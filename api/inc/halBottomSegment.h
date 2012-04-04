@@ -18,16 +18,50 @@ namespace hal {
 class BottomSegment : public Segment
 {
 public:
-  virtual ~BottomSegment() = 0;
-  virtual hal_size_t getNumChildren() const = 0;
-  virtual hal_index_t getChildIndex(hal_size_t i) const = 0;
-  virtual void setChildIndex(hal_size_t child, hal_index_t childIndex) = 0;
-  virtual hal_bool_t getChildReversed(hal_size_t i) const = 0;
-  virtual void setChildReversed(hal_size_t child, hal_bool_t isReversed) = 0;
-  virtual hal_index_t getParentParseIndex() const = 0;
-  virtual void setParentParseIndex(hal_index_t parParseIndex) = 0;
-  virtual hal_offset_t getParentParseOffset() const = 0;
-  virtual void setParentParseOffset(hal_offset_t parParseOffset) = 0;
+   /** Destructor */
+   virtual ~BottomSegment() = 0;
+
+   /** Get the number of child genomes (note this is a number of slots
+    * and that the current segment could actually have fewer children) */
+   virtual hal_size_t getNumChildren() const = 0;
+   
+   /** Get the index of a child segment (OR NULL_INDEX if none)
+    * @param i index of child to query */
+   virtual hal_index_t getChildIndex(hal_size_t i) const = 0;
+
+   /** Set the index of a child segment (OR NULL_INDEX if none)
+    * @param i index of child to set 
+    * @param childIndex index of segment in child to set */
+   virtual void setChildIndex(hal_size_t i, hal_index_t childIndex) = 0;
+
+   /** Get whether descent segment for ith child is mapped to the 
+    * reverse complement of this segment 
+    * @param i index of child to query */
+   virtual hal_bool_t getChildReversed(hal_size_t i) const = 0;
+
+   /** Set whether descent segment for ith child is mapped to the 
+    * reverse complement of this segment 
+    * @param i index of child to set 
+    * @param isReverse flag */
+   virtual void setChildReversed(hal_size_t child, hal_bool_t isReversed) = 0;
+
+   /** Get index of top segment in samge genome that contains
+    * this segment's start coordinate */
+   virtual hal_index_t getParentParseIndex() const = 0;
+
+   /** Set index of top segment in samge genome that contains
+    * this segment's start coordinate 
+    * @param parParseIndex index */
+   virtual void setParentParseIndex(hal_index_t parParseIndex) = 0;
+   
+   /** Get offset in associated top segment of start coordinate of 
+    * this segment */
+   virtual hal_offset_t getParentParseOffset() const = 0;
+
+   /** Set offset in associated top segment of start coordinate of 
+    * this segment 
+    * @param parpArseOffset offset in parent */
+   virtual void setParentParseOffset(hal_offset_t parParseOffset) = 0;
 };
 
 

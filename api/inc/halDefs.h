@@ -23,6 +23,7 @@ namespace hal {
  * number of bases in the largest genome in the file)
  */
 typedef int64_t hal_index_t;
+extern const hal_index_t NULL_INDEX;
 
 /**
  * NULL index value

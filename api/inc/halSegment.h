@@ -14,19 +14,40 @@
 namespace hal {
 
 /** 
- * Interface for a segment of DNA
+ * Interface for a segment of DNA. Note that segments should
+ * not be written to outside of creating new genomes.
  */
 class Segment
 {
 public:
+   /** Destructor */
    virtual ~Segment() = 0;
+
+   /** Get the length of the segment (number of bases) */
    virtual hal_size_t getLength() const = 0;
-   virtual void setLength() = 0;
+
+   /** Set the length of the segment
+    * @param length New length of segment */
+   virtual void setLength(hal_size_t length) = 0;
+
+   /** Get the containing (read-only) genome */
    virtual GenomeConstPtr getGenome() const = 0;
+
+   /** Get the containing genome */
    virtual GenomePtr getGenome() = 0;
+
+   /** Get the segment's start position in the genome */
    virtual hal_index_t getStartPostion() const = 0;
-   virtual void setStartPosition() = 0;
+
+   /** Set the segment's start position in the genome 
+    * @param startPos Start position */
+   virtual void setStartPosition(hal_index_t startPos) = 0;
+
+   /** Get a copy of the string of DNA characters associated with 
+    * this segment */
    virtual std::string getSequence() const = 0;
+
+   /** Get index of the next paralogous segment in the genome */
    virtual hal_index_t getNextParalogyIndex() const = 0;
 };
 
