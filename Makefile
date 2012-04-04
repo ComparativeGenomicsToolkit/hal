@@ -1,7 +1,7 @@
 # order is important, libraries first
 modules = api
 
-.PHONY: all %.all clean %.clean
+.PHONY: all %.all clean %.clean doxy %.doxy
 
 all : ${modules:%=all.%}
 
@@ -16,3 +16,8 @@ clean.%:
 
 test: all
 	python allTests.py
+
+doxy : ${modules:%=doxy.%}
+
+doxy.%:
+	cd $* && make doxy

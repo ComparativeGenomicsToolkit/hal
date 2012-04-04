@@ -25,5 +25,3 @@ HDF5_CCLINKER = ${cxx}
 cpp = h5c++
 cxx = h5cc
 
-# turn on optimizations (better done in sonlib include.mk?)
-# cppflags += -O3

@@ -1,16 +1,19 @@
 rootPath = ../
 include ../include.mk
 
-libSources = impl/*.cpp
+libSources = impl/*.cpp hdf5_impl/*.cpp
 libHeaders = inc/*.h
-libInternalHeaders = impl/*.h
-libTests = tests/*.cpp
-libTestsHeaders = tests/*.h
+libInternalHeaders = hdf5_impl/*.h
+libTests = tests/*.cpp hdf5_tests/*.cpp
+libTestsHeaders = tests/*.h hdf5_tests/*.cpp
 
 all : ${libPath}/halLib.a ${binPath}/halTests 
 
 clean : 
 	rm -f ${libPath}/halLib.a ${libPath}/*.h ${binPath}/halTests
+
+doxy :
+	doxygen doc/doxy.cfg
 
 ${libPath}/halLib.a : ${libSources} ${libHeaders} ${libInternalHeaders} ${basicLibsDependencies}
 	cp ${libHeaders} ${libPath}/
