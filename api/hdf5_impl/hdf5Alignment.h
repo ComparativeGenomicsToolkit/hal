@@ -9,6 +9,7 @@
 
 #include <H5Cpp.h>
 #include "halAlignment.h"
+#include "halAlignmentInstance.h"
 
 namespace hal {
 
@@ -19,16 +20,15 @@ class HDF5Alignment : public Alignment
 {
 public:
 
-   HDF5Alignment();
    virtual ~HDF5Alignment();
 
    void createNew(const std::string& alignmentPath);
    void open(const std::string& alignmentPath, 
-                     bool readOnly);
+             bool readOnly);
    
-   void addGenome(const std::string& path, 
-                  const std::string* parentPath,
-                  const std::vector<std::string>& childPaths);
+   GenomePtr addGenome(const std::string& path, 
+                       const std::string* parentPath,
+                       const std::vector<std::string>& childPaths);
 
    void removeGenome(const std::string& path);
 
@@ -45,10 +45,29 @@ public:
    MetaDataConstPtr getMetaData() const;
 
 protected:
+   // Nobody creates this class except through the interface. 
+   friend AlignmentPtr hdf5AlignmentInstance();
+   friend AlignmentConstPtr hdf5AlignmentInstanceReadOnly();
+   friend AlignmentPtr 
+   hdf5AlignmentInstance(const H5::FileCreatPropList& fileCreateProps,
+                         const H5::FileAccPropList& fileAccessProps,
+                         const H5::DSetCreatPropList& datasetCreateProps);
+   friend AlignmentConstPtr 
+   hdf5AlignmentInstanceReadOnly(const H5::FileCreatPropList& fileCreateProps,
+                                 const H5::FileAccPropList& fileAccessProps,
+                                 const H5::DSetCreatPropList& datasetCreateProps);
+
+   HDF5Alignment();
+   HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
+                 const H5::FileAccPropList& fileAccessProps,
+                 const H5::DSetCreatPropList& datasetCreateProps);
+
+protected:
 
    H5::H5File* _file;
    H5::FileCreatPropList _cprops;
    H5::FileAccPropList _aprops;
+   H5::DSetCreatPropList _dcprops;
    int _flags;
    MetaDataPtr _metaData;
    static const H5std_string MetaGroupName;

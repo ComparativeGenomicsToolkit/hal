@@ -46,11 +46,11 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   
 }
    
-void HDF5Alignment::addGenome(const string& path, 
+GenomePtr HDF5Alignment::addGenome(const string& path, 
                              const string* parentPath,
                              const vector<string>& childPaths)
 {
-  
+  return GenomePtr();
 }
 
 void HDF5Alignment::removeGenome(const string& path)

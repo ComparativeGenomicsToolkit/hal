@@ -37,7 +37,7 @@ public:
    virtual void set(const std::string& key, const std::string& value) = 0;
 
    /** Determine if key exists in metadata 
-    * @param key Key to test *//
+    * @param key Key to test */
    virtual bool has(const std::string& key) const = 0;
 };
 

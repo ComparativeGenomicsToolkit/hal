@@ -2,7 +2,7 @@ rootPath = ../
 include ../include.mk
 
 libSources = impl/*.cpp hdf5_impl/*.cpp
-libHeaders = inc/*.h
+libHeaders = inc/*.h 
 libInternalHeaders = hdf5_impl/*.h
 libTests = tests/*.cpp hdf5_tests/*.cpp
 libTestsHeaders = tests/*.h hdf5_tests/*.cpp
@@ -17,7 +17,7 @@ doxy :
 
 ${libPath}/halLib.a : ${libSources} ${libHeaders} ${libInternalHeaders} ${basicLibsDependencies}
 	cp ${libHeaders} ${libPath}/
-	${cpp} ${cppflags} -I inc -I ${libPath}/ -c ${libSources}
+	${cpp} ${cppflags} -I inc -I hdf5_impl -I ${libPath}/ -c ${libSources}
 	ar rc halLib.a *.o
 	ranlib halLib.a 
 	rm *.o
