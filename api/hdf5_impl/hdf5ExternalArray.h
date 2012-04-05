@@ -24,46 +24,7 @@ namespace hal {
 class HDF5ExternalArray
 {
 public:
-   
-   /** Creation parameters container */
-   struct CreationParameters {
-      /** Convenience constructor 
-       * @param file Pointer to the HDF5 file in which to create array
-       * @param path  Path within the file for the new array
-       * @param cparms  HDF5 options (ie chunking and compression etc) 
-       */
-      CreationParameters(H5::H5File* file, const H5std_string& path, 
-                         const H5::DSetCreatPropList& cparms =
-                         H5::DSetCreatPropList::DEFAULT) :
-        _file(file), _path(path), _cparms(cparms) {}
-      /** Pointer to the HDF5 file in which to create array */
-      H5::H5File* _file;
-      /** Path within the file for the new array */
-      H5std_string _path;
-      /** HDF5 options (ie chunking and compression etc) */
-      H5::DSetCreatPropList _cparms;
-   };
-
-   /** Loading parameters container */
-   struct LoadParameters {
-       /** Convenience constructor 
-       * @param file Pointer to the HDF5 file in which to create array
-       * @param path  Path within the file for the new array
-       * @param chunksInBuffer HDF5 options (ie chunking and compression etc) 
-       * 0: load entire array into buffer
-       * 1: use default chunking (from dataset)
-       * N: buffersize will be N chunks. 
-       */
-      LoadParameters(H5::H5File* file, const H5std_string& path,
-                      hsize_t chunksInBuffer = 1) :
-        _file(file), _path(path), _chunksInBuffer(chunksInBuffer) {}
-      H5::H5File* _file;
-      /** Path to array to read in file */
-      H5std_string _path;
-      /** Number of chunks to load in memory at a time */
-      hsize_t _chunksInBuffer;
-   };
-
+ 
    /** Constructor */
    HDF5ExternalArray();
 
@@ -71,18 +32,30 @@ public:
    virtual ~HDF5ExternalArray();
 
    /** Create a new dataset in specifed location
-    * @param creationParams creation parameters
+    * @param file Pointer to the HDF5 file in which to create array
+    * @param path  Path within the file for the new array
     * @param dataType HDF5 Datatype describing contents of array
     * @param numElements Fixed length of the new array
+    * @param cparms  HDF5 options (ie chunking and compression etc) 
     */
-   void create(const CreationParameters& creationParams,
-               const H5::DataType& dataType, hsize_t numElements);
+   void create(H5::H5File* file, 
+               const H5std_string& path, 
+               const H5::DataType& dataType,
+               hsize_t numElements,
+               const H5::DSetCreatPropList& cparms =
+               H5::DSetCreatPropList::DEFAULT);
  
    /** Load an existing dataset into memory
-    * @param loadParams Load Parameters
-    */
-   void load(const LoadParameters& loadParams);
-
+     * @param file Pointer to the HDF5 file in which to create array
+     * @param path  Path within the file for the new array
+     * @param chunksInBuffer HDF5 options (ie chunking and compression etc) 
+     * 0: load entire array into buffer
+     * 1: use default chunking (from dataset)
+     * N: buffersize will be N chunks. 
+     */
+   void load(H5::H5File* file, const H5std_string& path,
+             hsize_t chunksInBuffer = 1);
+   
    /** Write the memory buffer back to the file */
    void write();
 

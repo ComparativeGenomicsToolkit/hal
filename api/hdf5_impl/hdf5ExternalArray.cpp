@@ -31,20 +31,20 @@ HDF5ExternalArray::~HDF5ExternalArray()
 }
 
 // Create a new dataset in specifed location
-void HDF5ExternalArray::create(const CreationParameters& creationParams,
-                                const H5::DataType& dataType, 
-                                hsize_t size)
-
+void HDF5ExternalArray::create(H5::H5File* file, 
+                               const H5std_string& path, 
+                               const H5::DataType& dataType,
+                               hsize_t numElements,
+                               const H5::DSetCreatPropList& cparms)
 {
   // copy in parameters
-  _file = creationParams._file;
-  _path = creationParams._path;
+  _file = file;
+  _path = path;
   _dataType = dataType;
-  _size = size;
+  _size = numElements;
   _dataSize = _dataType.getSize();
   _dataSpace = DataSpace(1, &_size);
   
-  DSetCreatPropList cparms = creationParams._cparms;
   // resolve chunking size (0 = do not chunk)
   if (cparms.getLayout() == H5D_CHUNKED)
   {
@@ -78,11 +78,12 @@ void HDF5ExternalArray::create(const CreationParameters& creationParams,
 }
 
 // Load an existing dataset into memory
-void HDF5ExternalArray::load(const LoadParameters& loadParams)
+void HDF5ExternalArray::load(H5::H5File* file, const H5std_string& path,
+                             hsize_t chunksInBuffer)
 {
   // load up the parameters
-  _file = loadParams._file;
-  _path = loadParams._path;
+  _file = file;
+  _path = path;
   _dataSet = _file->openDataSet(_path);
   _dataType = _dataSet.getDataType();
   _dataSpace = _dataSet.getSpace();
@@ -95,7 +96,7 @@ void HDF5ExternalArray::load(const LoadParameters& loadParams)
   if (cparms.getLayout() == H5D_CHUNKED)
   {
     cparms.getChunk(1, &_chunkSize);
-    _chunkSize *= loadParams._chunksInBuffer;
+    _chunkSize *= chunksInBuffer;
     if (_chunkSize == 1)
     {
       throw DataSetIException("HDF5ExternalArray::create",

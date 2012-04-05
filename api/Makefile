@@ -4,8 +4,8 @@ include ../include.mk
 libSources = impl/*.cpp hdf5_impl/*.cpp
 libHeaders = inc/*.h 
 libInternalHeaders = hdf5_impl/*.h
-libTests = tests/*.cpp hdf5_tests/*.cpp
-libTestsHeaders = tests/*.h hdf5_tests/*.cpp
+libTests = hdf5_tests/*.cpp
+libTestsHeaders = hdf5_tests/*.h
 
 all : ${libPath}/halLib.a ${binPath}/halTests 
 
@@ -24,4 +24,4 @@ ${libPath}/halLib.a : ${libSources} ${libHeaders} ${libInternalHeaders} ${basicL
 	mv halLib.a ${libPath}/
 
 ${binPath}/halTests : ${libTests} ${libTestsHeaders} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I ${libPath} -I impl -I tests -o ${binPath}/halTests ${libTests} ${libPath}/halLib.a ${basicLibs}
+	${cpp} ${cppflags} -I inc -I hdf5_impl -I ${libPath} -I impl -I tests -o ${binPath}/halTests ${libTests} ${libPath}/halLib.a ${basicLibs}
