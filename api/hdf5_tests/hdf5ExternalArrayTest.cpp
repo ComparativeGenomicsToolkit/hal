@@ -56,7 +56,7 @@ void hdf5ExternalArrayTestCreate(CuTest *testCase)
       myArray.create(&file, datasetName, datatype, N, cparms);
       for (hsize_t i = 0; i < N; ++i)
       {
-        hsize_t* block = static_cast<hsize_t*>(myArray.getUpdate(i));
+        hsize_t* block = reinterpret_cast<hsize_t*>(myArray.getUpdate(i));
         *block = i;
       }
       myArray.write();
@@ -92,7 +92,7 @@ void hdf5ExternalArrayTestLoad(CuTest *testCase)
 
       for (hsize_t i = 0; i < N; ++i)
       {
-        const int64_t* val = static_cast<const int64_t*>(myArray.get(i));
+        const int64_t* val = reinterpret_cast<const int64_t*>(myArray.get(i));
         CuAssertTrue(testCase, *val == numbers[i]);
       }
     }
@@ -128,7 +128,7 @@ void hdf5ExternalArrayTestCompression(CuTest *testCase)
       myArray.create(&file, datasetName, datatype, N, cparms);
       for (hsize_t i = 0; i < N; ++i)
       {
-        hsize_t* block = static_cast<hsize_t*>(myArray.getUpdate(i));
+        hsize_t* block = reinterpret_cast<hsize_t*>(myArray.getUpdate(i));
         *block = i;
       }
       myArray.write();
@@ -140,7 +140,7 @@ void hdf5ExternalArrayTestCompression(CuTest *testCase)
       
       for (hsize_t i = 0; i < N; ++i)
       {
-        const int64_t* val = static_cast<const int64_t*>(myrArray.get(i));
+        const int64_t* val = reinterpret_cast<const int64_t*>(myrArray.get(i));
         CuAssertTrue(testCase, *val == numbers[i]);
       }
     }
