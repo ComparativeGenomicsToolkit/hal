@@ -47,12 +47,12 @@ public:
 
    /** Get index of top segment in samge genome that contains
     * this segment's start coordinate */
-   virtual hal_index_t getParentParseIndex() const = 0;
+   virtual hal_index_t getTopParseIndex() const = 0;
 
    /** Set index of top segment in samge genome that contains
     * this segment's start coordinate 
     * @param parParseIndex index */
-   virtual void setParentParseIndex(hal_index_t parParseIndex) = 0;
+   virtual void setTopParseIndex(hal_index_t parseIndex) = 0;
    
    /** Get offset in associated top segment of start coordinate of 
     * this segment */
@@ -61,7 +61,7 @@ public:
    /** Set offset in associated top segment of start coordinate of 
     * this segment 
     * @param parpArseOffset offset in parent */
-   virtual void setParentParseOffset(hal_offset_t parParseOffset) = 0;
+   virtual void setParentParseOffset(hal_offset_t parseOffset) = 0;
 };
 
 

@@ -11,6 +11,8 @@
 #include "halGenome.h"
 #include "hdf5ExternalArray.h"
 #include "hdf5Alignment.h"
+#include "halSegmentIterator.h"
+#include "hdf5MetaData.h"
 
 namespace hal {
 

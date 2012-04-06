@@ -4,8 +4,8 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#ifndef _HALTYPES_H
-#define _HALTYPES_H
+#ifndef _HALDEFS_H
+#define _HALDEFS_H
 
 #include <string>
 #include <vector>

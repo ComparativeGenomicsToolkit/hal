@@ -5,7 +5,7 @@
  */
 
 #ifndef _HDF5EXTERNALARRAY_H
-#define _RAWH5EXTERNALARRAY_H
+#define _HDF5EXTERNALARRAY_H
 
 #include <cassert>
 #include <H5Cpp.h>
@@ -62,13 +62,29 @@ public:
    /** Access the raw data at given index
     * @param i index of element to retrieve for reading
     */
-   const void* get(hsize_t i);
+   const char* get(hsize_t i);
 
    /** Write the raw data at given index 
     * @param i index of element to retrieve for updating
     */
-   void* getUpdate(hsize_t i);
+   char* getUpdate(hsize_t i);
 
+   /** Access typed value within element in a raw data array 
+    * @param index Index of element (struct) in the array
+    * @param offset Offset of value within struct (number of bytes) */
+   template <typename T>
+   T getValue(hsize_t index, hsize_t offset) const;
+
+   /** Write typed value within element in raw data array
+    * @param index Index of element (struct) in the array
+    * @param offset Offset of value within struct (number of bytes)
+    * @param value New value to set */
+   template <typename T>
+   void setValue(hsize_t index, hsize_t offset, T value);
+
+   /** Write typed element in the the raw data index
+    * @param offset OFfset of element in struct (number of bytes) */
+   
    /** Number of elements in array */
    hsize_t getSize() const;
    
@@ -115,7 +131,7 @@ private:
 
 // INLINE MEMBERS
 
-inline const void* HDF5ExternalArray::get(hsize_t i)
+inline const char* HDF5ExternalArray::get(hsize_t i)
 {
   assert(i < _size);
   if (i < _bufStart || i > _bufEnd)
@@ -126,7 +142,7 @@ inline const void* HDF5ExternalArray::get(hsize_t i)
   return _buf + (i - _bufStart) * _dataSize;
 }
 
-inline void* HDF5ExternalArray::getUpdate(hsize_t i)
+inline char* HDF5ExternalArray::getUpdate(hsize_t i)
 {
   assert(i < _size);
   if (i < _bufStart || i > _bufEnd)
@@ -141,6 +157,25 @@ inline void* HDF5ExternalArray::getUpdate(hsize_t i)
 inline hsize_t HDF5ExternalArray::getSize() const
 {
   return _size;
+}
+
+template<typename T> 
+inline T HDF5ExternalArray::getValue(hsize_t index, hsize_t offset) const 
+{
+  assert (offset + sizeof(T) <= _dataSize);
+  //even though paging causes the class to change state, we
+  //still consider getValue a const function since the array's 
+  //contents don't change.
+  HDF5ExternalArray* stripConstThis = const_cast<HDF5ExternalArray*>(this);
+  return *reinterpret_cast<const T*>(stripConstThis->get(index) + offset);
+}
+
+template<typename T> 
+inline void HDF5ExternalArray::setValue(hsize_t index, hsize_t offset, T val)
+{
+  assert (offset + sizeof(T) <= _dataSize);
+  T* entry = reinterpret_cast<T*>(getUpdate(index) + offset);
+  *entry = val;
 }
 
 }

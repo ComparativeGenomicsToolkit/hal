@@ -8,9 +8,6 @@
 #define _HALGENOME_H
 
 #include "halDefs.h"
-#include "halAlignment.h"
-#include "halSegmentIterator.h"
-#include "halDNAIterator.h"
 
 namespace hal {
 

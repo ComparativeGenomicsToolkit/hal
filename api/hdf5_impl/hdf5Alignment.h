@@ -10,6 +10,8 @@
 #include <H5Cpp.h>
 #include "halAlignment.h"
 #include "halAlignmentInstance.h"
+#include "halGenome.h"
+#include "halMetaData.h"
 
 namespace hal {
 

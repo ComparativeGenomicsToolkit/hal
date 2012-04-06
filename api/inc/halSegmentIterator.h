@@ -8,8 +8,6 @@
 #define _HALSEGMENTITERATOR_H
 
 #include "halDefs.h"
-#include "halTopSegment.h"
-#include "halBottomSegment.h"
 
 namespace hal {
 

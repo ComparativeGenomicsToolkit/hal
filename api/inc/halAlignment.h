@@ -9,8 +9,6 @@
 
 #include <string>
 #include "halDefs.h"
-#include "halMetaData.h"
-#include "halGenome.h"
 
 namespace hal {
 

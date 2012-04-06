@@ -9,7 +9,6 @@
 
 #include <string>
 #include "halDefs.h"
-#include "halGenome.h"
 
 namespace hal {
 
@@ -37,7 +36,7 @@ public:
    virtual GenomePtr getGenome() = 0;
 
    /** Get the segment's start position in the genome */
-   virtual hal_index_t getStartPostion() const = 0;
+   virtual hal_index_t getStartPosition() const = 0;
 
    /** Set the segment's start position in the genome 
     * @param startPos Start position */
@@ -49,6 +48,11 @@ public:
 
    /** Get index of the next paralogous segment in the genome */
    virtual hal_index_t getNextParalogyIndex() const = 0;
+
+   /** Set index of the next paralogous segment in the genome 
+    * @param parIdx of next segment in same genome that is 
+    * homologous to this segment */
+   virtual void setNextParalogyIndex(hal_index_t parIdx) = 0;
 };
 
 
