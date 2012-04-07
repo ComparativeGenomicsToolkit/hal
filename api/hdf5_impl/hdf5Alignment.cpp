@@ -16,13 +16,26 @@ using namespace H5;
 const H5std_string HDF5Alignment::MetaGroupName = "MetaData";
 
 HDF5Alignment::HDF5Alignment() :
-  Alignment(),
   _file(NULL),
   _cprops(FileCreatPropList::DEFAULT),
   _aprops(FileAccPropList::DEFAULT),
+  _dcprops(DSetCreatPropList::DEFAULT),
   _flags(H5F_ACC_RDONLY)
 {
   
+}
+
+
+HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
+                             const H5::FileAccPropList& fileAccessProps,
+                             const H5::DSetCreatPropList& datasetCreateProps) :
+  _file(NULL),
+  _cprops(fileCreateProps),
+  _aprops(fileAccessProps),
+  _dcprops(datasetCreateProps),
+  _flags(H5F_ACC_RDONLY)
+{
+
 }
 
 HDF5Alignment::~HDF5Alignment()
@@ -46,6 +59,11 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   
 }
    
+void HDF5Alignment::close()
+{
+  _file->close();
+}
+
 GenomePtr HDF5Alignment::addGenome(const string& path, 
                              const string* parentPath,
                              const vector<string>& childPaths)

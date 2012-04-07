@@ -35,6 +35,9 @@ public:
     * @param readOnly access flag */
    virtual void open(const std::string& alignmentPath, 
                      bool readOnly) = 0;
+
+   /** Close the alignment */
+   virtual void close() = 0;
    
    /** Add a new genome to the alignment
     * @param path location of new genome in alignment

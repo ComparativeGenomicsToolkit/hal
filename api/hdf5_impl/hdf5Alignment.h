@@ -22,11 +22,12 @@ class HDF5Alignment : public Alignment
 {
 public:
 
-   virtual ~HDF5Alignment();
+   ~HDF5Alignment();
 
    void createNew(const std::string& alignmentPath);
    void open(const std::string& alignmentPath, 
              bool readOnly);
+   void close();
    
    GenomePtr addGenome(const std::string& path, 
                        const std::string* parentPath,
