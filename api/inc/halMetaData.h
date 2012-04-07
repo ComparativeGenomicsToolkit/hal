@@ -41,6 +41,7 @@ public:
    virtual bool has(const std::string& key) const = 0;
 };
 
+inline MetaData::~MetaData() {}
 
 }
 #endif

@@ -17,84 +17,94 @@ namespace hal {
 class HDF5TopSegment : public TopSegment
 {
 public:
+
+   /** Constructor 
+    * @param genome Smart pointer to genome to which segment belongs
+    * @param array HDF5 array containg segment
+    * @param index Index of segment in the array */
+   HDF5TopSegment(GenomePtr genome,
+                  HDF5ExternalArray* array,
+                  hal_index_t index);
+
    /** Destructor */
-   virtual ~HDF5TopSegment() = 0;
+   ~HDF5TopSegment();
 
    /** Get the length of the segment (number of bases) */
-   virtual hal_size_t getLength() const = 0;
+   hal_size_t getLength() const;
 
    /** Set the length of the segment
     * @param length New length of segment */
-   virtual void setLength(hal_size_t length) = 0;
+   void setLength(hal_size_t length);
 
    /** Get the containing (read-only) genome */
-   virtual GenomeConstPtr getGenome() const = 0;
+   GenomeConstPtr getGenome() const;
 
    /** Get the containing genome */
-   virtual GenomePtr getGenome() = 0;
+   GenomePtr getGenome();
 
    /** Get the segment's start position in the genome */
-   virtual hal_index_t getStartPosition() const = 0;
+   hal_index_t getStartPosition() const;
 
    /** Set the segment's start position in the genome 
     * @param startPos Start position */
-   virtual void setStartPosition(hal_index_t startPos) = 0;
+   void setStartPosition(hal_index_t startPos);
 
    /** Get a copy of the string of DNA characters associated with 
     * this segment */
-   virtual std::string getSequence() const = 0;
+   std::string getSequence() const;
 
    /** Get index of the next paralogous segment in the genome */
-   virtual hal_index_t getNextParalogyIndex() const = 0;
+   hal_index_t getNextParalogyIndex() const;
 
    /** Set index of the next paralogous segment in the genome 
     * @param parIdx of next segment in same genome that is 
     * homologous to this segment */
-   virtual void setNextParalogyIndex(hal_index_t parIdx) = 0;
+   void setNextParalogyIndex(hal_index_t parIdx);
 
    /** Get index of the homologous segmenet in the ancestral genome */
-   virtual hal_index_t getParentIndex() const = 0;
+   hal_index_t getParentIndex() const;
    
    /** Set the index of the homologous segment in the ancestra genome 
     * @param parIdx parent index to set */
-   virtual void setParentIndex(hal_index_t parIdx) = 0;
+   void setParentIndex(hal_index_t parIdx);
 
    /** Check whether segment is mapped to parent's reverse complement */
-   virtual hal_bool_t getParentReversed() const = 0;
+   hal_bool_t getParentReversed() const;
 
    /** Set whether segment is mapped to parent's reverse complement 
     * @param isReversed Flag */
-   virtual void setParentReversed(hal_bool_t isReversed) = 0;
+   void setParentReversed(hal_bool_t isReversed);
 
    /** Get the index of the bottom segment in genome that contains the
     * start coordinate of this top segment */
-   virtual hal_index_t getBottomParseIndex() const = 0;
+   hal_index_t getBottomParseIndex() const;
 
    /** Set the index of the bototm segment in the genome that contains the
     * start coordinate of this top segment 
     * @param botParseIndx index to set */
-   virtual void setBottomParseIndex(hal_index_t botParseIdx) = 0;
+   void setBottomParseIndex(hal_index_t botParseIdx);
 
    /** Get the offset in the bottom parse segment that aligns with the
     * start coordinate of this segment */
-   virtual hal_offset_t getBottomParseOffset() const = 0;
+   hal_offset_t getBottomParseOffset() const;
 
    /** Set the offset in the bottom parse segment that aligns with the
     * start coordinate of this segment 
     * @param botParseOffset offset */
-   virtual void setBottomParseOffset(hal_offset_t botParseOffset) = 0;
+   void setBottomParseOffset(hal_offset_t botParseOffset);
 
    static H5::CompType dataType();
    
 protected:
 
-   static const hsize_t genomeIndexOffset;
-   static const hsize_t lengthOffset;
-   static const hsize_t bottomIndexOffset;
-   static const hsize_t bottomOffsetOffset;
-   static const hsize_t parIndexOffset;
-   static const hsize_t parentIndexOffset;
-   static const hsize_t parentReversedOffset;
+   static const size_t genomeIndexOffset;
+   static const size_t lengthOffset;
+   static const size_t bottomIndexOffset;
+   static const size_t bottomOffsetOffset;
+   static const size_t parIndexOffset;
+   static const size_t parentIndexOffset;
+   static const size_t parentReversedOffset;
+   static const size_t totalSize;
 
    HDF5ExternalArray* _array;
    hal_index_t _index;

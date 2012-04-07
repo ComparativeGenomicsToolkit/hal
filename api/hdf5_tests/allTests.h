@@ -13,5 +13,6 @@ extern "C" {
 
 CuSuite *hdf5TestSuite();
 CuSuite *hdf5ExternalArrayTestSuite();
+CuSuite *hdf5SegmentTypeTestSuite();
 
 #endif

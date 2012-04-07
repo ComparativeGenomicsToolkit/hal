@@ -71,6 +71,6 @@ public:
    virtual MetaDataConstPtr getMetaData() const = 0;
 };
 
-
+inline Alignment::~Alignment() {}
 }
 #endif

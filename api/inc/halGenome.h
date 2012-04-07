@@ -67,5 +67,7 @@ public:
   
 };
 
+inline Genome::~Genome() {}
+
 }
 #endif

@@ -55,6 +55,7 @@ public:
    virtual void setNextParalogyIndex(hal_index_t parIdx) = 0;
 };
 
+inline Segment::~Segment() {}
 
 }
 #endif

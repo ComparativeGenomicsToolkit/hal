@@ -18,6 +18,15 @@ namespace hal {
 class HDF5BottomSegment : public BottomSegment
 {
 public:
+   
+    /** Constructor 
+    * @param genome Smart pointer to genome to which segment belongs
+    * @param array HDF5 array containg segment
+    * @param index Index of segment in the array */
+   HDF5BottomSegment(GenomePtr genome,
+                     HDF5ExternalArray* array,
+                     hal_index_t index);
+
     /** Destructor */
    ~HDF5BottomSegment();
 
@@ -99,12 +108,13 @@ public:
    
 protected:
 
-   static const hsize_t genomeIndexOffset;
-   static const hsize_t lengthOffset;
-   static const hsize_t topIndexOffset;
-   static const hsize_t topOffsetOffset;
-   static const hsize_t parIndexOffset;
-   static const hsize_t firstChildOffset;
+   static const size_t genomeIndexOffset;
+   static const size_t lengthOffset;
+   static const size_t topIndexOffset;
+   static const size_t topOffsetOffset;
+   static const size_t parIndexOffset;
+   static const size_t firstChildOffset;
+   static const size_t totalSize(hal_size_t numChildren);
 
    HDF5ExternalArray* _array;
    hal_index_t _index;
@@ -194,7 +204,7 @@ inline hal_bool_t HDF5BottomSegment::getChildReversed(hal_size_t i) const
   return _array->getValue<hal_bool_t>(
     (hsize_t)_index, firstChildOffset + 
     i * (sizeof(hal_index_t) + sizeof(hal_bool_t)) +
-    sizeof(hal_bool_t));
+    sizeof(hal_index_t));
 }
 
 inline void HDF5BottomSegment::setChildReversed(hal_size_t i, 
@@ -203,7 +213,7 @@ inline void HDF5BottomSegment::setChildReversed(hal_size_t i,
   assert(_index >= 0);
   _array->setValue((hsize_t)_index, firstChildOffset + 
                    i * (sizeof(hal_index_t) + sizeof(hal_bool_t)) + 
-                   sizeof(hal_bool_t), isReversed);
+                   sizeof(hal_index_t), isReversed);
 }
 
 inline hal_index_t HDF5BottomSegment::getTopParseIndex() const

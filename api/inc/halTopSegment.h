@@ -54,6 +54,6 @@ public:
    virtual void setBottomParseOffset(hal_offset_t botParseOffset) = 0;
 };
 
-
+inline TopSegment::~TopSegment() {}
 }
 #endif

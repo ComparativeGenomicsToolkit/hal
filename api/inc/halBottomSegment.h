@@ -56,14 +56,14 @@ public:
    
    /** Get offset in associated top segment of start coordinate of 
     * this segment */
-   virtual hal_offset_t getParentParseOffset() const = 0;
+   virtual hal_offset_t getTopParseOffset() const = 0;
 
    /** Set offset in associated top segment of start coordinate of 
     * this segment 
     * @param parpArseOffset offset in parent */
-   virtual void setParentParseOffset(hal_offset_t parseOffset) = 0;
+   virtual void setTopParseOffset(hal_offset_t parseOffset) = 0;
 };
 
-
+inline BottomSegment::~BottomSegment() {}
 }
 #endif

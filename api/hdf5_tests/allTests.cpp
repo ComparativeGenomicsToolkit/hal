@@ -11,6 +11,7 @@ int halRunAllTests(void) {
 	CuSuite* suite = CuSuiteNew();
 	CuSuiteAddSuite(suite, hdf5TestSuite());
         CuSuiteAddSuite(suite, hdf5ExternalArrayTestSuite());
+        CuSuiteAddSuite(suite, hdf5SegmentTypeTestSuite());
 	CuSuiteRun(suite);
 	CuSuiteSummary(suite, output);
 	CuSuiteDetails(suite, output);

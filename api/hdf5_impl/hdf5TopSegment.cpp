@@ -5,39 +5,55 @@
  */
 #include <string>
 #include <sstream>
+#include <iostream>
 #include "hdf5TopSegment.h"
 
 using namespace std;
 using namespace H5;
 using namespace hal;
 
-const hsize_t HDF5TopSegment::genomeIndexOffset = 0;
-const hsize_t HDF5TopSegment::lengthOffset = sizeof(hal_index_t);
-const hsize_t HDF5TopSegment::bottomIndexOffset = 2 * sizeof(hal_index_t);
-const hsize_t HDF5TopSegment::bottomOffsetOffset = 3 * sizeof(hal_index_t);
-const hsize_t HDF5TopSegment::parIndexOffset = 3 * sizeof(hal_index_t) + sizeof(hal_offset_t);
-const hsize_t HDF5TopSegment::parentIndexOffset = 4 * sizeof(hal_index_t) + sizeof(hal_offset_t);
-const hsize_t HDF5TopSegment::parentReversedOffset = 5 * sizeof(hal_index_t) + sizeof(hal_offset_t);
+const size_t HDF5TopSegment::genomeIndexOffset = 0;
+const size_t HDF5TopSegment::lengthOffset = sizeof(hal_index_t);
+const size_t HDF5TopSegment::bottomIndexOffset = lengthOffset + sizeof(hal_size_t);
+const size_t HDF5TopSegment::bottomOffsetOffset = bottomIndexOffset + sizeof(hal_index_t);
+const size_t HDF5TopSegment::parIndexOffset = bottomOffsetOffset + sizeof(hal_offset_t);
+const size_t HDF5TopSegment::parentIndexOffset = parIndexOffset + sizeof(hal_index_t);
+const size_t HDF5TopSegment::parentReversedOffset = parentIndexOffset + sizeof(hal_index_t);
+const size_t HDF5TopSegment::totalSize = parentReversedOffset + sizeof(hal_bool_t);
 
-static const PredType h5index_type = PredType::NATIVE_INT64;
-static const PredType h5bool_type = PredType::NATIVE_HBOOL;
+HDF5TopSegment::HDF5TopSegment(GenomePtr genome,
+                               HDF5ExternalArray* array,
+                               hal_index_t index) :
+  _array(array),
+  _index(index),
+  _genome(genome)
+{
+
+}
+
+HDF5TopSegment::~HDF5TopSegment()
+{
+  
+}
 
 H5::CompType HDF5TopSegment::dataType()
 {
   // the in-memory representations and hdf5 representations 
   // don't necessarily have to be the same, but it simplifies 
   // testing for now. 
-  assert(h5index_type.getSize() == sizeof(hal_index_t));
-  assert(h5bool_type.getSize() == sizeof(hal_bool_t));
+  assert(PredType::NATIVE_INT64.getSize() == sizeof(hal_index_t));
+  assert(PredType::NATIVE_UINT64.getSize() == sizeof(hal_offset_t));
+  assert(PredType::NATIVE_HSIZE.getSize() == sizeof(hal_size_t));
+  assert(PredType::NATIVE_CHAR.getSize() == sizeof(hal_bool_t));
 
-  H5::CompType dataType;
-  dataType.insertMember("genomeIdx", genomeIndexOffset, h5index_type);
-  dataType.insertMember("length", lengthOffset, h5index_type);
-  dataType.insertMember("bottomIdx", bottomIndexOffset, h5index_type);
-  dataType.insertMember("bottomOffset", bottomOffsetOffset, h5index_type);
-  dataType.insertMember("paralogyIdx", parIndexOffset, h5index_type);
-  dataType.insertMember("parentIdx", parentIndexOffset, h5index_type);
-  dataType.insertMember("reverseFlag", parentReversedOffset, h5bool_type);
+  H5::CompType dataType(totalSize);
+  dataType.insertMember("genomeIdx", genomeIndexOffset, PredType::NATIVE_INT64);
+  dataType.insertMember("length", lengthOffset, PredType::NATIVE_HSIZE); 
+  dataType.insertMember("bottomIdx", bottomIndexOffset, PredType::NATIVE_INT64);
+  dataType.insertMember("bottomOffset", bottomOffsetOffset, PredType::NATIVE_UINT64);
+  dataType.insertMember("paralogyIdx", parIndexOffset, PredType::NATIVE_INT64);
+  dataType.insertMember("parentIdx", parentIndexOffset, PredType::NATIVE_INT64);
+  dataType.insertMember("reverseFlag", parentReversedOffset, PredType::NATIVE_CHAR);
 
   return dataType;
 }
