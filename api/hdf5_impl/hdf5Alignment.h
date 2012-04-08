@@ -29,23 +29,32 @@ public:
              bool readOnly);
    void close();
    
-   GenomePtr addGenome(const std::string& path, 
-                       const std::string* parentPath,
-                       const std::vector<std::string>& childPaths);
+   GenomePtr addGenome(const std::string& name,
+                       const std::string& path,
+                       const std::string& parentName,
+                       const std::vector<std::string>& childNames);
 
-   void removeGenome(const std::string& path);
+   void removeGenome(const std::string& name);
 
-   GenomeConstPtr openConstGenome(const std::string& path) const;
+   GenomeConstPtr openConstGenome(const std::string& name) const;
 
-   GenomePtr openGenome(const std::string& path);
+   GenomePtr openGenome(const std::string& name);
 
-   std::string getParent(const std::string& path);
+   std::string getRootName() const;
+
+   std::string getParentName(const std::string& name) const;
    
-   std::vector<std::string> getChildren(const std::string& path);
+   std::vector<std::string> 
+   getChildNames(const std::string& name) const;
+
+   std::vector<std::string>
+   getLeafNamesBelow(const std::string& name) const;
 
    MetaDataPtr getMetaData();
 
    MetaDataConstPtr getMetaData() const;
+
+   const std::string& getPath(const std::string& name) const;
 
 protected:
    // Nobody creates this class except through the interface. 

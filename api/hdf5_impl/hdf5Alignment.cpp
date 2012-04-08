@@ -64,34 +64,45 @@ void HDF5Alignment::close()
   _file->close();
 }
 
-GenomePtr HDF5Alignment::addGenome(const string& path, 
-                             const string* parentPath,
-                             const vector<string>& childPaths)
+GenomePtr HDF5Alignment::addGenome(const string& name,
+                                   const string& path,
+                                   const string& parentName,
+                                   const vector<string>& childNames)
 {
   return GenomePtr();
 }
 
-void HDF5Alignment::removeGenome(const string& path)
+void HDF5Alignment::removeGenome(const string& name)
 {
 
 }
 
-GenomeConstPtr HDF5Alignment::openConstGenome(const string& path) const
+GenomeConstPtr HDF5Alignment::openConstGenome(const string& name) const
 {
   return GenomeConstPtr();
 }
 
-GenomePtr HDF5Alignment::openGenome(const string& path)
+GenomePtr HDF5Alignment::openGenome(const string& name)
 {
   return GenomePtr();
 }
 
-string HDF5Alignment::getParent(const string& path)
+string HDF5Alignment::getRootName() const
+{
+  return "";
+}
+
+string HDF5Alignment::getParentName(const string& name) const
 {
   return "";
 }
    
-vector<string> HDF5Alignment::getChildren(const string& path)
+vector<string> HDF5Alignment::getChildNames(const string& name) const
+{
+  return vector<string>();
+}
+
+vector<string> HDF5Alignment::getLeafNamesBelow(const string& name) const
 {
   return vector<string>();
 }
@@ -104,4 +115,9 @@ MetaDataPtr HDF5Alignment::getMetaData()
 MetaDataConstPtr HDF5Alignment::getMetaData() const
 {
   return _metaData;
+}
+
+const string& HDF5Alignment::getPath(const string& name) const
+{
+  return "";
 }

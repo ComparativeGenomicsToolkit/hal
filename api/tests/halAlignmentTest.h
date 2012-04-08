@@ -27,9 +27,10 @@ struct TempReadAlignment {
 
 class AlignmentTest
 {
+   virtual ~AlignmentTest();
    void check();   
-   virtual void createCallBack(hal::AlignmentPtr alignment) = 0;
-   virtual void checkCallBack(hal::AlignmentConstPtr alignment) = 0;
+   virtual void createCallBack(hal::AlignmentPtr alignment);
+   virtual void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
 #endif
