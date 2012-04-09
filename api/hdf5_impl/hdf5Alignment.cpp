@@ -4,6 +4,7 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
+#include <cassert>
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "sonLibTree.h"
@@ -138,4 +139,14 @@ MetaDataConstPtr HDF5Alignment::getMetaData() const
 const string& HDF5Alignment::getPath(const string& name) const
 {
   return "";
+}
+
+void HDF5Alignment::writeTree()
+{
+
+}
+
+void HDF5Alignment::loadTree()
+{
+
 }
