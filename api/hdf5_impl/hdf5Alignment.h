@@ -13,6 +13,8 @@
 #include "halGenome.h"
 #include "halMetaData.h"
 
+typedef struct _stTree stTree;
+
 namespace hal {
 
 /** 
@@ -73,6 +75,9 @@ protected:
    HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
                  const H5::FileAccPropList& fileAccessProps,
                  const H5::DSetCreatPropList& datasetCreateProps);
+   
+   void loadTree();
+   void writeTree();
 
 protected:
 
@@ -83,7 +88,8 @@ protected:
    int _flags;
    MetaDataPtr _metaData;
    static const H5std_string MetaGroupName;
-   
+   static const H5std_string TreeGroupName;
+   stTree* _tree;
 };
 
 }
