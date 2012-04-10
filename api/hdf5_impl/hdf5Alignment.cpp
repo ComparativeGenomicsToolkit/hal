@@ -238,6 +238,21 @@ MetaDataConstPtr HDF5Alignment::getMetaData() const
   return _metaData;
 }
 
+string HDF5Alignment::getNewickTree() const
+{
+  if (_tree == NULL)
+  {
+    return "";
+  }
+  else
+  {
+    char* treeString = stTree_getNewickTreeString(_tree);
+    string returnString(treeString);
+    free(treeString);
+    return returnString;
+  }
+}
+
 void HDF5Alignment::writeTree()
 {
   if (_dirty == false)

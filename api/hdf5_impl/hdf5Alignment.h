@@ -62,6 +62,8 @@ public:
 
    MetaDataConstPtr getMetaData() const;
 
+   std::string getNewickTree() const;
+
 protected:
    // Nobody creates this class except through the interface. 
    friend AlignmentPtr hdf5AlignmentInstance();

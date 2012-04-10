@@ -92,6 +92,9 @@ public:
 
    /** Get read-only instance of Alignment's metadata */
    virtual MetaDataConstPtr getMetaData() const = 0;
+
+   /** Get a newick-formatted phylogeny to the alignment */
+   virtual std::string getNewickTree() const = 0;
 };
 
 inline Alignment::~Alignment() {}
