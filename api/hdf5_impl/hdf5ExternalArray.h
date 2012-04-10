@@ -32,13 +32,13 @@ public:
    virtual ~HDF5ExternalArray();
 
    /** Create a new dataset in specifed location
-    * @param file Pointer to the HDF5 file in which to create array
+    * @param file Pointer to the HDF5 parent in which to create array
     * @param path  Path within the file for the new array
     * @param dataType HDF5 Datatype describing contents of array
     * @param numElements Fixed length of the new array
     * @param cparms  HDF5 options (ie chunking and compression etc) 
     */
-   void create(H5::H5File* file, 
+   void create(H5::CommonFG* file, 
                const H5std_string& path, 
                const H5::DataType& dataType,
                hsize_t numElements,
@@ -53,7 +53,7 @@ public:
      * 1: use default chunking (from dataset)
      * N: buffersize will be N chunks. 
      */
-   void load(H5::H5File* file, const H5std_string& path,
+   void load(H5::CommonFG* file, const H5std_string& path,
              hsize_t chunksInBuffer = 1);
    
    /** Write the memory buffer back to the file */
@@ -94,7 +94,7 @@ protected:
    void page(hsize_t i);
 
    /** Pointer to file that owns this dataset */
-   H5::H5File* _file;
+   H5::CommonFG* _file;
    /** Path of dataset in file */
    H5std_string _path;
    /** Datatype for array */

@@ -99,6 +99,7 @@ protected:
    static const H5std_string TreeGroupName;
    static const H5std_string GenomesGroupName;
    stTree* _tree;
+   mutable std::map<std::string, stTree*> _nodeMap;
    bool _dirty;
    mutable std::map<std::string, GenomePtr> _openGenomes;
 };
