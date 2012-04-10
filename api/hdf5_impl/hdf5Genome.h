@@ -23,11 +23,23 @@ class HDF5Genome : public Genome
 {
 public:
 
-   HDF5Genome();
+   HDF5Genome(const std::string& name,
+              HDF5Alignment* alignment,
+              H5::H5File* file,
+              const H5::DSetCreatPropList& dcProps);
+
    virtual ~HDF5Genome();
+
+   void reset(hal_size_t totalSequenceLength,
+              hal_size_t numTopSegments,
+              hal_size_t numBottomSegments);
+
+   void resetTopSegments(hal_size_t numTopSegments);
+
+   void resetBottomSegments(hal_size_t numBottomSegments);
+
    const std::string& getName() const;
    AlignmentPtr getAlignment();
-   AlignmentConstPtr getAlignment() const;
    hal_size_t getSequenceLength() const;
    hal_size_t getNumberTopSegments() const;
    hal_size_t getNumberBottomSegmentes() const;
@@ -38,10 +50,15 @@ public:
    
    MetaDataPtr getMetaData();
    MetaDataConstPtr getMetaData() const;
-  
+
+   void write();
+   void read();
+   void create();
+
 protected:
 
    HDF5Alignment* _alignment;
+   H5::H5File* _file;
    AlignmentPtr _alignmentPtr;
    H5::CommonFG* _h5Parent;
    std::string _name;
@@ -49,7 +66,6 @@ protected:
    HDF5ExternalArray _dnaArray;
    HDF5ExternalArray _topArray;
    HDF5ExternalArray _bottomArray;
-   
 };
 
 }

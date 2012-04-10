@@ -7,6 +7,7 @@
 #ifndef _HDF5ALIGNMENT_H
 #define _HDF5ALIGNMENT_H
 
+#include <map>
 #include <H5Cpp.h>
 #include "halAlignment.h"
 #include "halAlignmentInstance.h"
@@ -32,9 +33,9 @@ public:
    void close();
    
    GenomePtr addGenome(const std::string& name,
-                       const std::string& path,
-                       const std::string& parentName,
-                       const std::vector<std::string>& childNames);
+                       const std::pair<std::string, double>& parentName,
+                       const std::vector<std::pair<std::string, double> >&
+                       childNames);
 
    void removeGenome(const std::string& name);
 
@@ -45,18 +46,21 @@ public:
    std::string getRootName() const;
 
    std::string getParentName(const std::string& name) const;
-   
+
+   double getBranchLength(const std::string& parentName,
+                          const std::string& childName);   
+
    std::vector<std::string> 
    getChildNames(const std::string& name) const;
 
    std::vector<std::string>
    getLeafNamesBelow(const std::string& name) const;
 
+   hal_size_t getNumGenomes() const;
+
    MetaDataPtr getMetaData();
 
    MetaDataConstPtr getMetaData() const;
-
-   const std::string& getPath(const std::string& name) const;
 
 protected:
    // Nobody creates this class except through the interface. 
@@ -78,6 +82,10 @@ protected:
    
    void loadTree();
    void writeTree();
+   void addGenomeToTree(const std::string& name,
+                        const std::pair<std::string, double>& parentName,
+                        const std::vector<std::pair<std::string, double> >&
+                        childNames);
 
 protected:
 
@@ -89,7 +97,10 @@ protected:
    MetaDataPtr _metaData;
    static const H5std_string MetaGroupName;
    static const H5std_string TreeGroupName;
+   static const H5std_string GenomesGroupName;
    stTree* _tree;
+   bool _dirty;
+   mutable std::map<std::string, GenomePtr> _openGenomes;
 };
 
 }
