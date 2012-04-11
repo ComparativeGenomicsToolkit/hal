@@ -36,16 +36,12 @@ struct AlignmentTest
    virtual void createCallBack(hal::AlignmentPtr alignment) {}
    virtual void checkCallBack(hal::AlignmentConstPtr alignment) {}
    CuTest* _testCase;
-   void assertTrue(bool b) {
-     CuAssertTrue(_testCase, b);
-   }
 };
 
 struct AlignmentTestTrees : public AlignmentTest
 {
-   AlignmentTestTrees() : AlignmentTest(){}
-   ~AlignmentTestTrees(){}
    void createCallBack(hal::AlignmentPtr alignment);
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
+
 #endif

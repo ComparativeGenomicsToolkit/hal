@@ -38,15 +38,20 @@ public:
    virtual void close() = 0;
    
    /** Add a new genome to the alignment
-    * @param name of new genome in alignment (must be unique)
-    * @param parent name/branch-length pair of parent genome
-    * (if parent's name is empty, we assume root is being added)
-    * @param children name/branch-length pairs of child genomes (if any)*/
-   virtual GenomePtr addGenome(const std::string& name,
-                               const std::pair<std::string, double>& parent,
-                               const std::vector<
-                                 std::pair<std::string, double> >& 
-                               children) = 0;
+    * @param name name of new genome in alignment (must be unique)
+    * @param parent name of parent genome in tree (must exist)
+    * @param branchLength distance between new genome and parent */
+   virtual GenomePtr addLeafGenome(const std::string& name,
+                                   const std::string& parentName,
+                                   double branchLength) = 0;
+
+   /** Add a new genome as root to the alignment.  The previous root
+    * (if exists) will be a child of the new genome
+    * @param name name of new genome in alignment (must be unique)
+    * @param branchLength distance between new genome and previous root
+    * (if exists)*/
+   virtual GenomePtr addRootGenome(const std::string& name,
+                                   double branchLength) = 0;
 
    /** Remove a genome from the alignment 
     * @param path Path of genome to remove */
@@ -71,7 +76,7 @@ public:
     * @param parentName name of parent genome
     * @param childName name of child genome */
    virtual double getBranchLength(const std::string& parentName,
-                                  const std::string& childName) = 0;
+                                  const std::string& childName) const = 0;
    
    /** Get names of child genomes in the phylogeny (empty vector for leaves)
     * @param name Name of genome */

@@ -29,14 +29,15 @@ HDF5Genome::HDF5Genome(const string& name,
 {
   assert(!name.empty());
   assert(alignment != NULL && h5Parent != NULL);
+  H5::Exception::dontPrint();
   try
   {
     _group = h5Parent->openGroup(name);
+    read();
   }
   catch (Exception& e)
   {
     _group = h5Parent->createGroup(name);
-    read();
   }
   _metaData = MetaDataPtr(new HDF5MetaData(&_group, metaGroupName));
 }
@@ -51,6 +52,7 @@ void HDF5Genome::reset(hal_size_t totalSequenceLength,
                        hal_size_t numTopSegments,
                        hal_size_t numBottomSegments)
 {
+  H5::Exception::dontPrint();
   try
   {
     DataSet d = _group.openDataSet(dnaArrayName);
@@ -65,6 +67,7 @@ void HDF5Genome::reset(hal_size_t totalSequenceLength,
 
 void HDF5Genome::resetTopSegments(hal_size_t numTopSegments)
 {
+  H5::Exception::dontPrint();
   try
   {
     DataSet d = _group.openDataSet(topArrayName);
@@ -77,6 +80,7 @@ void HDF5Genome::resetTopSegments(hal_size_t numTopSegments)
 
 void HDF5Genome::resetBottomSegments(hal_size_t numBottomSegments)
 {
+  H5::Exception::dontPrint();
   try
   {
     DataSet d = _group.openDataSet(bottomArrayName);

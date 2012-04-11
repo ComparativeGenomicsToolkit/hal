@@ -4,6 +4,7 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <cstdio>
+#include <H5Cpp.h>
 #include "allTests.h"
 
 int hdf5RunAllTests(void) {
@@ -20,6 +21,6 @@ int hdf5RunAllTests(void) {
 }
 
 int main(int argc, char *argv[]) {
-   
+  H5::Exception::dontPrint();
   return hdf5RunAllTests();
 }

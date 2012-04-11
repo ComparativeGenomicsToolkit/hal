@@ -51,13 +51,11 @@ HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
 
 HDF5Alignment::~HDF5Alignment()
 {
-  cout << "CALL DEST" << endl;
   close();
 }
 
 void HDF5Alignment::createNew(const string& alignmentPath)
 {
-  cout << "CALL CREATE" <<endl;
   close();
   _flags = H5F_ACC_TRUNC;
   _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
@@ -72,7 +70,6 @@ void HDF5Alignment::createNew(const string& alignmentPath)
 // todo: properly handle readonly
 void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
 {
-  cout << "CALL OPEN" <<endl;
   close();
   delete _file;
   int _flags = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
@@ -116,17 +113,65 @@ void HDF5Alignment::close()
   }
 }
 
-GenomePtr HDF5Alignment::addGenome(const string& name,
-                                   const pair<string, double>& parent,
-                                   const vector<pair<string, double> >& 
-                                   children)
+GenomePtr  HDF5Alignment::addLeafGenome(const string& name,
+                                        const string& parentName,
+                                        double branchLength)
 {
-  addGenomeToTree(name, parent, children);
+  if (name.empty() == true || parentName.empty())
+  {
+    throw hal_exception("name can't be empty");
+  }
+  map<string, stTree*>::iterator findIt = _nodeMap.find(name);
+  if (findIt != _nodeMap.end())
+  {
+    throw hal_exception(string("node ") + name + " already exists");
+  }
+  findIt = _nodeMap.find(parentName);
+  if (findIt == _nodeMap.end())
+  {
+    throw hal_exception(string("parent ") + parentName + " not found in tree");
+  }
+  stTree* parent = findIt->second;
+  stTree* node = stTree_construct();
+  stTree_setLabel(node, name.c_str());
+  stTree_setParent(node, parent);
+  stTree_setBranchLength(node, branchLength);
+  _nodeMap.insert(pair<string, stTree*>(name, node));
+
   HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
   GenomePtr genomePtr(genome);
   _openGenomes.insert(pair<string, GenomePtr>(name, genomePtr));
   return genomePtr;
 }
+
+GenomePtr  HDF5Alignment::addRootGenome(const string& name,
+                                        double branchLength)
+{
+  if (name.empty() == true)
+  {
+    throw hal_exception("name can't be empty");
+  }
+  map<string, stTree*>::iterator findIt = _nodeMap.find(name);
+  if (findIt != _nodeMap.end())
+  {
+    throw hal_exception(string("node ") + name + " already exists");
+  }
+  stTree* node = stTree_construct();
+  stTree_setLabel(node, name.c_str());
+  if (_tree != NULL)
+  {
+    stTree_setParent(_tree, node);
+    stTree_setBranchLength(_tree, branchLength);
+  }
+  _tree = node;
+  _nodeMap.insert(pair<string, stTree*>(name, node));
+
+  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
+  GenomePtr genomePtr(genome);
+  _openGenomes.insert(pair<string, GenomePtr>(name, genomePtr));
+  return genomePtr;
+}
+
 
 void HDF5Alignment::removeGenome(const string& name)
 {
@@ -188,18 +233,18 @@ string HDF5Alignment::getParentName(const string& name) const
 }
 
 double HDF5Alignment::getBranchLength(const string& parentName,
-                                      const string& childName)
+                                      const string& childName) const
 {
-  map<string, stTree*>::iterator findIt = _nodeMap.find(parentName);
+  map<string, stTree*>::iterator findIt = _nodeMap.find(childName);
   if (findIt == _nodeMap.end())
   {
-    throw hal_exception(string("node ") + parentName + " not found");
+    throw hal_exception(string("node ") + childName + " not found");
   }
   stTree* node = findIt->second;
   stTree* parent = stTree_getParent(node);
   if (parent == NULL || parentName != stTree_getLabel(parent))
   {
-    throw hal_exception(string("edge ") + childName + "--" + parentName + 
+    throw hal_exception(string("edge ") + parentName + "--" + childName + 
                         " not found");
   }
   return stTree_getBranchLength(node);
@@ -269,7 +314,6 @@ void HDF5Alignment::writeTree()
 {
   if (_dirty == false)
      return;
-  cout << "CALL WRITE TREE" <<endl;
 
   char* treeString = NULL;
   if (_tree != NULL)
@@ -287,7 +331,7 @@ void HDF5Alignment::writeTree()
   free(treeString);
 }
 
-static void addNodeToMap(stTree* node, map<string, stTree*> nodeMap)
+static void addNodeToMap(stTree* node, map<string, stTree*>& nodeMap)
 {
   const char* label = stTree_getLabel(node);
   assert(label != NULL);
@@ -324,72 +368,3 @@ void HDF5Alignment::loadTree()
   }
 }
 
-void HDF5Alignment::addGenomeToTree(const string& name,
-                                    const pair<string, double>& parent,
-                                    const vector<pair<string, double> >&
-                                    children)
-{
-  if (name.empty() == true)
-  {
-    throw hal_exception("name can't be empty");
-  }
-  map<string, stTree*>::iterator findIt = _nodeMap.find(name);
-  if (findIt != _nodeMap.end())
-  {
-    throw hal_exception(string("node ") + name + " already exists");
-  }
-
-  // construct the new node to add
-  stTree* node = stTree_construct();
-  stTree_setLabel(node, name.c_str());
-  _nodeMap.insert(pair<string, stTree*>(name, node));
-
-  // attach as new root
-  if (parent.first.empty() == true)
-  {
-    stTree_setParent(_tree, node);
-    _tree = node;
-  }
-  
-  //attach as new child
-  else
-  {
-    findIt = _nodeMap.find(parent.first);
-    if (findIt == _nodeMap.end())
-    {
-      throw hal_exception(string("parent ") + parent.first + " not found");
-    }
-    stTree* parentNode = findIt->second;
-    stTree_setParent(node, parentNode);
-    stTree_setBranchLength(node, parent.second);
-  }
-
-  // add in all the children
-  vector<pair<string, double> >::const_iterator childIt;
-  for (childIt = children.begin(); childIt != children.end(); ++childIt)
-  {
-    if (childIt->first.empty() == true)
-    {
-      throw hal_exception("name can't be empty");
-    }
-    // child already in the tree.  all we do is make sure it is
-    // indeed a child of node, and if so set the branch length
-    if (_nodeMap.find(childIt->first) != _nodeMap.end())
-    {
-      stTree* existingChild = stTree_findChild(node, childIt->first.c_str());
-      if (existingChild == NULL)
-      {
-        throw hal_exception("Attempting to add child that violates tree");
-      }
-      stTree_setBranchLength(existingChild, childIt->second);
-    }
-    // child not in the tree.  create and add
-    else
-    {
-      stTree* child = stTree_construct();
-      stTree_setLabel(child, name.c_str());
-      stTree_setParent(child, node);
-      stTree_setBranchLength(child, childIt->second);
-    }
-  }
-}

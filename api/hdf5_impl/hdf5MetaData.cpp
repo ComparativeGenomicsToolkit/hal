@@ -77,6 +77,7 @@ void HDF5MetaData::open(CommonFG* parent, const string& name)
   _name = name;
   _dirty = false;
 
+  H5::Exception::dontPrint();
   try
   {
     _group = parent->openGroup(name);

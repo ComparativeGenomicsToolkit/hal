@@ -12,5 +12,6 @@ extern "C" {
 }
 
 CuSuite *halAlignmentTestSuite();
+CuSuite* halMetaDataTestSuite();
 
 #endif

@@ -32,10 +32,12 @@ public:
              bool readOnly);
    void close();
    
-   GenomePtr addGenome(const std::string& name,
-                       const std::pair<std::string, double>& parentName,
-                       const std::vector<std::pair<std::string, double> >&
-                       childNames);
+   GenomePtr addLeafGenome(const std::string& name,
+                           const std::string& parentName,
+                           double branchLength);
+
+   GenomePtr addRootGenome(const std::string& name,
+                           double branchLength);
 
    void removeGenome(const std::string& name);
 
@@ -48,7 +50,7 @@ public:
    std::string getParentName(const std::string& name) const;
 
    double getBranchLength(const std::string& parentName,
-                          const std::string& childName);   
+                          const std::string& childName) const;   
 
    std::vector<std::string> 
    getChildNames(const std::string& name) const;
