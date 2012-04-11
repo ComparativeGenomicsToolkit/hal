@@ -26,11 +26,11 @@ TempCreateAlignment::TempCreateAlignment(AlignmentPtr alignment) :
 TempCreateAlignment::~TempCreateAlignment()
 {
   _alignment->close();
-  removeTempFile(const_cast<char*>(_path.c_str()));
+  removeTempFile(_path);
 }
 
 TempReadAlignment::TempReadAlignment(AlignmentPtr alignment, 
-                                     const string& path)
+                                     char* path)
   : _path(path)
 {
   alignment->open(_path, true);
@@ -40,11 +40,11 @@ TempReadAlignment::TempReadAlignment(AlignmentPtr alignment,
 TempReadAlignment::~TempReadAlignment()
 {
   _alignment->close();
-  removeTempFile(const_cast<char*>(_path.c_str()));
 }
 
-void AlignmentTest::check()
+void AlignmentTest::check(CuTest* testCase)
 {
+  _testCase = testCase;
   vector<AlignmentPtr> createInstances = getTestAlignmentInstances();
   vector<AlignmentPtr> readInstances = getTestAlignmentInstances();
 
@@ -52,9 +52,35 @@ void AlignmentTest::check()
   {
     TempCreateAlignment creater(createInstances[i]);
     createCallBack(creater._alignment);
+    creater._alignment->close();
     
     TempReadAlignment checker(readInstances[i], creater._path);
     checkCallBack(checker._alignment);
   }
+}
+
+void AlignmentTestTrees::createCallBack(hal::AlignmentPtr alignment)
+{
+  hal_size_t alignmentSize = alignment->getNumGenomes();
+  AlignmentTest::assertTrue(alignmentSize == 0);
+}
+
+void AlignmentTestTrees::checkCallBack(hal::AlignmentConstPtr alignment)
+{
+
+}
+
+void halAlignmentTestTrees(CuTest *testCase)
+{
+  AlignmentTestTrees tester;
+  tester.check(testCase);
+}
+
+
+CuSuite* halAlignmentTestSuite(void) 
+{
+  CuSuite* suite = CuSuiteNew();
+  SUITE_ADD_TEST(suite, halAlignmentTestTrees);
+  return suite;
 }
 

@@ -11,5 +11,6 @@ extern "C" {
 #include "CuTest.h"
 }
 
+CuSuite *halAlignmentTestSuite();
 
 #endif

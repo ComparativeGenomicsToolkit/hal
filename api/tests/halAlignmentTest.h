@@ -9,28 +9,43 @@
 
 #include <vector>
 #include "halAlignment.h"
+#include "allTests.h"
 
-struct TempCreateAlignment {
+struct TempCreateAlignment 
+{
    TempCreateAlignment(hal::AlignmentPtr alignment);
-   std::string _path;
+   char* _path;
    hal::AlignmentPtr _alignment;
    ~TempCreateAlignment();
 };
 
-struct TempReadAlignment {
+struct TempReadAlignment 
+{
    TempReadAlignment(hal::AlignmentPtr alignment,
-                     const std::string& path);
-   std::string _path;
+                     char* path);
+   char* _path;
    hal::AlignmentPtr _alignment;
    ~TempReadAlignment();
 };
 
-class AlignmentTest
+struct AlignmentTest
 {
-   virtual ~AlignmentTest();
-   void check();   
-   virtual void createCallBack(hal::AlignmentPtr alignment);
-   virtual void checkCallBack(hal::AlignmentConstPtr alignment);
+   AlignmentTest(){}
+   virtual ~AlignmentTest(){}
+   void check(CuTest *testCase);   
+   virtual void createCallBack(hal::AlignmentPtr alignment) {}
+   virtual void checkCallBack(hal::AlignmentConstPtr alignment) {}
+   CuTest* _testCase;
+   void assertTrue(bool b) {
+     CuAssertTrue(_testCase, b);
+   }
 };
 
+struct AlignmentTestTrees : public AlignmentTest
+{
+   AlignmentTestTrees() : AlignmentTest(){}
+   ~AlignmentTestTrees(){}
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
 #endif

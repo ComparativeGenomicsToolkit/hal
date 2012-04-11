@@ -5,6 +5,7 @@
  */
 
 #include <cassert>
+#include <iostream>
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
@@ -50,11 +51,13 @@ HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
 
 HDF5Alignment::~HDF5Alignment()
 {
+  cout << "CALL DEST" << endl;
   close();
 }
 
 void HDF5Alignment::createNew(const string& alignmentPath)
 {
+  cout << "CALL CREATE" <<endl;
   close();
   _flags = H5F_ACC_TRUNC;
   _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
@@ -63,11 +66,13 @@ void HDF5Alignment::createNew(const string& alignmentPath)
   _file->createGroup(GenomesGroupName);
   _metaData = MetaDataPtr(new HDF5MetaData(_file, MetaGroupName));
   _tree = NULL;
+  _dirty = true;
 }
 
 // todo: properly handle readonly
 void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
 {
+  cout << "CALL OPEN" <<endl;
   close();
   delete _file;
   int _flags = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
@@ -80,28 +85,35 @@ void HDF5Alignment::close()
 {
   if (_file != NULL)
   {
+    writeTree();
+    if (_tree != NULL)
+    {
+      stTree_destruct(_tree);
+      _tree = NULL;
+    }
+    // todo: make sure there's no memory leak with metadata 
+    // smart pointer should prevent
+    if (_metaData.get() != NULL)
+    {
+      dynamic_cast<HDF5MetaData*>(_metaData.get())->write();
+    }
+  
+    map<string, GenomePtr>::iterator mapIt;
+    for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt)
+    {
+      HDF5Genome* genome = dynamic_cast<HDF5Genome*>(mapIt->second.get());
+      genome->write();
+    }
+    _openGenomes.clear();
     _file->close();
     delete _file;
     _file = NULL;
-    assert(_tree != NULL);
   }
-  if (_tree != NULL)
+  else
   {
-    writeTree();
-    stTree_destruct(_tree);
-    _tree = NULL;
+    assert(_tree == NULL);
+    assert(_openGenomes.empty() == true);
   }
-  // todo: make sure there's no memory leak with metadata 
-  // smart pointer should prevent
-  dynamic_cast<HDF5MetaData*>(_metaData.get())->write();
-  
-  map<string, GenomePtr>::iterator mapIt;
-  for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt)
-  {
-    HDF5Genome* genome = dynamic_cast<HDF5Genome*>(mapIt->second.get());
-    genome->write();
-  }
-  _openGenomes.clear();
 }
 
 GenomePtr HDF5Alignment::addGenome(const string& name,
@@ -257,13 +269,22 @@ void HDF5Alignment::writeTree()
 {
   if (_dirty == false)
      return;
+  cout << "CALL WRITE TREE" <<endl;
 
-  assert(_tree != NULL);
-  
-  char* tree = stTree_getNewickTreeString(_tree);
+  char* treeString = NULL;
+  if (_tree != NULL)
+  {
+    treeString = stTree_getNewickTreeString(_tree);
+  }
+  else
+  {
+    treeString = (char*)malloc(sizeof(char));
+    treeString[0] = '\0';
+  }
+  assert (_file != NULL);
   HDF5MetaData treeMeta(_file, TreeGroupName);
-  treeMeta.set(TreeGroupName, tree);
-  free(tree);
+  treeMeta.set(TreeGroupName, treeString);
+  free(treeString);
 }
 
 static void addNodeToMap(stTree* node, map<string, stTree*> nodeMap)
@@ -358,7 +379,7 @@ void HDF5Alignment::addGenomeToTree(const string& name,
       stTree* existingChild = stTree_findChild(node, childIt->first.c_str());
       if (existingChild == NULL)
       {
-         throw hal_exception("Attempting to add child that violates tree");
+        throw hal_exception("Attempting to add child that violates tree");
       }
       stTree_setBranchLength(existingChild, childIt->second);
     }

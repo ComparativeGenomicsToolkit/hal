@@ -4,6 +4,7 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <cassert>
+#include <iostream>
 #include "hdf5MetaData.h"
 #include "halCommon.h"
 
@@ -108,7 +109,7 @@ void HDF5MetaData::write()
     if (H5Aexists(_group.getId(), i->first.c_str()) == true)
     {
       _group.removeAttr(_name);
-    }    
+    }
     attr = _group.createAttribute(i->first, vlsType, attSpace);
     attr.write(vlsType, i->second);
   }

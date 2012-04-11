@@ -9,6 +9,7 @@
 int halRunAllTests(void) {
   CuString *output = CuStringNew();
   CuSuite* suite = CuSuiteNew();
+  CuSuiteAddSuite(suite, halAlignmentTestSuite());
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);
   CuSuiteDetails(suite, output);
