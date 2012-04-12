@@ -11,6 +11,7 @@ int halRunAllTests(void) {
   CuSuite* suite = CuSuiteNew();
   CuSuiteAddSuite(suite, halAlignmentTestSuite());
   CuSuiteAddSuite(suite, halMetaDataTestSuite());
+  CuSuiteAddSuite(suite, halGenomeTestSuite());
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);
   CuSuiteDetails(suite, output);

@@ -59,7 +59,7 @@ public:
    /** Get the number of bottom segments
     * (which form blocks with the children)
     * in the genome */
-   virtual hal_size_t getNumberBottomSegmentes() const = 0;
+   virtual hal_size_t getNumberBottomSegments() const = 0;
 
    /** Get a segment iterator
     * @param top Specify whether or not returned iterator is a top

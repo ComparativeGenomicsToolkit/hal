@@ -42,7 +42,7 @@ public:
    AlignmentPtr getAlignment();
    hal_size_t getSequenceLength() const;
    hal_size_t getNumberTopSegments() const;
-   hal_size_t getNumberBottomSegmentes() const;
+   hal_size_t getNumberBottomSegments() const;
    SegmentIteratorPtr getSegmentIterator(hal_bool_t top, 
                                          hal_index_t position);
    SegmentIteratorConstPtr getSegmentIterator(

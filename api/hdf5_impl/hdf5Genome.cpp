@@ -3,6 +3,7 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <cassert>
+#include <iostream>
 #include "H5Cpp.h"
 #include "hdf5Genome.h"
 #include "hdf5DNA.h"
@@ -13,10 +14,10 @@ using namespace hal;
 using namespace std;
 using namespace H5;
 
-const string HDF5Genome::dnaArrayName = "/DNA_ARRAY";
-const string HDF5Genome::topArrayName = "/TOP_ARRAY";
-const string HDF5Genome::bottomArrayName = "/BOTTOM_ARRAY";
-const string HDF5Genome::metaGroupName = "/Meta";
+const string HDF5Genome::dnaArrayName = "DNA_ARRAY";
+const string HDF5Genome::topArrayName = "TOP_ARRAY";
+const string HDF5Genome::bottomArrayName = "BOTTOM_ARRAY";
+const string HDF5Genome::metaGroupName = "Meta";
 
 HDF5Genome::HDF5Genome(const string& name,
                        HDF5Alignment* alignment,
@@ -59,8 +60,11 @@ void HDF5Genome::reset(hal_size_t totalSequenceLength,
     _group.unlink(dnaArrayName);
   }
   catch (H5::Exception){}
-  _dnaArray.create(&_group, dnaArrayName, HDF5DNA::dataType(), 
-                   totalSequenceLength, _dcprops);
+  if (totalSequenceLength > 0)
+  {
+    _dnaArray.create(&_group, dnaArrayName, HDF5DNA::dataType(), 
+                     totalSequenceLength, _dcprops);
+  }
   resetTopSegments(numTopSegments);
   resetBottomSegments(numBottomSegments);
 }
@@ -71,11 +75,14 @@ void HDF5Genome::resetTopSegments(hal_size_t numTopSegments)
   try
   {
     DataSet d = _group.openDataSet(topArrayName);
-    _group.unlink(dnaArrayName);
+    _group.unlink(topArrayName);
   }
   catch (H5::Exception){}
-  _topArray.create(&_group, topArrayName, HDF5TopSegment::dataType(), 
-                   numTopSegments, _dcprops);
+  if (numTopSegments > 0)
+  {
+    _topArray.create(&_group, topArrayName, HDF5TopSegment::dataType(), 
+                     numTopSegments, _dcprops);
+  }
 }
 
 void HDF5Genome::resetBottomSegments(hal_size_t numBottomSegments)
@@ -84,13 +91,16 @@ void HDF5Genome::resetBottomSegments(hal_size_t numBottomSegments)
   try
   {
     DataSet d = _group.openDataSet(bottomArrayName);
-    _group.unlink(dnaArrayName);
+    _group.unlink(bottomArrayName);
   }
   catch (H5::Exception){}
   hal_size_t numChildren = _alignment->getChildNames(_name).size();
-  _bottomArray.create(&_group, bottomArrayName, 
-                      HDF5BottomSegment::dataType(numChildren), 
-                      numBottomSegments, _dcprops);
+  if (numBottomSegments > 0)
+  {
+    _bottomArray.create(&_group, bottomArrayName, 
+                        HDF5BottomSegment::dataType(numChildren), 
+                        numBottomSegments, _dcprops);
+  }
 }
 
 const string& HDF5Genome::getName() const
@@ -108,7 +118,7 @@ hal_size_t HDF5Genome::getNumberTopSegments() const
   return _topArray.getSize();
 }
 
-hal_size_t HDF5Genome::getNumberBottomSegmentes() const
+hal_size_t HDF5Genome::getNumberBottomSegments() const
 {
   return _bottomArray.getSize();
 }
@@ -145,7 +155,23 @@ void HDF5Genome::write()
 
 void HDF5Genome::read()
 {
-  _dnaArray.load(&_group, dnaArrayName);
-  _topArray.load(&_group, topArrayName);
-  _bottomArray.load(&_group, bottomArrayName);
+  H5::Exception::dontPrint();
+  try
+  {
+    _group.openDataSet(dnaArrayName);
+    _dnaArray.load(&_group, dnaArrayName);
+  }
+  catch (H5::Exception){}
+  try
+  {
+    _group.openDataSet(topArrayName);
+    _topArray.load(&_group, topArrayName);
+  }
+  catch (H5::Exception){}
+  try
+  {
+    _group.openDataSet(bottomArrayName);
+    _bottomArray.load(&_group, bottomArrayName);
+  }
+  catch (H5::Exception){}
 }

@@ -76,7 +76,6 @@ void AlignmentTestTrees::createCallBack(hal::AlignmentPtr alignment)
 
 void AlignmentTestTrees::checkCallBack(hal::AlignmentConstPtr alignment)
 {
-  cout << alignment->getNewickTree() << endl;
   CuAssertTrue(_testCase, alignment->getRootName() == "NewRoot");
   CuAssertTrue(_testCase, alignment->getNewickTree() == 
         "((Leaf:10,Leaf1:4.1,Leaf2:5.1,Leaf3:6.1,Leaf4:7.1)Root:15)NewRoot;");

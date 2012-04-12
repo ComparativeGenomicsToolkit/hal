@@ -18,9 +18,9 @@ using namespace H5;
 
 /** default group name for MetaData attributes, will be a subgroup
  * of the top level of the file, ie /Meta */
-const H5std_string HDF5Alignment::MetaGroupName = "/Meta";
-const H5std_string HDF5Alignment::TreeGroupName = "/Phylogeny";
-const H5std_string HDF5Alignment::GenomesGroupName = "/Genomes";
+const H5std_string HDF5Alignment::MetaGroupName = "Meta";
+const H5std_string HDF5Alignment::TreeGroupName = "Phylogeny";
+const H5std_string HDF5Alignment::GenomesGroupName = "Genomes";
 
 HDF5Alignment::HDF5Alignment() :
   _file(NULL),
