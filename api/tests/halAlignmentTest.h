@@ -36,6 +36,8 @@ struct AlignmentTest
    virtual void createCallBack(hal::AlignmentPtr alignment) {}
    virtual void checkCallBack(hal::AlignmentConstPtr alignment) {}
    CuTest* _testCase;
+   const char* _createPath;
+   const char* _checkPath;
 };
 
 struct AlignmentTestTrees : public AlignmentTest

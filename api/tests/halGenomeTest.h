@@ -24,4 +24,10 @@ struct GenomeCreateTest : public AlignmentTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
+struct GenomeUpdateTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
 #endif

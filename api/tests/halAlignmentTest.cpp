@@ -52,10 +52,12 @@ void AlignmentTest::check(CuTest* testCase)
   for (size_t i = 0; i < createInstances.size(); ++i)
   {
     TempCreateAlignment creater(createInstances[i]);
+    _createPath = creater._path;
     createCallBack(creater._alignment);
     creater._alignment->close();
     
     TempReadAlignment checker(readInstances[i], creater._path);
+    _checkPath = checker._path;
     checkCallBack(checker._alignment);
   }
 }

@@ -66,7 +66,7 @@ public:
     * segment
     * @param position Index in segment array of returned iterator */
    virtual SegmentIteratorPtr getSegmentIterator(hal_bool_t top, 
-                                              hal_index_t position) = 0;
+                                                 hal_index_t position) = 0;
    
    /** Get a read-only segment iterator
     * @param top Specify whether or not returned iterator is a top
