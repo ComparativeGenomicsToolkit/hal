@@ -8,25 +8,26 @@
 #define _HALTOPSEGMENTITERATOR_H
 
 #include "halDefs.h"
-#include "halTopSegment.h"
 #include "halSegmentIterator.h"
+#include "halTopSegment.h"
 
 namespace hal {
-
-class BottomSegmentIterator;
-class BottomSegmentConstIterator;
 
 /** 
  * Interface for top segment iterator exposes the top segment
  * interface and some new methods for jumping around the genome.  
  * Always hidden in smart pointers in the public interface. 
  */
-class TopSegmentIterator : public TopSegment, public SegmentIterator
+class TopSegmentIterator : public SegmentIterator
 {
 public:
-   virtual void toChild(BottomSegmentConstIterator bs, 
+   virtual TopSegmentIteratorPtr copy() = 0;
+   virtual TopSegmentIteratorConstPtr copy() const = 0;
+   virtual void toChild(BottomSegmentIteratorConstPtr bs, 
                         hal_size_t child) const = 0;
-   virtual void toParseUp(BottomSegmentConstIterator bs) const = 0;
+   virtual void toParseUp(BottomSegmentIteratorConstPtr bs) const = 0;
+   virtual TopSegment* getTopSegment() = 0;
+   virtual const TopSegment* getTopSegment() const = 0;
 
 protected:
    friend class counted_ptr<TopSegmentIterator>;

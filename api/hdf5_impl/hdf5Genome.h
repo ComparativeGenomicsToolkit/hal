@@ -18,14 +18,16 @@
 
 namespace hal {
 
-class HDF5SegmentIterator;
+class HDF5TopSegmentIterator;
+class HDF5BottomSegmentIterator;
 class HDF5Alignment;
 /** 
  * HDF5 implementation of hal::Genome
  */
 class HDF5Genome : public Genome
 {
-   friend class HDF5SegmentIterator;
+   friend class HDF5TopSegmentIterator;
+   friend class HDF5BottomSegmentIterator;
 public:
 
    HDF5Genome(const std::string& name,

@@ -17,16 +17,18 @@ namespace hal {
  * for top and bottom iterators.  A segment iterator implements 
  * the segment as well as the iterator interface. 
  */
-class SegmentIterator : public Segment
+class SegmentIterator 
 {
 public:
 
-   virtual SegmentIteratorPtr copy() = 0;
-   virtual SegmentIteratorConstPtr copy() const = 0;
    virtual void toLeft() const = 0;
    virtual void toRight() const = 0;
+   virtual void toNextParalogy() const = 0;
    virtual hal_offset_t getStartOffset() const = 0;
    virtual hal_offset_t getEndOffset() const = 0;
+   virtual hal_size_t getLength() const = 0;
+   virtual hal_bool_t getReversed() const = 0;
+   virtual void getSequence(std::string& outSequence) = 0;
 
 protected:
    friend class counted_ptr<SegmentIterator>;

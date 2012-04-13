@@ -15,7 +15,7 @@ namespace hal {
 /** 
  * Interface for a top segment of DNA
  */
-class TopSegment : public virtual Segment
+class TopSegment : public Segment
 {
 public:
   

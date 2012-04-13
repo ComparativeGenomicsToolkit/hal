@@ -14,8 +14,14 @@
 
 namespace hal {
 
+class HDF5TopSegmentIterator;
+class HDF5BottomSegmentIterator;
+
 class HDF5TopSegment : public TopSegment
 {
+   friend class HDF5TopSegmentIterator;
+   friend class HDF5BottomSegmentIterator;
+
 public:
 
    /** Constructor 
@@ -94,6 +100,9 @@ public:
    void setBottomParseOffset(hal_offset_t botParseOffset);
 
    static H5::CompType dataType();
+
+   /** Get the index of the segment in the segment array */
+   hal_index_t getArrayIndex() const;
    
 protected:
 
@@ -106,9 +115,9 @@ protected:
    static const size_t parentReversedOffset;
    static const size_t totalSize;
 
-   HDF5ExternalArray* _array;
-   hal_index_t _index;
-   HDF5Genome* _genome;
+   mutable HDF5ExternalArray* _array;
+   mutable hal_index_t _index;
+   mutable HDF5Genome* _genome;
 };
 
 //INLINE members
@@ -198,6 +207,12 @@ inline void HDF5TopSegment::setBottomParseOffset(hal_offset_t parseOffset)
 {
   _array->setValue(_index, bottomOffsetOffset, parseOffset);
 }
+
+inline hal_index_t HDF5TopSegment::getArrayIndex() const
+{
+  return _index;
+}
+
 
 }
 

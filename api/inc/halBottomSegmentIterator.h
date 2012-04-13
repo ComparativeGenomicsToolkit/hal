@@ -13,19 +13,20 @@
 
 namespace hal {
 
-class TopSegmentIterator;
-class TopSegmentConstIterator;
-
 /** 
  * Interface for bottom segment iterator exposes the bottom segment
  * interface and some new methods for jumping around the genome.  
  * Always hidden in smart pointers in the public interface. 
  */
-class BottomSegmentIterator : public BottomSegment, public SegmentIterator
+class BottomSegmentIterator : public SegmentIterator
 {
 public:
-   virtual void toParent(TopSegmentConstIterator ts) const = 0; 
-   virtual void toParseDown(TopSegmentConstIterator bs) const = 0;
+   virtual BottomSegmentIteratorPtr copy() = 0;
+   virtual BottomSegmentIteratorConstPtr copy() const = 0;
+   virtual void toParent(TopSegmentIteratorConstPtr ts) const = 0; 
+   virtual void toParseDown(TopSegmentIteratorConstPtr bs) const = 0;
+   virtual BottomSegment* getBottomSegment() = 0;
+   virtual const BottomSegment* getBottomSegment() const = 0;
 
 protected:
    friend class counted_ptr<BottomSegmentIterator>;

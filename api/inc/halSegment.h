@@ -52,6 +52,10 @@ public:
     * homologous to this segment */
    virtual void setNextParalogyIndex(hal_index_t parIdx) = 0;
 
+   /** Get the index of the segment in the segment array */
+   virtual hal_index_t getArrayIndex() const = 0;
+
+
 protected:
    
    /** Destructor */

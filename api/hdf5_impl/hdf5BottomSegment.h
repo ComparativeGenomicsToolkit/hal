@@ -15,10 +15,16 @@
 
 namespace hal {
 
+class HDF5TopSegmentIterator;
+class HDF5BottomSegmentIterator;
+
 class HDF5BottomSegment : public BottomSegment
 {
 public:
-   
+
+   friend class HDF5TopSegmentIterator;
+   friend class HDF5BottomSegmentIterator;
+
     /** Constructor 
     * @param genome Smart pointer to genome to which segment belongs
     * @param array HDF5 array containg segment
@@ -104,9 +110,13 @@ public:
     * @param parpArseOffset offset in parent */
    void setTopParseOffset(hal_offset_t parseOffset);
 
+   /** Get the index of the segment in the segment array */
+   hal_index_t getArrayIndex() const;
+
    static H5::CompType dataType(hal_size_t numChildren);
    static hal_size_t numChildrenFromDataType(
      const H5::DataType& dataType);
+
    
 protected:
 
@@ -118,10 +128,9 @@ protected:
    static const size_t firstChildOffset;
    static const size_t totalSize(hal_size_t numChildren);
 
-   HDF5ExternalArray* _array;
-   hal_index_t _index;
-   HDF5Genome* _genome;
-   hal_size_t _numChildren;
+   mutable HDF5ExternalArray* _array;
+   mutable hal_index_t _index;
+   mutable HDF5Genome* _genome;
 };
 
 //INLINE members
@@ -181,7 +190,7 @@ inline void HDF5BottomSegment::setNextParalogyIndex(hal_index_t parIdx)
 
 inline hal_size_t HDF5BottomSegment::getNumChildren() const
 {
-  return _numChildren;
+  return _genome->getNumChildren();
 }
 
 inline hal_index_t HDF5BottomSegment::getChildIndex(hal_size_t i) const
@@ -243,6 +252,10 @@ inline void HDF5BottomSegment::setTopParseOffset(hal_offset_t parseOffset)
   _array->setValue((hsize_t)_index, topOffsetOffset, parseOffset);
 }
 
+inline hal_index_t HDF5BottomSegment::getArrayIndex() const
+{
+  return _index;
+}
 }
 
 #endif
