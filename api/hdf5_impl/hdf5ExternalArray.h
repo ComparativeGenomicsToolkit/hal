@@ -87,6 +87,9 @@ public:
    
    /** Number of elements in array */
    hsize_t getSize() const;
+
+   /** Get the HDF5 Datatype */
+   const H5::DataType& getDataType() const;
    
 protected:
 
@@ -176,6 +179,11 @@ inline void HDF5ExternalArray::setValue(hsize_t index, hsize_t offset, T val)
   assert (offset + sizeof(T) <= _dataSize);
   T* entry = reinterpret_cast<T*>(getUpdate(index) + offset);
   *entry = val;
+}
+
+inline const H5::DataType& HDF5ExternalArray::getDataType() const
+{
+  return _dataType;
 }
 
 }

@@ -26,19 +26,16 @@ void GenomeMetaTest::createCallBack(AlignmentPtr alignment)
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
   
-  GenomePtr ancGenome = alignment->addRootGenome("AncGenome", 0);
-  GenomePtr leaf1Genome = alignment->addLeafGenome("Leaf1", "AncGenome", 0.1);
-  GenomePtr leaf2Genome = alignment->addLeafGenome("Leaf2", "AncGenome", 0.2);
-  GenomePtr leaf3Genome = alignment->addLeafGenome("Leaf3", "AncGenome", 0.3);
+  Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
  
-  MetaDataPtr ancMeta = ancGenome->getMetaData();
+  MetaData* ancMeta = ancGenome->getMetaData();
   ancMeta->set("Young", "Jeezy");
 }
 
 void GenomeMetaTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  GenomeConstPtr ancGenome = alignment->openConstGenome("AncGenome");
-  MetaDataConstPtr ancMeta = ancGenome->getMetaData();
+  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
+  const MetaData* ancMeta = ancGenome->getMetaData();
   CuAssertTrue(_testCase, ancMeta->get("Young") == "Jeezy");
   CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 0);
   CuAssertTrue(_testCase, ancGenome->getNumberTopSegments() == 0);
@@ -51,12 +48,12 @@ void GenomeCreateTest::createCallBack(AlignmentPtr alignment)
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
   
-  GenomePtr ancGenome = alignment->addRootGenome("AncGenome", 0);
-  GenomePtr leaf1Genome = alignment->addLeafGenome("Leaf1", "AncGenome", 0.1);
-  GenomePtr leaf2Genome = alignment->addLeafGenome("Leaf2", "AncGenome", 0.2);
-  GenomePtr leaf3Genome = alignment->addLeafGenome("Leaf3", "AncGenome", 0.3);
+  Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
+  Genome* leaf1Genome = alignment->addLeafGenome("Leaf1", "AncGenome", 0.1);
+  Genome* leaf2Genome = alignment->addLeafGenome("Leaf2", "AncGenome", 0.2);
+  Genome* leaf3Genome = alignment->addLeafGenome("Leaf3", "AncGenome", 0.3);
  
-  MetaDataPtr ancMeta = ancGenome->getMetaData();
+  MetaData* ancMeta = ancGenome->getMetaData();
   ancMeta->set("Young", "Jeezy");
 
   ancGenome->reset(1000000, 5000, 700000);
@@ -67,12 +64,12 @@ void GenomeCreateTest::createCallBack(AlignmentPtr alignment)
 
 void GenomeCreateTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  GenomeConstPtr ancGenome = alignment->openConstGenome("AncGenome");
-  MetaDataConstPtr ancMeta = ancGenome->getMetaData();
+  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
+  const MetaData* ancMeta = ancGenome->getMetaData();
   CuAssertTrue(_testCase, ancMeta->get("Young") == "Jeezy");
-  GenomeConstPtr leaf1Genome = alignment->openConstGenome("Leaf1");
-  GenomeConstPtr leaf2Genome = alignment->openConstGenome("Leaf2");
-  GenomeConstPtr leaf3Genome = alignment->openConstGenome("Leaf3");
+  const Genome* leaf1Genome = alignment->openConstGenome("Leaf1");
+  const Genome* leaf2Genome = alignment->openConstGenome("Leaf2");
+  const Genome* leaf3Genome = alignment->openConstGenome("Leaf3");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
   CuAssertTrue(_testCase, leaf1Genome->getName() == "Leaf1");
   CuAssertTrue(_testCase, leaf2Genome->getName() == "Leaf2");  
@@ -96,7 +93,7 @@ void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
   
-  GenomePtr ancGenome = alignment->addRootGenome("AncGenome", 0);
+  Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
   ancGenome->reset(1000000, 5000, 700000);
   alignment->close();
 
@@ -107,7 +104,7 @@ void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
 
 void GenomeUpdateTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  GenomeConstPtr ancGenome = alignment->openConstGenome("AncGenome");
+  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
   CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 10000005);
   CuAssertTrue(_testCase, ancGenome->getNumberTopSegments() == 14000);

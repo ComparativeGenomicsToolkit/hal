@@ -28,12 +28,12 @@ HDF5Alignment::HDF5Alignment() :
   _aprops(FileAccPropList::DEFAULT),
   _dcprops(DSetCreatPropList::DEFAULT),
   _flags(H5F_ACC_RDONLY),
+  _metaData(NULL),
   _tree(NULL),
   _dirty(false)
 {
   
 }
-
 
 HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
                              const H5::FileAccPropList& fileAccessProps,
@@ -43,6 +43,7 @@ HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
   _aprops(fileAccessProps),
   _dcprops(datasetCreateProps),
   _flags(H5F_ACC_RDONLY),
+  _metaData(NULL),
   _tree(NULL),
   _dirty(false)
 {
@@ -62,7 +63,8 @@ void HDF5Alignment::createNew(const string& alignmentPath)
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
   _file->createGroup(GenomesGroupName);
-  _metaData = MetaDataPtr(new HDF5MetaData(_file, MetaGroupName));
+  delete _metaData;
+  _metaData = new HDF5MetaData(_file, MetaGroupName);
   _tree = NULL;
   _dirty = true;
 }
@@ -74,7 +76,8 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   delete _file;
   int _flags = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
   _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
-  _metaData = MetaDataPtr(new HDF5MetaData(_file, MetaGroupName));
+  delete _metaData;
+  _metaData = new HDF5MetaData(_file, MetaGroupName);
   loadTree();
 }
    
@@ -90,16 +93,19 @@ void HDF5Alignment::close()
     }
     // todo: make sure there's no memory leak with metadata 
     // smart pointer should prevent
-    if (_metaData.get() != NULL)
+    if (_metaData != NULL)
     {
-      dynamic_cast<HDF5MetaData*>(_metaData.get())->write();
+      _metaData->write();
+      delete _metaData;
+      _metaData = NULL;
     }
   
-    map<string, GenomePtr>::iterator mapIt;
+    map<string, HDF5Genome*>::iterator mapIt;
     for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt)
     {
-      HDF5Genome* genome = dynamic_cast<HDF5Genome*>(mapIt->second.get());
+      HDF5Genome* genome = mapIt->second;
       genome->write();
+      delete genome;
     }
     _openGenomes.clear();
     _file->close();
@@ -113,9 +119,9 @@ void HDF5Alignment::close()
   }
 }
 
-GenomePtr  HDF5Alignment::addLeafGenome(const string& name,
-                                        const string& parentName,
-                                        double branchLength)
+Genome*  HDF5Alignment::addLeafGenome(const string& name,
+                                      const string& parentName,
+                                      double branchLength)
 {
   if (name.empty() == true || parentName.empty())
   {
@@ -139,12 +145,11 @@ GenomePtr  HDF5Alignment::addLeafGenome(const string& name,
   _nodeMap.insert(pair<string, stTree*>(name, node));
 
   HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
-  GenomePtr genomePtr(genome);
-  _openGenomes.insert(pair<string, GenomePtr>(name, genomePtr));
-  return genomePtr;
+  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  return genome;
 }
 
-GenomePtr  HDF5Alignment::addRootGenome(const string& name,
+Genome* HDF5Alignment::addRootGenome(const string& name,
                                         double branchLength)
 {
   if (name.empty() == true)
@@ -167,9 +172,8 @@ GenomePtr  HDF5Alignment::addRootGenome(const string& name,
   _nodeMap.insert(pair<string, stTree*>(name, node));
 
   HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
-  GenomePtr genomePtr(genome);
-  _openGenomes.insert(pair<string, GenomePtr>(name, genomePtr));
-  return genomePtr;
+  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  return genome;
 }
 
 
@@ -178,9 +182,9 @@ void HDF5Alignment::removeGenome(const string& name)
   
 }
 
-GenomeConstPtr HDF5Alignment::openConstGenome(const string& name) const
+const Genome* HDF5Alignment::openConstGenome(const string& name) const
 {
-  map<string, GenomePtr>::iterator mapit = _openGenomes.find(name);
+  map<string, HDF5Genome*>::iterator mapit = _openGenomes.find(name);
   if (mapit != _openGenomes.end())
   {
     return mapit->second;
@@ -188,23 +192,21 @@ GenomeConstPtr HDF5Alignment::openConstGenome(const string& name) const
   HDF5Genome* genome = new HDF5Genome(name, const_cast<HDF5Alignment*>(this), 
                                       _file, _dcprops);
   genome->read();
-  GenomePtr genomePtr(genome);
-  _openGenomes.insert(pair<string, GenomePtr>(name, genomePtr));
-  return genomePtr;
+  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  return genome;
 }
 
-GenomePtr HDF5Alignment::openGenome(const string& name)
+Genome* HDF5Alignment::openGenome(const string& name)
 {
-  map<string, GenomePtr>::iterator mapit = _openGenomes.find(name);
+  map<string, HDF5Genome*>::iterator mapit = _openGenomes.find(name);
   if (mapit != _openGenomes.end())
   {
     return mapit->second;
   }
   HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
   genome->read();
-  GenomePtr genomePtr(genome);
-  _openGenomes.insert(pair<string, GenomePtr>(name, genomePtr));
-  return genomePtr;
+  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  return genome;
 }
 
 string HDF5Alignment::getRootName() const
@@ -285,12 +287,12 @@ hal_size_t HDF5Alignment::getNumGenomes() const
   }
 }
 
-MetaDataPtr HDF5Alignment::getMetaData()
+MetaData* HDF5Alignment::getMetaData()
 {
   return _metaData;
 }
 
-MetaDataConstPtr HDF5Alignment::getMetaData() const
+const MetaData* HDF5Alignment::getMetaData() const
 {
   return _metaData;
 }

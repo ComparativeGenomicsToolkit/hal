@@ -19,9 +19,7 @@ namespace hal {
  */
 class Genome
 {
-public:
-   /** Destructor */
-   virtual ~Genome() = 0;
+public:   
 
    /** Reset (or initialize) the dimensions of the genome 
     * Note that there are no guarantees that any of the current
@@ -61,26 +59,53 @@ public:
     * in the genome */
    virtual hal_size_t getNumberBottomSegments() const = 0;
 
-   /** Get a segment iterator
-    * @param top Specify whether or not returned iterator is a top
-    * segment
+   /** Get a top segment iterator
     * @param position Index in segment array of returned iterator */
-   virtual SegmentIteratorPtr getSegmentIterator(hal_bool_t top, 
-                                                 hal_index_t position) = 0;
-   
-   /** Get a read-only segment iterator
-    * @param top Specify whether or not returned iterator is a top
-    * segment
+   virtual TopSegmentIteratorPtr getTopSegmentIterator(
+     hal_index_t position) = 0;
+
+   /** Get a const top segment iterator
     * @param position Index in segment array of returned iterator */
-   virtual SegmentIteratorConstPtr getSegmentIterator(
-     hal_bool_t top, hal_index_t position) const = 0;
-   
+   virtual TopSegmentIteratorConstPtr getTopSegmentIterator(
+     hal_index_t position) const = 0;
+
+   /** Get a bottom segment iterator
+    * @param position Index in segment array of returned iterator */
+   virtual BottomSegmentIteratorPtr getBottomSegmentIterator(
+     hal_index_t position) = 0;
+
+   /** Get a const bottom segment iterator
+    * @param position Index in segment array of returned iterator */
+   virtual BottomSegmentIteratorConstPtr getBottomSegmentIterator(
+     hal_index_t position) const = 0;
+
    /** Get genome-specific metadata for this genome */
-   virtual MetaDataPtr getMetaData() = 0;
+   virtual MetaData* getMetaData() = 0;
 
    /** Get read-only instance of genome-specific metadata for this genome */
-   virtual MetaDataConstPtr getMetaData() const = 0;
-  
+   virtual const MetaData* getMetaData() const = 0;
+
+   /** Get the parent genome */
+   virtual Genome* getParent() = 0;
+
+   /** Get const parent genome */
+   virtual const Genome* getParent() const = 0;
+
+   /** Get child genome 
+    * @param childIdx index of child genome */
+   virtual const Genome* getChild(hal_size_t childIdx) = 0;
+
+   /** Get const child genome 
+    * @param childIdx index of child genome */
+   virtual const Genome* getChild(hal_size_t childIdx) const = 0;
+
+   /** Get number of child genomes */
+   virtual hal_size_t getNumChildren() const = 0;
+
+protected:
+
+   /** Destructor */
+   virtual ~Genome() = 0;
 };
 
 inline Genome::~Genome() {}

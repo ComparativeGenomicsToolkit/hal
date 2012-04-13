@@ -21,9 +21,6 @@ class Alignment
 {
 public:
 
-   /** Destructor */
-   virtual ~Alignment() = 0;
-
    /** Create new alignment (overwriting any existing alignments)
     * @param alignmentPath location on disk */
    virtual void createNew(const std::string& alignmentPath) = 0;
@@ -41,7 +38,7 @@ public:
     * @param name name of new genome in alignment (must be unique)
     * @param parent name of parent genome in tree (must exist)
     * @param branchLength distance between new genome and parent */
-   virtual GenomePtr addLeafGenome(const std::string& name,
+   virtual Genome* addLeafGenome(const std::string& name,
                                    const std::string& parentName,
                                    double branchLength) = 0;
 
@@ -50,7 +47,7 @@ public:
     * @param name name of new genome in alignment (must be unique)
     * @param branchLength distance between new genome and previous root
     * (if exists)*/
-   virtual GenomePtr addRootGenome(const std::string& name,
+   virtual Genome* addRootGenome(const std::string& name,
                                    double branchLength) = 0;
 
    /** Remove a genome from the alignment 
@@ -59,11 +56,11 @@ public:
 
    /** Open an existing genome for reading and updating
     * @name Name of genome to open */
-   virtual GenomeConstPtr openConstGenome(const std::string& name) const = 0;
+   virtual const Genome* openConstGenome(const std::string& name) const = 0;
 
    /** Open an exsting genome for reading
     * @name Name of genome to open */
-   virtual GenomePtr openGenome(const std::string& name) = 0;
+   virtual Genome* openGenome(const std::string& name) = 0;
 
    /** Get name of root genome (empty string for empty alignment) */
    virtual std::string getRootName() const = 0;
@@ -93,13 +90,19 @@ public:
    virtual hal_size_t getNumGenomes() const = 0;
 
    /** Get Alignment's metadata */
-   virtual MetaDataPtr getMetaData() = 0;
+   virtual MetaData* getMetaData() = 0;
 
    /** Get read-only instance of Alignment's metadata */
-   virtual MetaDataConstPtr getMetaData() const = 0;
+   virtual const MetaData* getMetaData() const = 0;
 
    /** Get a newick-formatted phylogeny to the alignment */
    virtual std::string getNewickTree() const = 0;
+
+protected:
+   friend class counted_ptr<Alignment>;
+   friend class counted_ptr<const Alignment>;
+   /** Destructor */
+   virtual ~Alignment() = 0;
 };
 
 inline Alignment::~Alignment() {}

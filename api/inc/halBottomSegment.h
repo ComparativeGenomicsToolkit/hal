@@ -15,11 +15,9 @@ namespace hal {
 /** 
  * Interface for a bottom segment of DNA
  */
-class BottomSegment : public Segment
+class BottomSegment : public virtual Segment
 {
 public:
-   /** Destructor */
-   virtual ~BottomSegment() = 0;
 
    /** Get the number of child genomes (note this is a number of slots
     * and that the current segment could actually have fewer children) */
@@ -62,6 +60,11 @@ public:
     * this segment 
     * @param parpArseOffset offset in parent */
    virtual void setTopParseOffset(hal_offset_t parseOffset) = 0;
+
+protected:
+
+   /** Destructor */
+   virtual ~BottomSegment() = 0;
 };
 
 inline BottomSegment::~BottomSegment() {}

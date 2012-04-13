@@ -23,7 +23,7 @@ public:
     * @param genome Smart pointer to genome to which segment belongs
     * @param array HDF5 array containg segment
     * @param index Index of segment in the array */
-   HDF5BottomSegment(GenomePtr genome,
+   HDF5BottomSegment(HDF5Genome* genome,
                      HDF5ExternalArray* array,
                      hal_index_t index);
 
@@ -38,10 +38,10 @@ public:
    void setLength(hal_size_t length);
 
    /** Get the containing (read-only) genome */
-   GenomeConstPtr getGenome() const;
+   const Genome* getGenome() const;
 
    /** Get the containing genome */
-   GenomePtr getGenome();
+   Genome* getGenome();
 
    /** Get the segment's start position in the genome */
    hal_index_t getStartPosition() const;
@@ -105,6 +105,8 @@ public:
    void setTopParseOffset(hal_offset_t parseOffset);
 
    static H5::CompType dataType(hal_size_t numChildren);
+   static hal_size_t numChildrenFromDataType(
+     const H5::DataType& dataType);
    
 protected:
 
@@ -118,7 +120,7 @@ protected:
 
    HDF5ExternalArray* _array;
    hal_index_t _index;
-   GenomePtr _genome;
+   HDF5Genome* _genome;
    hal_size_t _numChildren;
 };
 
@@ -151,12 +153,12 @@ HDF5BottomSegment::setLength(hal_size_t length)
   _array->setValue((hsize_t)_index, lengthOffset, length);
 }
 
-inline GenomeConstPtr HDF5BottomSegment::getGenome() const
+inline const Genome* HDF5BottomSegment::getGenome() const
 {                                               
   return _genome;
 }
 
-inline GenomePtr HDF5BottomSegment::getGenome()
+inline Genome* HDF5BottomSegment::getGenome()
 {
   return _genome;
 }

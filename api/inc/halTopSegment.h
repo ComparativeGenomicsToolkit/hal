@@ -15,12 +15,10 @@ namespace hal {
 /** 
  * Interface for a top segment of DNA
  */
-class TopSegment : public Segment
+class TopSegment : public virtual Segment
 {
 public:
-   /** Destructor */
-   virtual ~TopSegment() = 0;
-
+  
    /** Get index of the homologous segmenet in the ancestral genome */
    virtual hal_index_t getParentIndex() const = 0;
    
@@ -52,6 +50,11 @@ public:
     * start coordinate of this segment 
     * @param botParseOffset offset */
    virtual void setBottomParseOffset(hal_offset_t botParseOffset) = 0;
+
+protected:
+
+   /** Destructor */
+   virtual ~TopSegment() = 0;
 };
 
 inline TopSegment::~TopSegment() {}

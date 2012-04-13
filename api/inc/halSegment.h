@@ -19,9 +19,7 @@ namespace hal {
 class Segment
 {
 public:
-   /** Destructor */
-   virtual ~Segment() = 0;
-
+ 
    /** Get the length of the segment (number of bases) */
    virtual hal_size_t getLength() const = 0;
 
@@ -30,10 +28,10 @@ public:
    virtual void setLength(hal_size_t length) = 0;
 
    /** Get the containing (read-only) genome */
-   virtual GenomeConstPtr getGenome() const = 0;
+   virtual const Genome* getGenome() const = 0;
 
    /** Get the containing genome */
-   virtual GenomePtr getGenome() = 0;
+   virtual Genome* getGenome() = 0;
 
    /** Get the segment's start position in the genome */
    virtual hal_index_t getStartPosition() const = 0;
@@ -53,6 +51,11 @@ public:
     * @param parIdx of next segment in same genome that is 
     * homologous to this segment */
    virtual void setNextParalogyIndex(hal_index_t parIdx) = 0;
+
+protected:
+   
+   /** Destructor */
+   virtual ~Segment() = 0;
 };
 
 inline Segment::~Segment() {}

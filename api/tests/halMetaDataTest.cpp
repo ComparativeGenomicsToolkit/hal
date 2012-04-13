@@ -24,7 +24,7 @@ void MetaDataTest::createCallBack(hal::AlignmentPtr alignment)
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
   
-  MetaDataPtr meta = alignment->getMetaData();
+  MetaData* meta = alignment->getMetaData();
   CuAssertTrue(_testCase, meta->getMap().empty() == true);
   meta->set("colour", "red");
   meta->set("number", "1");
@@ -43,7 +43,7 @@ void MetaDataTest::createCallBack(hal::AlignmentPtr alignment)
 
 void MetaDataTest::checkCallBack(hal::AlignmentConstPtr alignment)
 {
-  MetaDataConstPtr meta = alignment->getMetaData();
+  const MetaData* meta = alignment->getMetaData();
   
   CuAssertTrue(_testCase, meta->get("colour") == "black");
   CuAssertTrue(_testCase, meta->get("number") == "1");

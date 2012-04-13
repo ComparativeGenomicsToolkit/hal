@@ -11,16 +11,21 @@
 #include "halGenome.h"
 #include "hdf5ExternalArray.h"
 #include "hdf5Alignment.h"
-#include "halSegmentIterator.h"
+#include "halTopSegmentIterator.h"
+#include "halBottomSegmentIterator.h"
 #include "hdf5MetaData.h"
+
 
 namespace hal {
 
+class HDF5SegmentIterator;
+class HDF5Alignment;
 /** 
  * HDF5 implementation of hal::Genome
  */
 class HDF5Genome : public Genome
 {
+   friend class HDF5SegmentIterator;
 public:
 
    HDF5Genome(const std::string& name,
@@ -43,17 +48,29 @@ public:
    hal_size_t getSequenceLength() const;
    hal_size_t getNumberTopSegments() const;
    hal_size_t getNumberBottomSegments() const;
-   SegmentIteratorPtr getSegmentIterator(hal_bool_t top, 
-                                         hal_index_t position);
-   SegmentIteratorConstPtr getSegmentIterator(
-     hal_bool_t top, hal_index_t position) const;
-   
-   MetaDataPtr getMetaData();
-   MetaDataConstPtr getMetaData() const;
+
+   TopSegmentIteratorPtr getTopSegmentIterator(hal_index_t position);
+
+   TopSegmentIteratorConstPtr getTopSegmentIterator(hal_index_t position) const;
+
+   BottomSegmentIteratorPtr getBottomSegmentIterator(hal_index_t position);
+
+   BottomSegmentIteratorConstPtr getBottomSegmentIterator(hal_index_t position) const;
+
+   MetaData* getMetaData();
+   const MetaData* getMetaData() const;
+
+   Genome* getParent();
+   const Genome* getParent() const;
+
+   Genome* getChild(hal_size_t childIdx);
+   const Genome* getChild(hal_size_t childIdx) const;
+   hal_size_t getNumChildren() const;
 
    void write();
    void read();
    void create();
+   void resetTreeCache();
 
 protected:
 
@@ -61,20 +78,23 @@ protected:
    H5::CommonFG* _h5Parent;
    AlignmentPtr _alignmentPtr;
    std::string _name;
-   MetaDataPtr _metaData;
+   HDF5MetaData* _metaData;
    HDF5ExternalArray _dnaArray;
    HDF5ExternalArray _topArray;
    HDF5ExternalArray _bottomArray;
-   GenomePtr _parent;
-   std::vector<GenomePtr> _children;
    H5::Group _group;
    H5::DSetCreatPropList _dcprops;
+   hal_size_t _numChildrenInBottomArray;
+
+   mutable Genome* _parentCache;
+   mutable std::vector<Genome*> _childCache;
+
    static const std::string dnaArrayName;
    static const std::string topArrayName;
    static const std::string bottomArrayName;
    static const std::string metaGroupName;
-   
 };
+
 
 }
 #endif

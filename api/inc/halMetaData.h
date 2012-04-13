@@ -21,9 +21,7 @@ namespace hal {
 class MetaData
 {
 public:
-   /** Destructor */
-   virtual ~MetaData() = 0;
-   
+    
    /** Get read-only reference to the map of metadat */
    virtual const std::map<std::string, std::string>& getMap() const = 0;
    
@@ -39,6 +37,11 @@ public:
    /** Determine if key exists in metadata 
     * @param key Key to test */
    virtual bool has(const std::string& key) const = 0;
+
+protected:
+   
+   /** Destructor */
+   virtual ~MetaData() = 0;
 };
 
 inline MetaData::~MetaData() {}

@@ -26,7 +26,9 @@ HDF5Genome::HDF5Genome(const string& name,
   _alignment(alignment),
   _h5Parent(h5Parent),
   _name(name),
-  _dcprops(dcProps)
+  _dcprops(dcProps),
+  _numChildrenInBottomArray(0),
+  _parentCache(NULL)
 {
   assert(!name.empty());
   assert(alignment != NULL && h5Parent != NULL);
@@ -40,13 +42,13 @@ HDF5Genome::HDF5Genome(const string& name,
   {
     _group = h5Parent->createGroup(name);
   }
-  _metaData = MetaDataPtr(new HDF5MetaData(&_group, metaGroupName));
+  _metaData = new HDF5MetaData(&_group, metaGroupName);
 }
 
 
 HDF5Genome::~HDF5Genome()
 {
-  
+  delete _metaData;
 }
 
 void HDF5Genome::reset(hal_size_t totalSequenceLength,
@@ -67,6 +69,8 @@ void HDF5Genome::reset(hal_size_t totalSequenceLength,
   }
   resetTopSegments(numTopSegments);
   resetBottomSegments(numBottomSegments);
+  _parentCache = NULL;
+  _childCache.clear();
 }
 
 void HDF5Genome::resetTopSegments(hal_size_t numTopSegments)
@@ -83,6 +87,7 @@ void HDF5Genome::resetTopSegments(hal_size_t numTopSegments)
     _topArray.create(&_group, topArrayName, HDF5TopSegment::dataType(), 
                      numTopSegments, _dcprops);
   }
+  _parentCache = NULL;
 }
 
 void HDF5Genome::resetBottomSegments(hal_size_t numBottomSegments)
@@ -100,7 +105,9 @@ void HDF5Genome::resetBottomSegments(hal_size_t numBottomSegments)
     _bottomArray.create(&_group, bottomArrayName, 
                         HDF5BottomSegment::dataType(numChildren), 
                         numBottomSegments, _dcprops);
+    _numChildrenInBottomArray = numChildren;
   }
+  _childCache.clear();
 }
 
 const string& HDF5Genome::getName() const
@@ -123,24 +130,35 @@ hal_size_t HDF5Genome::getNumberBottomSegments() const
   return _bottomArray.getSize();
 }
 
-SegmentIteratorPtr HDF5Genome::getSegmentIterator(hal_bool_t top, 
-                                                  hal_index_t position)
+TopSegmentIteratorPtr HDF5Genome::getTopSegmentIterator(hal_index_t position)
 {
-  return SegmentIteratorPtr(NULL);
+  return TopSegmentIteratorPtr(0);
 }
 
-SegmentIteratorConstPtr HDF5Genome::getSegmentIterator(
-  hal_bool_t top, hal_index_t position) const
+TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
+  hal_index_t position) const
 {
-  return SegmentIteratorConstPtr(NULL);
+  return TopSegmentIteratorConstPtr(0);
+}
+
+BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
+  hal_index_t position)
+{
+  return BottomSegmentIteratorPtr(0);
+}
+
+BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
+  hal_index_t position) const
+{
+  return BottomSegmentIteratorConstPtr(0);
 }
    
-MetaDataPtr HDF5Genome::getMetaData()
+MetaData* HDF5Genome::getMetaData()
 {
   return _metaData;
 }
 
-MetaDataConstPtr HDF5Genome::getMetaData() const
+const MetaData* HDF5Genome::getMetaData() const
 {
   return _metaData;
 }
@@ -150,7 +168,64 @@ void HDF5Genome::write()
   _dnaArray.write();
   _topArray.write();
   _bottomArray.write();
-  dynamic_cast<HDF5MetaData*>(_metaData.get())->write();
+  _metaData->write();
+}
+
+Genome* HDF5Genome::getParent()
+{
+  if (_parentCache == NULL)
+  {
+    _parentCache = _alignment->openGenome(
+      _alignment->getParentName(_name));
+  }
+  return _parentCache;
+}
+
+const Genome* HDF5Genome::getParent() const
+{
+  if (_parentCache == NULL)
+  {
+    _parentCache = _alignment->openGenome(
+      _alignment->getParentName(_name));
+  }
+  return _parentCache;
+}
+
+Genome* HDF5Genome::getChild(hal_size_t childIdx)
+{
+  assert(childIdx < _numChildrenInBottomArray);
+  if (_childCache.size() <= childIdx || 
+      _childCache[childIdx] == NULL)
+  {
+    vector<string> childNames = _alignment->getChildNames(_name);
+    _childCache.resize(childNames.size());
+    for (size_t i = 0; i < _childCache.size(); ++i)
+    {
+      _childCache[i] = _alignment->openGenome(childNames.at(i));
+    }
+  }
+  return _childCache[childIdx];
+}
+
+const Genome* HDF5Genome::getChild(hal_size_t childIdx) const
+{
+  assert(childIdx < _numChildrenInBottomArray);
+  if (_childCache.size() <= childIdx || 
+      _childCache[childIdx] == NULL)
+  {
+    vector<string> childNames = _alignment->getChildNames(_name);
+    _childCache.resize(childNames.size());
+    for (size_t i = 0; i < _childCache.size(); ++i)
+    {
+      _childCache[i] = _alignment->openGenome(childNames.at(i));
+    }
+  }
+  return _childCache[childIdx];
+}
+
+hal_size_t HDF5Genome::getNumChildren() const
+{
+  return _numChildrenInBottomArray;
 }
 
 void HDF5Genome::read()
@@ -172,6 +247,8 @@ void HDF5Genome::read()
   {
     _group.openDataSet(bottomArrayName);
     _bottomArray.load(&_group, bottomArrayName);
+    _numChildrenInBottomArray = 
+       HDF5BottomSegment::numChildrenFromDataType(_bottomArray.getDataType());
   }
   catch (H5::Exception){}
 }

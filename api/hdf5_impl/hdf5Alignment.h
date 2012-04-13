@@ -9,15 +9,16 @@
 
 #include <map>
 #include <H5Cpp.h>
-#include "halAlignment.h"
+#include "hdf5Alignment.h"
 #include "halAlignmentInstance.h"
-#include "halGenome.h"
-#include "halMetaData.h"
+#include "hdf5Genome.h"
+#include "hdf5MetaData.h"
 
 typedef struct _stTree stTree;
 
 namespace hal {
 
+class HDF5Genome;
 /** 
  * HDF5 implementation of hal::Alignment
  */
@@ -32,18 +33,18 @@ public:
              bool readOnly);
    void close();
    
-   GenomePtr addLeafGenome(const std::string& name,
+   Genome* addLeafGenome(const std::string& name,
                            const std::string& parentName,
                            double branchLength);
 
-   GenomePtr addRootGenome(const std::string& name,
+   Genome* addRootGenome(const std::string& name,
                            double branchLength);
 
    void removeGenome(const std::string& name);
 
-   GenomeConstPtr openConstGenome(const std::string& name) const;
+   const Genome* openConstGenome(const std::string& name) const;
 
-   GenomePtr openGenome(const std::string& name);
+   Genome* openGenome(const std::string& name);
 
    std::string getRootName() const;
 
@@ -60,9 +61,9 @@ public:
 
    hal_size_t getNumGenomes() const;
 
-   MetaDataPtr getMetaData();
+   MetaData* getMetaData();
 
-   MetaDataConstPtr getMetaData() const;
+   const MetaData* getMetaData() const;
 
    std::string getNewickTree() const;
 
@@ -98,14 +99,14 @@ protected:
    H5::FileAccPropList _aprops;
    H5::DSetCreatPropList _dcprops;
    int _flags;
-   MetaDataPtr _metaData;
+   HDF5MetaData* _metaData;
    static const H5std_string MetaGroupName;
    static const H5std_string TreeGroupName;
    static const H5std_string GenomesGroupName;
    stTree* _tree;
    mutable std::map<std::string, stTree*> _nodeMap;
    bool _dirty;
-   mutable std::map<std::string, GenomePtr> _openGenomes;
+   mutable std::map<std::string, HDF5Genome*> _openGenomes;
 };
 
 }

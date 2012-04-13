@@ -60,7 +60,7 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
       myArray.create(&file, datasetName, datatype, N, cparms);
       for (hsize_t i = 0; i < N; ++i)
       {
-        HDF5TopSegment segment(GenomePtr(), &myArray, i);
+        HDF5TopSegment segment(NULL, &myArray, i);
         segment.setStartPosition(i * 1);
         segment.setLength(i * 2);
         segment.setNextParalogyIndex(i * 3);
@@ -77,7 +77,7 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
       readArray.load(&rfile, datasetName);
       for (hsize_t i = 0; i < N; ++i)
       {
-         HDF5TopSegment segment(GenomePtr(), &readArray, i);
+         HDF5TopSegment segment(NULL, &readArray, i);
          CuAssertTrue(testCase, 
                       segment.getStartPosition() == (hal_index_t)i * 1);
          CuAssertTrue(testCase,
@@ -130,7 +130,7 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
         myArray.create(&file, datasetName, datatype, N, cparms);
         for (hsize_t i = 0; i < N; ++i)
         {
-          HDF5BottomSegment segment(GenomePtr(), &myArray, i);
+          HDF5BottomSegment segment(NULL, &myArray, i);
           segment.setStartPosition(i * 1);
           segment.setLength(i * 2);
           segment.setNextParalogyIndex(i * 3);
@@ -151,7 +151,7 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
 
         for (hsize_t i = 0; i < N; ++i)
         {
-          HDF5BottomSegment segment(GenomePtr(), &readArray, i);
+          HDF5BottomSegment segment(NULL, &readArray, i);
           CuAssertTrue(testCase, 
                        segment.getStartPosition() == (hal_index_t)i * 1);
           CuAssertTrue(testCase,

@@ -8,41 +8,33 @@
 #define _HALSEGMENTITERATOR_H
 
 #include "halDefs.h"
+#include "halSegment.h"
 
 namespace hal {
 
 /** 
- * Interface for general segment iterator
+ * Interface for general segment iterator.  Common functionality
+ * for top and bottom iterators.  A segment iterator implements 
+ * the segment as well as the iterator interface. 
  */
-class SegmentIterator
+class SegmentIterator : public Segment
 {
 public:
+
+   virtual SegmentIteratorPtr copy() = 0;
+   virtual SegmentIteratorConstPtr copy() const = 0;
+   virtual void toLeft() const = 0;
+   virtual void toRight() const = 0;
+   virtual hal_offset_t getStartOffset() const = 0;
+   virtual hal_offset_t getEndOffset() const = 0;
+
+protected:
+   friend class counted_ptr<SegmentIterator>;
+   friend class counted_ptr<const SegmentIterator>;
    virtual ~SegmentIterator() = 0;
-   virtual SegmentIteratorConstPtr parse() const = 0;
-   virtual SegmentIteratorPtr parse() = 0;
-   virtual std::vector<SegmentIteratorConstPtr> parseList() const = 0;
-   virtual std::vector<SegmentIteratorPtr> parseList() = 0;
-   virtual SegmentIteratorConstPtr parent() const = 0;
-   virtual SegmentIteratorPtr parent() = 0;
-   virtual SegmentIteratorConstPtr next() const = 0;
-   virtual SegmentIteratorPtr next() = 0;
-   virtual SegmentIteratorConstPtr prev() const = 0;
-   virtual SegmentIteratorPtr prev() = 0;
-   virtual SegmentIteratorConstPtr child(hal_offset_t) const = 0;
-   virtual SegmentIteratorPtr child(hal_offset_t) = 0;
-   virtual hal_offset_t leftOffset() const = 0;
-   virtual hal_offset_t rightOffset() const = 0;
-   virtual hal_bool_t amTop() const = 0;
-   virtual hal_bool_t amBottom() const = 0;
-   virtual SegmentConstPtr segment() const = 0;
-   virtual SegmentPtr segment() = 0;
-   virtual TopSegmentConstPtr topSegment() const = 0;
-   virtual TopSegmentPtr topSegment() = 0;
-   virtual BottomSegmentConstPtr bottomSegment() const = 0;
-   virtual BottomSegmentPtr bototmSegment() = 0;
 };
 
-
+inline SegmentIterator::~SegmentIterator() {}
 
 }
 #endif

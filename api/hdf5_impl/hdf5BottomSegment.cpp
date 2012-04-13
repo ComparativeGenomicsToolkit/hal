@@ -22,7 +22,7 @@ const size_t HDF5BottomSegment::totalSize(hal_size_t numChildren)
   return firstChildOffset + numChildren * (sizeof(hal_index_t) + sizeof(hal_bool_t));
 }
 
-HDF5BottomSegment::HDF5BottomSegment(GenomePtr genome,
+HDF5BottomSegment::HDF5BottomSegment(HDF5Genome* genome,
                                      HDF5ExternalArray* array,
                                      hal_index_t index) :
   _array(array),
@@ -69,3 +69,9 @@ H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
   return dataType;
 }
 
+hal_size_t HDF5BottomSegment::numChildrenFromDataType(
+  const H5::DataType& dataType)
+{
+  return (dataType.getSize() - firstChildOffset) / 
+     (sizeof(hal_index_t) + sizeof(hal_bool_t));
+}

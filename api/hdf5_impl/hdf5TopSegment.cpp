@@ -21,14 +21,14 @@ const size_t HDF5TopSegment::parentIndexOffset = parIndexOffset + sizeof(hal_ind
 const size_t HDF5TopSegment::parentReversedOffset = parentIndexOffset + sizeof(hal_index_t);
 const size_t HDF5TopSegment::totalSize = parentReversedOffset + sizeof(hal_bool_t);
 
-HDF5TopSegment::HDF5TopSegment(GenomePtr genome,
+HDF5TopSegment::HDF5TopSegment(HDF5Genome* genome,
                                HDF5ExternalArray* array,
                                hal_index_t index) :
   _array(array),
   _index(index),
   _genome(genome)
 {
-
+  
 }
 
 HDF5TopSegment::~HDF5TopSegment()
