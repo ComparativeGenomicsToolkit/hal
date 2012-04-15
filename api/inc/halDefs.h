@@ -38,7 +38,7 @@ typedef int64_t hal_offset_t;
 /**
  * Size type
  */
-typedef size_t hal_size_t;
+typedef uint64_t hal_size_t;
 
 /**
  * A DNA character
@@ -77,10 +77,12 @@ HAL_FORWARD_DEC_CLASS(MetaData)
 HAL_FORWARD_DEC_CLASS(TopSegment)
 HAL_FORWARD_DEC_CLASS(BottomSegment)
 HAL_FORWARD_DEC_CLASS(Segment)
+HAL_FORWARD_DEC_CLASS(Sequence)
 HAL_FORWARD_DEC_CLASS(SegmentIterator)
 HAL_FORWARD_DEC_CLASS(TopSegmentIterator)
 HAL_FORWARD_DEC_CLASS(BottomSegmentIterator)
 HAL_FORWARD_DEC_CLASS(DNAIterator)
+HAL_FORWARD_DEC_CLASS(SequenceIterator)
   
 }
 #endif

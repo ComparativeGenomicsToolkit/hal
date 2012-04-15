@@ -21,6 +21,7 @@ namespace hal {
 class HDF5TopSegmentIterator;
 class HDF5BottomSegmentIterator;
 class HDF5DNAIterator;
+class HDF5SequenceIterator;
 class HDF5Alignment;
 /** 
  * HDF5 implementation of hal::Genome
@@ -30,6 +31,7 @@ class HDF5Genome : public Genome
    friend class HDF5TopSegmentIterator;
    friend class HDF5BottomSegmentIterator;
    friend class HDF5DNAIterator;
+   friend class HDF5SequenceIterator;
 public:
 
    HDF5Genome(const std::string& name,
@@ -39,43 +41,86 @@ public:
 
    virtual ~HDF5Genome();
 
-   void reset(hal_size_t totalSequenceLength,
-              hal_size_t numTopSegments,
-              hal_size_t numBottomSegments);
+   // GENOME INTERFACE
 
-   void resetTopSegments(hal_size_t numTopSegments);
+   void setDimensions(
+     const std::vector<hal::Sequence::Info>& sequenceDimensions);
 
-   void resetBottomSegments(hal_size_t numBottomSegments);
+   void setTopDimensions(
+     const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
 
-   const std::string& getName() const;
-   AlignmentPtr getAlignment();
-   hal_size_t getSequenceLength() const;
-   hal_size_t getNumberTopSegments() const;
-   hal_size_t getNumberBottomSegments() const;
+   void setBottomDimensions(
+     const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
+   
+   hal_size_t getNumSequences() const;
+   
+   Sequence* getSequence(const std::string& name);
 
-   TopSegmentIteratorPtr getTopSegmentIterator(hal_index_t position);
+   const Sequence* getSequence(const std::string& name) const;
 
-   TopSegmentIteratorConstPtr getTopSegmentIterator(hal_index_t position) const;
+   Sequence* getSequenceBySite(hal_index_t position);
+   const Sequence* getSequenceBySite(hal_index_t position) const;
+   
+   SequenceIteratorPtr getSequenceIterator(
+     hal_index_t position);
 
-   BottomSegmentIteratorPtr getBottomSegmentIterator(hal_index_t position);
-
-   BottomSegmentIteratorConstPtr getBottomSegmentIterator(hal_index_t position) const;
+   SequenceIteratorConstPtr getSequenceIterator(
+     hal_index_t position) const;
 
    MetaData* getMetaData();
+
    const MetaData* getMetaData() const;
 
    Genome* getParent();
+
    const Genome* getParent() const;
 
    Genome* getChild(hal_size_t childIdx);
+
    const Genome* getChild(hal_size_t childIdx) const;
+
    hal_size_t getNumChildren() const;
 
+   // SEGMENTED SEQUENCE INTERFACE
+
+   const std::string& getName() const;
+
+   hal_size_t getSequenceLength() const;
+   
+   hal_size_t getNumTopSegments() const;
+
+   hal_size_t getNumBottomSegments() const;
+
+   TopSegmentIteratorPtr getTopSegmentIterator(
+     hal_index_t position);
+
+   TopSegmentIteratorConstPtr getTopSegmentIterator(
+     hal_index_t position) const;
+
+   BottomSegmentIteratorPtr getBottomSegmentIterator(
+     hal_index_t position);
+
+   BottomSegmentIteratorConstPtr getBottomSegmentIterator(
+     hal_index_t position) const;
+
+   void getString(std::string& outString) const;
+
+   void setString(const std::string& inString);
+
+   void getSubString(std::string& outString, hal_size_t start,
+                             hal_size_t length) const;
+
+   void setSubString(const std::string& intString, 
+                             hal_size_t start,
+                             hal_size_t length);
+
+   // HDF5 SPECIFIC 
    void write();
    void read();
    void create();
    void resetTreeCache();
-
+   void writeSequences(const std::vector<hal::Sequence::Info>&
+                       sequenceDimensions);
 protected:
 
    HDF5Alignment* _alignment;
@@ -86,6 +131,7 @@ protected:
    HDF5ExternalArray _dnaArray;
    HDF5ExternalArray _topArray;
    HDF5ExternalArray _bottomArray;
+   HDF5ExternalArray _sequenceArray;
    H5::Group _group;
    H5::DSetCreatPropList _dcprops;
    hal_size_t _numChildrenInBottomArray;
@@ -96,6 +142,7 @@ protected:
    static const std::string dnaArrayName;
    static const std::string topArrayName;
    static const std::string bottomArrayName;
+   static const std::string sequenceArrayName;
    static const std::string metaGroupName;
 };
 

@@ -43,7 +43,7 @@ void hdf5ExternalArrayTestCreate(CuTest *testCase)
     setup();
     try 
     {
-      IntType datatype(PredType::NATIVE_LONG);
+      IntType datatype(PredType::NATIVE_HSIZE);
 
       H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
 
@@ -116,7 +116,7 @@ void hdf5ExternalArrayTestCompression(CuTest *testCase)
     setup();
     try 
     {
-      IntType datatype(PredType::NATIVE_LONG);
+      IntType datatype(PredType::NATIVE_HSIZE);
       H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
       HDF5ExternalArray myArray;
       DSetCreatPropList cparms;

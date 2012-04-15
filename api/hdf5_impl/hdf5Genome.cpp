@@ -4,11 +4,14 @@
  */
 #include <cassert>
 #include <iostream>
+#include <algorithm>
 #include "H5Cpp.h"
 #include "hdf5Genome.h"
 #include "hdf5DNA.h"
 #include "hdf5TopSegment.h"
 #include "hdf5BottomSegment.h"
+#include "hdf5Sequence.h"
+#include "hdf5SequenceIterator.h"
 
 using namespace hal;
 using namespace std;
@@ -17,6 +20,7 @@ using namespace H5;
 const string HDF5Genome::dnaArrayName = "DNA_ARRAY";
 const string HDF5Genome::topArrayName = "TOP_ARRAY";
 const string HDF5Genome::bottomArrayName = "BOTTOM_ARRAY";
+const string HDF5Genome::sequenceArrayName = "SEQUENCE_ARRAY";
 const string HDF5Genome::metaGroupName = "Meta";
 
 HDF5Genome::HDF5Genome(const string& name,
@@ -51,10 +55,38 @@ HDF5Genome::~HDF5Genome()
   delete _metaData;
 }
 
-void HDF5Genome::reset(hal_size_t totalSequenceLength,
-                       hal_size_t numTopSegments,
-                       hal_size_t numBottomSegments)
+//GENOME INTERFACE
+
+void HDF5Genome::setDimensions(
+  const vector<Sequence::Info>& sequenceDimensions)
 {
+  hal_size_t totalSequenceLength = 0;
+  hal_size_t totalSeq = sequenceDimensions.size();
+  hal_size_t maxName = 0;
+  
+  // Copy segment dimensions to use the external interface
+  vector<Sequence::UpdateInfo> topDimensions;
+  topDimensions.reserve(sequenceDimensions.size());
+  vector<Sequence::UpdateInfo> bottomDimensions;
+  bottomDimensions.reserve(bottomDimensions.size());
+
+  // Compute summary info from the list of sequence Dimensions
+  for (vector<Sequence::Info>::const_iterator i = sequenceDimensions.begin();
+       i != sequenceDimensions.end(); 
+       ++i)
+  {
+    totalSequenceLength += i->_length;
+    maxName = max(static_cast<hal_size_t>(i->_name.length()), maxName);
+    topDimensions.push_back(
+      Sequence::UpdateInfo(i->_name, i->_numTopSegments));
+    bottomDimensions.push_back(
+      Sequence::UpdateInfo(i->_name, i->_numBottomSegments));
+  }
+
+  // Unlink the DNA and segment arrays if they exist (using 
+  // exceptions is the only way I know how right now).  Note that
+  // the file needs to be refactored to take advantage of the new
+  // space. 
   H5::Exception::dontPrint();
   try
   {
@@ -62,19 +94,45 @@ void HDF5Genome::reset(hal_size_t totalSequenceLength,
     _group.unlink(dnaArrayName);
   }
   catch (H5::Exception){}
+  try
+  {
+    DataSet d = _group.openDataSet(sequenceArrayName);
+    _group.unlink(sequenceArrayName);
+  }
+  catch (H5::Exception){}
   if (totalSequenceLength > 0)
   {
     _dnaArray.create(&_group, dnaArrayName, HDF5DNA::dataType(), 
                      totalSequenceLength, _dcprops);
   }
-  resetTopSegments(numTopSegments);
-  resetBottomSegments(numBottomSegments);
+  if (totalSeq > 0)
+  {
+    _sequenceArray.create(&_group, sequenceArrayName, 
+                          // pad names a bit to allow renaming
+                          HDF5Sequence::dataType(maxName + 32), 
+                          totalSeq, _dcprops);
+    writeSequences(sequenceDimensions);
+    
+  }
+  
+  // Do the same as above for the segments. 
+  setTopDimensions(topDimensions);
+  setBottomDimensions(bottomDimensions);
+
   _parentCache = NULL;
   _childCache.clear();
 }
 
-void HDF5Genome::resetTopSegments(hal_size_t numTopSegments)
+void HDF5Genome::setTopDimensions(
+  const vector<Sequence::UpdateInfo>& topDimensions)
 {
+  hal_size_t numTopSegments = 0;
+  for (vector<Sequence::UpdateInfo>::const_iterator i = topDimensions.begin();
+       i != topDimensions.end(); 
+       ++i)
+  {
+    numTopSegments += i->_numSegments;
+  }
   H5::Exception::dontPrint();
   try
   {
@@ -90,8 +148,16 @@ void HDF5Genome::resetTopSegments(hal_size_t numTopSegments)
   _parentCache = NULL;
 }
 
-void HDF5Genome::resetBottomSegments(hal_size_t numBottomSegments)
+void HDF5Genome::setBottomDimensions(
+  const vector<Sequence::UpdateInfo>& bottomDimensions)
 {
+  hal_size_t numBottomSegments = 0;
+  for (vector<Sequence::UpdateInfo>::const_iterator i
+          = bottomDimensions.begin(); i != bottomDimensions.end(); 
+       ++i)
+  {
+    numBottomSegments += i->_numSegments;
+  }
   H5::Exception::dontPrint();
   try
   {
@@ -110,49 +176,43 @@ void HDF5Genome::resetBottomSegments(hal_size_t numBottomSegments)
   _childCache.clear();
 }
 
-const string& HDF5Genome::getName() const
+hal_size_t HDF5Genome::getNumSequences() const
 {
-  return _name;
-}
-
-hal_size_t HDF5Genome::getSequenceLength() const
-{
-  return _dnaArray.getSize();
-}
-
-hal_size_t HDF5Genome::getNumberTopSegments() const
-{
-  return _topArray.getSize();
-}
-
-hal_size_t HDF5Genome::getNumberBottomSegments() const
-{
-  return _bottomArray.getSize();
-}
-
-TopSegmentIteratorPtr HDF5Genome::getTopSegmentIterator(hal_index_t position)
-{
-  return TopSegmentIteratorPtr(0);
-}
-
-TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
-  hal_index_t position) const
-{
-  return TopSegmentIteratorConstPtr(0);
-}
-
-BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
-  hal_index_t position)
-{
-  return BottomSegmentIteratorPtr(0);
-}
-
-BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
-  hal_index_t position) const
-{
-  return BottomSegmentIteratorConstPtr(0);
+  return _sequenceArray.getSize();
 }
    
+Sequence* HDF5Genome::getSequence(const string& name)
+{
+  return NULL;
+}
+
+const Sequence* HDF5Genome::getSequence(const string& name) const
+{
+  return NULL;
+}
+
+Sequence* HDF5Genome::getSequenceBySite(hal_index_t position)
+{
+  return NULL;
+}
+
+const Sequence* HDF5Genome::getSequenceBySite(hal_index_t position) const
+{
+  return NULL;
+}
+
+SequenceIteratorPtr HDF5Genome::getSequenceIterator(
+  hal_index_t position)
+{
+
+}
+
+SequenceIteratorConstPtr HDF5Genome::getSequenceIterator(
+  hal_index_t position) const
+{
+
+}
+
 MetaData* HDF5Genome::getMetaData()
 {
   return _metaData;
@@ -161,14 +221,6 @@ MetaData* HDF5Genome::getMetaData()
 const MetaData* HDF5Genome::getMetaData() const
 {
   return _metaData;
-}
-  
-void HDF5Genome::write()
-{
-  _dnaArray.write();
-  _topArray.write();
-  _bottomArray.write();
-  _metaData->write();
 }
 
 Genome* HDF5Genome::getParent()
@@ -228,6 +280,84 @@ hal_size_t HDF5Genome::getNumChildren() const
   return _numChildrenInBottomArray;
 }
 
+// SEGMENTED SEQUENCE INTERFACE
+
+const string& HDF5Genome::getName() const
+{
+  return _name;
+}
+
+hal_size_t HDF5Genome::getSequenceLength() const
+{
+  return _dnaArray.getSize();
+}
+
+hal_size_t HDF5Genome::getNumTopSegments() const
+{
+  return _topArray.getSize();
+}
+
+hal_size_t HDF5Genome::getNumBottomSegments() const
+{
+  return _bottomArray.getSize();
+}
+
+TopSegmentIteratorPtr HDF5Genome::getTopSegmentIterator(hal_index_t position)
+{
+  return TopSegmentIteratorPtr(0);
+}
+
+TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
+  hal_index_t position) const
+{
+  return TopSegmentIteratorConstPtr(0);
+}
+
+BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
+  hal_index_t position)
+{
+  return BottomSegmentIteratorPtr(0);
+}
+
+BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
+  hal_index_t position) const
+{
+  return BottomSegmentIteratorConstPtr(0);
+}
+   
+void HDF5Genome::getString(string& outString) const
+{
+
+}
+
+void HDF5Genome::setString(const string& inString)
+{
+
+}
+
+void HDF5Genome::getSubString(string& outString, hal_size_t start,
+                              hal_size_t length) const
+{
+
+}
+
+void HDF5Genome::setSubString(const string& intString, 
+                              hal_size_t start,
+                              hal_size_t length)
+{
+}
+  
+// LOCAL NON-INTERFACE METHODS
+
+void HDF5Genome::write()
+{
+  _dnaArray.write();
+  _topArray.write();
+  _bottomArray.write();
+  _metaData->write();
+}
+
+
 void HDF5Genome::read()
 {
   H5::Exception::dontPrint();
@@ -251,4 +381,9 @@ void HDF5Genome::read()
        HDF5BottomSegment::numChildrenFromDataType(_bottomArray.getDataType());
   }
   catch (H5::Exception){}
+}
+
+void HDF5Genome::writeSequences(const vector<Sequence::Info>&
+                                sequenceDimensions)
+{
 }

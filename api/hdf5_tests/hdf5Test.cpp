@@ -43,7 +43,7 @@ void writeNumbers(hsize_t chunkSize)
   // write numbers[] to a rawH5ExternalArray file
   H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
   DataSpace dataspace(1, &N);
-  IntType datatype(PredType::NATIVE_LONG);
+  IntType datatype(PredType::NATIVE_HSIZE);
   datatype.setOrder(H5T_ORDER_LE);
   DSetCreatPropList cparms;
   if (chunkSize > 0)
@@ -51,7 +51,7 @@ void writeNumbers(hsize_t chunkSize)
     cparms.setChunk(1, &chunkSize);
   }
   DataSet dataset = file.createDataSet(datasetName, datatype, dataspace);
-  dataset.write(numbers, PredType::NATIVE_LONG);
+  dataset.write(numbers, PredType::NATIVE_HSIZE);
   file.close();
 }
 

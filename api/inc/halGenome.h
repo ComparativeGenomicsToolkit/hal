@@ -8,6 +8,8 @@
 #define _HALGENOME_H
 
 #include "halDefs.h"
+#include "halSegmentedSequence.h"
+#include "halSequence.h"
 
 namespace hal {
 
@@ -17,7 +19,7 @@ namespace hal {
  * which are used to map between ancestral and descendant genomes.  This
  * data is all accessed through iterators. 
  */
-class Genome
+class Genome : public SegmentedSequence
 {
 public:   
 
@@ -26,58 +28,51 @@ public:
     * data gets preserved so this should only be used for creating
     * or completely rewriting a genome.  The phylogenetic information
     * (ex number of children) is read from the Aignment object
-    * @param totalSequenceLength DNA sequence length 
-    * @param numTopSegments Number of top segments
-    * @param numBottomSegments Number of bottom segments */
-   virtual void reset(hal_size_t totalSequenceLength,
-                      hal_size_t numTopSegments,
-                      hal_size_t numBottomSegments) = 0;
+    * @param sequenceDimensions List of information for all sequences
+    * that are to be contained in the genome. */
+   virtual void setDimensions(
+     const std::vector<hal::Sequence::Info>& sequenceDimensions) = 0;
 
-   /** Reset (or initialize) the top segments, leaving the 
-    * rest of the genome intact.
-    * @param numTopSegments Number of top segments */
-   virtual void resetTopSegments(hal_size_t numTopSegments) = 0;
+   /** Reset (or initialize) the number of top segments in each
+    * sequence of the genome, leaving the rest of the genome intact.
+    * @param sequenceDimensions Number of top segments in each sequence
+    * if there is a sequence presently in the genome but not in this 
+    * list it will not be updated.*/
+   virtual void setTopDimensions(
+     const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions) = 0;
 
-   /** Reset (or initialize) the bottom segments, leaving the 
-    * rest of the genome intact.
-    * @param numBottomSegments Number of bottom segments */
-   virtual void resetBottomSegments(hal_size_t numBottomSegments) = 0;
-     
-   /** Get the name of the genome */
-   virtual const std::string& getName() const = 0;
+   /** Reset (or initialize) the number of bottom segments in each
+    * sequence of the genome, leaving the rest of the genome intact.
+    * @param sequenceDimensions Number of bottom segments in each sequence
+    * if there is a sequence presently in the genome but not in this 
+    * list it will not be updated.*/
+   virtual void setBottomDimensions(
+     const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions) = 0;
    
-   /** Get the total length of the DNA sequence in the genome*/
-   virtual hal_size_t getSequenceLength() const = 0;
+   /** Get number of sequences in the genome */
+   virtual hal_size_t getNumSequences() const = 0;
    
-   /** Get the number of top segements 
-    * (which form blocks with ancestor and siblings)
-    * in the genome */
-   virtual hal_size_t getNumberTopSegments() const = 0;
+   /** Get a sequence by name */
+   virtual Sequence* getSequence(const std::string& name) = 0;
 
-   /** Get the number of bottom segments
-    * (which form blocks with the children)
-    * in the genome */
-   virtual hal_size_t getNumberBottomSegments() const = 0;
+   /** Get a (read-only) sequence by name */
+   virtual const Sequence* getSequence(const std::string& name) const = 0;
 
-   /** Get a top segment iterator
-    * @param position Index in segment array of returned iterator */
-   virtual TopSegmentIteratorPtr getTopSegmentIterator(
-     hal_index_t position) = 0;
+   /** Get a sequence by base's position (in genome coordinates) */
+   virtual Sequence* getSequenceBySite(hal_index_t position) = 0;
 
-   /** Get a const top segment iterator
-    * @param position Index in segment array of returned iterator */
-   virtual TopSegmentIteratorConstPtr getTopSegmentIterator(
-     hal_index_t position) const = 0;
+   /** Get a sequence by base's position (in genome coordinates) */
+   virtual const Sequence* getSequenceBySite(hal_index_t position) const = 0;
+   
+   /** Get a sequence iterator 
+    * @param position Number of the sequence to start iterator at */
+   virtual SequenceIteratorPtr getSequenceIterator(
+     hal_index_t position = 0) = 0;
 
-   /** Get a bottom segment iterator
-    * @param position Index in segment array of returned iterator */
-   virtual BottomSegmentIteratorPtr getBottomSegmentIterator(
-     hal_index_t position) = 0;
-
-   /** Get a const bottom segment iterator
-    * @param position Index in segment array of returned iterator */
-   virtual BottomSegmentIteratorConstPtr getBottomSegmentIterator(
-     hal_index_t position) const = 0;
+   /** Get a const sequence iterator 
+    * @param position Number of the sequence to start iterator at */
+   virtual SequenceIteratorConstPtr getSequenceIterator(
+     hal_index_t position = 0) const = 0;
 
    /** Get genome-specific metadata for this genome */
    virtual MetaData* getMetaData() = 0;
@@ -93,7 +88,7 @@ public:
 
    /** Get child genome 
     * @param childIdx index of child genome */
-   virtual const Genome* getChild(hal_size_t childIdx) = 0;
+   virtual Genome* getChild(hal_size_t childIdx) = 0;
 
    /** Get const child genome 
     * @param childIdx index of child genome */

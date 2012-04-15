@@ -38,8 +38,8 @@ void GenomeMetaTest::checkCallBack(AlignmentConstPtr alignment)
   const MetaData* ancMeta = ancGenome->getMetaData();
   CuAssertTrue(_testCase, ancMeta->get("Young") == "Jeezy");
   CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 0);
-  CuAssertTrue(_testCase, ancGenome->getNumberTopSegments() == 0);
-  CuAssertTrue(_testCase, ancGenome->getNumberBottomSegments() == 0);
+  CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == 0);
+  CuAssertTrue(_testCase, ancGenome->getNumBottomSegments() == 0);
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
 }
 
@@ -56,10 +56,16 @@ void GenomeCreateTest::createCallBack(AlignmentPtr alignment)
   MetaData* ancMeta = ancGenome->getMetaData();
   ancMeta->set("Young", "Jeezy");
 
-  ancGenome->reset(1000000, 5000, 700000);
-  leaf1Genome->reset(1000000, 700000, 0);
-  leaf2Genome->reset(2000000, 700000, 0);
-  leaf3Genome->reset(3000000, 700000, 0);
+  
+  vector<Sequence::Info> seqVec(1);
+  seqVec[0] =Sequence::Info("Sequence", 1000000, 5000, 700000);
+  ancGenome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence", 1000000, 700000, 0);
+  leaf1Genome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence", 2000000, 700000, 0);
+  leaf2Genome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence", 3000000, 700000, 0);
+  leaf3Genome->setDimensions(seqVec);
 }
 
 void GenomeCreateTest::checkCallBack(AlignmentConstPtr alignment)
@@ -75,17 +81,17 @@ void GenomeCreateTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, leaf2Genome->getName() == "Leaf2");  
   CuAssertTrue(_testCase, leaf3Genome->getName() == "Leaf3");
   CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 1000000);
-  CuAssertTrue(_testCase, ancGenome->getNumberTopSegments() == 5000);
-  CuAssertTrue(_testCase, ancGenome->getNumberBottomSegments() == 700000);
+  CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == 5000);
+  CuAssertTrue(_testCase, ancGenome->getNumBottomSegments() == 700000);
   CuAssertTrue(_testCase, leaf1Genome->getSequenceLength() == 1000000);
-  CuAssertTrue(_testCase, leaf1Genome->getNumberTopSegments() == 700000);
-  CuAssertTrue(_testCase, leaf1Genome->getNumberBottomSegments() == 0);
+  CuAssertTrue(_testCase, leaf1Genome->getNumTopSegments() == 700000);
+  CuAssertTrue(_testCase, leaf1Genome->getNumBottomSegments() == 0);
   CuAssertTrue(_testCase, leaf2Genome->getSequenceLength() == 2000000);
-  CuAssertTrue(_testCase, leaf2Genome->getNumberTopSegments() == 700000);
-  CuAssertTrue(_testCase, leaf2Genome->getNumberBottomSegments() == 0);
+  CuAssertTrue(_testCase, leaf2Genome->getNumTopSegments() == 700000);
+  CuAssertTrue(_testCase, leaf2Genome->getNumBottomSegments() == 0);
   CuAssertTrue(_testCase, leaf3Genome->getSequenceLength() == 3000000);
-  CuAssertTrue(_testCase, leaf3Genome->getNumberTopSegments() == 700000);
-  CuAssertTrue(_testCase, leaf3Genome->getNumberBottomSegments() == 0);
+  CuAssertTrue(_testCase, leaf3Genome->getNumTopSegments() == 700000);
+  CuAssertTrue(_testCase, leaf3Genome->getNumBottomSegments() == 0);
 }
 
 void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
@@ -94,12 +100,15 @@ void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
   CuAssertTrue(_testCase, alignmentSize == 0);
   
   Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
-  ancGenome->reset(1000000, 5000, 700000);
+  vector<Sequence::Info> seqVec(1);
+  seqVec[0] = Sequence::Info("Sequence", 1000000, 5000, 700000);
+  ancGenome->setDimensions(seqVec);  
   alignment->close();
 
   alignment->open(_createPath, false);
   ancGenome = alignment->openGenome("AncGenome");
-  ancGenome->reset(10000005, 14000, 2000001);
+  seqVec[0] = Sequence::Info("Sequence", 10000005, 14000, 2000001);
+  ancGenome->setDimensions(seqVec);  
 }
 
 void GenomeUpdateTest::checkCallBack(AlignmentConstPtr alignment)
@@ -107,8 +116,8 @@ void GenomeUpdateTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* ancGenome = alignment->openConstGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
   CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 10000005);
-  CuAssertTrue(_testCase, ancGenome->getNumberTopSegments() == 14000);
-  CuAssertTrue(_testCase, ancGenome->getNumberBottomSegments() == 2000001);
+  CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == 14000);
+  CuAssertTrue(_testCase, ancGenome->getNumBottomSegments() == 2000001);
 }
 
 void halGenomeMetaTest(CuTest *testCase)
