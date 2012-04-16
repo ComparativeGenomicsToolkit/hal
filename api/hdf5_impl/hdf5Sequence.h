@@ -34,6 +34,7 @@ public:
    ~HDF5Sequence();
 
    // SEQUENCE INTERFACE
+   std::string getName() const;
 
    const Genome* getGenome() const;
 
@@ -44,8 +45,6 @@ public:
    hal_index_t getArrayIndex() const;
 
    // SEGMENTED SEQUENCE INTERFACE
-
-   const std::string& getName() const;
 
    hal_size_t getSequenceLength() const;
    

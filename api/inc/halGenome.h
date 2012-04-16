@@ -22,6 +22,8 @@ namespace hal {
 class Genome : public SegmentedSequence
 {
 public:   
+   /** Get the name of the genome */
+   virtual const std::string& getName() const = 0;
 
    /** Reset (or initialize) the dimensions of the genome 
     * Note that there are no guarantees that any of the current

@@ -22,9 +22,6 @@ namespace hal {
 class SegmentedSequence
 {
 public:   
-     
-   /** Get the name of the sequence */
-   virtual const std::string& getName() const = 0;
 
    /** Get the total length of the DNA sequence in the sequence*/
    virtual hal_size_t getSequenceLength() const = 0;

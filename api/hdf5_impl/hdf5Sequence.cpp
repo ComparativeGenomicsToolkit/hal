@@ -25,7 +25,7 @@ HDF5Sequence::HDF5Sequence(HDF5Genome* genome,
   _index(index),
   _genome(genome)
 {
-  
+
 }
 
 HDF5Sequence::~HDF5Sequence()
@@ -53,6 +53,10 @@ H5::CompType HDF5Sequence::dataType(hal_size_t maxNameLength)
 }
 
 // SEQUENCE INTERFACE
+string HDF5Sequence::getName() const
+{
+  return _array->get(_index) + nameOffset;
+}
 
 const Genome* HDF5Sequence::getGenome() const
 {
@@ -75,12 +79,6 @@ hal_index_t HDF5Sequence::getArrayIndex() const
 }
 
 // SEGMENTED SEQUENCE INTERFACE
-
-const string& HDF5Sequence::getName() const
-{
-//todo
-//  return _array->getValue<char*>(_index, nameOffset);
-}
 
 hal_size_t HDF5Sequence::getSequenceLength() const
 {
@@ -154,7 +152,7 @@ void HDF5Sequence::set(hal_size_t startPosition,
   _array->setValue(_index, numTopSegmentsOffset, sequenceInfo._numTopSegments);
   _array->setValue(_index, numBottomSegmentsOffset,
                    sequenceInfo._numBottomSegments);
-  char* arrayBuffer = _array->getUpdate(_index);
+  char* arrayBuffer = _array->getUpdate(_index) + nameOffset;
   strcpy(arrayBuffer, sequenceInfo._name.c_str());
 }
 

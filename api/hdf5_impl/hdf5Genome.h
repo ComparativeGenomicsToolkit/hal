@@ -44,6 +44,8 @@ public:
 
    // GENOME INTERFACE
 
+   const std::string& getName() const;
+
    void setDimensions(
      const std::vector<hal::Sequence::Info>& sequenceDimensions);
 
@@ -83,8 +85,6 @@ public:
    hal_size_t getNumChildren() const;
 
    // SEGMENTED SEQUENCE INTERFACE
-
-   const std::string& getName() const;
 
    hal_size_t getSequenceLength() const;
    
