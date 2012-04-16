@@ -28,7 +28,7 @@ public:
    virtual hal_offset_t getEndOffset() const = 0;
    virtual hal_size_t getLength() const = 0;
    virtual hal_bool_t getReversed() const = 0;
-   virtual void getSequence(std::string& outSequence) = 0;
+   virtual void getString(std::string& outString) const = 0;
 
 protected:
    friend class counted_ptr<SegmentIterator>;

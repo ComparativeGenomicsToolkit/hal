@@ -83,6 +83,57 @@ void TopSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
     _topSegments[i].compareTo(tsIt, _testCase);
     tsIt->toRight();
   }
+  tsIt = ancGenome->getTopSegmentIterator(ancGenome->getNumTopSegments() - 1);
+  for (hal_index_t i = ancGenome->getNumTopSegments() - 1; i >= 0; --i)
+  {
+    CuAssertTrue(_testCase, tsIt->getTopSegment()->getArrayIndex() == i);
+    _topSegments[i].compareTo(tsIt, _testCase);
+    tsIt->toLeft();
+  }
+}
+
+void TopSegmentSequenceTest::createCallBack(AlignmentPtr alignment)
+{
+  Genome* ancGenome = alignment->addRootGenome("Anc0", 0);
+  vector<Sequence::Info> seqVec(1);
+  seqVec[0] = Sequence::Info("Sequence", 1000000, 5000, 700000);
+  ancGenome->setDimensions(seqVec);
+  
+  _topSegments.clear();
+  for (size_t i = 0; i < ancGenome->getNumTopSegments(); ++i)
+  {
+    TopSegmentStruct topSeg;
+    topSeg.setRandom();
+    _topSegments.push_back(topSeg);
+  }
+  
+  TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator(0);
+  for (size_t i = 0; i < ancGenome->getNumTopSegments(); ++i)
+  {
+    CuAssertTrue(_testCase, tsIt->getTopSegment()->getArrayIndex() == i);
+    _topSegments[i].applyTo(tsIt);
+    tsIt->toRight();
+  }
+}
+
+void TopSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  const Genome* ancGenome = alignment->openConstGenome("Anc0");
+  CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == _topSegments.size());
+  TopSegmentIteratorConstPtr tsIt = ancGenome->getTopSegmentIterator(0);
+  for (size_t i = 0; i < ancGenome->getNumTopSegments(); ++i)
+  {
+    CuAssertTrue(_testCase, tsIt->getTopSegment()->getArrayIndex() == i);
+    _topSegments[i].compareTo(tsIt, _testCase);
+    tsIt->toRight();
+  }
+  tsIt = ancGenome->getTopSegmentIterator(ancGenome->getNumTopSegments() - 1);
+  for (size_t i = ancGenome->getNumTopSegments() - 1; i >= 0; --i)
+  {
+    CuAssertTrue(_testCase, tsIt->getTopSegment()->getArrayIndex() == i);
+    _topSegments[i].compareTo(tsIt, _testCase);
+    tsIt->toLeft();
+  }
 }
 
 void halTopSegmentSimpleIteratorTest(CuTest *testCase)

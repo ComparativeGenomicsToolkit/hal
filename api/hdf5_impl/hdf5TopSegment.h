@@ -55,10 +55,6 @@ public:
     * @param startPos Start position */
    void setStartPosition(hal_index_t startPos);
 
-   /** Get a copy of the string of DNA characters associated with 
-    * this segment */
-   std::string getSequence() const;
-
    /** Get index of the next paralogous segment in the genome */
    hal_index_t getNextParalogyIndex() const;
 
@@ -151,11 +147,6 @@ inline const Genome* HDF5TopSegment::getGenome() const
 inline Genome* HDF5TopSegment::getGenome()
 {
   return _genome;
-}
-
-inline std::string HDF5TopSegment::getSequence() const
-{
-  return "todo";
 }
 
 inline hal_index_t HDF5TopSegment::getNextParalogyIndex() const

@@ -118,6 +118,30 @@ void GenomeUpdateTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, ancGenome->getNumBottomSegments() == 2000001);
 }
 
+void GenomeStringTest::createCallBack(AlignmentPtr alignment)
+{
+  hal_size_t alignmentSize = alignment->getNumGenomes();
+  CuAssertTrue(_testCase, alignmentSize == 0);
+  hal_size_t seqLength = 78889943;
+  Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
+  vector<Sequence::Info> seqVec(1);
+  seqVec[0] = Sequence::Info("Sequence", seqLength, 5000, 700000);
+  ancGenome->setDimensions(seqVec);  
+  
+  _string = randomString(seqLength);
+  ancGenome->setString(_string);
+}
+
+void GenomeStringTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
+  CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
+  string genomeString;
+  ancGenome->getString(genomeString);
+  CuAssertTrue(_testCase, genomeString == _string);
+}
+
+
 void halGenomeMetaTest(CuTest *testCase)
 {
   GenomeMetaTest tester;
@@ -150,6 +174,18 @@ void halGenomeUpdateTest(CuTest *testCase)
   }
 }
 
+void halGenomeStringTest(CuTest *testCase)
+{
+  try
+  {
+    GenomeStringTest tester;
+    tester.check(testCase);
+  }
+  catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  }
+}
 
 CuSuite* halGenomeTestSuite(void) 
 {
@@ -157,6 +193,7 @@ CuSuite* halGenomeTestSuite(void)
   SUITE_ADD_TEST(suite, halGenomeMetaTest);
   SUITE_ADD_TEST(suite, halGenomeCreateTest);
   SUITE_ADD_TEST(suite, halGenomeUpdateTest);
+  SUITE_ADD_TEST(suite, halGenomeStringTest);
   return suite;
 }
 

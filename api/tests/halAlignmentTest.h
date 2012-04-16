@@ -38,6 +38,7 @@ struct AlignmentTest
    CuTest* _testCase;
    const char* _createPath;
    const char* _checkPath;
+   static std::string randomString(hal_size_t length);
 };
 
 struct AlignmentTestTrees : public AlignmentTest

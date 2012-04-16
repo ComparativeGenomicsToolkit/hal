@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "hdf5TopSegmentIterator.h"
 #include "hdf5BottomSegmentIterator.h"
+#include "hdf5DNAIterator.h"
 
 using namespace std;
 using namespace H5;
@@ -37,7 +38,6 @@ void HDF5TopSegmentIterator::toLeft() const
 {
   if (_startOffset == 0)
   {
-    assert(_topSegment._index > 0);
     --_topSegment._index;
     _endOffset = 0;
   }
@@ -52,8 +52,6 @@ void HDF5TopSegmentIterator::toRight() const
 {
   if (_endOffset == 0)
   {
-    assert(_topSegment._index < 
-           static_cast<hal_index_t>(_topSegment._genome->_topArray.getSize()));
     ++_topSegment._index;
     _startOffset = 0;
   }
@@ -77,27 +75,34 @@ void HDF5TopSegmentIterator::toNextParalogy() const
 
 hal_offset_t HDF5TopSegmentIterator::getStartOffset() const
 {
+  assert (inRange() == true);
   return _startOffset;
 }
 
 hal_offset_t HDF5TopSegmentIterator::getEndOffset() const
 {
+  assert (inRange() == true);
   return _endOffset;
 }
 
 hal_size_t HDF5TopSegmentIterator::getLength() const
 {
+  assert (inRange() == true);
   return _topSegment.getLength() - _endOffset - _startOffset;
 }
 
 hal_bool_t HDF5TopSegmentIterator::getReversed() const
 {
+  assert (inRange() == true);
   return _reversed;
 }
 
-void HDF5TopSegmentIterator::getSequence(std::string& outSequence)
+void HDF5TopSegmentIterator::getString(std::string& outString) const
 {
-
+  assert (inRange() == true);
+  HDF5DNAIterator di(const_cast<HDF5Genome*>(_topSegment._genome), 
+                     _topSegment._index + _startOffset);
+  di.readString(outString, getLength(), _reversed); 
 }
 
 //TOP ITERATOR METHODS
@@ -106,6 +111,7 @@ void HDF5TopSegmentIterator::getSequence(std::string& outSequence)
 void HDF5TopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs, 
                                      hal_size_t child) const
 {
+  assert (inRange() == true);
   const HDF5BottomSegmentIterator* h5bs = 
      reinterpret_cast<const HDF5BottomSegmentIterator*>(bs.get());
   _topSegment._genome = static_cast<HDF5Genome*>(
@@ -119,6 +125,7 @@ void HDF5TopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs,
 
 void HDF5TopSegmentIterator::toParseUp(BottomSegmentIteratorConstPtr bs) const
 {
+  assert (inRange() == true);
   const HDF5BottomSegmentIterator* h5bs = 
      reinterpret_cast<const HDF5BottomSegmentIterator*>(bs.get());
   _topSegment._genome = h5bs->_bottomSegment._genome;
@@ -154,10 +161,12 @@ TopSegmentIteratorConstPtr HDF5TopSegmentIterator::copy() const
 
 TopSegment* HDF5TopSegmentIterator::getTopSegment()
 {
+  assert (inRange() == true);
   return &_topSegment;
 }
 
 const TopSegment* HDF5TopSegmentIterator::getTopSegment() const
 {
+  assert (inRange() == true);
   return &_topSegment;
 }

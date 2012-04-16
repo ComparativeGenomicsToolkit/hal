@@ -16,6 +16,23 @@ namespace hal {
 std::vector<std::string> chopString(const std::string& inString,
                                     const std::string& separator);
 
+inline hal_dna_t reverseComplement(hal_dna_t c)
+{
+  switch (c)
+  {
+  case 'A' : return 'T'; 
+  case 'a' : return 't'; 
+  case 'C' : return 'G'; 
+  case 'c' : return 'g';
+  case 'G' : return 'C';
+  case 'g' : return 'c';
+  case 'T' : return 'A';
+  case 't' : return 'a';
+  default : break;
+  }
+  return c;
+}
+
 }
 #endif
 

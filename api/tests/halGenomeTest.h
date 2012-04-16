@@ -30,4 +30,12 @@ struct GenomeUpdateTest : public AlignmentTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
+struct GenomeStringTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   std::string _string;
+};
+
+
 #endif

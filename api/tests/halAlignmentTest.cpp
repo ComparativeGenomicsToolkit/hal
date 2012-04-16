@@ -6,6 +6,7 @@
 
 #include <string>
 #include <iostream>
+#include <cstdlib>
 #include "halAlignmentTest.h"
 #include "halAlignmentInstanceTest.h"
 #include "halAlignment.h"
@@ -16,6 +17,33 @@ extern "C" {
 
 using namespace std;
 using namespace hal;
+
+string AlignmentTest::randomString(hal_size_t length)
+{
+  string s;
+  s.resize(length);
+  for (hal_size_t i = 0; i < length; ++i)
+  {
+    int r = rand() % 10;
+    char c;
+    switch (r) 
+    {
+    case 0 : c = 'a'; break;
+    case 1 : c = 'c'; break;
+    case 2 : c = 'g'; break;
+    case 3 : c = 't'; break;
+    case 4 : c = 'A'; break;
+    case 5 : c = 'C'; break;
+    case 6 : c = 'G'; break;
+    case 7 : c = 'T'; break;
+    case 8 : c = 'N'; break;
+    case 9 : c = 'n'; break;
+    default: c = '?'; break;
+    }
+    s[i] = r;
+  }
+  return s;
+}
 
 TempCreateAlignment::TempCreateAlignment(AlignmentPtr alignment) :
   _alignment(alignment)

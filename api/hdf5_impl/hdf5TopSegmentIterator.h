@@ -36,7 +36,7 @@ public:
    hal_offset_t getEndOffset() const;
    hal_size_t getLength() const;
    hal_bool_t getReversed() const;
-   void getSequence(std::string& outSequence);
+   void getString(std::string& outString) const;
 
    //TOP ITERATOR METHODS
    TopSegmentIteratorPtr copy();
@@ -47,12 +47,19 @@ public:
    TopSegment* getTopSegment();
    const TopSegment* getTopSegment() const;
 
+   bool inRange() const;
 protected:
    HDF5TopSegment _topSegment;
    mutable hal_offset_t _startOffset;
    mutable hal_offset_t _endOffset;
    mutable hal_bool_t _reversed;
 };
+
+inline bool HDF5TopSegmentIterator::inRange() const
+{
+  return _topSegment._index >= 0 && _topSegment._index < 
+     (hal_index_t)_topSegment._genome->_topArray.getSize();
+}
 
 }
 #endif

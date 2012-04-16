@@ -147,7 +147,10 @@ inline const char* HDF5ExternalArray::get(hsize_t i)
 
 inline char* HDF5ExternalArray::getUpdate(hsize_t i)
 {
-  assert(i < _size);
+  if (i >= _size)
+  {
+    throw hal_exception("error: attempt to write hdf5 array out of bounds");
+  }
   if (i < _bufStart || i > _bufEnd)
   {
     page(i);

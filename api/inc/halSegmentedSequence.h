@@ -76,7 +76,7 @@ public:
     * @param inString input string to copy
     * @param start First position of substring 
     * @param length Length of substring */
-   virtual void setSubString(const std::string& intString, 
+   virtual void setSubString(const std::string& inString, 
                              hal_size_t start,
                              hal_size_t length) = 0;
 

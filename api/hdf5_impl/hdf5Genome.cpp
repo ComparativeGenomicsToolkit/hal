@@ -394,11 +394,7 @@ void HDF5Genome::getSubString(string& outString, hal_size_t start,
 {
   outString.resize(length);
   HDF5DNAIterator dnaIt(const_cast<HDF5Genome*>(this), start);
-  for (hal_size_t i = 0; i < length; ++i)
-  {
-    outString[i] = dnaIt.getChar();
-    dnaIt.toRight();
-  }
+  dnaIt.readString(outString, length);
 }
 
 void HDF5Genome::setSubString(const string& inString, 
@@ -411,11 +407,7 @@ void HDF5Genome::setSubString(const string& inString,
                                "length from target string in genome");
   }
   HDF5DNAIterator dnaIt(this, start);
-  for (hal_size_t i = 0; i < length; ++i)
-  {
-    dnaIt.setChar(inString[i]);
-    dnaIt.toRight();
-  }
+  dnaIt.writeString(inString, length);
 }
   
 // LOCAL NON-INTERFACE METHODS
@@ -428,7 +420,6 @@ void HDF5Genome::write()
   _metaData->write();
   _sequenceArray.write();
 }
-
 
 void HDF5Genome::read()
 {

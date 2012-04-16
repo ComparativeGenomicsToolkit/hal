@@ -33,5 +33,12 @@ struct TopSegmentSimpleIteratorTest : public AlignmentTest
    std::vector<TopSegmentStruct> _topSegments;
 };
 
+struct TopSegmentSequenceTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   std::vector<TopSegmentStruct> _topSegments;
+   std::vector<std::string> _sequences;
+};
 
 #endif

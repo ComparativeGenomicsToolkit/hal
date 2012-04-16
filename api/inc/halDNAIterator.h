@@ -21,6 +21,9 @@ public:
    /** Get the DNA character at this position */
    virtual hal_dna_t getChar() const = 0;
 
+   /** Get the reverse Complemenet of the DNA character at this position */
+   virtual hal_dna_t getCompChar() const = 0;
+
    /** Set the DNA character at this position 
     * @param c DNA character to set */
    virtual void setChar(hal_dna_t c) = 0;

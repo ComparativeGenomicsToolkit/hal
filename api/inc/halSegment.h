@@ -40,10 +40,6 @@ public:
     * @param startPos Start position */
    virtual void setStartPosition(hal_index_t startPos) = 0;
 
-   /** Get a copy of the string of DNA characters associated with 
-    * this segment */
-   virtual std::string getSequence() const = 0;
-
    /** Get index of the next paralogous segment in the genome */
    virtual hal_index_t getNextParalogyIndex() const = 0;
 

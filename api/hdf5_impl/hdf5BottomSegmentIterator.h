@@ -40,7 +40,7 @@ public:
    hal_offset_t getEndOffset() const;
    hal_size_t getLength() const;
    hal_bool_t getReversed() const;
-   void getSequence(std::string& outSequence);
+   void getString(std::string& outString) const;
 
    //BOTTOM ITERATOR METHODS
    BottomSegmentIteratorPtr copy();

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "hdf5BottomSegmentIterator.h"
 #include "hdf5TopSegmentIterator.h"
+#include "hdf5DNAIterator.h"
 
 using namespace std;
 using namespace H5;
@@ -97,9 +98,11 @@ hal_bool_t HDF5BottomSegmentIterator::getReversed() const
   return _reversed;
 }
 
-void HDF5BottomSegmentIterator::getSequence(std::string& outSequence)
+void HDF5BottomSegmentIterator::getString(std::string& outString) const
 {
-
+  HDF5DNAIterator di(const_cast<HDF5Genome*>(_bottomSegment._genome), 
+                     _bottomSegment._index + _startOffset);
+  di.readString(outString, getLength(), _reversed); 
 }
 
 //BOTTOM ITERATOR METHODS
