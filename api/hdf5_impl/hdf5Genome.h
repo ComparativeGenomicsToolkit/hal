@@ -23,6 +23,7 @@ class HDF5BottomSegmentIterator;
 class HDF5DNAIterator;
 class HDF5SequenceIterator;
 class HDF5Alignment;
+class HDF5Sequence;
 /** 
  * HDF5 implementation of hal::Genome
  */
@@ -119,8 +120,14 @@ public:
    void read();
    void create();
    void resetTreeCache();
+
+protected:
+
+   void readSequences();
    void writeSequences(const std::vector<hal::Sequence::Info>&
                        sequenceDimensions);
+   void deleteSequenceCache();
+
 protected:
 
    HDF5Alignment* _alignment;
@@ -138,6 +145,8 @@ protected:
 
    mutable Genome* _parentCache;
    mutable std::vector<Genome*> _childCache;
+   mutable std::map<hal_size_t, HDF5Sequence*> _sequencePosCache;
+   mutable std::map<std::string, HDF5Sequence*> _sequenceNameCache;
 
    static const std::string dnaArrayName;
    static const std::string topArrayName;

@@ -79,6 +79,8 @@ public:
    // LOCAL NON-INTERFACE METHODS
 
    static H5::CompType dataType(hal_size_t maxNameLength);
+
+   void set(hal_size_t startPosition, const Sequence::Info& sequenceInfo);
    
 protected:
 

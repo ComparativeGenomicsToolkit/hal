@@ -53,6 +53,7 @@ HDF5Genome::HDF5Genome(const string& name,
 HDF5Genome::~HDF5Genome()
 {
   delete _metaData;
+  deleteSequenceCache();
 }
 
 //GENOME INTERFACE
@@ -68,7 +69,7 @@ void HDF5Genome::setDimensions(
   vector<Sequence::UpdateInfo> topDimensions;
   topDimensions.reserve(sequenceDimensions.size());
   vector<Sequence::UpdateInfo> bottomDimensions;
-  bottomDimensions.reserve(bottomDimensions.size());
+  bottomDimensions.reserve(sequenceDimensions.size());
 
   // Compute summary info from the list of sequence Dimensions
   for (vector<Sequence::Info>::const_iterator i = sequenceDimensions.begin();
@@ -355,6 +356,7 @@ void HDF5Genome::write()
   _topArray.write();
   _bottomArray.write();
   _metaData->write();
+  _sequenceArray.write();
 }
 
 
@@ -381,9 +383,58 @@ void HDF5Genome::read()
        HDF5BottomSegment::numChildrenFromDataType(_bottomArray.getDataType());
   }
   catch (H5::Exception){}
+  deleteSequenceCache();
+  try
+  {
+    _group.openDataSet(sequenceArrayName);
+    _sequenceArray.load(&_group, sequenceArrayName);
+    readSequences();
+  }
+  catch (H5::Exception){}
+}
+
+void HDF5Genome::readSequences()
+{return;
+  deleteSequenceCache();
+  hal_size_t numSequences = _sequenceArray.getSize();
+  for (hal_size_t i = 0; i < numSequences; ++i)
+  {
+    HDF5Sequence* seq = new HDF5Sequence(this, &_sequenceArray, i);
+    _sequencePosCache.insert(
+      pair<hal_size_t, HDF5Sequence*>(seq->getStartPosition(), seq));
+    _sequenceNameCache.insert(
+      pair<string, HDF5Sequence*>(seq->getName(), seq));
+
+  }
+}
+
+void HDF5Genome::deleteSequenceCache()
+{return;
+  map<hal_size_t, HDF5Sequence*>::iterator i;
+  for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i)
+  {
+    delete i->second;
+  }
+  _sequencePosCache.clear();
+  _sequenceNameCache.clear(); // I share my pointers with above. 
 }
 
 void HDF5Genome::writeSequences(const vector<Sequence::Info>&
                                 sequenceDimensions)
-{
+{return;
+  deleteSequenceCache();
+  vector<Sequence::Info>::const_iterator i;
+  hal_size_t startPosition = 0;
+  for (i = sequenceDimensions.begin(); i != sequenceDimensions.end(); ++i)
+  {
+    // Copy segment into HDF5 array
+    HDF5Sequence* seq = new HDF5Sequence(this, &_sequenceArray, 
+                                         i - sequenceDimensions.begin());
+    //   seq->set(startPosition, *i);
+    // Keep the object pointer in our caches
+    _sequencePosCache.insert(
+      pair<hal_size_t, HDF5Sequence*>(startPosition, seq));
+    _sequenceNameCache.insert(pair<string, HDF5Sequence*>(i->_name, seq));
+    startPosition += i->_length;
+  }  
 }

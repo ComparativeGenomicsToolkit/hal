@@ -144,4 +144,17 @@ void HDF5Sequence::setSubString(const std::string& intString,
 
 }
 
+// LOCAL
+
+void HDF5Sequence::set(hal_size_t startPosition, 
+                       const Sequence::Info& sequenceInfo)
+{
+  _array->setValue(_index, startOffset, startPosition);
+  _array->setValue(_index, lengthOffset, sequenceInfo._length);
+  _array->setValue(_index, numTopSegmentsOffset, sequenceInfo._numTopSegments);
+  _array->setValue(_index, numBottomSegmentsOffset,
+                   sequenceInfo._numBottomSegments);
+  char* arrayBuffer = _array->getUpdate(_index);
+  strcpy(arrayBuffer, sequenceInfo._name.c_str());
+}
 

@@ -75,6 +75,7 @@ void HDF5ExternalArray::create(H5::CommonFG* file,
   // create the hdf5 array
   _dataSet = _file->createDataSet(_path, _dataType, _dataSpace, cparms);
   _chunkSpace = DataSpace(1, &_bufSize);
+  assert(getSize() == numElements);
 }
 
 // Load an existing dataset into memory
