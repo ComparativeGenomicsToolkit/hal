@@ -24,6 +24,10 @@ HDF5BottomSegmentIterator::HDF5BottomSegmentIterator(HDF5Genome* genome,
   _endOffset(endOffset),
   _reversed(reversed)
 {
+  if (_endOffset == numeric_limits<hal_size_t>::max())
+  {
+    _endOffset = _bottomSegment.getLength() - 1;
+  }
 }
 
 HDF5BottomSegmentIterator::~HDF5BottomSegmentIterator()

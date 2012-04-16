@@ -7,6 +7,7 @@
 #ifndef _HDF5BOTTOMSEGMENTITERATOR_H
 #define _HDF5BOTTOMSEGMENTITERATOR_H
 
+#include <limits>
 #include <H5Cpp.h>
 #include "halBottomSegmentIterator.h"
 #include "hdf5ExternalArray.h"
@@ -25,8 +26,10 @@ class HDF5BottomSegmentIterator : public BottomSegmentIterator
 public:
    
    HDF5BottomSegmentIterator(HDF5Genome* genome, hal_index_t index,
-                          hal_size_t startOffset, hal_size_t endOffset,
-                          hal_bool_t inverted);
+                             hal_size_t startOffset = 0, 
+                             hal_size_t endOffset = 
+                             std::numeric_limits<hal_size_t>::max(),
+                             hal_bool_t inverted = false);
    ~HDF5BottomSegmentIterator();
    
    // ITERATOR METHODS

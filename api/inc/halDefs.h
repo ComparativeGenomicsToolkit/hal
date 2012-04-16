@@ -26,11 +26,6 @@ typedef int64_t hal_index_t;
 extern const hal_index_t NULL_INDEX;
 
 /**
- * NULL index value
- */
-#define hal_null_idx -1
-
-/**
  * An index in a segment (top or bottom) array
  */
 typedef int64_t hal_offset_t;

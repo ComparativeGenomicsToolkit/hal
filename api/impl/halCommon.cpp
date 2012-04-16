@@ -10,7 +10,7 @@
 using namespace std;
 using namespace hal;
 
-const hal_index_t NULL_INDEX = (hal_index_t)-1;
+const hal_index_t hal::NULL_INDEX = static_cast<hal_index_t>(-1);
 
 /** C++ version of strtok */
 vector<string> chopString(const string& inString,

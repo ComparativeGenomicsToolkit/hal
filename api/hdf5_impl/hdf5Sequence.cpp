@@ -98,6 +98,7 @@ hal_size_t HDF5Sequence::getNumBottomSegments() const
 TopSegmentIteratorPtr HDF5Sequence::getTopSegmentIterator(
   hal_index_t position)
 {
+  
   return TopSegmentIteratorPtr();
 }
 
