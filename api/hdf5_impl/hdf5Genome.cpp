@@ -12,6 +12,7 @@
 #include "hdf5BottomSegment.h"
 #include "hdf5Sequence.h"
 #include "hdf5SequenceIterator.h"
+#include "hdf5DNAIterator.h"
 
 using namespace hal;
 using namespace std;
@@ -184,12 +185,23 @@ hal_size_t HDF5Genome::getNumSequences() const
    
 Sequence* HDF5Genome::getSequence(const string& name)
 {
-  return NULL;
+  map<string, HDF5Sequence*>::iterator mapIt = _sequenceNameCache.find(name);
+  if (mapIt == _sequenceNameCache.end())
+  {
+    throw hal_exception(name + ":  sequence not in genome");
+  }
+  return mapIt->second;
 }
 
 const Sequence* HDF5Genome::getSequence(const string& name) const
 {
-  return NULL;
+  map<string, HDF5Sequence*>::const_iterator mapIt = 
+     _sequenceNameCache.find(name);
+  if (mapIt == _sequenceNameCache.end())
+  {
+    throw hal_exception(name + ":  sequence not in genome");
+  }
+  return mapIt->second;
 }
 
 Sequence* HDF5Genome::getSequenceBySite(hal_index_t position)
@@ -328,24 +340,41 @@ BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
    
 void HDF5Genome::getString(string& outString) const
 {
-
+  getSubString(outString, 0, getSequenceLength());
 }
 
 void HDF5Genome::setString(const string& inString)
 {
-
+  setSubString(inString, 0, getSequenceLength());
 }
 
 void HDF5Genome::getSubString(string& outString, hal_size_t start,
                               hal_size_t length) const
 {
-
+  outString.resize(length);
+  HDF5DNAIterator dnaIt(const_cast<HDF5Genome*>(this), start);
+  for (hal_size_t i = 0; i < length; ++i)
+  {
+    outString[i] = dnaIt.getChar();
+    dnaIt.toRight();
+  }
 }
 
-void HDF5Genome::setSubString(const string& intString, 
+void HDF5Genome::setSubString(const string& inString, 
                               hal_size_t start,
                               hal_size_t length)
 {
+  if (length != inString.length())
+  {
+    throw hal_exception(string("setString: input string has differnt") +
+                               "length from target string in genome");
+  }
+  HDF5DNAIterator dnaIt(this, start);
+  for (hal_size_t i = 0; i < length; ++i)
+  {
+    dnaIt.setChar(inString[i]);
+    dnaIt.toRight();
+  }
 }
   
 // LOCAL NON-INTERFACE METHODS
@@ -394,7 +423,7 @@ void HDF5Genome::read()
 }
 
 void HDF5Genome::readSequences()
-{return;
+{
   deleteSequenceCache();
   hal_size_t numSequences = _sequenceArray.getSize();
   for (hal_size_t i = 0; i < numSequences; ++i)
@@ -409,7 +438,7 @@ void HDF5Genome::readSequences()
 }
 
 void HDF5Genome::deleteSequenceCache()
-{return;
+{
   map<hal_size_t, HDF5Sequence*>::iterator i;
   for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i)
   {
@@ -421,7 +450,7 @@ void HDF5Genome::deleteSequenceCache()
 
 void HDF5Genome::writeSequences(const vector<Sequence::Info>&
                                 sequenceDimensions)
-{return;
+{
   deleteSequenceCache();
   vector<Sequence::Info>::const_iterator i;
   hal_size_t startPosition = 0;

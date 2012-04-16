@@ -23,14 +23,14 @@ public:
    HDF5DNAIterator(HDF5Genome* genome, hal_index_t index);
    ~HDF5DNAIterator();
    
-   virtual hal_dna_t getChar() const = 0;
-   virtual void setChar(hal_dna_t c) = 0;
-   virtual void toLeft() const = 0;
-   virtual void toRight() const = 0;
-   virtual void jumpTo(hal_size_t index) const = 0;
-   virtual const Genome* getGenome() const = 0;
-   virtual Genome* getGenome() = 0;
-   virtual hal_index_t getArrayIndex() const = 0;
+   hal_dna_t getChar() const;
+   void setChar(hal_dna_t c);
+   void toLeft() const;
+   void toRight() const;
+   void jumpTo(hal_size_t index) const;
+   const Genome* getGenome() const;
+   Genome* getGenome();
+   hal_index_t getArrayIndex() const;
 
 protected:
    mutable hal_index_t _index;

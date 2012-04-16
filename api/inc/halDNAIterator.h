@@ -52,5 +52,6 @@ protected:
    virtual ~DNAIterator() = 0;
 };
 
+inline DNAIterator::~DNAIterator() {}
 }
 #endif
