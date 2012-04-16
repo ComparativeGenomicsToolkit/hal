@@ -459,7 +459,7 @@ void HDF5Genome::writeSequences(const vector<Sequence::Info>&
     // Copy segment into HDF5 array
     HDF5Sequence* seq = new HDF5Sequence(this, &_sequenceArray, 
                                          i - sequenceDimensions.begin());
-    //   seq->set(startPosition, *i);
+    seq->set(startPosition, *i);
     // Keep the object pointer in our caches
     _sequencePosCache.insert(
       pair<hal_size_t, HDF5Sequence*>(startPosition, seq));
