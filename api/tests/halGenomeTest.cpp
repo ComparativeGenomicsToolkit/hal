@@ -5,8 +5,6 @@
  */
 #include <string>
 #include <iostream>
-#include <H5Cpp.h>
-#include <H5Exception.h>
 #include "halGenomeTest.h"
 #include "halAlignmentTest.h"
 #include "halAlignmentInstanceTest.h"
@@ -133,9 +131,8 @@ void halGenomeCreateTest(CuTest *testCase)
     GenomeCreateTest tester;
     tester.check(testCase);
   }
-  catch (H5::Exception& e) 
+  catch (...) 
   {
-    cerr << e.getDetailMsg() << " " << endl;
     CuAssertTrue(testCase, false);
   }
 }
@@ -147,9 +144,8 @@ void halGenomeUpdateTest(CuTest *testCase)
     GenomeUpdateTest tester;
     tester.check(testCase);
   }
-  catch (H5::Exception& e) 
+  catch (...) 
   {
-    cerr << e.getDetailMsg() << " " << endl;
     CuAssertTrue(testCase, false);
   }
 }

@@ -7,7 +7,6 @@
 #ifndef _HDF5TOPSEGMENTITERATOR_H
 #define _HDF5TOPSEGMENTITERATOR_H
 
-#include <limits>
 #include <H5Cpp.h>
 #include "halTopSegmentIterator.h"
 #include "hdf5ExternalArray.h"
@@ -24,9 +23,8 @@ class HDF5TopSegmentIterator : public TopSegmentIterator
 public:
    
    HDF5TopSegmentIterator(HDF5Genome* genome, hal_index_t index,
-                          hal_size_t startOffset = 0, 
-                          hal_size_t endOffset = 
-                          std::numeric_limits<hal_size_t>::max(),
+                          hal_offset_t startOffset = 0, 
+                          hal_offset_t endOffset = 0,
                           hal_bool_t inverted = false);
    ~HDF5TopSegmentIterator();
    

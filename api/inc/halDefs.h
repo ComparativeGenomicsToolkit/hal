@@ -12,7 +12,6 @@
 #include <stdexcept>
 #include "counted_ptr.h"
 
-namespace hal {
 
 /** 
  *  Keep simple compiler-related definitions in this file. 
@@ -23,7 +22,6 @@ namespace hal {
  * number of bases in the largest genome in the file)
  */
 typedef int64_t hal_index_t;
-extern const hal_index_t NULL_INDEX;
 
 /**
  * An index in a segment (top or bottom) array
@@ -49,6 +47,10 @@ typedef bool hal_bool_t;
  * General usage exception class, used for all critical errors. 
  */
 typedef std::runtime_error hal_exception;
+
+namespace hal {
+
+extern const hal_index_t NULL_INDEX;
 
 /**
  * Smart pointer type.  Should be official one like boost::shared_ptr

@@ -16,18 +16,15 @@ using namespace hal;
 
 HDF5TopSegmentIterator::HDF5TopSegmentIterator(HDF5Genome* genome, 
                                                hal_index_t index,
-                                               hal_size_t startOffset, 
-                                               hal_size_t endOffset,
+                                               hal_offset_t startOffset, 
+                                               hal_offset_t endOffset,
                                                hal_bool_t reversed) :
   _topSegment(genome, &genome->_topArray, index),
   _startOffset(startOffset),
   _endOffset(endOffset),
   _reversed(reversed)
 {
-  if (_endOffset == numeric_limits<hal_size_t>::max())
-  {
-    _endOffset = _topSegment.getLength() - 1;
-  }
+
 }
 
 HDF5TopSegmentIterator::~HDF5TopSegmentIterator()
@@ -42,26 +39,28 @@ void HDF5TopSegmentIterator::toLeft() const
   {
     assert(_topSegment._index > 0);
     --_topSegment._index;
+    _endOffset = 0;
   }
   else
   {
-    _endOffset = _startOffset - 1;
+    _endOffset = _topSegment.getLength() - _startOffset - 1;
     _startOffset = 0;
   }
 }
 
 void HDF5TopSegmentIterator::toRight() const
 {
-  if (_endOffset < static_cast<hal_offset_t>(_topSegment.getLength()) - 1)
+  if (_endOffset == 0)
   {
     assert(_topSegment._index < 
-           static_cast<hal_index_t>(_topSegment._genome->_topArray.getSize() - 1));
-    --_topSegment._index;
+           static_cast<hal_index_t>(_topSegment._genome->_topArray.getSize()));
+    ++_topSegment._index;
+    _startOffset = 0;
   }
   else
   {
-    _startOffset = _endOffset + 1;
-    _endOffset = _topSegment.getLength() - 1;
+    _startOffset =  _topSegment.getLength() - _endOffset - 1;
+    _endOffset = 0;
   }
 }
 
@@ -88,7 +87,7 @@ hal_offset_t HDF5TopSegmentIterator::getEndOffset() const
 
 hal_size_t HDF5TopSegmentIterator::getLength() const
 {
-  return _endOffset - _startOffset + 1;
+  return _topSegment.getLength() - _endOffset - _startOffset;
 }
 
 hal_bool_t HDF5TopSegmentIterator::getReversed() const

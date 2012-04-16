@@ -28,7 +28,7 @@ HDF5TopSegment::HDF5TopSegment(HDF5Genome* genome,
   _index(index),
   _genome(genome)
 {
-  
+  assert(_index >= 0);
 }
 
 HDF5TopSegment::~HDF5TopSegment()
