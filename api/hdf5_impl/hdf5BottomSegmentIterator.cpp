@@ -25,10 +25,7 @@ HDF5BottomSegmentIterator::HDF5BottomSegmentIterator(HDF5Genome* genome,
   _endOffset(endOffset),
   _reversed(reversed)
 {
-  if (_endOffset == numeric_limits<hal_size_t>::max())
-  {
-    _endOffset = _bottomSegment.getLength() - 1;
-  }
+ 
 }
 
 HDF5BottomSegmentIterator::~HDF5BottomSegmentIterator()
@@ -39,36 +36,42 @@ HDF5BottomSegmentIterator::~HDF5BottomSegmentIterator()
 
 void HDF5BottomSegmentIterator::toLeft() const
 {
-  if (_startOffset == 0)
+   if (_startOffset == 0)
   {
-    assert(_bottomSegment._index > 0);
     --_bottomSegment._index;
+    _endOffset = 0;
   }
   else
   {
-    _endOffset = _startOffset - 1;
+    _endOffset = _bottomSegment.getLength() - _startOffset - 1;
     _startOffset = 0;
   }
 }
 
 void HDF5BottomSegmentIterator::toRight() const
 {
-  if (_endOffset < static_cast<hal_offset_t>(_bottomSegment.getLength()) - 1)
+   if (_endOffset == 0)
   {
-    assert(_bottomSegment._index < 
-           static_cast<hal_index_t>(
-             _bottomSegment._genome->_bottomArray.getSize() - 1));
-    --_bottomSegment._index;
+    ++_bottomSegment._index;
+    _startOffset = 0;
   }
   else
   {
-    _startOffset = _endOffset + 1;
-    _endOffset = _bottomSegment.getLength() - 1;
+    _startOffset =  _bottomSegment.getLength() - _endOffset - 1;
+    _endOffset = 0;
   }
+}
+
+void HDF5BottomSegmentIterator::toReverse() const
+{
+  assert (inRange() == true);
+  _reversed = !_reversed;
+  swap(_startOffset, _endOffset);
 }
 
 void HDF5BottomSegmentIterator::toNextParalogy() const
 {
+  assert (inRange() == true);
   assert(_bottomSegment.getNextParalogyIndex() != NULL_INDEX);
   _bottomSegment._index = _bottomSegment.getNextParalogyIndex();
 /*  if(_bottomSegment.getGetParalogyReversed() == true)
@@ -80,28 +83,33 @@ void HDF5BottomSegmentIterator::toNextParalogy() const
 
 hal_offset_t HDF5BottomSegmentIterator::getStartOffset() const
 {
+  assert (inRange() == true);
   return _startOffset;
 }
 
 hal_offset_t HDF5BottomSegmentIterator::getEndOffset() const
 {
+  assert (inRange() == true);
   return _endOffset;
 }
 
 hal_size_t HDF5BottomSegmentIterator::getLength() const
 {
-  return _endOffset - _startOffset + 1;
+  assert (inRange() == true);
+  return _bottomSegment.getLength() - _endOffset - _startOffset;
 }
 
 hal_bool_t HDF5BottomSegmentIterator::getReversed() const
 {
+  assert (inRange() == true);
   return _reversed;
 }
 
 void HDF5BottomSegmentIterator::getString(std::string& outString) const
 {
+  assert (inRange() == true);
   HDF5DNAIterator di(const_cast<HDF5Genome*>(_bottomSegment._genome), 
-                     _bottomSegment._index + _startOffset);
+                     _bottomSegment.getStartPosition() + _startOffset);
   di.readString(outString, getLength(), _reversed); 
 }
 
@@ -110,6 +118,7 @@ void HDF5BottomSegmentIterator::getString(std::string& outString) const
 
 void HDF5BottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
 {
+  assert (inRange() == true);
   const HDF5TopSegmentIterator* h5ts = 
      reinterpret_cast<const HDF5TopSegmentIterator*>(ts.get());
   _bottomSegment._genome = static_cast<HDF5Genome*>(
@@ -124,6 +133,7 @@ void HDF5BottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
 void 
 HDF5BottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
 {
+  assert (inRange() == true);
   const HDF5TopSegmentIterator* h5ts = 
      reinterpret_cast<const HDF5TopSegmentIterator*>(ts.get());
   _bottomSegment._genome = h5ts->_topSegment._genome;
@@ -137,6 +147,7 @@ HDF5BottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
 
 BottomSegmentIteratorPtr HDF5BottomSegmentIterator::copy()
 {
+  assert (inRange() == true);
   HDF5BottomSegmentIterator* newIt = 
      new HDF5BottomSegmentIterator(_bottomSegment._genome, 
                                 _bottomSegment._index,
@@ -148,6 +159,7 @@ BottomSegmentIteratorPtr HDF5BottomSegmentIterator::copy()
 
 BottomSegmentIteratorConstPtr HDF5BottomSegmentIterator::copy() const
 {
+  assert (inRange() == true);
   const HDF5BottomSegmentIterator* newIt = 
      new HDF5BottomSegmentIterator(_bottomSegment._genome, 
                                 _bottomSegment._index,
@@ -159,10 +171,12 @@ BottomSegmentIteratorConstPtr HDF5BottomSegmentIterator::copy() const
 
 BottomSegment* HDF5BottomSegmentIterator::getBottomSegment()
 {
+  assert (inRange() == true);
   return &_bottomSegment;
 }
 
 const BottomSegment* HDF5BottomSegmentIterator::getBottomSegment() const
 {
+  assert (inRange() == true);
   return &_bottomSegment;
 }

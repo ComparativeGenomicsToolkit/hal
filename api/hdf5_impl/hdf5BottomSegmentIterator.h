@@ -27,14 +27,14 @@ public:
    
    HDF5BottomSegmentIterator(HDF5Genome* genome, hal_index_t index,
                              hal_size_t startOffset = 0, 
-                             hal_size_t endOffset = 
-                             std::numeric_limits<hal_size_t>::max(),
+                             hal_size_t endOffset = 0,
                              hal_bool_t inverted = false);
    ~HDF5BottomSegmentIterator();
    
    // ITERATOR METHODS
    void toLeft() const;
    void toRight() const;
+   void toReverse() const;
    void toNextParalogy() const;
    hal_offset_t getStartOffset() const;
    hal_offset_t getEndOffset() const;
@@ -50,12 +50,20 @@ public:
    BottomSegment* getBottomSegment();
    const BottomSegment* getBottomSegment() const;
 
+   bool inRange() const;
+
 protected:
    HDF5BottomSegment _bottomSegment;
    mutable hal_offset_t _startOffset;
    mutable hal_offset_t _endOffset;
    mutable hal_bool_t _reversed;
 };
+
+inline bool HDF5BottomSegmentIterator::inRange() const
+{
+  return _bottomSegment._index >= 0 && _bottomSegment._index < 
+     (hal_index_t)_bottomSegment._genome->_bottomArray.getSize();
+}
 
 }
 #endif

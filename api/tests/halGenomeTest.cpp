@@ -122,7 +122,7 @@ void GenomeStringTest::createCallBack(AlignmentPtr alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
-  hal_size_t seqLength = 78889943;
+  hal_size_t seqLength = 28889943;
   Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
   vector<Sequence::Info> seqVec(1);
   seqVec[0] = Sequence::Info("Sequence", seqLength, 5000, 700000);

@@ -62,6 +62,13 @@ void HDF5TopSegmentIterator::toRight() const
   }
 }
 
+void HDF5TopSegmentIterator::toReverse() const
+{
+  assert (inRange() == true);
+  _reversed = !_reversed;
+  swap(_startOffset, _endOffset);
+}
+
 void HDF5TopSegmentIterator::toNextParalogy() const
 {
   assert(_topSegment.getNextParalogyIndex() != NULL_INDEX);
@@ -101,7 +108,7 @@ void HDF5TopSegmentIterator::getString(std::string& outString) const
 {
   assert (inRange() == true);
   HDF5DNAIterator di(const_cast<HDF5Genome*>(_topSegment._genome), 
-                     _topSegment._index + _startOffset);
+                     _topSegment.getStartPosition() + _startOffset);
   di.readString(outString, getLength(), _reversed); 
 }
 

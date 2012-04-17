@@ -23,6 +23,7 @@ public:
 
    virtual void toLeft() const = 0;
    virtual void toRight() const = 0;
+   virtual void toReverse() const = 0;
    virtual void toNextParalogy() const = 0;
    virtual hal_offset_t getStartOffset() const = 0;
    virtual hal_offset_t getEndOffset() const = 0;

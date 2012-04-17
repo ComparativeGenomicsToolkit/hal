@@ -13,6 +13,7 @@ int halRunAllTests(void) {
   CuSuiteAddSuite(suite, halMetaDataTestSuite());
   CuSuiteAddSuite(suite, halGenomeTestSuite());
   CuSuiteAddSuite(suite, halTopSegmentTestSuite());
+  CuSuiteAddSuite(suite, halBottomSegmentTestSuite());
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);
   CuSuiteDetails(suite, output);

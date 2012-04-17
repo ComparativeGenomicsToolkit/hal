@@ -31,6 +31,7 @@ public:
    // ITERATOR METHODS
    void toLeft() const;
    void toRight() const;
+   void toReverse() const;
    void toNextParalogy() const;
    hal_offset_t getStartOffset() const;
    hal_offset_t getEndOffset() const;

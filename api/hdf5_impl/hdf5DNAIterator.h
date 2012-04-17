@@ -120,7 +120,7 @@ inline void HDF5DNAIterator::readString(std::string& outString,
   }
   else
   {
-    for (hal_size_t i = length - 1; i >= 0; --i)
+    for (hal_index_t i = length - 1; i >= 0; --i)
     {
       outString[i] = getCompChar();
       toRight();
@@ -143,7 +143,7 @@ inline void HDF5DNAIterator::writeString(const std::string& inString,
   }
   else
   {
-    for (hal_size_t i = length - 1; i >= 0; --i)
+    for (hal_index_t i = length - 1; i >= 0; --i)
     {
       setChar(reverseComplement(inString[i]));
       toRight();
