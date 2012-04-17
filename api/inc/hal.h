@@ -18,7 +18,11 @@
  * created with the XXXXAlignmentInstance() functions (where XXXX is
  * the implementation).  The HAL API is designed so that the user never
  * explicitly allocates or frees any memory associated with it (doing
- * so should in theory be prevented at compile-time). 
+ * so should in theory be prevented at compile-time).  
+ *
+ * \section using_sec Using
+ *
+ * include hal/lib/hal.h and link to hal/lib/halLib.a
  *
  * \section hdf5_sec HDF5 Implementation
  *

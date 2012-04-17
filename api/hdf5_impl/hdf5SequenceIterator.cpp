@@ -42,25 +42,25 @@ SequenceIteratorConstPtr HDF5SequenceIterator::copy() const
 
 void HDF5SequenceIterator:: toNext() const
 {
-  assert(_sequence._index < 
-           static_cast<hal_index_t>(
-             _sequence._genome->_sequenceArray.getSize() - 1));
   ++_sequence._index;
 }
 
 void HDF5SequenceIterator::toPrev() const
 {
-  assert(_sequence._index > 0);
   --_sequence._index;
 }
 
 Sequence* HDF5SequenceIterator::getSequence()
 {
+  assert(_sequence._index >= 0 && _sequence._index < 
+         (hal_index_t)_sequence._genome->_sequenceArray.getSize()); 
   return &_sequence;
 }
 
 const Sequence* HDF5SequenceIterator::getSequence() const
 {
+  assert(_sequence._index >= 0 && _sequence._index < 
+         (hal_index_t)_sequence._genome->_sequenceArray.getSize());
   return &_sequence;
 }
 

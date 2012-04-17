@@ -208,11 +208,11 @@ const Sequence* HDF5Genome::getSequence(const string& name) const
 
 Sequence* HDF5Genome::getSequenceBySite(hal_size_t position)
 {
-  map<hal_size_t, HDF5Sequence*>::iterator i = 
-     _sequencePosCache.lower_bound(position);
+  map<hal_size_t, HDF5Sequence*>::iterator i;
+  i = _sequencePosCache.upper_bound(position);
   if (i != _sequencePosCache.end())
   {
-    if (position < i->first + i->second->getSequenceLength())
+    if (position >= i->second->getStartPosition())
     {
       return i->second;
     }
@@ -222,12 +222,11 @@ Sequence* HDF5Genome::getSequenceBySite(hal_size_t position)
 
 const Sequence* HDF5Genome::getSequenceBySite(hal_size_t position) const
 {
-  map<hal_size_t, HDF5Sequence*>::const_iterator i =
-     _sequencePosCache.lower_bound(position);
+  map<hal_size_t, HDF5Sequence*>::const_iterator i;
+  i = _sequencePosCache.upper_bound(position);
   if (i != _sequencePosCache.end())
   {
-    if (static_cast<hal_size_t>(position) < 
-        i->first + i->second->getSequenceLength())
+    if (position >= i->second->getStartPosition())
     {
       return i->second;
     }
@@ -462,7 +461,8 @@ void HDF5Genome::readSequences()
   {
     HDF5Sequence* seq = new HDF5Sequence(this, &_sequenceArray, i);
     _sequencePosCache.insert(
-      pair<hal_size_t, HDF5Sequence*>(seq->getStartPosition(), seq));
+      pair<hal_size_t, HDF5Sequence*>(seq->getStartPosition() +
+                                      seq->getSequenceLength(), seq));
     _sequenceNameCache.insert(
       pair<string, HDF5Sequence*>(seq->getName(), seq));
 
@@ -494,7 +494,7 @@ void HDF5Genome::writeSequences(const vector<Sequence::Info>&
     seq->set(startPosition, *i);
     // Keep the object pointer in our caches
     _sequencePosCache.insert(
-      pair<hal_size_t, HDF5Sequence*>(startPosition, seq));
+      pair<hal_size_t, HDF5Sequence*>(startPosition + i->_length, seq));
     _sequenceNameCache.insert(pair<string, HDF5Sequence*>(i->_name, seq));
     startPosition += i->_length;
   }  

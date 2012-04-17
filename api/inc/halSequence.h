@@ -55,6 +55,9 @@ public:
       hal_size_t _numSegments;
    };
 
+   /** Return a copy of the sequence's name */
+   virtual std::string getName() const = 0;
+
    /** Get the containing (read-only) genome */
    virtual const Genome* getGenome() const = 0;
 
