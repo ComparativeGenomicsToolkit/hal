@@ -55,11 +55,11 @@ public:
    virtual void removeGenome(const std::string& name) = 0;
 
    /** Open an existing genome for reading and updating
-    * @name Name of genome to open */
+    * @param name Name of genome to open */
    virtual const Genome* openConstGenome(const std::string& name) const = 0;
 
    /** Open an exsting genome for reading
-    * @name Name of genome to open */
+    * @param name Name of genome to open */
    virtual Genome* openGenome(const std::string& name) = 0;
 
    /** Get name of root genome (empty string for empty alignment) */

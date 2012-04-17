@@ -61,10 +61,10 @@ public:
    virtual const Sequence* getSequence(const std::string& name) const = 0;
 
    /** Get a sequence by base's position (in genome coordinates) */
-   virtual Sequence* getSequenceBySite(hal_index_t position) = 0;
+   virtual Sequence* getSequenceBySite(hal_size_t position) = 0;
 
    /** Get a sequence by base's position (in genome coordinates) */
-   virtual const Sequence* getSequenceBySite(hal_index_t position) const = 0;
+   virtual const Sequence* getSequenceBySite(hal_size_t position) const = 0;
    
    /** Get a sequence iterator 
     * @param position Number of the sequence to start iterator at */

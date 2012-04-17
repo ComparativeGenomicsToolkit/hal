@@ -61,8 +61,8 @@ public:
 
    const Sequence* getSequence(const std::string& name) const;
 
-   Sequence* getSequenceBySite(hal_index_t position);
-   const Sequence* getSequenceBySite(hal_index_t position) const;
+   Sequence* getSequenceBySite(hal_size_t position);
+   const Sequence* getSequenceBySite(hal_size_t position) const;
    
    SequenceIteratorPtr getSequenceIterator(
      hal_index_t position);

@@ -58,7 +58,7 @@ void BottomSegmentStruct::compareTo(BottomSegmentIteratorConstPtr it,
   CuAssertTrue(testCase, _topParseIndex == seg->getTopParseIndex());
   CuAssertTrue(testCase, _topParseOffset == seg->getTopParseOffset());
   CuAssertTrue(testCase, _children.size() == seg->getNumChildren());
-  for (hal_size_t i = i = 0; i < _children.size(); ++i)
+  for (hal_size_t i = 0; i < _children.size(); ++i)
   {
     CuAssertTrue(testCase, _children[i].first == seg->getChildIndex(i));
     CuAssertTrue(testCase, _children[i].second == seg->getChildReversed(i));
@@ -92,7 +92,8 @@ void BottomSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
   BottomSegmentIteratorPtr tsIt = ancGenome->getBottomSegmentIterator(0);
   for (size_t i = 0; i < ancGenome->getNumBottomSegments(); ++i)
   {
-    CuAssertTrue(_testCase, tsIt->getBottomSegment()->getArrayIndex() == i);
+    CuAssertTrue(_testCase, 
+                 (size_t)tsIt->getBottomSegment()->getArrayIndex() == i);
     CuAssertTrue(_testCase, tsIt->getBottomSegment()->getNumChildren() == 
                  numChildren);
     CuAssertTrue(_testCase, _bottomSegments[i]._children.size() == numChildren);
@@ -109,7 +110,8 @@ void BottomSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
   BottomSegmentIteratorConstPtr tsIt = ancGenome->getBottomSegmentIterator(0);
   for (size_t i = 0; i < ancGenome->getNumBottomSegments(); ++i)
   {
-    CuAssertTrue(_testCase, tsIt->getBottomSegment()->getArrayIndex() == i);
+    CuAssertTrue(_testCase, 
+                 (size_t)tsIt->getBottomSegment()->getArrayIndex() == i);
     _bottomSegments[i].compareTo(tsIt, _testCase);
     tsIt->toRight();
   }

@@ -13,13 +13,13 @@
 #include "allTests.h"
 
 struct TopSegmentStruct {
-   hal_index_t _length;
+   hal_size_t _length;
    hal_index_t _startPosition;
    hal_index_t _nextParalogyIndex;
    hal_index_t _parentIndex;
    hal_index_t _arrayIndex;
    hal_index_t _bottomParseIndex;
-   hal_index_t _bottomParseOffset;
+   hal_offset_t _bottomParseOffset;
    void setRandom();
    void applyTo(hal::TopSegmentIteratorPtr it) const;
    void compareTo(hal::TopSegmentIteratorConstPtr it,

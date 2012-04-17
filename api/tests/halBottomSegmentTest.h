@@ -13,13 +13,13 @@
 #include "allTests.h"
 
 struct BottomSegmentStruct {
-   hal_index_t _length;
+   hal_size_t _length;
    hal_index_t _startPosition;
    hal_index_t _nextParalogyIndex;
    std::vector<std::pair<hal_index_t, hal_bool_t> >_children;
    hal_index_t _arrayIndex;
    hal_index_t _topParseIndex;
-   hal_index_t _topParseOffset;
+   hal_offset_t _topParseOffset;
    void setRandom(hal_size_t numChildren);
    void applyTo(hal::BottomSegmentIteratorPtr it) const;
    void compareTo(hal::BottomSegmentIteratorConstPtr it,

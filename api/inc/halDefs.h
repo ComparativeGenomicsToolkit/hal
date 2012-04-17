@@ -26,7 +26,7 @@ typedef int64_t hal_index_t;
 /**
  * An index in a segment (top or bottom) array
  */
-typedef int64_t hal_offset_t;
+typedef uint64_t hal_offset_t;
 
 /**
  * Size type
