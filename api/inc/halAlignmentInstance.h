@@ -10,6 +10,7 @@
 #include "halDefs.h"
 #include "halAlignment.h"
 
+
 // we don't include hdf5 from our interface headers.  
 namespace H5 {
 class FileCreatPropList;
@@ -17,6 +18,7 @@ class FileAccPropList;
 class DSetCreatPropList;
 }
 
+/** HAL API namespace */
 namespace hal {
 
 /** Get an instance of an HDF5-implemented Alignment with 
