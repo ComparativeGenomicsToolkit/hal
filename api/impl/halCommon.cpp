@@ -3,9 +3,9 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-
+#include <sstream>
 #include "halDefs.h"
-#include "halCommon.h"
+#include "hal.h"
 
 using namespace std;
 using namespace hal;
@@ -29,3 +29,6 @@ vector<string> chopString(const string& inString,
   
   return outVector;
 }
+
+
+

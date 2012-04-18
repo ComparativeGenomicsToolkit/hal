@@ -182,7 +182,7 @@ void HDF5Alignment::removeGenome(const string& name)
   
 }
 
-const Genome* HDF5Alignment::openConstGenome(const string& name) const
+const Genome* HDF5Alignment::openGenome(const string& name) const
 {
   map<string, HDF5Genome*>::iterator mapit = _openGenomes.find(name);
   if (mapit != _openGenomes.end())

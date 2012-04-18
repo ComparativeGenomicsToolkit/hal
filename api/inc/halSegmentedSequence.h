@@ -39,22 +39,32 @@ public:
    /** Get a top segment iterator
     * @param position Index in segment array of returned iterator */
    virtual TopSegmentIteratorPtr getTopSegmentIterator(
-     hal_index_t position) = 0;
+     hal_index_t position = 0) = 0;
 
    /** Get a const top segment iterator
     * @param position Index in segment array of returned iterator */
    virtual TopSegmentIteratorConstPtr getTopSegmentIterator(
-     hal_index_t position) const = 0;
+     hal_index_t position = 0) const = 0;
 
    /** Get a bottom segment iterator
     * @param position Index in segment array of returned iterator */
    virtual BottomSegmentIteratorPtr getBottomSegmentIterator(
-     hal_index_t position) = 0;
+     hal_index_t position = 0) = 0;
 
    /** Get a const bottom segment iterator
     * @param position Index in segment array of returned iterator */
    virtual BottomSegmentIteratorConstPtr getBottomSegmentIterator(
-     hal_index_t position) const = 0;
+     hal_index_t position = 0) const = 0;
+
+   /** Get a DNA iterator
+    * @param position Index in segment array of returned iterator */
+   virtual DNAIteratorPtr getDNAIterator(
+     hal_index_t position = 0) = 0;
+
+   /** Get a const DNA iterator
+    * @param position Index in segment array of returned iterator */
+   virtual DNAIteratorConstPtr getDNAIterator(
+     hal_index_t position = 0) const = 0;
 
    /** Get the character string underlying the segmented sequence
     * @param outString String object into which we copy the result */
@@ -79,6 +89,7 @@ public:
    virtual void setSubString(const std::string& inString, 
                              hal_size_t start,
                              hal_size_t length) = 0;
+
 
 protected:
 

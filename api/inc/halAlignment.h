@@ -56,7 +56,7 @@ public:
 
    /** Open an existing genome for reading and updating
     * @param name Name of genome to open */
-   virtual const Genome* openConstGenome(const std::string& name) const = 0;
+   virtual const Genome* openGenome(const std::string& name) const = 0;
 
    /** Open an exsting genome for reading
     * @param name Name of genome to open */

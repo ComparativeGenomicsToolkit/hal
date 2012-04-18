@@ -42,7 +42,7 @@ public:
 
    void removeGenome(const std::string& name);
 
-   const Genome* openConstGenome(const std::string& name) const;
+   const Genome* openGenome(const std::string& name) const;
 
    Genome* openGenome(const std::string& name);
 

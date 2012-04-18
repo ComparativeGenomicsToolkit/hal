@@ -267,8 +267,11 @@ Genome* HDF5Genome::getParent()
 {
   if (_parentCache == NULL)
   {
-    _parentCache = _alignment->openGenome(
-      _alignment->getParentName(_name));
+    string name = _alignment->getParentName(name);
+    if (name.empty() == false)
+    {
+      _parentCache = _alignment->openGenome(name);
+    }
   }
   return _parentCache;
 }
@@ -277,8 +280,11 @@ const Genome* HDF5Genome::getParent() const
 {
   if (_parentCache == NULL)
   {
-    _parentCache = _alignment->openGenome(
-      _alignment->getParentName(_name));
+    string name = _alignment->getParentName(name);
+    if (name.empty() == false)
+    {
+      _parentCache = _alignment->openGenome(name);
+    }
   }
   return _parentCache;
 }
@@ -378,6 +384,21 @@ BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
   return BottomSegmentIteratorConstPtr(newIt);
 }
    
+DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position)
+{
+  assert(position < (hal_index_t)_sequenceArray.getSize());
+  HDF5DNAIterator* newIt = new HDF5DNAIterator(this, position);
+  return DNAIteratorPtr(newIt);
+}
+
+DNAIteratorConstPtr HDF5Genome::getDNAIterator(hal_index_t position) const
+{
+  assert(position < (hal_index_t)_sequenceArray.getSize());
+  HDF5Genome* genome = const_cast<HDF5Genome*>(this);
+  const HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, position);
+  return DNAIteratorConstPtr(newIt);
+}
+
 void HDF5Genome::getString(string& outString) const
 {
   getSubString(outString, 0, getSequenceLength());

@@ -64,6 +64,10 @@ public:
    BottomSegmentIteratorConstPtr getBottomSegmentIterator(
      hal_index_t position) const;
 
+   DNAIteratorPtr getDNAIterator(hal_index_t position);
+
+   DNAIteratorConstPtr getDNAIterator(hal_index_t position) const;
+
    void getString(std::string& outString) const;
 
    void setString(const std::string& inString);

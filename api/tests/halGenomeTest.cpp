@@ -32,7 +32,7 @@ void GenomeMetaTest::createCallBack(AlignmentPtr alignment)
 
 void GenomeMetaTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
+  const Genome* ancGenome = alignment->openGenome("AncGenome");
   const MetaData* ancMeta = ancGenome->getMetaData();
   CuAssertTrue(_testCase, ancMeta->get("Young") == "Jeezy");
   CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 0);
@@ -68,12 +68,12 @@ void GenomeCreateTest::createCallBack(AlignmentPtr alignment)
 
 void GenomeCreateTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
+  const Genome* ancGenome = alignment->openGenome("AncGenome");
   const MetaData* ancMeta = ancGenome->getMetaData();
   CuAssertTrue(_testCase, ancMeta->get("Young") == "Jeezy");
-  const Genome* leaf1Genome = alignment->openConstGenome("Leaf1");
-  const Genome* leaf2Genome = alignment->openConstGenome("Leaf2");
-  const Genome* leaf3Genome = alignment->openConstGenome("Leaf3");
+  const Genome* leaf1Genome = alignment->openGenome("Leaf1");
+  const Genome* leaf2Genome = alignment->openGenome("Leaf2");
+  const Genome* leaf3Genome = alignment->openGenome("Leaf3");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
   CuAssertTrue(_testCase, leaf1Genome->getName() == "Leaf1");
   CuAssertTrue(_testCase, leaf2Genome->getName() == "Leaf2");  
@@ -111,7 +111,7 @@ void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
 
 void GenomeUpdateTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
+  const Genome* ancGenome = alignment->openGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
   CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 10000005);
   CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == 14000);
@@ -134,7 +134,7 @@ void GenomeStringTest::createCallBack(AlignmentPtr alignment)
 
 void GenomeStringTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
+  const Genome* ancGenome = alignment->openGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
   string genomeString;
   ancGenome->getString(genomeString);

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include "hdf5Sequence.h"
+#include "hdf5DNAIterator.h"
 
 using namespace std;
 using namespace H5;
@@ -118,6 +119,16 @@ BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentIterator(
   hal_index_t position) const
 {
   return BottomSegmentIteratorConstPtr();
+}
+
+DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position)
+{
+  return DNAIteratorPtr();
+}
+
+DNAIteratorConstPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
+{
+  return DNAIteratorConstPtr();
 }
 
 void HDF5Sequence::getString(std::string& outString) const

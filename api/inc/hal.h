@@ -50,5 +50,7 @@
 #include "halSegmentedSequence.h"
 #include "halTopSegment.h"
 #include "halTopSegmentIterator.h"
+#include "halDNAIterator.h"
+#include "halValidate.h"
 
 #endif

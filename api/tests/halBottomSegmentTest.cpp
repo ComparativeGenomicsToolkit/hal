@@ -104,7 +104,7 @@ void BottomSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
 
 void BottomSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("Anc0");
+  const Genome* ancGenome = alignment->openGenome("Anc0");
   CuAssertTrue(_testCase, 
                ancGenome->getNumBottomSegments() == _bottomSegments.size());
   BottomSegmentIteratorConstPtr tsIt = ancGenome->getBottomSegmentIterator(0);
@@ -140,7 +140,7 @@ void BottomSegmentSequenceTest::createCallBack(AlignmentPtr alignment)
 
 void BottomSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("Anc0");
+  const Genome* ancGenome = alignment->openGenome("Anc0");
   BottomSegmentIteratorConstPtr tsIt = ancGenome->getBottomSegmentIterator(100);
   CuAssertTrue(_testCase, tsIt->getBottomSegment()->getStartPosition() == 500);
   CuAssertTrue(_testCase, tsIt->getBottomSegment()->getLength() == 9);

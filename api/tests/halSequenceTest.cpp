@@ -40,7 +40,7 @@ void SequenceCreateTest::createCallBack(AlignmentPtr alignment)
 
 void SequenceCreateTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("AncGenome");
+  const Genome* ancGenome = alignment->openGenome("AncGenome");
   
   hal_size_t numSequences = ancGenome->getNumSequences();
   CuAssertTrue(_testCase, numSequences = 1000);

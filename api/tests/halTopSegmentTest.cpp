@@ -75,7 +75,7 @@ void TopSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
 
 void TopSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("Anc0");
+  const Genome* ancGenome = alignment->openGenome("Anc0");
   CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == _topSegments.size());
   TopSegmentIteratorConstPtr tsIt = ancGenome->getTopSegmentIterator(0);
   for (size_t i = 0; i < ancGenome->getNumTopSegments(); ++i)
@@ -109,7 +109,7 @@ void TopSegmentSequenceTest::createCallBack(AlignmentPtr alignment)
 
 void TopSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  const Genome* ancGenome = alignment->openConstGenome("Anc0");
+  const Genome* ancGenome = alignment->openGenome("Anc0");
   TopSegmentIteratorConstPtr tsIt = ancGenome->getTopSegmentIterator(100);
   CuAssertTrue(_testCase, tsIt->getTopSegment()->getStartPosition() == 500);
   CuAssertTrue(_testCase, tsIt->getTopSegment()->getLength() == 9);
