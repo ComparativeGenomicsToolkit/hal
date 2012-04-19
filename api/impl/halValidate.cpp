@@ -11,6 +11,9 @@
 using namespace std;
 using namespace hal;
 
+// current implementation is poor and hacky.  should fix up to 
+// use iterators to properly scan the segments. 
+
 void hal::validateBottomSegment(const BottomSegment* bottomSegment)
 {
   const Genome* genome = bottomSegment->getGenome();

@@ -18,6 +18,10 @@ struct SequenceCreateTest : public AlignmentTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
-
+struct SequenceIteratorTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
 
 #endif
