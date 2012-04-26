@@ -48,7 +48,7 @@ public:
     * @param branchLength distance between new genome and previous root
     * (if exists)*/
    virtual Genome* addRootGenome(const std::string& name,
-                                   double branchLength) = 0;
+                                 double branchLength = 0) = 0;
 
    /** Remove a genome from the alignment 
     * @param path Path of genome to remove */

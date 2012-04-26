@@ -223,7 +223,7 @@ string HDF5Alignment::getParentName(const string& name) const
   map<string, stTree*>::iterator findIt = _nodeMap.find(name);
   if (findIt == _nodeMap.end())
   {
-    throw hal_exception(string("node ") + name + " not found");
+    throw hal_exception(string("node not found: ") + name);
   }
   stTree* node = findIt->second;
   stTree* parent = stTree_getParent(node);

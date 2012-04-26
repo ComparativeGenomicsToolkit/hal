@@ -157,8 +157,6 @@ void SequenceIteratorTest::checkCallBack(AlignmentConstPtr alignment)
                    sqBottomSegment->getArrayIndex());
       bsIt->toRight();
     }
-
-
     seqIt->toNext();
   }
 }

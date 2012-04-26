@@ -5,6 +5,7 @@
  */
 #include <sstream>
 #include <deque>
+#include <iostream>
 #include "halValidate.h"
 #include "hal.h"
 
@@ -41,8 +42,9 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
            << childGenome->getName();
         throw hal_exception(ss.str());
       }
-      const TopSegment* childSegment = 
-         childGenome->getTopSegmentIterator(childIndex)->getTopSegment();
+      TopSegmentIteratorConstPtr topSegmentIteratr = 
+         childGenome->getTopSegmentIterator(childIndex);
+      const TopSegment* childSegment = topSegmentIteratr->getTopSegment();
       if (childSegment->getLength() != bottomSegment->getLength())
       {
         stringstream ss;
@@ -76,8 +78,9 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
          << genome->getName() << " has null parse index";
       throw hal_exception(ss.str());
     }
-    const TopSegment* parseSegment = 
-       genome->getTopSegmentIterator(parseIndex)->getTopSegment();
+    TopSegmentIteratorConstPtr parseIterator = 
+       genome->getTopSegmentIterator(parseIndex);
+    const TopSegment* parseSegment = parseIterator->getTopSegment();
     hal_offset_t parseOffset = bottomSegment->getTopParseOffset();
     if (parseOffset >= parseSegment->getLength())
     {
@@ -113,8 +116,10 @@ void hal::validateTopSegment(const TopSegment* topSegment)
          << parentGenome->getName();
       throw hal_exception(ss.str());
     }
+    BottomSegmentIteratorConstPtr bottomSegmentIterator = 
+       parentGenome->getBottomSegmentIterator(parentIndex);
     const BottomSegment* parentSegment = 
-       parentGenome->getBottomSegmentIterator(parentIndex)->getBottomSegment();
+       bottomSegmentIterator->getBottomSegment();
     if (topSegment->getLength() != parentSegment->getLength())
     {
       stringstream ss;
@@ -147,8 +152,10 @@ void hal::validateTopSegment(const TopSegment* topSegment)
       throw hal_exception(ss.str());
     }
     hal_offset_t parseOffset = topSegment->getBottomParseOffset();
+    BottomSegmentIteratorConstPtr bottomSegmentIterator =
+       genome->getBottomSegmentIterator(parseIndex);
     const BottomSegment* parseSegment = 
-       genome->getBottomSegmentIterator(parseIndex)->getBottomSegment();
+       bottomSegmentIterator->getBottomSegment();
     if (parseOffset >= parseSegment->getLength())
     {
       stringstream ss;
@@ -170,42 +177,55 @@ void hal::validateSequence(const Sequence* sequence)
     if (isNucleotide(c) == false)
     {
       stringstream ss;
-      ss << "Non-nucleotide character " << c << " discoverd at position " 
-         << i << " of sequence " << sequence->getName();
+      ss << "Non-nucleotide character discoverd at position " 
+         << i << " of sequence " << sequence->getName() << ": " << c;
       throw hal_exception(ss.str());
     }
   }
   
   // Check the top segments
-  hal_size_t totalTopLength = 0;
-  TopSegmentIteratorConstPtr topIt = sequence->getTopSegmentIterator();
-  hal_size_t numTopSegments = sequence->getNumTopSegments();
-  for (hal_size_t i = 0; i < numTopSegments; ++i)
+  if (sequence->getGenome()->getParent() != NULL)
   {
-    const TopSegment* topSegment = topIt->getTopSegment();
-    validateTopSegment(topSegment);
-    totalTopLength += topSegment->getLength();
-  }
-  if (totalTopLength != length)
-  {
-    throw hal_exception("top lengths don't add up in " +
-                        sequence->getName());
+    hal_size_t totalTopLength = 0;
+    TopSegmentIteratorConstPtr topIt = sequence->getTopSegmentIterator();
+    hal_size_t numTopSegments = sequence->getNumTopSegments();
+    for (hal_size_t i = 0; i < numTopSegments; ++i)
+    {
+      const TopSegment* topSegment = topIt->getTopSegment();
+      validateTopSegment(topSegment);
+      totalTopLength += topSegment->getLength();
+      topIt->toRight();
+    }
+    if (totalTopLength != length)
+    {
+      stringstream ss;
+      ss << "Sequence " << sequence->getName() << " has length " << length 
+         << " but its top segments add up to " << totalTopLength;
+      throw hal_exception(ss.str());
+    }
   }
 
   // Check the bottom segments
-  hal_size_t totalBottomLength = 0;
-  BottomSegmentIteratorConstPtr bottomIt = sequence->getBottomSegmentIterator();
-  hal_size_t numBottomSegments = sequence->getNumBottomSegments();
-  for (hal_size_t i = 0; i < numBottomSegments; ++i)
+  if (sequence->getGenome()->getNumChildren() > 0)
   {
-    const BottomSegment* bottomSegment = bottomIt->getBottomSegment();
-    validateBottomSegment(bottomSegment);
-    totalBottomLength += bottomSegment->getLength();
-  }
-  if (totalBottomLength != length)
-  {
-    throw hal_exception("bottom lengths don't add up in " +
-                        sequence->getName());
+    hal_size_t totalBottomLength = 0;
+    BottomSegmentIteratorConstPtr bottomIt = 
+       sequence->getBottomSegmentIterator();
+    hal_size_t numBottomSegments = sequence->getNumBottomSegments();
+    for (hal_size_t i = 0; i < numBottomSegments; ++i)
+    {
+      const BottomSegment* bottomSegment = bottomIt->getBottomSegment();
+      validateBottomSegment(bottomSegment);
+      totalBottomLength += bottomSegment->getLength();
+      bottomIt->toRight();
+    }
+    if (totalBottomLength != length)
+    {
+      stringstream ss;
+      ss << "Sequence " << sequence->getName() << " has length " << length 
+         << " but its bottom segments add up to " << totalBottomLength;
+      throw hal_exception(ss.str());
+    }
   }
 }
 

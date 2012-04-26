@@ -17,5 +17,6 @@ CuSuite* halGenomeTestSuite();
 CuSuite* halTopSegmentTestSuite();
 CuSuite* halBottomSegmentTestSuite();
 CuSuite* halSequenceTestSuite();
+CuSuite* halValidateTestSuite();
 
 #endif

@@ -26,7 +26,7 @@ public:
 
    /** move iterat one segment to the right */
    virtual void toRight() const = 0;
-   
+
    /** switch to segment's reverse complement */
    virtual void toReverse() const = 0;
 

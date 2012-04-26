@@ -124,7 +124,7 @@ void HDF5TopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs,
   _topSegment._genome = static_cast<HDF5Genome*>(
     h5bs->_bottomSegment._genome->getChild(child));
   _topSegment._index = h5bs->_bottomSegment.getChildIndex(child);
-  _topSegment._array = &h5bs->_bottomSegment._genome->_topArray;
+  _topSegment._array = &_topSegment._genome->_topArray;
   _startOffset = h5bs->_startOffset;
   _endOffset = h5bs->_endOffset;
   _reversed = h5bs->_reversed;
