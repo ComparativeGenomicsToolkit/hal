@@ -8,6 +8,7 @@
 #define _HALALIGNMENT_H
 
 #include <string>
+#include <vector>
 #include "halDefs.h"
 
 namespace hal {

@@ -7,11 +7,9 @@
 #ifndef _HALDEFS_H
 #define _HALDEFS_H
 
-#include <string>
-#include <vector>
+#include <inttypes.h>
 #include <stdexcept>
 #include "counted_ptr.h"
-
 
 /** 
  *  Keep simple compiler-related definitions in this file. 

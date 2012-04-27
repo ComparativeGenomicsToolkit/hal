@@ -4,6 +4,7 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <iostream>
 #include "hdf5Sequence.h"

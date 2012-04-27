@@ -7,6 +7,8 @@
 #ifndef _HALGENOME_H
 #define _HALGENOME_H
 
+#include <vector>
+#include <string>
 #include "halDefs.h"
 #include "halSegmentedSequence.h"
 #include "halSequence.h"

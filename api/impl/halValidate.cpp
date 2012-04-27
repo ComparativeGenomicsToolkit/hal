@@ -55,6 +55,12 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
            << bottomSegment->getLength();
         throw hal_exception(ss.str());
       }
+      if (childSegment->getParentIndex() != bottomSegment->getArrayIndex())
+      {
+        throw hal_exception("parent / child index mismatch (parent=" +
+                            genome->getName() + " child=" +
+                            childGenome->getName());
+      }
     }
   }
 
