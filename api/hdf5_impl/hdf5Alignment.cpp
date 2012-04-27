@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <cstdlib>
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
@@ -32,7 +33,12 @@ HDF5Alignment::HDF5Alignment() :
   _tree(NULL),
   _dirty(false)
 {
-  
+  // Todo: verify chunk size
+  //_dcprops = DSetCreatPropList();
+  //_dcprops.setDeflate(9);
+  // hsize_t chunkSize = 100;
+  //_dcprops.setChunk(1, &chunkSize);
+  //_aprops.setCache(128, 128, 524288000, 0.25);
 }
 
 HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,

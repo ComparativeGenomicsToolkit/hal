@@ -114,7 +114,7 @@ void HDF5Genome::setDimensions(
     _sequenceArray.create(&_group, sequenceArrayName, 
                           // pad names a bit to allow renaming
                           HDF5Sequence::dataType(maxName + 32), 
-                          totalSeq, _dcprops);
+                          totalSeq, DSetCreatPropList());
     writeSequences(sequenceDimensions);
     
   }

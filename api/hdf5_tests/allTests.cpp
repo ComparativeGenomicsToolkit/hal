@@ -13,6 +13,7 @@ int hdf5RunAllTests(void) {
   CuSuiteAddSuite(suite, hdf5TestSuite());
   CuSuiteAddSuite(suite, hdf5ExternalArrayTestSuite());
   CuSuiteAddSuite(suite, hdf5SegmentTypeTestSuite());
+  CuSuiteAddSuite(suite, hdf5SequenceTypeTestSuite());
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);
   CuSuiteDetails(suite, output);

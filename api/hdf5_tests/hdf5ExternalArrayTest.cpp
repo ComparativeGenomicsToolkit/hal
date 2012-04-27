@@ -120,9 +120,9 @@ void hdf5ExternalArrayTestCompression(CuTest *testCase)
       H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
       HDF5ExternalArray myArray;
       DSetCreatPropList cparms;
-      cparms.setDeflate(9);
       if (chunkSize > 0)
       {
+        cparms.setDeflate(9);
         cparms.setChunk(1, &chunkSize);
       }
       myArray.create(&file, datasetName, datatype, N, cparms);
@@ -161,5 +161,6 @@ CuSuite* hdf5ExternalArrayTestSuite(void)
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, hdf5ExternalArrayTestCreate);
   SUITE_ADD_TEST(suite, hdf5ExternalArrayTestLoad);
+  SUITE_ADD_TEST(suite, hdf5ExternalArrayTestCompression);
   return suite;
 }

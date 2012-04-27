@@ -26,8 +26,8 @@ class TestCase(unittest.TestCase):
     def testAPI(self):
         """Run all the api CuTests, fail if any of them fail.
         """
-        system("apiTests")
         system("hdf5Tests")
+        system("apiTests")
 
 def main():
     parseCactusSuiteTestOptions()
