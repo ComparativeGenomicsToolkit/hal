@@ -95,6 +95,13 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
          << genome->getName() << " has null parse offset";
       throw hal_exception(ss.str());
     }
+    if ((hal_index_t)parseOffset + parseSegment->getStartPosition() != 
+        bottomSegment->getStartPosition())
+    {
+      throw hal_exception("parse index broken in bottom segment in genome " +
+                          genome->getName());
+                          
+    }
   }
 }
 
@@ -168,6 +175,13 @@ void hal::validateTopSegment(const TopSegment* topSegment)
       ss << "Segment " << topSegment->getArrayIndex() << " in genome "
          << genome->getName() << " has null parse offset";
       throw hal_exception(ss.str());
+    }
+    if ((hal_index_t)parseOffset + parseSegment->getStartPosition() != 
+        topSegment->getStartPosition())
+    {
+      throw hal_exception("parse index broken in top segment in genome " +
+                          genome->getName());
+                          
     }
   }
 }

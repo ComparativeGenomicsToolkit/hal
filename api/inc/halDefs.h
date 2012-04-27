@@ -7,7 +7,7 @@
 #ifndef _HALDEFS_H
 #define _HALDEFS_H
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdexcept>
 #include "counted_ptr.h"
 
