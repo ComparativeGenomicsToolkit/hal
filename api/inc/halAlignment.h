@@ -40,8 +40,8 @@ public:
     * @param parent name of parent genome in tree (must exist)
     * @param branchLength distance between new genome and parent */
    virtual Genome* addLeafGenome(const std::string& name,
-                                   const std::string& parentName,
-                                   double branchLength) = 0;
+                                 const std::string& parentName,
+                                 double branchLength) = 0;
 
    /** Add a new genome as root to the alignment.  The previous root
     * (if exists) will be a child of the new genome

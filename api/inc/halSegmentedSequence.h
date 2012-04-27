@@ -46,6 +46,9 @@ public:
    virtual TopSegmentIteratorConstPtr getTopSegmentIterator(
      hal_index_t position = 0) const = 0;
 
+   /** Get a topSegment end iterator (one beyond last element in list) */
+   virtual TopSegmentIteratorConstPtr getTopSegmentEndIterator() const = 0;
+
    /** Get a bottom segment iterator
     * @param position Index in segment array of returned iterator */
    virtual BottomSegmentIteratorPtr getBottomSegmentIterator(
@@ -56,6 +59,10 @@ public:
    virtual BottomSegmentIteratorConstPtr getBottomSegmentIterator(
      hal_index_t position = 0) const = 0;
 
+   /** Get a bottomSegment end iterator (one beyond last element in list) */
+   virtual BottomSegmentIteratorConstPtr getBottomSegmentEndIterator() 
+     const = 0;
+
    /** Get a DNA iterator
     * @param position Index in segment array of returned iterator */
    virtual DNAIteratorPtr getDNAIterator(
@@ -65,6 +72,9 @@ public:
     * @param position Index in segment array of returned iterator */
    virtual DNAIteratorConstPtr getDNAIterator(
      hal_index_t position = 0) const = 0;
+
+   /** Get a DNA end iterator (one beyond last element in list) */
+   virtual DNAIteratorConstPtr getDNAEndIterator() const = 0;
 
    /** Get the character string underlying the segmented sequence
     * @param outString String object into which we copy the result */

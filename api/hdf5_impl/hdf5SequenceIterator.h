@@ -32,6 +32,7 @@ public:
    void toPrev() const;
    Sequence* getSequence();
    const Sequence* getSequence() const;
+   bool equals(SequenceIteratorConstPtr other) const;
 
 protected:
    HDF5Sequence _sequence;

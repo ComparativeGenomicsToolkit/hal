@@ -34,6 +34,8 @@ public:
    Genome* getGenome();
    hal_index_t getArrayIndex() const;
 
+   bool equals(DNAIteratorConstPtr other) const;
+
    void readString(std::string& outString, hal_size_t length,
                    hal_bool_t reversed = false) const;
 
@@ -41,6 +43,8 @@ public:
                     hal_bool_t reversed = false);
 
    inline bool inRange() const;
+
+   
 
 protected:
    mutable hal_index_t _index;
@@ -104,6 +108,13 @@ inline hal_index_t HDF5DNAIterator::getArrayIndex() const
   return _index;
 }
 
+inline bool HDF5DNAIterator::equals(DNAIteratorConstPtr other) const
+{
+  const HDF5DNAIterator* h5Other = reinterpret_cast<
+     const HDF5DNAIterator*>(other.get());
+  assert(_genome == h5Other->_genome);
+  return _index == h5Other->_index;
+}
 inline void HDF5DNAIterator::readString(std::string& outString,
                                         hal_size_t length, 
                                         hal_bool_t reversed) const

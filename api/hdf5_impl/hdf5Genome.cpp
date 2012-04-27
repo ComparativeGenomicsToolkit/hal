@@ -237,7 +237,7 @@ const Sequence* HDF5Genome::getSequenceBySite(hal_size_t position) const
 SequenceIteratorPtr HDF5Genome::getSequenceIterator(
   hal_index_t position)
 {
-  assert(position < (hal_index_t)_sequenceArray.getSize());
+  assert(position <= (hal_index_t)_sequenceArray.getSize());
   HDF5SequenceIterator* newIt = new HDF5SequenceIterator(this, position);
   return SequenceIteratorPtr(newIt);
 }
@@ -245,12 +245,17 @@ SequenceIteratorPtr HDF5Genome::getSequenceIterator(
 SequenceIteratorConstPtr HDF5Genome::getSequenceIterator(
   hal_index_t position) const
 {
-  assert(position < (hal_index_t)_sequenceArray.getSize());
+  assert(position <= (hal_index_t)_sequenceArray.getSize());
   // genome effectively gets re-consted when returned in the
   // const iterator.  just save doubling up code.
   HDF5SequenceIterator* newIt = new HDF5SequenceIterator(
     const_cast<HDF5Genome*>(this), position);
   return SequenceIteratorConstPtr(newIt);
+}
+
+SequenceIteratorConstPtr HDF5Genome::getSequenceEndIterator() const
+{
+  return getSequenceIterator(getNumSequences());
 }
 
 MetaData* HDF5Genome::getMetaData()
@@ -365,6 +370,11 @@ TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
   return TopSegmentIteratorConstPtr(newIt);
 }
 
+TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentEndIterator() const
+{
+  return getTopSegmentIterator(getNumTopSegments());
+}
+
 BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
   hal_index_t position)
 {
@@ -383,6 +393,11 @@ BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
      new HDF5BottomSegmentIterator(genome, position);
   return BottomSegmentIteratorConstPtr(newIt);
 }
+
+BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentEndIterator() const
+{
+  return getBottomSegmentIterator(getNumBottomSegments());
+}
    
 DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position)
 {
@@ -397,6 +412,11 @@ DNAIteratorConstPtr HDF5Genome::getDNAIterator(hal_index_t position) const
   HDF5Genome* genome = const_cast<HDF5Genome*>(this);
   const HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, position);
   return DNAIteratorConstPtr(newIt);
+}
+
+DNAIteratorConstPtr HDF5Genome::getDNAEndIterator() const
+{
+  return getDNAIterator(getSequenceLength());
 }
 
 void HDF5Genome::getString(string& outString) const

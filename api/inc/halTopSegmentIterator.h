@@ -28,6 +28,7 @@ public:
    virtual void toParseUp(BottomSegmentIteratorConstPtr bs) const = 0;
    virtual TopSegment* getTopSegment() = 0;
    virtual const TopSegment* getTopSegment() const = 0;
+   virtual bool equals(TopSegmentIteratorConstPtr other) const = 0;
 
 protected:
    friend class counted_ptr<TopSegmentIterator>;
@@ -37,6 +38,21 @@ protected:
 
 inline TopSegmentIterator::~TopSegmentIterator() {}
 
+inline bool operator==(TopSegmentIteratorConstPtr p1,
+                       TopSegmentIteratorConstPtr p2) 
+{
+  if (p1.get() == NULL || p2.get() == NULL)
+  {
+    return p1.get() == NULL && p2.get() == NULL;
+  }
+  return p1->equals(p2);
+}
+
+inline bool operator!=(TopSegmentIteratorConstPtr p1,
+                       TopSegmentIteratorConstPtr p2)
+{
+  return !(p1 == p2);
+}
 
 }
 #endif

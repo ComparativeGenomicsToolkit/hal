@@ -117,6 +117,11 @@ TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentIterator(
   return TopSegmentIteratorConstPtr(newIt);
 }
 
+TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentEndIterator() const
+{
+  return getTopSegmentIterator(getNumTopSegments());
+}
+
 BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
   hal_index_t position)
 {
@@ -136,6 +141,11 @@ BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentIterator(
   return BottomSegmentIteratorConstPtr(newIt);
 }
 
+BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentEndIterator() const
+{
+  return getBottomSegmentIterator(getNumBottomSegments());
+}
+
 DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position)
 {
   hal_size_t idx = position + getStartPosition();
@@ -149,6 +159,11 @@ DNAIteratorConstPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
   HDF5Genome* genome = const_cast<HDF5Genome*>(_genome);
   const HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, idx);
   return DNAIteratorConstPtr(newIt);
+}
+
+DNAIteratorConstPtr HDF5Sequence::getDNAEndIterator() const
+{
+  return getDNAIterator(getSequenceLength());
 }
 
 void HDF5Sequence::getString(std::string& outString) const

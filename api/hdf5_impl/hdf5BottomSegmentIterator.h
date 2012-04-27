@@ -49,7 +49,8 @@ public:
    void toParseDown(TopSegmentIteratorConstPtr ts) const;
    BottomSegment* getBottomSegment();
    const BottomSegment* getBottomSegment() const;
-
+   bool equals(BottomSegmentIteratorConstPtr other) const;
+   
    bool inRange() const;
 
 protected:

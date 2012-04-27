@@ -63,13 +63,13 @@ void TopSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
     _topSegments.push_back(topSeg);
   }
   
-  TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator(0);
-  for (size_t i = 0; i < ancGenome->getNumTopSegments(); ++i)
+  TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator();
+  TopSegmentIteratorConstPtr tsEnd = ancGenome->getTopSegmentEndIterator();
+  for (size_t i = 0; tsIt != tsEnd; tsIt->toRight(), ++i)
   {
     CuAssertTrue(_testCase, 
                  (size_t)tsIt->getTopSegment()->getArrayIndex() == i);
     _topSegments[i].applyTo(tsIt);
-    tsIt->toRight();
   }
 }
 

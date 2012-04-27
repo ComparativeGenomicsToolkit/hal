@@ -180,3 +180,11 @@ const BottomSegment* HDF5BottomSegmentIterator::getBottomSegment() const
   assert (inRange() == true);
   return &_bottomSegment;
 }
+
+bool HDF5BottomSegmentIterator::equals(BottomSegmentIteratorConstPtr other) const
+{
+  const HDF5BottomSegmentIterator* h5Other = reinterpret_cast<
+     const HDF5BottomSegmentIterator*>(other.get());
+  assert(_bottomSegment.getGenome() == h5Other->_bottomSegment.getGenome());
+  return _bottomSegment._index == h5Other->_bottomSegment._index;
+}

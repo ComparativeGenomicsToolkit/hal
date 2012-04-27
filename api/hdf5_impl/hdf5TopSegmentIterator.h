@@ -47,6 +47,7 @@ public:
    void toParseUp(BottomSegmentIteratorConstPtr bs) const;
    TopSegment* getTopSegment();
    const TopSegment* getTopSegment() const;
+   bool equals(TopSegmentIteratorConstPtr other) const;
 
    bool inRange() const;
 protected:

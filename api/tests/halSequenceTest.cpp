@@ -52,8 +52,10 @@ void SequenceCreateTest::checkCallBack(AlignmentConstPtr alignment)
   hal_size_t lastLength = 0;
 
   SequenceIteratorConstPtr seqIt = ancGenome->getSequenceIterator();
-  for (hal_size_t i = 0; i < numSequences; ++i)
+  SequenceIteratorConstPtr endIt = ancGenome->getSequenceEndIterator();
+  for (; seqIt != endIt; seqIt->toNext())
   {
+    hal_size_t i = (hal_size_t)seqIt->getSequence()->getArrayIndex();
     stringstream ss;
     ss << i;
     hal_size_t len = 1 + i * 5 + i;
@@ -82,7 +84,6 @@ void SequenceCreateTest::checkCallBack(AlignmentConstPtr alignment)
     
     lastStart = seq->getStartPosition();
     lastLength = seq->getSequenceLength();
-    seqIt->toNext();
   }
 
   const Sequence* seq = ancGenome->getSequence("sequence555");
@@ -126,10 +127,12 @@ void SequenceIteratorTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, numSequences = 1000);
 
   SequenceIteratorConstPtr seqIt = ancGenome->getSequenceIterator();
-  for (hal_size_t i = 0; i < numSequences; ++i)
+  SequenceIteratorConstPtr endIt = ancGenome->getSequenceEndIterator();
+  for (; seqIt != endIt; seqIt->toNext())
   {
     const Sequence* seq = seqIt->getSequence();
-    
+    hal_size_t i = seq->getArrayIndex();
+ 
     TopSegmentIteratorConstPtr tsIt = seq->getTopSegmentIterator();
     hal_size_t numTopSegments = seq->getNumTopSegments();
     for (hal_size_t j = 0; j < numTopSegments; ++j)
@@ -157,7 +160,6 @@ void SequenceIteratorTest::checkCallBack(AlignmentConstPtr alignment)
                    sqBottomSegment->getArrayIndex());
       bsIt->toRight();
     }
-    seqIt->toNext();
   }
 }
 

@@ -27,6 +27,7 @@ public:
    virtual void toParseDown(TopSegmentIteratorConstPtr bs) const = 0;
    virtual BottomSegment* getBottomSegment() = 0;
    virtual const BottomSegment* getBottomSegment() const = 0;
+   virtual bool equals(BottomSegmentIteratorConstPtr other) const = 0;
 
 protected:
    friend class counted_ptr<BottomSegmentIterator>;
@@ -35,6 +36,22 @@ protected:
 };
 
 inline BottomSegmentIterator::~BottomSegmentIterator() {}
+
+inline bool operator==(BottomSegmentIteratorConstPtr p1,
+                       BottomSegmentIteratorConstPtr p2) 
+{
+  if (p1.get() == NULL || p2.get() == NULL)
+  {
+    return p1.get() == NULL && p2.get() == NULL;
+  }
+  return p1->equals(p2);
+}
+
+inline bool operator!=(BottomSegmentIteratorConstPtr p1,
+                       BottomSegmentIteratorConstPtr p2)
+{
+  return !(p1 == p2);
+}
 
 }
 #endif

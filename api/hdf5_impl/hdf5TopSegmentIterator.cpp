@@ -177,3 +177,11 @@ const TopSegment* HDF5TopSegmentIterator::getTopSegment() const
   assert (inRange() == true);
   return &_topSegment;
 }
+
+bool HDF5TopSegmentIterator::equals(TopSegmentIteratorConstPtr other) const
+{
+  const HDF5TopSegmentIterator* h5Other = reinterpret_cast<
+     const HDF5TopSegmentIterator*>(other.get());
+  assert(_topSegment.getGenome() == h5Other->_topSegment.getGenome());
+  return _topSegment._index == h5Other->_topSegment._index;
+}

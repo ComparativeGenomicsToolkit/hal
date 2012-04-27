@@ -64,3 +64,11 @@ const Sequence* HDF5SequenceIterator::getSequence() const
   return &_sequence;
 }
 
+bool HDF5SequenceIterator::equals(SequenceIteratorConstPtr other) const
+{
+  const HDF5SequenceIterator* h5Other = reinterpret_cast<
+     const HDF5SequenceIterator*>(other.get());
+  assert(_sequence.getGenome() == h5Other->_sequence.getGenome());
+  return _sequence._index == h5Other->_sequence._index;
+}
+
