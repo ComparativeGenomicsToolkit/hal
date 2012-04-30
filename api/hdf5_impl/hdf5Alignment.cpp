@@ -114,6 +114,7 @@ void HDF5Alignment::close()
       delete genome;
     }
     _openGenomes.clear();
+    _file->flush(H5F_SCOPE_LOCAL);
     _file->close();
     delete _file;
     _file = NULL;
