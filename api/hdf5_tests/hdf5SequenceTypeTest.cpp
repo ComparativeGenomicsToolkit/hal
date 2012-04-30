@@ -83,6 +83,7 @@ void hdf5SequenceTypeTest(CuTest *testCase)
           sequence.set(i, seqInfo);
         }
         myArray.write();
+        file.flush(H5F_SCOPE_LOCAL);
         file.close();
 
         H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);

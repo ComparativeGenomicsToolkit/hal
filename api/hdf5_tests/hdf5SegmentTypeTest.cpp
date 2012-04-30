@@ -70,6 +70,7 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
         segment.setBottomParseOffset(i * 6);
       }
       myArray.write();
+      file.flush(H5F_SCOPE_LOCAL);
       file.close();
 
       H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);
@@ -143,6 +144,7 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
           }
         }
         myArray.write();
+        file.flush(H5F_SCOPE_LOCAL);
         file.close();
 
         H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);
