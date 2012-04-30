@@ -11,10 +11,10 @@
  * hdf5 stuff
  */
 
-static const hsize_t N = 1000;
+static const hsize_t N = 50000000;
 static const std::string datasetName("name");
 extern char* fileName;
-extern int64_t numbers[N];
+extern int64_t* numbers;
 
 void hdf5TestTeardown();
 void hdf5TestSetup();
