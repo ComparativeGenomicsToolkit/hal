@@ -52,6 +52,7 @@ void writeNumbers(hsize_t chunkSize)
      chunkSize = 0;
   if (chunkSize > 0)
   {
+    cparms.setDeflate(3);
     cparms.setChunk(1, &chunkSize);
   }
   DataSpace dataspace(1, &N);
@@ -131,6 +132,11 @@ void checkNumbers(CuTest *testCase)
   }
   for (hsize_t i = 0; i < N; ++i)
   {
+    if (rnumbers[i] != numbers[i])
+    {
+      cerr << i << ": " << rnumbers[i] << " (should be " << numbers[i] << ")"
+           << endl;
+    }
     CuAssertTrue(testCase, rnumbers[i] == numbers[i]);
   }
   delete [] rnumbers;

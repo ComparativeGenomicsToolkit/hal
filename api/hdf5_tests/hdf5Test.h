@@ -11,7 +11,7 @@
  * hdf5 stuff
  */
 
-static const hsize_t N = 50000000;
+static const hsize_t N = 500000;
 static const std::string datasetName("name");
 extern char* fileName;
 extern int64_t* numbers;
