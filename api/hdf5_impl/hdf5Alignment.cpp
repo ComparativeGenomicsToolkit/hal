@@ -34,11 +34,11 @@ HDF5Alignment::HDF5Alignment() :
   _dirty(false)
 {
   // Todo: verify chunk size
-  //_dcprops = DSetCreatPropList();
-  //_dcprops.setDeflate(9);
-  // hsize_t chunkSize = 100;
-  //_dcprops.setChunk(1, &chunkSize);
-  //_aprops.setCache(128, 128, 524288000, 0.25);
+  _dcprops = DSetCreatPropList();
+  _dcprops.setDeflate(9);
+  hsize_t chunkSize = 2000000;
+  _dcprops.setChunk(1, &chunkSize);
+  _aprops.setCache(11, 51, 100000000, 0.25);
 }
 
 HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,

@@ -25,8 +25,8 @@ using namespace H5;
 using namespace hal;
 using namespace std;
 
-static const hsize_t chunkSizes[] = {0, 4, 8, 16, 32, 128, 512, 1000};
-static const hsize_t numSizes = 8;
+static const hsize_t chunkSizes[] = {0, 4, N/10, N/2, N};
+static const hsize_t numSizes = 5;
 static const hsize_t numChildrens[] = {0,1,2,3,50};
 static const hsize_t numNumChildrens = 5;
 

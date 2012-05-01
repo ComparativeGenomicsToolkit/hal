@@ -150,12 +150,12 @@ void halGenomeMetaTest(CuTest *testCase)
 
 void halGenomeCreateTest(CuTest *testCase)
 {
-//  try
+  try
   {
     GenomeCreateTest tester;
     tester.check(testCase);
   }
-//  catch (...) 
+  catch (...) 
   {
     CuAssertTrue(testCase, false);
   }

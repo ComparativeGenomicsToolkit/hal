@@ -31,11 +31,11 @@ HDF5ExternalArray::~HDF5ExternalArray()
 }
 
 // Create a new dataset in specifed location
-void HDF5ExternalArray::create(H5::CommonFG* file, 
+void HDF5ExternalArray::create(CommonFG* file, 
                                const H5std_string& path, 
-                               const H5::DataType& dataType,
+                               const DataType& dataType,
                                hsize_t numElements,
-                               const H5::DSetCreatPropList& cparms)
+                               DSetCreatPropList cparms)
 {
   // copy in parameters
   _file = file;
@@ -49,15 +49,11 @@ void HDF5ExternalArray::create(H5::CommonFG* file,
   if (cparms.getLayout() == H5D_CHUNKED)
   {
     cparms.getChunk(1, &_chunkSize);
-    if (_chunkSize == 1)
+    // something's wrong with the input chunk size.  do one chunk. 
+    if (_chunkSize <= 1 || _chunkSize >= _size)
     {
-      throw DataSetIException("HDF5ExternalArray::create",
-                             "chunkSize of 1 not supported");
-    }
-    if (_chunkSize > _size)
-    {
-      throw DataSetIException("HDF5ExternalArray::create",
-                              "chunkSize > array size is not supported");
+      _chunkSize = _size;
+      cparms.setChunk(1, &_chunkSize);
     }
   }
   else
@@ -79,7 +75,7 @@ void HDF5ExternalArray::create(H5::CommonFG* file,
 }
 
 // Load an existing dataset into memory
-void HDF5ExternalArray::load(H5::CommonFG* file, const H5std_string& path,
+void HDF5ExternalArray::load(CommonFG* file, const H5std_string& path,
                              hsize_t chunksInBuffer)
 {
   // load up the parameters

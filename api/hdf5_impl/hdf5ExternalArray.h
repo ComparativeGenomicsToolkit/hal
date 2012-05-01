@@ -42,7 +42,7 @@ public:
                const H5std_string& path, 
                const H5::DataType& dataType,
                hsize_t numElements,
-               const H5::DSetCreatPropList& cparms =
+               H5::DSetCreatPropList cparms =
                H5::DSetCreatPropList::DEFAULT);
  
    /** Load an existing dataset into memory
