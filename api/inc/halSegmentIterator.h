@@ -81,5 +81,17 @@ protected:
 
 inline SegmentIterator::~SegmentIterator() {}
 
+inline bool operator<(SegmentIteratorConstPtr segmentIt,
+                      hal_index_t genomePos) 
+{
+  return segmentIt->leftOf(genomePos);
+}
+
+inline bool operator>(SegmentIteratorConstPtr segmentIt,
+                      hal_index_t genomePos) 
+{
+  return segmentIt->rightOf(genomePos);
+}
+
 }
 #endif
