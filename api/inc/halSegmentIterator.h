@@ -21,11 +21,17 @@ class SegmentIterator
 {
 public:
 
-   /** move iterator one segment to the left */
-   virtual void toLeft() const = 0;
+   /** move iterator one segment to the left 
+    * @param leftCutoff If the left segment contains the 
+    * genome position (DNA coordinate) specified by leftCutoff
+    * the segment iterator is sliced to begin at this position */
+   virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const = 0;
 
-   /** move iterat one segment to the right */
-   virtual void toRight() const = 0;
+   /** move iterator one segment to the right 
+    * @param leftCutoff If the right segment contains the 
+    * genome position (DNA coordinate) specified by rightCutoff
+    * the segment iterator is sliced to begin at this position */
+   virtual void toRight(hal_index_t rightCutoff = NULL_INDEX) const = 0;
 
    /** switch to segment's reverse complement */
    virtual void toReverse() const = 0;
@@ -54,6 +60,18 @@ public:
    /** Get the DNA string corresponding to the iterator from the genome 
     * @param outString string into which the results are copied */
    virtual void getString(std::string& outString) const = 0;
+
+   /** Determine if current segment is to the left of a genome coordinate
+    * @param genomePos Index of DNA character in genome */
+   virtual bool leftOf(hal_index_t genomePos) const = 0;
+
+   /** Determine if current segment is to the right of a genome coordinate
+    * @param genomePos Index of DNA character in genome */
+   virtual bool rightOf(hal_index_t genomePos) const = 0;
+
+   /** Determine if current segment is to the right of a genome coordinate
+    * @param genomePos Index of DNA character in genome */
+   virtual bool overlaps(hal_index_t genomePos) const = 0;
 
 protected:
    friend class counted_ptr<SegmentIterator>;

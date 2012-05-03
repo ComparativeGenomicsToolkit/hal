@@ -32,8 +32,8 @@ public:
    ~HDF5BottomSegmentIterator();
    
    // ITERATOR METHODS
-   void toLeft() const;
-   void toRight() const;
+   void toLeft(hal_index_t leftCutoff = NULL_INDEX) const;
+   void toRight(hal_index_t rightCutoff = NULL_INDEX) const;
    void toReverse() const;
    void toNextParalogy() const;
    hal_offset_t getStartOffset() const;
@@ -41,6 +41,9 @@ public:
    hal_size_t getLength() const;
    hal_bool_t getReversed() const;
    void getString(std::string& outString) const;
+   bool leftOf(hal_index_t genomePos) const;
+   bool rightOf(hal_index_t genomePos) const;
+   bool overlaps(hal_index_t genomePos) const;
 
    //BOTTOM ITERATOR METHODS
    BottomSegmentIteratorPtr copy();

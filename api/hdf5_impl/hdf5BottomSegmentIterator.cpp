@@ -34,9 +34,9 @@ HDF5BottomSegmentIterator::~HDF5BottomSegmentIterator()
    
 // ITERATOR METHODS
 
-void HDF5BottomSegmentIterator::toLeft() const
+void HDF5BottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
 {
-   if (_startOffset == 0)
+  if (_startOffset == 0)
   {
     --_bottomSegment._index;
     _endOffset = 0;
@@ -46,9 +46,13 @@ void HDF5BottomSegmentIterator::toLeft() const
     _endOffset = _bottomSegment.getLength() - _startOffset - 1;
     _startOffset = 0;
   }
+  if (leftCutoff != NULL_INDEX && overlaps(leftCutoff))
+  {
+    _startOffset = leftCutoff - _bottomSegment.getStartPosition();
+  }
 }
 
-void HDF5BottomSegmentIterator::toRight() const
+void HDF5BottomSegmentIterator::toRight(hal_index_t rightCutoff) const
 {
    if (_endOffset == 0)
   {
@@ -59,6 +63,11 @@ void HDF5BottomSegmentIterator::toRight() const
   {
     _startOffset =  _bottomSegment.getLength() - _endOffset - 1;
     _endOffset = 0;
+  }
+  if (rightCutoff != NULL_INDEX && overlaps(rightCutoff))
+  {
+    _endOffset = _bottomSegment.getStartPosition() + 
+       _bottomSegment.getLength() - rightCutoff;
   }
 }
 
@@ -188,3 +197,25 @@ bool HDF5BottomSegmentIterator::equals(BottomSegmentIteratorConstPtr other) cons
   assert(_bottomSegment.getGenome() == h5Other->_bottomSegment.getGenome());
   return _bottomSegment._index == h5Other->_bottomSegment._index;
 }
+
+hal_bool_t HDF5BottomSegmentIterator::leftOf(hal_index_t genomePos) const
+{
+  assert(genomePos != NULL_INDEX);
+  assert(_bottomSegment.getStartPosition() != NULL_INDEX);
+  return (hal_index_t)(_bottomSegment.getStartPosition() + _startOffset + 
+                     getLength()) < genomePos;
+}
+
+hal_bool_t HDF5BottomSegmentIterator::rightOf(hal_index_t genomePos) const
+{
+  assert(genomePos != NULL_INDEX);
+  assert(_bottomSegment.getStartPosition() != NULL_INDEX);
+  return (hal_index_t)(_bottomSegment.getStartPosition() + _startOffset) >
+     genomePos;
+}
+
+hal_bool_t HDF5BottomSegmentIterator::overlaps(hal_index_t genomePos) const
+{
+  return !leftOf(genomePos) && !rightOf(genomePos);
+}
+
