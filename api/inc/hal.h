@@ -52,5 +52,6 @@
 #include "halTopSegmentIterator.h"
 #include "halDNAIterator.h"
 #include "halValidate.h"
+#include "halColumnIterator.h"
 
 #endif
