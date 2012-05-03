@@ -48,6 +48,14 @@ public:
     * homologous to this segment */
    virtual void setNextParalogyIndex(hal_index_t parIdx) = 0;
 
+   /** Get flag determing if next paralogous segment aligns to the current
+    * one in the reverse complement */
+   hal_bool_t getNextParalogyReversed() const;
+
+   /** Set flag determing if the next paralogous segment is reversed
+    * @param parReversed flag */
+   void setNextParalogyReversed(hal_bool_t parReversed);
+
    /** Get the index of the segment in the segment array */
    virtual hal_index_t getArrayIndex() const = 0;
 

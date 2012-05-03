@@ -17,7 +17,8 @@ const size_t HDF5TopSegment::lengthOffset = sizeof(hal_index_t);
 const size_t HDF5TopSegment::bottomIndexOffset = lengthOffset + sizeof(hal_size_t);
 const size_t HDF5TopSegment::bottomOffsetOffset = bottomIndexOffset + sizeof(hal_index_t);
 const size_t HDF5TopSegment::parIndexOffset = bottomOffsetOffset + sizeof(hal_offset_t);
-const size_t HDF5TopSegment::parentIndexOffset = parIndexOffset + sizeof(hal_index_t);
+const size_t HDF5TopSegment::parReversedOffset = parIndexOffset + sizeof(hal_index_t);
+const size_t HDF5TopSegment::parentIndexOffset = parReversedOffset + sizeof(hal_bool_t);
 const size_t HDF5TopSegment::parentReversedOffset = parentIndexOffset + sizeof(hal_index_t);
 const size_t HDF5TopSegment::totalSize = parentReversedOffset + sizeof(hal_bool_t);
 
@@ -52,6 +53,7 @@ H5::CompType HDF5TopSegment::dataType()
   dataType.insertMember("bottomIdx", bottomIndexOffset, PredType::NATIVE_INT64);
   dataType.insertMember("bottomOffset", bottomOffsetOffset, PredType::NATIVE_UINT64);
   dataType.insertMember("paralogyIdx", parIndexOffset, PredType::NATIVE_INT64);
+  dataType.insertMember("paralogyReversed", parReversedOffset, PredType::NATIVE_CHAR);
   dataType.insertMember("parentIdx", parentIndexOffset, PredType::NATIVE_INT64);
   dataType.insertMember("reverseFlag", parentReversedOffset, PredType::NATIVE_CHAR);
 

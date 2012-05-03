@@ -63,6 +63,14 @@ public:
     * homologous to this segment */
    void setNextParalogyIndex(hal_index_t parIdx);
 
+   /** Get flag determing if next paralogous segment aligns to the current
+    * one in the reverse complement */
+   hal_bool_t getNextParalogyReversed() const;
+
+   /** Set flag determing if the next paralogous segment is reversed
+    * @param parReversed flag */
+   void setNextParalogyReversed(hal_bool_t parReversed);
+
    /** Get index of the homologous segmenet in the ancestral genome */
    hal_index_t getParentIndex() const;
    
@@ -107,6 +115,7 @@ protected:
    static const size_t bottomIndexOffset;
    static const size_t bottomOffsetOffset;
    static const size_t parIndexOffset;
+   static const size_t parReversedOffset;
    static const size_t parentIndexOffset;
    static const size_t parentReversedOffset;
    static const size_t totalSize;
@@ -157,6 +166,16 @@ inline hal_index_t HDF5TopSegment::getNextParalogyIndex() const
 inline void HDF5TopSegment::setNextParalogyIndex(hal_index_t parIdx)
 {
   _array->setValue(_index, parIndexOffset, parIdx);
+}
+
+inline hal_bool_t HDF5TopSegment::getNextParalogyReversed() const
+{
+  return _array->getValue<hal_bool_t>(_index, parReversedOffset);
+}
+
+inline void HDF5TopSegment::setNextParalogyReversed(hal_bool_t parReversed)
+{
+  _array->setValue((hsize_t)_index, parReversedOffset, parReversed);
 }
 
 inline hal_index_t HDF5TopSegment::getParentIndex() const

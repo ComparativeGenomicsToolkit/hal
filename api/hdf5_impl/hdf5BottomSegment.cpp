@@ -16,7 +16,8 @@ const size_t HDF5BottomSegment::lengthOffset = sizeof(hal_index_t);
 const size_t HDF5BottomSegment::topIndexOffset = lengthOffset + sizeof(hal_size_t);
 const size_t HDF5BottomSegment::topOffsetOffset = topIndexOffset + sizeof(hal_index_t);
 const size_t HDF5BottomSegment::parIndexOffset = topOffsetOffset + sizeof(hal_offset_t);
-const size_t HDF5BottomSegment::firstChildOffset = parIndexOffset + sizeof(hal_index_t);
+const size_t HDF5BottomSegment::parReversedOffset = parIndexOffset + sizeof(hal_index_t);
+const size_t HDF5BottomSegment::firstChildOffset = parReversedOffset + sizeof(hal_bool_t);
 const size_t HDF5BottomSegment::totalSize(hal_size_t numChildren)
 {
   return firstChildOffset + numChildren * (sizeof(hal_index_t) + sizeof(hal_bool_t));
@@ -53,6 +54,8 @@ H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
   dataType.insertMember("topIdx", topIndexOffset, PredType::NATIVE_INT64);
   dataType.insertMember("topOffset", topOffsetOffset, PredType::NATIVE_UINT64);
   dataType.insertMember("paralogyIdx", parIndexOffset, PredType::NATIVE_INT64);
+  dataType.insertMember("paralogyReverseFlag", parReversedOffset, 
+                        PredType::NATIVE_CHAR);
   for(hsize_t i = 0; i < numChildren; ++i)
   {
     std::stringstream ss;
