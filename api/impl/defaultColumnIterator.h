@@ -9,9 +9,10 @@
 
 #include <set>
 #include <stack>
+#include <vector>
+#include <map>
 #include "halColumnIterator.h"
 
-#ifdef _DISABLE_FOR_NOW_
 namespace hal {
 
 class DefaultColumnIterator : public ColumnIterator
@@ -36,33 +37,47 @@ public:
    const hal::Genome* getReferenceGenome() const;
 
 private:
-
-   void init() const;
-   void update() const;
-
-private:
    
-   typedef std::pair<const Genome*, hal_index_t> VisitFlag;
-   typedef std::set<VisitFlag> VisitSet;
-   typedef std::map<const Genome*, LinkedBottomIterator> BottomMap;
-   typedef std::map<const Genome*, LinkedTopIterator> TopMap;
-
    struct LinkedTopIterator;
+   typedef smart_ptr<LinkedTopIterator>::type LinkedTopIteratorPtr;
+   struct LinkedBottomIterator;
+   typedef smart_ptr<LinkedBottomIterator>::type LinkedBottomIteratorPtr;
+
    struct LinkedBottomIterator 
    {
-      BottomIteratorConstPtr _it;
-      LinkedTopIterator _topParse;
-      std::vector<LinkedTopIterator> _children;
-      LinkedBottomIterator _nextDup;
+      BottomSegmentIteratorConstPtr _it;
+      LinkedTopIteratorPtr _topParse;
+      std::vector<LinkedTopIteratorPtr> _children;
+      LinkedBottomIteratorPtr _nextDup;
    };
 
    struct LinkedTopIterator 
    {
-      TopIteratorConstPtr _it;
-      LinkedBottomIterator _bottomParse;
-      LinkedBottomIterator _parent;
-      LinkedTopIterator _nextDup;
+      TopSegmentIteratorConstPtr _it;
+      LinkedBottomIteratorPtr _bottomParse;
+      LinkedBottomIteratorPtr _parent;
+      LinkedTopIteratorPtr _nextDup;
    };
+
+   typedef std::pair<const Genome*, hal_index_t> VisitFlag;
+   typedef std::set<VisitFlag> VisitSet;
+   typedef std::map<const Genome*, LinkedBottomIteratorPtr> BottomMap;
+   typedef std::map<const Genome*, LinkedTopIteratorPtr> TopMap;
+
+private:
+
+   void init() const;
+   void update() const;
+
+   void toRightInParent(LinkedTopIteratorPtr topIt) const;
+   void toRightInChild(LinkedBottomIteratorPtr bottomIt, 
+                       hal_size_t index) const;
+   void toRightInNextTopDup(LinkedTopIteratorPtr topIt) const;
+   void toRightInNextBottomDup(LinkedBottomIteratorPtr bottomIt) const;
+   void toRightInParseUp(LinkedBottomIteratorPtr bottomIt) const;
+   void toRightInParseDown(LinkedTopIteratorPtr topIt) const;
+   
+private:
 
    // everything's mutable to keep const behaviour consistent with
    // other iterators (which provide both const and non-const access)
@@ -72,7 +87,9 @@ private:
    mutable VisitSet _bottomVisited;
 
    mutable const Genome* _root;
+   mutable const Genome* _reference;
    mutable std::stack<const Genome*> _activeStack;
+   mutable size_t _curInsertionLength;
 
    mutable BottomMap _bottomMap;
    mutable TopMap _topMap;
@@ -84,4 +101,4 @@ private:
 }
 
 #endif
-#endif
+

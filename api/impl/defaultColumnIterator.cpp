@@ -14,7 +14,6 @@
 using namespace std;
 using namespace hal;
 
-#ifdef _DISABLE_FOR_NOW
 DefaultColumnIterator::DefaultColumnIterator(Genome* reference, 
                                              Genome* root,
                                              hal_index_t columnIndex,
@@ -38,10 +37,6 @@ bool DefaultColumnIterator::equals(ColumnIteratorConstPtr other) const
   return false;
 }
 
-const ColumnIterator::SegmentMap& DefaultColumnIterator::getSegmentMap() const
-{
-  return _segmentMap;
-}
 
 const Genome* DefaultColumnIterator::getReferenceGenome() const 
 {
@@ -54,11 +49,11 @@ void DefaultColumnIterator::init() const
   _bottomMap.clear();
   _topVisited.clear();
   _bottomVisited.clear();
-  _activeStack.clear();
+  _activeStack = stack<const Genome*>();
   _activeStack.push(_reference);
   if (_root == NULL)
   {
-    _root = _referece;
+    _root = _reference;
     while (_root->getParent() == NULL)
     {
       _root = _root->getParent();
@@ -71,69 +66,78 @@ void DefaultColumnIterator::init() const
   {
     const Genome* genome = bfQueue.front();
     bfQueue.pop_front();
-    _topMap.insert(pair<const Genome*, LinkedTopIterator>(
-                     genome, LinkedTopIterator()));
-    _bottomMap.insert(pair<const Genome*, LinkedBottomIterator>(
-                        genome, LinkedBottomIterator()));
+    _topMap.insert(pair<const Genome*, LinkedTopIteratorPtr>(
+                     genome, LinkedTopIteratorPtr()));
+    _bottomMap.insert(pair<const Genome*, LinkedBottomIteratorPtr>(
+                        genome, LinkedBottomIteratorPtr()));
     hal_size_t numChildren = genome->getNumChildren();
-    for (hal_size_t i = 0; i < numChildren)
+    for (hal_size_t i = 0; i < numChildren; ++i)
     {
       bfQueue.push_back(genome->getChild(i));
     }
   }
 }
 
-void DefaultColumnIterator::toRightInParent(LinkedTopIterator& topIt) const
+void DefaultColumnIterator::toRightInParent(LinkedTopIteratorPtr topIt) const
 {
-  if (topIt._parent._it != NULL)
+  if (topIt->_parent->_it.get() != NULL)
   {
-    LinkedBottomIterator& parent - topIt._parent;
-    // do torighton topIt._parent
+    LinkedBottomIteratorPtr& parent = topIt->_parent;
+    // do torighton parent
   
     // parse up
     toRightInParseUp(parent);
 
     // descend down other children
-    for (hal_size_t i = 0; i < parent._children.size(); ++i)
+    for (hal_size_t i = 0; i < parent->_children.size(); ++i)
     {
-      if (&parent._children[i] != & topIt)
+      if (parent->_children[i].get() != topIt.get())
       {
-        toRightInChild(parent._children[i], i);
+        toRightInChild(parent, i);
       }
     }  
   }
 }
 
-void DefaultColumnIterator::toRightInChild(LinkedBottomIterator& bottomIt, 
+void DefaultColumnIterator::toRightInChild(LinkedBottomIteratorPtr bottomIt, 
                                            hal_size_t index) const
 {
-  
+  assert(bottomIt->_children.size() > index);
+  LinkedTopIteratorPtr& child = bottomIt->_children[index];
+  // do toright on child
+
+  // parse down
+  toRightInParseDown(child);  
 }
 
-void DefaultColumnIterator::toRightInNextTopDup(LinkedTopIterator& topIt) const
+void DefaultColumnIterator::toRightInNextTopDup(LinkedTopIteratorPtr topIt) const
 {
-
+  // to do
 }
 
 void DefaultColumnIterator::toRightInNextBottomDup(
-  LinkedBottomIterator& bottomIt) const
+  LinkedBottomIteratorPtr bottomIt) const
 {
-
+  // to do
 }
 
-void DefaultColumnIterator::toRightInParseUp(LinkedBottomIterator& bottomIt) const
+void DefaultColumnIterator::toRightInParseUp(LinkedBottomIteratorPtr bottomIt) const
 {
+  LinkedTopIteratorPtr& top = bottomIt->_topParse;
+  // do toright in top
 
+  toRightInParent(top);
 }
 
-void DefaultColumnIterator::toRightInParseDown(LinkedTopIterator& topIt) const
+void DefaultColumnIterator::toRightInParseDown(LinkedTopIteratorPtr topIt) const
 {
-
+  LinkedBottomIteratorPtr& bottom = topIt->_bottomParse;
+  // do toright in bottom
+  
+  for (hal_size_t i = 0; i < bottom->_children.size(); ++i)
+  {
+    toRightInChild(bottom, i);
+  }
 }
 
-void DefaultColumnIterator::toRight() const
-{
-  deque<const Genome*> bfQueue;
-  x
-}
-#endif
+
