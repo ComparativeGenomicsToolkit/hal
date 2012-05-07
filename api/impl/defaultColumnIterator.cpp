@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <cassert>
 #include <deque>
 #include "defaultColumnIterator.h"
 #include "hal.h"
