@@ -38,6 +38,7 @@ public:
    void toNextParalogy() const;
    hal_offset_t getStartOffset() const;
    hal_offset_t getEndOffset() const;
+   hal_index_t getStartPosition() const;
    hal_size_t getLength() const;
    hal_bool_t getReversed() const;
    void getString(std::string& outString) const;
@@ -53,7 +54,8 @@ public:
    BottomSegment* getBottomSegment();
    const BottomSegment* getBottomSegment() const;
    bool equals(BottomSegmentIteratorConstPtr other) const;
-   
+   bool hasChild(hal_size_t child) const;
+   bool hasParseUp() const;
    bool inRange() const;
 
 protected:

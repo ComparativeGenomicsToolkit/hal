@@ -29,6 +29,8 @@ public:
    virtual TopSegment* getTopSegment() = 0;
    virtual const TopSegment* getTopSegment() const = 0;
    virtual bool equals(TopSegmentIteratorConstPtr other) const = 0;
+   virtual bool hasParent() const = 0;
+   virtual bool hasParseDown() const = 0;
 
 protected:
    friend class counted_ptr<TopSegmentIterator>;

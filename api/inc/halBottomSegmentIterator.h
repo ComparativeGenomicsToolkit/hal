@@ -28,6 +28,8 @@ public:
    virtual BottomSegment* getBottomSegment() = 0;
    virtual const BottomSegment* getBottomSegment() const = 0;
    virtual bool equals(BottomSegmentIteratorConstPtr other) const = 0;
+   virtual bool hasChild(hal_size_t child) const = 0;
+   virtual bool hasParseUp() const = 0;
 
 protected:
    friend class counted_ptr<BottomSegmentIterator>;

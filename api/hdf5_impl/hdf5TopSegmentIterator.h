@@ -35,6 +35,7 @@ public:
    void toNextParalogy() const;
    hal_offset_t getStartOffset() const;
    hal_offset_t getEndOffset() const;
+   hal_index_t getStartPosition() const;
    hal_size_t getLength() const;
    hal_bool_t getReversed() const;
    void getString(std::string& outString) const;
@@ -51,7 +52,8 @@ public:
    TopSegment* getTopSegment();
    const TopSegment* getTopSegment() const;
    bool equals(TopSegmentIteratorConstPtr other) const;
-
+   bool hasParent() const;
+   bool hasParseDown() const;
    bool inRange() const;
 protected:
    HDF5TopSegment _topSegment;

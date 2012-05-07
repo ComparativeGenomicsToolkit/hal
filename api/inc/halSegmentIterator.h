@@ -49,6 +49,11 @@ public:
     * segment after the end offset is ignored by the iterator */  
    virtual hal_offset_t getEndOffset() const = 0;
 
+   /** Get the start position of the iterator's segment.  The parse
+    * offset is taken into account, so it will return the segment's
+    * start position plus the startoffset */
+   virtual hal_index_t getStartPosition() const = 0;
+
    /** Get the length of the iterator's segment.  The parse offset's
     * are taken into account.  So this will return the segment's 
     * length minues the sum of the two offsets */

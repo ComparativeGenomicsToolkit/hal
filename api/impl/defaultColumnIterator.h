@@ -19,7 +19,8 @@ class DefaultColumnIterator : public ColumnIterator
 {
 public:
 
-   DefaultColumnIterator(hal::Genome* reference, hal::Genome* root = NULL,
+   DefaultColumnIterator(const hal::Genome* reference, 
+                         const hal::Genome* root = NULL,
                          hal_index_t columnIndex = 0,
                          hal_size_t maxInsertionLength = 500);
    
@@ -67,15 +68,14 @@ private:
 private:
 
    void init() const;
-   void update() const;
 
-   void toRightInParent(LinkedTopIteratorPtr topIt) const;
-   void toRightInChild(LinkedBottomIteratorPtr bottomIt, 
+   void updateParent(LinkedTopIteratorPtr topIt) const;
+   void updateChild(LinkedBottomIteratorPtr bottomIt, 
                        hal_size_t index) const;
-   void toRightInNextTopDup(LinkedTopIteratorPtr topIt) const;
-   void toRightInNextBottomDup(LinkedBottomIteratorPtr bottomIt) const;
-   void toRightInParseUp(LinkedBottomIteratorPtr bottomIt) const;
-   void toRightInParseDown(LinkedTopIteratorPtr topIt) const;
+   void updateNextTopDup(LinkedTopIteratorPtr topIt) const;
+   void updateNextBottomDup(LinkedBottomIteratorPtr bottomIt) const;
+   void updateParseUp(LinkedBottomIteratorPtr bottomIt) const;
+   void updateParseDown(LinkedTopIteratorPtr topIt) const;
    
 private:
 

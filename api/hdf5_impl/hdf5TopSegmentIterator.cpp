@@ -101,6 +101,12 @@ hal_offset_t HDF5TopSegmentIterator::getEndOffset() const
   return _endOffset;
 }
 
+hal_index_t HDF5TopSegmentIterator::getStartPosition() const
+{
+  assert (inRange() == true);
+  return _topSegment.getStartPosition() + _startOffset;
+}
+
 hal_size_t HDF5TopSegmentIterator::getLength() const
 {
   assert (inRange() == true);
@@ -195,7 +201,19 @@ bool HDF5TopSegmentIterator::equals(TopSegmentIteratorConstPtr other) const
   return _topSegment._index == h5Other->_topSegment._index;
 }
 
-hal_bool_t HDF5TopSegmentIterator::leftOf(hal_index_t genomePos) const
+bool HDF5TopSegmentIterator::hasParent() const
+{
+  assert(inRange() == true);
+  return _topSegment.getParentIndex() != NULL_INDEX;
+}
+
+bool HDF5TopSegmentIterator::hasParseDown() const
+{
+  assert (inRange() == true);
+  return _topSegment.getBottomParseIndex() != NULL_INDEX;
+}
+
+bool HDF5TopSegmentIterator::leftOf(hal_index_t genomePos) const
 {
   assert(genomePos != NULL_INDEX);
   assert(_topSegment.getStartPosition() != NULL_INDEX);
@@ -203,7 +221,7 @@ hal_bool_t HDF5TopSegmentIterator::leftOf(hal_index_t genomePos) const
                      getLength()) < genomePos;
 }
 
-hal_bool_t HDF5TopSegmentIterator::rightOf(hal_index_t genomePos) const
+bool HDF5TopSegmentIterator::rightOf(hal_index_t genomePos) const
 {
   assert(genomePos != NULL_INDEX);
   assert(_topSegment.getStartPosition() != NULL_INDEX);
@@ -211,7 +229,7 @@ hal_bool_t HDF5TopSegmentIterator::rightOf(hal_index_t genomePos) const
      genomePos;
 }
 
-hal_bool_t HDF5TopSegmentIterator::overlaps(hal_index_t genomePos) const
+bool HDF5TopSegmentIterator::overlaps(hal_index_t genomePos) const
 {
   return !leftOf(genomePos) && !rightOf(genomePos);
 }
