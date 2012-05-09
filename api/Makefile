@@ -3,7 +3,7 @@ include ../include.mk
 
 libSources = impl/*.cpp hdf5_impl/*.cpp
 libHeaders = inc/*.h 
-libInternalHeaders = hdf5_impl/*.h
+libInternalHeaders = hdf5_impl/*.h impl/*.h
 libTests = tests/*.cpp
 libTestsHeaders = tests/*.h 
 libHdf5Tests = hdf5_tests/*.cpp
@@ -19,7 +19,7 @@ doxy :
 
 ${libPath}/halLib.a : ${libSources} ${libHeaders} ${libInternalHeaders} ${basicLibsDependencies}
 	cp ${libHeaders} ${libPath}/
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I ${libPath}/ -c ${libSources}
+	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
 	ar rc halLib.a *.o
 	ranlib halLib.a 
 	rm *.o

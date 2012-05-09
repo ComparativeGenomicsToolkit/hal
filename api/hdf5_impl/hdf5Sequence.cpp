@@ -11,6 +11,7 @@
 #include "hdf5DNAIterator.h"
 #include "hdf5TopSegmentIterator.h"
 #include "hdf5BottomSegmentIterator.h"
+#include "defaultColumnIterator.h"
 
 using namespace std;
 using namespace H5;
@@ -164,6 +165,31 @@ DNAIteratorConstPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
 DNAIteratorConstPtr HDF5Sequence::getDNAEndIterator() const
 {
   return getDNAIterator(getSequenceLength());
+}
+
+ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
+  const Genome* root, hal_size_t maxInsertLength, hal_index_t position) const
+{
+  hal_size_t idx = position + getStartPosition();
+  HDF5Genome* genome = const_cast<HDF5Genome*>(_genome);
+  const DefaultColumnIterator* newIt = 
+     new DefaultColumnIterator(genome, root, idx, maxInsertLength);
+  return ColumnIteratorConstPtr(newIt);
+}
+
+ColumnIteratorConstPtr HDF5Sequence::getColumnEndIterator(
+  hal_index_t position) const
+{
+  hal_size_t idx;
+  if (position == NULL_INDEX)
+  {
+    idx = getSequenceLength();
+  }
+  else
+  {
+    idx = position + getStartPosition() + 1;
+  }
+  return getColumnIterator(NULL, 0, idx);
 }
 
 void HDF5Sequence::getString(std::string& outString) const

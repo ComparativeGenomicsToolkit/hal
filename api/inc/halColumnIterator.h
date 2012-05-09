@@ -24,6 +24,9 @@ class ColumnIterator
 {
 public:
 
+   typedef std::vector<hal::DNAIteratorConstPtr> DNAList;
+   typedef std::map<const hal::Genome*, DNAList> ColumnMap;
+
    /** Move column iterator one column to the right along reference
     * genoem sequence */
    virtual void toRight() const = 0;
@@ -35,12 +38,17 @@ public:
    
    /** Get a pointer to the reference genome for the column iterator */
    virtual const hal::Genome* getReferenceGenome() const = 0;
+
+   /** Get a pointer to the column map */
+   virtual const ColumnMap* getColumnMap() const = 0;
    
 protected:
    friend class counted_ptr<ColumnIterator>;
    friend class counted_ptr<const ColumnIterator>;
    virtual ~ColumnIterator() = 0;
 };
+
+inline ColumnIterator::~ColumnIterator() {}
 
 }
 

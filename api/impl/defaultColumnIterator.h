@@ -37,8 +37,11 @@ public:
    
    const hal::Genome* getReferenceGenome() const;
 
+   /** Get a pointer to the column map */
+   const ColumnMap* getColumnMap() const;
+
 private:
-   
+
    struct LinkedTopIterator;
    typedef smart_ptr<LinkedTopIterator>::type LinkedTopIteratorPtr;
    struct LinkedBottomIterator;
@@ -47,6 +50,7 @@ private:
    struct LinkedBottomIterator 
    {
       BottomSegmentIteratorConstPtr _it;
+      DNAIteratorConstPtr _dna;
       LinkedTopIteratorPtr _topParse;
       std::vector<LinkedTopIteratorPtr> _children;
       LinkedBottomIteratorPtr _nextDup;
@@ -55,6 +59,7 @@ private:
    struct LinkedTopIterator 
    {
       TopSegmentIteratorConstPtr _it;
+      DNAIteratorConstPtr _dna;
       LinkedBottomIteratorPtr _bottomParse;
       LinkedBottomIteratorPtr _parent;
       LinkedTopIteratorPtr _nextDup;
@@ -64,10 +69,12 @@ private:
    typedef std::set<VisitFlag> VisitSet;
    typedef std::map<const Genome*, LinkedBottomIteratorPtr> BottomMap;
    typedef std::map<const Genome*, LinkedTopIteratorPtr> TopMap;
+   typedef std::stack<const Genome*> GenomeStack;
 
 private:
 
    void init() const;
+   void resetColMap() const;
 
    void updateParent(LinkedTopIteratorPtr topIt) const;
    void updateChild(LinkedBottomIteratorPtr bottomIt, 
@@ -96,6 +103,8 @@ private:
 
    mutable hal_index_t _index;
    mutable hal_size_t _maxInsertionLength;
+
+   mutable ColumnMap _colMap;
 };
 
 }

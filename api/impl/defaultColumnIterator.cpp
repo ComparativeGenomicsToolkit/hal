@@ -19,18 +19,61 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
                                              const Genome* root,
                                              hal_index_t columnIndex,
                                              hal_size_t maxInsertLength)
+:
+  _root(root),
+  _reference(reference),
+  _index(columnIndex),
+  _maxInsertionLength(maxInsertLength)
 {
-
+  init();
 }
    
 DefaultColumnIterator::~DefaultColumnIterator()
 {
-
+  
 }
 
 void DefaultColumnIterator::toRight() const
 {
-
+  resetColMap();
+  assert(_activeStack.empty() == false);
+  const Genome* refGenome = _activeStack.top();
+  if (refGenome->getNumTopSegments() > 0)
+  {
+    TopMap::iterator i = _topMap.find(refGenome);
+    assert(i != _topMap.end());
+    LinkedTopIteratorPtr topIt = i->second;
+    assert(topIt->_it.get() != NULL);
+    topIt->_it->toRight(topIt->_it->getStartPosition() + 1);
+    topIt->_dna->jumpTo(topIt->_it->getStartPosition());
+    ColumnMap::iterator colIt = _colMap.find(refGenome);
+    assert(colIt != _colMap.end());
+    colIt->second.push_back(topIt->_dna);
+    updateParent(topIt);
+    updateParseDown(topIt);
+  } 
+  else
+  {
+    assert(refGenome->getNumBottomSegments() > 0);
+    BottomMap::iterator i = _bottomMap.find(refGenome);
+    assert(i != _bottomMap.end());
+    LinkedBottomIteratorPtr bottomIt = i->second;
+    assert(bottomIt->_it.get() != NULL);
+    bottomIt->_it->toRight(bottomIt->_it->getStartPosition() + 1);
+    ColumnMap::iterator colIt = _colMap.find(refGenome);
+    assert(colIt != _colMap.end());
+    colIt->second.push_back(bottomIt->_dna);
+    hal_size_t numChildren = refGenome->getNumChildren();
+    bottomIt->_children.resize(numChildren);
+    for (size_t child = 0; child < numChildren; ++child)
+    {
+      updateChild(bottomIt, child);
+    }
+  }  
+  if (refGenome == _reference)
+  {
+    ++_index;
+  }
 }
 
 bool DefaultColumnIterator::equals(ColumnIteratorConstPtr other) const
@@ -44,23 +87,35 @@ const Genome* DefaultColumnIterator::getReferenceGenome() const
   return NULL;
 }
 
+const DefaultColumnIterator::ColumnMap* DefaultColumnIterator::getColumnMap() 
+const
+{
+  return &_colMap;
+}
+
 void DefaultColumnIterator::init() const
 { 
+  _colMap.clear();
   _topMap.clear();
   _bottomMap.clear();
   _topVisited.clear();
   _bottomVisited.clear();
   _activeStack = stack<const Genome*>();
   _activeStack.push(_reference);
+
+  // if no root specified, we walk up to the alignment's root
   if (_root == NULL)
   {
     _root = _reference;
-    while (_root->getParent() == NULL)
+    while (_root->getParent() != NULL)
     {
       _root = _root->getParent();
     }
   }
 
+  // Allocate a pair of linked iterators for every genome
+  // todo: change!!! we don't need!! we just need iterators for 
+  // genomes in the active stack!! 
   deque<const Genome*> bfQueue;
   bfQueue.push_back(_root);
   while (bfQueue.empty() == false)
@@ -68,22 +123,68 @@ void DefaultColumnIterator::init() const
     const Genome* genome = bfQueue.front();
     bfQueue.pop_front();
     _topMap.insert(pair<const Genome*, LinkedTopIteratorPtr>(
-                     genome, LinkedTopIteratorPtr()));
+                     genome, LinkedTopIteratorPtr(new LinkedTopIterator())));
     _bottomMap.insert(pair<const Genome*, LinkedBottomIteratorPtr>(
-                        genome, LinkedBottomIteratorPtr()));
+                        genome, 
+                        LinkedBottomIteratorPtr(new LinkedBottomIterator())));
+    _colMap.insert(pair<const Genome*, DNAList>(genome, DNAList()));
     hal_size_t numChildren = genome->getNumChildren();
     for (hal_size_t i = 0; i < numChildren; ++i)
     {
       bfQueue.push_back(genome->getChild(i));
     }
   }
+
+  // dig out the reference genome and find the first iterators
+  // move them to the start coordinate and recursively call the updates.  
+  const Genome* refGenome = _activeStack.top();
+  if (refGenome->getNumTopSegments() > 0)
+  {
+    TopMap::iterator i = _topMap.find(refGenome);
+    assert(i != _topMap.end());
+    LinkedTopIteratorPtr topIt = i->second;
+    topIt->_it = refGenome->getTopSegmentIterator(_index);
+    topIt->_dna = refGenome->getDNAIterator(_index);
+    ColumnMap::iterator colIt = _colMap.find(refGenome);
+    assert(colIt != _colMap.end());
+    colIt->second.push_back(topIt->_dna);
+    updateParent(topIt);
+    updateParseDown(topIt);
+  } 
+  else
+  {
+    assert(refGenome->getNumBottomSegments() > 0);
+    BottomMap::iterator i = _bottomMap.find(refGenome);
+    assert(i != _bottomMap.end());
+    LinkedBottomIteratorPtr bottomIt = i->second;
+    bottomIt->_it = refGenome->getBottomSegmentIterator(_index);
+    bottomIt->_dna = refGenome->getDNAIterator(_index);
+    ColumnMap::iterator colIt = _colMap.find(refGenome);
+    assert(colIt != _colMap.end());
+    colIt->second.push_back(bottomIt->_dna);
+    hal_size_t numChildren = refGenome->getNumChildren();
+    bottomIt->_children.resize(numChildren);
+    for (size_t child = 0; child < numChildren; ++child)
+    {
+      updateChild(bottomIt, child);
+    }
+  }  
+}
+
+void DefaultColumnIterator::resetColMap() const
+{
+  for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
+  {
+    i->second.clear();
+  }
 }
 
 void DefaultColumnIterator::updateParent(LinkedTopIteratorPtr topIt) const
 {
-  if (topIt->_it->hasParent())
+  const Genome* genome = topIt->_it->getTopSegment()->getGenome();
+ 
+  if (genome != _root && topIt->_it->hasParent())
   {
-    const Genome* genome = topIt->_it->getTopSegment()->getGenome();
     const Genome* parentGenome = genome->getParent();
 
     // no linked iterator for parent.  we create a new one and add the 
@@ -214,7 +315,7 @@ void DefaultColumnIterator::updateParseDown(LinkedTopIteratorPtr topIt) const
     // recurse on all the link's children
     for (hal_size_t i = 0; i <  topIt->_bottomParse->_children.size(); ++i)
     {
-          updateChild(topIt->_bottomParse, i);
+      updateChild(topIt->_bottomParse, i);
     }
   }
 }  
