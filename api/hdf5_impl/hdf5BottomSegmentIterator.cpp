@@ -54,20 +54,22 @@ void HDF5BottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
 
 void HDF5BottomSegmentIterator::toRight(hal_index_t rightCutoff) const
 {
-   if (_endOffset == 0)
+  if (_endOffset == 0)
   {
     ++_bottomSegment._index;
     _startOffset = 0;
   }
   else
   {
-    _startOffset =  _bottomSegment.getLength() - _endOffset - 1;
+    _startOffset = _bottomSegment.getLength() - _endOffset;
     _endOffset = 0;
   }
-  if (rightCutoff != NULL_INDEX && overlaps(rightCutoff))
+
+  if ((hal_size_t)_bottomSegment._index < _bottomSegment._array->getSize() &&
+      rightCutoff != NULL_INDEX && overlaps(rightCutoff))
   {
     _endOffset = _bottomSegment.getStartPosition() + 
-       _bottomSegment.getLength() - rightCutoff;
+       _bottomSegment.getLength() - rightCutoff - 1;
   }
 }
 
@@ -100,6 +102,15 @@ hal_offset_t HDF5BottomSegmentIterator::getEndOffset() const
 {
   assert (inRange() == true);
   return _endOffset;
+}
+
+void HDF5BottomSegmentIterator::slice(hal_offset_t startOffset, 
+                                      hal_offset_t endOffset) const
+{
+  assert(startOffset < _bottomSegment.getLength());
+  assert(endOffset < _bottomSegment.getLength());
+  _startOffset = startOffset;
+  _endOffset = endOffset;
 }
 
 hal_index_t HDF5BottomSegmentIterator::getStartPosition() const
@@ -187,13 +198,11 @@ BottomSegmentIteratorConstPtr HDF5BottomSegmentIterator::copy() const
 
 BottomSegment* HDF5BottomSegmentIterator::getBottomSegment()
 {
-  assert (inRange() == true);
   return &_bottomSegment;
 }
 
 const BottomSegment* HDF5BottomSegmentIterator::getBottomSegment() const
 {
-  assert (inRange() == true);
   return &_bottomSegment;
 }
 

@@ -9,33 +9,70 @@
 #include <cassert>
 #include "halColumnIteratorTest.h"
 #include "halRandomData.h"
+#include "hal.h"
+
 
 using namespace std;
 using namespace hal;
 
 void ColumnIteratorBaseTest::createCallBack(AlignmentPtr alignment)
 {
-  createRandomAlignment(alignment, 2, 1, 2, 10, 10, 2, 2);
+  createRandomAlignment(alignment, 2, 1e-10, 2, 10, 10, 3, 3);
 }
 
 void ColumnIteratorBaseTest::checkCallBack(AlignmentConstPtr alignment)
 {
+  validateAlignment(alignment);
   const Genome* genome = alignment->openGenome(alignment->getRootName());
   assert(genome != NULL);
 
-  cout << "genome len " << genome->getSequenceLength() 
-       << " num top " << genome->getNumTopSegments()
-       << " num bottom " << genome->getNumBottomSegments() << endl;
+  cout << "al size " << alignment->getNumGenomes() << endl;
+  cout << alignment->getChildNames(genome->getName())[0] << endl;
 
+  cout << "genome len " << genome->getSequenceLength(); 
+  cout << " num top " << genome->getNumTopSegments();
+  cout << " num bottom " << genome->getNumBottomSegments();
+  cout << " num child " << genome->getNumChildren(); 
+  cout << " child len " << genome->getChild(0)->getSequenceLength() << endl;
+
+
+  cout << "root genome looks like\n";
+  BottomSegmentIteratorConstPtr bit = genome->getBottomSegmentIterator();
+  cout << "child idx 0= " << bit->getBottomSegment()->getChildIndex(0) << endl;
+  bit->toRight();
+  cout << "child idx 1= " << bit->getBottomSegment()->getChildIndex(0) << endl;
+  bit->toRight();
+  cout << "child idx 2= " << bit->getBottomSegment()->getChildIndex(0) << endl;
+
+
+  cout << "child genome looks like\n";
+  const Genome* childGenome = genome->getChild(0);
+  TopSegmentIteratorConstPtr tit = childGenome->getTopSegmentIterator();
+  cout << "pare idx 0= " << tit->getTopSegment()->getParentIndex() << endl;
+  tit->toRight();
+  cout << "pare idx 1= " << tit->getTopSegment()->getParentIndex() << endl;
+  tit->toRight();
+  cout << "pare idx 2= " << tit->getTopSegment()->getParentIndex() << endl;
+
+  // Iterate over the genome, ensuring that base i aligns to single 
+  // other base
   ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
-  const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
-  CuAssertTrue(_testCase, colMap->size() == 2);
-  for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
-       i != colMap->end(); ++i)
+  for (size_t columnNumber = 0; columnNumber < genome->getSequenceLength(); 
+       ++columnNumber)
   {
-    cout << i->second.size() << endl;
-    CuAssertTrue(_testCase, i->second.size() == 1);
-    CuAssertTrue(_testCase, i->second[0]->getArrayIndex() == 0);
+    const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
+    CuAssertTrue(_testCase, colMap->size() == 2);
+    for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
+         i != colMap->end(); ++i)
+    {
+      for (size_t j = 0; j < i->second.size(); ++j)
+      {
+        CuAssertTrue(_testCase, i->second.size() == 1);
+        CuAssertTrue(_testCase, i->second[j]->getArrayIndex() == columnNumber);
+      }
+    }
+
+    colIterator->toRight();
   }
 }
 

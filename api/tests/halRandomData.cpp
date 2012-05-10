@@ -86,7 +86,7 @@ void createRandomAlignment(hal::AlignmentPtr emptyAlignment,
                          maxSegments);
 
   deque<string> bfQueue;
-  bfQueue.push_back(emptyAlignment->getRootName());
+  bfQueue.push_front(emptyAlignment->getRootName());
 
   while (bfQueue.empty() == false)
   {
@@ -98,7 +98,7 @@ void createRandomAlignment(hal::AlignmentPtr emptyAlignment,
     vector<string> childNames = emptyAlignment->getChildNames(genome->getName());
     for (size_t i = 0; i < childNames.size(); ++i)
     {
-      bfQueue.push_back(childNames[i]);
+      bfQueue.push_front(childNames[i]);
     }
   }
 }
@@ -114,7 +114,7 @@ void createRandomTree(hal::AlignmentPtr emptyAlignment,
   emptyAlignment->addRootGenome("Genome_0");
   
   deque<string> bfQueue;
-  bfQueue.push_back(emptyAlignment->getRootName());
+  bfQueue.push_front(emptyAlignment->getRootName());
   size_t genomeCount = 1;
   
   while (bfQueue.empty() == false)
@@ -126,6 +126,7 @@ void createRandomTree(hal::AlignmentPtr emptyAlignment,
     {
       numChildren = maxGenomes - genomeCount;
     }
+
     for (hal_size_t i = 0; i < numChildren; ++i)
     {
       stringstream ss;
@@ -134,7 +135,7 @@ void createRandomTree(hal::AlignmentPtr emptyAlignment,
       emptyAlignment->addLeafGenome(childName,
                                     genome->getName(),
                                     uniformDbl(1e-5, maxBranchLength));
-      bfQueue.push_back(childName);
+      bfQueue.push_front(childName);
     }
   }
 }
@@ -146,7 +147,7 @@ void createRandomDimensions(hal::AlignmentPtr alignment,
                             hal_size_t maxSegments)
 {
   deque<string> bfQueue;
-  bfQueue.push_back(alignment->getRootName());
+  bfQueue.push_front(alignment->getRootName());
 
   while (bfQueue.empty() == false)
   {
@@ -238,7 +239,7 @@ void createRandomDimensions(hal::AlignmentPtr alignment,
 
     for (size_t i = 0; i < childNames.size(); ++i)
     {
-      bfQueue.push_back(childNames[i]);
+      bfQueue.push_front(childNames[i]);
     }
   }
 }

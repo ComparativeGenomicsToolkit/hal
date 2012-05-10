@@ -35,6 +35,7 @@ public:
    void toNextParalogy() const;
    hal_offset_t getStartOffset() const;
    hal_offset_t getEndOffset() const;
+   void slice(hal_offset_t startOffset, hal_offset_t endOffset) const;
    hal_index_t getStartPosition() const;
    hal_size_t getLength() const;
    hal_bool_t getReversed() const;

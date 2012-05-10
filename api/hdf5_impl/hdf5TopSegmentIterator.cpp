@@ -61,13 +61,15 @@ void HDF5TopSegmentIterator::toRight(hal_index_t rightCutoff) const
   }
   else
   {
-    _startOffset =  _topSegment.getLength() - _endOffset - 1;
+    _startOffset =  _topSegment.getLength() - _endOffset;
     _endOffset = 0;
   }
-  if (rightCutoff != NULL_INDEX && overlaps(rightCutoff))
+
+  if ((hal_size_t)_topSegment._index < _topSegment._array->getSize() &&
+      rightCutoff != NULL_INDEX && overlaps(rightCutoff))
   {
     _endOffset = _topSegment.getStartPosition() + 
-       _topSegment.getLength() - rightCutoff;
+       _topSegment.getLength() - rightCutoff - 1;
   }
 }
 
@@ -99,6 +101,15 @@ hal_offset_t HDF5TopSegmentIterator::getEndOffset() const
 {
   assert (inRange() == true);
   return _endOffset;
+}
+
+void HDF5TopSegmentIterator::slice(hal_offset_t startOffset, 
+                                   hal_offset_t endOffset) const
+{
+  assert(startOffset < _topSegment.getLength());
+  assert(endOffset < _topSegment.getLength());
+  _startOffset = startOffset;
+  _endOffset = endOffset;
 }
 
 hal_index_t HDF5TopSegmentIterator::getStartPosition() const
@@ -183,13 +194,11 @@ TopSegmentIteratorConstPtr HDF5TopSegmentIterator::copy() const
 
 TopSegment* HDF5TopSegmentIterator::getTopSegment()
 {
-  assert (inRange() == true);
   return &_topSegment;
 }
 
 const TopSegment* HDF5TopSegmentIterator::getTopSegment() const
 {
-  assert (inRange() == true);
   return &_topSegment;
 }
 
