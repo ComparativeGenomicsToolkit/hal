@@ -47,4 +47,10 @@ struct TopSegmentSequenceTest : public AlignmentTest
    std::vector<std::string> _sequences;
 };
 
+struct TopSegmentIteratorParseTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
 #endif

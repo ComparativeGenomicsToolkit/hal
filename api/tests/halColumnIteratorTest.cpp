@@ -9,6 +9,8 @@
 #include <cassert>
 #include "halColumnIteratorTest.h"
 #include "halRandomData.h"
+#include "halBottomSegmentTest.h"
+#include "halTopSegmentTest.h"
 #include "hal.h"
 
 
@@ -79,78 +81,75 @@ void ColumnIteratorDepthTest::createCallBack(AlignmentPtr alignment)
   dims[0] = Sequence::Info("seq", seqLength, 0, numSegments);
   grandpa->setDimensions(dims);
   
-  BottomSegmentIteratorPtr bit;
-  TopSegmentIteratorPtr tit;
+  BottomSegmentIteratorPtr bi;
+  BottomSegmentStruct bs;
+  TopSegmentIteratorPtr ti;
+  TopSegmentStruct ts;
 
   for (hal_size_t i = 0; i < numSegments; ++i)
   {
-    tit = son1->getTopSegmentIterator(i);
-    tit->getTopSegment()->setParentIndex(i);
-    tit->getTopSegment()->setStartPosition(i * segLength);
-    tit->getTopSegment()->setLength(segLength);
-    tit->getTopSegment()->setBottomParseIndex(NULL_INDEX);
-    tit->getTopSegment()->setBottomParseOffset(0);
+    ti = son1->getTopSegmentIterator(i);
+    ts.set(i * segLength, segLength, i);
+    ts.applyTo(ti);
 
-    tit = son2->getTopSegmentIterator(i);
-    tit->getTopSegment()->setParentIndex(i);
-    tit->getTopSegment()->setStartPosition(i * segLength);
-    tit->getTopSegment()->setLength(segLength);
-    tit->getTopSegment()->setBottomParseIndex(NULL_INDEX);
-    tit->getTopSegment()->setBottomParseOffset(0);
+    ti = son2->getTopSegmentIterator(i);
+    ts.set(i * segLength, segLength, i);
+    ts.applyTo(ti);
 
-    tit = dad->getTopSegmentIterator(i);
-    tit->getTopSegment()->setParentIndex(i);
-    tit->getTopSegment()->setStartPosition(i * segLength);
-    tit->getTopSegment()->setLength(segLength);
-    tit->getTopSegment()->setBottomParseIndex(i);
-    tit->getTopSegment()->setBottomParseOffset(0);
+    ti = dad->getTopSegmentIterator(i);
+    ts.set(i * segLength, segLength, i, i, 0);
+    ts.applyTo(ti);
 
-    bit = dad->getBottomSegmentIterator(i);
-    bit->getBottomSegment()->setChildIndex(0, i);
-    bit->getBottomSegment()->setChildIndex(1, i);
-    bit->getBottomSegment()->setStartPosition(i * segLength);
-    bit->getBottomSegment()->setLength(segLength);
-    bit->getBottomSegment()->setTopParseIndex(i);
-    bit->getBottomSegment()->setTopParseOffset(0);
+    bi = dad->getBottomSegmentIterator(i);
+    bi->getBottomSegment()->setChildIndex(0, i);
+    bi->getBottomSegment()->setChildIndex(1, i);
+    bs.set(i * segLength, segLength, i, 0);
+    bs.applyTo(bi);
 
-    bit = grandpa->getBottomSegmentIterator(i);
-    bit->getBottomSegment()->setChildIndex(0, i);
-    bit->getBottomSegment()->setStartPosition(i * segLength);
-    bit->getBottomSegment()->setLength(segLength);
-    bit->getBottomSegment()->setTopParseIndex(NULL_INDEX);
-    bit->getBottomSegment()->setTopParseOffset(0);
+    bi = grandpa->getBottomSegmentIterator(i);
+    bi->getBottomSegment()->setChildIndex(0, i);
+    bs.set(i * segLength, segLength);
+    bs.applyTo(bi);
   }  
 }
 
-void ColumnIteratorDepthTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorDepthTest::checkGenome(const Genome* genome)
 {
-  // validateAlignment(alignment);
-  const Genome* genome = alignment->openGenome(alignment->getRootName());
   assert(genome != NULL);
-
-  // Iterate over the root, ensuring that base i aligns to single 
-  // other base
   ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
   for (size_t columnNumber = 0; columnNumber < genome->getSequenceLength(); 
        ++columnNumber)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
+    CuAssertTrue(_testCase, colMap->size() == 4);
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
       CuAssertTrue(_testCase, i->second.size() == 1);
       DNAIteratorConstPtr dnaIt = i->second[0];
       
-      cout << "column=" << columnNumber 
+      /*  cout << "column=" << columnNumber 
            << " genome=" << dnaIt->getGenome()->getName()
-           << " index=" << dnaIt->getArrayIndex() << endl;
+           << " index=" << dnaIt->getArrayIndex() << endl;*/
 
       CuAssertTrue(_testCase, dnaIt->getArrayIndex() == 
                    (hal_index_t)columnNumber);
     }
-
     colIterator->toRight();
   }
+}
+
+void ColumnIteratorDepthTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  // validateAlignment(alignment);
+  const Genome* genome = alignment->openGenome("grandpa");
+  checkGenome(genome);
+  genome = alignment->openGenome("dad");
+  checkGenome(genome);
+  genome = alignment->openGenome("son1");
+  checkGenome(genome);
+  genome = alignment->openGenome("son2");
+  checkGenome(genome);
 }
 
 void halColumnIteratorBaseTest(CuTest *testCase)
