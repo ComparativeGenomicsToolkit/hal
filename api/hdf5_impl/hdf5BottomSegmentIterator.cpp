@@ -163,12 +163,26 @@ HDF5BottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
   assert (inRange() == true);
   const HDF5TopSegmentIterator* h5ts = 
      reinterpret_cast<const HDF5TopSegmentIterator*>(ts.get());
+  
   _bottomSegment._genome = h5ts->_topSegment._genome;
   _bottomSegment._index = h5ts->_topSegment.getBottomParseIndex();
   _bottomSegment._array = &h5ts->_topSegment._genome->_bottomArray;
-  _startOffset = h5ts->_topSegment.getBottomParseOffset();
-  _endOffset = min(static_cast<hal_size_t>(h5ts->_endOffset),
-                   _bottomSegment.getLength());
+  
+  hal_index_t startPos = h5ts->getStartPosition();
+  hal_index_t endPos = startPos + h5ts->getLength() - 1;
+
+  while (startPos >= _bottomSegment.getStartPosition() + 
+         (hal_index_t)_bottomSegment.getLength())
+  {
+    ++_bottomSegment._index;
+  }
+  
+  _startOffset = startPos - _bottomSegment.getStartPosition();
+
+  hal_index_t newEndPos = _bottomSegment.getStartPosition() +
+     _bottomSegment.getLength() - 1;
+  _endOffset = max(0LL, newEndPos - endPos);
+
   _reversed = h5ts->_reversed;
 }
 
@@ -223,6 +237,8 @@ bool HDF5BottomSegmentIterator::hasChild(hal_size_t child) const
 bool HDF5BottomSegmentIterator::hasParseUp() const
 {
   assert (inRange() == true);
+  assert (_bottomSegment.getTopParseIndex() == NULL_INDEX || 
+          _bottomSegment.getGenome()->getParent() != NULL);
   return _bottomSegment.getTopParseIndex() != NULL_INDEX;
 }
 

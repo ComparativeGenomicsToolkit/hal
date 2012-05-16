@@ -7,7 +7,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <sstream>
+#include <cassert>
 #include "halBottomSegmentTest.h"
+#include "halTopSegmentTest.h"
 
 using namespace std;
 using namespace hal;
@@ -31,6 +33,19 @@ void BottomSegmentStruct::setRandom(hal_size_t numChildren)
     child.second = rand();
     _children.push_back(child);
   }
+}
+
+void BottomSegmentStruct::set(hal_index_t startPosition,
+                              hal_size_t length,
+                              hal_index_t topParseIndex,
+                              hal_offset_t topParseOffset,
+                              hal_index_t nextParalogyIndex)
+{
+  _startPosition = startPosition;
+  _length = length;
+  _topParseIndex = topParseIndex;
+  _topParseOffset = topParseOffset;
+  _nextParalogyIndex = nextParalogyIndex;
 }
 
 void BottomSegmentStruct::applyTo(BottomSegmentIteratorPtr it) const
@@ -153,6 +168,133 @@ void BottomSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, seq == "GAATGTGTG");
 }
 
+void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
+{
+  vector<Sequence::Info> seqVec(1);
+  
+  BottomSegmentIteratorPtr bi;
+  BottomSegmentStruct bs;
+  TopSegmentIteratorPtr ti;
+  TopSegmentStruct ts;
+  
+  // case 1: bottom segment aligns perfectly with top segment
+  Genome* case1 = alignment->addRootGenome("case1");
+  seqVec[0] = Sequence::Info("Sequence", 10, 2, 2);
+  case1->setDimensions(seqVec);
+  
+  ti = case1->getTopSegmentIterator();
+  ts.set(0, 10, NULL_INDEX, 0, 0);
+  ts.applyTo(ti);
+  
+  bi = case1->getBottomSegmentIterator();
+  bs.set(0, 10, 0, 0);
+  bs.applyTo(bi);
+
+  // case 2: bottom segment is completely contained in top segment
+  Genome* case2 = alignment->addRootGenome("case2");
+  seqVec[0] = Sequence::Info("Sequence", 10, 2, 3);
+  case2->setDimensions(seqVec);
+  
+  ti = case2->getTopSegmentIterator();
+  ts.set(0, 9, NULL_INDEX, 0, 0);
+  ts.applyTo(ti);
+
+  bi = case2->getBottomSegmentIterator();
+  bs.set(0, 3, 0, 0);
+  bs.applyTo(bi);
+  bi->toRight();
+  bs.set(3, 4, 0, 0);
+  bs.applyTo(bi);
+  bi->toRight();
+  bs.set(7, 3, 0, 0);
+  bs.applyTo(bi);
+
+  // case 3 top segment is completely contained in bottom segment
+  Genome* case3 = alignment->addRootGenome("case3");
+  seqVec[0] = Sequence::Info("Sequence", 10, 3, 2);
+  case3->setDimensions(seqVec);
+
+  ti = case3->getTopSegmentIterator();
+  ts.set(0, 3, NULL_INDEX, 0, 0);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(3, 4, NULL_INDEX, 0, 3);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(7, 3, NULL_INDEX, 0, 7);
+  ts.applyTo(ti);
+
+  bi = case3->getBottomSegmentIterator();
+  bs.set(0, 9, 0, 0);
+  bs.applyTo(bi);
+ 
+  // case 4: top segment overhangs bottom segment on the left
+  Genome* case4 = alignment->addRootGenome("case4");
+  seqVec[0] = Sequence::Info("Sequence", 10, 2, 2);
+  case4->setDimensions(seqVec);
+
+  ti = case4->getTopSegmentIterator();
+  ts.set(0, 9, NULL_INDEX, 0, 0);
+  ts.applyTo(ti);
+
+  bi = case4->getBottomSegmentIterator();
+  bs.set(0, 5, 0, 0);
+  bs.applyTo(bi);
+  bi->toRight();
+  bs.set(5, 5, 0, 0);
+  bs.applyTo(bi);
+}
+
+void BottomSegmentIteratorParseTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  BottomSegmentIteratorConstPtr bi;
+  TopSegmentIteratorConstPtr ti;
+
+  // case 1
+  const Genome* case1 = alignment->openGenome("case1");
+  ti = case1->getTopSegmentIterator();
+  bi = case1->getBottomSegmentIterator();
+  bi->toParseDown(ti);
+  CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
+  CuAssertTrue(_testCase, bi->getLength() == ti->getLength());
+  ti->slice(3, 1);
+  bi->toParseDown(ti);
+  CuAssertTrue(_testCase, ti->getLength() == 
+               ti->getTopSegment()->getLength() - 4);
+  CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
+  CuAssertTrue(_testCase, bi->getLength() == ti->getLength());
+
+  // case 2
+  const Genome* case2 = alignment->openGenome("case2");
+  ti = case2->getTopSegmentIterator();
+  bi = case2->getBottomSegmentIterator();
+  bi->toParseDown(ti);
+  CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
+  ti->slice(5, 2);
+  bi->toParseDown(ti);
+  CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
+
+  // case 3
+  const Genome* case3 = alignment->openGenome("case3");
+  ti = case3->getTopSegmentIterator(1);
+  bi = case3->getBottomSegmentIterator();
+  bi->toParseDown(ti);
+  CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
+  ti->slice(2, 1);
+  bi->toParseDown(ti);
+  CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
+
+  // case 4
+ const Genome* case4 = alignment->openGenome("case4");
+  ti = case4->getTopSegmentIterator();
+  bi = case4->getBottomSegmentIterator();
+  bi->toParseDown(ti);
+  CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
+  ti->slice(6, 2);
+  bi->toParseDown(ti);
+  CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
+}
+
 void halBottomSegmentSimpleIteratorTest(CuTest *testCase)
 {
   try 
@@ -179,11 +321,25 @@ void halBottomSegmentSequenceTest(CuTest *testCase)
   } 
 }
 
+void halBottomSegmentIteratorParseTest(CuTest *testCase)
+{
+  try 
+  {
+    BottomSegmentIteratorParseTest tester;
+    tester.check(testCase);
+  }
+  catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
 CuSuite* halBottomSegmentTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halBottomSegmentSimpleIteratorTest);
   SUITE_ADD_TEST(suite, halBottomSegmentSequenceTest);
+  SUITE_ADD_TEST(suite, halBottomSegmentIteratorParseTest);
   return suite;
 }
 

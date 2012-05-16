@@ -12,11 +12,11 @@ int halRunAllTests(void) {
   CuSuiteAddSuite(suite, halAlignmentTestSuite());
   CuSuiteAddSuite(suite, halMetaDataTestSuite());
   CuSuiteAddSuite(suite, halGenomeTestSuite());
-  CuSuiteAddSuite(suite, halTopSegmentTestSuite());
+  CuSuiteAddSuite(suite, halTopSegmentTestSuite()); 
   CuSuiteAddSuite(suite, halBottomSegmentTestSuite());
   CuSuiteAddSuite(suite, halSequenceTestSuite()); 
-  CuSuiteAddSuite(suite, halValidateTestSuite());
-  CuSuiteAddSuite(suite, halColumnIteratorTestSuite());
+  CuSuiteAddSuite(suite, halValidateTestSuite()); 
+  CuSuiteAddSuite(suite, halColumnIteratorTestSuite()); 
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);
   CuSuiteDetails(suite, output);

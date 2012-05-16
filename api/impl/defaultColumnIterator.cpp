@@ -232,6 +232,8 @@ void DefaultColumnIterator::updateParent(LinkedTopIteratorPtr topIt) const
     topIt->_parent->_it->toParent(topIt->_it);
     topIt->_parent->_dna->jumpTo( topIt->_parent->_it->getStartPosition());
     _colMap[parentGenome].push_back(topIt->_parent->_dna);
+    cout << "child parent " << topIt->_parent->_dna->getArrayIndex()
+         << endl;
 
     // recurse on parent's parse edge
     updateParseUp(topIt->_parent);
@@ -276,6 +278,13 @@ void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt,
       bottomIt->_children[index]->_it->getStartPosition());
     _colMap[childGenome].push_back(bottomIt->_children[index]->_dna);
 
+    cout << "updating genome " << childGenome->getName() 
+         << " (son of " << genome->getName() << ")"
+         << " parent index " 
+         << bottomIt->_dna->getArrayIndex()
+         << " index " << bottomIt->_children[index]->_dna->getArrayIndex()
+         << endl;
+
     //recurse on child's parse edge
     updateParseDown(bottomIt->_children[index]);
   }
@@ -312,7 +321,7 @@ void DefaultColumnIterator::updateParseUp(LinkedBottomIteratorPtr bottomIt)
     bottomIt->_topParse->_it->toParseUp(bottomIt->_it);
     bottomIt->_topParse->_dna->jumpTo(
       bottomIt->_topParse->_it->getStartPosition());
-    _colMap[genome].push_back(bottomIt->_topParse->_dna);
+    //_colMap[genome].push_back(bottomIt->_topParse->_dna);
 
     // recurse on parse link's parent
     updateParent(bottomIt->_topParse);
@@ -347,8 +356,13 @@ void DefaultColumnIterator::updateParseDown(LinkedTopIteratorPtr topIt) const
     topIt->_bottomParse->_it->toParseDown(topIt->_it);
     topIt->_bottomParse->_dna->jumpTo(
       topIt->_bottomParse->_it->getStartPosition());
-    _colMap[genome].push_back(topIt->_bottomParse->_dna);
+    //_colMap[genome].push_back(topIt->_bottomParse->_dna);
     
+    cout << "doing parse down on " << genome->getName()
+         << " where incoming index is " << topIt->_dna->getArrayIndex()
+         << " but outgoing index is " 
+         << topIt->_bottomParse->_dna->getArrayIndex() << endl;
+
     // recurse on all the link's children
     for (hal_size_t i = 0; i <  topIt->_bottomParse->_children.size(); ++i)
     {

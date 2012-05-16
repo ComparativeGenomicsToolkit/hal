@@ -25,6 +25,21 @@ void TopSegmentStruct::setRandom()
   _bottomParseOffset = rand();
 }
 
+void TopSegmentStruct::set(hal_index_t startPosition,
+                           hal_size_t length,
+                           hal_index_t parentIndex,
+                           hal_index_t bottomParseIndex,
+                           hal_offset_t bottomParseOffset,
+                           hal_index_t nextParalogyIndex)
+{
+  _startPosition = startPosition;
+  _length = length;
+  _parentIndex = parentIndex;
+  _bottomParseIndex = bottomParseIndex;
+  _bottomParseOffset = bottomParseOffset;
+  _nextParalogyIndex = nextParalogyIndex;
+}
+
 void TopSegmentStruct::applyTo(TopSegmentIteratorPtr it) const
 {
   TopSegment* seg = it->getTopSegment();

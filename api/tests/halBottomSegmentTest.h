@@ -24,7 +24,13 @@ struct BottomSegmentStruct {
    void applyTo(hal::BottomSegmentIteratorPtr it) const;
    void compareTo(hal::BottomSegmentIteratorConstPtr it,
      CuTest* testCase) const;
+   void set(hal_index_t startPosition,
+            hal_size_t length,
+            hal_index_t topParseIndex = hal::NULL_INDEX,
+            hal_offset_t topParseOffset = 0,
+            hal_index_t nextParalogyIndex = hal::NULL_INDEX);
 };
+
 
 struct BottomSegmentSimpleIteratorTest : public AlignmentTest
 {
@@ -39,6 +45,12 @@ struct BottomSegmentSequenceTest : public AlignmentTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
    std::vector<BottomSegmentStruct> _bottomSegments;
    std::vector<std::string> _sequences;
+};
+
+struct BottomSegmentIteratorParseTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
 #endif

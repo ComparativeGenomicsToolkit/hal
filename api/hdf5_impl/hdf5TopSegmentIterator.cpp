@@ -219,6 +219,8 @@ bool HDF5TopSegmentIterator::hasParent() const
 bool HDF5TopSegmentIterator::hasParseDown() const
 {
   assert (inRange() == true);
+  assert (_topSegment.getBottomParseIndex() == NULL_INDEX ||
+          _topSegment.getGenome()->getNumChildren() > 0);
   return _topSegment.getBottomParseIndex() != NULL_INDEX;
 }
 
