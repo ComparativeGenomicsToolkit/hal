@@ -54,7 +54,6 @@ void GenomeCreateTest::createCallBack(AlignmentPtr alignment)
   MetaData* ancMeta = ancGenome->getMetaData();
   ancMeta->set("Young", "Jeezy");
 
-  
   vector<Sequence::Info> seqVec(1);
   seqVec[0] =Sequence::Info("Sequence", 1000000, 5000, 700000);
   ancGenome->setDimensions(seqVec);
@@ -68,6 +67,8 @@ void GenomeCreateTest::createCallBack(AlignmentPtr alignment)
 
 void GenomeCreateTest::checkCallBack(AlignmentConstPtr alignment)
 {
+  const Genome* dudGenome = alignment->openGenome("Zebra");
+  CuAssertTrue(_testCase, dudGenome == NULL);
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   const MetaData* ancMeta = ancGenome->getMetaData();
   CuAssertTrue(_testCase, ancMeta->get("Young") == "Jeezy");

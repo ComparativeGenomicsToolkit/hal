@@ -196,10 +196,14 @@ const Genome* HDF5Alignment::openGenome(const string& name) const
   {
     return mapit->second;
   }
-  HDF5Genome* genome = new HDF5Genome(name, const_cast<HDF5Alignment*>(this), 
-                                      _file, _dcprops);
-  genome->read();
-  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  HDF5Genome* genome = NULL;
+  if (_nodeMap.find(name) != _nodeMap.end())
+  {
+    genome = new HDF5Genome(name, const_cast<HDF5Alignment*>(this), 
+                                        _file, _dcprops);
+    genome->read();
+    _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  }
   return genome;
 }
 
@@ -210,9 +214,13 @@ Genome* HDF5Alignment::openGenome(const string& name)
   {
     return mapit->second;
   }
-  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
-  genome->read();
-  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  HDF5Genome* genome = NULL;
+  if (_nodeMap.find(name) != _nodeMap.end())
+  {
+    genome = new HDF5Genome(name, this, _file, _dcprops);
+    genome->read();
+    _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  }
   return genome;
 }
 
