@@ -10,8 +10,9 @@
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
+extern "C" {
 #include "sonLibTree.h"
-
+}
 
 using namespace hal;
 using namespace std;
