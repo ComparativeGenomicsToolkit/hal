@@ -179,7 +179,7 @@ void HDF5TopSegmentIterator::toParseUp(BottomSegmentIteratorConstPtr bs) const
 
   hal_index_t newEndPos = _topSegment.getStartPosition() +
      _topSegment.getLength() - 1;
-  _endOffset = max(0LL, newEndPos - endPos);
+  _endOffset = max((hal_index_t)0, newEndPos - endPos);
 
   _reversed = h5bs->_reversed;
 }

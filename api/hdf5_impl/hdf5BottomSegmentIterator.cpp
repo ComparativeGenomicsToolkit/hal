@@ -181,7 +181,7 @@ HDF5BottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
 
   hal_index_t newEndPos = _bottomSegment.getStartPosition() +
      _bottomSegment.getLength() - 1;
-  _endOffset = max(0LL, newEndPos - endPos);
+  _endOffset = max((hal_index_t)0, newEndPos - endPos);
 
   _reversed = h5ts->_reversed;
 }
