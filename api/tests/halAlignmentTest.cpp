@@ -114,9 +114,50 @@ void AlignmentTestTrees::checkCallBack(hal::AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, children.size() == 5);
 }
 
+void AlignmentTestEmpty::createCallBack(hal::AlignmentPtr alignment)
+{
+
+}
+
+void AlignmentTestEmpty::checkCallBack(hal::AlignmentConstPtr alignment)
+{
+  CuAssertTrue(_testCase, alignment->getNumGenomes() == 0);
+}
+
+void AlignmentTestBadPathError::createCallBack(hal::AlignmentPtr alignment)
+{
+  
+}
+
+void AlignmentTestBadPathError::checkCallBack(hal::AlignmentConstPtr alignment)
+{
+  string badPath(_checkPath);
+  badPath += "blarg";
+  try {
+    ((Alignment*)alignment.get())->open(badPath, true);
+  }
+  catch(...)
+  {
+    return;
+  }
+  CuAssertTrue(_testCase, false);
+}
+
 void halAlignmentTestTrees(CuTest *testCase)
 {
   AlignmentTestTrees tester;
+  tester.check(testCase);
+}
+
+void halAlignmentTestEmpty(CuTest *testCase)
+{
+  AlignmentTestEmpty tester;
+  tester.check(testCase);
+}
+
+void halAlignmentTestBadPathError(CuTest *testCase)
+{
+  AlignmentTestBadPathError tester;
   tester.check(testCase);
 }
 
@@ -124,6 +165,8 @@ CuSuite* halAlignmentTestSuite(void)
 {
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halAlignmentTestTrees);
+  SUITE_ADD_TEST(suite, halAlignmentTestEmpty);
+  SUITE_ADD_TEST(suite, halAlignmentTestBadPathError);
   return suite;
 }
 
