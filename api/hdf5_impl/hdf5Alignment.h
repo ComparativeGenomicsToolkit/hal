@@ -31,6 +31,7 @@ public:
    void createNew(const std::string& alignmentPath);
    void open(const std::string& alignmentPath, 
              bool readOnly);
+   void open(const std::string& alignmentPath) const;
    void close();
    
    Genome* addLeafGenome(const std::string& name,

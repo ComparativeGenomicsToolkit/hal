@@ -32,6 +32,10 @@ public:
    virtual void open(const std::string& alignmentPath, 
                      bool readOnly) = 0;
 
+   /** Open an existing alignment for reading only 
+    * @param alignmentPath location on disk */
+   virtual void open(const std::string& alignmentPath) const = 0;
+
    /** Close the alignment */
    virtual void close() = 0;
    

@@ -87,6 +87,12 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   _metaData = new HDF5MetaData(_file, MetaGroupName);
   loadTree();
 }
+
+// todo: properly handle readonly
+void HDF5Alignment::open(const string& alignmentPath) const
+{
+  const_cast<HDF5Alignment*>(this)->open(alignmentPath, true);
+}
    
 void HDF5Alignment::close()
 {
