@@ -184,6 +184,17 @@ void hal::validateTopSegment(const TopSegment* topSegment)
                           
     }
   }
+
+  const hal_index_t paralogyIndex = topSegment->getNextParalogyIndex();
+  if (paralogyIndex != NULL_INDEX)
+  {
+    TopSegmentIteratorConstPtr pti = 
+       genome->getTopSegmentIterator(paralogyIndex);
+    if (pti->getTopSegment()->getParentIndex() != topSegment->getParentIndex())
+    {
+      throw hal_exception("paralogous top segments must share same parent");
+    }
+  }
 }
 
 void hal::validateSequence(const Sequence* sequence)

@@ -371,6 +371,7 @@ void createRandomSegment(Genome* genome,
         setIt->second)->getTopSegment();
       paralogousSegment->setNextParalogyIndex(topSegment->getArrayIndex());
       topSegment->setNextParalogyIndex(firstIt->second);
+      cout << "setting paralogy" << endl;
     }
 
     edgeSet.insert(pair<hal_index_t, hal_index_t>(
