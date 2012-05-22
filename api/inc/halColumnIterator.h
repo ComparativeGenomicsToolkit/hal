@@ -50,6 +50,22 @@ protected:
 
 inline ColumnIterator::~ColumnIterator() {}
 
+inline bool operator==(ColumnIteratorConstPtr p1,
+                       ColumnIteratorConstPtr p2) 
+{
+  if (p1.get() == NULL || p2.get() == NULL)
+  {
+    return p1.get() == NULL && p2.get() == NULL;
+  }
+  return p1->equals(p2);
+}
+
+inline bool operator!=(ColumnIteratorConstPtr p1,
+                       ColumnIteratorConstPtr p2)
+{
+  return !(p1 == p2);
+}
+
 }
 
 #endif

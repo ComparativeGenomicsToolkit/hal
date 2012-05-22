@@ -36,6 +36,17 @@ public:
    /** switch to segment's reverse complement */
    virtual void toReverse() const = 0;
 
+   /** move iterator to position of dna site in *genome*
+    * @param position index of site in genome
+    * @param slice if true, the returned iterator is sliced to correspond
+    * to just the single base.  if false, the iterator corresponds to the
+    * entire segment. 
+    * NOTE*** this function requires up to logN time!! in current hdf5 imp.*/
+   virtual void toSite(hal_index_t position, bool slice = true) const = 0;
+
+   /** check if there is a next paralogy */
+   virtual bool hasNextParalogy() const = 0;
+
    /** move to the next paralgous segment */
    virtual void toNextParalogy() const = 0;
    

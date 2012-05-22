@@ -56,6 +56,7 @@ void DefaultColumnIterator::toRight() const
         refGenome->getNumTopSegments())
     {
       updateParent(topIt);
+      updateNextTopDup(topIt);
       updateParseDown(topIt);
     }
   } 
@@ -93,13 +94,33 @@ void DefaultColumnIterator::toRight() const
 
 bool DefaultColumnIterator::equals(ColumnIteratorConstPtr other) const
 {
+  ColumnMap::const_iterator thisIt = _colMap.find(_reference);
+  const ColumnMap* otherMap = other->getColumnMap();
+  assert (_reference == other->getReferenceGenome());
+  ColumnMap::const_iterator otherIt = otherMap->find(
+    other->getReferenceGenome());
+  if (thisIt == _colMap.end() && otherIt == otherMap->end())
+  {
+    return true;
+  }
+  else if (thisIt != _colMap.end() && otherIt != otherMap->end())
+  {
+    if (thisIt->second.empty() == false && otherIt->second.empty() == false)
+    {
+      return thisIt->second[0]->equals(otherIt->second[0]);
+    }
+    else if (thisIt->second.empty() == true && otherIt->second.empty() == true)
+    {
+      return true;
+    }
+  }
   return false;
 }
 
 
 const Genome* DefaultColumnIterator::getReferenceGenome() const 
 {
-  return NULL;
+  return _reference;
 }
 
 const DefaultColumnIterator::ColumnMap* DefaultColumnIterator::getColumnMap() 
@@ -167,6 +188,7 @@ void DefaultColumnIterator::init() const
     assert(colIt != _colMap.end());
     colIt->second.push_back(topIt->_dna);
     updateParent(topIt);
+    updateNextTopDup(topIt);
     updateParseDown(topIt);
   } 
   else
@@ -252,7 +274,7 @@ void DefaultColumnIterator::updateParent(LinkedTopIteratorPtr topIt) const
 }
 
 void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt, 
-                                           hal_size_t index) const
+                                        hal_size_t index) const
 {
   if (bottomIt->_it->hasChild(index))
   {
@@ -284,6 +306,9 @@ void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt,
          << bottomIt->_dna->getArrayIndex()
          << " index " << bottomIt->_children[index]->_dna->getArrayIndex()
          << endl;
+    
+    //recurse on paralgous siblings
+    updateNextTopDup(bottomIt->_children[index]);
 
     //recurse on child's parse edge
     updateParseDown(bottomIt->_children[index]);
@@ -292,7 +317,46 @@ void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt,
 
 void DefaultColumnIterator::updateNextTopDup(LinkedTopIteratorPtr topIt) const
 {
-  // to do
+  assert (topIt->_it.get() != NULL);
+  if (topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX)
+  {
+    return;
+  }
+  
+  hal_index_t firstIndex = topIt->_it->getTopSegment()->getArrayIndex();
+  LinkedTopIteratorPtr currentTopIt = topIt;
+  const Genome* genome =  topIt->_it->getTopSegment()->getGenome();
+
+  do  
+  {
+     // no linked iterator for paralog. we create a new one and add link
+    if (currentTopIt->_nextDup.get() == NULL)
+    {
+      currentTopIt->_nextDup = LinkedTopIteratorPtr(new LinkedTopIterator());
+      currentTopIt->_nextDup->_it = genome->getTopSegmentIterator();
+      currentTopIt->_nextDup->_dna = genome->getDNAIterator();
+      currentTopIt->_nextDup->_parent = currentTopIt->_parent;
+    }
+    
+    // advance the dups's iterator to match currentTopIt's (which should
+    // have already been updated)
+    currentTopIt->_nextDup->_it = currentTopIt->_it->copy();
+    currentTopIt->_nextDup->_it->toNextParalogy();
+    currentTopIt->_nextDup->_dna->jumpTo(
+      currentTopIt->_nextDup->_it->getStartPosition());
+      
+    _colMap[genome].push_back(currentTopIt->_nextDup->_dna);
+    
+    // recurse on duplicate's parse edge
+    updateParseDown(currentTopIt->_nextDup);
+
+    // advance current it to the next paralog
+    currentTopIt = currentTopIt->_nextDup;
+  } 
+  while (currentTopIt->_it->getTopSegment()->getNextParalogyIndex() != 
+         NULL_INDEX &&
+         currentTopIt->_it->getTopSegment()->getNextParalogyIndex() != 
+         firstIndex);
 }
 
 void DefaultColumnIterator::updateNextBottomDup(

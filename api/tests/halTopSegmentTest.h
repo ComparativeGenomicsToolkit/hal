@@ -53,4 +53,11 @@ struct TopSegmentIteratorParseTest : public AlignmentTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
+struct TopSegmentIteratorToSiteTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkGenome(const hal::Genome* genome);
+};
+
 #endif

@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <cstdlib>
+#include <cassert>
 #include "halTopSegmentTest.h"
 #include "halBottomSegmentTest.h"
 
@@ -265,6 +266,79 @@ void TopSegmentIteratorParseTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
 }
 
+void TopSegmentIteratorToSiteTest::createCallBack(AlignmentPtr alignment)
+{
+  vector<Sequence::Info> seqVec(1);
+  
+  TopSegmentIteratorPtr ti;
+  TopSegmentStruct ts;
+  
+  // case 1: single segment
+  Genome* case1 = alignment->addRootGenome("case1");
+  seqVec[0] = Sequence::Info("Sequence", 10, 2, 0);
+  case1->setDimensions(seqVec);
+  ti = case1->getTopSegmentIterator();
+  ts.set(0, 9);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(9, 1);
+  ts.applyTo(ti);
+  case1 = NULL;
+
+  // case 2: bunch of random segments
+  const hal_size_t numSegs = 1133;
+  hal_size_t total = 0;
+  vector<hal_size_t> segLens(numSegs);
+  for (size_t i = 0 ; i < numSegs; ++i)
+  {
+    hal_size_t len = rand() % 77 + 1;
+    segLens[i] = len;
+    total += len;
+    assert(len > 0);
+  }
+  Genome* case2 = alignment->addRootGenome("case2");
+  seqVec[0] = Sequence::Info("Sequence", total, numSegs, 0);
+  case2->setDimensions(seqVec);
+  hal_index_t prev = 0;
+  for (size_t i = 0 ; i < numSegs; ++i)
+  {
+    ti = case2->getTopSegmentIterator((hal_index_t)i);
+    ts.set(prev, segLens[i]);
+    prev += segLens[i];
+    ts.applyTo(ti);
+  }
+}
+
+void TopSegmentIteratorToSiteTest::checkGenome(const Genome* genome)
+{
+  TopSegmentIteratorConstPtr ti = genome->getTopSegmentIterator();
+  for (hal_index_t pos = 0; 
+       pos < (hal_index_t)genome->getSequenceLength(); ++pos)
+  {
+    ti->toSite(pos);
+    CuAssertTrue(_testCase, ti->getStartPosition() == pos);
+    CuAssertTrue(_testCase, ti->getLength() == 1);
+    ti->toSite(pos, false);
+    CuAssertTrue(_testCase, pos >= ti->getStartPosition() && 
+                 pos < ti->getStartPosition() + (hal_index_t)ti->getLength());
+    CuAssertTrue(_testCase, 
+                 ti->getLength() == ti->getTopSegment()->getLength());
+  }
+}
+
+void TopSegmentIteratorToSiteTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  TopSegmentIteratorConstPtr bi;
+
+  // case 1
+  const Genome* case1 = alignment->openGenome("case1");
+  checkGenome(case1);
+
+  // case 2
+  const Genome* case2 = alignment->openGenome("case2");
+  checkGenome(case2);
+}
+
 void halTopSegmentSimpleIteratorTest(CuTest *testCase)
 {
   try 
@@ -304,12 +378,26 @@ void halTopSegmentIteratorParseTest(CuTest *testCase)
   } 
 }
 
+void halTopSegmentIteratorToSiteTest(CuTest *testCase)
+{
+  try 
+  {
+    TopSegmentIteratorToSiteTest tester;
+    tester.check(testCase);
+  }
+   catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
 CuSuite* halTopSegmentTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halTopSegmentSimpleIteratorTest);
   SUITE_ADD_TEST(suite, halTopSegmentSequenceTest);
   SUITE_ADD_TEST(suite, halTopSegmentIteratorParseTest);
+  SUITE_ADD_TEST(suite, halTopSegmentIteratorToSiteTest);
   return suite;
 }
 

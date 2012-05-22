@@ -26,6 +26,7 @@ public:
    virtual void toChild(BottomSegmentIteratorConstPtr bs, 
                         hal_size_t child) const = 0;
    virtual void toParseUp(BottomSegmentIteratorConstPtr bs) const = 0;
+   virtual void toSite(hal_index_t position, bool slice = true) const = 0;
    virtual TopSegment* getTopSegment() = 0;
    virtual const TopSegment* getTopSegment() const = 0;
    virtual bool equals(TopSegmentIteratorConstPtr other) const = 0;

@@ -295,6 +295,81 @@ void BottomSegmentIteratorParseTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
 }
 
+void BottomSegmentIteratorToSiteTest::createCallBack(AlignmentPtr alignment)
+{
+  vector<Sequence::Info> seqVec(1);
+  
+  BottomSegmentIteratorPtr bi;
+  BottomSegmentStruct bs;
+  
+  // case 1: single segment
+  Genome* case1 = alignment->addRootGenome("case1");
+  seqVec[0] = Sequence::Info("Sequence", 10, 0, 2);
+  case1->setDimensions(seqVec);
+  bi = case1->getBottomSegmentIterator();
+  bs.set(0, 9);
+  bs.applyTo(bi);
+  bi->toRight();
+  bs.set(9, 1);
+  bs.applyTo(bi);
+  case1 = NULL;
+
+  // case 2: bunch of random segments
+  const hal_size_t numSegs = 1133;
+  hal_size_t total = 0;
+  vector<hal_size_t> segLens(numSegs);
+  for (size_t i = 0 ; i < numSegs; ++i)
+  {
+    hal_size_t len = rand() % 77 + 1;
+    segLens[i] = len;
+    total += len;
+    assert(len > 0);
+  }
+  Genome* case2 = alignment->addRootGenome("case2");
+  seqVec[0] = Sequence::Info("Sequence", total, 0, numSegs);
+  case2->setDimensions(seqVec);
+  hal_index_t prev = 0;
+  for (size_t i = 0 ; i < numSegs; ++i)
+  {
+    bi = case2->getBottomSegmentIterator((hal_index_t)i);
+    bs.set(prev, segLens[i]);
+    prev += segLens[i];
+    bs.applyTo(bi);
+  }
+}
+
+void BottomSegmentIteratorToSiteTest::checkGenome(const Genome* genome)
+{
+  BottomSegmentIteratorConstPtr bi = genome->getBottomSegmentIterator();
+  for (hal_index_t pos = 0; 
+       pos < (hal_index_t)genome->getSequenceLength(); ++pos)
+  {
+    bi->toSite(pos);
+    CuAssertTrue(_testCase, bi->getStartPosition() == pos);
+    CuAssertTrue(_testCase, bi->getLength() == 1);
+    bi->toSite(pos, false);
+    CuAssertTrue(_testCase, pos >= bi->getStartPosition() && 
+                 pos < bi->getStartPosition() + (hal_index_t)bi->getLength());
+    CuAssertTrue(_testCase, 
+                 bi->getLength() == bi->getBottomSegment()->getLength());
+  }
+}
+
+void BottomSegmentIteratorToSiteTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  BottomSegmentIteratorConstPtr bi;
+
+  // case 1
+  const Genome* case1 = alignment->openGenome("case1");
+  checkGenome(case1);
+
+  // case 2
+  const Genome* case2 = alignment->openGenome("case2");
+  checkGenome(case2);
+
+
+}
+
 void halBottomSegmentSimpleIteratorTest(CuTest *testCase)
 {
   try 
@@ -334,12 +409,26 @@ void halBottomSegmentIteratorParseTest(CuTest *testCase)
   } 
 }
 
+void halBottomSegmentIteratorToSiteTest(CuTest *testCase)
+{
+  try 
+  {
+    BottomSegmentIteratorToSiteTest tester;
+    tester.check(testCase);
+  }
+   catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
 CuSuite* halBottomSegmentTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halBottomSegmentSimpleIteratorTest);
   SUITE_ADD_TEST(suite, halBottomSegmentSequenceTest);
   SUITE_ADD_TEST(suite, halBottomSegmentIteratorParseTest);
+  SUITE_ADD_TEST(suite, halBottomSegmentIteratorToSiteTest);
   return suite;
 }
 

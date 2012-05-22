@@ -26,6 +26,14 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
        << genome->getName();
     throw hal_exception(ss.str());
   }
+  
+  if (bottomSegment->getLength() < 1)
+  {
+    stringstream ss;
+    ss << "Bottom segment " << index  << " in genome " << genome->getName()
+       << " has length 0 which is not currently supported";
+    throw hal_exception(ss.str());
+  }
 
   hal_size_t numChildren = bottomSegment->getNumChildren();
   for (hal_size_t child = 0; child < numChildren; ++child)
@@ -55,7 +63,8 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
            << bottomSegment->getLength();
         throw hal_exception(ss.str());
       }
-      if (childSegment->getParentIndex() != bottomSegment->getArrayIndex())
+      if (childSegment->getNextParalogyIndex() == NULL_INDEX &&
+          childSegment->getParentIndex() != bottomSegment->getArrayIndex())
       {
         throw hal_exception("parent / child index mismatch (parent=" +
                             genome->getName() + " child=" +
@@ -80,8 +89,10 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
     if (parseIndex >= (hal_index_t)genome->getNumTopSegments())
     {
       stringstream ss;
-      ss << "Segment " << bottomSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has null parse index";
+      ss << "BottomSegment " << bottomSegment->getArrayIndex() << " in genome "
+         << genome->getName() << " has parse index " << parseIndex 
+         << " greater than the number of top segments, " 
+         << (hal_index_t)genome->getNumTopSegments();
       throw hal_exception(ss.str());
     }
     TopSegmentIteratorConstPtr parseIterator = 
@@ -91,8 +102,10 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
     if (parseOffset >= parseSegment->getLength())
     {
       stringstream ss;
-      ss << "Segment " << bottomSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has null parse offset";
+      ss << "BottomSegment " << bottomSegment->getArrayIndex() << " in genome "
+         << genome->getName() << " has parse offset, " << parseOffset 
+         << ", greater than the length of the segment, " 
+         << parseSegment->getLength();
       throw hal_exception(ss.str());
     }
     if ((hal_index_t)parseOffset + parseSegment->getStartPosition() != 
@@ -114,6 +127,14 @@ void hal::validateTopSegment(const TopSegment* topSegment)
     stringstream ss;
     ss << "Segment out of range " << index << " in genome "
        << genome->getName();
+    throw hal_exception(ss.str());
+  }
+
+  if (topSegment->getLength() < 1)
+  {
+    stringstream ss;
+    ss << "Top segment " << index  << " in genome " << genome->getName()
+       << " has length 0 which is not currently supported";
     throw hal_exception(ss.str());
   }
 
@@ -160,8 +181,8 @@ void hal::validateTopSegment(const TopSegment* topSegment)
     if (parseIndex >= (hal_index_t)genome->getNumBottomSegments())
     {
       stringstream ss;
-      ss << "Segment " << topSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has null parse index";
+      ss << "Top Segment " << topSegment->getArrayIndex() << " in genome "
+         << genome->getName() << " has parse index out of range";
       throw hal_exception(ss.str());
     }
     hal_offset_t parseOffset = topSegment->getBottomParseOffset();
@@ -172,8 +193,8 @@ void hal::validateTopSegment(const TopSegment* topSegment)
     if (parseOffset >= parseSegment->getLength())
     {
       stringstream ss;
-      ss << "Segment " << topSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has null parse offset";
+      ss << "Top Segment " << topSegment->getArrayIndex() << " in genome "
+         << genome->getName() << " has parse offset out of range";
       throw hal_exception(ss.str());
     }
     if ((hal_index_t)parseOffset + parseSegment->getStartPosition() != 
@@ -192,7 +213,13 @@ void hal::validateTopSegment(const TopSegment* topSegment)
        genome->getTopSegmentIterator(paralogyIndex);
     if (pti->getTopSegment()->getParentIndex() != topSegment->getParentIndex())
     {
-      throw hal_exception("paralogous top segments must share same parent");
+      stringstream ss;
+      ss << "Top segment " << topSegment->getArrayIndex() << " has parent index "
+         << topSegment->getParentIndex() << ", but next paraglog " 
+         << topSegment->getNextParalogyIndex() << " has parent Index " 
+         << pti->getTopSegment()->getParentIndex() 
+         << ". Paralogous top segments must share same parent.";
+      throw hal_exception(ss.str());
     }
   }
 }
@@ -346,7 +373,7 @@ void hal::validateAlignment(AlignmentConstPtr alignment)
       vector<string> childNames = alignment->getChildNames(name);
       for (size_t i = 0; i < childNames.size(); ++i)
       {
-        bfQueue.push_back(childNames[i]);
+        bfQueue.push_front(childNames[i]);
       }
     }
   }

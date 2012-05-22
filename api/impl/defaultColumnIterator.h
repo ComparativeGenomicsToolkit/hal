@@ -78,7 +78,7 @@ private:
 
    void updateParent(LinkedTopIteratorPtr topIt) const;
    void updateChild(LinkedBottomIteratorPtr bottomIt, 
-                       hal_size_t index) const;
+                    hal_size_t index) const;
    void updateNextTopDup(LinkedTopIteratorPtr topIt) const;
    void updateNextBottomDup(LinkedBottomIteratorPtr bottomIt) const;
    void updateParseUp(LinkedBottomIteratorPtr bottomIt) const;

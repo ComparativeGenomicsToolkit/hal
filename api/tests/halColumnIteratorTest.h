@@ -25,5 +25,12 @@ struct ColumnIteratorDepthTest : public AlignmentTest
    void checkGenome(const hal::Genome* genome);
 };
 
+struct ColumnIteratorDupTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkGenome(const hal::Genome* genome);
+};
+
 
 #endif
