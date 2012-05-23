@@ -9,7 +9,9 @@
 
 #include <list>
 #include <map>
+#include <set>
 #include "halDefs.h"
+#include "halDNAIterator.h"
 
 namespace hal {
 
@@ -24,17 +26,18 @@ class ColumnIterator
 {
 public:
 
-   typedef std::vector<hal::DNAIteratorConstPtr> DNAList;
-   typedef std::map<const hal::Genome*, DNAList> ColumnMap;
+   typedef std::set<hal::DNAIteratorConstPtr> DNASet;
+   typedef std::map<const hal::Genome*, DNASet> ColumnMap;
 
    /** Move column iterator one column to the right along reference
     * genoem sequence */
    virtual void toRight() const = 0;
 
-   /** Test if column iterator is at the same position (only in terms
+   /** Test if column iterator is left  (only in terms
     * of the reference genome) as another iterator.  Used to bound
-    * a loop, for example */
-   virtual bool equals(ColumnIteratorConstPtr other) const = 0;
+    * a loop, for example.  in the case of paralogy, the rightmost
+    * position of this is compared to the leftmost position of other*/
+   virtual bool leftOf(ColumnIteratorConstPtr other) const = 0;
    
    /** Get a pointer to the reference genome for the column iterator */
    virtual const hal::Genome* getReferenceGenome() const = 0;
@@ -50,20 +53,21 @@ protected:
 
 inline ColumnIterator::~ColumnIterator() {}
 
-inline bool operator==(ColumnIteratorConstPtr p1,
-                       ColumnIteratorConstPtr p2) 
+inline bool operator<(ColumnIteratorConstPtr p1,
+                      ColumnIteratorConstPtr p2) 
 {
-  if (p1.get() == NULL || p2.get() == NULL)
+  if (p1.get() == NULL && p2.get() == NULL)
   {
-    return p1.get() == NULL && p2.get() == NULL;
+    return false;
   }
-  return p1->equals(p2);
-}
-
-inline bool operator!=(ColumnIteratorConstPtr p1,
-                       ColumnIteratorConstPtr p2)
-{
-  return !(p1 == p2);
+  else if (p1.get() == NULL || p2.get() == NULL)
+  {
+    return p1.get() == NULL;
+  }
+  else
+  {
+    return p1->leftOf(p2);
+  }
 }
 
 }

@@ -292,7 +292,7 @@ vector<string> HDF5Alignment::getChildNames(const string& name) const
 }
 
 vector<string> HDF5Alignment::getLeafNamesBelow(const string& name) const
-{                                               
+{
   return vector<string>();
 }
 

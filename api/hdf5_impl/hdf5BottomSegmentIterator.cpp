@@ -84,13 +84,26 @@ void HDF5BottomSegmentIterator::toSite(hal_index_t position, bool slice) const
 {
   hal_index_t len = (hal_index_t)_bottomSegment._genome->getSequenceLength();
   hal_index_t nseg = (hal_index_t)_bottomSegment._genome->getNumBottomSegments();
-  
+
   assert(len != 0);
   double avgLen = (double)len / (double)nseg;
-  hal_index_t hint = min(nseg - 1., avgLen * ((double)position / (double)len));
+  hal_index_t hint = (hal_index_t)
+     min(nseg - 1., avgLen * ((double)position / (double)len));
   _bottomSegment._index = hint;
   _startOffset = 0;
   _endOffset = 0;
+
+  // out of range
+  if (position < 0)
+  {
+    _bottomSegment._index = -1;
+    return;
+  }
+  else if (position >= len)
+  {
+    _bottomSegment._index = len;
+    return;
+  }
   
   hal_index_t left = 0;
   hal_index_t right = nseg - 1;

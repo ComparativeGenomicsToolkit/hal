@@ -30,10 +30,7 @@ public:
     * genoem sequence */
     void toRight() const;
 
-   /** Test if column iterator is at the same position (only in terms
-    * of the reference genome) as another iterator.  Used to bound
-    * a loop, for example */
-    bool equals(ColumnIteratorConstPtr other) const;
+    bool leftOf(ColumnIteratorConstPtr other) const;
    
    const hal::Genome* getReferenceGenome() const;
 
@@ -75,6 +72,7 @@ private:
 
    void init() const;
    void resetColMap() const;
+   hal_index_t moveRightToNextUnvisited(LinkedTopIteratorPtr topIt) const;
 
    void updateParent(LinkedTopIteratorPtr topIt) const;
    void updateChild(LinkedBottomIteratorPtr bottomIt, 

@@ -41,7 +41,8 @@ public:
     * @param slice if true, the returned iterator is sliced to correspond
     * to just the single base.  if false, the iterator corresponds to the
     * entire segment. 
-    * NOTE*** this function requires up to logN time!! in current hdf5 imp.*/
+    * NOTE*** this function requires up to log2(N) time in current hdf5 imp.
+    * though it should be faster on average*/
    virtual void toSite(hal_index_t position, bool slice = true) const = 0;
 
    /** check if there is a next paralogy */

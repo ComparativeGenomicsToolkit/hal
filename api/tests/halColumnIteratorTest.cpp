@@ -39,11 +39,13 @@ void ColumnIteratorBaseTest::checkCallBack(AlignmentConstPtr alignment)
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
+      ColumnIterator::DNASet::const_iterator dnaIt = i->second.begin();
       for (size_t j = 0; j < i->second.size(); ++j)
       {
         CuAssertTrue(_testCase, i->second.size() == 1);
-        CuAssertTrue(_testCase, i->second[j]->getArrayIndex() == 
+        CuAssertTrue(_testCase, (*dnaIt)->getArrayIndex() == 
                      (hal_index_t)columnNumber);
+        dnaIt++;
       }
     }
 
@@ -126,7 +128,7 @@ void ColumnIteratorDepthTest::checkGenome(const Genome* genome)
          i != colMap->end(); ++i)
     {
       CuAssertTrue(_testCase, i->second.size() == 1);
-      DNAIteratorConstPtr dnaIt = i->second[0];
+      DNAIteratorConstPtr dnaIt = *i->second.begin();
       
       /*  cout << "column=" << columnNumber 
            << " genome=" << dnaIt->getGenome()->getName()
@@ -229,15 +231,34 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
   ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
   ColumnIteratorConstPtr endIterator = genome->getColumnEndIterator();
   size_t colNumber = 0;
-  for (; colIterator != endIterator; colIterator->toRight())
+  for (; colIterator < endIterator; colIterator->toRight())
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
     CuAssertTrue(_testCase, colMap->size() == 3);
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
+      DNAIteratorConstPtr dnaIt = *i->second.begin();
+      // the first column (of any genome) should be aligned to 
+      // every segment in son1
+      if (i->first->getName() == "son1")
+      {
+        if (colNumber < i->first->getNumTopSegments())
+        {
+          CuAssertTrue(_testCase, i->second.size() ==
+                       i->first->getNumTopSegments());
+        }
+        else
+        {
+          CuAssertTrue(_testCase, i->second.size() == 0);
+        }
+      }
+      else
+      {
+        
+      }
       //    CuAssertTrue(_testCase, i->second.size() == 1);
-      DNAIteratorConstPtr dnaIt = i->second[0];
+
       
       /*  cout << "column=" << columnNumber 
            << " genome=" << dnaIt->getGenome()->getName()
@@ -247,7 +268,7 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
       //             (hal_index_t)columnNumber);
     }
   }
-  ++colNumber;
+    ++colNumber;
 }
 
 void ColumnIteratorDupTest::checkCallBack(AlignmentConstPtr alignment)
