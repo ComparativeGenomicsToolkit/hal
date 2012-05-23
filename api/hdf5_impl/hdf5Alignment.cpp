@@ -7,6 +7,7 @@
 #include <cassert>
 #include <iostream>
 #include <cstdlib>
+#include <deque>
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
@@ -293,7 +294,25 @@ vector<string> HDF5Alignment::getChildNames(const string& name) const
 
 vector<string> HDF5Alignment::getLeafNamesBelow(const string& name) const
 {
-  return vector<string>();
+  vector<string> leaves;
+  vector<string> children;
+  deque<string> bfQueue;
+  bfQueue.push_front(name);
+  while (bfQueue.empty() == false)
+  {
+    string& current = bfQueue.back();
+    children = getChildNames(current);
+    if (children.empty() == true && current != name)
+    {
+      leaves.push_back(current);
+    }
+    for (size_t i = 0; i < children.size(); ++i)
+    {
+      bfQueue.push_front(children[i]);
+    }
+    bfQueue.pop_back();
+  }
+  return leaves;
 }
 
 hal_size_t HDF5Alignment::getNumGenomes() const

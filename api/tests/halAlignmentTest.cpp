@@ -112,6 +112,21 @@ void AlignmentTestTrees::checkCallBack(hal::AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, alignment->getBranchLength("Root", "Leaf") == 10.0);
   vector<string> children = alignment->getChildNames("Root");
   CuAssertTrue(_testCase, children.size() == 5);
+
+  vector<string> leaves = alignment->getLeafNamesBelow("Leaf");
+  CuAssertTrue(_testCase, leaves.size() == 0);
+  leaves = alignment->getLeafNamesBelow("NewRoot");
+  CuAssertTrue(_testCase, leaves.size() == 5);
+  for (size_t i = 0; i < leaves.size(); ++i)
+  {
+    CuAssertTrue(_testCase, leaves[i][0] == 'L');
+  }
+  leaves = alignment->getLeafNamesBelow("Root");
+  CuAssertTrue(_testCase, leaves.size() == 5);
+  for (size_t i = 0; i < leaves.size(); ++i)
+  {
+    CuAssertTrue(_testCase, leaves[i][0] == 'L');
+  }
 }
 
 void AlignmentTestEmpty::createCallBack(hal::AlignmentPtr alignment)
