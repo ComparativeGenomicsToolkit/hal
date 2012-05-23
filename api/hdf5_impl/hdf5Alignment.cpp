@@ -161,6 +161,7 @@ Genome*  HDF5Alignment::addLeafGenome(const string& name,
 
   HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
   _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  _dirty = true;
   return genome;
 }
 
@@ -188,6 +189,7 @@ Genome* HDF5Alignment::addRootGenome(const string& name,
 
   HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
   _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  _dirty = true;
   return genome;
 }
 
