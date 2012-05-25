@@ -24,8 +24,8 @@ struct Options {
    hal_size_t _maxSegmentLength;
    hal_size_t _minSegments;
    hal_size_t _maxSegments;
-   hal_size_t _hdf5Chunk;
-   hal_size_t _hdf5Compression;
+   hsize_t _hdf5Chunk;
+   hsize_t _hdf5Compression;
 };
 
 static const Options defaultSm = { 0.75, 0.1, 5, 10, 1000, 5, 10, 2000000, 9};
