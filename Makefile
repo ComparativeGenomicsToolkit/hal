@@ -1,5 +1,5 @@
 # order is important, libraries first
-modules = api
+modules = api stats
 
 .PHONY: all %.all clean %.clean doxy %.doxy
 

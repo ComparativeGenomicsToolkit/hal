@@ -51,6 +51,20 @@ hdf5AlignmentInstanceReadOnly(const H5::FileCreatPropList& fileCreateProps,
                               const H5::FileAccPropList& fileAccessProps,
                               const H5::DSetCreatPropList& datasetCreateProps);
 
+/** Get an alignment instance from a file by automatically detecting which 
+ * implementation to use.  (will currently (and probably forever more) 
+ * just return an HDF5 instance since that's all that exists) 
+ * @param path Path of file to open */
+AlignmentPtr openHalAlignment(const std::string& path); 
+
+/** Get a read-only alignment instance from a file by 
+ * automatically detecting which 
+ * implementation to use.  (will currently (and probably forever more) 
+ * just return an HDF5 instance since that's all that exists) 
+ * @param path Path of file to open */
+AlignmentConstPtr openHalAlignmentReadOnly(const std::string& path); 
+
+
 }
 
 #endif

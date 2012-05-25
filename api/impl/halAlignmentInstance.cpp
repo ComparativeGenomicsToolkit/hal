@@ -42,3 +42,23 @@ hal::hdf5AlignmentInstanceReadOnly(const FileCreatPropList& fileCreateProps,
                                         datasetCreateProps);
   return AlignmentConstPtr(al);
 }
+
+AlignmentPtr hal::openHalAlignment(const std::string& path)
+{
+  // detect which kind of file it is here (maybe by extension?)
+  // ...
+
+  AlignmentPtr alignment = hdf5AlignmentInstance();
+  alignment->open(path, false);
+  return alignment;
+}
+
+AlignmentConstPtr hal::openHalAlignmentReadOnly(const std::string& path)
+{
+  // detect which kind of file it is here (maybe by extension?)
+  // ...
+
+  AlignmentConstPtr alignment = hdf5AlignmentInstanceReadOnly();
+  alignment->open(path);
+  return alignment;
+}
