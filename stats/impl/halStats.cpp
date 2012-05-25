@@ -28,19 +28,19 @@ HalStats::~HalStats()
 
 void HalStats::printCsv(ostream& outStream) const
 {
-  cout << _tree << endl << endl;
+  outStream << _tree << endl << endl;
 
-  cout << "GenomeName, NumChildren, Length, NumSequences, "
+  outStream << "GenomeName, NumChildren, Length, NumSequences, "
        << "NumTopSegments, NumBottomSegments" << endl;
 
   vector<GenomeStats>::const_iterator i;
   for (i = _genomeStatsVec.begin(); i != _genomeStatsVec.end(); ++i)
   {
-    cout << i->_name << ", " << i->_numChildren << ", " << i->_length
+    outStream << i->_name << ", " << i->_numChildren << ", " << i->_length
          << ", " << i->_numSequences << ", " << i->_numTopSegments
          << ", " << i->_numBottomSegments << endl;
   }
-  cout << endl;
+  outStream << endl;
 }
 
 void HalStats::readAlignment(AlignmentConstPtr alignment)
