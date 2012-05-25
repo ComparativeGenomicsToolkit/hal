@@ -1,5 +1,5 @@
 # order is important, libraries first
-modules = api stats
+modules = api stats randgen validate
 
 .PHONY: all %.all clean %.clean doxy %.doxy
 
