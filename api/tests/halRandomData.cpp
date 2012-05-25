@@ -65,14 +65,14 @@ static inline void mutateString(string& buffer, double branchLength)
   }
 }
 
-void createRandomAlignment(hal::AlignmentPtr emptyAlignment,
-                           double meanDegree,
-                           double maxBranchLength,
-                           hal_size_t maxGenomes,
-                           hal_size_t minSegmentLength,
-                           hal_size_t maxSegmentLength,
-                           hal_size_t minSegments,
-                           hal_size_t maxSegments)
+void hal::createRandomAlignment(hal::AlignmentPtr emptyAlignment,
+                                double meanDegree,
+                                double maxBranchLength,
+                                hal_size_t maxGenomes,
+                                hal_size_t minSegmentLength,
+                                hal_size_t maxSegmentLength,
+                                hal_size_t minSegments,
+                                hal_size_t maxSegments)
 {
   createRandomTree(emptyAlignment,
                    meanDegree,
@@ -104,10 +104,10 @@ void createRandomAlignment(hal::AlignmentPtr emptyAlignment,
 }
                            
 
-void createRandomTree(hal::AlignmentPtr emptyAlignment,
-                      double meanDegree,
-                      double maxBranchLength,
-                      hal_size_t maxGenomes)
+void hal::createRandomTree(hal::AlignmentPtr emptyAlignment,
+                           double meanDegree,
+                           double maxBranchLength,
+                           hal_size_t maxGenomes)
 {
   assert(emptyAlignment->getNumGenomes() == 0);
   
@@ -140,11 +140,11 @@ void createRandomTree(hal::AlignmentPtr emptyAlignment,
   }
 }
 
-void createRandomDimensions(hal::AlignmentPtr alignment,
-                            hal_size_t minSegmentLength,
-                            hal_size_t maxSegmentLength,
-                            hal_size_t minSegments,
-                            hal_size_t maxSegments)
+void hal::createRandomDimensions(hal::AlignmentPtr alignment,
+                                 hal_size_t minSegmentLength,
+                                 hal_size_t maxSegmentLength,
+                                 hal_size_t minSegments,
+                                 hal_size_t maxSegments)
 {
   deque<string> bfQueue;
   bfQueue.push_front(alignment->getRootName());
@@ -244,7 +244,7 @@ void createRandomDimensions(hal::AlignmentPtr alignment,
   }
 }
 
-void createRandomGenome(AlignmentPtr alignment, Genome* genome)
+void hal::createRandomGenome(AlignmentPtr alignment, Genome* genome)
 {
   Genome* parent = genome->getParent();
   set<pair<hal_index_t, hal_index_t> > edgeSet;
@@ -286,12 +286,12 @@ void createRandomGenome(AlignmentPtr alignment, Genome* genome)
   }
 }
 
-void createRandomSegment(Genome* genome, 
-                         hal_size_t indexInParent,
-                         set<pair<hal_index_t, hal_index_t> >& edgeSet, 
-                         TopSegmentIteratorPtr topIter, 
-                         BottomSegmentIteratorPtr botIter,
-                         double branchLength)
+void hal::createRandomSegment(Genome* genome, 
+                              hal_size_t indexInParent,
+                              set<pair<hal_index_t, hal_index_t> >& edgeSet, 
+                              TopSegmentIteratorPtr topIter, 
+                              BottomSegmentIteratorPtr botIter,
+                              double branchLength)
 {
   Genome* parent = genome->getParent();
   hal_size_t numTopSegs = genome->getNumTopSegments();

@@ -10,6 +10,7 @@
 #include <set>
 #include "hal.h"
 
+namespace hal {
 
 void createRandomAlignment(hal::AlignmentPtr emptyAlignment,
                            double meanDegree,
@@ -41,5 +42,5 @@ void createRandomSegment(hal::Genome* genome,
                          hal::BottomSegmentIteratorPtr botIter,
                          double branchLength);
 
-
+}
 #endif
