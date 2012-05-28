@@ -10,6 +10,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <locale>
+#include <cassert>
 
 namespace hal {
 
@@ -57,6 +59,21 @@ inline hal_bool_t isNucleotide(hal_dna_t c)
   default : break;
   }
   return result;
+}
+
+/** Count the mutations between two DNA strings */
+inline hal_size_t hammingDistance(const std::string& s1, const std::string& s2)
+{
+  assert(s1.length() == s2.length());
+  hal_size_t dist = 0;
+  for (size_t i = 0; i < s1.length(); ++i)
+  {
+    if (std::toupper(s1[i]) != std::toupper(s2[i]))
+    {
+      ++dist;
+    }
+  }
+  return dist;
 }
 
 }

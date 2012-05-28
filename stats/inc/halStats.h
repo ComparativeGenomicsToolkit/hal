@@ -12,6 +12,8 @@
 #include <vector>
 #include "hal.h"
 
+namespace hal {
+
 struct GenomeStats : public hal::Sequence::Info 
 {
    size_t _numChildren;
@@ -37,7 +39,9 @@ protected:
    std::vector<GenomeStats> _genomeStatsVec;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const HalStats& halStats)
+}
+
+inline std::ostream& operator<<(std::ostream& os, const hal::HalStats& halStats)
 {
   halStats.printCsv(os);
   return os;
