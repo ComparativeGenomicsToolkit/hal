@@ -1,0 +1,6 @@
+
+GenomeName, ParentName, BranchLength, GenomeLength, ParentLength, Subtitutions, Insertions, InsertedBases, Inversions, InvertedBases
+Genome_1, Genome_0, 0.588341, 785856, 68970, 259342, 3821, 7642, 0, 0
+Genome_2, Genome_1, 0.312614, 2050111, 785856, 404679, 1345, 43039, 0, 0
+Genome_3, Genome_2, 0.620501, 740064, 2050111, 227856, 1951, 83884, 0, 0
+
