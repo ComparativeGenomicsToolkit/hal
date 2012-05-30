@@ -147,7 +147,21 @@ int main(int argc, char** argv)
   {
     // load up the hdf5 options
     DSetCreatPropList dcprops = DSetCreatPropList::DEFAULT;
-    dcprops.setDeflate(options._hdf5Compression);
+    if (options._hdf5Compression < 10)
+    {
+      dcprops.setDeflate(options._hdf5Compression);      
+    }
+    // can't get szip to create.  must be violating some rule but i don't know
+    // what.  should explore when i have time.  
+    else if (options._hdf5Compression < 200)
+    {
+      dcprops.setSzip(H5_SZIP_NN_OPTION_MASK,32);
+    }
+    else
+    {
+      dcprops.setSzip(H5_SZIP_NN_OPTION_MASK, options._hdf5Compression - 200);
+    }
+
     dcprops.setChunk(1, &options._hdf5Chunk);
 
     FileAccPropList aprops = FileAccPropList::DEFAULT;
