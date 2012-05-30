@@ -100,6 +100,13 @@ void hal::createRandomAlignment(hal::AlignmentPtr emptyAlignment,
     {
       bfQueue.push_front(childNames[i]);
     }
+
+    Genome* parent = genome->getParent();
+    if (parent != NULL)
+    {
+      emptyAlignment->closeGenome(parent);
+    }
+    emptyAlignment->closeGenome(genome);
   }
 }
                            

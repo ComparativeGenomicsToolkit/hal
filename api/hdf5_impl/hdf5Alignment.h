@@ -47,6 +47,8 @@ public:
 
    Genome* openGenome(const std::string& name);
 
+   void closeGenome(const Genome* genome) const;
+
    std::string getRootName() const;
 
    std::string getParentName(const std::string& name) const;

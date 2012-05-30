@@ -10,25 +10,20 @@ import os
 import sys
 import traceback
 import time
+import resource
+import psutil
 
 from sonLib.bioio import getTempDirectory
 from sonLib.bioio import getTempFile
 from sonLib.bioio import popenCatch
 from sonLib.bioio import system
-
-
-def runExecutable(command):
-    cmdLine = "./runAndGetResources.py \'%s\'" % command
-    output = popenCatch(cmdLine)
-    values = output[1:-2].split(',')
-    return (float(values[0]), float(values[1]), float(values[2]))
     
 def runHalGen(preset, hdf5Chunk, hdf5Compression, outPath):
-    return runExecutable("halRandGen --preset %s --hdf5Chunk %d\
+    system("halRandGen --preset %s --hdf5Chunk %d\
     --hdf5Compression %d %s" % (preset, hdf5Chunk, hdf5Compression, outPath))
 
 def runHalCons(halPath, outputPath):
-    return runExecutable("halCons %s > outputPath" % halPath)
+    system("halCons %s > outputPath" % halPath)
 
 def initOptions():
     parser = argparse.ArgumentParser(description='Run an experiment.')
@@ -52,14 +47,24 @@ def main(argv=None):
     rval = 0
 
     try:
-        tempDir = getTempDirectory(rootDir="./")
-        tempFile = getTempFile(rootDir=tempDir)
-    except:
-        traceback.print_exc(file=sys.stdout)
-        exit(1)
-    try:
-        print runHalGen("large", 10000000, 5, tempFile)
-        print runHalCons(tempFile, getTempFile(rootDir=tempDir))
+        for chunkSize in [100000, 1000000, 10000000]:
+            for compression in [0, 5, 9]:
+                try:
+                    tempDir = getTempDirectory(rootDir="./")
+                    tempFile = getTempFile(suffix=".h5", rootDir=tempDir)
+                except:
+                    traceback.print_exc(file=sys.stdout)
+                    exit(1)
+
+                t = time.time()
+                runHalGen("big", chunkSize, 5, tempFile)
+                th = time.time() - t
+                runHalCons(tempFile, getTempFile(rootDir=tempDir))
+                tc = time.time() - th - t
+                print "chunk=%d comp=%d:  generate %f.3  cons %f.3" % (
+                    chunkSize, compression, th, tc)
+
+
     except:
         traceback.print_exc(file=sys.stdout)
         rval = 1

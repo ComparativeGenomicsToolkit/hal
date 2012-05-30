@@ -31,6 +31,8 @@ struct Options {
 static const Options defaultSm = { 0.75, 0.1, 5, 10, 1000, 5, 10, 2000000, 9};
 static const Options defaultMed = { 1.25,  0.7, 20, 2, 50, 1000, 50000, 
                                     2000000, 9 };
+static const Options defaultBig = { 2,  0.7, 50, 2, 500, 100, 5000, 
+                                    2000000, 9 };
 static const Options defaultLrg = {2, 1, 100, 2, 10, 10000, 500000,
                                    2000000, 9};
 
@@ -38,7 +40,7 @@ static void printUsage()
 {
   cerr << "Usage: halStats [options] <path of ouput hal alignment file>\n"
        << "[options]:\n"
-       << "--preset <small, medium, large> [medum]\n"
+       << "--preset <small, medium, big, large> [medum]\n"
        << "--meanDegree <double> [" << defaultMed._meanDegree << "]\n"
        << "--maxBranchLength <double> [" << defaultMed._maxBranchLength 
        << "]\n"
@@ -79,6 +81,7 @@ static Options checkOptions(int argc, char** argv)
       val >> preset;
       if (preset == "small") options = defaultSm;
       else if (preset == "medium") options = defaultMed;
+      else if (preset == "big") options = defaultBig;
       else if (preset == "large") options = defaultLrg;
       else printUsage();
     }
@@ -148,7 +151,7 @@ int main(int argc, char** argv)
     dcprops.setChunk(1, &options._hdf5Chunk);
 
     FileAccPropList aprops = FileAccPropList::DEFAULT;
-    aprops.setCache(11, 51, 100000000, 0.25);
+    aprops.setCache(11, 5, 10000000, 0.25);
 
     AlignmentPtr alignment = hdf5AlignmentInstance(FileCreatPropList::DEFAULT,
                                                    aprops,

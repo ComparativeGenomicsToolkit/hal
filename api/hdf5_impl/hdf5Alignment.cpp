@@ -234,6 +234,20 @@ Genome* HDF5Alignment::openGenome(const string& name)
   return genome;
 }
 
+void HDF5Alignment::closeGenome(const Genome* genome) const
+{
+  string name = genome->getName();
+  map<string, HDF5Genome*>::iterator mapIt = _openGenomes.find(name);
+  if (mapIt == _openGenomes.end())
+  {
+    throw hal_exception("Attempt to close non-open genome.  " 
+                        "Should not even be possible");
+  }
+  mapIt->second->write();
+  delete mapIt->second;
+  _openGenomes.erase(mapIt);
+}
+
 string HDF5Alignment::getRootName() const
 {
   if (_tree == NULL)

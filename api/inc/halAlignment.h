@@ -67,6 +67,11 @@ public:
     * @param name Name of genome to open */
    virtual Genome* openGenome(const std::string& name) = 0;
 
+   /** Close an open genome.  All pointers to this genome become 
+    * invalid and openGenome needs to be called again to access it 
+    * @param genome Genome to close */
+   virtual void closeGenome(const Genome* genome) const = 0;
+
    /** Get name of root genome (empty string for empty alignment) */
    virtual std::string getRootName() const = 0;
 
