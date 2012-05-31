@@ -10,6 +10,7 @@ import os
 import sys
 import traceback
 import time
+import random
 import resource
 import psutil
 
@@ -18,9 +19,9 @@ from sonLib.bioio import getTempFile
 from sonLib.bioio import popenCatch
 from sonLib.bioio import system
     
-def runHalGen(preset, hdf5Chunk, hdf5Compression, outPath):
-    system("halRandGen --preset %s --hdf5Chunk %d\
-    --hdf5Compression %d %s" % (preset, hdf5Chunk, hdf5Compression, outPath))
+def runHalGen(preset, seed, hdf5Chunk, hdf5Compression, outPath):
+    system("halRandGen --preset %s --seed %d --hdf5Chunk %d\
+    --hdf5Compression %d %s" % (preset, seed, hdf5Chunk, hdf5Compression, outPath))
 
 def runHalCons(halPath, outputPath):
     system("halCons %s > outputPath" % halPath)
@@ -30,6 +31,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
+    seed = random.randint()
     parser = argparse.ArgumentParser(description='Run little hal test')
     parser.add_argument('--preset', type=str,
                         help='halGenRandom preset to use [small, medium, big, large]', default='small')
@@ -47,7 +49,7 @@ def main(argv=None):
                     return 1
 
                 t = time.time()
-                runHalGen(args.preset, chunkSize, compression, tempFile)
+                runHalGen(args.preset, seed, chunkSize, compression, tempFile)
                 fsize = os.path.getsize(tempFile)
                 th = time.time() - t
                 runHalCons(tempFile, getTempFile(rootDir=tempDir))

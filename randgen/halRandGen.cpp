@@ -155,11 +155,6 @@ int main(int argc, char** argv)
 
   try
   {
-    if (options._seed < 0)
-    {
-      options._seed = time(NULL);
-    }
-    srand(options._seed);
     // load up the hdf5 options
     DSetCreatPropList dcprops = DSetCreatPropList::DEFAULT;
     if (options._hdf5Compression < 10)
@@ -196,7 +191,8 @@ int main(int argc, char** argv)
                           options._minSegmentLength,
                           options._maxSegmentLength,
                           options._minSegments,
-                          options._maxSegments);
+                          options._maxSegments,
+                          options._seed);
     
     alignment->close();
   }

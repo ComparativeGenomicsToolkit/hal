@@ -19,7 +19,8 @@ void createRandomAlignment(hal::AlignmentPtr emptyAlignment,
                            hal_size_t minSegmentLength,
                            hal_size_t maxSegmentLength,
                            hal_size_t minSegments,
-                           hal_size_t maxSegments);
+                           hal_size_t maxSegments,
+                           int seed = -1);
 
 void createRandomTree(hal::AlignmentPtr emptyAlignment,
                       double meanDegree,

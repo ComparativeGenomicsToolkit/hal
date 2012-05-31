@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <ctime>
 #include <cmath>
 #include <deque>
 #include "halRandomData.h"
@@ -72,8 +73,16 @@ void hal::createRandomAlignment(hal::AlignmentPtr emptyAlignment,
                                 hal_size_t minSegmentLength,
                                 hal_size_t maxSegmentLength,
                                 hal_size_t minSegments,
-                                hal_size_t maxSegments)
+                                hal_size_t maxSegments,
+                                int seed)
 {
+  if (seed < 0)
+  {
+    seed = time(NULL);
+  }
+  srand(seed);
+  srand48(rand());
+
   createRandomTree(emptyAlignment,
                    meanDegree,
                    maxBranchLength,
