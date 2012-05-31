@@ -239,3 +239,12 @@ void HDF5Sequence::set(hal_size_t startPosition,
   strcpy(arrayBuffer, sequenceInfo._name.c_str());
 }
 
+void HDF5Sequence::setNumTopSegments(hal_size_t numTopSegments)
+{
+  _array->setValue(_index, numTopSegmentsOffset, numTopSegments);
+}
+
+void HDF5Sequence::setNumBottomSegments(hal_size_t numBottomSegments)
+{
+  _array->setValue(_index, numBottomSegmentsOffset, numBottomSegments);
+}

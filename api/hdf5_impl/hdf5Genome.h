@@ -49,12 +49,12 @@ public:
    void setDimensions(
      const std::vector<hal::Sequence::Info>& sequenceDimensions);
 
-   void setTopDimensions(
+   void updateTopDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
 
-   void setBottomDimensions(
+   void updateBottomDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
-   
+
    hal_size_t getNumSequences() const;
    
    Sequence* getSequence(const std::string& name);
@@ -145,6 +145,12 @@ protected:
    void writeSequences(const std::vector<hal::Sequence::Info>&
                        sequenceDimensions);
    void deleteSequenceCache();
+   void setGenomeTopDimensions(
+     const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
+
+   void setGenomeBottomDimensions(
+     const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
+
 
 protected:
 

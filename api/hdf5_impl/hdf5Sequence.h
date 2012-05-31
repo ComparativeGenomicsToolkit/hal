@@ -96,6 +96,10 @@ public:
    static H5::CompType dataType(hal_size_t maxNameLength);
 
    void set(hal_size_t startPosition, const Sequence::Info& sequenceInfo);
+
+   void setNumTopSegments(hal_size_t numTopSegments);
+
+   void setNumBottomSegments(hal_size_t numBottomSegments);
    
 protected:
 

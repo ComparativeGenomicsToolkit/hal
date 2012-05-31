@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
  *
@@ -19,6 +20,12 @@ struct SequenceCreateTest : public AlignmentTest
 };
 
 struct SequenceIteratorTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
+struct SequenceUpdateTest : public AlignmentTest
 {
    void createCallBack(hal::AlignmentPtr alignment);
    void checkCallBack(hal::AlignmentConstPtr alignment);

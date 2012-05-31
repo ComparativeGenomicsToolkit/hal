@@ -121,14 +121,106 @@ void HDF5Genome::setDimensions(
   }
   
   // Do the same as above for the segments. 
-  setTopDimensions(topDimensions);
-  setBottomDimensions(bottomDimensions);
+  setGenomeTopDimensions(topDimensions);
+  setGenomeBottomDimensions(bottomDimensions);
 
   _parentCache = NULL;
   _childCache.clear();
 }
 
-void HDF5Genome::setTopDimensions(
+void HDF5Genome::updateTopDimensions(
+  const vector<Sequence::UpdateInfo>& topDimensions)
+{
+  vector<Sequence::UpdateInfo>::const_iterator i;
+  map<string, HDF5Sequence*>::iterator cacheIt;
+  map<string, const Sequence::UpdateInfo*> inputMap;
+  // copy input into map, checking everything is already present
+  for (i = topDimensions.begin(); i != topDimensions.end(); ++i)
+  {
+    const string& name = i->_name;
+    cacheIt = _sequenceNameCache.find(name);
+    if (cacheIt == _sequenceNameCache.end())
+    {
+      throw hal_exception(string("Cannot update sequence ") +
+                          name + " because it is not present in "
+                          " genome " + getName());
+    }
+    inputMap.insert(pair<string, const Sequence::UpdateInfo*>(name, &*i));
+  }
+  // scan through existing sequences, updating as necessary
+  // build summary of all new and unchanged dimensions in newDimensions
+  map<hal_size_t, HDF5Sequence*>::iterator posCacheIt;
+  map<string, const Sequence::UpdateInfo*>::iterator inputIt;
+  vector<Sequence::UpdateInfo> newDimensions;
+  Sequence::UpdateInfo newInfo;
+  for (posCacheIt = _sequencePosCache.begin(); 
+       posCacheIt != _sequencePosCache.end(); ++posCacheIt)
+  {
+    HDF5Sequence* sequence = posCacheIt->second;
+    inputIt = inputMap.find(sequence->getName());
+    if (inputIt != inputMap.end())
+    {
+      const Sequence::UpdateInfo* updateInfo = inputIt->second;
+      sequence->setNumTopSegments(updateInfo->_numSegments);
+      newDimensions.push_back(*updateInfo);
+    }
+    else
+    {
+      newInfo._name = posCacheIt->first;
+      newInfo._numSegments = sequence->getNumTopSegments();
+      newDimensions.push_back(newInfo);
+    }
+  }
+  setGenomeTopDimensions(newDimensions);
+}
+
+void HDF5Genome::updateBottomDimensions(
+  const vector<Sequence::UpdateInfo>& bottomDimensions)
+{
+  vector<Sequence::UpdateInfo>::const_iterator i;
+  map<string, HDF5Sequence*>::iterator cacheIt;
+  map<string, const Sequence::UpdateInfo*> inputMap;
+  // copy input into map, checking everything is already present
+  for (i = bottomDimensions.begin(); i != bottomDimensions.end(); ++i)
+  {
+    const string& name = i->_name;
+    cacheIt = _sequenceNameCache.find(name);
+    if (cacheIt == _sequenceNameCache.end())
+    {
+      throw hal_exception(string("Cannot update sequence ") +
+                          name + " because it is not present in "
+                          " genome " + getName());
+    }
+    inputMap.insert(pair<string, const Sequence::UpdateInfo*>(name, &*i));
+  }
+  // scan through existing sequences, updating as necessary
+  // build summary of all new and unchanged dimensions in newDimensions
+  map<hal_size_t, HDF5Sequence*>::iterator posCacheIt;
+  map<string, const Sequence::UpdateInfo*>::iterator inputIt;
+  vector<Sequence::UpdateInfo> newDimensions;
+  Sequence::UpdateInfo newInfo;
+  for (posCacheIt = _sequencePosCache.begin(); 
+       posCacheIt != _sequencePosCache.end(); ++posCacheIt)
+  {
+    HDF5Sequence* sequence = posCacheIt->second;
+    inputIt = inputMap.find(sequence->getName());
+    if (inputIt != inputMap.end())
+    {
+      const Sequence::UpdateInfo* updateInfo = inputIt->second;
+      sequence->setNumBottomSegments(updateInfo->_numSegments);
+      newDimensions.push_back(*updateInfo);
+    }
+    else
+    {
+      newInfo._name = posCacheIt->first;
+      newInfo._numSegments = sequence->getNumBottomSegments();
+      newDimensions.push_back(newInfo);
+    }
+  }
+  setGenomeBottomDimensions(newDimensions);
+}
+
+void HDF5Genome::setGenomeTopDimensions(
   const vector<Sequence::UpdateInfo>& topDimensions)
 {
   hal_size_t numTopSegments = 0;
@@ -153,7 +245,7 @@ void HDF5Genome::setTopDimensions(
   _parentCache = NULL;
 }
 
-void HDF5Genome::setBottomDimensions(
+void HDF5Genome::setGenomeBottomDimensions(
   const vector<Sequence::UpdateInfo>& bottomDimensions)
 {
   hal_size_t numBottomSegments = 0;
@@ -550,6 +642,7 @@ void HDF5Genome::writeSequences(const vector<Sequence::Info>&
     // Copy segment into HDF5 array
     HDF5Sequence* seq = new HDF5Sequence(this, &_sequenceArray, 
                                          i - sequenceDimensions.begin());
+    // write all the Sequence::Info into the hdf5 sequence record
     seq->set(startPosition, *i);
     // Keep the object pointer in our caches
     _sequencePosCache.insert(

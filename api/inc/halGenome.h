@@ -37,20 +37,20 @@ public:
    virtual void setDimensions(
      const std::vector<hal::Sequence::Info>& sequenceDimensions) = 0;
 
-   /** Reset (or initialize) the number of top segments in each
-    * sequence of the genome, leaving the rest of the genome intact.
-    * @param sequenceDimensions Number of top segments in each sequence
-    * if there is a sequence presently in the genome but not in this 
-    * list it will not be updated.*/
-   virtual void setTopDimensions(
+   /** Update the number of top segments in *existing*
+    * sequences of the genome, leaving the rest of the genome intact.
+    * @param sequenceDimensions List of sequences names and their associated
+    * number of top segments.  These sequences must have already been 
+    * added using setDimensions (or error is thrown).*/
+   virtual void updateTopDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions) = 0;
 
-   /** Reset (or initialize) the number of bottom segments in each
-    * sequence of the genome, leaving the rest of the genome intact.
-    * @param sequenceDimensions Number of bottom segments in each sequence
-    * if there is a sequence presently in the genome but not in this 
-    * list it will not be updated.*/
-   virtual void setBottomDimensions(
+   /** Update the number of bottom segments in *existing*
+    * sequences of the genome, leaving the rest of the genome intact.
+    * @param sequenceDimensions List of sequences names and their associated
+    * number of bottom segments.  These sequences must have already been 
+    * added using setDimensions (or error is thrown).*/
+   virtual void updateBottomDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions) = 0;
    
    /** Get number of sequences in the genome */
