@@ -37,7 +37,7 @@ HDF5Alignment::HDF5Alignment() :
 {
   // Todo: verify chunk size
   _dcprops = DSetCreatPropList();
-  _dcprops.setDeflate(9);
+  _dcprops.setDeflate(2);
   hsize_t chunkSize = 2000000;
   _dcprops.setChunk(1, &chunkSize);
   _aprops.setCache(11, 51, 100000000, 0.25);
