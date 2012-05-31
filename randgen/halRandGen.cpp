@@ -32,13 +32,13 @@ struct Options {
    int _seed;
 };
 
-static const Options defaultSm = { 0.75, 0.1, 5, 10, 1000, 5, 10, 2000000, 9};
+static const Options defaultSm = { 0.75, 0.1, 5, 10, 1000, 5, 10, 2000000, 9, -1};
 static const Options defaultMed = { 1.25,  0.7, 20, 2, 50, 1000, 50000, 
                                     2000000, 9, -1 };
 static const Options defaultBig = { 2,  0.7, 50, 2, 500, 100, 5000, 
                                     2000000, 9, -1 };
 static const Options defaultLrg = {2, 1, 100, 2, 10, 10000, 500000,
-                                   2000000, -9, -1};
+                                   2000000, 9, -1};
 
 static void printUsage()
 {
