@@ -4,6 +4,8 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
+#include <cstdlib>
+#include <iostream>
 #include "halCons.h"
 
 using namespace std;

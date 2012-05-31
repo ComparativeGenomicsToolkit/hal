@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <ctime>
 
-
 #include <H5Cpp.h>
 #include "hal.h"
 #include "halRandomData.h"
