@@ -6,6 +6,9 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <cstdlib>
+#include <ctime>
+
 
 #include <H5Cpp.h>
 #include "hal.h"
@@ -26,15 +29,16 @@ struct Options {
    hal_size_t _maxSegments;
    hsize_t _hdf5Chunk;
    hsize_t _hdf5Compression;
+   int _seed;
 };
 
 static const Options defaultSm = { 0.75, 0.1, 5, 10, 1000, 5, 10, 2000000, 9};
 static const Options defaultMed = { 1.25,  0.7, 20, 2, 50, 1000, 50000, 
-                                    2000000, 9 };
+                                    2000000, 9, -1 };
 static const Options defaultBig = { 2,  0.7, 50, 2, 500, 100, 5000, 
-                                    2000000, 9 };
+                                    2000000, 9, -1 };
 static const Options defaultLrg = {2, 1, 100, 2, 10, 10000, 500000,
-                                   2000000, 9};
+                                   2000000, -9, -1};
 
 static void printUsage()
 {
@@ -51,6 +55,7 @@ static void printUsage()
        << "--minSegments <int> [" << defaultMed._minSegments << "]\n"
        << "--hdf5Chunk <int> [" << defaultMed._hdf5Chunk << "]\n"
        << "--hdf5Compression <int> [" << defaultMed._hdf5Compression << "]\n"
+       << "--seed <int> [system time]\n"
        << endl;
   exit(1);
 }
@@ -121,6 +126,11 @@ static Options checkOptions(int argc, char** argv)
     {
       val >> options._hdf5Compression;
     }
+    else if (arg == "--seed")
+    {
+      val >> options._seed;
+    }
+
     else
     {
       printUsage();
@@ -145,6 +155,11 @@ int main(int argc, char** argv)
 
   try
   {
+    if (options._seed < 0)
+    {
+      options._seed = time(NULL);
+    }
+    srand(options._seed);
     // load up the hdf5 options
     DSetCreatPropList dcprops = DSetCreatPropList::DEFAULT;
     if (options._hdf5Compression < 10)
