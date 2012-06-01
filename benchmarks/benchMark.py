@@ -31,7 +31,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    seed = random.randint()
+    seed = random.randint(0, 2**31)
     parser = argparse.ArgumentParser(description='Run little hal test')
     parser.add_argument('--preset', type=str,
                         help='halGenRandom preset to use [small, medium, big, large]', default='small')
