@@ -33,7 +33,8 @@ public:
 
 protected:
 
-   void readGenomeRecursive(const hal::Genome* genome);
+   void readGenomeRecursive(hal::AlignmentConstPtr alignment,
+                            const hal::Genome* genome);
 
    std::string _tree;
    std::vector<GenomeStats> _genomeStatsVec;

@@ -53,11 +53,12 @@ void HalStats::readAlignment(AlignmentConstPtr alignment)
     _tree = alignment->getNewickTree();
     _genomeStatsVec.reserve(alignment->getNumGenomes());
     const Genome* root = alignment->openGenome(alignment->getRootName());
-    readGenomeRecursive(root);
+    readGenomeRecursive(alignment, root);
   }
 }
 
-void HalStats::readGenomeRecursive(const Genome* genome)
+void HalStats::readGenomeRecursive(AlignmentConstPtr alignment,
+                                   const Genome* genome)
 {
   assert(genome != NULL);
 
@@ -70,9 +71,10 @@ void HalStats::readGenomeRecursive(const Genome* genome)
   genomeStats._numBottomSegments = genome->getNumBottomSegments();
   _genomeStatsVec.push_back(genomeStats);
 
-  for (hal_size_t i = 0; i < genome->getNumChildren(); ++i)
+  vector<string> children = alignment->getChildNames(genome->getName());
+  for (hal_size_t i = 0; i < children.size(); ++i)
   {
-    const Genome* child = genome->getChild(i);
-    readGenomeRecursive(child);
+    const Genome* child = alignment->openGenome(children[i]);
+    readGenomeRecursive(alignment, child);
   }
 }
