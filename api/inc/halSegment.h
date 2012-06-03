@@ -50,11 +50,11 @@ public:
 
    /** Get flag determing if next paralogous segment aligns to the current
     * one in the reverse complement */
-   hal_bool_t getNextParalogyReversed() const;
+   virtual hal_bool_t getNextParalogyReversed() const = 0;
 
    /** Set flag determing if the next paralogous segment is reversed
     * @param parReversed flag */
-   void setNextParalogyReversed(hal_bool_t parReversed);
+   virtual void setNextParalogyReversed(hal_bool_t parReversed) = 0;
 
    /** Get the index of the segment in the segment array */
    virtual hal_index_t getArrayIndex() const = 0;
