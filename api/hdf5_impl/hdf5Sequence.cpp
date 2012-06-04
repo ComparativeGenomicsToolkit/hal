@@ -217,8 +217,11 @@ void HDF5Sequence::setSubString(const std::string& inString,
 {
   if (length != inString.length())
   {
-    throw hal_exception(string("setString: input string has differnt") +
-                               "length from target string in genome");
+    stringstream ss;
+    ss << "setString: input string of length " << inString.length()
+       << " has length different from target string in sequence " << getName() 
+       << " which is of length " << length;
+    throw hal_exception(ss.str());
   }
   hal_size_t idx = start + getStartPosition();
   HDF5DNAIterator dnaIt(_genome, idx);
