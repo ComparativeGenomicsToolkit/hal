@@ -70,6 +70,12 @@ public:
    /** Get the index of the sequence in the sequence array */
    virtual hal_index_t getArrayIndex() const = 0;
 
+   /** Get the index of the sequence in the genome's top segment array */
+   hal_index_t getTopSegmentArrayIndex() const;
+
+   /** Get the index of the sequence in the genome's bottom segment array */
+   hal_index_t getBottomSegmentArrayIndex() const;
+
 protected:
    
    /** Destructor */

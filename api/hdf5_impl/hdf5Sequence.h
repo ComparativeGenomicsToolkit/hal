@@ -44,6 +44,10 @@ public:
 
    hal_index_t getArrayIndex() const;
 
+   hal_index_t getTopSegmentArrayIndex() const;
+
+   hal_index_t getBottomSegmentArrayIndex() const;
+
    // SEGMENTED SEQUENCE INTERFACE
 
    hal_size_t getSequenceLength() const;
@@ -95,11 +99,17 @@ public:
 
    static H5::CompType dataType(hal_size_t maxNameLength);
 
-   void set(hal_size_t startPosition, const Sequence::Info& sequenceInfo);
+   void set(hal_size_t startPosition, const Sequence::Info& sequenceInfo,
+            hal_size_t topSegmentStartIndex,
+            hal_size_t bottomSegmentStartIndex);
 
    void setNumTopSegments(hal_size_t numTopSegments);
 
    void setNumBottomSegments(hal_size_t numBottomSegments);
+
+   void setTopSegmentArrayIndex(hal_size_t topIndex);
+
+   void setBottomSegmentArrayIndex(hal_size_t bottomIndex); 
    
 protected:
 
@@ -107,6 +117,8 @@ protected:
    static const size_t lengthOffset;
    static const size_t numTopSegmentsOffset;
    static const size_t numBottomSegmentsOffset;
+   static const size_t topSegmentArrayIndexOffset;
+   static const size_t bottomSegmentArrayIndexOffset;
    static const size_t nameOffset;
    
    mutable HDF5ExternalArray* _array;

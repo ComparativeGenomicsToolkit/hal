@@ -76,11 +76,15 @@ void hdf5SequenceTypeTest(CuTest *testCase)
           cparms.setChunk(1, &chunkSize);
         }
         myArray.create(&file, datasetName, datatype, N, cparms);
+        hal_size_t totalTopSegments = 0;
+        hal_size_t totalBottomSegments = 0;
         for (hsize_t i = 0; i < N; ++i)
         {
           HDF5Sequence sequence(NULL, &myArray, i);
           Sequence::Info seqInfo(genName(i, length), i * 2, i * 3, i * 4);
-          sequence.set(i, seqInfo);
+          sequence.set(i, seqInfo, totalTopSegments, totalBottomSegments);
+          totalTopSegments += seqInfo._numTopSegments;
+          totalBottomSegments += seqInfo._numBottomSegments;
         }
         myArray.write();
         file.flush(H5F_SCOPE_LOCAL);
