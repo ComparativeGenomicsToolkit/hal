@@ -171,7 +171,7 @@ void hal::validateTopSegment(const TopSegment* topSegment)
     if (genome->getNumChildren() != 0)
     {
       stringstream ss;
-      ss << "Segment " << topSegment->getArrayIndex() << " in genome "
+      ss << "Top Segment " << topSegment->getArrayIndex() << " in genome "
          << genome->getName() << " has null parse index";
       throw hal_exception(ss.str());
     }
