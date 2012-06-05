@@ -219,6 +219,10 @@ void HDF5BottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
   _startOffset = h5ts->_startOffset;
   _endOffset = h5ts->_endOffset;
   _reversed = h5ts->_reversed;
+  if (h5ts->_topSegment.getParentReversed() == true)
+  {
+    _reversed = !_reversed;
+  }
 }
 
 void 
