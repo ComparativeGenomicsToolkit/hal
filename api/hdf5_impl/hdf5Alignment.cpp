@@ -40,7 +40,7 @@ HDF5Alignment::HDF5Alignment() :
   _dcprops.setDeflate(2);
   hsize_t chunkSize = 2500;
   _dcprops.setChunk(1, &chunkSize);
-  _aprops.setCache(111, 201, 10000000, 0.1);
+  _aprops.setCache(111, 1001, 100000000, 0.1);
 }
 
 HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
