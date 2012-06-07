@@ -54,15 +54,16 @@ void HalCons::analyzeAlignment(AlignmentConstPtr alignment)
   
   if (_alignment->getNumGenomes() > 0)
   {
-    const Genome* root = _alignment->openGenome(_alignment->getRootName());
+    string root = _alignment->getRootName();
     analyzeGenomeRecursive(root);
   }
 
   _alignment = AlignmentConstPtr();
 }
 
-void HalCons::analyzeGenomeRecursive(const Genome* genome)
+void HalCons::analyzeGenomeRecursive(const string& genomeName)
 {
+  const Genome* genome = _alignment->openGenome(genomeName);
   assert(genome != NULL);
 
   const Genome* parent = genome->getParent();
@@ -104,11 +105,13 @@ void HalCons::analyzeGenomeRecursive(const Genome* genome)
     
     StrPair branchName(genome->getName(), parent->getName());
     _branchMap.insert(pair<StrPair, ConsStats>(branchName, stats));
-  }
 
-  for (hal_size_t i = 0; i < genome->getNumChildren(); ++i)
+    _alignment->closeGenome(parent);
+  }
+  _alignment->closeGenome(genome);
+  vector<string> children = _alignment->getChildNames(genomeName);
+  for (hal_size_t i = 0; i < children.size(); ++i)
   {
-    const Genome* child = genome->getChild(i);
-    analyzeGenomeRecursive(child);
+    analyzeGenomeRecursive(children[i]);
   }
 }

@@ -41,7 +41,7 @@ public:
 
 protected:
 
-   void analyzeGenomeRecursive(const hal::Genome* genome);
+   void analyzeGenomeRecursive(const std::string& genomeName);
 
    typedef std::pair<std::string, std::string> StrPair;
    typedef std::map<StrPair, ConsStats> BranchMap;
