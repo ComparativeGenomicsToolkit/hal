@@ -33,6 +33,7 @@ public:
              bool readOnly);
    void open(const std::string& alignmentPath) const;
    void close();
+   void setOptionsFromParser(CLParserConstPtr parser) const;
    
    Genome* addLeafGenome(const std::string& name,
                            const std::string& parentName,
@@ -98,9 +99,9 @@ protected:
 protected:
 
    H5::H5File* _file;
-   H5::FileCreatPropList _cprops;
-   H5::FileAccPropList _aprops;
-   H5::DSetCreatPropList _dcprops;
+   mutable H5::FileCreatPropList _cprops;
+   mutable H5::FileAccPropList _aprops;
+   mutable H5::DSetCreatPropList _dcprops;
    int _flags;
    HDF5MetaData* _metaData;
    static const H5std_string MetaGroupName;

@@ -11,6 +11,7 @@
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
+#include "hdf5CLParser.h"
 extern "C" {
 #include "sonLibTree.h"
 }
@@ -35,12 +36,10 @@ HDF5Alignment::HDF5Alignment() :
   _tree(NULL),
   _dirty(false)
 {
-  // Todo: verify chunk size
-  _dcprops = DSetCreatPropList();
-  _dcprops.setDeflate(2);
-  hsize_t chunkSize = 2500;
-  _dcprops.setChunk(1, &chunkSize);
-  _aprops.setCache(113, 10009, 10485760, 0.75);
+  // set defaults from the command-line parser
+  HDF5CLParser defaultOptions(true);  
+  defaultOptions.applyToDCProps(_dcprops);
+  defaultOptions.applyToAProps(_aprops);
 }
 
 HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
@@ -132,6 +131,19 @@ void HDF5Alignment::close()
     assert(_tree == NULL);
     assert(_openGenomes.empty() == true);
   }
+}
+
+void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
+{
+  const HDF5CLParser* hdf5Parser = 
+     dynamic_cast<const HDF5CLParser*>(parser.get());
+  if (hdf5Parser == NULL)
+  {
+    throw hal_exception("setOptionsFromParser expected instance of "
+                        "hdf5CLParser");
+  }
+  hdf5Parser->applyToDCProps(_dcprops);
+  hdf5Parser->applyToAProps(_aprops);
 }
 
 Genome*  HDF5Alignment::addLeafGenome(const string& name,

@@ -9,6 +9,7 @@
 
 #include "halDefs.h"
 #include "halAlignment.h"
+#include "halCLParser.h"
 
 
 // we don't include hdf5 from our interface headers.  
@@ -54,16 +55,20 @@ hdf5AlignmentInstanceReadOnly(const H5::FileCreatPropList& fileCreateProps,
 /** Get an alignment instance from a file by automatically detecting which 
  * implementation to use.  (will currently (and probably forever more) 
  * just return an HDF5 instance since that's all that exists) 
- * @param path Path of file to open */
-AlignmentPtr openHalAlignment(const std::string& path); 
+ * @param path Path of file to open 
+ * @param options Command line options information */
+AlignmentPtr openHalAlignment(const std::string& path,
+                              CLParserConstPtr options = CLParserConstPtr()); 
 
 /** Get a read-only alignment instance from a file by 
  * automatically detecting which 
  * implementation to use.  (will currently (and probably forever more) 
  * just return an HDF5 instance since that's all that exists) 
- * @param path Path of file to open */
-AlignmentConstPtr openHalAlignmentReadOnly(const std::string& path); 
-
+ * @param path Path of file to open 
+ * @param options Command line options information */
+AlignmentConstPtr openHalAlignmentReadOnly(const std::string& path,
+                                           CLParserConstPtr options = 
+                                           CLParserConstPtr());  
 
 }
 

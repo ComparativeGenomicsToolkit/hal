@@ -6,6 +6,7 @@
 
 #include "halAlignmentInstance.h"
 #include "hdf5Alignment.h"
+#include "hdf5CLParser.h"
 
 using namespace std;
 using namespace H5;
@@ -43,22 +44,32 @@ hal::hdf5AlignmentInstanceReadOnly(const FileCreatPropList& fileCreateProps,
   return AlignmentConstPtr(al);
 }
 
-AlignmentPtr hal::openHalAlignment(const std::string& path)
+AlignmentPtr hal::openHalAlignment(const std::string& path,
+                                CLParserConstPtr options)
 {
   // detect which kind of file it is here (maybe by extension?)
   // ...
 
   AlignmentPtr alignment = hdf5AlignmentInstance();
+  if (options.get() != NULL)
+  {
+    alignment->setOptionsFromParser(options);
+  }
   alignment->open(path, false);
   return alignment;
 }
 
-AlignmentConstPtr hal::openHalAlignmentReadOnly(const std::string& path)
+AlignmentConstPtr hal::openHalAlignmentReadOnly(const std::string& path,
+                                CLParserConstPtr options)
 {
   // detect which kind of file it is here (maybe by extension?)
   // ...
 
   AlignmentConstPtr alignment = hdf5AlignmentInstanceReadOnly();
+  if (options.get() != NULL)
+  {
+    alignment->setOptionsFromParser(options);
+  }
   alignment->open(path);
   return alignment;
 }

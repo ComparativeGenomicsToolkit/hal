@@ -67,6 +67,7 @@ struct smart_ptr {
   typedef smart_ptr<const T>::type T ## ConstPtr;
 
 HAL_FORWARD_DEC_CLASS(Alignment)
+HAL_FORWARD_DEC_CLASS(CLParser)
 HAL_FORWARD_DEC_CLASS(Genome)
 HAL_FORWARD_DEC_CLASS(MetaData)
 HAL_FORWARD_DEC_CLASS(TopSegment)

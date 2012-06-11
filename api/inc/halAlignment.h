@@ -38,6 +38,10 @@ public:
 
    /** Close the alignment */
    virtual void close() = 0;
+
+   /** Set options from parser 
+    * @param clParser pointer to command-line parser */
+   virtual void setOptionsFromParser(CLParserConstPtr parser) const = 0;
    
    /** Add a new genome to the alignment
     * @param name name of new genome in alignment (must be unique)

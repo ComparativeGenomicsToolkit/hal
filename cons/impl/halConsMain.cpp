@@ -11,22 +11,29 @@
 using namespace std;
 using namespace hal;
 
-static string checkOptions(int argc, char** argv)
-{
-  if (argc != 2)
-  {
-    cerr << "Usage: halCons <path of hal alignment file>" << endl;
-    exit(1);
-  }
-  return argv[1];
-}
 
 int main(int argc, char** argv)
 {
-  string path = checkOptions(argc, argv);
+  CLParserPtr optionsParser = hdf5CLParserInstance();
+  optionsParser->addArgument("halFile", "path to hal file to analyze");
+  optionsParser->setDescription("Gather preliminary conservation statistics"
+                                " from hal database");
+  string path;
+  try
+  {
+    optionsParser->parseOptions(argc, argv);
+    path = optionsParser->getArgument<string>("halFile");
+  }
+  catch(exception& e)
+  {
+    cerr << e.what() << endl;
+    optionsParser->printUsage(cerr);
+    exit(1);
+  }
   try
   {
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(path);
+    alignment->setOptionsFromParser(optionsParser);
     HalCons halCons(alignment);
     cout << endl << halCons;
   }
