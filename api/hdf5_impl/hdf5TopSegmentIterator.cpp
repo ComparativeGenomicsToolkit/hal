@@ -199,7 +199,11 @@ void HDF5TopSegmentIterator::getString(std::string& outString) const
   assert (inRange() == true);
   HDF5DNAIterator di(const_cast<HDF5Genome*>(_topSegment._genome), 
                      _topSegment.getStartPosition() + _startOffset);
-  di.readString(outString, getLength(), _reversed); 
+  if (_reversed == true)
+  {
+    di.toReverse();
+  }
+  di.readString(outString, getLength()); 
 }
 
 //TOP ITERATOR METHODS

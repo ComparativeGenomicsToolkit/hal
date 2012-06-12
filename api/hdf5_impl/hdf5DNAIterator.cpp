@@ -15,7 +15,8 @@ using namespace hal;
 
 HDF5DNAIterator::HDF5DNAIterator(HDF5Genome* genome, hal_index_t index) :
   _index(index),
-  _genome(genome)
+  _genome(genome),
+  _reversed(false)
 {
 
 }

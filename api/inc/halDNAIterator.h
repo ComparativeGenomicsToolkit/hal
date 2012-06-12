@@ -18,26 +18,31 @@ class DNAIterator
 {
 public:
 
-   /** Get the DNA character at this position */
+   /** Get the DNA character at this position (if revsersed is set
+    * the reverse compelement is returned */
    virtual hal_dna_t getChar() const = 0;
 
-   /** Get the reverse Complemenet of the DNA character at this position */
-   virtual hal_dna_t getCompChar() const = 0;
-
-   /** Set the DNA character at this position 
+   /** Set the DNA character at this position (if revsersed is set
+    * the reverse compelement is stored
     * @param c DNA character to set */
    virtual void setChar(hal_dna_t c) = 0;
 
-   /** Move to previous position */
+   /** Move to previous position (equiv. to toRight if reversed)*/
    virtual void toLeft() const = 0;
 
-   /** Move to next position */
+   /** Move to next position (equiv. to toLeft if reversed)*/
    virtual void toRight() const = 0;
 
    /** Jump to any point on the genome (can lead to 
     * inefficient paging from disk if used irresponsibly)
     * @param index position in array to jump to */
    virtual void jumpTo(hal_size_t index) const = 0;
+
+   /** switch to base's reverse complement */
+   virtual void toReverse() const = 0;
+
+   /** Check whether iterator is on base's complement */
+   virtual bool getReversed() const = 0;
      
    /** Get the containing (read-only) genome */
    virtual const Genome* getGenome() const = 0;
@@ -45,7 +50,7 @@ public:
    /** Get the containing genome */
    virtual Genome* getGenome() = 0;
 
-   /** Get the index of the segment in the segment array */
+   /** Get the index of the base in the dna array */
    virtual hal_index_t getArrayIndex() const = 0;
 
    /** Compare (array indexes) of two iterators */

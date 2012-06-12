@@ -201,7 +201,11 @@ void HDF5BottomSegmentIterator::getString(std::string& outString) const
   assert (inRange() == true);
   HDF5DNAIterator di(const_cast<HDF5Genome*>(_bottomSegment._genome), 
                      _bottomSegment.getStartPosition() + _startOffset);
-  di.readString(outString, getLength(), _reversed); 
+  if (_reversed == true)
+  {
+    di.toReverse();
+  }
+  di.readString(outString, getLength()); 
 }
 
 //BOTTOM ITERATOR METHODS

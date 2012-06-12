@@ -25,11 +25,12 @@ public:
    ~HDF5DNAIterator();
    
    hal_dna_t getChar() const;
-   hal_dna_t getCompChar() const;
    void setChar(hal_dna_t c);
    void toLeft() const;
    void toRight() const;
    void jumpTo(hal_size_t index) const;
+   void toReverse() const;
+   bool getReversed() const;
    const Genome* getGenome() const;
    Genome* getGenome();
    hal_index_t getArrayIndex() const;
@@ -37,19 +38,17 @@ public:
    bool equals(DNAIteratorConstPtr other) const;
    bool leftOf(DNAIteratorConstPtr other) const;
 
-   void readString(std::string& outString, hal_size_t length,
-                   hal_bool_t reversed = false) const;
+   void readString(std::string& outString, hal_size_t length) const;
 
-   void writeString(const std::string& inString, hal_size_t length,
-                    hal_bool_t reversed = false);
+   void writeString(const std::string& inString, hal_size_t length);
 
    inline bool inRange() const;
-
    
 
 protected:
    mutable hal_index_t _index;
    mutable HDF5Genome* _genome;
+   mutable bool _reversed;
 };
 
 inline bool HDF5DNAIterator::inRange() const
@@ -61,13 +60,12 @@ inline bool HDF5DNAIterator::inRange() const
 inline hal_dna_t HDF5DNAIterator::getChar() const
 {
   assert(inRange() == true);
-  return _genome->_dnaArray.getValue<hal_dna_t>(_index, 0);
-}
-
-inline hal_dna_t  HDF5DNAIterator::getCompChar() const
-{
-  assert(inRange() == true);
-  return reverseComplement(getChar());
+  hal_dna_t c = _genome->_dnaArray.getValue<hal_dna_t>(_index, 0);
+  if (_reversed)
+  {
+    c = reverseComplement(c);
+  }
+  return c;
 }
 
 inline void HDF5DNAIterator::setChar(hal_dna_t c)
@@ -76,22 +74,36 @@ inline void HDF5DNAIterator::setChar(hal_dna_t c)
   {
     throw hal_exception("Trying to set character out of range");
   }
+  if (_reversed)
+  {
+    c = reverseComplement(c);
+  }
   _genome->_dnaArray.setValue(_index, 0, c);
 }
 
 inline void HDF5DNAIterator::toLeft() const
 {
-  --_index;
+  _reversed ? ++_index : --_index;
 }
 
 inline void HDF5DNAIterator::toRight() const
 {
-  ++_index;
+  _reversed ? --_index : ++_index;
 }
 
 inline void HDF5DNAIterator::jumpTo(hal_size_t index) const
 {
   _index = static_cast<hal_index_t>(index);
+}
+
+inline void HDF5DNAIterator::toReverse() const
+{
+  _reversed = !_reversed;
+}
+
+inline hal_bool_t HDF5DNAIterator::getReversed() const
+{
+  return _reversed;
 }
 
 inline const Genome* HDF5DNAIterator::getGenome() const
@@ -126,12 +138,12 @@ inline bool HDF5DNAIterator::leftOf(DNAIteratorConstPtr other) const
 }
 
 inline void HDF5DNAIterator::readString(std::string& outString,
-                                        hal_size_t length, 
-                                        hal_bool_t reversed) const
+                                        hal_size_t length) const
 {
   assert(inRange() == true);
   outString.resize(length);
-  if (reversed == false)
+
+  if (_reversed == false)
   {
     for (hal_size_t i = 0; i < length; ++i)
     {
@@ -143,18 +155,17 @@ inline void HDF5DNAIterator::readString(std::string& outString,
   {
     for (hal_index_t i = length - 1; i >= 0; --i)
     {
-      outString[i] = getCompChar();
+      outString[i] = getChar();
       toRight();
     }
   }
 }
 
 inline void HDF5DNAIterator::writeString(const std::string& inString,
-                                         hal_size_t length,
-                                         hal_bool_t reversed)
+                                         hal_size_t length)
 {
   assert(inRange() == true);
-  if (reversed == false)
+  if (_reversed == false)
   {
     for (hal_size_t i = 0; i < length; ++i)
     {
@@ -166,7 +177,7 @@ inline void HDF5DNAIterator::writeString(const std::string& inString,
   {
     for (hal_index_t i = length - 1; i >= 0; --i)
     {
-      setChar(reverseComplement(inString[i]));
+      setChar(inString[i]);
       toRight();
     }
   }
