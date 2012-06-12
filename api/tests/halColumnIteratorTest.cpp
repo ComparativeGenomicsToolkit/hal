@@ -204,6 +204,8 @@ void ColumnIteratorDupTest::createCallBack(AlignmentPtr alignment)
     bs.applyTo(bi);
   }  
   
+  // son1 is just one big duplication stemming 
+  // from 0th segment in dad
   for (hal_size_t i = 0; i < numSegments; ++i)
   {
     ti = son1->getTopSegmentIterator(i);
@@ -216,13 +218,22 @@ void ColumnIteratorDupTest::createCallBack(AlignmentPtr alignment)
     {
       ti->getTopSegment()->setNextParalogyIndex(0);
     }
+    if (i > 0)
+    {
+      bi = dad->getBottomSegmentIterator(i);
+      bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
+    }
   }
   
+  // son2 has a duplication between 4 and 8,
+  // which both derive from 4 in dad
   ti = son2->getTopSegmentIterator(4);
   ti->getTopSegment()->setNextParalogyIndex(8);
   ti = son2->getTopSegmentIterator(8);
   ti->getTopSegment()->setNextParalogyIndex(4);
   ti->getTopSegment()->setParentIndex(4);
+  bi = dad->getBottomSegmentIterator(8);
+  bi->getBottomSegment()->setChildIndex(1, NULL_INDEX);
 }
 
 void ColumnIteratorDupTest::checkGenome(const Genome* genome)
@@ -234,41 +245,46 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
   for (; colIterator < endIterator; colIterator->toRight())
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
+    // check that all three genomes are in the map
     CuAssertTrue(_testCase, colMap->size() == 3);
+
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
       DNAIteratorConstPtr dnaIt = *i->second.begin();
-      // the first column (of any genome) should be aligned to 
+      // the first segment (of any genome) should be aligned to 
       // every segment in son1
-      if (i->first->getName() == "son1")
+      if (i->first->getName() == "son1" && genome->getName() != "son1")
       {
-        if (colNumber < i->first->getNumTopSegments())
+        if (colNumber < i->first->getTopSegmentIterator()->getLength())
         {
           CuAssertTrue(_testCase, i->second.size() ==
-                       i->first->getNumTopSegments());
+                       i->first->getTopSegmentIterator()->getLength());
         }
         else
         {
           CuAssertTrue(_testCase, i->second.size() == 0);
         }
       }
-      else
+      // check the paralogy on son2 
+      else if (i->first->getName() == "son2" && genome->getName() == "dad")
       {
-        
+        if (colNumber >= 40 && colNumber < 50)
+        {
+          CuAssertTrue(_testCase, i->second.size() == 2);
+        }
+        else if (colNumber >= 80 && colNumber < 90)
+        {
+          CuAssertTrue(_testCase, i->second.size() == 0);
+        }
+        else
+        {
+          CuAssertTrue(_testCase, i->second.size() == 1);
+        }
       }
-      //    CuAssertTrue(_testCase, i->second.size() == 1);
-
-      
-      /*  cout << "column=" << columnNumber 
-           << " genome=" << dnaIt->getGenome()->getName()
-           << " index=" << dnaIt->getArrayIndex() << endl;*/
-
-      // CuAssertTrue(_testCase, dnaIt->getArrayIndex() == 
-      //             (hal_index_t)columnNumber);
     }
-  }
     ++colNumber;
+  }
 }
 
 void ColumnIteratorDupTest::checkCallBack(AlignmentConstPtr alignment)
