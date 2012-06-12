@@ -300,7 +300,7 @@ const Sequence* HDF5Genome::getSequence(const string& name) const
   const Sequence* sequence = NULL;
   map<string, HDF5Sequence*>::const_iterator mapIt = 
      _sequenceNameCache.find(name);
-  if (mapIt == _sequenceNameCache.end())
+  if (mapIt != _sequenceNameCache.end())
   {
     sequence = mapIt->second;
   }
