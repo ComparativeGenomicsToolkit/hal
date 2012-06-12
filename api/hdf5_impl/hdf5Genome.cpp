@@ -286,23 +286,25 @@ hal_size_t HDF5Genome::getNumSequences() const
    
 Sequence* HDF5Genome::getSequence(const string& name)
 {
+  Sequence* sequence = NULL;
   map<string, HDF5Sequence*>::iterator mapIt = _sequenceNameCache.find(name);
-  if (mapIt == _sequenceNameCache.end())
+  if (mapIt != _sequenceNameCache.end())
   {
-    throw hal_exception(name + ":  sequence not in genome");
+    sequence = mapIt->second;
   }
-  return mapIt->second;
+  return sequence;
 }
 
 const Sequence* HDF5Genome::getSequence(const string& name) const
 {
+  const Sequence* sequence = NULL;
   map<string, HDF5Sequence*>::const_iterator mapIt = 
      _sequenceNameCache.find(name);
   if (mapIt == _sequenceNameCache.end())
   {
-    throw hal_exception(name + ":  sequence not in genome");
+    sequence = mapIt->second;
   }
-  return mapIt->second;
+  return sequence;
 }
 
 Sequence* HDF5Genome::getSequenceBySite(hal_size_t position)
