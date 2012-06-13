@@ -298,6 +298,147 @@ void ColumnIteratorDupTest::checkCallBack(AlignmentConstPtr alignment)
   checkGenome(genome);
 }
 
+void ColumnIteratorInvTest::createCallBack(AlignmentPtr alignment)
+{
+  double branchLength = 1e-10;
+
+  alignment->addRootGenome("grandpa");
+  alignment->addLeafGenome("dad", "grandpa", branchLength);
+  alignment->addLeafGenome("son1", "dad", branchLength);
+  
+  vector<Sequence::Info> dims(1);
+  hal_size_t numSegments = 10;
+  hal_size_t segLength = 10;
+  hal_size_t seqLength = numSegments * segLength;
+
+  Genome* son1 = alignment->openGenome("son1");
+  dims[0] = Sequence::Info("seq", seqLength, numSegments, 0);
+  son1->setDimensions(dims);
+
+  Genome* dad = alignment->openGenome("dad");
+  dims[0] = Sequence::Info("seq", seqLength, numSegments, numSegments);
+  dad->setDimensions(dims);
+
+  Genome* grandpa = alignment->openGenome("grandpa");
+  dims[0] = Sequence::Info("seq", seqLength, 0, numSegments);
+  grandpa->setDimensions(dims);
+  
+  BottomSegmentIteratorPtr bi;
+  BottomSegmentStruct bs;
+  TopSegmentIteratorPtr ti;
+  TopSegmentStruct ts;
+
+  for (hal_size_t i = 0; i < numSegments; ++i)
+  {
+    ti = son1->getTopSegmentIterator(i);
+    ts.set(i * segLength, segLength, i);
+    ts.applyTo(ti);
+    ti = dad->getTopSegmentIterator(i);
+    ts.set(i * segLength, segLength, i, i, 0);
+    ts.applyTo(ti);
+
+    bi = dad->getBottomSegmentIterator(i);
+    bi->getBottomSegment()->setChildIndex(0, i);
+    bs.set(i * segLength, segLength, i, 0);
+    bs.applyTo(bi);
+
+    bi = grandpa->getBottomSegmentIterator(i);
+    bi->getBottomSegment()->setChildIndex(0, i);
+    bs.set(i * segLength, segLength);
+    bs.applyTo(bi);
+  }  
+
+  DNAIteratorPtr gDnaIt = grandpa->getDNAIterator();
+  DNAIteratorPtr dDnaIt = dad->getDNAIterator();
+  DNAIteratorPtr sDnaIt = son1->getDNAIterator();
+  
+  for (hal_size_t i = 0; i < grandpa->getSequenceLength(); ++i)
+  {
+    switch (i % 4) {
+    case 0: 
+      gDnaIt->setChar('A'); 
+      dDnaIt->setChar('C'); 
+      sDnaIt->setChar('T');
+      break;
+    case 1: 
+      gDnaIt->setChar('G'); 
+      dDnaIt->setChar('A'); 
+      sDnaIt->setChar('C');
+      break;
+    case 2: 
+      gDnaIt->setChar('T'); 
+      dDnaIt->setChar('G'); 
+      sDnaIt->setChar('A');
+      break;
+    case 3: 
+      gDnaIt->setChar('C'); 
+      dDnaIt->setChar('T'); 
+      sDnaIt->setChar('G');
+      break;
+    }
+    gDnaIt->toRight();
+    dDnaIt->toRight();
+    sDnaIt->toRight();
+  }
+
+  // child-dad edge has inversion in 0th segment
+  bi = dad->getBottomSegmentIterator();
+  bi->getBottomSegment()->setChildReversed(0, true);
+  ti = son1->getTopSegmentIterator();
+  ti->getTopSegment()->setParentReversed(true);
+
+  // child-dad edge and dad-grandpa edges have inversion
+  // in 1st segment
+  bi = dad->getBottomSegmentIterator(1);
+  bi->getBottomSegment()->setChildReversed(0, true);
+  ti = son1->getTopSegmentIterator(1);
+  ti->getTopSegment()->setParentReversed(true);
+  bi = grandpa->getBottomSegmentIterator(1);
+  bi->getBottomSegment()->setChildReversed(0, true);
+  ti = dad->getTopSegmentIterator(1);
+  ti->getTopSegment()->setParentReversed(true);
+}
+
+void ColumnIteratorInvTest::checkGenome(const Genome* genome)
+{
+  assert(genome != NULL);
+  ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
+  ColumnIteratorConstPtr endIterator = genome->getColumnEndIterator();
+  size_t colNumber = 0;
+  for (; colIterator < endIterator; colIterator->toRight())
+  {
+    const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
+
+    // check that all three genomes are in the map
+    CuAssertTrue(_testCase, colMap->size() == 3);
+
+    for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
+         i != colMap->end(); ++i)
+    {
+      CuAssertTrue(_testCase, i->second.size() == 1);
+      DNAIteratorConstPtr dnaIt = *i->second.begin();
+      
+      if (i->first->getName() == "son1")
+      {
+        //    DNAIteratorConstPtr dadIt = *colMap->find("dad")->second.begin();
+        //DNAIteratorConstPtr graIt = *colMap->find("grandpa")->second.begin();
+      }
+    }
+    ++colNumber;
+  }
+}
+
+void ColumnIteratorInvTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  validateAlignment(alignment);
+  const Genome* genome = alignment->openGenome("dad");
+  checkGenome(genome);
+  genome = alignment->openGenome("son1");
+//  checkGenome(genome);
+  genome = alignment->openGenome("grandpa");
+//  checkGenome(genome);
+}
+
 void halColumnIteratorBaseTest(CuTest *testCase)
 {
   try 
@@ -326,9 +467,22 @@ void halColumnIteratorDepthTest(CuTest *testCase)
 
 void halColumnIteratorDupTest(CuTest *testCase)
 {
-  // try 
+  try 
   {
     ColumnIteratorDupTest tester;
+    tester.check(testCase);
+  }
+  catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
+void halColumnIteratorInvTest(CuTest *testCase)
+{
+  // try 
+  {
+    ColumnIteratorInvTest tester;
     tester.check(testCase);
   }
   // catch (...) 
@@ -343,6 +497,7 @@ CuSuite* halColumnIteratorTestSuite(void)
   SUITE_ADD_TEST(suite, halColumnIteratorBaseTest);
   SUITE_ADD_TEST(suite, halColumnIteratorDepthTest);
   SUITE_ADD_TEST(suite, halColumnIteratorDupTest);
+  SUITE_ADD_TEST(suite, halColumnIteratorInvTest);
   return suite;
 }
 
