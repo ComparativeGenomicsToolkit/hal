@@ -4,8 +4,12 @@ include ../include.mk
 libSourcesAll = impl/*.cpp
 libSources=$(subst impl/hal2maf.cpp,,${libSourcesAll})
 libHeaders = inc/*.h 
+libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
+libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
+libTests = tests/*.cpp 
+libTestsHeaders = tests/*.h 
 
-all : ${libPath}/halMafExport.a ${binPath}/hal2maf
+all : ${libPath}/halMafExport.a ${binPath}/hal2maf ${binPath}/halMafTests
 
 clean : 
 	rm -f ${libPath}/halMafExport.a ${libPath}/*.h ${binPath}/hal2maf 
@@ -21,3 +25,5 @@ ${libPath}/halMafExport.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${ba
 ${binPath}/hal2maf : impl/hal2maf.cpp ${libPath}/halMafExport.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/hal2maf impl/hal2maf.cpp ${libPath}/halMafExport.a ${libPath}/halLib.a ${basicLibs}
 
+${binPath}/halMafTests : ${libTests} ${libTestsHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halMafTests ${libTests} ${libPath}/halLib.a ${libPath}/halMafExport.a ${basicLibs}

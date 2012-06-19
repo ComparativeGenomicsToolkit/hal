@@ -23,11 +23,10 @@ class TestCase(unittest.TestCase):
             os.remove(tempFile)
         unittest.TestCase.tearDown(self)
         
-    def testAPI(self):
+    def testMaf(self):
         """Run all the api CuTests, fail if any of them fail.
         """
-        system("halHdf5Tests")
-        system("halApiTests")
+        system("halMafTests")
 
 def main():
     parseCactusSuiteTestOptions()
