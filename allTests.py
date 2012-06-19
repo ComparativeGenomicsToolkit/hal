@@ -8,9 +8,11 @@ import unittest
 import sys
 import os
 from hal.api.apiTest import TestCase as apiTest
+from hal.maf.mafTest import TestCase as mafTest
 
 def allSuites(): 
-    allTests = unittest.TestSuite((unittest.makeSuite(apiTest, 'test')))
+    allTests = unittest.TestSuite((unittest.makeSuite(apiTest, 'test'),
+                                   unittest.makeSuite(mafTest, 'test')))
     return allTests
         
 def main():    

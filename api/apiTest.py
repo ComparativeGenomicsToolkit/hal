@@ -30,7 +30,6 @@ class TestCase(unittest.TestCase):
         system("halApiTests")
 
 def main():
-    parseCactusSuiteTestOptions()
     sys.argv = sys.argv[:1]
     unittest.main()
         

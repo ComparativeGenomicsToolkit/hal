@@ -29,7 +29,6 @@ class TestCase(unittest.TestCase):
         system("halMafTests")
 
 def main():
-    parseCactusSuiteTestOptions()
     sys.argv = sys.argv[:1]
     unittest.main()
         
