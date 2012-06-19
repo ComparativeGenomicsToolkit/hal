@@ -28,9 +28,6 @@ const H5std_string HDF5Alignment::GenomesGroupName = "Genomes";
 
 HDF5Alignment::HDF5Alignment() :
   _file(NULL),
-  _cprops(FileCreatPropList::DEFAULT),
-  _aprops(FileAccPropList::DEFAULT),
-  _dcprops(DSetCreatPropList::DEFAULT),
   _flags(H5F_ACC_RDONLY),
   _metaData(NULL),
   _tree(NULL),
@@ -46,15 +43,14 @@ HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
                              const H5::FileAccPropList& fileAccessProps,
                              const H5::DSetCreatPropList& datasetCreateProps) :
   _file(NULL),
-  _cprops(fileCreateProps),
-  _aprops(fileAccessProps),
-  _dcprops(datasetCreateProps),
   _flags(H5F_ACC_RDONLY),
   _metaData(NULL),
   _tree(NULL),
   _dirty(false)
 {
-
+  _cprops = fileCreateProps;
+  _aprops = fileAccessProps;
+  _dcprops = datasetCreateProps;
 }
 
 HDF5Alignment::~HDF5Alignment()

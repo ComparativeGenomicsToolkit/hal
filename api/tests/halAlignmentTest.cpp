@@ -62,6 +62,7 @@ TempReadAlignment::TempReadAlignment(AlignmentPtr alignment,
                                      char* path)
   : _path(path)
 {
+  alignment->close();
   alignment->open(_path, true);
   _alignment = alignment;
 }

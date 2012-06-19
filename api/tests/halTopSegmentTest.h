@@ -17,6 +17,7 @@ struct TopSegmentStruct {
    hal_index_t _startPosition;
    hal_index_t _nextParalogyIndex;
    hal_index_t _parentIndex;
+   bool _parentReversed;
    hal_index_t _arrayIndex;
    hal_index_t _bottomParseIndex;
    hal_offset_t _bottomParseOffset;
@@ -58,6 +59,12 @@ struct TopSegmentIteratorToSiteTest : public AlignmentTest
    void createCallBack(hal::AlignmentPtr alignment);
    void checkCallBack(hal::AlignmentConstPtr alignment);
    void checkGenome(const hal::Genome* genome);
+};
+
+struct TopSegmentIteratorReverseTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
 #endif

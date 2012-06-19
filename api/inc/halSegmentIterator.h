@@ -24,13 +24,15 @@ public:
    /** move iterator one segment to the left 
     * @param leftCutoff If the left segment contains the 
     * genome position (DNA coordinate) specified by leftCutoff
-    * the segment iterator is sliced to begin at this position */
+    * the segment iterator is sliced to begin at this position 
+    * (if the iterator is reversed, it moves in opposite direction) */
    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const = 0;
 
    /** move iterator one segment to the right 
     * @param rightCutoff If the right segment contains the 
     * genome position (DNA coordinate) specified by rightCutoff
-    * the segment iterator is sliced to end at this position */
+    * the segment iterator is sliced to end at this position 
+    * (if the iterator is reversed, it moves in opposite direction) */
    virtual void toRight(hal_index_t rightCutoff = NULL_INDEX) const = 0;
 
    /** switch to segment's reverse complement */
@@ -69,7 +71,10 @@ public:
 
    /** Get the start position of the iterator's segment.  The parse
     * offset is taken into account, so it will return the segment's
-    * start position plus the startoffset */
+    * start position plus the startoffset.  Note that the start position
+    * is currently always in FORWARD GENOME coordinates.  That said,
+    * if the segment iterator is in reverse orientation, the segment
+    * is read from right (startposition) to left (startposition - length -1)*/
    virtual hal_index_t getStartPosition() const = 0;
 
    /** Get the length of the iterator's segment.  The parse offset's

@@ -131,7 +131,7 @@ CuSuite* halValidateTestSuite(void)
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halValidateSmallTest);
   SUITE_ADD_TEST(suite, halValidateMediumTest);
-  SUITE_ADD_TEST(suite, halValidateLargeTest);
+//  SUITE_ADD_TEST(suite, halValidateLargeTest);
   return suite;
 }
 

@@ -56,4 +56,34 @@ inline bool operator!=(BottomSegmentIteratorConstPtr p1,
 }
 
 }
+
+#ifndef NDEBUG
+#include "halGenome.h" 
+namespace hal {
+inline std::ostream& operator<<(std::ostream& os, 
+                                BottomSegmentIteratorConstPtr bs)
+{
+  const BottomSegment* bseg = bs->getBottomSegment();
+  const Genome* genome = bseg->getGenome();
+  os << "bottomIterator: ";
+  os << "Genome=" << genome->getName();
+  os << " idx=" << bseg->getArrayIndex();
+  if (bseg->getArrayIndex() >= 0 && 
+      bseg->getArrayIndex() < (hal_index_t)genome->getNumBottomSegments())
+  {
+    os << " segLen=" << bseg->getLength();
+    os << " segStart=" << bseg->getStartPosition() << std::endl;
+    
+    os << " offset=[" << bs->getStartOffset() << "," 
+       << bs->getEndOffset() << "]";
+    os << " start=" << bs->getStartPosition();
+    os << " len=" << bs->getLength();
+    os << " rev=" << bs->getReversed();
+  }
+  return os;
+}
+}
+#endif
+
+
 #endif

@@ -7,6 +7,7 @@
 #ifndef _HALTOPSEGMENTITERATOR_H
 #define _HALTOPSEGMENTITERATOR_H
 
+#include <iostream>
 #include "halDefs.h"
 #include "halSegmentIterator.h"
 #include "halTopSegment.h"
@@ -58,4 +59,34 @@ inline bool operator!=(TopSegmentIteratorConstPtr p1,
 }
 
 }
+
+
+#ifndef NDEBUG
+#include "halGenome.h"
+namespace hal {
+inline std::ostream& operator<<(std::ostream& os, 
+                                TopSegmentIteratorConstPtr ts)
+{
+  const TopSegment* tseg = ts->getTopSegment();
+  const Genome* genome = tseg->getGenome();
+  os << "topIterator: ";
+  os << "Genome=" << genome->getName();
+  os << " idx=" << tseg->getArrayIndex();
+  if (tseg->getArrayIndex() >= 0 && 
+      tseg->getArrayIndex() < (hal_index_t)genome->getNumTopSegments())
+  {
+    os << " segLen=" << tseg->getLength();
+    os << " segStart=" << tseg->getStartPosition() << std::endl;
+
+    os << " offset=[" << ts->getStartOffset() << "," 
+       << ts->getEndOffset() << "]";
+    os << " start=" << ts->getStartPosition();
+    os << " len=" << ts->getLength();
+    os << " rev=" << ts->getReversed();
+  }
+  return os;
+}
+}
+#endif
+
 #endif

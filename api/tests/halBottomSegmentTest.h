@@ -60,5 +60,10 @@ struct BottomSegmentIteratorToSiteTest : public AlignmentTest
    void checkGenome(const hal::Genome* genome);
 };
 
+struct BottomSegmentIteratorReverseTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
 
 #endif

@@ -292,7 +292,14 @@ void DefaultColumnIterator::updateParent(LinkedTopIteratorPtr topIt) const
     // advance the parent's iterator to match topIt's (which should 
     // already have been updated. 
     topIt->_parent->_it->toParent(topIt->_it);
+/*
+    cout << parentGenome->getName() << " " << topIt->_parent->_it->getReversed() << endl;
+
+    cout << topIt->_parent->_it->getStartPosition() << " " << topIt->_it->getStartPosition() << endl << endl;
+*/
+
     topIt->_parent->_dna->jumpTo( topIt->_parent->_it->getStartPosition());
+    topIt->_parent->_dna->setReversed(topIt->_parent->_it->getReversed());
     _colMap[parentGenome].insert(topIt->_parent->_dna);
     // cout << "child parent " << topIt->_parent->_dna->getArrayIndex() << endl;
 
@@ -337,15 +344,19 @@ void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt,
     bottomIt->_children[index]->_it->toChild(bottomIt->_it, index);
     bottomIt->_children[index]->_dna->jumpTo(
       bottomIt->_children[index]->_it->getStartPosition());
+    bottomIt->_children[index]->_dna->setReversed(
+      bottomIt->_children[index]->_it->getReversed());
     _colMap[childGenome].insert(bottomIt->_children[index]->_dna);
-
-    /*cout << "updating genome " << childGenome->getName() 
+/*
+    cout << "updating genome " << childGenome->getName() 
          << " (son of " << genome->getName() << ")"
          << " parent index " 
          << bottomIt->_dna->getArrayIndex()
          << " index " << bottomIt->_children[index]->_dna->getArrayIndex()
-         << endl;*/
-    
+         << endl;
+    cout << "parent it " << bottomIt->_it << endl;
+    cout << "child it " << bottomIt->_children[index]->_it << endl << endl;
+*/    
     //recurse on paralgous siblings
     updateNextTopDup(bottomIt->_children[index]);
 
@@ -383,7 +394,8 @@ void DefaultColumnIterator::updateNextTopDup(LinkedTopIteratorPtr topIt) const
     currentTopIt->_nextDup->_it->toNextParalogy();
     currentTopIt->_nextDup->_dna->jumpTo(
       currentTopIt->_nextDup->_it->getStartPosition());
-      
+    currentTopIt->_nextDup->_dna->setReversed(
+      currentTopIt->_nextDup->_it->getReversed());
     _colMap[genome].insert(currentTopIt->_nextDup->_dna);
 
     // add the dup to the visit set if we're the reference
@@ -429,6 +441,9 @@ void DefaultColumnIterator::updateParseUp(LinkedBottomIteratorPtr bottomIt)
     bottomIt->_topParse->_it->toParseUp(bottomIt->_it);
     bottomIt->_topParse->_dna->jumpTo(
       bottomIt->_topParse->_it->getStartPosition());
+    bottomIt->_topParse->_dna->setReversed(
+      bottomIt->_topParse->_it->getReversed());
+
     //_colMap[genome].push_back(bottomIt->_topParse->_dna);
 
     // recurse on parse link's parent
@@ -462,15 +477,20 @@ void DefaultColumnIterator::updateParseDown(LinkedTopIteratorPtr topIt) const
     
     // advance the parse link's iterator to match topIt
     topIt->_bottomParse->_it->toParseDown(topIt->_it);
+
+    
     topIt->_bottomParse->_dna->jumpTo(
       topIt->_bottomParse->_it->getStartPosition());
+    topIt->_bottomParse->_dna->setReversed(
+      topIt->_bottomParse->_it->getReversed());
+
     //_colMap[genome].push_back(topIt->_bottomParse->_dna);
-    /*
+/*
     cout << "doing parse down on " << genome->getName()
          << " where incoming index is " << topIt->_dna->getArrayIndex()
          << " but outgoing index is " 
          << topIt->_bottomParse->_dna->getArrayIndex() << endl;
-    */
+*/
     // recurse on all the link's children
     for (hal_size_t i = 0; i <  topIt->_bottomParse->_children.size(); ++i)
     {

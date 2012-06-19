@@ -37,6 +37,7 @@ void TopSegmentStruct::set(hal_index_t startPosition,
   _startPosition = startPosition;
   _length = length;
   _parentIndex = parentIndex;
+  _parentReversed = false;
   _bottomParseIndex = bottomParseIndex;
   _bottomParseOffset = bottomParseOffset;
   _nextParalogyIndex = nextParalogyIndex;
@@ -49,6 +50,7 @@ void TopSegmentStruct::applyTo(TopSegmentIteratorPtr it) const
   seg->setStartPosition(_startPosition);
   seg->setNextParalogyIndex(_nextParalogyIndex);
   seg->setParentIndex(_parentIndex);
+  seg->setParentReversed(_parentReversed);
   seg->setBottomParseIndex(_bottomParseIndex);
   seg->setBottomParseOffset(_bottomParseOffset);
 }
@@ -68,20 +70,33 @@ void TopSegmentStruct::compareTo(TopSegmentIteratorConstPtr it,
 void TopSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
 {
   Genome* ancGenome = alignment->addRootGenome("Anc0", 0);
+  size_t numChildren = 9;
+  for (size_t i = 0; i < numChildren; ++i)
+  {
+    std::stringstream ss;
+    ss << i;
+    alignment->addLeafGenome(string("Leaf") + ss.str(), "Anc0", 0.1);
+  }
   vector<Sequence::Info> seqVec(1);
-  seqVec[0] = Sequence::Info("Sequence", 1000000, 5000, 700000);
+  seqVec[0] = Sequence::Info("Sequence", 1000000, 5000, 10000);
   ancGenome->setDimensions(seqVec);
+  
+  CuAssertTrue(_testCase, ancGenome->getNumChildren() == numChildren);
   
   _topSegments.clear();
   for (size_t i = 0; i < ancGenome->getNumTopSegments(); ++i)
   {
     TopSegmentStruct topSeg;
     topSeg.setRandom();
+    topSeg._length = 
+       ancGenome->getSequenceLength() / ancGenome->getNumTopSegments();
+    topSeg._startPosition = i * topSeg._length;
     _topSegments.push_back(topSeg);
   }
   
-  TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator();
-  TopSegmentIteratorConstPtr tsEnd = ancGenome->getTopSegmentEndIterator();
+  TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator(0);
+  TopSegmentIteratorConstPtr tsEnd = 
+     ancGenome->getTopSegmentEndIterator();
   for (size_t i = 0; tsIt != tsEnd; tsIt->toRight(), ++i)
   {
     CuAssertTrue(_testCase, 
@@ -93,7 +108,8 @@ void TopSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
 void TopSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
 {
   const Genome* ancGenome = alignment->openGenome("Anc0");
-  CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == _topSegments.size());
+  CuAssertTrue(_testCase, 
+               ancGenome->getNumTopSegments() == _topSegments.size());
   TopSegmentIteratorConstPtr tsIt = ancGenome->getTopSegmentIterator(0);
   for (size_t i = 0; i < ancGenome->getNumTopSegments(); ++i)
   {
@@ -102,12 +118,52 @@ void TopSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
     _topSegments[i].compareTo(tsIt, _testCase);
     tsIt->toRight();
   }
-  tsIt = ancGenome->getTopSegmentIterator(ancGenome->getNumTopSegments() - 1);
+  tsIt = ancGenome->getTopSegmentIterator(
+    ancGenome->getNumTopSegments() - 1);
   for (hal_index_t i = ancGenome->getNumTopSegments() - 1; i >= 0; --i)
   {
     CuAssertTrue(_testCase, tsIt->getTopSegment()->getArrayIndex() == i);
     _topSegments[i].compareTo(tsIt, _testCase);
     tsIt->toLeft();
+  }
+
+  tsIt = ancGenome->getTopSegmentIterator(0); 
+  tsIt->slice(0, tsIt->getLength() - 1);
+  for (hal_index_t i = 0; i < (hal_index_t)ancGenome->getSequenceLength(); ++i)
+  {
+    CuAssertTrue(_testCase, tsIt->getLength() == 1);
+    CuAssertTrue(_testCase, tsIt->getStartPosition() == i);
+    tsIt->toRight(tsIt->getStartPosition() + 1);
+  }
+  tsIt = ancGenome->getTopSegmentIterator(
+    ancGenome->getNumTopSegments() - 1);
+  tsIt->slice(tsIt->getLength() - 1, 0);
+  for (hal_index_t i = ancGenome->getSequenceLength() - 1; i >= 0; --i)
+  {
+    CuAssertTrue(_testCase, tsIt->getLength() == 1);
+    CuAssertTrue(_testCase, tsIt->getStartPosition() == i);
+    tsIt->toLeft(tsIt->getStartPosition() - 1);
+  }
+
+  tsIt = ancGenome->getTopSegmentIterator(0); 
+  tsIt->toReverse();
+  CuAssertTrue(_testCase, tsIt->getReversed() == true);
+  tsIt->slice(tsIt->getLength() - 1, 0);
+  for (hal_index_t i = 0; i < (hal_index_t)ancGenome->getSequenceLength(); ++i)
+  {
+    CuAssertTrue(_testCase, tsIt->getLength() == 1);
+    CuAssertTrue(_testCase, tsIt->getStartPosition() == i);
+    tsIt->toLeft(tsIt->getStartPosition() + 1);
+  }
+  tsIt = ancGenome->getTopSegmentIterator(
+    ancGenome->getNumTopSegments() - 1);
+  tsIt->toReverse();
+  tsIt->slice(0, tsIt->getLength() - 1);
+  for (hal_index_t i = ancGenome->getSequenceLength() - 1; i >= 0; --i)
+  {
+    CuAssertTrue(_testCase, tsIt->getLength() == 1);
+    CuAssertTrue(_testCase, tsIt->getStartPosition() == i);
+    tsIt->toRight(tsIt->getStartPosition() - 1);
   }
 }
 
@@ -339,6 +395,107 @@ void TopSegmentIteratorToSiteTest::checkCallBack(AlignmentConstPtr alignment)
   checkGenome(case2);
 }
 
+void TopSegmentIteratorReverseTest::createCallBack(AlignmentPtr alignment)
+{
+  vector<Sequence::Info> seqVec(1);
+  
+  BottomSegmentIteratorPtr bi;
+  BottomSegmentStruct bs;
+  TopSegmentIteratorPtr ti;
+  TopSegmentStruct ts;
+  
+  // setup simple case were there is an edge from a parent to 
+  // child and it is reversed
+  Genome* parent1 = alignment->addRootGenome("parent1");
+  Genome* child1 = alignment->addLeafGenome("child1", "parent1", 1);
+  seqVec[0] = Sequence::Info("Sequence", 10, 2, 2);
+  parent1->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 10, 2, 2);
+  child1->setDimensions(seqVec);
+
+  parent1->setString("CCCTACGTGC");
+  child1->setString("CCCTACGTGC");
+
+  bi = parent1->getBottomSegmentIterator();
+  bs.set(0, 10, 0, 0);
+  bs._children.push_back(pair<hal_size_t, bool>(0, true));
+  bs.applyTo(bi);
+     
+  ti = child1->getTopSegmentIterator();
+  ts.set(0, 10, 0, 0, 0);
+  ts._parentReversed = true;
+  ts.applyTo(ti);
+
+  bi = child1->getBottomSegmentIterator();
+  bs.set(0, 5, 0, 0);
+  bs._children.clear();
+  bs.applyTo(bi);
+  bi->toRight();
+  bs.set(5, 5, 0, 5);
+  bs.applyTo(bi);
+}
+
+void TopSegmentIteratorReverseTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  BottomSegmentIteratorConstPtr bi;
+  TopSegmentIteratorConstPtr ti, ti2;
+
+  const Genome* parent1 = alignment->openGenome("parent1");
+  const Genome* child1 = alignment->openGenome("child1");
+
+  ti = child1->getTopSegmentIterator();
+  bi = parent1->getBottomSegmentIterator();
+
+  ti2 = child1->getTopSegmentIterator();
+  ti2->toChild(bi, 0);
+  
+  CuAssertTrue(_testCase, ti->getStartPosition() == 0);
+  CuAssertTrue(_testCase, ti->getLength() == 10);
+  CuAssertTrue(_testCase, ti->getReversed() == false);
+
+  CuAssertTrue(_testCase, ti2->getStartPosition() == 9);
+  CuAssertTrue(_testCase, ti2->getLength() == 10);
+  CuAssertTrue(_testCase, ti2->getReversed() == true);
+
+  bi->slice(1, 3);
+  ti2->toChild(bi, 0);
+  
+  CuAssertTrue(_testCase, bi->getStartPosition() == 1);
+  CuAssertTrue(_testCase, bi->getLength() == 6);
+  CuAssertTrue(_testCase, ti2->getStartPosition() == 6);
+  CuAssertTrue(_testCase, ti2->getLength() == 6);
+
+  string buffer;
+  bi->getString(buffer);
+  CuAssertTrue(_testCase, buffer == "CCTACG");
+  ti2->getString(buffer);
+  CuAssertTrue(_testCase, buffer == "CGTAGG");
+
+  bi = child1->getBottomSegmentIterator();
+  CuAssertTrue(_testCase, bi->getReversed() == false);
+
+  ti->toParseUp(bi);  
+  CuAssertTrue(_testCase, ti->getStartPosition() == 0);
+  CuAssertTrue(_testCase, ti->getLength() == 5);
+
+  bi->toReverse();
+  ti->toParseUp(bi);
+  CuAssertTrue(_testCase, ti->getStartPosition() == 4);
+  CuAssertTrue(_testCase, ti->getLength() == 5);
+
+  bi->toReverse();  
+  CuAssertTrue(_testCase, bi->getReversed() == false);
+  bi->toRight();
+  ti->toParseUp(bi);
+  CuAssertTrue(_testCase, ti->getStartPosition() == 5);
+  CuAssertTrue(_testCase, ti->getLength() == 5);
+
+  bi->toReverse();  
+  ti->toParseUp(bi);  
+  CuAssertTrue(_testCase, ti->getStartPosition() == 9);
+  CuAssertTrue(_testCase, ti->getLength() == 5);
+}
+
 void halTopSegmentSimpleIteratorTest(CuTest *testCase)
 {
   try 
@@ -391,6 +548,19 @@ void halTopSegmentIteratorToSiteTest(CuTest *testCase)
   } 
 }
 
+void halTopSegmentIteratorReverseTest(CuTest *testCase)
+{
+  try 
+  {
+    TopSegmentIteratorReverseTest tester;
+    tester.check(testCase);
+  }
+   catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
 CuSuite* halTopSegmentTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
@@ -398,6 +568,7 @@ CuSuite* halTopSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, halTopSegmentSequenceTest);
   SUITE_ADD_TEST(suite, halTopSegmentIteratorParseTest);
   SUITE_ADD_TEST(suite, halTopSegmentIteratorToSiteTest);
+  SUITE_ADD_TEST(suite, halTopSegmentIteratorReverseTest);
   return suite;
 }
 

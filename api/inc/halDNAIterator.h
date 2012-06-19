@@ -43,6 +43,9 @@ public:
 
    /** Check whether iterator is on base's complement */
    virtual bool getReversed() const = 0;
+
+   /** Set the iterator's reverse complement status */
+   virtual void setReversed(bool reversed) const = 0;
      
    /** Get the containing (read-only) genome */
    virtual const Genome* getGenome() const = 0;
