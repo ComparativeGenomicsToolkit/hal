@@ -12,7 +12,9 @@ using namespace std;
 using namespace hal;
 
 CLParser::CLParser() :
-  _prefix("--")
+  _prefix("--"),
+  _maxArgLen(0),
+  _maxOptLen(0)
 {
   addOptionFlag("help", "dsiplay this help page", false);
 }
@@ -41,6 +43,7 @@ void CLParser::addArgument(const string& name,
   }
   Argument arg = {name, description, ""};
   _args.push_back(arg);
+  _maxArgLen = max(_maxArgLen, name.length());
 }
 
 bool CLParser::hasArgument(const string& name) const
@@ -68,6 +71,7 @@ void CLParser::addOptionFlag(const string& name,
   Option opt = { description, ss.str(), ss.str(), true };
   map<string, Option>::iterator i = _options.find(name);
   _options.insert(pair<string, Option>(name, opt));
+  _maxOptLen = max(_maxOptLen, name.length());
 }
    
 bool CLParser::getFlag(const string& name) const
@@ -169,7 +173,8 @@ void CLParser::printUsage(ostream& os) const
   os << "ARGUMENTS:\n";
   for (size_t i = 0; i < _args.size(); ++i)
   {
-    os << _args[i]._name << ":   " << _args[i]._description << endl;
+    string spacer(_maxArgLen - _args[i]._name.length(), ' ');
+    os << _args[i]._name << ":   " << spacer << _args[i]._description << endl;
   }
   os << endl;
   os << "OPTIONS:\n";
@@ -177,11 +182,14 @@ void CLParser::printUsage(ostream& os) const
        i != _options.end(); ++i)
   {
     os << _prefix << i->first;
+    size_t spacerLen = 8 + _maxOptLen - i->first.length();
     if (i->second._flag == false)
     {
       os << " <value>";
+      spacerLen -= 8;
     }
-    os << ":   " << i->second._description << " [default = " << 
+    string spacer(spacerLen, ' ');
+    os << ":   " << spacer << i->second._description << " [default = " << 
        i->second._defaultValue << "]" << endl;
   }
   os << endl;

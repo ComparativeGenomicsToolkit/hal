@@ -131,6 +131,8 @@ protected:
    std::string _example;
    std::vector<Argument> _args;
    std::map<std::string, Option> _options;
+   size_t _maxArgLen;
+   size_t _maxOptLen;
 };
 
 template <typename T>
@@ -184,6 +186,7 @@ inline void CLParser::addOption(const std::string& name,
   }
   std::map<std::string, Option>::iterator i = _options.find(name);
   _options.insert(std::pair<std::string, Option>(name, opt));
+  _maxOptLen = std::max(_maxOptLen, name.length());
 }
 
 template <typename T>
