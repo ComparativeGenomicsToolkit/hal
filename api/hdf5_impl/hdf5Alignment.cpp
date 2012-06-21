@@ -7,6 +7,7 @@
 #include <cassert>
 #include <iostream>
 #include <cstdlib>
+#include <fstream>
 #include <deque>
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
@@ -62,6 +63,10 @@ void HDF5Alignment::createNew(const string& alignmentPath)
 {
   close();
   _flags = H5F_ACC_TRUNC;
+  if (!ofstream(alignmentPath.c_str()))
+  {
+    throw hal_exception("Unable to open " + alignmentPath);
+  }
   _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
@@ -78,6 +83,10 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   close();
   delete _file;
   int _flags = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
+  if (!ifstream(alignmentPath.c_str()))
+  {
+    throw hal_exception("Unable to open " + alignmentPath);
+  }
   _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
   delete _metaData;
   _metaData = new HDF5MetaData(_file, MetaGroupName);
