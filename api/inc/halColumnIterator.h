@@ -27,7 +27,7 @@ class ColumnIterator
 public:
 
    typedef std::set<hal::DNAIteratorConstPtr> DNASet;
-   typedef std::map<const hal::Genome*, DNASet> ColumnMap;
+   typedef std::map<const hal::Sequence*, DNASet> ColumnMap;
 
    /** Move column iterator one column to the right along reference
     * genoem sequence */
@@ -41,6 +41,9 @@ public:
    
    /** Get a pointer to the reference genome for the column iterator */
    virtual const hal::Genome* getReferenceGenome() const = 0;
+
+   /** Get a pointer to the reference sequence for the column iterator */
+   virtual const hal::Sequence* getReferenceSequence() const = 0;
 
    /** Get a pointer to the column map */
    virtual const ColumnMap* getColumnMap() const = 0;

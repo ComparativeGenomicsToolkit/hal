@@ -34,6 +34,8 @@ public:
    void setReversed(bool reversed) const;
    const Genome* getGenome() const;
    Genome* getGenome();
+   const Sequence* getSequence() const;
+   Sequence* getSequence();
    hal_index_t getArrayIndex() const;
 
    bool equals(DNAIteratorConstPtr other) const;
@@ -120,6 +122,16 @@ inline const Genome* HDF5DNAIterator::getGenome() const
 inline Genome* HDF5DNAIterator::getGenome()
 {
   return _genome;
+}
+
+inline const Sequence* HDF5DNAIterator::getSequence() const
+{
+  return _genome->getSequenceBySite(_index);
+}
+
+inline Sequence* HDF5DNAIterator::getSequence()
+{
+  return _genome->getSequenceBySite(_index);
 }
 
 inline hal_index_t HDF5DNAIterator::getArrayIndex() const

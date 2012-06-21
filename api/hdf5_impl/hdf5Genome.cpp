@@ -524,9 +524,10 @@ ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
   const Genome* root, hal_size_t maxInsertLength, hal_index_t position) const
 {
   assert(position <= (hal_index_t)_dnaArray.getSize());
-  HDF5Genome* genome = const_cast<HDF5Genome*>(this);
+  const Sequence* sequence = getSequenceBySite(position);
   const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(genome, root, position, maxInsertLength);
+     new DefaultColumnIterator(sequence, root, position, maxInsertLength, 
+                               false);
   return ColumnIteratorConstPtr(newIt);
 }
 
@@ -534,7 +535,10 @@ ColumnIteratorConstPtr HDF5Genome::getColumnEndIterator(
   hal_index_t position) const
 {
   position = position == NULL_INDEX ? getSequenceLength() : position + 1;
-  return getColumnIterator(NULL, 0, position);
+  const Sequence* sequence = getSequenceBySite(position-1);
+   const DefaultColumnIterator* newIt = 
+      new DefaultColumnIterator(sequence, NULL, position, 0, true);
+  return ColumnIteratorConstPtr(newIt);
 }
 
 void HDF5Genome::getString(string& outString) const

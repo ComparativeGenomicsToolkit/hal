@@ -48,6 +48,12 @@ public:
    /** Get the containing genome */
    Genome* getGenome();
 
+   /** Get the containing (read-only) sequence */
+   const Sequence* getSequence() const;
+
+   /** Get the containing sequence */
+   Sequence* getSequence();
+
    /** Get the segment's start position in the genome */
    hal_index_t getStartPosition() const;
 
@@ -156,6 +162,16 @@ inline const Genome* HDF5TopSegment::getGenome() const
 inline Genome* HDF5TopSegment::getGenome()
 {
   return _genome;
+}
+
+inline const Sequence* HDF5TopSegment::getSequence() const
+{
+  return _genome->getSequenceBySite(getStartPosition());
+}
+
+inline Sequence* HDF5TopSegment::getSequence()
+{
+  return _genome->getSequenceBySite(getStartPosition());
 }
 
 inline hal_index_t HDF5TopSegment::getNextParalogyIndex() const

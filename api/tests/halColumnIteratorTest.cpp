@@ -146,12 +146,12 @@ void ColumnIteratorDepthTest::checkCallBack(AlignmentConstPtr alignment)
   // validateAlignment(alignment);
   const Genome* genome = alignment->openGenome("grandpa");
   checkGenome(genome);
-/*  genome = alignment->openGenome("dad");
+  genome = alignment->openGenome("dad");
   checkGenome(genome);
   genome = alignment->openGenome("son1");
   checkGenome(genome);
   genome = alignment->openGenome("son2");
-  checkGenome(genome);*/
+  checkGenome(genome);
 }
 
 void ColumnIteratorDupTest::createCallBack(AlignmentPtr alignment)
@@ -254,7 +254,8 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
       DNAIteratorConstPtr dnaIt = *i->second.begin();
       // the first segment (of any genome) should be aligned to 
       // every segment in son1
-      if (i->first->getName() == "son1" && genome->getName() != "son1")
+      if (i->first->getGenome()->getName() == "son1" && 
+          genome->getName() != "son1")
       {
         if (colNumber < i->first->getTopSegmentIterator()->getLength())
         {
@@ -267,7 +268,7 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
         }
       }
       // check the paralogy on son2 
-      else if (i->first->getName() == "son2" && genome->getName() == "dad")
+      else if (i->first->getGenome()->getName() == "son2" && genome->getName() == "dad")
       {
         if (colNumber >= 40 && colNumber < 50)
         {
@@ -418,13 +419,17 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
       CuAssertTrue(_testCase, i->second.size() == 1);
       DNAIteratorConstPtr dnaIt = *i->second.begin();
       
-      if (i->first->getName() == "son1")
+      if (i->first->getGenome()->getName() == "son1")
       {
-        const Genome* dad = i->first->getParent();
+        const Genome* dad = i->first->getGenome()->getParent();
         const Genome* grandpa = dad->getParent();
+        SequenceIteratorConstPtr dadSeq = dad->getSequenceIterator();
+        SequenceIteratorConstPtr graSeq = grandpa->getSequenceIterator();
 
-        DNAIteratorConstPtr dadIt = *colMap->find(dad)->second.begin();
-        DNAIteratorConstPtr graIt = *colMap->find(grandpa)->second.begin();
+        DNAIteratorConstPtr dadIt = 
+           *colMap->find(dadSeq->getSequence())->second.begin();
+        DNAIteratorConstPtr graIt = 
+           *colMap->find(graSeq->getSequence())->second.begin();
 
         if (colNumber >= 0 && colNumber < 10)
         {

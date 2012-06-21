@@ -19,10 +19,11 @@ class DefaultColumnIterator : public ColumnIterator
 {
 public:
 
-   DefaultColumnIterator(const hal::Genome* reference, 
-                         const hal::Genome* root = NULL,
-                         hal_index_t columnIndex = 0,
-                         hal_size_t maxInsertionLength = 500);
+   DefaultColumnIterator(const hal::Sequence* reference, 
+                         const hal::Genome* root,
+                         hal_index_t columnIndex,
+                         hal_size_t maxInsertionLength,
+                         bool endIterator);
    
    ~DefaultColumnIterator();
 
@@ -33,6 +34,7 @@ public:
     bool leftOf(ColumnIteratorConstPtr other) const;
    
    const hal::Genome* getReferenceGenome() const;
+   const hal::Sequence* getReferenceSequence() const;
 
    /** Get a pointer to the column map */
    const ColumnMap* getColumnMap() const;
@@ -62,16 +64,25 @@ private:
       LinkedTopIteratorPtr _nextDup;
    };
 
-   typedef std::pair<const Genome*, hal_index_t> VisitFlag;
-   typedef std::set<VisitFlag> VisitSet;
-   typedef std::map<const Genome*, LinkedBottomIteratorPtr> BottomMap;
-   typedef std::map<const Genome*, LinkedTopIteratorPtr> TopMap;
-   typedef std::stack<const Genome*> GenomeStack;
+   typedef std::set<hal_index_t> VisitSet;
+
+   struct StackEntry 
+   {
+      const Sequence* _sequence;
+      hal_index_t _index;
+      LinkedTopIteratorPtr _top;
+      LinkedBottomIteratorPtr _bottom;
+      VisitSet _visitSet;
+   };
+
+   typedef std::stack<StackEntry> ActiveStack;
 
 private:
 
-   void init() const;
+   void init(const hal::Sequence* ref, hal_index_t index, 
+             bool endIterator) const;
    void resetColMap() const;
+   void recursiveUpdate(bool init) const;
    hal_index_t moveRightToNextUnvisited(LinkedTopIteratorPtr topIt) const;
 
    void updateParent(LinkedTopIteratorPtr topIt) const;
@@ -81,6 +92,11 @@ private:
    void updateNextBottomDup(LinkedBottomIteratorPtr bottomIt) const;
    void updateParseUp(LinkedBottomIteratorPtr bottomIt) const;
    void updateParseDown(LinkedTopIteratorPtr topIt) const;
+
+   void colMapInsert(const Sequence* sequence,
+                     DNAIteratorConstPtr dnaIt) const;
+   void colMapInsert(DNAIteratorConstPtr dnaIt) const;
+
    
 private:
 
@@ -88,24 +104,37 @@ private:
    // other iterators (which provide both const and non-const access)
    // the fact that this iterator has no writable interface makes it
    // seem like a dumb excercise though. 
-   mutable VisitSet _topVisited;
-   mutable VisitSet _bottomVisited;
-
    mutable const Genome* _root;
-   mutable const Genome* _reference;
-   mutable std::stack<const Genome*> _activeStack;
+   mutable ActiveStack _stack;
    mutable size_t _curInsertionLength;
 
-   mutable BottomMap _bottomMap;
-   mutable TopMap _topMap;
-
-   mutable hal_index_t _index;
    mutable hal_size_t _maxInsertionLength;
 
    mutable ColumnMap _colMap;
 };
 
+inline void DefaultColumnIterator::colMapInsert(const Sequence* sequence, 
+                                                DNAIteratorConstPtr dnaIt) const
+{
+  ColumnMap::iterator i = _colMap.lower_bound(sequence);
+  if(i != _colMap.end() && !(_colMap.key_comp()(sequence, i->first)))
+  {
+    i->second.insert(dnaIt);
+  }
+  else
+  {
+    DNASet dnaSet;
+    dnaSet.insert(dnaIt);
+    _colMap.insert(i, ColumnMap::value_type(sequence, dnaSet));
+  }
 }
 
+inline void DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
+{
+  colMapInsert(dnaIt->getSequence(), dnaIt);
+}
+
+
+}
 #endif
 

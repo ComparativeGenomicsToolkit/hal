@@ -53,6 +53,12 @@ public:
    /** Get the containing genome */
    virtual Genome* getGenome() = 0;
 
+   /** Get the containing (read-only) sequence */
+   virtual const Sequence* getSequence() const = 0;
+
+   /** Get the containing sequence */
+   virtual Sequence* getSequence() = 0;
+
    /** Get the index of the base in the dna array */
    virtual hal_index_t getArrayIndex() const = 0;
 

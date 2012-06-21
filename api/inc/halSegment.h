@@ -33,6 +33,12 @@ public:
    /** Get the containing genome */
    virtual Genome* getGenome() = 0;
 
+   /** Get the containing (read-only) sequence */
+   virtual const Sequence* getSequence() const = 0;
+
+   /** Get the containing sequence */
+   virtual Sequence* getSequence() = 0;
+
    /** Get the segment's start position in the genome */
    virtual hal_index_t getStartPosition() const = 0;
 
