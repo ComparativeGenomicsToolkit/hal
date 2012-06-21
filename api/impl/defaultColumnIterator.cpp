@@ -138,17 +138,7 @@ void DefaultColumnIterator::init(const Sequence* ref, hal_index_t index,
   _stack.push(se);
 
   if (endIterator == false)
-  {
-    // if no root specified, we walk up to the alignment's root
-    if (_root == NULL)
-    {
-      _root = _stack.top()._sequence->getGenome();
-      while (_root->getParent() != NULL)
-      {
-        _root = _root->getParent();
-      }
-    }
-  
+  {  
     // might be an end interator.  in that case, do not recurse. 
     if ((hal_size_t)index < ref->getStartPosition() + ref->getSequenceLength())
     {
