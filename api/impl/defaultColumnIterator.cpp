@@ -86,6 +86,7 @@ void DefaultColumnIterator::toRight() const
 }
 
 // NOTE, will need changing once the stack gets used 
+// ACTUALLY ITS BROKEN NOW 
 bool DefaultColumnIterator::leftOf(ColumnIteratorConstPtr other) const
 {
   ColumnMap::const_iterator thisIt = _colMap.find(_stack.top()._sequence);

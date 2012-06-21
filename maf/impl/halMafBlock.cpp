@@ -21,7 +21,7 @@ MafBlock::~MafBlock()
 
 }
 
-void MafBlock::setFirstColumn(ColumnIteratorConstPtr col)
+void MafBlock::initBlock(ColumnIteratorConstPtr col)
 {
   _entries.clear();
   const ColumnMap* colMap = col->getColumnMap();
@@ -54,7 +54,6 @@ void MafBlock::setFirstColumn(ColumnIteratorConstPtr col)
       entry->_srcLength = (hal_index_t)sequence->getSequenceLength();
     }    
   }
-  appendColumn(col);
 }
 
 void MafBlock::appendColumn(ColumnIteratorConstPtr col)
@@ -88,16 +87,16 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
       assert(entry->_srcLength == (hal_index_t)sequence->getSequenceLength());
       ++entry->_length;
       assert((*j)->getReversed() == true || 
-             (*j)->getArrayIndex() == entry->_length - entry->_start);
+             (*j)->getArrayIndex() == entry->_start + entry->_length - 1);
       assert((*j)->getReversed() == false || 
-             (*j)->getArrayIndex() == entry->_start - entry->_length);
+             (*j)->getArrayIndex() == entry->_start - entry->_length + 1);
       entry->_sequence.append(1, (*j)->getChar());
     }
     
     // UPDATE GAPPED ENTRIES
-    while (_entries[idx]._name == name)
+    while (idx < _entries.size() && _entries[idx]._name == name)
     {
-      entry->_sequence.append("-");
+      _entries[idx]._sequence.append("-");
       ++idx;
     } 
   }
@@ -136,6 +135,10 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
       }
       else
       {
+        if (idx >= _entries.size())
+        {
+          return false;
+        }
         entry = &_entries[idx++];
       }
       if (entry->_name != name)
@@ -159,7 +162,7 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
       }
     }
 
-    while (_entries[idx]._name == name)
+    while (idx < _entries.size() && _entries[idx]._name == name)
     {
       ++idx;
     } 
@@ -191,7 +194,6 @@ ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
   {
     os << mafBlock._entries[i];
   }
-  os << endl;
   return os;
 }
 

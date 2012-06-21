@@ -32,7 +32,7 @@ public:
    MafBlock();
    ~MafBlock();
 
-   void setFirstColumn(ColumnIteratorConstPtr col);
+   void initBlock(ColumnIteratorConstPtr col);
    void appendColumn(ColumnIteratorConstPtr col);
    bool canAppendColumn(hal::ColumnIteratorConstPtr col);
    

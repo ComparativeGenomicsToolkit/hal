@@ -87,22 +87,20 @@ void MafExport::convertSequence(ostream& mafStream,
   ColumnIteratorConstPtr colIt = sequence->getColumnIterator(root,
                                                              0, 
                                                              startPosition);
-  ColumnIteratorConstPtr colEnd = 
-     sequence->getColumnEndIterator(startPosition + length - 1);
-
-  _mafBlock.setFirstColumn(colIt);
+  _mafBlock.initBlock(colIt);
   assert(_mafBlock.canAppendColumn(colIt) == true);
   
-  while (colIt < colEnd)
+  for (hal_size_t i = 0; i < length; ++i)
   {
     if (_mafBlock.canAppendColumn(colIt) == false)
     {
-      mafStream << _mafBlock << endl << endl;
-      _mafBlock.setFirstColumn(colIt);
+      mafStream << _mafBlock << endl;
+      _mafBlock.initBlock(colIt);
       assert(_mafBlock.canAppendColumn(colIt) == true);
     }
     _mafBlock.appendColumn(colIt);
+    colIt->toRight();
   }
-  mafStream << _mafBlock << endl << endl;
+  mafStream << _mafBlock << endl;
 }
 
