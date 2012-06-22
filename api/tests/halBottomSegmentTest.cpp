@@ -225,7 +225,7 @@ void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case1->setDimensions(seqVec);
   
   ti = case1->getTopSegmentIterator();
-  ts.set(0, 10, NULL_INDEX, 0, 0);
+  ts.set(0, 10, NULL_INDEX, false, 0, 0);
   ts.applyTo(ti);
   
   bi = case1->getBottomSegmentIterator();
@@ -238,7 +238,7 @@ void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case2->setDimensions(seqVec);
   
   ti = case2->getTopSegmentIterator();
-  ts.set(0, 9, NULL_INDEX, 0, 0);
+  ts.set(0, 9, NULL_INDEX, false, 0, 0);
   ts.applyTo(ti);
 
   bi = case2->getBottomSegmentIterator();
@@ -257,13 +257,13 @@ void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case3->setDimensions(seqVec);
 
   ti = case3->getTopSegmentIterator();
-  ts.set(0, 3, NULL_INDEX, 0, 0);
+  ts.set(0, 3, NULL_INDEX, false, 0, 0);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(3, 4, NULL_INDEX, 0, 3);
+  ts.set(3, 4, NULL_INDEX, false, 0, 3);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(7, 3, NULL_INDEX, 0, 7);
+  ts.set(7, 3, NULL_INDEX, false, 0, 7);
   ts.applyTo(ti);
 
   bi = case3->getBottomSegmentIterator();
@@ -276,7 +276,7 @@ void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case4->setDimensions(seqVec);
 
   ti = case4->getTopSegmentIterator();
-  ts.set(0, 9, NULL_INDEX, 0, 0);
+  ts.set(0, 9, NULL_INDEX, false, 0, 0);
   ts.applyTo(ti);
 
   bi = case4->getBottomSegmentIterator();
@@ -439,15 +439,14 @@ void BottomSegmentIteratorReverseTest::createCallBack(AlignmentPtr alignment)
   bs.applyTo(bi);
      
   ti = child1->getTopSegmentIterator();
-  ts.set(0, 10, 0, 0, 0);
-  ts._parentReversed = true;
+  ts.set(0, 10, 0, true, 0, 0);
   ts.applyTo(ti);
 
   ti = parent1->getTopSegmentIterator();
-  ts.set(0, 5, 0, 0, 0);
+  ts.set(0, 5, 0, false, 0, 0);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(5, 5, 0, 0, 5);
+  ts.set(5, 5, 0, false, 0, 5);
   ts.applyTo(ti);
 }
 
@@ -478,14 +477,14 @@ void BottomSegmentIteratorReverseTest::checkCallBack(AlignmentConstPtr alignment
   
   CuAssertTrue(_testCase, ti->getStartPosition() == 1);
   CuAssertTrue(_testCase, ti->getLength() == 6);
-  CuAssertTrue(_testCase, bi2->getStartPosition() == 6);
+  CuAssertTrue(_testCase, bi2->getStartPosition() == 8);
   CuAssertTrue(_testCase, bi2->getLength() == 6);
 
   string buffer;
   ti->getString(buffer);
   CuAssertTrue(_testCase, buffer == "CCTACG");
   bi2->getString(buffer);
-  CuAssertTrue(_testCase, buffer == "CGTAGG");
+  CuAssertTrue(_testCase, buffer == "CACGTA");
 
   ti = parent1->getTopSegmentIterator();
   CuAssertTrue(_testCase, ti->getReversed() == false);

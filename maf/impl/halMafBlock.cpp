@@ -52,6 +52,10 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
       entry->_length = 0;
       entry->_strand = (*j)->getReversed() ? '-' : '+';
       entry->_srcLength = (hal_index_t)sequence->getSequenceLength();
+      if ((*j)->getReversed())
+      {
+        entry->_start = entry->_srcLength - entry->_start;
+      }
     }    
   }
 }
@@ -68,6 +72,7 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
   for (ColumnMap::const_iterator i = colMap->begin(); i != colMap->end(); ++i)
   {
     const Sequence* sequence = i->first;
+    hal_index_t sequenceStart = sequence->getStartPosition();
     name = sequence->getName();
  
     // UPDATE NON-GAPPED ENTRIES
@@ -87,9 +92,11 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
       assert(entry->_srcLength == (hal_index_t)sequence->getSequenceLength());
       ++entry->_length;
       assert((*j)->getReversed() == true || 
-             (*j)->getArrayIndex() == entry->_start + entry->_length - 1);
+             (*j)->getArrayIndex() - sequenceStart == 
+             entry->_start + entry->_length - 1);
       assert((*j)->getReversed() == false || 
-             (*j)->getArrayIndex() == entry->_start - entry->_length + 1);
+             entry->_srcLength - (*j)->getArrayIndex() + sequenceStart == 
+             entry->_start + entry->_length - 1);
       entry->_sequence.append(1, (*j)->getChar());
     }
     
@@ -123,6 +130,8 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
   for (ColumnMap::const_iterator i = colMap->begin(); i != colMap->end(); ++i)
   {
     const Sequence* sequence = i->first;
+    hal_index_t sequenceStart = sequence->getStartPosition();
+    hal_index_t pos = 0;
     name = sequence->getName();
 
     // for every base in each sequence (<=1 unless duplication)
@@ -145,20 +154,19 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
       {
         return false;
       }
-      if (entry->_strand == '+')
-      {
-        if ((*j)->getArrayIndex() - entry->_start != entry->_length)
-        {
-          return false;
-        }
-      }
-      else
+
+      // position on forward strand relative to start of sequence
+      pos = (*j)->getArrayIndex() - sequenceStart;
+      if (entry->_strand == '-')
       {
         assert(entry->_strand == '-');
-        if (entry->_start - (*j)->getArrayIndex() != entry->_length)
-        {
-          return false;
-        }        
+        // position on reverse strand relative to end of sequence
+        pos = entry->_srcLength - pos;
+      }
+
+      if (pos - entry->_start != entry->_length)
+      {
+        return false;
       }
     }
 

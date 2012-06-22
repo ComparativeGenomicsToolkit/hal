@@ -31,6 +31,20 @@
  * but coordinate values themselves are by default always expressed relative
  * to the entire genome in the forward strand. 
  *
+ * \section pointer_sec Note on pointers
+ *
+ * When a genome is opened, there is a unique pointer to it that is valid
+ * until it is explicitly closed (or the alignment is closed). This guarantee
+ * does not hold for any other types (ie sequences or segments).
+ * All pointers that are retrived via iterators have lifespans 
+ * limited by their iterators.
+ * Note that this means that the following code:
+ * TopSegment* ts = genome->getTopSegmentIterator()->getTopSegment()
+ * returns an invalid pointer, since the iterator gets descructed immediately.  
+ * They are not
+ * unique either, so multiple pointers / iterators can contain the same 
+ * underlying object. 
+ *
  * \section using_sec Using
  *
  * include hal/lib/hal.h and link to hal/lib/halLib.a

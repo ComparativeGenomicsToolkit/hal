@@ -25,6 +25,7 @@ struct TopSegmentStruct {
    void set(hal_index_t startPosition,
             hal_size_t length,
             hal_index_t parentIndex = hal::NULL_INDEX,
+            bool parentReversed = false,
             hal_index_t bottomParseIndex = hal::NULL_INDEX,
             hal_offset_t bottomParseOffset = 0,
             hal_index_t nextParalogyIndex = hal::NULL_INDEX);

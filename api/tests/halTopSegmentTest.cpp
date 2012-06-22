@@ -30,6 +30,7 @@ void TopSegmentStruct::setRandom()
 void TopSegmentStruct::set(hal_index_t startPosition,
                            hal_size_t length,
                            hal_index_t parentIndex,
+                           bool parentReversed,
                            hal_index_t bottomParseIndex,
                            hal_offset_t bottomParseOffset,
                            hal_index_t nextParalogyIndex)
@@ -37,7 +38,7 @@ void TopSegmentStruct::set(hal_index_t startPosition,
   _startPosition = startPosition;
   _length = length;
   _parentIndex = parentIndex;
-  _parentReversed = false;
+  _parentReversed = parentReversed;
   _bottomParseIndex = bottomParseIndex;
   _bottomParseOffset = bottomParseOffset;
   _nextParalogyIndex = nextParalogyIndex;
@@ -209,7 +210,7 @@ void TopSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case1->setDimensions(seqVec);
   
   ti = case1->getTopSegmentIterator();
-  ts.set(0, 10, NULL_INDEX, 0, 0);
+  ts.set(0, 10, NULL_INDEX, false, 0, 0);
   ts.applyTo(ti);
   
   bi = case1->getBottomSegmentIterator();
@@ -222,7 +223,7 @@ void TopSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case2->setDimensions(seqVec);
   
   ti = case2->getTopSegmentIterator();
-  ts.set(0, 9, NULL_INDEX, 0, 0);
+  ts.set(0, 9, NULL_INDEX, false, 0, 0);
   ts.applyTo(ti);
 
   bi = case2->getBottomSegmentIterator();
@@ -241,13 +242,13 @@ void TopSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case3->setDimensions(seqVec);
 
   ti = case3->getTopSegmentIterator();
-  ts.set(0, 3, NULL_INDEX, 0, 0);
+  ts.set(0, 3, NULL_INDEX, false, 0, 0);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(3, 4, NULL_INDEX, 0, 3);
+  ts.set(3, 4, NULL_INDEX, false, 0, 3);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(7, 3, NULL_INDEX, 0, 7);
+  ts.set(7, 3, NULL_INDEX, false, 0, 7);
   ts.applyTo(ti);
 
   bi = case3->getBottomSegmentIterator();
@@ -260,7 +261,7 @@ void TopSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case4->setDimensions(seqVec);
 
   ti = case4->getTopSegmentIterator();
-  ts.set(0, 9, NULL_INDEX, 0, 0);
+  ts.set(0, 9, NULL_INDEX, false, 0, 0);
   ts.applyTo(ti);
 
   bi = case4->getBottomSegmentIterator();
@@ -422,8 +423,7 @@ void TopSegmentIteratorReverseTest::createCallBack(AlignmentPtr alignment)
   bs.applyTo(bi);
      
   ti = child1->getTopSegmentIterator();
-  ts.set(0, 10, 0, 0, 0);
-  ts._parentReversed = true;
+  ts.set(0, 10, 0, true, 0, 0);
   ts.applyTo(ti);
 
   bi = child1->getBottomSegmentIterator();
@@ -462,14 +462,14 @@ void TopSegmentIteratorReverseTest::checkCallBack(AlignmentConstPtr alignment)
   
   CuAssertTrue(_testCase, bi->getStartPosition() == 1);
   CuAssertTrue(_testCase, bi->getLength() == 6);
-  CuAssertTrue(_testCase, ti2->getStartPosition() == 6);
+  CuAssertTrue(_testCase, ti2->getStartPosition() == 8);
   CuAssertTrue(_testCase, ti2->getLength() == 6);
 
   string buffer;
   bi->getString(buffer);
   CuAssertTrue(_testCase, buffer == "CCTACG");
   ti2->getString(buffer);
-  CuAssertTrue(_testCase, buffer == "CGTAGG");
+  CuAssertTrue(_testCase, buffer == "CACGTA");
 
   bi = child1->getBottomSegmentIterator();
   CuAssertTrue(_testCase, bi->getReversed() == false);

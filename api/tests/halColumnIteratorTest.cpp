@@ -99,17 +99,20 @@ void ColumnIteratorDepthTest::createCallBack(AlignmentPtr alignment)
     ts.applyTo(ti);
 
     ti = dad->getTopSegmentIterator(i);
-    ts.set(i * segLength, segLength, i, i, 0);
+    ts.set(i * segLength, segLength, i, false, i, 0);
     ts.applyTo(ti);
 
     bi = dad->getBottomSegmentIterator(i);
     bi->getBottomSegment()->setChildIndex(0, i);
+    bi->getBottomSegment()->setChildReversed(0, false);
     bi->getBottomSegment()->setChildIndex(1, i);
+    bi->getBottomSegment()->setChildReversed(1, false);;
     bs.set(i * segLength, segLength, i, 0);
     bs.applyTo(bi);
 
     bi = grandpa->getBottomSegmentIterator(i);
     bi->getBottomSegment()->setChildIndex(0, i);
+    bi->getBottomSegment()->setChildReversed(0, false);
     bs.set(i * segLength, segLength);
     bs.applyTo(bi);
   }  
@@ -242,7 +245,8 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
   ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
   ColumnIteratorConstPtr endIterator = genome->getColumnEndIterator();
   size_t colNumber = 0;
-  for (; colIterator < endIterator; colIterator->toRight())
+  for (; colNumber < genome->getSequenceLength(); colIterator->toRight(), 
+          ++colNumber)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
     // check that all three genomes are in the map
@@ -284,7 +288,6 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
         }
       }
     }
-    ++colNumber;
   }
 }
 
@@ -335,7 +338,7 @@ void ColumnIteratorInvTest::createCallBack(AlignmentPtr alignment)
     ts.set(i * segLength, segLength, i);
     ts.applyTo(ti);
     ti = dad->getTopSegmentIterator(i);
-    ts.set(i * segLength, segLength, i, i, 0);
+    ts.set(i * segLength, segLength, i, false, i, 0);
     ts.applyTo(ti);
 
     bi = dad->getBottomSegmentIterator(i);
@@ -406,13 +409,15 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
   ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
   ColumnIteratorConstPtr endIterator = genome->getColumnEndIterator();
   size_t colNumber = 0;
-  for (; colIterator < endIterator; colIterator->toRight())
+  for (; colNumber < genome->getSequenceLength(); colIterator->toRight(), 
+          ++colNumber)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
 
-    // check that all three genomes are in the map
+    // check that all three sequences are in the map
     CuAssertTrue(_testCase, colMap->size() == 3);
 
+    // iterate the sequences in the map
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
@@ -423,8 +428,22 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
       {
         const Genome* dad = i->first->getGenome()->getParent();
         const Genome* grandpa = dad->getParent();
+
+        CuAssertTrue(_testCase, dad->getName() == "dad");
+        CuAssertTrue(_testCase, grandpa->getName() == "grandpa");
+        
         SequenceIteratorConstPtr dadSeq = dad->getSequenceIterator();
         SequenceIteratorConstPtr graSeq = grandpa->getSequenceIterator();
+        
+        CuAssertTrue(_testCase, 
+                     dadSeq->getSequence()->getGenome() == dad);
+        CuAssertTrue(_testCase, 
+                     graSeq->getSequence()->getGenome() == grandpa);
+        
+        CuAssertTrue(_testCase, colMap->find(dadSeq->getSequence()) != 
+                     colMap->end());
+        CuAssertTrue(_testCase, colMap->find(graSeq->getSequence()) != 
+                     colMap->end());
 
         DNAIteratorConstPtr dadIt = 
            *colMap->find(dadSeq->getSequence())->second.begin();
@@ -434,25 +453,46 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
         if (colNumber >= 0 && colNumber < 10)
         {
           CuAssertTrue(_testCase, dnaIt->getReversed() == false);
+          CuAssertTrue(_testCase, 
+                       dnaIt->getArrayIndex() == (hal_index_t)colNumber);
+
           // inversion on bottom branch
           CuAssertTrue(_testCase, dadIt->getReversed() == true);
+          CuAssertTrue(_testCase, 
+                       dadIt->getArrayIndex() == 9 - (hal_index_t)colNumber);
+
           CuAssertTrue(_testCase, graIt->getReversed() == true);
+          CuAssertTrue(_testCase, 
+                       graIt->getArrayIndex() == 9 - (hal_index_t)colNumber);
         }
         else if (colNumber >= 10 && colNumber < 20)
         {
           CuAssertTrue(_testCase, dnaIt->getReversed() == false);
+          CuAssertTrue(_testCase, 
+                       dnaIt->getArrayIndex() == (hal_index_t)colNumber);
+
           // inversion on bottom branch
           CuAssertTrue(_testCase, dadIt->getReversed() == true);
+          CuAssertTrue(_testCase, 
+                       dadIt->getArrayIndex() == 29 - (hal_index_t)colNumber);
+
           // inversion on top branch
           CuAssertTrue(_testCase, graIt->getReversed() == false);
+          CuAssertTrue(_testCase, 
+                       graIt->getArrayIndex() == (hal_index_t)colNumber);
+
         }
-        
-        CuAssertTrue(_testCase, dnaIt->getArrayIndex() ==(hal_index_t)colNumber);
-        CuAssertTrue(_testCase, dadIt->getArrayIndex() ==(hal_index_t)colNumber);
-        CuAssertTrue(_testCase, graIt->getArrayIndex() ==(hal_index_t)colNumber);
+        else
+        {
+          CuAssertTrue(_testCase, 
+                       dnaIt->getArrayIndex() == (hal_index_t)colNumber);
+          CuAssertTrue(_testCase, 
+                       dadIt->getArrayIndex() == (hal_index_t)colNumber);
+          CuAssertTrue(_testCase, 
+                       graIt->getArrayIndex() == (hal_index_t)colNumber);
+        }
       }
     }
-    ++colNumber;
   }
 }
 

@@ -12,6 +12,7 @@
 #include <set>
 #include "halDefs.h"
 #include "halDNAIterator.h"
+#include "halSequence.h"
 
 namespace hal {
 
@@ -26,8 +27,18 @@ class ColumnIterator
 {
 public:
 
+   // we can compare genomes by pointers (because they are persistent
+   // and unique, though it's still hacky) but we can't do the same 
+   // for anything else, including sequences.  
+   struct SequenceLess { bool operator()(const hal::Sequence* s1,
+                                         const hal::Sequence* s2) const {
+     return s1->getGenome() < s2->getGenome() || (
+       s1->getGenome() == s2->getGenome() && 
+       s1->getStartPosition() < s2->getStartPosition()); }
+   };
+
    typedef std::set<hal::DNAIteratorConstPtr> DNASet;
-   typedef std::map<const hal::Sequence*, DNASet> ColumnMap;
+   typedef std::map<const hal::Sequence*, DNASet, SequenceLess> ColumnMap;
 
    /** Move column iterator one column to the right along reference
     * genoem sequence */
