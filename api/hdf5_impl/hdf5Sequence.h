@@ -34,7 +34,7 @@ public:
    ~HDF5Sequence();
 
    // SEQUENCE INTERFACE
-   std::string getName() const;
+   const std::string& getName() const;
 
    const Genome* getGenome() const;
 
@@ -113,6 +113,8 @@ public:
    
 protected:
 
+   void refreshCache() const;
+
    static const size_t startOffset;
    static const size_t lengthOffset;
    static const size_t numTopSegmentsOffset;
@@ -124,6 +126,11 @@ protected:
    mutable HDF5ExternalArray* _array;
    mutable hal_index_t _index;
    mutable HDF5Genome* _genome;
+
+   mutable hal_index_t _cacheIndex;
+   mutable std::string _nameCache;
+   mutable hal_index_t _startCache;
+   mutable hal_size_t _lengthCache;
 };
 
 }

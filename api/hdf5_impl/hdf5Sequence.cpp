@@ -30,7 +30,10 @@ HDF5Sequence::HDF5Sequence(HDF5Genome* genome,
                            hal_index_t index) :
   _array(array),
   _index(index),
-  _genome(genome)
+  _genome(genome),
+  _cacheIndex(NULL_INDEX),
+  _startCache(NULL_INDEX),
+  _lengthCache(0)
 {
 
 }
@@ -38,6 +41,21 @@ HDF5Sequence::HDF5Sequence(HDF5Genome* genome,
 HDF5Sequence::~HDF5Sequence()
 {
   
+}
+
+// Some tools (ie maf export) access the same sequence
+// info over and over again deep inside a loop.  So I hack
+// in a little cache, mostly to avoid copying the same string
+// (name) out of hdf5.  
+inline void HDF5Sequence::refreshCache() const
+{
+  if (_index != _cacheIndex)
+  {
+    _nameCache = _array->get(_index) + nameOffset;
+    _startCache = _array->getValue<hal_size_t>(_index, startOffset);
+    _lengthCache = _array->getValue<hal_size_t>(_index, lengthOffset);
+    _cacheIndex = _index;
+  }
 }
 
 H5::CompType HDF5Sequence::dataType(hal_size_t maxNameLength)
@@ -64,9 +82,10 @@ H5::CompType HDF5Sequence::dataType(hal_size_t maxNameLength)
 }
 
 // SEQUENCE INTERFACE
-string HDF5Sequence::getName() const
+const string& HDF5Sequence::getName() const
 {
-  return _array->get(_index) + nameOffset;
+  refreshCache();
+  return _nameCache;
 }
 
 const Genome* HDF5Sequence::getGenome() const
@@ -81,7 +100,8 @@ Genome* HDF5Sequence::getGenome()
 
 hal_size_t HDF5Sequence::getStartPosition() const
 {
-  return _array->getValue<hal_size_t>(_index, startOffset);
+  refreshCache();
+  return _startCache;
 }
 
 hal_index_t HDF5Sequence::getArrayIndex() const
@@ -105,7 +125,8 @@ hal_index_t HDF5Sequence::getBottomSegmentArrayIndex() const
 
 hal_size_t HDF5Sequence::getSequenceLength() const
 {
-  return _array->getValue<hal_size_t>(_index, lengthOffset);
+  refreshCache();
+  return _lengthCache;
 }
 
 hal_size_t HDF5Sequence::getNumTopSegments() const
@@ -265,6 +286,9 @@ void HDF5Sequence::set(hal_size_t startPosition,
                    bottomSegmentStartIndex);
   char* arrayBuffer = _array->getUpdate(_index) + nameOffset;
   strcpy(arrayBuffer, sequenceInfo._name.c_str());
+  // keep cache for frequently used queries. 
+  _cacheIndex = NULL_INDEX;
+  refreshCache();
 }
 
 void HDF5Sequence::setNumTopSegments(hal_size_t numTopSegments)

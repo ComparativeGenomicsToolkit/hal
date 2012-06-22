@@ -66,14 +66,13 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
   size_t idx = 1;
   bool refFound = false;
   const Sequence* refSequence = col->getReferenceSequence();
-  string name;
   MafBlockEntry* entry = NULL;
   // for every sequence
   for (ColumnMap::const_iterator i = colMap->begin(); i != colMap->end(); ++i)
   {
     const Sequence* sequence = i->first;
     hal_index_t sequenceStart = sequence->getStartPosition();
-    name = sequence->getName();
+    const string& name = sequence->getName();
  
     // UPDATE NON-GAPPED ENTRIES
     for (DNASet::const_iterator j = i->second.begin(); j != i->second.end(); ++j)
@@ -124,7 +123,6 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
   bool refFound = false;
   const Sequence* refSequence = col->getReferenceSequence();
   MafBlockEntry* entry = NULL;
-  string name;
 
   // for every sequence
   for (ColumnMap::const_iterator i = colMap->begin(); i != colMap->end(); ++i)
@@ -132,7 +130,7 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
     const Sequence* sequence = i->first;
     hal_index_t sequenceStart = sequence->getStartPosition();
     hal_index_t pos = 0;
-    name = sequence->getName();
+    const string& name = sequence->getName();
 
     // for every base in each sequence (<=1 unless duplication)
     for (DNASet::const_iterator j = i->second.begin(); j != i->second.end(); ++j)
