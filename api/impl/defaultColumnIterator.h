@@ -82,6 +82,7 @@ private:
    void init(const hal::Sequence* ref, hal_index_t index, 
              bool endIterator) const;
    void resetColMap() const;
+   void eraseColMap() const;
    void recursiveUpdate(bool init) const;
    hal_index_t moveRightToNextUnvisited(LinkedTopIteratorPtr topIt) const;
 
@@ -119,12 +120,12 @@ inline void DefaultColumnIterator::colMapInsert(const Sequence* sequence,
   ColumnMap::iterator i = _colMap.lower_bound(sequence);
   if(i != _colMap.end() && !(_colMap.key_comp()(sequence, i->first)))
   {
-    i->second.insert(dnaIt);
+    i->second->push_back(dnaIt);
   }
   else
   {
-    DNASet dnaSet;
-    dnaSet.insert(dnaIt);
+    DNASet* dnaSet = new DNASet();
+    dnaSet->push_back(dnaIt);
     _colMap.insert(i, ColumnMap::value_type(sequence, dnaSet));
   }
 }

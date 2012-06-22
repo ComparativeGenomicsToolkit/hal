@@ -39,10 +39,10 @@ void ColumnIteratorBaseTest::checkCallBack(AlignmentConstPtr alignment)
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
-      ColumnIterator::DNASet::const_iterator dnaIt = i->second.begin();
-      for (size_t j = 0; j < i->second.size(); ++j)
+      ColumnIterator::DNASet::const_iterator dnaIt = i->second->begin();
+      for (size_t j = 0; j < i->second->size(); ++j)
       {
-        CuAssertTrue(_testCase, i->second.size() == 1);
+        CuAssertTrue(_testCase, i->second->size() == 1);
         CuAssertTrue(_testCase, (*dnaIt)->getArrayIndex() == 
                      (hal_index_t)columnNumber);
         dnaIt++;
@@ -130,8 +130,8 @@ void ColumnIteratorDepthTest::checkGenome(const Genome* genome)
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
-      CuAssertTrue(_testCase, i->second.size() == 1);
-      DNAIteratorConstPtr dnaIt = *i->second.begin();
+      CuAssertTrue(_testCase, i->second->size() == 1);
+      DNAIteratorConstPtr dnaIt = *i->second->begin();
       
 /*        cout << "column=" << columnNumber 
            << " genome=" << dnaIt->getGenome()->getName()
@@ -255,7 +255,7 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
-      DNAIteratorConstPtr dnaIt = *i->second.begin();
+      DNAIteratorConstPtr dnaIt = *i->second->begin();
       // the first segment (of any genome) should be aligned to 
       // every segment in son1
       if (i->first->getGenome()->getName() == "son1" && 
@@ -263,12 +263,12 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
       {
         if (colNumber < i->first->getTopSegmentIterator()->getLength())
         {
-          CuAssertTrue(_testCase, i->second.size() ==
+          CuAssertTrue(_testCase, i->second->size() ==
                        i->first->getTopSegmentIterator()->getLength());
         }
         else
         {
-          CuAssertTrue(_testCase, i->second.size() == 0);
+          CuAssertTrue(_testCase, i->second->size() == 0);
         }
       }
       // check the paralogy on son2 
@@ -276,15 +276,15 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
       {
         if (colNumber >= 40 && colNumber < 50)
         {
-          CuAssertTrue(_testCase, i->second.size() == 2);
+          CuAssertTrue(_testCase, i->second->size() == 2);
         }
         else if (colNumber >= 80 && colNumber < 90)
         {
-          CuAssertTrue(_testCase, i->second.size() == 0);
+          CuAssertTrue(_testCase, i->second->size() == 0);
         }
         else
         {
-          CuAssertTrue(_testCase, i->second.size() == 1);
+          CuAssertTrue(_testCase, i->second->size() == 1);
         }
       }
     }
@@ -421,8 +421,8 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
-      CuAssertTrue(_testCase, i->second.size() == 1);
-      DNAIteratorConstPtr dnaIt = *i->second.begin();
+      CuAssertTrue(_testCase, i->second->size() == 1);
+      DNAIteratorConstPtr dnaIt = *i->second->begin();
       
       if (i->first->getGenome()->getName() == "son1")
       {
@@ -446,9 +446,9 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
                      colMap->end());
 
         DNAIteratorConstPtr dadIt = 
-           *colMap->find(dadSeq->getSequence())->second.begin();
+           *colMap->find(dadSeq->getSequence())->second->begin();
         DNAIteratorConstPtr graIt = 
-           *colMap->find(graSeq->getSequence())->second.begin();
+           *colMap->find(graSeq->getSequence())->second->begin();
 
         if (colNumber >= 0 && colNumber < 10)
         {

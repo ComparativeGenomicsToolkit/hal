@@ -37,8 +37,8 @@ public:
        s1->getStartPosition() < s2->getStartPosition()); }
    };
 
-   typedef std::set<hal::DNAIteratorConstPtr> DNASet;
-   typedef std::map<const hal::Sequence*, DNASet, SequenceLess> ColumnMap;
+   typedef std::vector<hal::DNAIteratorConstPtr> DNASet;
+   typedef std::map<const hal::Sequence*, DNASet*, SequenceLess> ColumnMap;
 
    /** Move column iterator one column to the right along reference
     * genoem sequence */

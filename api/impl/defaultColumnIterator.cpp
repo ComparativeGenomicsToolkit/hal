@@ -30,7 +30,7 @@ DefaultColumnIterator::DefaultColumnIterator(const Sequence* reference,
    
 DefaultColumnIterator::~DefaultColumnIterator()
 {
-  
+  eraseColMap();
 }
 
 /*
@@ -95,10 +95,10 @@ bool DefaultColumnIterator::leftOf(ColumnIteratorConstPtr other) const
   ColumnMap::const_iterator otherIt = otherMap->find(
     other->getReferenceSequence());
   if (thisIt != _colMap.end() && otherIt != otherMap->end() &&
-      thisIt->second.empty() == false && otherIt->second.empty() == false)
+      thisIt->second->empty() == false && otherIt->second->empty() == false)
   {
-    DNASet::const_reverse_iterator thisDNA = thisIt->second.rbegin();
-    DNASet::const_iterator otherDNA = otherIt->second.begin();
+    DNASet::const_reverse_iterator thisDNA = thisIt->second->rbegin();
+    DNASet::const_iterator otherDNA = otherIt->second->begin();
     return (*thisDNA)->leftOf(*otherDNA);
   }
   return false;
@@ -124,7 +124,7 @@ const
 void DefaultColumnIterator::init(const Sequence* ref, hal_index_t index,
                                  bool endIterator) const
 { 
-  _colMap.clear();
+  eraseColMap();
   while (!_stack.empty())
   {
     _stack.pop();
@@ -224,14 +224,33 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
       }
     }
   }  
+  
+  // now that we moved from sets to vectors, we explictly sort.
+  // (still on the fence on whether or not we need to keep sorted)
+  for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
+  {
+    if (i->second->size() > 1)
+    {
+      sort(i->second->begin(), i->second->end());
+    }
+  }
 }
 
 void DefaultColumnIterator::resetColMap() const
 {
   for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
   {
-    i->second.clear();
+    i->second->clear();
   }
+}
+
+void DefaultColumnIterator::eraseColMap() const
+{
+  for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
+  {
+    delete i->second;
+  }
+  _colMap.clear();
 }
 
 void DefaultColumnIterator::updateParent(LinkedTopIteratorPtr topIt) const
