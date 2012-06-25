@@ -47,7 +47,7 @@ protected:
 
    typedef std::multimap<const Sequence*, MafBlockEntry*> Entries;
    Entries _entries;
-   size_t _lastSize;
+   Entries::const_iterator _reference;
 
    typedef hal::ColumnIterator::ColumnMap ColumnMap;
    typedef hal::ColumnIterator::DNASet DNASet;

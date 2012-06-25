@@ -26,6 +26,7 @@ MafBlock::~MafBlock()
 
 void MafBlock::resetEntries()
 {
+  _reference = _entries.end();
   Entries::iterator i = _entries.begin();
   Entries::iterator next;
   MafBlockEntry* e;
@@ -142,8 +143,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
       if (e == _entries.end() || e->first != sequence)
       {
         MafBlockEntry* entry = new MafBlockEntry();
-        initEntry(entry, sequence, DNAIteratorConstPtr());
-        e = _entries.insert(Entries::value_type(sequence, entry));
+        initEntry(entry, sequence, DNAIteratorConstPtr());        
       }
       else
       {
@@ -189,6 +189,15 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
         }
       }
     }
+  }
+
+  if (_reference == _entries.end())
+  {
+    const Sequence* referenceSequence = col->getReferenceSequence();
+     e = _entries.lower_bound(referenceSequence);
+     assert(e != _entries.end());
+     assert(e->first == referenceSequence);
+     _reference = e;
   }
 }    
 
@@ -304,10 +313,15 @@ istream& hal::operator>>(istream& is, MafBlockEntry& mafBlockEntry)
 ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
 {
   os << "a\n";
+
+  MafBlock::Entries::const_iterator ref = mafBlock._reference;
+  assert(mafBlock._reference != mafBlock._entries.end());
+  os << *ref->second;
+
   for (MafBlock::Entries::const_iterator e = mafBlock._entries.begin();
        e != mafBlock._entries.end(); ++e)
   {
-    if (e->second->_start != NULL_INDEX)
+    if (e->second->_start != NULL_INDEX && e != ref)
     {
       os << *e->second;
     }
