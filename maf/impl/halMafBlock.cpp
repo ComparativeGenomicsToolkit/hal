@@ -75,7 +75,7 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
 
     if (dna->getReversed())
     {
-      entry->_start = entry->_srcLength - entry->_start;
+      entry->_start = entry->_srcLength - entry->_start - 1;
     }
   }
   else
@@ -110,7 +110,7 @@ void MafBlock::updateEntry(MafBlockEntry* entry, const Sequence* sequence,
            dna->getArrayIndex() - sequence->getStartPosition() == 
            entry->_start + entry->_length - 1);
     assert(dna->getReversed() == false || 
-           entry->_srcLength - dna->getArrayIndex() + 
+           entry->_srcLength - dna->getArrayIndex() - 1 + 
            sequence->getStartPosition()  == 
            entry->_start + entry->_length - 1);
 
@@ -143,7 +143,8 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
       if (e == _entries.end() || e->first != sequence)
       {
         MafBlockEntry* entry = new MafBlockEntry();
-        initEntry(entry, sequence, DNAIteratorConstPtr());        
+        initEntry(entry, sequence, DNAIteratorConstPtr());      
+        e = _entries.insert(Entries::value_type(sequence, entry));  
       }
       else
       {
@@ -276,7 +277,7 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
           {
             assert(entry->_strand == '-');
             // position on reverse strand relative to end of sequence
-            pos = entry->_srcLength - pos;
+            pos = entry->_srcLength - pos - 1;
           }
 
           if (pos - entry->_start != entry->_length)
