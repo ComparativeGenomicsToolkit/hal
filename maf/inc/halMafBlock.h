@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 #include <deque>
+#include <map>
 #include <string>
 #include "hal.h"
 
@@ -38,8 +39,14 @@ public:
    
 protected:
    
-   std::deque<MafBlockEntry> _entries;
-   std::string _refName;
+   void resetEntries();
+   void initEntry(MafBlockEntry* entry, const Sequence* sequence,
+                  DNAIteratorConstPtr dna);
+   void updateEntry(MafBlockEntry* entry, const Sequence* sequence,
+                    DNAIteratorConstPtr dna);
+
+   typedef std::multimap<const Sequence*, MafBlockEntry*> Entries;
+   Entries _entries;
    size_t _lastSize;
 
    typedef hal::ColumnIterator::ColumnMap ColumnMap;

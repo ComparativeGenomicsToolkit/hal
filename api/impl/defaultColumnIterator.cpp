@@ -227,13 +227,13 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
   
   // now that we moved from sets to vectors, we explictly sort.
   // (still on the fence on whether or not we need to keep sorted)
-  for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
+/*  for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
   {
     if (i->second->size() > 1)
     {
       sort(i->second->begin(), i->second->end());
     }
-  }
+    }*/
 }
 
 void DefaultColumnIterator::resetColMap() const
