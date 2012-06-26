@@ -14,5 +14,6 @@ extern "C" {
 }
 
 CuSuite *halMafExportTestSuite();
+CuSuite *halMafBlockTestSuite();
 
 #endif

@@ -10,6 +10,7 @@ int halMafRunAllTests(void) {
   CuString *output = CuStringNew();
   CuSuite* suite = CuSuiteNew();
   CuSuiteAddSuite(suite, halMafExportTestSuite());
+  CuSuiteAddSuite(suite, halMafBlockTestSuite());
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);
   CuSuiteDetails(suite, output);

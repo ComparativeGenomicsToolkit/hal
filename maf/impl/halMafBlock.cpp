@@ -35,16 +35,18 @@ void MafBlock::resetEntries()
     next = i;
     ++next;
     e = i->second;
-    if (e->_start == NULL_INDEX)
+    if (e->_start == NULL_INDEX && next != _entries.end() &&  
+        i->first == next->first)
     {
       // Never got written to in the last block, so we give up
-      // and remove it.
+      // and remove it.  But we keep one entry per sequence visited
+      // so only remove if next has the same name.  
       delete i->second;
       _entries.erase(i);
     }
     else
     {
-      assert (e->_length > 0);
+      assert (e->_start == NULL_INDEX || e->_length > 0);
       assert (e->_name == i->first->getName());
       // Rest block information but leave sequence information so we
       // can reuse it. 
@@ -75,7 +77,7 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
 
     if (dna->getReversed())
     {
-      entry->_start = entry->_srcLength - entry->_start - 1;
+      entry->_start = entry->_srcLength - 1 - entry->_start;
     }
   }
   else
@@ -109,9 +111,10 @@ void MafBlock::updateEntry(MafBlockEntry* entry, const Sequence* sequence,
     assert(dna->getReversed() == true || 
            dna->getArrayIndex() - sequence->getStartPosition() == 
            entry->_start + entry->_length - 1);
+
     assert(dna->getReversed() == false || 
-           entry->_srcLength - dna->getArrayIndex() - 1 + 
-           sequence->getStartPosition()  == 
+           entry->_srcLength - 1 - 
+           (dna->getArrayIndex() - sequence->getStartPosition())  == 
            entry->_start + entry->_length - 1);
 
     entry->_sequence.push_back(dna->getChar());
@@ -130,7 +133,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
   ColumnMap::const_iterator c = colMap->begin();
   DNASet::const_iterator d;
   const Sequence* sequence;
-  
+
   for (; c != colMap->end(); ++c)
   {
     sequence = c->first;
@@ -183,6 +186,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
           initEntry(entry, sequence, *d);
           assert(entry->_name == sequence->getName());
           e = _entries.insert(Entries::value_type(sequence, entry));
+
         }
         else
         {
@@ -272,12 +276,16 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
         assert(entry->_name == sequence->getName());
         if (entry->_start != NULL_INDEX)
         {
-          pos = (*d)->getArrayIndex() - sequenceStart;
-          if (entry->_strand == '-')
+          if (entry->_length > 0 && 
+              (entry->_strand == '-') != (*d)->getReversed())
           {
-            assert(entry->_strand == '-');
+            return false;
+          }
+          pos = (*d)->getArrayIndex() - sequenceStart;
+          if ((*d)->getReversed() == true)
+          {
             // position on reverse strand relative to end of sequence
-            pos = entry->_srcLength - pos - 1;
+            pos = entry->_srcLength - 1 - pos;
           }
 
           if (pos - entry->_start != entry->_length)

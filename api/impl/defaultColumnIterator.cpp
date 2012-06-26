@@ -83,6 +83,21 @@ hal_index_t DefaultColumnIterator::moveRightToNextUnvisited(
 void DefaultColumnIterator::toRight() const
 {
   recursiveUpdate(false);
+
+#ifndef NDEBUG
+  set<pair<const Sequence*, hal_index_t> > coordSet;
+  ColumnMap::const_iterator i, iNext;
+  DNASet::const_iterator j;
+  for (i = _colMap.begin(); i != _colMap.end(); ++i)
+  {
+    // check that the same coordinate not present for the same sequence
+    for (j = i->second->begin(); j != i->second->end(); ++j)
+    {
+      pair<const Sequence*, hal_index_t> data(i->first, (*j)->getArrayIndex());
+      assert(coordSet.insert(data).second == true);
+    }
+  }
+#endif
 }
 
 // NOTE, will need changing once the stack gets used 

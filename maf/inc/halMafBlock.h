@@ -45,7 +45,8 @@ protected:
    void updateEntry(MafBlockEntry* entry, const Sequence* sequence,
                     DNAIteratorConstPtr dna);
 
-   typedef std::multimap<const Sequence*, MafBlockEntry*> Entries;
+   typedef std::multimap<const Sequence*, MafBlockEntry*, 
+                         ColumnIterator::SequenceLess> Entries;
    Entries _entries;
    Entries::const_iterator _reference;
 
