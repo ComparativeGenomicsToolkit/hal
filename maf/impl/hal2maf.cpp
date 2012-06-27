@@ -92,7 +92,7 @@ int main(int argc, char** argv)
     const Genome* refGenome = NULL;
     if (refGenomeName != "\"\"")
     {
-      refGenome = alignment->openGenome(rootGenomeName);
+      refGenome = alignment->openGenome(refGenomeName);
       if (refGenome == NULL)
       {
         throw hal_exception(string("Reference genome, ") + refGenomeName + 
