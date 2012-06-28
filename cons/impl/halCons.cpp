@@ -30,7 +30,7 @@ void HalCons::printCsv(ostream& outStream) const
 {
   outStream << "GenomeName, ParentName, BranchLength, GenomeLength," 
      " ParentLength, Subtitutions, Insertions, InsertedBases, Inversions,"
-     " InvertedBases" << endl;
+     " InvertedBases, Duplications, DuplicatedBases" << endl;
 
   BranchMap::const_iterator i = _branchMap.begin();
   for (; i != _branchMap.end(); ++i)
@@ -41,7 +41,8 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._genomeLength << ", " << stats._parentLength << ", "
               << stats._subs << ", "
               << stats._numInserts << ", " << stats._numInsertBases << ", "
-              << stats._numInverts << ", " << stats._numInvertBases <<endl;
+              << stats._numInverts << ", " << stats._numInvertBases << ", "
+              << stats._numDups << ", " << stats._numDupBases <<endl;
   }
 
   outStream << endl;
@@ -99,6 +100,12 @@ void HalCons::analyzeGenomeRecursive(const string& genomeName)
         parIt->getString(strBufParent);
         topIt->getString(strBuf);
         stats._subs += hammingDistance(strBuf, strBufParent);
+        
+        if (topIt->hasNextParalogy() == true)
+        {
+          ++stats._numDups;
+          stats._numDupBases += topIt->getLength();
+        }
       }
     }
     //TODO: DELETIONS!!!

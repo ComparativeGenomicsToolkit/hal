@@ -174,7 +174,6 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
         }
         else
         {
-          ++e;
           while (e->first != c->first && e != _entries.end())
           {
             ++e;
@@ -186,12 +185,12 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
           initEntry(entry, sequence, *d);
           assert(entry->_name == sequence->getName());
           e = _entries.insert(Entries::value_type(sequence, entry));
-
         }
         else
         {
           initEntry(e->second, sequence, *d);
         }
+        ++e;
       }
     }
   }

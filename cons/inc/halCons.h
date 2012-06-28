@@ -26,6 +26,8 @@ struct ConsStats
    hal_size_t _numDeleteBases;
    hal_size_t _numInverts;
    hal_size_t _numInvertBases;
+   hal_size_t _numDups;
+   hal_size_t _numDupBases;
 };
 
 class HalCons

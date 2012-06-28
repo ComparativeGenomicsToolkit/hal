@@ -30,6 +30,10 @@ void validateSequence(const Sequence* sequence);
  * appears out of whack. */
 void validateGenome(const Genome* genome);
 
+/** Go through a genome, and throw an exception if any duplications 
+ * appears out of whack. */
+void validateDuplications(const Genome* genome);
+
 /** Go through an alignment, and throw an excpetion if anything
  * appears out of whack. */
 void validateAlignment(AlignmentConstPtr alignment);

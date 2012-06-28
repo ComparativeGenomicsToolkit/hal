@@ -70,6 +70,7 @@ private:
    {
       const Sequence* _sequence;
       hal_index_t _index;
+      bool _reversed;
       LinkedTopIteratorPtr _top;
       LinkedBottomIteratorPtr _bottom;
       VisitSet _visitSet;
@@ -94,9 +95,10 @@ private:
    void updateParseUp(LinkedBottomIteratorPtr bottomIt) const;
    void updateParseDown(LinkedTopIteratorPtr topIt) const;
 
-   void colMapInsert(const Sequence* sequence,
-                     DNAIteratorConstPtr dnaIt) const;
-   void colMapInsert(DNAIteratorConstPtr dnaIt) const;
+   hal_index_t nextFreeIndex(LinkedTopIteratorPtr topIt) const;
+   void colMapInsert(DNAIteratorConstPtr dnaIt, 
+                     bool updateVisitSet = true) const;
+   bool checkRange(DNAIteratorConstPtr dnaIt) const;
 
    
 private:
@@ -114,26 +116,7 @@ private:
    mutable ColumnMap _colMap;
 };
 
-inline void DefaultColumnIterator::colMapInsert(const Sequence* sequence, 
-                                                DNAIteratorConstPtr dnaIt) const
-{
-  ColumnMap::iterator i = _colMap.lower_bound(sequence);
-  if(i != _colMap.end() && !(_colMap.key_comp()(sequence, i->first)))
-  {
-    i->second->push_back(dnaIt);
-  }
-  else
-  {
-    DNASet* dnaSet = new DNASet();
-    dnaSet->push_back(dnaIt);
-    _colMap.insert(i, ColumnMap::value_type(sequence, dnaSet));
-  }
-}
 
-inline void DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
-{
-  colMapInsert(dnaIt->getSequence(), dnaIt);
-}
 
 
 }

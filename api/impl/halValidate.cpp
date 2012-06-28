@@ -5,6 +5,7 @@
  */
 #include <sstream>
 #include <deque>
+#include <vector>
 #include <iostream>
 #include "halValidate.h"
 #include "hal.h"
@@ -287,6 +288,48 @@ void hal::validateSequence(const Sequence* sequence)
   }
 }
 
+void hal::validateDuplications(const Genome* genome)
+{
+  const Genome* parent = genome->getParent();
+  if (parent == NULL)
+  {
+    return;
+  }
+  TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
+  TopSegmentIteratorConstPtr endIt = genome->getTopSegmentEndIterator();
+  vector<unsigned char> pcount(parent->getNumBottomSegments(), 0);
+  for (; topIt != endIt; topIt->toRight())
+  {
+    if (topIt->hasParent())
+    {
+      if (pcount[topIt->getTopSegment()->getParentIndex()] < 250)
+      {
+        ++pcount[topIt->getTopSegment()->getParentIndex()];
+      }
+    }
+  }
+  for (topIt = genome->getTopSegmentIterator(); topIt != endIt; topIt->toRight())
+  {
+    if (topIt->hasParent())
+    {
+      size_t count = pcount[topIt->getTopSegment()->getParentIndex()];
+      assert(count > 0);
+      {
+        if (topIt->hasNextParalogy() == false && count > 1)
+        {
+          stringstream ss;
+          ss << "Top Segment " << topIt->getTopSegment()->getArrayIndex()
+             << " in genome " << genome->getName() << " is not marked as a"
+             << " duplication but it shares its parent " 
+             << topIt->getTopSegment()->getArrayIndex() << " with at least " 
+             << count - 1 << " other segments in the same genome";
+          throw hal_exception(ss.str());
+        }  
+      }
+    }
+  }
+}
+
 void hal::validateGenome(const Genome* genome)
 {
   // first we check the sequence coverage
@@ -352,6 +395,8 @@ void hal::validateGenome(const Genome* genome)
        << "sequences have " << totalBottom << " bottom segments";
     throw hal_exception(ss.str());
   }
+  
+  validateDuplications(genome);
 }
 
 void hal::validateAlignment(AlignmentConstPtr alignment)

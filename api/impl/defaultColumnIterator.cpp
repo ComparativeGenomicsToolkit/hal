@@ -148,6 +148,7 @@ void DefaultColumnIterator::init(const Sequence* ref, hal_index_t index,
   // put ther reference on the stack
   StackEntry se = {ref,
                    index,
+                   false,
                    LinkedTopIteratorPtr(new LinkedTopIterator()),
                    LinkedBottomIteratorPtr(new LinkedBottomIterator()),
                    VisitSet()};
@@ -192,13 +193,21 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
     {
       assert(topIt->_it.get() != NULL);
       assert(topIt->_it->getReversed() == false);
-      _stack.top()._index = topIt->_it->getStartPosition() + 1;
+      _stack.top()._index = nextFreeIndex(topIt);
       // do not handle iterating over multiple reference sequnces for now
       assert(topIt->_it->getTopSegment()->getSequence() == refSequence);
-      topIt->_it->toRight(_stack.top()._index);
+      if (_stack.top()._index < 0 || _stack.top()._index >= 
+            (hal_index_t)refSequence->getSequenceLength())
+      {
+        return;
+      }
+      while (topIt->_it->overlaps(_stack.top()._index) == false)
+      {
+        topIt->_it->toRight(_stack.top()._index);
+      }
       topIt->_dna->jumpTo(_stack.top()._index);
     }
-    colMapInsert(refSequence, topIt->_dna);
+    colMapInsert(topIt->_dna, false);
     if (_stack.top()._index >= 0 && 
         _stack.top()._index < (hal_index_t)refSequence->getSequenceLength())
     {
@@ -227,7 +236,7 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
       bottomIt->_it->toRight(_stack.top()._index);
       bottomIt->_dna->jumpTo(_stack.top()._index);
     }
-    colMapInsert(refSequence, bottomIt->_dna);
+    colMapInsert(bottomIt->_dna, false);
     hal_size_t numChildren = refSequence->getGenome()->getNumChildren();
     bottomIt->_children.resize(numChildren);
     if (_stack.top()._index >= 0 && 
@@ -378,7 +387,7 @@ void DefaultColumnIterator::updateNextTopDup(LinkedTopIteratorPtr topIt) const
   {
     return;
   }
-  
+
   hal_index_t firstIndex = topIt->_it->getTopSegment()->getArrayIndex();
   LinkedTopIteratorPtr currentTopIt = topIt;
   const Genome* genome =  topIt->_it->getTopSegment()->getGenome();
@@ -403,14 +412,6 @@ void DefaultColumnIterator::updateNextTopDup(LinkedTopIteratorPtr topIt) const
     currentTopIt->_nextDup->_dna->setReversed(
       currentTopIt->_nextDup->_it->getReversed());
     colMapInsert(currentTopIt->_nextDup->_dna);
-
-    // add the dup to the visit set if we're the reference
-    // WORTHLESS, must do this every time! 
-    const TopSegment* topSeg = currentTopIt->_nextDup->_it->getTopSegment();
-    if (topSeg->getGenome() == _stack.top()._sequence->getGenome())
-    {
-      _stack.top()._visitSet.insert(topSeg->getArrayIndex());
-    }
     
     // recurse on duplicate's parse edge
     updateParseDown(currentTopIt->_nextDup);
@@ -504,3 +505,61 @@ void DefaultColumnIterator::updateParseDown(LinkedTopIteratorPtr topIt) const
   }
 }  
 
+hal_index_t DefaultColumnIterator::nextFreeIndex(LinkedTopIteratorPtr topIt)
+  const
+{
+  hal_index_t index = topIt->_it->getStartPosition() + 1;
+  VisitSet::iterator i = _stack.top()._visitSet.find(index);
+  while (i != _stack.top()._visitSet.end())
+  {
+    cout << "skippity " << index << endl;
+//    _stack.top()._visitSet.erase(i);
+    index += _stack.top()._reversed == false ? 1 : -1;
+    i = _stack.top()._visitSet.find(index);
+  }
+  return index;
+}
+
+void DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt,
+                                         bool updateVisitSet) const
+{
+  const Sequence* sequence = dnaIt->getSequence();
+  ColumnMap::iterator i = _colMap.lower_bound(sequence);
+  if(i != _colMap.end() && !(_colMap.key_comp()(sequence, i->first)))
+  {
+    i->second->push_back(dnaIt);
+  }
+  else
+  {
+    DNASet* dnaSet = new DNASet();
+    dnaSet->push_back(dnaIt);
+    _colMap.insert(i, ColumnMap::value_type(sequence, dnaSet));
+  }
+  
+  // add to the duplication visit set if it's the reference
+  if (updateVisitSet == true &&
+      sequence->getGenome() == _stack.top()._sequence->getGenome())
+  {
+    cout << "adding " << dnaIt->getArrayIndex() << endl;
+    _stack.top()._visitSet.insert(dnaIt->getArrayIndex());
+  }
+
+}
+
+bool DefaultColumnIterator::checkRange(DNAIteratorConstPtr dnaIt) const
+{
+  StackEntry& entry = _stack.top();
+  if (dnaIt->getSequence() == entry._sequence)
+  {
+    // todo: check should be two-sided
+    if (entry._reversed == false)
+    {
+      return dnaIt->getArrayIndex() >= entry._index;
+    }
+    else
+    {
+      return dnaIt->getArrayIndex() <= entry._index;
+    }
+  }
+  return true;
+}
