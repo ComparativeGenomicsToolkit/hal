@@ -193,7 +193,8 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
     {
       assert(topIt->_it.get() != NULL);
       assert(topIt->_it->getReversed() == false);
-      _stack.top()._index = nextFreeIndex(topIt);
+      nextFreeIndex();
+      
       // do not handle iterating over multiple reference sequnces for now
       assert(topIt->_it->getTopSegment()->getSequence() == refSequence);
       if (_stack.top()._index < 0 || _stack.top()._index >= 
@@ -201,21 +202,29 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
       {
         return;
       }
+      topIt->_it->slice(0, 0);
       while (topIt->_it->overlaps(_stack.top()._index) == false)
       {
-        topIt->_it->toRight(_stack.top()._index);
+        topIt->_it->toRight();
       }
+      hal_index_t offset = _stack.top()._index -  topIt->_it->getStartPosition();
+      assert(offset >= 0 && offset < (hal_index_t)topIt->_it->getLength());
+      topIt->_it->slice(offset, topIt->_it->getLength() - offset - 1);
       topIt->_dna->jumpTo(_stack.top()._index);
     }
     colMapInsert(topIt->_dna, false);
+    assert(topIt->_dna->getArrayIndex() == _stack.top()._index);
+    
     if (_stack.top()._index >= 0 && 
         _stack.top()._index < (hal_index_t)refSequence->getSequenceLength())
     {
+      assert(topIt->_it->getStartPosition() == topIt->_dna->getArrayIndex());
       updateParent(topIt);
       updateNextTopDup(topIt);
       updateParseDown(topIt);
     }
   } 
+
   else
   {
     assert(!_stack.empty());
@@ -230,18 +239,35 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
     {
       assert(bottomIt->_it.get() != NULL);
       assert(bottomIt->_it->getReversed() == false);
-      _stack.top()._index = bottomIt->_it->getStartPosition() + 1;
-      // do not handle iterating over multiple reference sequnces for now
+      nextFreeIndex();
       assert(bottomIt->_it->getBottomSegment()->getSequence() == refSequence);
-      bottomIt->_it->toRight(_stack.top()._index);
+      if (_stack.top()._index < 0 || _stack.top()._index >= 
+            (hal_index_t)refSequence->getSequenceLength())
+      {
+        return;
+      }
+      bottomIt->_it->slice(0, 0);
+      while (bottomIt->_it->overlaps(_stack.top()._index) == false)
+      {
+        bottomIt->_it->toRight();
+      }
+
+      hal_index_t offset = _stack.top()._index -
+         bottomIt->_it->getStartPosition();
+      assert(offset >= 0 && offset < (hal_index_t)bottomIt->_it->getLength());
+      bottomIt->_it->slice(offset, bottomIt->_it->getLength() - offset - 1);
       bottomIt->_dna->jumpTo(_stack.top()._index);
     }
     colMapInsert(bottomIt->_dna, false);
+    assert(bottomIt->_dna->getArrayIndex() == _stack.top()._index);
+
     hal_size_t numChildren = refSequence->getGenome()->getNumChildren();
     bottomIt->_children.resize(numChildren);
     if (_stack.top()._index >= 0 && 
         _stack.top()._index < (hal_index_t)refSequence->getSequenceLength())
     {
+      assert(bottomIt->_it->getStartPosition() == 
+             bottomIt->_dna->getArrayIndex());
       for (size_t child = 0; child < numChildren; ++child)
       {
         updateChild(bottomIt, child);
@@ -281,7 +307,8 @@ void DefaultColumnIterator::updateParent(LinkedTopIteratorPtr topIt) const
 {
   const Genome* genome = topIt->_it->getTopSegment()->getGenome();
  
-  if (genome != _root && topIt->_it->hasParent())
+  if (genome != _root && topIt->_it->hasParent() && 
+      checkRange(topIt->_dna))
   {
     const Genome* parentGenome = genome->getParent();
 
@@ -307,12 +334,6 @@ void DefaultColumnIterator::updateParent(LinkedTopIteratorPtr topIt) const
     // advance the parent's iterator to match topIt's (which should 
     // already have been updated. 
     topIt->_parent->_it->toParent(topIt->_it);
-/*
-    cout << parentGenome->getName() << " " << topIt->_parent->_it->getReversed() << endl;
-
-    cout << topIt->_parent->_it->getStartPosition() << " " << topIt->_it->getStartPosition() << endl << endl;
-*/
-
     topIt->_parent->_dna->jumpTo( topIt->_parent->_it->getStartPosition());
     topIt->_parent->_dna->setReversed(topIt->_parent->_it->getReversed());
     colMapInsert(topIt->_parent->_dna);
@@ -337,7 +358,7 @@ void DefaultColumnIterator::updateParent(LinkedTopIteratorPtr topIt) const
 void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt, 
                                         hal_size_t index) const
 {
-  if (bottomIt->_it->hasChild(index))
+  if (bottomIt->_it->hasChild(index) && checkRange(bottomIt->_dna))
   {
     assert(index < bottomIt->_children.size());
     const Genome* genome = bottomIt->_it->getBottomSegment()->getGenome();
@@ -383,7 +404,8 @@ void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt,
 void DefaultColumnIterator::updateNextTopDup(LinkedTopIteratorPtr topIt) const
 {
   assert (topIt->_it.get() != NULL);
-  if (topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX)
+  if (topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX ||
+      !checkRange(topIt->_dna))
   {
     return;
   }
@@ -434,7 +456,7 @@ void DefaultColumnIterator::updateNextBottomDup(
 void DefaultColumnIterator::updateParseUp(LinkedBottomIteratorPtr bottomIt)
    const
 {
-  if (bottomIt->_it->hasParseUp())
+  if (bottomIt->_it->hasParseUp() && checkRange(bottomIt->_dna))
   {
     const Genome* genome = bottomIt->_it->getBottomSegment()->getGenome();
 
@@ -456,12 +478,15 @@ void DefaultColumnIterator::updateParseUp(LinkedBottomIteratorPtr bottomIt)
 
     // recurse on parse link's parent
     updateParent(bottomIt->_topParse);
+
+    //recurse on parse link's paralogous siblings
+    updateNextTopDup(bottomIt->_topParse);
   }
 }
  
 void DefaultColumnIterator::updateParseDown(LinkedTopIteratorPtr topIt) const
 {
-  if (topIt->_it->hasParseDown())
+  if (topIt->_it->hasParseDown() && checkRange(topIt->_dna))
   {
     const Genome* genome = topIt->_it->getTopSegment()->getGenome();
 
@@ -505,25 +530,25 @@ void DefaultColumnIterator::updateParseDown(LinkedTopIteratorPtr topIt) const
   }
 }  
 
-hal_index_t DefaultColumnIterator::nextFreeIndex(LinkedTopIteratorPtr topIt)
-  const
+void DefaultColumnIterator::nextFreeIndex() const
 {
-  hal_index_t index = topIt->_it->getStartPosition() + 1;
+  hal_index_t index = _stack.top()._index + 1;
   VisitSet::iterator i = _stack.top()._visitSet.find(index);
   while (i != _stack.top()._visitSet.end())
   {
-    cout << "skippity " << index << endl;
 //    _stack.top()._visitSet.erase(i);
     index += _stack.top()._reversed == false ? 1 : -1;
     i = _stack.top()._visitSet.find(index);
   }
-  return index;
+  assert (index > _stack.top()._index);
+  _stack.top()._index = index;
 }
 
 void DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt,
                                          bool updateVisitSet) const
 {
   const Sequence* sequence = dnaIt->getSequence();
+  assert(sequence != NULL);
   ColumnMap::iterator i = _colMap.lower_bound(sequence);
   if(i != _colMap.end() && !(_colMap.key_comp()(sequence, i->first)))
   {
@@ -540,10 +565,8 @@ void DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt,
   if (updateVisitSet == true &&
       sequence->getGenome() == _stack.top()._sequence->getGenome())
   {
-    cout << "adding " << dnaIt->getArrayIndex() << endl;
     _stack.top()._visitSet.insert(dnaIt->getArrayIndex());
   }
-
 }
 
 bool DefaultColumnIterator::checkRange(DNAIteratorConstPtr dnaIt) const
@@ -551,6 +574,7 @@ bool DefaultColumnIterator::checkRange(DNAIteratorConstPtr dnaIt) const
   StackEntry& entry = _stack.top();
   if (dnaIt->getSequence() == entry._sequence)
   {
+    assert (entry._sequence->getGenome() == dnaIt->getGenome());
     // todo: check should be two-sided
     if (entry._reversed == false)
     {

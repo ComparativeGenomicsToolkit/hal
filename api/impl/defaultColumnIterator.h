@@ -95,11 +95,10 @@ private:
    void updateParseUp(LinkedBottomIteratorPtr bottomIt) const;
    void updateParseDown(LinkedTopIteratorPtr topIt) const;
 
-   hal_index_t nextFreeIndex(LinkedTopIteratorPtr topIt) const;
+   void nextFreeIndex() const;
    void colMapInsert(DNAIteratorConstPtr dnaIt, 
                      bool updateVisitSet = true) const;
    bool checkRange(DNAIteratorConstPtr dnaIt) const;
-
    
 private:
 
