@@ -13,8 +13,8 @@ using namespace hal;
 const hal_index_t hal::NULL_INDEX = static_cast<hal_index_t>(-1);
 
 /** C++ version of strtok */
-vector<string> chopString(const string& inString,
-                          const string& separator)
+vector<string> hal::chopString(const string& inString,
+                               const string& separator)
 {
   vector<string> outVector;
   string::size_type start = 0;
@@ -26,7 +26,10 @@ vector<string> chopString(const string& inString,
     outVector.push_back (inString.substr (start, end-start));
     start = end + separator.size();
   }
-  
+  if (start < inString.length())
+  {
+    outVector.push_back(inString.substr(start, string::npos));
+  }
   return outVector;
 }
 
