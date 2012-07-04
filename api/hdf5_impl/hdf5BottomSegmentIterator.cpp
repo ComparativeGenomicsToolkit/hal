@@ -201,8 +201,9 @@ void HDF5BottomSegmentIterator::toNextParalogy() const
 {
   assert (inRange() == true);
   assert(_bottomSegment.getNextParalogyIndex() != NULL_INDEX);
+  bool rev = _bottomSegment.getNextParalogyReversed();
   _bottomSegment._index = _bottomSegment.getNextParalogyIndex();
-  if(_bottomSegment.getNextParalogyReversed() == true)
+  if(rev == true)
   {
     toReverse();
   }

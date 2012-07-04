@@ -200,8 +200,9 @@ bool HDF5TopSegmentIterator::hasNextParalogy() const
 void HDF5TopSegmentIterator::toNextParalogy() const
 {
   assert(_topSegment.getNextParalogyIndex() != NULL_INDEX);
+  bool rev = _topSegment.getNextParalogyReversed();
   _topSegment._index = _topSegment.getNextParalogyIndex();
-  if(_topSegment.getNextParalogyReversed() == true)
+  if(rev == true)
   {
     toReverse();
   }
