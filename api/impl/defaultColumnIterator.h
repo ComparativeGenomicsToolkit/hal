@@ -39,6 +39,8 @@ public:
    /** Get a pointer to the column map */
    const ColumnMap* getColumnMap() const;
 
+   hal_index_t getArrayIndex() const;
+
 private:
 
    struct LinkedTopIterator;

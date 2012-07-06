@@ -58,6 +58,9 @@ public:
 
    /** Get a pointer to the column map */
    virtual const ColumnMap* getColumnMap() const = 0;
+
+   /** Get the index of the column in the reference genome's array */
+   virtual hal_index_t getArrayIndex() const = 0;
    
 protected:
    friend class counted_ptr<ColumnIterator>;

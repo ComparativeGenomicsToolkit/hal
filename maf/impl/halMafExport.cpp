@@ -40,7 +40,7 @@ void MafExport::convertGenome(ostream& mafStream,
 {
   if (length == 0)
   {
-    length = genome->getSequenceLength();
+    length = genome->getSequenceLength() - startPosition;
   }
   if ((hal_size_t)startPosition + length > genome->getSequenceLength())
   {
@@ -54,13 +54,15 @@ void MafExport::convertGenome(ostream& mafStream,
 
   while (doneLen < length)
   {
+    assert(pos < genome->getSequenceLength());
     const Sequence* sequence = genome->getSequenceBySite(pos);
     assert(sequence != NULL);
-    hal_index_t seqStart = startPosition - sequence->getStartPosition();
+    hal_index_t seqStart = pos - sequence->getStartPosition();
     hal_size_t curLen = min(length - doneLen, 
-                            sequence->getSequenceLength() - startPosition);
+                            sequence->getSequenceLength() - seqStart);
     assert(curLen > 0);
     convertSequence(mafStream, alignment, sequence, seqStart, curLen, root);
+    pos += curLen;
     doneLen += curLen;
   }
 }
@@ -72,6 +74,9 @@ void MafExport::convertSequence(ostream& mafStream,
                                 hal_size_t length,
                                 const Genome* root)
 {
+  cout << "calling cs on " << sequence->getName() << ",s=" << 
+     sequence->getStartPosition() << ",l=" << sequence->getSequenceLength()
+       << " start " << startPosition << " length " << length << endl;
   if (length == 0)
   {
     length = sequence->getSequenceLength();
@@ -89,8 +94,15 @@ void MafExport::convertSequence(ostream& mafStream,
                                                              startPosition);
   _mafBlock.initBlock(colIt);
   assert(_mafBlock.canAppendColumn(colIt) == true);
-  
-  for (hal_size_t i = 0; i < length; ++i)
+ 
+  // this could use a cleanup.  but for now we convert to genome coordinates
+  // and rely on the iterator's array index for the loop.  (should use the
+  // end iterator but it's not workign yet.  On a related note, this won't
+  // gracefully support insertions via the stack so the loop will have to
+  // be updated for this as well)
+  hal_index_t genomeStart = sequence->getStartPosition() + startPosition;
+  hal_index_t genomeEnd = genomeStart + (hal_index_t)length;
+  while (colIt->getArrayIndex() < genomeEnd)
   {
     if (_mafBlock.canAppendColumn(colIt) == false)
     {
