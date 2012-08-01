@@ -49,8 +49,14 @@ void HDF5ExternalArray::create(CommonFG* file,
   if (cparms.getLayout() == H5D_CHUNKED)
   {
     cparms.getChunk(1, &_chunkSize);
+    // don't support chunking when size=1
+    if (_size == 1)
+    {
+      cparms = DSetCreatPropList();
+      _chunkSize = 0;
+    }
     // something's wrong with the input chunk size.  do one chunk. 
-    if (_chunkSize <= 1 || _chunkSize >= _size)
+    else if (_chunkSize <= 1 || _chunkSize >= _size)
     {
       _chunkSize = _size;
       cparms.setChunk(1, &_chunkSize);
@@ -72,6 +78,7 @@ void HDF5ExternalArray::create(CommonFG* file,
   _dataSet = _file->createDataSet(_path, _dataType, _dataSpace, cparms);
   _chunkSpace = DataSpace(1, &_bufSize);
   assert(getSize() == numElements);
+  assert(_bufSize > 0 || _size == 0);
 }
 
 // Load an existing dataset into memory
@@ -96,13 +103,13 @@ void HDF5ExternalArray::load(CommonFG* file, const H5std_string& path,
     _chunkSize *= chunksInBuffer;
     if (_chunkSize == 1)
     {
-      throw DataSetIException("HDF5ExternalArray::create",
-                             "chunkSize of 1 not supported");
+      throw hal_exception("HDF5ExternalArray::create: " 
+                          "chunkSize of 1 not supported");
     }
     if (_chunkSize > _size)
     {
-      throw DataSetIException("HDF5ExternalArray::create",
-                              "chunkSize > array size is not supported");
+      throw hal_exception("HDF5ExternalArray::create: "
+                          "chunkSize > array size is not supported");
     }
   }
   else
@@ -119,6 +126,8 @@ void HDF5ExternalArray::load(CommonFG* file, const H5std_string& path,
 
   // fill buffer from disk
   page(0);
+
+  assert(_bufSize > 0 || _size == 0);
 }
 
 // Write the memory buffer back to the file 
@@ -152,4 +161,5 @@ void HDF5ExternalArray::page(hsize_t i)
   _dataSpace.selectHyperslab(H5S_SELECT_SET, &_bufSize, &_bufStart);
   _dataSet.read(_buf, _dataType, _chunkSpace, _dataSpace);
   _dirty = false;
+  assert(_bufSize > 0 || _size == 0);
 }
