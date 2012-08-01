@@ -366,6 +366,7 @@ void hal::createRandomSegment(Genome* genome,
 
     mutateString(buffer, branchLength);
     BottomSegment* botSegment = botIter->getBottomSegment();
+    assert(botSegment->getArrayIndex() == parentIdx);
     assert(botSegment->getLength() == topSegment->getLength());
     botSegment->setChildIndex(indexInParent, topSegment->getArrayIndex());
     botSegment->setChildReversed(indexInParent, inverted);
@@ -380,14 +381,15 @@ void hal::createRandomSegment(Genome* genome,
       prevIt = setIt++;
     }
 
-    if (setIt != edgeSet.end() && setIt->first == botSegment->getArrayIndex())
+    if (prevIt != edgeSet.end() && prevIt->first == botSegment->getArrayIndex())
     {
-      assert (setIt->second < topSegment->getArrayIndex());
-      TopSegment* paralogousSegment = genome->getTopSegmentIterator(
-        setIt->second)->getTopSegment();
+      assert (prevIt->second < topSegment->getArrayIndex());
+      assert (prevIt->second != NULL_INDEX);
+      TopSegmentIteratorPtr paralogousIt = 
+         genome->getTopSegmentIterator(prevIt->second);
+      TopSegment* paralogousSegment = paralogousIt->getTopSegment();
       paralogousSegment->setNextParalogyIndex(topSegment->getArrayIndex());
       topSegment->setNextParalogyIndex(firstIt->second);
-      cout << "setting paralogy" << endl;
     }
 
     edgeSet.insert(pair<hal_index_t, hal_index_t>(
