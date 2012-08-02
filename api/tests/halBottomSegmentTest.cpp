@@ -511,6 +511,99 @@ void BottomSegmentIteratorReverseTest::checkCallBack(AlignmentConstPtr alignment
   CuAssertTrue(_testCase, bi->getLength() == 5);
 }
 
+void BottomSegmentIsGapTest::createCallBack(AlignmentPtr alignment)
+{
+  size_t numSequences = 3;
+  vector<Sequence::Info> seqVec(numSequences);
+  
+  BottomSegmentIteratorPtr bi;
+  BottomSegmentStruct bs;
+  TopSegmentIteratorPtr ti;
+  TopSegmentStruct ts;
+  
+  Genome* parent1 = alignment->addRootGenome("parent1");
+  Genome* child1 = alignment->addLeafGenome("child1", "parent1", 1);
+
+  // set up two genomes.  each with three sequences.  each sequence
+  // with 5 segments of length two.  start with segment i in parent
+  // aligned with segment i in child.
+  for (size_t i = 0; i < numSequences; ++i)
+  {
+    stringstream ss;
+    ss << "Sequence" << i;
+    string name = ss.str();
+    seqVec[i] = Sequence::Info(name, 10, 5, 5);
+  }
+  parent1->setDimensions(seqVec);
+  child1->setDimensions(seqVec);
+
+  bi = parent1->getBottomSegmentIterator();
+  for (; bi != parent1->getBottomSegmentEndIterator(); bi->toRight())
+  {
+    bs.set(bi->getBottomSegment()->getArrayIndex() * 2, 2);
+    bs._children.clear();
+    bs._children.push_back(pair<hal_size_t, bool>(
+                            bi->getBottomSegment()->getArrayIndex(), 
+                            false));
+    bs.applyTo(bi);
+  }
+     
+  ti = child1->getTopSegmentIterator();
+  for (; ti != child1->getTopSegmentEndIterator(); ti->toRight())
+  {
+    ts.set(ti->getTopSegment()->getArrayIndex() * 2, 2, 
+           ti->getTopSegment()->getArrayIndex());
+    ts.applyTo(ti);
+  }
+
+  // deletion in middle (3rd bottom segment)
+
+  bi = parent1->getBottomSegmentIterator(3);
+  ti = child1->getTopSegmentIterator(3);
+  assert(bi->getBottomSegment()->getChildIndex(0) == 3 &&
+         ti->getTopSegment()->getParentIndex() == 3);
+  bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
+  ti->getTopSegment()->setParentIndex(4);
+  bi->toRight();
+  bi->getBottomSegment()->setChildIndex(0, 3);
+
+  // deletion at beginning (5th bottom segment)
+  
+  bi = parent1->getBottomSegmentIterator(5);
+  ti = child1->getTopSegmentIterator(5);
+  assert(bi->getBottomSegment()->getChildIndex(0) == 5 &&
+         ti->getTopSegment()->getParentIndex() == 5);
+  bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
+  bi->toRight();
+  bi->getBottomSegment()->setChildIndex(0, 5);
+  ti->toRight();
+  ti->getTopSegment()->setParentIndex(5);
+  ti->toLeft();
+  ti->toLeft();
+  ti->getTopSegment()->setParentIndex(NULL_INDEX);
+}
+
+void BottomSegmentIsGapTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  BottomSegmentIteratorConstPtr bi;
+  TopSegmentIteratorConstPtr ti;
+
+  const Genome* parent1 = alignment->openGenome("parent1");
+
+  for (hal_size_t i = 0; i < parent1->getNumBottomSegments(); ++i)
+  {
+    bi = parent1->getBottomSegmentIterator(i);
+    if (i == 5 || i == 3)
+    {
+      CuAssertTrue(_testCase, bi->getBottomSegment()->isGapDeletion(0));
+    }
+    else
+    {
+      CuAssertTrue(_testCase, !bi->getBottomSegment()->isGapDeletion(0));
+    }
+  }
+}
+
 void halBottomSegmentSimpleIteratorTest(CuTest *testCase)
 {
   try 
@@ -576,6 +669,19 @@ void halBottomSegmentIteratorReverseTest(CuTest *testCase)
   } 
 }
 
+void halBottomSegmentIsGapTest(CuTest *testCase)
+{
+  try 
+  {
+    BottomSegmentIsGapTest tester;
+    tester.check(testCase);
+  }
+   catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
 CuSuite* halBottomSegmentTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
@@ -584,6 +690,7 @@ CuSuite* halBottomSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, halBottomSegmentIteratorParseTest);
   SUITE_ADD_TEST(suite, halBottomSegmentIteratorToSiteTest);
   SUITE_ADD_TEST(suite, halBottomSegmentIteratorReverseTest);
+  SUITE_ADD_TEST(suite, halBottomSegmentIsGapTest);
   return suite;
 }
 
