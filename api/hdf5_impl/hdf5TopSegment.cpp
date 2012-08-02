@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <cstdlib>
 #include "hdf5TopSegment.h"
 #include "hdf5BottomSegment.h"
 
@@ -85,6 +86,7 @@ bool HDF5TopSegment::isGapInsertion() const
 
   // case 1) gap insertion inside a sequence
   if (leftParentIndex != NULL_INDEX && rightParentIndex != NULL_INDEX &&
+      abs(rightParentIndex - leftParentIndex) == 1 &&
       leftParentSequence == rightParentSequence)
   {
     return true;

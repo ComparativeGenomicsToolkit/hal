@@ -5,6 +5,7 @@
  */
 #include <string>
 #include <sstream>
+#include <cstdlib>
 #include "hdf5BottomSegment.h"
 #include "hdf5TopSegment.h"
 
@@ -86,6 +87,7 @@ bool HDF5BottomSegment::isGapDeletion(hal_size_t i) const
 
   // case 1) gap deletion inside a sequence
   if (leftChildIndex != NULL_INDEX && rightChildIndex != NULL_INDEX &&
+      abs(rightChildIndex - leftChildIndex) == 1 &&
       leftChildSequence == rightChildSequence)
   {
     return true;
