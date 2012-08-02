@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include "hdf5TopSegment.h"
+#include "hdf5BottomSegment.h"
 
 using namespace std;
 using namespace H5;
@@ -35,6 +36,76 @@ HDF5TopSegment::HDF5TopSegment(HDF5Genome* genome,
 HDF5TopSegment::~HDF5TopSegment()
 {
   
+}
+
+bool HDF5TopSegment::isGapInsertion() const
+{
+  if (getParentIndex() != NULL_INDEX)
+  {
+    return false;
+  }
+  
+  const Sequence* sequence = getSequence();
+  HDF5Genome* parentGenome =  reinterpret_cast<HDF5Genome*>(
+    _genome->getParent());
+  hal_index_t seqStartIndex =  sequence->getTopSegmentArrayIndex();
+  hal_index_t seqLastIndex = seqStartIndex + 
+     (hal_index_t)sequence->getNumTopSegments() - 1;
+
+  hal_index_t leftParentIndex = NULL_INDEX;
+  const Sequence* leftParentSequence = NULL;
+  hal_index_t rightParentIndex = NULL_INDEX;
+  const Sequence* rightParentSequence = NULL;
+
+  // walk up to parent of left neighbour
+  if (_index != seqStartIndex)
+  {
+    HDF5TopSegment leftSeg(_genome, _array, _index - 1);
+    if (leftSeg.getParentIndex() != NULL_INDEX)
+    {
+      HDF5BottomSegment leftPar(parentGenome, &parentGenome->_bottomArray,
+                                leftSeg.getParentIndex());
+      leftParentIndex = leftPar.getArrayIndex();
+      leftParentSequence = leftPar.getSequence();
+    }
+  }
+
+  // wlak up to parent of right neighbour
+  if (_index != seqLastIndex)
+  {
+    HDF5TopSegment rightSeg(_genome, _array, _index + 1);
+    if (rightSeg.getParentIndex() != NULL_INDEX)
+    {
+      HDF5BottomSegment rightPar(parentGenome, &parentGenome->_bottomArray,
+                                rightSeg.getParentIndex());
+      rightParentIndex = rightPar.getArrayIndex();
+      rightParentSequence = rightPar.getSequence();
+    }
+  }
+
+  // case 1) gap insertion inside a sequence
+  if (leftParentIndex != NULL_INDEX && rightParentIndex != NULL_INDEX &&
+      leftParentSequence == rightParentSequence)
+  {
+    return true;
+  }
+
+  // case 2) gap insertion at beginning of sequence
+  if (leftParentIndex == NULL_INDEX && rightParentIndex != NULL_INDEX &&
+      rightParentIndex == rightParentSequence->getBottomSegmentArrayIndex())
+  {
+    return true;
+  }
+  
+  // case 3) gap insertion at end of sequence
+  if (rightParentIndex == NULL_INDEX && leftParentIndex != NULL_INDEX &&
+      leftParentIndex == leftParentSequence->getBottomSegmentArrayIndex() +
+      (hal_index_t)leftParentSequence->getNumBottomSegments() - 1)
+  {
+    return true;
+  }
+
+  return false;
 }
 
 H5::CompType HDF5TopSegment::dataType()

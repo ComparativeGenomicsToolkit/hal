@@ -29,7 +29,9 @@ class HDF5Sequence;
  */
 class HDF5Genome : public Genome
 {
+   friend class HDF5TopSegment;
    friend class HDF5TopSegmentIterator;
+   friend class HDF5BottomSegment;
    friend class HDF5BottomSegmentIterator;
    friend class HDF5DNAIterator;
    friend class HDF5SequenceIterator;

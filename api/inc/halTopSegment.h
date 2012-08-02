@@ -51,6 +51,12 @@ public:
     * @param botParseOffset offset */
    virtual void setBottomParseOffset(hal_offset_t botParseOffset) = 0;
 
+   /** Test if the segment is the result of a simple inseriton (ie gap): 
+    * both its left and right neighbours are adjacent in the parent
+    *  (or are genome extremities) */
+   virtual bool isGapInsertion() const = 0;
+
+
 protected:
 
    /** Destructor */

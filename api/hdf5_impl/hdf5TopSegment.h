@@ -109,6 +109,12 @@ public:
     * @param botParseOffset offset */
    void setBottomParseOffset(hal_offset_t botParseOffset);
 
+   /** Test if the segment is the result of a simple inseriton (ie gap): 
+    * both its left and right neighbours are adjacent in the parent
+    *  (or are genome extremities) */
+   bool isGapInsertion() const;
+
+
    static H5::CompType dataType();
 
    /** Get the index of the segment in the segment array */
@@ -233,6 +239,8 @@ inline void HDF5TopSegment::setBottomParseOffset(hal_offset_t parseOffset)
 {
   _array->setValue(_index, bottomOffsetOffset, parseOffset);
 }
+
+
 
 inline hal_index_t HDF5TopSegment::getArrayIndex() const
 {

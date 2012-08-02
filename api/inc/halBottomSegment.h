@@ -61,6 +61,12 @@ public:
     * @param parpArseOffset offset in parent */
    virtual void setTopParseOffset(hal_offset_t parseOffset) = 0;
 
+   /** Test if the segment is the result of a simple deletion (ie gap): 
+    * both its left and right neighbours are adjacent in the child
+    *  (or are genome extremities) 
+    * @param i index of child genome */
+   virtual bool isGapDeletion(hal_size_t i) const = 0;
+
 protected:
 
    /** Destructor */
