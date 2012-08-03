@@ -42,7 +42,8 @@ HDF5BottomSegment::~HDF5BottomSegment()
 
 bool HDF5BottomSegment::isGapDeletion(hal_size_t i) const
 {
-  if (getChildIndex(i) != NULL_INDEX)
+  if (getChildIndex(i) != NULL_INDEX ||
+      getNextParalogyIndex() != NULL_INDEX)
   {
     return false;
   }

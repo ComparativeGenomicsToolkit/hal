@@ -41,7 +41,8 @@ HDF5TopSegment::~HDF5TopSegment()
 
 bool HDF5TopSegment::isGapInsertion() const
 {
-  if (getParentIndex() != NULL_INDEX)
+  if (getParentIndex() != NULL_INDEX || 
+      getNextParalogyIndex() != NULL_INDEX)
   {
     return false;
   }

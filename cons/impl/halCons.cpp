@@ -30,7 +30,8 @@ void HalCons::printCsv(ostream& outStream) const
 {
   outStream << "GenomeName, ParentName, BranchLength, GenomeLength," 
      " ParentLength, Subtitutions, Insertions, InsertedBases, Inversions,"
-     " InvertedBases, Duplications, DuplicatedBases" << endl;
+     " InvertedBases, Duplications, DuplicatedBases, GapInsertions," 
+     " GapInsertedBases, GapDeletions, GapDeletedBases" << endl;
 
   BranchMap::const_iterator i = _branchMap.begin();
   for (; i != _branchMap.end(); ++i)
@@ -42,7 +43,10 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._subs << ", "
               << stats._numInserts << ", " << stats._numInsertBases << ", "
               << stats._numInverts << ", " << stats._numInvertBases << ", "
-              << stats._numDups << ", " << stats._numDupBases <<endl;
+              << stats._numDups << ", " << stats._numDupBases << ", "
+              << stats._gapInserts << ", " << stats._gapInsertBases << ", "
+              << stats._gapDeletes << ", " << stats._gapDeleteBases
+              <<endl;
   }
 
   outStream << endl;
@@ -84,7 +88,12 @@ void HalCons::analyzeGenomeRecursive(const string& genomeName)
     
     for (; topIt != topEnd; topIt->toRight())
     {
-      if (topIt->hasParent() == false)
+      if (topIt->getTopSegment()->isGapInsertion() == true)
+      {
+        ++stats._gapInserts;
+        stats._gapInsertBases += topIt->getLength();
+      }
+      else if (topIt->hasParent() == false || topIt->hasNextParalogy() == false)
       {
         ++stats._numInserts;
         stats._numInsertBases += topIt->getLength();
