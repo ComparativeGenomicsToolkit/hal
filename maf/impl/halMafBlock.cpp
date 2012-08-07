@@ -22,6 +22,10 @@ MafBlock::~MafBlock()
   {
     delete i->second;
   }
+  for (size_t j = 0; j < _stringBuffers.size(); ++j)
+  {
+    delete [] _stringBuffers[j];
+  }
 }
 
 void MafBlock::resetEntries()
@@ -53,14 +57,14 @@ void MafBlock::resetEntries()
       e->_start = NULL_INDEX;
       e->_strand = '+';
       e->_length = 0;
-      e->_sequence.clear();
+      e->_sequence->clear();
     }
     i = next;
   }  
 }
 
 void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence, 
-                         DNAIteratorConstPtr dna)
+                         DNAIteratorConstPtr dna, bool clearSequence)
 {
   if (entry->_name != sequence->getName())
   {
@@ -87,20 +91,21 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
     entry->_length = 0;
     entry->_strand = '+';
   }
-  entry->_sequence.clear();
+  if (clearSequence == true)
+  {
+    entry->_sequence->clear();
+  }
 }
 
-void MafBlock::updateEntry(MafBlockEntry* entry, const Sequence* sequence,
-                           DNAIteratorConstPtr dna)
+inline void MafBlock::updateEntry(MafBlockEntry* entry, 
+                                  const Sequence* sequence,
+                                  DNAIteratorConstPtr dna)
 {
   if (dna.get() != NULL)
   {
     if (entry->_start == NULL_INDEX)
     {
-      string prep = entry->_sequence;
-      initEntry(entry, sequence, dna);
-      entry->_sequence.swap(prep);
-      entry->_sequence.append(prep);
+      initEntry(entry, sequence, dna, false);
     }
     assert(entry->_name == sequence->getName());
     assert(entry->_strand == dna->getReversed() ? '-' : '+');
@@ -117,11 +122,11 @@ void MafBlock::updateEntry(MafBlockEntry* entry, const Sequence* sequence,
            (dna->getArrayIndex() - sequence->getStartPosition())  == 
            entry->_start + entry->_length - 1);
 
-    entry->_sequence.push_back(dna->getChar());
+    entry->_sequence->append(dna->getChar());
   }
   else
   {
-    entry->_sequence.append("-");
+    entry->_sequence->append('-');
   }
 }
 
@@ -145,7 +150,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
       e = _entries.lower_bound(sequence);
       if (e == _entries.end() || e->first != sequence)
       {
-        MafBlockEntry* entry = new MafBlockEntry();
+        MafBlockEntry* entry = new MafBlockEntry(_stringBuffers);
         initEntry(entry, sequence, DNAIteratorConstPtr());      
         e = _entries.insert(Entries::value_type(sequence, entry));  
       }
@@ -181,7 +186,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
         }
         if (e == _entries.end())
         {
-          MafBlockEntry* entry = new MafBlockEntry();
+          MafBlockEntry* entry = new MafBlockEntry(_stringBuffers);
           initEntry(entry, sequence, *d);
           assert(entry->_name == sequence->getName());
           e = _entries.insert(Entries::value_type(sequence, entry));
@@ -304,16 +309,25 @@ ostream& hal::operator<<(ostream& os, const MafBlockEntry& mafBlockEntry)
 {
   os << "s\t" << mafBlockEntry._name << '\t' << mafBlockEntry._start << '\t'
      << mafBlockEntry._length << '\t' << mafBlockEntry._strand << '\t' 
-     << mafBlockEntry._srcLength << '\t' << mafBlockEntry._sequence << '\n';
+     << mafBlockEntry._srcLength << '\t' << mafBlockEntry._sequence->str() 
+     << '\n';
   return os;
 }
 
 istream& hal::operator>>(istream& is, MafBlockEntry& mafBlockEntry)
 {
+  string buffer;
   is >> mafBlockEntry._name >> mafBlockEntry._start 
      >> mafBlockEntry._length >> mafBlockEntry._strand 
-     >> mafBlockEntry._srcLength >> mafBlockEntry._sequence;
+     >> mafBlockEntry._srcLength >> buffer;
   assert(mafBlockEntry._strand == '+' || mafBlockEntry._strand == '-');
+  // don't think this fucntion is used so don't worry about 
+  // this crap too much.
+  mafBlockEntry._sequence->clear();
+  for (size_t i = 0; i < buffer.length(); ++i)
+  {
+    mafBlockEntry._sequence->append(buffer[i]);
+  }
   return is;
 }
 

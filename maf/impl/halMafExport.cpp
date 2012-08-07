@@ -74,9 +74,6 @@ void MafExport::convertSequence(ostream& mafStream,
                                 hal_size_t length,
                                 const Genome* root)
 {
-  cout << "calling cs on " << sequence->getName() << ",s=" << 
-     sequence->getStartPosition() << ",l=" << sequence->getSequenceLength()
-       << " start " << startPosition << " length " << length << endl;
   if (length == 0)
   {
     length = sequence->getSequenceLength();
