@@ -65,6 +65,12 @@ public:
    /** Get the index of the segment in the segment array */
    virtual hal_index_t getArrayIndex() const = 0;
 
+   /** Check whether segment is the first segment of a sequence */
+   virtual bool isFirst() const = 0;
+
+   /** Check whether segment is the last segment of a sequence */
+   virtual bool isLast() const = 0;
+
 
 protected:
    

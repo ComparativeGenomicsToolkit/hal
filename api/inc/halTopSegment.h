@@ -51,6 +51,16 @@ public:
     * @param botParseOffset offset */
    virtual void setBottomParseOffset(hal_offset_t botParseOffset) = 0;
 
+   /** Get the index of the parent of the left neighbour of this segment
+    * in the genome (use isLeft first to check the left  
+    * current segment is the first segment in a sequence) */
+   virtual hal_index_t getLeftParentIndex() const = 0;
+
+   /** Get the index of the parent of the right neighbour of this segment
+    * in the genome (use isRight right to check the left  
+    * current segment is the last segment in a sequence) */
+   virtual hal_index_t getRightParentIndex() const = 0;
+
    /** Test if the segment is the result of a simple inseriton (ie gap): 
     * both its left and right neighbours are adjacent in the parent
     *  (or are genome extremities) */

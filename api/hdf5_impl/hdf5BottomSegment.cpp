@@ -51,9 +51,6 @@ bool HDF5BottomSegment::isGapDeletion(hal_size_t i) const
   const Sequence* sequence = getSequence();
   HDF5Genome* childGenome =  reinterpret_cast<HDF5Genome*>(
     _genome->getChild(i));
-  hal_index_t seqStartIndex =  sequence->getBottomSegmentArrayIndex();
-  hal_index_t seqLastIndex = seqStartIndex + 
-     (hal_index_t)sequence->getNumBottomSegments() - 1;
 
   hal_index_t leftChildIndex = NULL_INDEX;
   const Sequence* leftChildSequence = NULL;
@@ -61,27 +58,25 @@ bool HDF5BottomSegment::isGapDeletion(hal_size_t i) const
   const Sequence* rightChildSequence = NULL;
 
   // walk down to child of left neighbour
-  if (_index != seqStartIndex)
+  if (isFirst() == false)
   {
-    HDF5BottomSegment leftSeg(_genome, _array, _index - 1);
-    if (leftSeg.getChildIndex(i) != NULL_INDEX)
+    leftChildIndex = getLeftChildIndex(i);
+    if (leftChildIndex != NULL_INDEX)
     {
       HDF5TopSegment leftChild(childGenome, &childGenome->_topArray,
-                               leftSeg.getChildIndex(i));
-      leftChildIndex = leftChild.getArrayIndex();
+                               leftChildIndex);
       leftChildSequence = leftChild.getSequence();
     }
   }
 
   // wlak down to child of right neighbour
-  if (_index != seqLastIndex)
+  if (isLast() == false)
   {
-    HDF5BottomSegment rightSeg(_genome, _array, _index + 1);
-    if (rightSeg.getChildIndex(i) != NULL_INDEX)
+    rightChildIndex = getRightChildIndex(i);
+    if (rightChildIndex != NULL_INDEX)
     {
       HDF5TopSegment rightChild(childGenome, &childGenome->_topArray,
-                                rightSeg.getChildIndex(i));
-      rightChildIndex = rightChild.getArrayIndex();
+                                rightChildIndex);
       rightChildSequence = rightChild.getSequence();
     }
   }

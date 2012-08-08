@@ -109,6 +109,16 @@ public:
     * @param botParseOffset offset */
    void setBottomParseOffset(hal_offset_t botParseOffset);
 
+   /** Get the index of the parent of the left neighbour of this segment
+    * returns NULL_INDEX if the left neighbour has no parent or the 
+    * current segment is the first segment in a sequence */
+   virtual hal_index_t getLeftParentIndex() const;
+
+   /** Get the index of the parent of the right neighbour of this segment
+    * returns NULL_INDEX if the right neighbour has no parent or the 
+    * current segment is the first segment in a sequence */
+   virtual hal_index_t getRightParentIndex() const;
+
    /** Test if the segment is the result of a simple inseriton (ie gap): 
     * both its left and right neighbours are adjacent in the parent
     *  (or are genome extremities) */
@@ -119,6 +129,13 @@ public:
 
    /** Get the index of the segment in the segment array */
    hal_index_t getArrayIndex() const;
+
+   /** Check whether segment is the first segment of a sequence */
+   bool isFirst() const;
+
+   /** Check whether segment is the last segment of a sequence */
+   bool isLast() const;
+
    
 protected:
 
@@ -240,13 +257,37 @@ inline void HDF5TopSegment::setBottomParseOffset(hal_offset_t parseOffset)
   _array->setValue(_index, bottomOffsetOffset, parseOffset);
 }
 
-
-
 inline hal_index_t HDF5TopSegment::getArrayIndex() const
 {
   return _index;
 }
 
+inline bool HDF5TopSegment::isFirst() const
+{
+  return _index == 0 || 
+     _index == (hal_index_t)getSequence()->getTopSegmentArrayIndex();
+}
+
+inline bool HDF5TopSegment::isLast() const
+{
+  return _index == (hal_index_t)_array->getSize() - 1 || 
+     _index == getSequence()->getTopSegmentArrayIndex() +
+     (hal_index_t)getSequence()->getNumTopSegments() - 1;
+}
+
+inline hal_index_t HDF5TopSegment::getLeftParentIndex() const
+{
+  assert(isFirst() == false);
+  HDF5TopSegment leftSeg(_genome, _array, _index - 1);
+  return leftSeg.getParentIndex();
+}
+
+inline hal_index_t HDF5TopSegment::getRightParentIndex() const
+{
+  assert(isLast() == false);
+  HDF5TopSegment rightSeg(_genome, _array, _index + 1);
+  return rightSeg.getParentIndex();
+}
 
 }
 

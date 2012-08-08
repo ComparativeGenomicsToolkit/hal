@@ -47,12 +47,8 @@ bool HDF5TopSegment::isGapInsertion() const
     return false;
   }
   
-  const Sequence* sequence = getSequence();
   HDF5Genome* parentGenome =  reinterpret_cast<HDF5Genome*>(
     _genome->getParent());
-  hal_index_t seqStartIndex =  sequence->getTopSegmentArrayIndex();
-  hal_index_t seqLastIndex = seqStartIndex + 
-     (hal_index_t)sequence->getNumTopSegments() - 1;
 
   hal_index_t leftParentIndex = NULL_INDEX;
   const Sequence* leftParentSequence = NULL;
@@ -60,27 +56,26 @@ bool HDF5TopSegment::isGapInsertion() const
   const Sequence* rightParentSequence = NULL;
 
   // walk up to parent of left neighbour
-  if (_index != seqStartIndex)
+  if (isFirst() == false)
   {
-    HDF5TopSegment leftSeg(_genome, _array, _index - 1);
-    if (leftSeg.getParentIndex() != NULL_INDEX)
+    leftParentIndex = getLeftParentIndex();
+    if (leftParentIndex != NULL_INDEX)
     {
       HDF5BottomSegment leftPar(parentGenome, &parentGenome->_bottomArray,
-                                leftSeg.getParentIndex());
-      leftParentIndex = leftPar.getArrayIndex();
+                                leftParentIndex);
       leftParentSequence = leftPar.getSequence();
     }
   }
 
   // wlak up to parent of right neighbour
-  if (_index != seqLastIndex)
+  if (isLast() == false)
   {
+    rightParentIndex = getRightParentIndex();
     HDF5TopSegment rightSeg(_genome, _array, _index + 1);
     if (rightSeg.getParentIndex() != NULL_INDEX)
     {
       HDF5BottomSegment rightPar(parentGenome, &parentGenome->_bottomArray,
-                                rightSeg.getParentIndex());
-      rightParentIndex = rightPar.getArrayIndex();
+                                 rightParentIndex);    
       rightParentSequence = rightPar.getSequence();
     }
   }

@@ -120,6 +120,18 @@ public:
     * @param parpArseOffset offset in parent */
    void setTopParseOffset(hal_offset_t parseOffset);
 
+   /** Get the index of the child of the left neighbour of this segment
+    * in the genome (use isLeft first to check if the left neighbour
+    * is in the same sequence)
+    * @param i index of child to set */
+   hal_index_t getLeftChildIndex(hal_size_t i) const;
+
+   /** Get the right of the child of the left neighbour of this segment
+    * in the genome (use isRight first to check if the right neighbour
+    * is in the same sequence)
+    * @param i index of child to set */
+   hal_index_t getRightChildIndex(hal_size_t i) const;
+
    /** Test if the segment is the result of a simple deletion (ie gap): 
     * both its left and right neighbours are adjacent in the child
     *  (or are genome extremities) 
@@ -128,6 +140,12 @@ public:
 
    /** Get the index of the segment in the segment array */
    hal_index_t getArrayIndex() const;
+
+   /** Check whether segment is the first segment of a sequence */
+   bool isFirst() const;
+
+   /** Check whether segment is the last segment of a sequence */
+   bool isLast() const;
 
    static H5::CompType dataType(hal_size_t numChildren);
    static hal_size_t numChildrenFromDataType(
@@ -288,6 +306,35 @@ inline hal_index_t HDF5BottomSegment::getArrayIndex() const
 {
   return _index;
 }
+
+inline bool HDF5BottomSegment::isFirst() const
+{
+  return _index == 0 || 
+     _index == (hal_index_t)getSequence()->getBottomSegmentArrayIndex();
 }
+
+inline bool HDF5BottomSegment::isLast() const
+{
+  return _index == (hal_index_t)_array->getSize() - 1 || 
+     _index == getSequence()->getBottomSegmentArrayIndex() +
+     (hal_index_t)getSequence()->getNumBottomSegments() - 1;
+}
+
+inline hal_index_t HDF5BottomSegment::getLeftChildIndex(hal_size_t i) const
+{
+  assert(isFirst() == false);
+  HDF5BottomSegment leftSeg(_genome, _array, _index - 1);
+  return leftSeg.getChildIndex(i);
+}
+
+inline hal_index_t HDF5BottomSegment::getRightChildIndex(hal_size_t i) const
+{
+  assert(isLast() == false);
+  HDF5BottomSegment rightSeg(_genome, _array, _index + 1);
+  return rightSeg.getChildIndex(i);
+}
+
+}
+
 
 #endif
