@@ -66,6 +66,10 @@ public:
     *  (or are genome extremities) */
    virtual bool isGapInsertion() const = 0;
 
+   /** Test if the segment is an inversion between two sets of homologous
+    * segments.  ie its left and right neighbours' parents are adjacent
+    * to its parent in the ancestor, but the oriernations are different */
+   virtual bool isSimpleInversion() const = 0;
 
 protected:
 

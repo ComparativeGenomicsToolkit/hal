@@ -106,6 +106,90 @@ bool HDF5TopSegment::isGapInsertion() const
   return false;
 }
 
+// TODO: should probably be sharing more code with isGapInsertion()...
+bool HDF5TopSegment::isSimpleInversion() const
+{
+  if (getParentIndex() == NULL_INDEX || 
+      getNextParalogyIndex() != NULL_INDEX)
+  {
+    return false;
+  }
+  
+  HDF5Genome* parentGenome =  reinterpret_cast<HDF5Genome*>(
+    _genome->getParent());
+
+  hal_index_t leftParentIndex = NULL_INDEX;
+  const Sequence* leftParentSequence = NULL;
+  bool leftParentReversed = false;
+  hal_index_t rightParentIndex = NULL_INDEX;
+  const Sequence* rightParentSequence = NULL;
+  bool rightParentReversed = false;
+  hal_index_t parentIndex = getParentIndex();
+  bool parentReversed = getParentReversed();
+
+  // walk up to parent of left neighbour
+  if (isFirst() == false)
+  {
+    leftParentIndex = getLeftParentIndex();
+    if (leftParentIndex != NULL_INDEX)
+    {
+      HDF5BottomSegment leftPar(parentGenome, &parentGenome->_bottomArray,
+                                leftParentIndex);
+      leftParentSequence = leftPar.getSequence();
+      HDF5TopSegment leftSeg(_genome, _array, _index - 1);
+      leftParentReversed = leftSeg.getParentReversed();
+    }
+  }
+
+  // wlak up to parent of right neighbour
+  if (isLast() == false)
+  {
+    rightParentIndex = getRightParentIndex();
+    HDF5TopSegment rightSeg(_genome, _array, _index + 1);
+    if (rightSeg.getParentIndex() != NULL_INDEX)
+    {
+      HDF5BottomSegment rightPar(parentGenome, &parentGenome->_bottomArray,
+                                 rightParentIndex);
+      rightParentSequence = rightPar.getSequence();
+      HDF5TopSegment rightSeg(_genome, _array, _index + 1);
+      rightParentReversed = rightSeg.getParentReversed();
+    }
+  }
+
+  // case 1) simple inversion inside a sequence
+  if (leftParentIndex != NULL_INDEX && rightParentIndex != NULL_INDEX &&
+      abs(rightParentIndex - leftParentIndex) == 2 &&
+      abs(parentIndex - leftParentIndex) == 1 &&
+      abs(parentIndex - rightParentIndex) == 1 &&
+      parentReversed != leftParentReversed &&
+      parentReversed != rightParentReversed &&
+      leftParentSequence == rightParentSequence)
+  {
+    return true;
+  }
+
+  // case 2) simple inversion at beginning of sequence
+  if (leftParentIndex == NULL_INDEX && rightParentIndex != NULL_INDEX &&
+      rightParentIndex == rightParentSequence->getBottomSegmentArrayIndex() &&
+      abs(parentIndex - rightParentIndex) == 1 &&
+      parentReversed != rightParentReversed)
+  {
+    return true;
+  }
+  
+  // case 3) simple inversion at end of sequence
+  if (rightParentIndex == NULL_INDEX && leftParentIndex != NULL_INDEX &&
+      leftParentIndex == leftParentSequence->getBottomSegmentArrayIndex() +
+      (hal_index_t)leftParentSequence->getNumBottomSegments() - 1 &&
+      abs(parentIndex - leftParentIndex) == 1 &&
+      parentReversed != leftParentReversed)
+  {
+    return true;
+  }
+
+  return false;
+}
+
 H5::CompType HDF5TopSegment::dataType()
 {
   // the in-memory representations and hdf5 representations 

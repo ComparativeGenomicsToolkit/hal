@@ -123,7 +123,11 @@ public:
     * both its left and right neighbours are adjacent in the parent
     *  (or are genome extremities) */
    bool isGapInsertion() const;
-
+   
+   /** Test if the segment is an inversion between two sets of homologous
+    * segments.  ie its left and right neighbours' parents are adjacent
+    * to its parent in the ancestor, but the oriernations are different */
+   bool isSimpleInversion() const;
 
    static H5::CompType dataType();
 

@@ -48,7 +48,6 @@ bool HDF5BottomSegment::isGapDeletion(hal_size_t i) const
     return false;
   }
 
-  const Sequence* sequence = getSequence();
   HDF5Genome* childGenome =  reinterpret_cast<HDF5Genome*>(
     _genome->getChild(i));
 
