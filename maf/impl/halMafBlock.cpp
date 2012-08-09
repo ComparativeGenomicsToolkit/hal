@@ -24,7 +24,7 @@ MafBlock::~MafBlock()
   }
   for (size_t j = 0; j < _stringBuffers.size(); ++j)
   {
-    delete [] _stringBuffers[j];
+    delete _stringBuffers[j];
   }
 }
 
