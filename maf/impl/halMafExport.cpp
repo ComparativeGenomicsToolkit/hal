@@ -100,7 +100,6 @@ void MafExport::convertSequence(ostream& mafStream,
   hal_index_t genomeStart = sequence->getStartPosition() + startPosition;
   hal_index_t genomeEnd = genomeStart + (hal_index_t)length;
   size_t numBlocks = 0;
-  size_t i = 0;
   while (colIt->getArrayIndex() < genomeEnd)
   {
     if (_mafBlock.canAppendColumn(colIt) == false)
