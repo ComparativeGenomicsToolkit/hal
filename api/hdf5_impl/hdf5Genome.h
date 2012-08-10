@@ -135,6 +135,8 @@ public:
                              hal_size_t start,
                              hal_size_t length);
 
+   RearrangementPtr getRearrangement(hal_index_t position) const;
+
    // HDF5 SPECIFIC 
    void write();
    void read();

@@ -116,6 +116,11 @@ public:
                              hal_size_t start,
                              hal_size_t length) = 0;
 
+   /** Get a rearrangement object 
+    * @param position Position of topsegment defining first breakpoint of
+    * rearrangement */
+   virtual RearrangementPtr getRearrangement(
+     hal_index_t position = 0) const = 0;
 
 protected:
 

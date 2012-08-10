@@ -95,6 +95,8 @@ public:
                              hal_size_t start,
                              hal_size_t length);
 
+   RearrangementPtr getRearrangement(hal_index_t position) const;
+
    // LOCAL NON-INTERFACE METHODS
 
    static H5::CompType dataType(hal_size_t maxNameLength);

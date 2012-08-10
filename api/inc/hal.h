@@ -81,5 +81,6 @@
 #include "halDNAIterator.h"
 #include "halValidate.h"
 #include "halColumnIterator.h"
+#include "halRearrangement.h"
 
 #endif

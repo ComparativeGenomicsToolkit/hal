@@ -16,6 +16,7 @@
 #include "hdf5BottomSegmentIterator.h"
 #include "hdf5DNAIterator.h"
 #include "defaultColumnIterator.h"
+#include "defaultRearrangement.h"
 
 using namespace hal;
 using namespace std;
@@ -570,6 +571,14 @@ void HDF5Genome::setSubString(const string& inString,
   }
   HDF5DNAIterator dnaIt(this, start);
   dnaIt.writeString(inString, length);
+}
+
+RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position) const
+{
+  TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
+  DefaultRearrangement* rea = new DefaultRearrangement();
+  rea->identifyFromLeftBreakpoint(top);
+  return RearrangementPtr(rea);
 }
   
 // LOCAL NON-INTERFACE METHODS
