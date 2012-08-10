@@ -61,6 +61,16 @@ public:
 
    /** Get the index of the column in the reference genome's array */
    virtual hal_index_t getArrayIndex() const = 0;
+
+   /** As we iterate along, we keep a column map entry for each sequence
+    * visited.  This works out pretty well except for extreme cases (such
+    * as iterating over entire fly genomes where we can accumulate 10s of 
+    * thousands of empty entries for all the different scaffolds when 
+    * in truth we only need a handful at any given time). Under these
+    * circumstances, calling this method every 1M bases or so will help
+    * reduce memory as well as speed up queries on the column map. Perhaps
+    * this should eventually be built in and made transparent? */
+   virtual void defragment() const = 0;
    
 protected:
    friend class counted_ptr<ColumnIterator>;

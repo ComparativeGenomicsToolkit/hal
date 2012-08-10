@@ -41,6 +41,8 @@ public:
 
    hal_index_t getArrayIndex() const;
 
+   void defragment() const;
+
 private:
 
    struct LinkedTopIterator;

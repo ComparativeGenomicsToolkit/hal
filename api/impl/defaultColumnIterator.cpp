@@ -142,6 +142,23 @@ hal_index_t DefaultColumnIterator::getArrayIndex() const
   return _stack.top()._index;
 }
 
+void DefaultColumnIterator::defragment() const
+{
+  ColumnMap::iterator i = _colMap.begin();
+  ColumnMap::iterator next;
+  while ( i != _colMap.end())
+  {
+    next = i;
+    ++next;
+    if (i->second->empty())
+    {
+      delete i->second;
+      _colMap.erase(i);
+    }
+    i = next;
+  }
+}
+
 void DefaultColumnIterator::init(const Sequence* ref, hal_index_t index,
                                  bool endIterator) const
 { 

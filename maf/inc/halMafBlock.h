@@ -44,6 +44,7 @@ struct MafBlockEntry
    hal_index_t _start;
    hal_index_t _length;
    char _strand;
+   short _lastUsed;
    hal_index_t _srcLength;
    MafBlockString* _sequence;
 };
@@ -130,7 +131,7 @@ inline char* MafBlockString::str()
 }
 
 inline MafBlockEntry::MafBlockEntry(std::vector<MafBlockString*>& buffers) : 
-  _buffers(buffers) 
+  _buffers(buffers), _lastUsed(0) 
 {
   if (_buffers.empty() == false) 
   {

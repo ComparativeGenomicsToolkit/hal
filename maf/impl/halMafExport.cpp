@@ -99,11 +99,19 @@ void MafExport::convertSequence(ostream& mafStream,
   // be updated for this as well)
   hal_index_t genomeStart = sequence->getStartPosition() + startPosition;
   hal_index_t genomeEnd = genomeStart + (hal_index_t)length;
+  size_t numBlocks = 0;
+  size_t i = 0;
   while (colIt->getArrayIndex() < genomeEnd)
   {
     if (_mafBlock.canAppendColumn(colIt) == false)
     {
-      mafStream << _mafBlock << endl;
+      // erase empty entries from the column.  helps when there are 
+      // millions of sequences (ie from fastas with lots of scaffolds)
+      if (numBlocks++ % 1000 == 0)
+      {
+        colIt->defragment();
+      }
+      mafStream << _mafBlock << '\n';
       _mafBlock.initBlock(colIt);
       assert(_mafBlock.canAppendColumn(colIt) == true);
     }

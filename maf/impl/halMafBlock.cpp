@@ -34,21 +34,39 @@ void MafBlock::resetEntries()
   Entries::iterator i = _entries.begin();
   Entries::iterator next;
   MafBlockEntry* e;
+  bool deleted;
   while (i != _entries.end())
   {
     next = i;
     ++next;
     e = i->second;
-    if (e->_start == NULL_INDEX && next != _entries.end() &&  
-        i->first == next->first)
+    deleted = false;
+
+    //every time we reset an entry, we check if was empty.
+    //if it was, then we increase lastUsed, otherwise we reset it to
+    // 0. this way, if an entry isn't used within 10 consecutive resets
+    //we ditch it.  this is a tuning parameter to balance between not
+    //creating and destroying entries every time there is a delete and
+    //not keeping track of thousands of entries (fly scaffolds) which 
+    //don't get used but bog down all set operations in the flys. 
+    if (e->_start == NULL_INDEX)
     {
-      // Never got written to in the last block, so we give up
-      // and remove it.  But we keep one entry per sequence visited
-      // so only remove if next has the same name.  
-      delete i->second;
-      _entries.erase(i);
+      if (e->_lastUsed > 10)
+      {
+        delete i->second;
+        _entries.erase(i);
+        deleted = true;
+      }
+      else
+      {
+        ++e->_lastUsed;
+      }
     }
     else
+    {
+      e->_lastUsed = 0;
+    }
+    if (deleted == false)
     {
       assert (e->_start == NULL_INDEX || e->_length > 0);
       assert (e->_name == i->first->getName());
