@@ -24,6 +24,8 @@ class TopSegmentIterator : public SegmentIterator
 public:
    virtual TopSegmentIteratorPtr copy() = 0;
    virtual TopSegmentIteratorConstPtr copy() const = 0;
+   virtual void copy(TopSegmentIteratorConstPtr ts) const = 0;
+
    virtual void toChild(BottomSegmentIteratorConstPtr bs, 
                         hal_size_t child) const = 0;
    virtual void toParseUp(BottomSegmentIteratorConstPtr bs) const = 0;

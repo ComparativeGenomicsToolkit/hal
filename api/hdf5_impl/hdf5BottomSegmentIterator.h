@@ -52,6 +52,7 @@ public:
    //BOTTOM ITERATOR METHODS
    BottomSegmentIteratorPtr copy();
    BottomSegmentIteratorConstPtr copy() const;
+   void copy(BottomSegmentIteratorConstPtr bs) const;
    void toParent(TopSegmentIteratorConstPtr ts) const; 
    void toParseDown(TopSegmentIteratorConstPtr ts) const;
    BottomSegment* getBottomSegment();

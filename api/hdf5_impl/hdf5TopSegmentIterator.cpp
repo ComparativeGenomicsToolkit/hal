@@ -351,6 +351,18 @@ TopSegmentIteratorConstPtr HDF5TopSegmentIterator::copy() const
   return TopSegmentIteratorConstPtr(newIt);
 }
 
+void HDF5TopSegmentIterator::copy(TopSegmentIteratorConstPtr ts) const
+{
+  assert(ts.get() != NULL);
+  const HDF5TopSegmentIterator* h5ts = 
+     reinterpret_cast<const HDF5TopSegmentIterator*>(ts.get());
+  _topSegment._genome = h5ts->_topSegment._genome;
+  _topSegment._index = h5ts->_topSegment._index;
+  _startOffset = h5ts->_startOffset;
+  _endOffset = h5ts->_endOffset;
+  _reversed = h5ts->_reversed;
+}
+
 TopSegment* HDF5TopSegmentIterator::getTopSegment()
 {
   return &_topSegment;

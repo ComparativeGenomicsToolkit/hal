@@ -23,6 +23,7 @@ class BottomSegmentIterator : public SegmentIterator
 public:
    virtual BottomSegmentIteratorPtr copy() = 0;
    virtual BottomSegmentIteratorConstPtr copy() const = 0;
+   virtual void copy(BottomSegmentIteratorConstPtr bs) const = 0;
    virtual void toParent(TopSegmentIteratorConstPtr ts) const = 0; 
    virtual void toParseDown(TopSegmentIteratorConstPtr bs) const = 0;
    virtual BottomSegment* getBottomSegment() = 0;

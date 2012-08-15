@@ -106,6 +106,18 @@ bool HDF5BottomSegment::isGapDeletion(hal_size_t i) const
   return false;
 }
 
+bool HDF5BottomSegment::isSimpleInversion(hal_size_t i) const
+{
+  if (getChildIndex(i) == NULL_INDEX)
+  {
+    return false;
+  }
+  HDF5Genome* childGenome =  reinterpret_cast<HDF5Genome*>(
+    _genome->getChild(i));
+  HDF5TopSegment ts(childGenome, &childGenome->_topArray, getChildIndex(i));
+  return ts.isSimpleInversion();
+}
+
 H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
 {
   // the in-memory representations and hdf5 representations 

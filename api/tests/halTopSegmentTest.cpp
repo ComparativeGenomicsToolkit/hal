@@ -566,8 +566,8 @@ void TopSegmentIsGapTest::createCallBack(AlignmentPtr alignment)
   // just having a null parent is not enough for an insertion
   bi = parent1->getBottomSegmentIterator(2);
   ti = child1->getTopSegmentIterator(2);
-  assert(bi->getBottomSegment()->getChildIndex(0) == 10 &&
-         ti->getTopSegment()->getParentIndex() == 10);
+  assert(bi->getBottomSegment()->getChildIndex(0) == 2 &&
+         ti->getTopSegment()->getParentIndex() == 2);
   ti->getTopSegment()->setParentIndex(NULL_INDEX);
 }
 

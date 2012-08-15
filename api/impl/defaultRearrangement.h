@@ -37,21 +37,58 @@ public:
    void setGapLengthThreshold(hal_size_t threshold);
 
 private:
+   
+   void resetStatus(TopSegmentIteratorConstPtr topSegment);
+
+   // traversal shortcuts used to skip gaps.
+   // left is always left in genome coordiantes (even if iterator is 
+   // inverted)
+   void findRight(TopSegmentIteratorConstPtr inLeft,
+                  TopSegmentIteratorConstPtr outRight);
+   void findLeft(TopSegmentIteratorConstPtr inRight,
+                 TopSegmentIteratorConstPtr outLeft);
+   void findRight(BottomSegmentIteratorConstPtr inLeft,
+                  BottomSegmentIteratorConstPtr outRight);
+   void findLeft(BottomSegmentIteratorConstPtr inRight,
+                 BottomSegmentIteratorConstPtr outLeft);
+
+   void findParents(TopSegmentIteratorConstPtr inLeft, 
+                    TopSegmentIteratorConstPtr inRight,
+                    BottomSegmentIteratorConstPtr outParentLeft,
+                    BottomSegmentIteratorConstPtr outParentRight);
+
+   void findChilds(BottomSegmentIteratorConstPtr inParentLeft, 
+                   BottomSegmentIteratorConstPtr inParentRight,
+                   TopSegmentIteratorConstPtr outLeft,
+                   TopSegmentIteratorConstPtr outRight);
+
+   // cycle traversals
+   bool scanInversionCycle();
+   bool scanInsertionCycle();
+   bool scanDeletionCycle();
+
+private:
 
    static const hal_size_t DefaultGapThreshold;
    
    hal_size_t _gapThreshold;
 
-   TopSegmentIteratorConstPtr _left;
-   TopSegmentIteratorConstPtr _right;
-   BottomSegmentIteratorConstPtr _leftParent;
-   BottomSegmentIteratorConstPtr _rightParent;
+   TopSegmentIteratorConstPtr _startLeft, _startRight;
+   TopSegmentIteratorConstPtr _startLeft2, _startRight2;
+   TopSegmentIteratorConstPtr _endLeft, _endRight;
+   BottomSegmentIteratorConstPtr _parentStartLeft, _parentStartRight;
+   BottomSegmentIteratorConstPtr _parentEndLeft, _parentEndRight;
+   
+   hal_size_t _childIndex;
+   const Genome* _genome;
+   const Genome* _parent;
 
    ID _id;
    hal_size_t _length;
    hal_size_t _numGaps;
    hal_size_t _numGapBases;
    hal_size_t _dupDegree;   
+  
 };
 
 

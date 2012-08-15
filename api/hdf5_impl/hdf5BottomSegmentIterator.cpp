@@ -356,6 +356,18 @@ BottomSegmentIteratorConstPtr HDF5BottomSegmentIterator::copy() const
   return BottomSegmentIteratorConstPtr(newIt);
 }
 
+void HDF5BottomSegmentIterator::copy(BottomSegmentIteratorConstPtr bs) const
+{
+  assert(bs.get() != NULL);
+  const HDF5BottomSegmentIterator* h5bs = 
+     reinterpret_cast<const HDF5BottomSegmentIterator*>(bs.get());
+  _bottomSegment._genome = h5bs->_bottomSegment._genome;
+  _bottomSegment._index = h5bs->_bottomSegment._index;
+  _startOffset = h5bs->_startOffset;
+  _endOffset = h5bs->_endOffset;
+  _reversed = h5bs->_reversed;
+}
+
 BottomSegment* HDF5BottomSegmentIterator::getBottomSegment()
 {
   return &_bottomSegment;

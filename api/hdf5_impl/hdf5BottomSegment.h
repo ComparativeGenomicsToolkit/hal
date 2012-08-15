@@ -138,6 +138,12 @@ public:
     * @param i index of child genome */
    virtual bool isGapDeletion(hal_size_t i) const;
 
+   /** Test if the segment is an inversion between two sets of homologous
+    * segments.  ie its left and right neighbours' childs are adjacent
+    * to its child in the descendant, but the oriernations are different 
+    * @param i index of child genome */
+   bool isSimpleInversion(hal_size_t i) const;
+
    /** Get the index of the segment in the segment array */
    hal_index_t getArrayIndex() const;
 

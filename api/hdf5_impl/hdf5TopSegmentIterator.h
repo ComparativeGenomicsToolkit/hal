@@ -49,6 +49,7 @@ public:
    //TOP ITERATOR METHODS
    TopSegmentIteratorPtr copy();
    TopSegmentIteratorConstPtr copy() const;
+   void copy(TopSegmentIteratorConstPtr ts) const;
    void toChild(BottomSegmentIteratorConstPtr bs, 
                         hal_size_t child) const;
    void toParseUp(BottomSegmentIteratorConstPtr bs) const;

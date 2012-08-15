@@ -25,7 +25,9 @@ class Rearrangement
 public:
 
    enum ID { Insertion, Deletion, Duplication, Translocation, 
-             Transposition, Inversion, Gap, Complex, Invalid };
+             Transposition, Inversion, GapInsertion, GapDeletion,
+             Complex, Telomere, TelomereInsertion, TelomereDeletion,
+             Invalid };
 
    /** Get the ID of the rearrangement */
    virtual ID getID() const = 0;
