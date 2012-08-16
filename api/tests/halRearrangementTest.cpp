@@ -29,15 +29,14 @@ void addIdenticalParentChild(hal::AlignmentPtr alignment,
   Genome* parent = alignment->addRootGenome("parent");
   Genome* child = alignment->addLeafGenome("child", "parent", 1);
 
-  size_t sequenceLength = segmentLength * numSegmentsPerSequence;
-  size_t numSegments = numSequences * numSegmentsPerSequence;
- 
   for (size_t i = 0; i < numSequences; ++i)
   {
     stringstream ss;
     ss << "Sequence" << i;
     string name = ss.str();
-    seqVec[i] = Sequence::Info(name, sequenceLength, numSegments, numSegments);
+    seqVec[i] = Sequence::Info(name, segmentLength * numSegmentsPerSequence, 
+                               numSegmentsPerSequence, 
+                               numSegmentsPerSequence);
   }
   parent->setDimensions(seqVec);
   child->setDimensions(seqVec);
@@ -122,6 +121,71 @@ void RearrangementInsertionTest::checkCallBack(AlignmentConstPtr alignment)
   
 }
 
+void RearrangementSimpleInversionTest::createCallBack(AlignmentPtr alignment)
+{
+  size_t numSequences = 3;
+  size_t numSegmentsPerSequence = 10;
+  size_t segmentLength = 50;
+  
+  addIdenticalParentChild(alignment, numSequences, numSegmentsPerSequence,
+                          segmentLength);
+
+  Genome* parent = alignment->openGenome("parent");
+  Genome* child = alignment->openGenome("child");
+
+  // inversion on 1st segment (interior)
+  BottomSegmentIteratorPtr bi = parent->getBottomSegmentIterator(1);
+  TopSegmentIteratorPtr ti = child->getTopSegmentIterator(1);
+  bi->getBottomSegment()->setChildReversed(0, true);
+  ti->getTopSegment()->setParentReversed(true);
+  
+  // inversion on last segment of first sequence
+  bi = parent->getBottomSegmentIterator(numSegmentsPerSequence - 1);
+  ti = child->getTopSegmentIterator(numSegmentsPerSequence - 1);
+  bi->getBottomSegment()->setChildReversed(0, true);
+  ti->getTopSegment()->setParentReversed(true);
+
+  // inversion on first segment of 3rd sequence
+  bi = parent->getBottomSegmentIterator(numSegmentsPerSequence * 2);
+  ti = child->getTopSegmentIterator(numSegmentsPerSequence * 2);
+  bi->getBottomSegment()->setChildReversed(0, true);
+  ti->getTopSegment()->setParentReversed(true);  
+}
+
+void 
+RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  BottomSegmentIteratorConstPtr bi;
+  TopSegmentIteratorConstPtr ti;
+
+  const Genome* child = alignment->openGenome("child");
+  const Genome* parent = alignment->openGenome("parent");
+  
+  size_t numSequences = child->getNumSequences();
+  size_t numSegmentsPerSequence = 
+     child->getSequenceIterator()->getSequence()->getNumTopSegments();
+  size_t segmentLength = 
+     child->getTopSegmentIterator()->getTopSegment()->getLength();
+  
+  RearrangementPtr r = child->getRearrangement();
+  do
+  {
+    hal_index_t leftIdx = 
+       r->getLeftBreakpoint()->getTopSegment()->getArrayIndex();
+    cout << leftIdx << ") " << r->getID() << endl;
+    if (leftIdx == 1 || leftIdx == numSegmentsPerSequence - 1 ||
+        leftIdx == (numSegmentsPerSequence * 2) )
+    {
+      CuAssertTrue(_testCase, r->getID() == Rearrangement::Inversion);
+    }
+    else
+    {
+      CuAssertTrue(_testCase, r->getID() != Rearrangement::Inversion);
+    }
+  }
+  while (r->identifyNext() == true);
+}
+
 void halRearrangementInsertionTest(CuTest *testCase)
 {
   try 
@@ -135,10 +199,24 @@ void halRearrangementInsertionTest(CuTest *testCase)
   } 
 }
 
+void halRearrangementSimpleInversionTest(CuTest *testCase)
+{
+  try 
+  {
+    RearrangementSimpleInversionTest tester;
+    tester.check(testCase);
+  }
+   catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
 CuSuite* halRearrangementTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halRearrangementInsertionTest);
+  SUITE_ADD_TEST(suite, halRearrangementSimpleInversionTest);
   return suite;
 }
 

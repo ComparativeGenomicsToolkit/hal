@@ -78,22 +78,40 @@ TopSegmentIteratorConstPtr DefaultRearrangement::getRightBreakpoint() const
 bool DefaultRearrangement::identifyFromLeftBreakpoint(
   TopSegmentIteratorConstPtr topSegment)
 {
-  // initalise the object
-  resetStatus(topSegment);
+  if (scanInversionCycle(topSegment) == true)
+  {
+    _id = Inversion;
+  }
+  else if (scanInsertionCycle(topSegment) == true)
+  {
+    _id = Insertion;
+  }
+  else if (scanDeletionCycle(topSegment) == true)
+  {
+    _id = Deletion;
+  }
+  else
+  {
+    _id = Complex;
+  }
   
-  // Determine cycle by 1) scanning right (skipping gaps).
-  // Scan up (first segment with a parent)
-  // Scan left (skipping gaps)
-  // scan down (first segment with a child)
-  
-  return false;
+  return true;
 }
 
 bool DefaultRearrangement::identifyNext()
 {
-  _startLeft->copy(_endRight);
-  _startLeft->toRight();
-  return identifyFromLeftBreakpoint(_startLeft);
+  if (_endRight->getTopSegment()->getArrayIndex() == 
+      _genome->getNumTopSegments() - 1)
+  {
+    return false;
+  }
+  else
+  {
+    _startLeft->copy(_endRight);
+    _startLeft->toRight();
+    bool res = identifyFromLeftBreakpoint(_startLeft);
+    return res;
+  }
 }
 
 hal_size_t DefaultRearrangement::getGapLengthThreshold() const
@@ -148,17 +166,37 @@ void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
     _startLeft2 = _genome->getTopSegmentIterator();
     _startRight = _genome->getTopSegmentIterator();
     _startRight2 = _genome->getTopSegmentIterator();
+    _endLeft = _genome->getTopSegmentIterator();
+    _endRight = _genome->getTopSegmentIterator();
     _parentStartLeft = _parent->getBottomSegmentIterator();
     _parentEndLeft = _parent->getBottomSegmentIterator();
     _parentStartRight = _parent->getBottomSegmentIterator();
     _parentEndRight = _parent->getBottomSegmentIterator();
   }
   findRight(_startLeft, _startRight);
+  _endLeft->copy(_startRight);
+  _endRight->copy(_startRight);
 
   assert(_genome != NULL);
   assert(_startLeft.get() != NULL);
   assert(_parent != NULL);
   assert(_parent->getChild(_childIndex) == _genome);
+}
+
+bool DefaultRearrangement::isGap(TopSegmentIteratorConstPtr topSegment)
+{
+  return (topSegment->getTopSegment()->isGapInsertion() ||
+     topSegment->getTopSegment()->isSimpleInversion()) &&
+     topSegment->getLength() <= _gapThreshold;
+}
+
+
+bool DefaultRearrangement::isGap(BottomSegmentIteratorConstPtr bottomSegment)
+{
+  return 
+     (bottomSegment->getBottomSegment()->isGapDeletion(_childIndex) ||
+      bottomSegment->getBottomSegment()->isSimpleInversion(_childIndex)) &&
+     bottomSegment->getLength() <= _gapThreshold;
 }
 
 void DefaultRearrangement::findRight(TopSegmentIteratorConstPtr inLeft,
@@ -173,10 +211,14 @@ void DefaultRearrangement::findRight(TopSegmentIteratorConstPtr inLeft,
   while (outRight->getTopSegment()->isLast() == false)
   {
     outRight->toRight();
-    if (outRight->getTopSegment()->isGapInsertion() == false &&
-        outRight->getTopSegment()->isSimpleInversion() == false)
+    if (isGap(outRight) == false)
     {
+      outRight->toLeft();
       break;
+    }
+    else
+    {
+      outRight->toRight();
     }
   }
   assert(outRight->getTopSegment()->getArrayIndex() >= 
@@ -195,10 +237,14 @@ void DefaultRearrangement::findLeft(TopSegmentIteratorConstPtr inRight,
   while (outLeft->getTopSegment()->isFirst() == false)
   {
     outLeft->toLeft();
-    if (outLeft->getTopSegment()->isGapInsertion() == false &&
-        outLeft->getTopSegment()->isSimpleInversion() == false)
+    if (isGap(outLeft) == false)
     {
+      outLeft->toRight();
       break;
+    }
+    else
+    {
+      outLeft->toLeft();
     }
   }
   assert(inRight->getTopSegment()->getArrayIndex() >= 
@@ -217,8 +263,7 @@ void DefaultRearrangement::findRight(BottomSegmentIteratorConstPtr inLeft,
   while (outRight->getBottomSegment()->isLast() == false)
   {
     outRight->toRight();
-    if (outRight->getBottomSegment()->isGapDeletion(_childIndex) == false &&
-        outRight->getBottomSegment()->isSimpleInversion(_childIndex) == false)
+    if (isGap(outRight) == false)
     {
       outRight->toLeft();
       break;
@@ -244,8 +289,7 @@ void DefaultRearrangement::findLeft(BottomSegmentIteratorConstPtr inRight,
   while (outLeft->getBottomSegment()->isFirst() == false)
   {
     outLeft->toLeft();
-    if (outLeft->getBottomSegment()->isGapDeletion(_childIndex) == false &&
-        outLeft->getBottomSegment()->isSimpleInversion(_childIndex) == false)
+    if (isGap(outLeft) == false)
     {
       outLeft->toRight();
       break;
@@ -342,64 +386,34 @@ DefaultRearrangement::findChilds(BottomSegmentIteratorConstPtr inParentLeft,
 
 }
 
-// try to find a cycle like the following (barring gaps)
-// right one segment
-// up one segment
-// left one segment
-// down one segment
-bool DefaultRearrangement::scanInversionCycle()
+// Segment is an inverted descendant of another Segment
+// (Note that it can still be part of a more complex operation 
+// such as a transposition -- which would have to be tested for
+// in the insertion cycle code.  so this method is insufficient to
+// return an ID=Inversion)
+bool DefaultRearrangement::scanInversionCycle(
+  TopSegmentIteratorConstPtr topSegment)
 {
-  // move right one segment
-  if (_startLeft->getTopSegment()->isLast() == true)
+  resetStatus(topSegment);
+  
+  if (_startLeft->hasParent() == true && 
+      _startLeft->getTopSegment()->getParentReversed() == true)
   {
-    return false;
-  }
-  assert(_startLeft->getReversed() == false);
-  findRight(_startLeft, _startRight);
-  _endLeft->copy(_startRight);
-  _endLeft->toRight();
-  findRight(_endLeft, _endRight);
+    assert(_startRight->hasParent() == true);
+    assert(_startRight->getTopSegment()->getParentReversed() == true);
 
-  // move up one segment
-  if (_endLeft->hasParent() == false || 
-      _endLeft->getTopSegment()->getParentReversed() == false)
-  {
-    return false;
-  }
-  findParents(_endLeft, _endRight, _parentEndLeft, _parentEndRight);
-  
-  // move left one segment
-  _parentStartLeft->copy(_parentEndLeft);
-  _parentStartRight->copy(_parentEndRight);
-  if (_parentEndLeft->getBottomSegment()->isFirst() == true)
-  {
-    return true;
-  }
-  _parentStartLeft->toLeft();
-  findLeft(_parentStartLeft, _parentStartRight);
-  swap(_parentStartLeft, _parentStartRight);
-  
-  // move down one segment
-  if (_parentStartLeft->hasChild(_childIndex) == true)
-  {
-    findChilds(_parentStartLeft, _parentStartRight, _startLeft2, _startRight2);
-  }
-  
-  if (_startLeft->equals(_startLeft2))
-  {
-    assert(_startRight->equals(_startRight2));
-    return true;
+    findParents(_startLeft, _startRight, _parentStartLeft, _parentStartRight);
+    _parentEndLeft->copy(_parentStartRight);
+    _parentEndRight->copy(_parentStartRight);
+    _startLeft2->toChild(_parentStartRight, _childIndex);
+    _startRight2->toChild(_parentStartLeft, _childIndex);
+    
+    if (_startLeft2->equals(_startLeft) == true &&
+        _startRight2->equals(_startRight) == true)
+    {
+      return true;
+    }
   }
 
-  return false;
-}
-
-// try to find a cycle like the following (barring gaps)
-// up one segment
-// right one segment
-// down one segment
-// left two segments
-bool DefaultRearrangement::scanInsertionCycle()
-{
   return false;
 }

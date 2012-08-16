@@ -268,12 +268,14 @@ inline hal_index_t HDF5TopSegment::getArrayIndex() const
 
 inline bool HDF5TopSegment::isFirst() const
 {
+  assert(getSequence() != NULL);
   return _index == 0 || 
      _index == (hal_index_t)getSequence()->getTopSegmentArrayIndex();
 }
 
 inline bool HDF5TopSegment::isLast() const
 {
+  assert(getSequence() != NULL);
   return _index == (hal_index_t)_array->getSize() - 1 || 
      _index == getSequence()->getTopSegmentArrayIndex() +
      (hal_index_t)getSequence()->getNumTopSegments() - 1;

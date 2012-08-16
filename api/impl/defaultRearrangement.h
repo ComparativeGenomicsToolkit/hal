@@ -40,6 +40,9 @@ private:
    
    void resetStatus(TopSegmentIteratorConstPtr topSegment);
 
+   bool isGap(TopSegmentIteratorConstPtr topSegment);
+   bool isGap(BottomSegmentIteratorConstPtr bottomSegment);
+
    // traversal shortcuts used to skip gaps.
    // left is always left in genome coordiantes (even if iterator is 
    // inverted)
@@ -62,10 +65,22 @@ private:
                    TopSegmentIteratorConstPtr outLeft,
                    TopSegmentIteratorConstPtr outRight);
 
-   // cycle traversals
-   bool scanInversionCycle();
-   bool scanInsertionCycle();
-   bool scanDeletionCycle();
+   // Inversion Module 
+   bool scanInversionCycle(TopSegmentIteratorConstPtr topSegment);
+
+   // Insertion Modules
+   // see defaultRearrangementIns.cpp
+   bool scanInsertionCycle(TopSegmentIteratorConstPtr topSegment);
+   bool middleInsertion();
+   bool startInsertion();
+   bool endInsertion();
+   
+   // Deletion Modules
+   // see defaultRearrangementDel.cpp
+   bool scanDeletionCycle(TopSegmentIteratorConstPtr topSegment);
+   bool middleDeletion();
+   bool startDeletion();
+   bool endDeletion();
 
 private:
 

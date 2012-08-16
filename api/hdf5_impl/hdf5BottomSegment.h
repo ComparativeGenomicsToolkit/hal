@@ -315,12 +315,14 @@ inline hal_index_t HDF5BottomSegment::getArrayIndex() const
 
 inline bool HDF5BottomSegment::isFirst() const
 {
+  assert(getSequence() != NULL);
   return _index == 0 || 
      _index == (hal_index_t)getSequence()->getBottomSegmentArrayIndex();
 }
 
 inline bool HDF5BottomSegment::isLast() const
 {
+  assert(getSequence() != NULL);
   return _index == (hal_index_t)_array->getSize() - 1 || 
      _index == getSequence()->getBottomSegmentArrayIndex() +
      (hal_index_t)getSequence()->getNumBottomSegments() - 1;

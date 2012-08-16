@@ -24,7 +24,7 @@ class Rearrangement
 {
 public:
 
-   enum ID { Insertion, Deletion, Duplication, Translocation, 
+   enum ID { Insertion = 0, Deletion, Duplication, Translocation, 
              Transposition, Inversion, GapInsertion, GapDeletion,
              Complex, Telomere, TelomereInsertion, TelomereDeletion,
              Invalid };
