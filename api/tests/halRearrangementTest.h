@@ -19,6 +19,10 @@ void addIdenticalParentChild(hal::AlignmentPtr alignment,
 
 void makeInsertion(hal::BottomSegmentIteratorPtr bi);
 
+void makeInsGap(hal::TopSegmentIteratorPtr ti);
+
+void makeDelGap(hal::BottomSegmentIteratorPtr bi);
+
 struct RearrangementInsertionTest : public AlignmentTest
 {
    void createCallBack(hal::AlignmentPtr alignment);
@@ -30,5 +34,12 @@ struct RearrangementSimpleInversionTest : public AlignmentTest
    void createCallBack(hal::AlignmentPtr alignment);
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
+
+struct RearrangementGappedInversionTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
 
 #endif

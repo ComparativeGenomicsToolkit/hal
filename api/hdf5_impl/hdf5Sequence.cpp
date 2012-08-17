@@ -13,6 +13,8 @@
 #include "hdf5BottomSegmentIterator.h"
 #include "defaultColumnIterator.h"
 #include "defaultRearrangement.h"
+#include "defaultGappedTopSegmentIterator.h"
+#include "defaultGappedBottomSegmentIterator.h"
 
 using namespace std;
 using namespace H5;
@@ -278,6 +280,24 @@ RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position) const
   return RearrangementPtr(rea);
 }
 
+GappedTopSegmentIteratorConstPtr HDF5Sequence::getGappedTopSegmentIterator(
+  hal_index_t i, hal_size_t gapThreshold) const
+{
+  TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
+  DefaultGappedTopSegmentIterator* gt = 
+     new DefaultGappedTopSegmentIterator(top, gapThreshold);
+  return GappedTopSegmentIteratorConstPtr(gt);
+}
+
+GappedBottomSegmentIteratorConstPtr 
+HDF5Sequence::getGappedBottomSegmentIterator(
+     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const
+{
+  BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
+  DefaultGappedBottomSegmentIterator* gb = 
+     new DefaultGappedBottomSegmentIterator(bot, childIdx, gapThreshold);
+  return GappedBottomSegmentIteratorConstPtr(gb);
+}
 // LOCAL
 
 void HDF5Sequence::set(hal_size_t startPosition, 

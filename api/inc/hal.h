@@ -81,6 +81,8 @@
 #include "halDNAIterator.h"
 #include "halValidate.h"
 #include "halColumnIterator.h"
+#include "halGappedTopSegmentIterator.h"
+#include "halGappedBottomSegmentIterator.h"
 #include "halRearrangement.h"
 
 #endif

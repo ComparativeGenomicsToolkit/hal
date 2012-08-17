@@ -43,27 +43,37 @@ private:
    bool isGap(TopSegmentIteratorConstPtr topSegment);
    bool isGap(BottomSegmentIteratorConstPtr bottomSegment);
 
+   bool isForwardAligned(TopSegmentIteratorConstPtr inLeft, 
+                         TopSegmentIteratorConstPtr inRight,
+                         BottomSegmentIteratorConstPtr inParentLeft,
+                         BottomSegmentIteratorConstPtr inParentRight);
+
+   bool isReverseAligned(TopSegmentIteratorConstPtr inLeft, 
+                        TopSegmentIteratorConstPtr inRight,
+                        BottomSegmentIteratorConstPtr inParentLeft,
+                        BottomSegmentIteratorConstPtr inParentRight);
+
    // traversal shortcuts used to skip gaps.
    // left is always left in genome coordiantes (even if iterator is 
    // inverted)
    void findRight(TopSegmentIteratorConstPtr inLeft,
-                  TopSegmentIteratorConstPtr outRight);
+                  TopSegmentIteratorConstPtr& outRight);
    void findLeft(TopSegmentIteratorConstPtr inRight,
-                 TopSegmentIteratorConstPtr outLeft);
+                 TopSegmentIteratorConstPtr& outLeft);
    void findRight(BottomSegmentIteratorConstPtr inLeft,
-                  BottomSegmentIteratorConstPtr outRight);
+                  BottomSegmentIteratorConstPtr& outRight);
    void findLeft(BottomSegmentIteratorConstPtr inRight,
-                 BottomSegmentIteratorConstPtr outLeft);
+                 BottomSegmentIteratorConstPtr& outLeft);
 
    void findParents(TopSegmentIteratorConstPtr inLeft, 
                     TopSegmentIteratorConstPtr inRight,
-                    BottomSegmentIteratorConstPtr outParentLeft,
-                    BottomSegmentIteratorConstPtr outParentRight);
+                    BottomSegmentIteratorConstPtr& outParentLeft,
+                    BottomSegmentIteratorConstPtr& outParentRight);
 
    void findChilds(BottomSegmentIteratorConstPtr inParentLeft, 
                    BottomSegmentIteratorConstPtr inParentRight,
-                   TopSegmentIteratorConstPtr outLeft,
-                   TopSegmentIteratorConstPtr outRight);
+                   TopSegmentIteratorConstPtr& outLeft,
+                   TopSegmentIteratorConstPtr& outRight);
 
    // Inversion Module 
    bool scanInversionCycle(TopSegmentIteratorConstPtr topSegment);

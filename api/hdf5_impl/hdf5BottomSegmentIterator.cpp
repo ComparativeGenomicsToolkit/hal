@@ -254,7 +254,6 @@ hal_size_t HDF5BottomSegmentIterator::getLength() const
 
 hal_bool_t HDF5BottomSegmentIterator::getReversed() const
 {
-  assert (inRange() == true);
   return _reversed;
 }
 

@@ -185,22 +185,123 @@ void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
 
 bool DefaultRearrangement::isGap(TopSegmentIteratorConstPtr topSegment)
 {
+  return topSegment->hasParent() == false &&
+     topSegment->getLength() <= _gapThreshold;
+  /*
   return (topSegment->getTopSegment()->isGapInsertion() ||
      topSegment->getTopSegment()->isSimpleInversion()) &&
-     topSegment->getLength() <= _gapThreshold;
+     topSegment->getLength() <= _gapThreshold;*/
 }
 
 
 bool DefaultRearrangement::isGap(BottomSegmentIteratorConstPtr bottomSegment)
 {
+  return bottomSegment->hasChild(_childIndex) == false &&
+     bottomSegment->getLength() <= _gapThreshold;
+/*
   return 
      (bottomSegment->getBottomSegment()->isGapDeletion(_childIndex) ||
       bottomSegment->getBottomSegment()->isSimpleInversion(_childIndex)) &&
      bottomSegment->getLength() <= _gapThreshold;
+*/
+}
+
+bool DefaultRearrangement::
+isForwardAligned(TopSegmentIteratorConstPtr inLeft, 
+                 TopSegmentIteratorConstPtr inRight,
+                 BottomSegmentIteratorConstPtr inParentLeft,
+                 BottomSegmentIteratorConstPtr inParentRight)
+{
+  TopSegmentIteratorConstPtr child = inLeft->copy();
+  TopSegmentIteratorConstPtr temp = child->copy();
+  BottomSegmentIteratorConstPtr parent = inParentLeft->copy();
+  assert(child->getReversed() == false && parent->getReversed() == false);
+  assert(inLeft->getTopSegment()->getArrayIndex() <=
+         inRight->getTopSegment()->getArrayIndex());
+  assert(inParentLeft->getBottomSegment()->getArrayIndex() <=
+         inParentRight->getBottomSegment()->getArrayIndex());
+  assert(isGap(inLeft) == false && isGap(inRight) == false);
+  assert(isGap(inParentLeft) == false && isGap(inParentRight) == false);
+  assert(inLeft->getTopSegment()->getSequence() == 
+         inRight->getTopSegment()->getSequence());
+  assert(inParentLeft->getBottomSegment()->getSequence() == 
+         inParentRight->getBottomSegment()->getSequence());
+  
+  while (child->equals(inRight) == false)
+  {
+    temp->toChild(parent, _childIndex);
+    if (child->equals(temp) == false || temp->getReversed() == true)
+    {
+      return false;
+    }
+    child->toRight();
+    while (isGap(child))
+    {
+      child->toRight();
+    }
+    parent->toRight();
+    while (isGap(parent))
+    {
+      parent->toRight();
+    }    
+    if (parent->equals(inParentRight) == true &&
+        child->equals(inRight) == false)
+    {
+      return false;
+    }
+  }
+  return parent->equals(inParentRight);
+}
+
+bool DefaultRearrangement::
+isReverseAligned(TopSegmentIteratorConstPtr inLeft, 
+                TopSegmentIteratorConstPtr inRight,
+                BottomSegmentIteratorConstPtr inParentLeft,
+                BottomSegmentIteratorConstPtr inParentRight)
+{
+  TopSegmentIteratorConstPtr child = inRight->copy();
+  TopSegmentIteratorConstPtr temp = child->copy();
+  BottomSegmentIteratorConstPtr parent = inParentLeft->copy();
+  assert(child->getReversed() == false && parent->getReversed() == false);
+  assert(inLeft->getTopSegment()->getArrayIndex() <=
+         inRight->getTopSegment()->getArrayIndex());
+  assert(inParentLeft->getBottomSegment()->getArrayIndex() <=
+         inParentRight->getBottomSegment()->getArrayIndex());
+  assert(isGap(inLeft) == false && isGap(inRight) == false);
+  assert(isGap(inParentLeft) == false && isGap(inParentRight) == false);
+  assert(inLeft->getTopSegment()->getSequence() == 
+         inRight->getTopSegment()->getSequence());
+  assert(inParentLeft->getBottomSegment()->getSequence() == 
+         inParentRight->getBottomSegment()->getSequence());
+  
+  while (child->equals(inLeft) == false)
+  {
+    temp->toChild(parent, _childIndex);
+    if (child->equals(temp) == false || temp->getReversed() == false)
+    {
+      return false;
+    }
+    child->toLeft();
+    while (isGap(child))
+    {
+      child->toLeft();
+    }
+    parent->toRight();
+    while (isGap(parent))
+    {
+      parent->toRight();
+    }    
+    if (parent->equals(inParentRight) == true && 
+        child->equals(inLeft) == false)
+    {
+      return false;
+    }
+  }
+  return parent->equals(inParentRight);
 }
 
 void DefaultRearrangement::findRight(TopSegmentIteratorConstPtr inLeft,
-                                     TopSegmentIteratorConstPtr outRight)
+                                     TopSegmentIteratorConstPtr& outRight)
 {
   outRight->copy(inLeft);
   if (outRight->getReversed() == true)
@@ -226,7 +327,7 @@ void DefaultRearrangement::findRight(TopSegmentIteratorConstPtr inLeft,
 }
 
 void DefaultRearrangement::findLeft(TopSegmentIteratorConstPtr inRight,
-                                    TopSegmentIteratorConstPtr outLeft)
+                                    TopSegmentIteratorConstPtr& outLeft)
 {
   outLeft->copy(inRight);
   if (outLeft->getReversed() == true)
@@ -252,7 +353,7 @@ void DefaultRearrangement::findLeft(TopSegmentIteratorConstPtr inRight,
 }
 
 void DefaultRearrangement::findRight(BottomSegmentIteratorConstPtr inLeft,
-                                     BottomSegmentIteratorConstPtr outRight)
+                                     BottomSegmentIteratorConstPtr& outRight)
 {
   outRight->copy(inLeft);
   if (outRight->getReversed() == true)
@@ -278,7 +379,7 @@ void DefaultRearrangement::findRight(BottomSegmentIteratorConstPtr inLeft,
 }
 
 void DefaultRearrangement::findLeft(BottomSegmentIteratorConstPtr inRight,
-                                    BottomSegmentIteratorConstPtr outLeft)
+                                    BottomSegmentIteratorConstPtr& outLeft)
 {
   outLeft->copy(inRight);
   if (outLeft->getReversed() == true)
@@ -306,8 +407,8 @@ void DefaultRearrangement::findLeft(BottomSegmentIteratorConstPtr inRight,
 void 
 DefaultRearrangement::findParents(TopSegmentIteratorConstPtr inLeft, 
                                   TopSegmentIteratorConstPtr inRight,
-                                  BottomSegmentIteratorConstPtr outParentLeft,
-                                  BottomSegmentIteratorConstPtr outParentRight)
+                                  BottomSegmentIteratorConstPtr& outParentLeft,
+                                  BottomSegmentIteratorConstPtr& outParentRight)
 {
   assert(inLeft->hasParent() && inRight->hasParent());
   assert(inLeft->getTopSegment()->getParentReversed() == 
@@ -327,6 +428,8 @@ DefaultRearrangement::findParents(TopSegmentIteratorConstPtr inLeft,
     outParentRight->toReverse();
   }
   assert(outParentLeft->getReversed() == outParentRight->getReversed());
+  assert(outParentLeft->getBottomSegment()->getArrayIndex() <=
+         outParentRight->getBottomSegment()->getArrayIndex());
 
 
 #ifndef NDEBUG
@@ -341,14 +444,14 @@ DefaultRearrangement::findParents(TopSegmentIteratorConstPtr inLeft,
   findLeft(outParentRight, b);
   assert(b->equals(outParentLeft));
 #endif
-  
+
 }
 
 void 
 DefaultRearrangement::findChilds(BottomSegmentIteratorConstPtr inParentLeft, 
                                  BottomSegmentIteratorConstPtr inParentRight,
-                                 TopSegmentIteratorConstPtr outLeft,
-                                 TopSegmentIteratorConstPtr outRight)
+                                 TopSegmentIteratorConstPtr& outLeft,
+                                 TopSegmentIteratorConstPtr& outRight)
 {
   assert(inParentLeft->hasChild(_childIndex) && 
          inParentRight->hasChild(_childIndex));
@@ -402,14 +505,26 @@ bool DefaultRearrangement::scanInversionCycle(
     assert(_startRight->hasParent() == true);
     assert(_startRight->getTopSegment()->getParentReversed() == true);
 
+    cout << "sl " << _startLeft << endl
+         << "sr " << _startRight << endl
+         << "pl " << _parentStartLeft << endl
+         << "pr " << _parentStartRight << endl;
+
     findParents(_startLeft, _startRight, _parentStartLeft, _parentStartRight);
+
+    cout << endl << endl;
+    cout << "sl " << _startLeft << endl
+         << "sr " << _startRight << endl
+         << "pl " << _parentStartLeft << endl
+         << "pr " << _parentStartRight << endl;
+
     _parentEndLeft->copy(_parentStartRight);
     _parentEndRight->copy(_parentStartRight);
     _startLeft2->toChild(_parentStartRight, _childIndex);
     _startRight2->toChild(_parentStartLeft, _childIndex);
     
-    if (_startLeft2->equals(_startLeft) == true &&
-        _startRight2->equals(_startRight) == true)
+    if (isReverseAligned(_startLeft, _startRight, 
+                         _parentStartLeft, _parentStartRight) == true)
     {
       return true;
     }

@@ -17,6 +17,8 @@
 #include "hdf5DNAIterator.h"
 #include "defaultColumnIterator.h"
 #include "defaultRearrangement.h"
+#include "defaultGappedTopSegmentIterator.h"
+#include "defaultGappedBottomSegmentIterator.h"
 
 using namespace hal;
 using namespace std;
@@ -580,6 +582,25 @@ RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position) const
   rea->identifyFromLeftBreakpoint(top);
   return RearrangementPtr(rea);
 }
+
+GappedTopSegmentIteratorConstPtr HDF5Genome::getGappedTopSegmentIterator(
+  hal_index_t i, hal_size_t gapThreshold) const
+{
+  TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
+  DefaultGappedTopSegmentIterator* gt = 
+     new DefaultGappedTopSegmentIterator(top, gapThreshold);
+  return GappedTopSegmentIteratorConstPtr(gt);
+}
+
+GappedBottomSegmentIteratorConstPtr HDF5Genome::getGappedBottomSegmentIterator(
+     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const
+{
+  BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
+  DefaultGappedBottomSegmentIterator* gb = 
+     new DefaultGappedBottomSegmentIterator(bot, childIdx, gapThreshold);
+  return GappedBottomSegmentIteratorConstPtr(gb);
+}
+
   
 // LOCAL NON-INTERFACE METHODS
 

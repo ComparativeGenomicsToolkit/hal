@@ -122,6 +122,15 @@ public:
    virtual RearrangementPtr getRearrangement(
      hal_index_t position = 0) const = 0;
 
+   /** Get a gapped iterator  (experimental) */
+   virtual GappedTopSegmentIteratorConstPtr getGappedTopSegmentIterator(
+     hal_index_t i, hal_size_t gapThreshold) const = 0;
+
+   virtual GappedBottomSegmentIteratorConstPtr getGappedBottomSegmentIterator(
+     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const = 0;
+
+       
+
 protected:
 
    /** Destructor */

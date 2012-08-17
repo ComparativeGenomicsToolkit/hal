@@ -20,7 +20,6 @@ class DefaultGappedTopSegmentIterator : public GappedTopSegmentIterator
 public:
 
    DefaultGappedTopSegmentIterator(TopSegmentIteratorConstPtr left,
-                                   hal_size_t childIndex,
                                    hal_size_t gapThreshold);
 
    ~DefaultGappedTopSegmentIterator();
@@ -78,6 +77,8 @@ private:
    void toLeftNextUngapped(BottomSegmentIteratorConstPtr ts) const;
    void toRightNextUngapped(BottomSegmentIteratorConstPtr ts) const;
    
+   // keep convention of other iterators where const-ness only applies
+   // to the database and not the iterator...
    mutable TopSegmentIteratorConstPtr _left;
    mutable TopSegmentIteratorConstPtr _right;
    mutable BottomSegmentIteratorConstPtr _leftParent;

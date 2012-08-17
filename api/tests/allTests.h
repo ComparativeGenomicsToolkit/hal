@@ -20,5 +20,6 @@ CuSuite* halSequenceTestSuite();
 CuSuite* halValidateTestSuite();
 CuSuite* halColumnIteratorTestSuite();
 CuSuite* halRearrangementTestSuite();
+CuSuite* halGappedSegmentIteratorTestSuite();
 
 #endif

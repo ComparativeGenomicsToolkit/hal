@@ -97,6 +97,13 @@ public:
 
    RearrangementPtr getRearrangement(hal_index_t position) const;
 
+   GappedTopSegmentIteratorConstPtr getGappedTopSegmentIterator(
+     hal_index_t i, hal_size_t gapThreshold) const;
+
+   GappedBottomSegmentIteratorConstPtr getGappedBottomSegmentIterator(
+     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const;
+
+
    // LOCAL NON-INTERFACE METHODS
 
    static H5::CompType dataType(hal_size_t maxNameLength);
