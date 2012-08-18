@@ -67,7 +67,7 @@ namespace hal {
 inline std::ostream& operator<<(std::ostream& os, 
                                 GappedBottomSegmentIteratorConstPtr gbs)
 {
-  os << "first\n" << gbs->getLeft() << "\nlast" << gbs->getRight();
+  os << "LEFT: " << gbs->getLeft() << "\nRIGHT: " << gbs->getRight();
   return os;
 }
 }

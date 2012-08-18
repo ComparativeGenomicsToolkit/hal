@@ -19,7 +19,13 @@ struct GappedSegmentSimpleIteratorTest : public AlignmentTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
-struct GappedSegmentIteratorReverseTest : public AlignmentTest
+struct GappedSegmentSimpleIteratorTest2 : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
+struct GappedSegmentIteratorIndelTest : public AlignmentTest
 {
    void createCallBack(hal::AlignmentPtr alignment);
    void checkCallBack(hal::AlignmentConstPtr alignment);

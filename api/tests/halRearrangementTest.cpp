@@ -149,6 +149,23 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
   }
 }
 
+void makeInversion(hal::TopSegmentIteratorPtr ti, hal_size_t len)
+{
+  Genome* child = ti->getTopSegment()->getGenome();
+  Genome* parent = child->getParent();
+  hal_index_t first =  ti->getTopSegment()->getArrayIndex();
+  hal_index_t last =  ti->getTopSegment()->getArrayIndex() + len - 1;
+  for (size_t i = 0; i < len; ++i)
+  {
+    TopSegmentIteratorPtr t = child->getTopSegmentIterator(first + i);
+    BottomSegmentIteratorPtr b = parent->getBottomSegmentIterator(last - i);
+    t->getTopSegment()->setParentIndex(last - i);
+    t->getTopSegment()->setParentReversed(true);
+    b->getBottomSegment()->setChildIndex(0, first + i);
+    b->getBottomSegment()->setChildReversed(0, true);
+  }
+}
+
 void RearrangementInsertionTest::createCallBack(AlignmentPtr alignment)
 {
   size_t numSequences = 3;

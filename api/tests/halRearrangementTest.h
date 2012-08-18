@@ -23,6 +23,8 @@ void makeInsGap(hal::TopSegmentIteratorPtr ti);
 
 void makeDelGap(hal::BottomSegmentIteratorPtr bi);
 
+void makeInversion(hal::TopSegmentIteratorPtr ti, hal_size_t len);
+
 struct RearrangementInsertionTest : public AlignmentTest
 {
    void createCallBack(hal::AlignmentPtr alignment);
