@@ -74,8 +74,10 @@ private:
    void extendRight() const;
    void extendLeft() const;
 
-   void toLeftNextUngapped(BottomSegmentIteratorConstPtr ts) const;
-   void toRightNextUngapped(BottomSegmentIteratorConstPtr ts) const;
+   void toLeftNextUngapped(BottomSegmentIteratorConstPtr bs) const;
+   void toRightNextUngapped(BottomSegmentIteratorConstPtr bs) const;
+   void toLeftNextUngapped(TopSegmentIteratorConstPtr ts) const;
+   void toRightNextUngapped(TopSegmentIteratorConstPtr ts) const;
    
    // keep convention of other iterators where const-ness only applies
    // to the database and not the iterator...

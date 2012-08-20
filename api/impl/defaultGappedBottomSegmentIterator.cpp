@@ -282,7 +282,19 @@ void DefaultGappedBottomSegmentIterator::toParent(
 bool DefaultGappedBottomSegmentIterator::equals(
   GappedBottomSegmentIteratorConstPtr other) const
 {
-  return _left->equals(other->getLeft()) && _right->equals(other->getRight());
+  _temp->copy(_left);
+  toRightNextUngapped(_temp);
+  _temp2->copy(other->getLeft());
+  toRightNextUngapped(_temp2);
+  if (_temp->equals(_temp2) == false)
+  {
+    return false;
+  }
+  _temp->copy(_right);
+  toLeftNextUngapped(_temp);
+  _temp2->copy(other->getRight());
+  toLeftNextUngapped(_temp2);
+  return _temp->equals(_temp2);
 }
 
 bool DefaultGappedBottomSegmentIterator::hasChild() const
@@ -317,12 +329,14 @@ bool DefaultGappedBottomSegmentIterator::compatible(
   assert(left->hasChild(_childIndex) && right->hasChild(_childIndex));
   assert(left->equals(right) == false);
   
+//  cout << "COMPAT \n" << left << endl << right << endl;
   _leftChild->toChild(left, _childIndex);
   _rightChild->toChild(right, _childIndex);
 
   if (_leftChild->getTopSegment()->getParentReversed() != 
       _rightChild->getTopSegment()->getParentReversed())
   {
+//    cout << "f1 " << endl;
     return false;
   }
 
@@ -331,6 +345,7 @@ bool DefaultGappedBottomSegmentIterator::compatible(
       (_leftChild->getReversed() && 
        _leftChild->rightOf(_rightChild->getStartPosition()) == false))
   {    
+//    cout << "f2 " << endl;
     return false;
   }
   
@@ -350,6 +365,7 @@ bool DefaultGappedBottomSegmentIterator::compatible(
       }
       else
       {
+//        cout << "f3 " << endl;
         return false;
       }
     }
@@ -366,21 +382,32 @@ void DefaultGappedBottomSegmentIterator::extendRight() const
   {
     return;
   }
+//  cout << "calling ER on " << _right->getBottomSegment()->getArrayIndex();
+  toRightNextUngapped(_right);
   _temp->copy(_right);
 
   while ((!_right->getReversed() && !_right->getBottomSegment()->isLast()) ||
          (_right->getReversed() && !_right->getBottomSegment()->isFirst()))
   {
     _right->toRight();
+    toRightNextUngapped(_right);
+//    cout << "\ndoing THANG on " << _temp->getBottomSegment()->getArrayIndex()
+    //       << ", " <<  _right->getBottomSegment()->getArrayIndex() << endl;
+    
+  
     if ((_right->hasChild(_childIndex) == false && 
          _right->getLength() > _gapThreshold) ||
-        (_right->hasChild(_childIndex) == true && 
+        (_temp->hasChild(_childIndex) == false && 
+         _temp->getLength() > _gapThreshold) ||
+        (_right->hasChild(_childIndex) == true &&
+         _temp->hasChild(_childIndex) == true &&
          compatible(_temp, _right) == false))
     {
       _right->toLeft();
       break;
     }
     _temp->toRight();
+    toRightNextUngapped(_temp);
   }
 }
 
@@ -392,21 +419,59 @@ void DefaultGappedBottomSegmentIterator::extendLeft() const
   {
     return;
   }
+  toLeftNextUngapped(_left);
   _temp->copy(_left);
-
+  
   while ((!_left->getReversed() && !_left->getBottomSegment()->isFirst()) ||
          (_left->getReversed() && !_left->getBottomSegment()->isLast()))
   {
     _left->toLeft();
+    toLeftNextUngapped(_left);
+
     if ((_left->hasChild(_childIndex) == false &&
          _left->getLength() > _gapThreshold) ||
+        (_temp->hasChild(_childIndex) == false &&
+         _temp->getLength() > _gapThreshold) ||
         (_left->hasChild(_childIndex) == true &&
+         _temp->hasChild(_childIndex) == true && 
          compatible(_left, _temp) == false))
     {
       _left->toRight();
       break;
     }
     _temp->toLeft();
+    toLeftNextUngapped(_temp);
+  }
+}
+
+void DefaultGappedBottomSegmentIterator::toLeftNextUngapped(
+  BottomSegmentIteratorConstPtr bs) const
+{
+  while (bs->hasChild(_childIndex) == false && 
+         bs->getLength() <= _gapThreshold)
+  {
+    if ((!bs->getReversed() && bs->getBottomSegment()->isFirst() ||
+         (bs->getReversed() && bs->getBottomSegment()->isLast())))
+    {
+      break;
+    }
+    bs->toLeft();
+  }
+}
+
+void DefaultGappedBottomSegmentIterator::toRightNextUngapped(
+  BottomSegmentIteratorConstPtr bs) const
+{
+  while (bs->hasChild(_childIndex) == false &&
+         bs->getLength() <= _gapThreshold)
+  {
+    if ((!bs->getReversed() && bs->getBottomSegment()->isLast() ||
+         (bs->getReversed() && bs->getBottomSegment()->isFirst())))
+    {
+      break;
+    }
+//    cout << "hut!" << endl;
+    bs->toRight();
   }
 }
 

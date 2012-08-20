@@ -75,6 +75,8 @@ private:
    void extendRight() const;
    void extendLeft() const;
 
+   void toLeftNextUngapped(BottomSegmentIteratorConstPtr bs) const;
+   void toRightNextUngapped(BottomSegmentIteratorConstPtr bs) const;
    void toLeftNextUngapped(TopSegmentIteratorConstPtr ts) const;
    void toRightNextUngapped(TopSegmentIteratorConstPtr ts) const;
    

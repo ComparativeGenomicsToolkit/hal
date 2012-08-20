@@ -293,7 +293,19 @@ void DefaultGappedTopSegmentIterator::toChild(
 bool DefaultGappedTopSegmentIterator::equals(
   GappedTopSegmentIteratorConstPtr other) const
 {
-  return _left->equals(other->getLeft()) && _right->equals(other->getRight());
+  _temp->copy(_left);
+  toRightNextUngapped(_temp);
+  _temp2->copy(other->getLeft());
+  toRightNextUngapped(_temp2);
+  if (_temp->equals(_temp2) == false)
+  {
+    return false;
+  }
+  _temp->copy(_right);
+  toLeftNextUngapped(_temp);
+  _temp2->copy(other->getRight());
+  toLeftNextUngapped(_temp2);
+  return _temp->equals(_temp2);
 }
 
 bool DefaultGappedTopSegmentIterator::hasParent() const
@@ -327,7 +339,6 @@ bool DefaultGappedTopSegmentIterator::compatible(
 {
   assert(left->hasParent() && right->hasParent());
   assert(left->equals(right) == false);
-  
   _leftParent->toParent(left);
   _rightParent->toParent(right);
 
@@ -421,19 +432,25 @@ void DefaultGappedTopSegmentIterator::extendRight() const
   {
     return;
   }
+  toRightNextUngapped(_right);
   _temp->copy(_right);
 
   while ((!_right->getReversed() && !_right->getTopSegment()->isLast()) ||
          (_right->getReversed() && !_right->getTopSegment()->isFirst()))
   {
     _right->toRight();
+    toRightNextUngapped(_right);
+
     if ((_right->hasParent() == false && _right->getLength() > _gapThreshold) ||
-        (_right->hasParent() == true && compatible(_temp, _right) == false))
+        (_temp->hasParent() == false && _temp->getLength() > _gapThreshold) ||
+        (_right->hasParent() == true && _temp->hasParent() == true &&
+         compatible(_temp, _right) == false))
     {
       _right->toLeft();
       break;
     }
     _temp->toRight();
+    toRightNextUngapped(_temp);
   }
 }
 
@@ -444,20 +461,27 @@ void DefaultGappedTopSegmentIterator::extendLeft() const
       (_left->getReversed() && _left->getTopSegment()->isLast()))
   {
     return;
-  }
+  };
+  toLeftNextUngapped(_left);
   _temp->copy(_left);
 
   while ((!_left->getReversed() && !_left->getTopSegment()->isFirst()) ||
          (_left->getReversed() && !_left->getTopSegment()->isLast()))
   {
     _left->toLeft();
+    toLeftNextUngapped(_left);
+    
     if ((_left->hasParent() == false && _left->getLength() > _gapThreshold) ||
-        (_left->hasParent() == true && compatible(_left, _temp) == false))
+        (_temp->hasParent() == false && _temp->getLength() > _gapThreshold) ||
+        (_left->hasParent() == true && _temp->hasParent() == true && 
+         compatible(_left, _temp) == false))
     {
       _left->toRight();
       break;
     }
     _temp->toLeft();
+    toLeftNextUngapped(_temp);
+
   }
 }
 
@@ -488,6 +512,36 @@ void DefaultGappedTopSegmentIterator::toRightNextUngapped(
       break;
     }
     bs->toRight();
+  }
+}
+   
+void DefaultGappedTopSegmentIterator::toLeftNextUngapped(
+  TopSegmentIteratorConstPtr ts) const
+{
+  while (ts->hasParent() == false && 
+         ts->getLength() <= _gapThreshold)
+  {
+    if ((!ts->getReversed() && ts->getTopSegment()->isFirst() ||
+         (ts->getReversed() && ts->getTopSegment()->isLast())))
+    {
+      break;
+    }
+    ts->toLeft();
+  }
+}
+
+void DefaultGappedTopSegmentIterator::toRightNextUngapped(
+  TopSegmentIteratorConstPtr ts) const
+{
+  while (ts->hasParent() == false &&
+         ts->getLength() <= _gapThreshold)
+  {
+    if ((!ts->getReversed() && ts->getTopSegment()->isLast() ||
+         (ts->getReversed() && ts->getTopSegment()->isFirst())))
+    {
+      break;
+    }
+    ts->toRight();
   }
 }
    
