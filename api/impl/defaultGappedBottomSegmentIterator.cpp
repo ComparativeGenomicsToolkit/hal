@@ -310,6 +310,23 @@ bool DefaultGappedBottomSegmentIterator::hasChild() const
   return false;
 }
 
+bool DefaultGappedBottomSegmentIterator::getChildReversed() const
+{
+  if (hasChild())
+  {
+    _temp->copy(_left);
+    _temp2->copy(_right);
+
+    toRightNextUngapped(_temp);
+    toLeftNextUngapped(_temp2);
+    assert(_temp->hasChild(_childIndex) && _temp2->hasChild(_childIndex));
+    assert(_temp->getBottomSegment()->getChildReversed(_childIndex) == 
+           _temp2->getBottomSegment()->getChildReversed(_childIndex));
+    return _temp->getBottomSegment()->getChildReversed(_childIndex);
+  }
+  return false;
+}
+
 BottomSegmentIteratorConstPtr DefaultGappedBottomSegmentIterator::getLeft() const
 {
   return _left;

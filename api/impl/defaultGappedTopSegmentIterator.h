@@ -63,8 +63,11 @@ public:
    void toChild(GappedBottomSegmentIteratorConstPtr bs) const;
    bool equals(GappedTopSegmentIteratorConstPtr other) const;
    bool hasParent() const;
+   bool getParentReversed() const;
    TopSegmentIteratorConstPtr getLeft() const;
    TopSegmentIteratorConstPtr getRight() const;
+   void setLeft(TopSegmentIteratorConstPtr ts) const;
+
 
 private:
    

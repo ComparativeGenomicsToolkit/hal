@@ -30,9 +30,11 @@ public:
    virtual void toChild(GappedBottomSegmentIteratorConstPtr bs) const = 0;
    virtual bool equals(GappedTopSegmentIteratorConstPtr other) const = 0;
    virtual bool hasParent() const = 0;
+   virtual bool getParentReversed() const = 0;
 
    virtual TopSegmentIteratorConstPtr getLeft() const = 0;
    virtual TopSegmentIteratorConstPtr getRight() const = 0;
+   virtual void setLeft(TopSegmentIteratorConstPtr ts) const = 0;
 
 protected:
    friend class counted_ptr<GappedTopSegmentIterator>;

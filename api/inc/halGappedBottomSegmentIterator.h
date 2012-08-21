@@ -30,6 +30,7 @@ public:
    virtual void toParent(GappedTopSegmentIteratorConstPtr ts) const = 0;
    virtual bool equals(GappedBottomSegmentIteratorConstPtr other) const = 0;
    virtual bool hasChild() const = 0;
+   virtual bool getChildReversed() const = 0;
 
    virtual BottomSegmentIteratorConstPtr getLeft() const = 0;
    virtual BottomSegmentIteratorConstPtr getRight() const = 0;
