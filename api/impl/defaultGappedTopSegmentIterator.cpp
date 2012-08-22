@@ -75,14 +75,14 @@ hal_size_t DefaultGappedTopSegmentIterator::getNumGapDeletedBases() const
 
 bool DefaultGappedTopSegmentIterator::isLast() const
 {
-  throw hal_exception("not imp");
-  return false;
+  return getReversed() ? _left->getTopSegment()->isLast() :
+     _right->getTopSegment()->isLast();
 }
 
 bool DefaultGappedTopSegmentIterator::isFirst() const
 {
-  throw hal_exception("not imp");
-  return false;
+  return getReversed() ? _right->getTopSegment()->isFirst() :
+     _left->getTopSegment()->isFirst();
 }
 
 hal_index_t DefaultGappedTopSegmentIterator::getLeftArrayIndex() const
@@ -295,14 +295,13 @@ bool DefaultGappedTopSegmentIterator::equals(
 bool DefaultGappedTopSegmentIterator::hasParent() const
 {
   _temp->copy(_left);
-  while(_temp != _right)
-  {
-    if (_temp->hasParent() == true)
-    {
-      return true;
-    }
-  }
-  return false;
+  _temp2->copy(_right);
+  
+  toRightNextUngapped(_temp);
+  toLeftNextUngapped(_temp2);
+
+  assert(_temp->hasParent() == _temp2->hasParent());
+  return _temp->hasParent();
 }
 
 bool DefaultGappedTopSegmentIterator::getParentReversed() const

@@ -8,6 +8,8 @@
 #define _HALDEFAULTREARRANGEMENT_H
 
 #include "halRearrangement.h"
+#include "halGappedTopSegmentIterator.h"
+#include "halGappedBottomSegmentIterator.h"
 
 namespace hal {
 
@@ -18,8 +20,10 @@ namespace hal {
 class DefaultRearrangement : public Rearrangement
 {
 public:
+   static const hal_size_t DefaultGapThreshold;
 
-   DefaultRearrangement();
+   DefaultRearrangement(const Genome* childGenome, 
+                        hal_size_t gapThreshold = DefaultGapThreshold);
 
    ~DefaultRearrangement();
    
@@ -93,10 +97,11 @@ private:
    bool endDeletion();
 
 private:
-
-   static const hal_size_t DefaultGapThreshold;
    
    hal_size_t _gapThreshold;
+
+   GappedTopSegmentIteratorConstPtr _left, _right;
+   GappedBottomSegmentIteratorConstPtr _leftParent, _rightParent;
 
    TopSegmentIteratorConstPtr _startLeft, _startRight;
    TopSegmentIteratorConstPtr _startLeft2, _startRight2;

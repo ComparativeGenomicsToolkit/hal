@@ -272,8 +272,11 @@ RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
      child->getSequenceIterator()->getSequence()->getNumTopSegments();
   size_t segmentLength = 
      child->getTopSegmentIterator()->getTopSegment()->getLength();
-  
+
+
   RearrangementPtr r = child->getRearrangement();
+
+  r= child->getRearrangement();
   do
   {
     hal_index_t leftIdx = 
@@ -393,27 +396,27 @@ void halRearrangementInsertionTest(CuTest *testCase)
 
 void halRearrangementSimpleInversionTest(CuTest *testCase)
 {
-  try 
+//  try 
   {
     RearrangementSimpleInversionTest tester;
     tester.check(testCase);
   }
-   catch (...) 
+//   catch (...) 
   {
-    CuAssertTrue(testCase, false);
+//    CuAssertTrue(testCase, false);
   } 
 }
 
 void halRearrangementGappedInversionTest(CuTest *testCase)
 {
-  try 
+//  try 
   {
     RearrangementGappedInversionTest tester;
     tester.check(testCase);
   }
-   catch (...) 
+//   catch (...) 
   {
-    CuAssertTrue(testCase, false);
+//    CuAssertTrue(testCase, false);
   } 
 }
 
@@ -421,7 +424,7 @@ CuSuite* halRearrangementTestSuite(void)
 {
   CuSuite* suite = CuSuiteNew();
 //  SUITE_ADD_TEST(suite, halRearrangementInsertionTest);
-//za  SUITE_ADD_TEST(suite, halRearrangementSimpleInversionTest);
+  SUITE_ADD_TEST(suite, halRearrangementSimpleInversionTest);
   SUITE_ADD_TEST(suite, halRearrangementGappedInversionTest);
   return suite;
 }

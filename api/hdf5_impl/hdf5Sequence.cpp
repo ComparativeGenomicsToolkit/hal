@@ -275,7 +275,7 @@ void HDF5Sequence::setSubString(const std::string& inString,
 RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position) const
 {
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
-  DefaultRearrangement* rea = new DefaultRearrangement();
+  DefaultRearrangement* rea = new DefaultRearrangement(getGenome());
   rea->identifyFromLeftBreakpoint(top);
   return RearrangementPtr(rea);
 }
