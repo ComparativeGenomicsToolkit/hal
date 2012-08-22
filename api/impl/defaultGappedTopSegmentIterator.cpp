@@ -166,18 +166,22 @@ void DefaultGappedTopSegmentIterator::toSite(hal_index_t position,
 bool DefaultGappedTopSegmentIterator::hasNextParalogy() const
 {
   _temp->copy(_left);
-  while(_temp != _right)
-  {
-    if (_temp->hasNextParalogy() == true || _temp->hasParent() == true)
-    {
-      return true;
-    }
-  }
-  return false;
+  _temp2->copy(_right);
+  
+  toRightNextUngapped(_temp);
+  toLeftNextUngapped(_temp2);
+
+  assert(_temp->hasNextParalogy() == _temp2->hasNextParalogy());
+  return _temp->hasNextParalogy();
 }
 
 void DefaultGappedTopSegmentIterator::toNextParalogy() const
 {
+  assert(hasNextParalogy());
+
+  toRightNextUngapped(_left);
+  toLeftNextUngapped(_right);
+
   _left->toNextParalogy();
   _right->toNextParalogy();
 }

@@ -298,6 +298,8 @@ bool DefaultRearrangement::scanDeletionCycle(
 
 // If true, _leftParent will store the swapped segment (and _cur will store)
 // the other half
+// NEED TO REVISE WITH STRONGER CRITERIA -- right now any operation
+// next to an endpoint can get confused with a translocation.  
 bool DefaultRearrangement::scanTranslocationCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
@@ -326,6 +328,24 @@ bool DefaultRearrangement::scanTranslocationCycle(
   {
     _tempParent->toParent(_right);
     return _tempParent->equals(_rightParent);
+  }
+  return false;
+}
+
+// leaves duplication on _cur and _right
+bool DefaultRearrangement::scanDuplicationCycle(
+  TopSegmentIteratorConstPtr topSegment)
+{
+  assert(topSegment.get());
+  resetStatus(topSegment);
+  
+  if (_cur->hasNextParalogy() == true)
+  {
+    _right->toNextParalogy();
+    if (_right->getLeftArrayIndex() > _cur->getLeftArrayIndex())
+    {
+      return true;
+    }
   }
   return false;
 }
