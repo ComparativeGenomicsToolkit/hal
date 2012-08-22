@@ -95,6 +95,13 @@ hal_index_t DefaultGappedTopSegmentIterator::getRightArrayIndex() const
   throw hal_exception("not imp");
 }
 
+const Sequence* DefaultGappedTopSegmentIterator::getSequence() const
+{
+  assert(_left->getTopSegment()->getSequence() ==
+         _right->getTopSegment()->getSequence());
+  return _left->getTopSegment()->getSequence();
+}
+
 // Segment Iterator methods
 void DefaultGappedTopSegmentIterator::toLeft(hal_index_t leftCutoff) const
 {
@@ -290,6 +297,66 @@ bool DefaultGappedTopSegmentIterator::equals(
   _temp2->copy(other->getRight());
   toLeftNextUngapped(_temp2);
   return _temp->equals(_temp2);
+}
+
+bool DefaultGappedTopSegmentIterator::adjacentTo(
+  GappedTopSegmentIteratorConstPtr other) const
+{
+  _temp->copy(_left);
+  if (_temp->getTopSegment()->isFirst() == false)
+  {
+    _temp->toLeft();
+    toLeftNextUngapped(_temp);
+    _temp2->copy(other->getLeft());
+    if (_temp2->getTopSegment()->isFirst() == false)
+    {
+      _temp2->toLeft();
+      toLeftNextUngapped(_temp2);
+      if (_temp->equals(_temp2))
+      {
+        return true;
+      }
+    }
+    _temp2->copy(other->getRight());
+    if (_temp2->getTopSegment()->isLast() == false)
+    {
+      _temp2->toRight();
+      toRightNextUngapped(_temp2);
+      if (_temp->equals(_temp2))
+      {
+        return true;
+      }
+    }
+  }
+
+  _temp->copy(_right);
+  if (_temp->getTopSegment()->isLast() == false)
+  {
+    _temp->toRight();
+    toRightNextUngapped(_temp);
+    _temp2->copy(other->getLeft());
+    if (_temp2->getTopSegment()->isFirst() == false)
+    {
+      _temp2->toLeft();
+      toLeftNextUngapped(_temp2);
+      if (_temp->equals(_temp2))
+      {
+        return true;
+      }
+    }
+    _temp2->copy(other->getRight());
+    if (_temp2->getTopSegment()->isLast() == false)
+    {
+      _temp2->toRight();
+      toRightNextUngapped(_temp2);
+      if (_temp->equals(_temp2))
+      {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 bool DefaultGappedTopSegmentIterator::hasParent() const

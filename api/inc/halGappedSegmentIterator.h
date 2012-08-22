@@ -42,6 +42,8 @@ public:
 
    virtual hal_index_t getRightArrayIndex() const = 0;
 
+   virtual const Sequence* getSequence() const = 0;
+
 protected:
    friend class counted_ptr<GappedSegmentIterator>;
    friend class counted_ptr<const GappedSegmentIterator>;

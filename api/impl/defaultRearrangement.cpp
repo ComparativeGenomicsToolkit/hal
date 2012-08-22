@@ -34,10 +34,12 @@ DefaultRearrangement::DefaultRearrangement(const Genome* childGenome,
   _parent = childGenome->getParent();
   assert(_parent != NULL);
   // just allocating here -- need to be properly init
-  _left = _genome->getGappedTopSegmentIterator(0, _gapThreshold);
+  _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold);
+  _left = _cur->copy();
   _right = _left->copy();
   _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold);
   _rightParent = _leftParent->copy();
+  _tempParent = _leftParent->copy();
 }
 
 DefaultRearrangement::~DefaultRearrangement()
@@ -74,14 +76,14 @@ hal_size_t DefaultRearrangement::getDuplicationDegree() const
 
 TopSegmentIteratorConstPtr DefaultRearrangement::getLeftBreakpoint() const
 {
-  assert(_left->getReversed() == false);
-  return _left->getLeft();
+  assert(_cur->getReversed() == false);
+  return _cur->getLeft();
 }
 
 TopSegmentIteratorConstPtr DefaultRearrangement::getRightBreakpoint() const
 {
-  assert(_left->getReversed() == false);
-  return _right->getRight();
+  assert(_cur->getReversed() == false);
+  return _cur->getRight();
 }
 
 bool DefaultRearrangement::identifyFromLeftBreakpoint(
@@ -109,14 +111,16 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
 
 bool DefaultRearrangement::identifyNext()
 {
-  if (_right->isLast())
+  if (_cur->isLast())
   {
     return false;
   }
-  _right->toRight();
-  _left->copy(_right);
-  assert(_left->getReversed() == false);
-  bool res = identifyFromLeftBreakpoint(_left->getLeft());
+  assert(_cur->getReversed() == false);
+  // don't like this.  need to refactor interface to make better
+  // use of gapped iterators
+  TopSegmentIteratorConstPtr ts = _cur->getRight();
+  ts->toRight();
+  bool res = identifyFromLeftBreakpoint(ts);
   return res;
 }
 
@@ -142,12 +146,10 @@ void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
   _parent = _genome->getParent();
   assert(_parent != NULL);
 
-  _left->setLeft(topSegment);
+  _cur->setLeft(topSegment);
+  _left->copy(_cur);
   _right->copy(_left);
 }
-
-
-
 
 // Segment is an inverted descendant of another Segment
 // (Note that it can still be part of a more complex operation 
@@ -159,17 +161,171 @@ bool DefaultRearrangement::scanInversionCycle(
 {
   assert(topSegment.get());
   resetStatus(topSegment);
-  return _left->getParentReversed();
+  return _cur->getParentReversed();
 }
 
+// If true, _cur will store the insertion 'candidate'
+// It must be further verified that this segment has no parent to
+// distinguish between destination of transposition and insertion. 
 bool DefaultRearrangement::scanInsertionCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
+  assert(topSegment.get());
+  resetStatus(topSegment);
+  bool first = _cur->isFirst();
+  bool last = _cur->isLast();
+  if (first && last)
+  {
+    return false;
+  }
+
+  // Case 1a) current segment is left endpoint.  we consider insertion
+  // if right neighbour has parent
+  if (first)
+  {
+    _right->toRight();
+    return _right->hasParent();
+  }
+
+  // Case 1b) current segment is right endpoint.  we consider insertion
+  // if left neighbour has parent
+  else if (last)
+  {
+    _left->toLeft();
+    return _left->hasParent();
+  }
+
+  // Case 2) current segment has a left neigbhour and a right neigbour
+  else
+  {
+    _left->toLeft();
+    _right->toRight();
+    _leftParent->toParent(_left);
+    _rightParent->toParent(_right);
+    // Case 2a) Parents are adjacent
+    if (_leftParent->adjacentTo(_rightParent))
+    {
+      return true;
+    }
+    // Case 2b) Left parent is endpoint
+    else if (_leftParent->isFirst() || _leftParent->isLast())
+    {
+      return _leftParent->getSequence() == _rightParent->getSequence();
+    }
+    
+    // Case 2c) Right parent is endpoint
+    else if (_rightParent->isFirst() || _rightParent->isLast())
+    {
+      return _leftParent->getSequence() == _rightParent->getSequence();
+    }
+  }
+
   return false;
 }
 
+// If true, _leftParent will store the deletion 'candidate'
+// It must be further verified that this segment has no child to
+// distinguish between source of transposition and deletion. 
 bool DefaultRearrangement::scanDeletionCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
+  assert(topSegment.get());
+  resetStatus(topSegment);
+  bool first = _cur->isFirst();
+  bool last = _cur->isLast();
+  if (_cur->hasParent() == false || (first && last))
+  {
+    return false;
+  }
+
+  // Case 1) current segment is a right endpoint.  we consider delection
+  // if parent has neighbour
+  if (last)
+  {
+    _leftParent->toParent(_cur);
+    if (_leftParent->isFirst() == false)
+    {
+      _leftParent->toLeft();
+      return true;
+    }
+    if (_leftParent->isLast() == false)
+    {
+      _leftParent->toRight();
+      return true;
+    }
+  }
+
+  // Case 2) Try to find deletion cycle by going right-up-left-left-down
+  else
+  {
+    _leftParent->toParent(_cur);
+    _right->toRight();
+    if (_right->hasParent() == false)
+    {
+      return false;
+    }
+    _rightParent->toParent(_right); 
+    
+    if (_leftParent->getSequence() == _rightParent->getSequence())
+    {
+      // don't care about inversions
+      // so we make sure left is left of right and they are both positive
+      if (_leftParent->getReversed() == true)
+      {
+        _leftParent->toReverse();
+      }
+      if (_rightParent->getReversed() == true)
+      {
+        _rightParent->toReverse();
+      }
+      if (_rightParent->getLeftArrayIndex() < _leftParent->getLeftArrayIndex())
+      {
+        swap(_leftParent, _rightParent);
+      }
+
+      if (_leftParent->isLast())
+      {
+        return false;
+      }
+      
+      _leftParent->toRight();
+      return _leftParent->adjacentTo(_rightParent);
+    }
+  }
+
+  return false;
+}
+
+// If true, _leftParent will store the swapped segment (and _cur will store)
+// the other half
+bool DefaultRearrangement::scanTranslocationCycle(
+  TopSegmentIteratorConstPtr topSegment)
+{
+  assert(topSegment.get());
+  resetStatus(topSegment);
+  bool first = _cur->isFirst();
+  bool last = _cur->isLast();
+  if (_cur->hasParent() == false || (!first && !last))
+  {
+    return false;
+  }
+
+  _leftParent->toParent(_cur);
+  bool pFirst = _leftParent->isFirst();
+  bool pLast = _leftParent->isLast();
+  _rightParent->copy(_leftParent);
+
+  first ? _right->toRight() : _right->toLeft();
+  pFirst ? _rightParent->toRight() : _rightParent->toLeft();
+
+  if (_right->hasParent() == false)
+  {
+    return true;
+  }
+  else
+  {
+    _tempParent->toParent(_right);
+    return _tempParent->equals(_rightParent);
+  }
   return false;
 }

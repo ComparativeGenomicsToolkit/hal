@@ -37,6 +37,7 @@ public:
    bool isFirst() const;
    hal_index_t getLeftArrayIndex() const;
    hal_index_t getRightArrayIndex() const;
+   const Sequence* getSequence() const;
    
    // Segment Iterator methods
    void toLeft(hal_index_t leftCutoff) const;
@@ -63,6 +64,7 @@ public:
    void copy(GappedBottomSegmentIteratorConstPtr bs) const;
    void toParent(GappedTopSegmentIteratorConstPtr ts) const;
    bool equals(GappedBottomSegmentIteratorConstPtr other) const;
+   bool adjacentTo(GappedBottomSegmentIteratorConstPtr other) const;
    bool hasChild() const;
    bool getChildReversed() const;
    BottomSegmentIteratorConstPtr getLeft() const;

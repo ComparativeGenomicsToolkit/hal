@@ -29,6 +29,7 @@ public:
 
    virtual void toChild(GappedBottomSegmentIteratorConstPtr bs) const = 0;
    virtual bool equals(GappedTopSegmentIteratorConstPtr other) const = 0;
+   virtual bool adjacentTo(GappedTopSegmentIteratorConstPtr other) const = 0;
    virtual bool hasParent() const = 0;
    virtual bool getParentReversed() const = 0;
 
