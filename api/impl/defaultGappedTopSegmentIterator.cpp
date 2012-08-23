@@ -53,24 +53,32 @@ hal_size_t DefaultGappedTopSegmentIterator::getNumSegments() const
                          _left->getTopSegment()->getArrayIndex() + 1);
 }
 
-hal_size_t DefaultGappedTopSegmentIterator::getNumGapInsertions() const
+hal_size_t DefaultGappedTopSegmentIterator::getNumGaps() const
 {
-  return 0;
+  hal_size_t count = 0;
+  _temp->copy(_left);
+  for (; _temp->equals(_right) == false; _temp->toRight())
+  {
+    if (_temp->hasParent() == false)
+    {
+      ++count;
+    }
+  }
+  return count;
 }
 
-hal_size_t DefaultGappedTopSegmentIterator::getNumGapDeletions() const
+hal_size_t DefaultGappedTopSegmentIterator::getNumGapBases() const
 {
-  return 0;
-}
-
-hal_size_t DefaultGappedTopSegmentIterator::getNumGapInsertedBases() const
-{
-  return 0;
-}
-
-hal_size_t DefaultGappedTopSegmentIterator::getNumGapDeletedBases() const
-{
-  return 0;
+   hal_size_t count = 0;
+  _temp->copy(_left);
+  for (; _temp->equals(_right) == false; _temp->toRight())
+  {
+    if (_temp->hasParent() == false)
+    {
+      count += _temp->getLength();
+    }
+  }
+  return count;
 }
 
 bool DefaultGappedTopSegmentIterator::isLast() const
@@ -87,12 +95,12 @@ bool DefaultGappedTopSegmentIterator::isFirst() const
 
 hal_index_t DefaultGappedTopSegmentIterator::getLeftArrayIndex() const
 {
-  throw hal_exception("not imp");
+  return _left->getTopSegment()->getArrayIndex();
 }
 
 hal_index_t DefaultGappedTopSegmentIterator::getRightArrayIndex() const
 {
-  throw hal_exception("not imp");
+  return _right->getTopSegment()->getArrayIndex();
 }
 
 const Sequence* DefaultGappedTopSegmentIterator::getSequence() const

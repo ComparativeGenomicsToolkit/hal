@@ -28,10 +28,8 @@ public:
    hal_size_t getGapThreshold() const;
    hal_size_t getChildIndex() const;
    hal_size_t getNumSegments() const;
-   hal_size_t getNumGapInsertions() const;
-   hal_size_t getNumGapDeletions() const;
-   hal_size_t getNumGapInsertedBases() const;
-   hal_size_t getNumGapDeletedBases() const;
+   hal_size_t getNumGaps() const;
+   hal_size_t getNumGapBases() const;
    bool isLast() const;
    bool isFirst() const;
    hal_index_t getLeftArrayIndex() const;

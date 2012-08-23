@@ -25,11 +25,7 @@ DefaultRearrangement::DefaultRearrangement(const Genome* childGenome,
   _parent(NULL),
   _gapThreshold(gapThreshold),
   _childIndex(1000),
-  _id(Invalid),
-  _length(0),
-  _numGaps(0),
-  _numGapBases(0),
-  _dupDegree(0)
+  _id(Invalid)
 {
   _parent = childGenome->getParent();
   assert(_parent != NULL);
@@ -56,22 +52,23 @@ ID DefaultRearrangement::getID() const
 
 hal_size_t DefaultRearrangement::getLength() const
 {
-  return _length;
+  return _id == Deletion ? _leftParent->getLength() : _cur->getLength();
 }
 
 hal_size_t DefaultRearrangement::getNumContainedGaps() const
 {
-  return _numGaps;
+  return _id == Deletion ? _leftParent->getNumGaps() : _cur->getNumGaps();
 }
 
 hal_size_t DefaultRearrangement::getNumContainedGapBases() const
 {
-  return _numGapBases;
+  return
+     _id == Deletion ? _leftParent->getNumGapBases() : _cur->getNumGapBases();
 }
 
 hal_size_t DefaultRearrangement::getDuplicationDegree() const
 {
-  return _dupDegree;
+  return 0;
 }
 
 TopSegmentIteratorConstPtr DefaultRearrangement::getLeftBreakpoint() const
@@ -137,10 +134,6 @@ void DefaultRearrangement::setGapLengthThreshold(hal_size_t threshold)
 void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
 {  
   _id = Invalid;
-  _length = 0;
-  _numGaps = 0;
-  _numGapBases = 0;
-  _dupDegree = 0;
   assert(topSegment.get());
   _genome = topSegment->getTopSegment()->getGenome();
   _parent = _genome->getParent();

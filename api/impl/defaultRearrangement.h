@@ -61,12 +61,7 @@ private:
    const Genome* _genome;
    const Genome* _parent;
 
-   ID _id;
-   hal_size_t _length;
-   hal_size_t _numGaps;
-   hal_size_t _numGapBases;
-   hal_size_t _dupDegree;   
-  
+   ID _id;  
 };
 
 

@@ -26,13 +26,9 @@ public:
    
    virtual hal_size_t getNumSegments() const = 0;
 
-   virtual hal_size_t getNumGapInsertions() const = 0;
+   virtual hal_size_t getNumGaps() const = 0;
    
-   virtual hal_size_t getNumGapDeletions() const = 0;
-
-   virtual hal_size_t getNumGapInsertedBases() const = 0;
-
-   virtual hal_size_t getNumGapDeletedBases() const = 0;
+   virtual hal_size_t getNumGapBases() const = 0;
    
    virtual bool isLast() const = 0;
    
