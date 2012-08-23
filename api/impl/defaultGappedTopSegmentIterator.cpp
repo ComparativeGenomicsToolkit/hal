@@ -315,12 +315,11 @@ bool DefaultGappedTopSegmentIterator::adjacentTo(
   GappedTopSegmentIteratorConstPtr other) const
 {
   _temp->copy(_left);
-  if (_temp->getTopSegment()->isFirst() == false)
+  toLeftNextUngapped(_temp);
+  if (_temp->isFirst() == false)
   {
-    _temp->toLeft();
-    toLeftNextUngapped(_temp);
     _temp2->copy(other->getLeft());
-    if (_temp2->getTopSegment()->isFirst() == false)
+    if (_temp2->isFirst() == false)
     {
       _temp2->toLeft();
       toLeftNextUngapped(_temp2);
@@ -330,7 +329,7 @@ bool DefaultGappedTopSegmentIterator::adjacentTo(
       }
     }
     _temp2->copy(other->getRight());
-    if (_temp2->getTopSegment()->isLast() == false)
+    if (_temp2->isLast() == false)
     {
       _temp2->toRight();
       toRightNextUngapped(_temp2);
@@ -342,12 +341,11 @@ bool DefaultGappedTopSegmentIterator::adjacentTo(
   }
 
   _temp->copy(_right);
-  if (_temp->getTopSegment()->isLast() == false)
+  toRightNextUngapped(_temp);
+  if (_temp->isLast() == false)
   {
-    _temp->toRight();
-    toRightNextUngapped(_temp);
     _temp2->copy(other->getLeft());
-    if (_temp2->getTopSegment()->isFirst() == false)
+    if (_temp2->isFirst() == false)
     {
       _temp2->toLeft();
       toLeftNextUngapped(_temp2);
@@ -357,7 +355,7 @@ bool DefaultGappedTopSegmentIterator::adjacentTo(
       }
     }
     _temp2->copy(other->getRight());
-    if (_temp2->getTopSegment()->isLast() == false)
+    if (_temp2->isLast() == false)
     {
       _temp2->toRight();
       toRightNextUngapped(_temp2);

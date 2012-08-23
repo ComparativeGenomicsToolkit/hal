@@ -45,9 +45,6 @@ public:
     * on the gap threshold that can be specified below... */   
    virtual hal_size_t getNumContainedGapBases() const = 0;
 
-   /** Get the degree (ie number of copies) of a duplication operation */
-   virtual hal_size_t getDuplicationDegree() const = 0;
-
    /** Left breakpoint is specified by the right cap of the returned segment */
    virtual TopSegmentIteratorConstPtr getLeftBreakpoint() const = 0;
 

@@ -101,6 +101,16 @@ public:
     * @param genomePos Index of DNA character in genome */
    virtual bool overlaps(hal_index_t genomePos) const = 0;
 
+   /** Is the first segment of a sequence 
+    * ie has index 0 in sequence if not reversed or index n-1 if is
+    * reversed */
+   virtual bool isFirst() const = 0;
+
+   /** Is the last segment of a sequence 
+    * ie has index n-1 in sequence if not reversed or index 0 if is
+    * reversed */
+   virtual bool isLast() const = 0;
+
 protected:
    friend class counted_ptr<SegmentIterator>;
    friend class counted_ptr<const SegmentIterator>;

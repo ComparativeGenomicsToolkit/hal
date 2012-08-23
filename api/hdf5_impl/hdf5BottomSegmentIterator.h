@@ -48,6 +48,8 @@ public:
    bool leftOf(hal_index_t genomePos) const;
    bool rightOf(hal_index_t genomePos) const;
    bool overlaps(hal_index_t genomePos) const;
+   bool isFirst() const;
+   bool isLast() const;
 
    //BOTTOM ITERATOR METHODS
    BottomSegmentIteratorPtr copy();

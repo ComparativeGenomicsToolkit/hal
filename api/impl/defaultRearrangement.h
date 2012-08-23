@@ -32,7 +32,6 @@ public:
    hal_size_t getLength() const;
    hal_size_t getNumContainedGaps() const;
    hal_size_t getNumContainedGapBases() const;
-   hal_size_t getDuplicationDegree() const;
    TopSegmentIteratorConstPtr getLeftBreakpoint() const;
    TopSegmentIteratorConstPtr getRightBreakpoint() const;
    bool identifyFromLeftBreakpoint(TopSegmentIteratorConstPtr topSegment);

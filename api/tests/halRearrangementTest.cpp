@@ -276,7 +276,7 @@ RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
 
   RearrangementPtr r = child->getRearrangement();
 
-  r= child->getRearrangement();
+  r = child->getRearrangement();
   do
   {
     hal_index_t leftIdx = 

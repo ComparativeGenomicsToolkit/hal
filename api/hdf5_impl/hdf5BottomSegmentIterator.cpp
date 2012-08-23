@@ -432,4 +432,15 @@ bool HDF5BottomSegmentIterator::overlaps(hal_index_t genomePos) const
   return !leftOf(genomePos) && !rightOf(genomePos);
 }
 
+bool HDF5BottomSegmentIterator::isFirst() const
+{
+  return !_reversed ? _bottomSegment.isFirst() : _bottomSegment.isLast();
+}
+
+bool HDF5BottomSegmentIterator::isLast() const
+{
+  return !_reversed ? _bottomSegment.isLast() : _bottomSegment.isFirst();
+}
+
+
 

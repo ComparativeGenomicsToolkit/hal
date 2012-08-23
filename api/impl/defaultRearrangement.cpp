@@ -66,11 +66,6 @@ hal_size_t DefaultRearrangement::getNumContainedGapBases() const
      _id == Deletion ? _leftParent->getNumGapBases() : _cur->getNumGapBases();
 }
 
-hal_size_t DefaultRearrangement::getDuplicationDegree() const
-{
-  return 0;
-}
-
 TopSegmentIteratorConstPtr DefaultRearrangement::getLeftBreakpoint() const
 {
   assert(_cur->getReversed() == false);
@@ -90,14 +85,14 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
   {
     _id = Inversion;
   }
-  else if (scanInsertionCycle(topSegment) == true)
+  /*else if (scanInsertionCycle(topSegment) == true)
   {
     _id = Insertion;
   }
   else if (scanDeletionCycle(topSegment) == true)
   {
     _id = Deletion;
-  }
+    }*/
   else
   {
     _id = Complex;
@@ -144,16 +139,47 @@ void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
   _right->copy(_left);
 }
 
-// Segment is an inverted descendant of another Segment
-// (Note that it can still be part of a more complex operation 
-// such as a transposition -- which would have to be tested for
-// in the insertion cycle code.  so this method is insufficient to
-// return an ID=Inversion)
+// Segment is an inverted descendant of another Segment but 
+// otherwise no rearrangement.  
 bool DefaultRearrangement::scanInversionCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment.get());
   resetStatus(topSegment);
+  bool first = _cur->isFirst();
+  bool last = _cur->isLast();
+
+  if (_cur->hasParent() == false)
+  {
+    return false;
+  }
+  _tempParent->toParent(_cur);
+  if (first == false)
+  {
+    _left->toLeft();
+    if (_left->hasParent() == false)
+    {
+      return false;
+    }
+    _leftParent->toParent(_left);
+    if (_leftParent->adjacentTo(_tempParent) == false)
+    {
+      return false;
+    }
+  }
+  if (last == false)
+  {
+    _right->toRight();
+    if (_right->hasParent() == false)
+    {
+      return false;
+    }
+    _rightParent->toParent(_right);
+    if (_rightParent->adjacentTo(_tempParent) == false)
+    {
+      return false;
+    }
+  }
   return _cur->getParentReversed();
 }
 
