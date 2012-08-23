@@ -85,14 +85,19 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
   {
     _id = Inversion;
   }
-  /*else if (scanInsertionCycle(topSegment) == true)
+  else if (scanInsertionCycle(topSegment) == true)
   {
-    _id = Insertion;
+    _id = _cur->hasParent() ? Transposition : Insertion;
   }
-  else if (scanDeletionCycle(topSegment) == true)
+  else if (scanDeletionCycle(topSegment) == true && 
+           _cur->hasParent() == false)
   {
     _id = Deletion;
-    }*/
+  }
+  else if (scanDuplicationCycle(topSegment) == true)
+  {
+    _id = Duplication;
+  }
   else
   {
     _id = Complex;
