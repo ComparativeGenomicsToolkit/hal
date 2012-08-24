@@ -31,7 +31,7 @@ void HalCons::printCsv(ostream& outStream) const
   outStream << "GenomeName, ParentName, BranchLength, GenomeLength," 
      " ParentLength, Subtitutions, Insertions, InsertedBases, Inversions,"
      " InvertedBases, Duplications, DuplicatedBases, Transpositions,"
-     " TranspositionBases, GapInsertions," 
+     " TranspositionBases, Other, OtherBases, GapInsertions," 
      " GapInsertedBases, GapDeletions, GapDeletedBases" << endl;
 
   BranchMap::const_iterator i = _branchMap.begin();
@@ -50,6 +50,8 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._duplicationLength.getSum() << ", "
               << stats._transpositionLength.getCount() << ", "
               << stats._transpositionLength.getSum() << ", "
+              << stats._otherLength.getCount() << ", "
+              << stats._otherLength.getSum() << ", "
               << stats._gapInsertionLength.getCount() << ", " 
               << stats._gapInsertionLength.getSum() << ", "
               << stats._gapDeletionLength.getCount() << ", " 
