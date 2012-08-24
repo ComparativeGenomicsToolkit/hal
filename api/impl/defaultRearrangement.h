@@ -55,6 +55,7 @@ private:
 
    GappedTopSegmentIteratorConstPtr _left, _cur, _right;
    GappedBottomSegmentIteratorConstPtr _leftParent, _rightParent, _tempParent;
+   TopSegmentIteratorConstPtr _top;
    
    hal_size_t _childIndex;
    const Genome* _genome;

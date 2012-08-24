@@ -30,7 +30,8 @@ void HalCons::printCsv(ostream& outStream) const
 {
   outStream << "GenomeName, ParentName, BranchLength, GenomeLength," 
      " ParentLength, Subtitutions, Insertions, InsertedBases, Inversions,"
-     " InvertedBases, Duplications, DuplicatedBases, GapInsertions," 
+     " InvertedBases, Duplications, DuplicatedBases, Transpositions,"
+     " TranspositionBases, GapInsertions," 
      " GapInsertedBases, GapDeletions, GapDeletedBases" << endl;
 
   BranchMap::const_iterator i = _branchMap.begin();
@@ -41,9 +42,14 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._branchLength << ", " 
               << stats._genomeLength << ", " << stats._parentLength << ", "
               << stats._subs << ", "
-              << stats._numInserts << ", " << stats._numInsertBases << ", "
-              << stats._numInverts << ", " << stats._numInvertBases << ", "
-              << stats._numDups << ", " << stats._numDupBases << ", "
+              << stats._insertionLength.getCount() << ", " 
+              << stats._insertionLength.getSum() << ", "
+              << stats._inversionLength.getCount() << ", " 
+              << stats._inversionLength.getSum() << ", "
+              << stats._duplicationLength.getCount() << ", " 
+              << stats._duplicationLength.getSum() << ", "
+              << stats._transpositionLength.getCount() << ", "
+              << stats._transpositionLength.getSum() << ", "
               << stats._gapInsertionLength.getCount() << ", " 
               << stats._gapInsertionLength.getSum() << ", "
               << stats._gapDeletionLength.getCount() << ", " 
@@ -140,7 +146,7 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
   // do the gapped deletions by scanning the parent
   GappedBottomSegmentIteratorConstPtr gappedBottom = 
      parent->getGappedBottomSegmentIterator(0, childIndex, 10);
-  
+
   while (gappedBottom->getRightArrayIndex() < parent->getNumBottomSegments())
   {
     stats._gapDeletionLength.add(gappedBottom->getNumGapBases());

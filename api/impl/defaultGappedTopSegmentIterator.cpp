@@ -429,10 +429,12 @@ DefaultGappedTopSegmentIterator::setLeft(TopSegmentIteratorConstPtr ti) const
       break;
     }
   }
+
   _left->copy(ti);
   _right->copy(ti);
   _temp->copy(ti);
   _temp2->copy(ti);
+
   _leftParent->copy(parent->getBottomSegmentIterator());
   _rightParent->copy(_leftParent);
   extendRight();
@@ -549,8 +551,7 @@ void DefaultGappedTopSegmentIterator::extendRight() const
   toRightNextUngapped(_right);
   _temp->copy(_right);
 
-  while ((!_right->getReversed() && !_right->getTopSegment()->isLast()) ||
-         (_right->getReversed() && !_right->getTopSegment()->isFirst()))
+  while (_right->isLast() == false) 
   {
     _right->toRight();
     toRightNextUngapped(_right);

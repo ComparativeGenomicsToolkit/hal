@@ -36,6 +36,7 @@ DefaultRearrangement::DefaultRearrangement(const Genome* childGenome,
   _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold);
   _rightParent = _leftParent->copy();
   _tempParent = _leftParent->copy();
+  _top = _cur->getLeft()->copy();
 }
 
 DefaultRearrangement::~DefaultRearrangement()
@@ -115,9 +116,9 @@ bool DefaultRearrangement::identifyNext()
   assert(_cur->getReversed() == false);
   // don't like this.  need to refactor interface to make better
   // use of gapped iterators
-  TopSegmentIteratorConstPtr ts = _cur->getRight();
-  ts->toRight();
-  bool res = identifyFromLeftBreakpoint(ts);
+  _top->copy(_cur->getRight());
+  _top->toRight();
+  bool res = identifyFromLeftBreakpoint(_top);
   return res;
 }
 

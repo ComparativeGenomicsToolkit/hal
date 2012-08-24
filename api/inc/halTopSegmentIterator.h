@@ -73,6 +73,7 @@ inline std::ostream& operator<<(std::ostream& os,
   const Genome* genome = tseg->getGenome();
   os << "topIterator: ";
   os << "Genome=" << genome->getName();
+  os << " Seq=" << tseg->getSequence()->getName();
   os << " idx=" << tseg->getArrayIndex();
   if (tseg->getArrayIndex() >= 0 && 
       tseg->getArrayIndex() < (hal_index_t)genome->getNumTopSegments())
@@ -85,6 +86,7 @@ inline std::ostream& operator<<(std::ostream& os,
     os << " start=" << ts->getStartPosition();
     os << " len=" << ts->getLength();
     os << " rev=" << ts->getReversed();
+    os << " par=" << tseg->getParentIndex();
   }
   return os;
 }

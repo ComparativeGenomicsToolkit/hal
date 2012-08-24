@@ -68,6 +68,7 @@ inline std::ostream& operator<<(std::ostream& os,
   const Genome* genome = bseg->getGenome();
   os << "bottomIterator: ";
   os << "Genome=" << genome->getName();
+  os << " Seq=" << bseg->getSequence()->getName();
   os << " idx=" << bseg->getArrayIndex();
   if (bseg->getArrayIndex() >= 0 && 
       bseg->getArrayIndex() < (hal_index_t)genome->getNumBottomSegments())
