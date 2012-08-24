@@ -224,23 +224,26 @@ bool DefaultRearrangement::scanInsertionCycle(
   {
     _left->toLeft();
     _right->toRight();
-    _leftParent->toParent(_left);
-    _rightParent->toParent(_right);
-    // Case 2a) Parents are adjacent
-    if (_leftParent->adjacentTo(_rightParent))
+    if (_left->hasParent() == true && _right->hasParent() == true)
     {
-      return true;
-    }
-    // Case 2b) Left parent is endpoint
-    else if (_leftParent->isFirst() || _leftParent->isLast())
-    {
-      return _leftParent->getSequence() == _rightParent->getSequence();
-    }
+      _leftParent->toParent(_left);
+      _rightParent->toParent(_right);
+      // Case 2a) Parents are adjacent
+      if (_leftParent->adjacentTo(_rightParent))
+      {
+        return true;
+      }
+      // Case 2b) Left parent is endpoint
+      else if (_leftParent->isFirst() || _leftParent->isLast())
+      {
+        return _leftParent->getSequence() == _rightParent->getSequence();
+      }
     
-    // Case 2c) Right parent is endpoint
-    else if (_rightParent->isFirst() || _rightParent->isLast())
-    {
-      return _leftParent->getSequence() == _rightParent->getSequence();
+      // Case 2c) Right parent is endpoint
+      else if (_rightParent->isFirst() || _rightParent->isLast())
+      {
+        return _leftParent->getSequence() == _rightParent->getSequence();
+      }
     }
   }
 

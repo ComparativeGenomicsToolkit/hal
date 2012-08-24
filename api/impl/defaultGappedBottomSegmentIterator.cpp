@@ -418,14 +418,12 @@ bool DefaultGappedBottomSegmentIterator::compatible(
   assert(left->hasChild(_childIndex) && right->hasChild(_childIndex));
   assert(left->equals(right) == false);
   
-//  cout << "COMPAT \n" << left << endl << right << endl;
   _leftChild->toChild(left, _childIndex);
   _rightChild->toChild(right, _childIndex);
 
   if (_leftChild->getTopSegment()->getParentReversed() != 
       _rightChild->getTopSegment()->getParentReversed())
   {
-//    cout << "f1 " << endl;
     return false;
   }
 
@@ -434,16 +432,20 @@ bool DefaultGappedBottomSegmentIterator::compatible(
       (_leftChild->getReversed() && 
        _leftChild->rightOf(_rightChild->getStartPosition()) == false))
   {    
-//    cout << "f2 " << endl;
+    return false;
+  }
+  
+  if (left->getBottomSegment()->getSequence() != 
+      right->getBottomSegment()->getSequence() ||
+      _leftChild->getTopSegment()->getSequence() != 
+      _rightChild->getTopSegment()->getSequence())
+  {
     return false;
   }
   
   while (true)
   {
-    assert(_leftChild->getReversed() == true ||
-           _leftChild->getTopSegment()->isLast() == false);
-    assert(_leftChild->getReversed() == false ||
-           _leftChild->getTopSegment()->isFirst() == false);
+    assert(_leftChild->isLast() == false);
     _leftChild->toRight();
     if (_leftChild->hasParent() == true || 
         _leftChild->getLength() >= _gapThreshold)
@@ -454,7 +456,6 @@ bool DefaultGappedBottomSegmentIterator::compatible(
       }
       else
       {
-//        cout << "f3 " << endl;
         return false;
       }
     }

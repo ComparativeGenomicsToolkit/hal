@@ -435,6 +435,18 @@ hal_size_t HDF5Genome::getNumChildren() const
   return _numChildrenInBottomArray;
 }
 
+hal_index_t HDF5Genome::getChildIndex(const Genome* child) const
+{
+  for (hal_size_t i = 0; i < _numChildrenInBottomArray; ++i)
+  {
+    if (getChild(i) == child)
+    {
+      return i;
+    }
+  }
+  return NULL_INDEX;
+}
+
 // SEGMENTED SEQUENCE INTERFACE
 
 const string& HDF5Genome::getName() const

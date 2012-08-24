@@ -11,11 +11,13 @@
 #include <string>
 #include <vector>
 #include "hal.h"
+#include "halAverage.h"
 
 namespace hal {
 
 struct ConsStats
 {
+   // old stats
    hal_size_t _genomeLength;
    hal_size_t _parentLength;
    double _branchLength;
@@ -28,10 +30,18 @@ struct ConsStats
    hal_size_t _numInvertBases;
    hal_size_t _numDups;
    hal_size_t _numDupBases;
-   hal_size_t _gapInserts;
-   hal_size_t _gapInsertBases;
-   hal_size_t _gapDeletes;
-   hal_size_t _gapDeleteBases;
+
+   // stats from new rearragnemtn 
+   typedef Average<hal_size_t> Avg;
+   Avg _inversionLength;
+   Avg _insertionLength;
+   Avg _deletionLength;
+   Avg _transpositionLength;
+   Avg _duplicationLength;
+   Avg _otherLength;
+   Avg _gapInsertionLength;
+   Avg _gapDeletionLength;
+
 };
 
 class HalCons
@@ -47,7 +57,8 @@ public:
 
 protected:
 
-   void analyzeGenomeRecursive(const std::string& genomeName);
+   void analyzeGenomeRecursive(const std::string& genomeName);   
+   void rearrangementAnalysis(const Genome* genome, ConsStats& stats);
 
    typedef std::pair<std::string, std::string> StrPair;
    typedef std::map<StrPair, ConsStats> BranchMap;

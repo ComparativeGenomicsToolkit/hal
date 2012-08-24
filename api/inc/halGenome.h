@@ -105,6 +105,10 @@ public:
    /** Get number of child genomes */
    virtual hal_size_t getNumChildren() const = 0;
 
+   /** Get the numeric index of a given child Genome 
+    * @child child genome */
+   virtual hal_index_t getChildIndex(const Genome* child) const = 0;
+
 protected:
 
    /** Destructor */

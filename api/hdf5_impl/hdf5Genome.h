@@ -88,6 +88,8 @@ public:
 
    hal_size_t getNumChildren() const;
 
+   hal_index_t getChildIndex(const Genome* child) const;
+
    // SEGMENTED SEQUENCE INTERFACE
 
    hal_size_t getSequenceLength() const;

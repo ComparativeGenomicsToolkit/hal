@@ -40,7 +40,7 @@ public:
 
    /** Get the total size (in bases) of gaps within the arrangement.  
     * Gaps are dependent
-    * on the gap threshold that can be specified below... */   
+    * on the gap threshold that can be specified below...*/
    virtual hal_size_t getNumContainedGapBases() const = 0;
 
    /** Left breakpoint is specified by the right cap of the returned segment */

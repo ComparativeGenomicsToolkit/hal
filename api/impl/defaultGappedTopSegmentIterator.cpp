@@ -473,13 +473,19 @@ bool DefaultGappedTopSegmentIterator::compatible(
   {
     return false;
   }
+
+  if (left->getTopSegment()->getSequence() != 
+      right->getTopSegment()->getSequence() ||
+      _leftParent->getBottomSegment()->getSequence() != 
+      _rightParent->getBottomSegment()->getSequence())
+  {
+    return false;
+  }
+
   
   while (true)
   {
-    assert(_leftParent->getReversed() == true ||
-           _leftParent->getBottomSegment()->isLast() == false);
-    assert(_leftParent->getReversed() == false ||
-           _leftParent->getBottomSegment()->isFirst() == false);
+    assert(_leftParent->isLast() == false);
     _leftParent->toRight();
     if (_leftParent->hasChild(_childIndex) == true || 
         _leftParent->getLength() >= _gapThreshold)
