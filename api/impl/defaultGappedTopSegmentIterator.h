@@ -88,6 +88,8 @@ private:
    mutable TopSegmentIteratorConstPtr _right;
    mutable BottomSegmentIteratorConstPtr _leftParent;
    mutable BottomSegmentIteratorConstPtr _rightParent;
+   mutable TopSegmentIteratorConstPtr _leftDup;
+   mutable TopSegmentIteratorConstPtr _rightDup;
    mutable TopSegmentIteratorConstPtr _temp;
    mutable TopSegmentIteratorConstPtr _temp2;
    mutable hal_size_t _childIndex;

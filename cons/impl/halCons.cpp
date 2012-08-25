@@ -29,7 +29,8 @@ HalCons::~HalCons()
 void HalCons::printCsv(ostream& outStream) const
 {
   outStream << "GenomeName, ParentName, BranchLength, GenomeLength," 
-     " ParentLength, Subtitutions, Insertions, InsertedBases, Inversions,"
+     " ParentLength, Subtitutions, Insertions, InsertedBases,"
+     " Deletions, DeletionBases, Inversions,"
      " InvertedBases, Duplications, DuplicatedBases, Transpositions,"
      " TranspositionBases, Other, OtherBases, GapInsertions," 
      " GapInsertedBases, GapDeletions, GapDeletedBases" << endl;
@@ -44,6 +45,8 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._subs << ", "
               << stats._insertionLength.getCount() << ", " 
               << stats._insertionLength.getSum() << ", "
+              << stats._deletionLength.getCount() << ", " 
+              << stats._deletionLength.getSum() << ", "
               << stats._inversionLength.getCount() << ", " 
               << stats._inversionLength.getSum() << ", "
               << stats._duplicationLength.getCount() << ", " 
@@ -151,7 +154,11 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
 
   while (gappedBottom->getRightArrayIndex() < parent->getNumBottomSegments())
   {
-    stats._gapDeletionLength.add(gappedBottom->getNumGapBases());
+    hal_size_t numGaps = gappedBottom->getNumGaps();
+    if (numGaps > 0)
+    {
+      stats._gapDeletionLength.add(gappedBottom->getNumGapBases(), numGaps);
+    }
     gappedBottom->toRight();
   }
 
@@ -178,8 +185,11 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
       stats._otherLength.add(r->getLength());
       break;
     }
-    stats._gapInsertionLength.add(r->getNumContainedGapBases(), 
-                                  r->getNumContainedGaps());
+    hal_size_t numGaps = r->getNumContainedGaps();
+    if (numGaps > 0)
+    {
+      stats._gapInsertionLength.add(r->getNumContainedGapBases(), numGaps);
+    }
   } 
   while (r->identifyNext() == true);
 }

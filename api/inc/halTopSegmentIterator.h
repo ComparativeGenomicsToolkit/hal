@@ -87,6 +87,7 @@ inline std::ostream& operator<<(std::ostream& os,
     os << " len=" << ts->getLength();
     os << " rev=" << ts->getReversed();
     os << " par=" << tseg->getParentIndex();
+    os << " dup=" << tseg->getNextParalogyIndex();
   }
   return os;
 }

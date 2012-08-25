@@ -86,6 +86,7 @@ inline hal_size_t Average<T>::getCount() const
 template <typename T>
 inline void Average<T>::add(T val, hal_size_t count)
 {
+  assert(val > 0);
   _sum += val;
   _count += count;
   _min = min(_min, val);

@@ -26,6 +26,8 @@ DefaultGappedTopSegmentIterator::DefaultGappedTopSegmentIterator(
   _right = left->copy();
   _temp = left->copy();
   _temp2 = left->copy();
+  _leftDup = left->copy();
+  _rightDup = left->copy();
   _leftParent = parent->getBottomSegmentIterator();
   _rightParent = _leftParent->copy();
   setLeft(left);
@@ -504,28 +506,32 @@ bool DefaultGappedTopSegmentIterator::compatible(
   }
   if (_left->hasNextParalogy() == true)
   {
-    _temp->copy(_left);
-    _temp->toNextParalogy();
-    _temp2->copy(_right);
-    _temp2->toNextParalogy();
+    _leftDup->copy(_left);
+    _leftDup->toNextParalogy();
+    _rightDup->copy(_right);
+    _rightDup->toNextParalogy();
   
-    if (_temp->leftOf(_temp2->getStartPosition()) == false)
+    if ((_leftDup->getReversed() == false && 
+         _leftDup->leftOf(_rightDup->getStartPosition()) == false) ||
+        (_leftDup->getReversed() == true && 
+         _rightDup->leftOf(_leftDup->getStartPosition()) == false))
     {
       return false;
     }
-  
+    if (_leftDup->getTopSegment()->getSequence() != 
+        _rightDup->getTopSegment()->getSequence())
+    {
+      return false;
+    }
+
     while (true)
     {
-      assert(_temp->getReversed() == true ||
-             _temp->getTopSegment()->isLast() == false);
-      assert(_temp->getReversed() == false ||
-             _temp->getTopSegment()->isFirst() == false);
-      assert(_temp->getTopSegment()->isLast() == false);
-      _temp->toRight();
-      if (_temp->hasParent() == true || 
-          _temp->getLength() >= _gapThreshold)
+      assert(_leftDup->isLast() == false);
+      _leftDup->toRight();
+      if (_leftDup->hasParent() == true || 
+          _leftDup->getLength() >= _gapThreshold)
       {
-        if (_temp->equals(_temp2))
+        if (_leftDup->equals(_rightDup))
         {
           break;
         }
@@ -548,7 +554,8 @@ void DefaultGappedTopSegmentIterator::extendRight() const
   {
     return;
   }
-  toRightNextUngapped(_right);
+
+  toRightNextUngapped(_right);  
   _temp->copy(_right);
 
   while (_right->isLast() == false) 

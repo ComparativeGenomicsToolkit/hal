@@ -91,7 +91,7 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
     _id = _cur->hasParent() ? Transposition : Insertion;
   }
   else if (scanDeletionCycle(topSegment) == true && 
-           _cur->hasParent() == false)
+           _leftParent->hasChild() == false)
   {
     _id = Deletion;
   }
@@ -109,17 +109,20 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
 
 bool DefaultRearrangement::identifyNext()
 {
-  if (_cur->isLast())
-  {
-    return false;
-  }
   assert(_cur->getReversed() == false);
   // don't like this.  need to refactor interface to make better
   // use of gapped iterators
   _top->copy(_cur->getRight());
-  _top->toRight();
-  bool res = identifyFromLeftBreakpoint(_top);
-  return res;
+  if (_top->getTopSegment()->getArrayIndex() < _genome->getNumTopSegments() - 1)
+  {
+    _top->toRight();
+    identifyFromLeftBreakpoint(_top);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 hal_size_t DefaultRearrangement::getGapLengthThreshold() const

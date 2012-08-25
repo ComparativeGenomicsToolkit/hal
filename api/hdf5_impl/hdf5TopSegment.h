@@ -208,6 +208,7 @@ inline hal_index_t HDF5TopSegment::getNextParalogyIndex() const
 
 inline void HDF5TopSegment::setNextParalogyIndex(hal_index_t parIdx)
 {
+  assert(parIdx != _index);
   _array->setValue(_index, parIndexOffset, parIdx);
 }
 
