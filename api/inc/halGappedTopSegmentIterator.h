@@ -70,7 +70,8 @@ namespace hal {
 inline std::ostream& operator<<(std::ostream& os, 
                                 GappedTopSegmentIteratorConstPtr gts)
 {
-  os << "LEFT: " << gts->getLeft() << "\nRIGHT: " << gts->getRight();
+  os << "Th=" << gts->getGapThreshold() << " chIdx=" << gts->getChildIndex() 
+     << "\nLEFT: " << gts->getLeft() << "\nRIGHT: " << gts->getRight();
   return os;
 }
 }

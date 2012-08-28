@@ -42,7 +42,8 @@ public:
 private:
    
    void resetStatus(TopSegmentIteratorConstPtr topSegment);
-
+   
+   bool scanNothingCycle(TopSegmentIteratorConstPtr topSegment);
    bool scanInversionCycle(TopSegmentIteratorConstPtr topSegment);
    bool scanInsertionCycle(TopSegmentIteratorConstPtr topSegment);
    bool scanDeletionCycle(TopSegmentIteratorConstPtr topSegment);

@@ -22,6 +22,8 @@ DefaultGappedTopSegmentIterator::DefaultGappedTopSegmentIterator(
 {
   const Genome* genome = left->getTopSegment()->getGenome();
   const Genome* parent = genome->getParent();
+  assert(genome && parent);
+  _childIndex = parent->getChildIndex(genome);
   _left = left->copy();
   _right = left->copy();
   _temp = left->copy();
@@ -61,7 +63,7 @@ hal_size_t DefaultGappedTopSegmentIterator::getNumGaps() const
   _temp->copy(_left);
   for (; _temp->equals(_right) == false; _temp->toRight())
   {
-    if (_temp->hasParent() == false)
+    if (_temp->hasParent() == false && _temp->getLength() <= _gapThreshold)
     {
       ++count;
     }
@@ -85,14 +87,12 @@ hal_size_t DefaultGappedTopSegmentIterator::getNumGapBases() const
 
 bool DefaultGappedTopSegmentIterator::isLast() const
 {
-  return getReversed() ? _left->getTopSegment()->isLast() :
-     _right->getTopSegment()->isLast();
+  return _right->isLast();
 }
 
 bool DefaultGappedTopSegmentIterator::isFirst() const
 {
-  return getReversed() ? _right->getTopSegment()->isFirst() :
-     _left->getTopSegment()->isFirst();
+  return _left->isFirst();
 }
 
 hal_index_t DefaultGappedTopSegmentIterator::getLeftArrayIndex() const
@@ -177,7 +177,7 @@ bool DefaultGappedTopSegmentIterator::hasNextParalogy() const
 {
   _temp->copy(_left);
   _temp2->copy(_right);
-  
+
   toRightNextUngapped(_temp);
   toLeftNextUngapped(_temp2);
 
@@ -263,6 +263,13 @@ GappedTopSegmentIteratorPtr DefaultGappedTopSegmentIterator::copy()
 {
   DefaultGappedTopSegmentIterator* newIt =
      new DefaultGappedTopSegmentIterator(_left, _gapThreshold);
+  newIt->_left->copy(_left);
+  newIt->_right->copy(_right);
+  newIt->_childIndex = _childIndex;
+  newIt->_gapThreshold = _gapThreshold;
+  assert(hasParent() == newIt->hasParent());
+  assert(hasNextParalogy() == newIt->hasNextParalogy());
+  assert(getParentReversed() == newIt->getParentReversed());
   return GappedTopSegmentIteratorPtr(newIt);
 }
 
@@ -270,6 +277,14 @@ GappedTopSegmentIteratorConstPtr DefaultGappedTopSegmentIterator::copy() const
 {
   const DefaultGappedTopSegmentIterator* newIt =
      new DefaultGappedTopSegmentIterator(_left, _gapThreshold);
+  newIt->_left->copy(_left);
+  newIt->_right->copy(_right);
+  newIt->_childIndex = _childIndex;
+  newIt->_gapThreshold = _gapThreshold;
+  assert(hasParent() == newIt->hasParent());
+  assert(hasNextParalogy() == newIt->hasNextParalogy());
+  assert(getParentReversed() == newIt->getParentReversed());
+
   return GappedTopSegmentIteratorConstPtr(newIt);
 }
 
@@ -280,6 +295,9 @@ void DefaultGappedTopSegmentIterator::copy(
   _right->copy(ts->getRight());
   _childIndex = ts->getChildIndex();
   _gapThreshold = ts->getGapThreshold();
+  assert(hasParent() == ts->hasParent());
+  assert(hasNextParalogy() == ts->hasNextParalogy());
+  assert(getParentReversed() == ts->getParentReversed());
 }
 
 void DefaultGappedTopSegmentIterator::toChild(
@@ -287,6 +305,9 @@ void DefaultGappedTopSegmentIterator::toChild(
 {
   _leftParent->copy(bs->getLeft());
   _rightParent->copy(bs->getRight());
+
+  const Genome* parent = bs->getLeft()->getBottomSegment()->getGenome();
+  _childIndex = parent->getChildIndex(_left->getTopSegment()->getGenome());
 
   toRightNextUngapped(_leftParent);
   toLeftNextUngapped(_rightParent);
@@ -459,13 +480,13 @@ bool DefaultGappedTopSegmentIterator::compatible(
     return false;
   }
 
-  if (_left->hasNextParalogy() != _right->hasNextParalogy())
+  if (left->hasNextParalogy() != right->hasNextParalogy())
   {
     return false;
   }
-  if (_left->hasNextParalogy() == true && 
-      _left->getTopSegment()->getNextParalogyReversed() !=
-      _right->getTopSegment()->getNextParalogyReversed())
+  if (left->hasNextParalogy() == true && 
+      left->getTopSegment()->getNextParalogyReversed() !=
+      right->getTopSegment()->getNextParalogyReversed())
   {
     return false;
   }
@@ -492,7 +513,7 @@ bool DefaultGappedTopSegmentIterator::compatible(
     assert(_leftParent->isLast() == false);
     _leftParent->toRight();
     if (_leftParent->hasChild(_childIndex) == true || 
-        _leftParent->getLength() >= _gapThreshold)
+        _leftParent->getLength() > _gapThreshold)
     {
       if (_leftParent->equals(_rightParent))
       {
@@ -504,11 +525,11 @@ bool DefaultGappedTopSegmentIterator::compatible(
       }
     }
   }
-  if (_left->hasNextParalogy() == true)
+  if (left->hasNextParalogy() == true)
   {
-    _leftDup->copy(_left);
+    _leftDup->copy(left);
     _leftDup->toNextParalogy();
-    _rightDup->copy(_right);
+    _rightDup->copy(right);
     _rightDup->toNextParalogy();
   
     if ((_leftDup->getReversed() == false && 
@@ -529,7 +550,7 @@ bool DefaultGappedTopSegmentIterator::compatible(
       assert(_leftDup->isLast() == false);
       _leftDup->toRight();
       if (_leftDup->hasParent() == true || 
-          _leftDup->getLength() >= _gapThreshold)
+          _leftDup->getLength() > _gapThreshold)
       {
         if (_leftDup->equals(_rightDup))
         {
@@ -587,8 +608,7 @@ void DefaultGappedTopSegmentIterator::extendLeft() const
   toLeftNextUngapped(_left);
   _temp->copy(_left);
 
-  while ((!_left->getReversed() && !_left->getTopSegment()->isFirst()) ||
-         (_left->getReversed() && !_left->getTopSegment()->isLast()))
+  while (_left->isFirst() == false)
   {
     _left->toLeft();
     toLeftNextUngapped(_left);

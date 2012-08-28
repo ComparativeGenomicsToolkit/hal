@@ -357,6 +357,7 @@ void HDF5TopSegmentIterator::copy(TopSegmentIteratorConstPtr ts) const
   const HDF5TopSegmentIterator* h5ts = 
      reinterpret_cast<const HDF5TopSegmentIterator*>(ts.get());
   assert(h5ts != this);
+  _topSegment._array = h5ts->_topSegment._array;
   _topSegment._genome = h5ts->_topSegment._genome;
   _topSegment._index = h5ts->_topSegment._index;
   _startOffset = h5ts->_startOffset;

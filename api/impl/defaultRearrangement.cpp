@@ -82,18 +82,40 @@ TopSegmentIteratorConstPtr DefaultRearrangement::getRightBreakpoint() const
 bool DefaultRearrangement::identifyFromLeftBreakpoint(
   TopSegmentIteratorConstPtr topSegment)
 {
-  if (scanInversionCycle(topSegment) == true)
+  if (scanNothingCycle(topSegment) == true)
+  {
+    _id = Nothing;
+  }
+  else if (scanInversionCycle(topSegment) == true)
   {
     _id = Inversion;
   }
   else if (scanInsertionCycle(topSegment) == true)
   {
-    _id = _cur->hasParent() ? Transposition : Insertion;
+    if (_cur->getLength() > _gapThreshold)
+    {
+      _id = _cur->hasParent() ? Transposition : Insertion;
+    }
+    else
+    {
+      _id = Gap;
+    }
   }
-  else if (scanDeletionCycle(topSegment) == true && 
-           _leftParent->hasChild() == false)
+  else if (scanDeletionCycle(topSegment) == true) 
   {
-    _id = Deletion;
+    if (_leftParent->getLength() > _gapThreshold &&
+        _leftParent->hasChild() == false)
+    {
+      _id = Deletion;
+    }           
+    else if (_leftParent->getLength() <= _gapThreshold)
+    {
+      _id = Gap;
+    }
+    else
+    {
+      _id = Complex;
+    }
   }
   else if (scanDuplicationCycle(topSegment) == true)
   {
@@ -101,6 +123,43 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
   }
   else
   {
+    resetStatus(topSegment);
+    if (_cur->isFirst() == false && _cur->isLast() == false)
+    {
+      _left->toLeft();
+      _right->toRight();
+      if (_left->hasParent() == true && _right->hasParent() == true && 
+          _cur->hasParent() == true)
+      {
+        _tempParent->toParent(_cur);
+        _leftParent->toParent(_left);
+        _rightParent->toParent(_right);
+
+/*    cout << "\n\ndoing complex\n" 
+         << "cur " << _cur 
+         << "\nleft ** " << _left
+         << "\nright ** " << _right
+         << "\ntp ** " << _tempParent
+         << "\nlp ** " << _leftParent 
+         << "\nrp ** " << _rightParent << endl;
+
+    if (_cur->getLeft()->getTopSegment()->getArrayIndex() == 1219)
+    {
+      GappedBottomSegmentIteratorConstPtr bt = _leftParent->copy();
+      cout << "bt copy " << bt << endl;
+      bt->toRight();
+      cout << "bt right " << bt << endl;
+      _leftParent->toRight();
+      cout << "\n after lp to right ** " << _leftParent;
+      _rightParent->toLeft();
+      cout << "\n after rp to left ** " << _rightParent << endl;
+      scanDeletionCycle(topSegment);
+//      exit(10);
+    }
+*/
+      }
+    }
+
     _id = Complex;
   }
   
@@ -146,6 +205,84 @@ void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
   _cur->setLeft(topSegment);
   _left->copy(_cur);
   _right->copy(_left);
+}
+
+// Segment corresponds to no rearrangemnt.  This will happen when 
+// there is a rearrangement in the homolgous segment in its sibling 
+// genome.  In general, we can expect about half of segments to correspond
+// to such cases.   
+bool DefaultRearrangement::scanNothingCycle(
+  TopSegmentIteratorConstPtr topSegment)
+{
+  assert(topSegment.get());
+  resetStatus(topSegment);
+  bool first = _cur->isFirst();
+  bool last = _cur->isLast();
+
+  if (_cur->hasParent() == false)
+  {
+    return false;
+  }
+  _tempParent->toParent(_cur);
+  if (first == false)
+  {
+    _left->toLeft();
+    if (_left->hasParent() == false)
+    {
+      return false;
+    }
+    _leftParent->toParent(_left);
+    if (_leftParent->adjacentTo(_tempParent) == false)
+    {
+      return false;
+    }
+    if (_left->getParentReversed() == true)
+    {
+      if (_cur->getParentReversed() == false || 
+          _leftParent->rightOf(_tempParent->getStartPosition()) == false)
+      {
+         return false;
+      }
+    }
+    else
+    {
+      if (_cur->getParentReversed() == true || 
+          _leftParent->leftOf(_tempParent->getStartPosition()) == false)
+      {
+         return false;
+      }
+    }
+  }
+  if (last == false)
+  {
+    _right->toRight();
+    if (_right->hasParent() == false)
+    {
+      return false;
+    }
+    _rightParent->toParent(_right);
+    if (_rightParent->adjacentTo(_tempParent) == false)
+    {
+      return false;
+    }
+    if (_right->getParentReversed() == true)
+    {
+      if (_cur->getParentReversed() == false || 
+          _rightParent->leftOf(_tempParent->getStartPosition()) == false)
+      {
+         return false;
+      }
+    }
+    else
+    {
+      if (_cur->getParentReversed() == true || 
+          _rightParent->rightOf(_tempParent->getStartPosition()) == false)
+      {
+         return false;
+      }
+    }
+  }
+  return last && first ? _cur->getParentReversed() : true;
 }
 
 // Segment is an inverted descendant of another Segment but 

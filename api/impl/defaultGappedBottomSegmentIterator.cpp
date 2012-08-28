@@ -39,6 +39,8 @@ DefaultGappedBottomSegmentIterator::DefaultGappedBottomSegmentIterator(
   _temp2 = left->copy();
   _leftChild = child->getTopSegmentIterator();
   _rightChild = _leftChild->copy();
+  _leftDup = _leftChild->copy();
+  _rightDup = _leftChild->copy();
   extendRight();
 }
 
@@ -70,11 +72,13 @@ hal_size_t DefaultGappedBottomSegmentIterator::getNumGaps() const
   _temp->copy(_left);
   for (; _temp->equals(_right) == false; _temp->toRight())
   {
-    if (_temp->hasChild(_childIndex) == false)
+    if (_temp->hasChild(_childIndex) == false && 
+        _temp->getLength() <= _gapThreshold)
     {
       ++count;
     }
   }
+
   return count;
 }
 
@@ -94,14 +98,12 @@ hal_size_t DefaultGappedBottomSegmentIterator::getNumGapBases() const
 
 bool DefaultGappedBottomSegmentIterator::isLast() const
 {
-  return getReversed() ? _left->getBottomSegment()->isLast() :
-     _right->getBottomSegment()->isLast();
+  return _right->isLast();
 }
 
 bool DefaultGappedBottomSegmentIterator::isFirst() const
 {
-  return getReversed() ? _right->getBottomSegment()->isFirst() :
-     _left->getBottomSegment()->isFirst();
+  return _left->isFirst();
 }
 
 hal_index_t DefaultGappedBottomSegmentIterator::getLeftArrayIndex() const
@@ -262,6 +264,12 @@ GappedBottomSegmentIteratorPtr DefaultGappedBottomSegmentIterator::copy()
 {
   DefaultGappedBottomSegmentIterator* newIt =
      new DefaultGappedBottomSegmentIterator(_left, _childIndex, _gapThreshold);
+  newIt->_left->copy(_left);
+  newIt->_right->copy(_right);
+  newIt->_childIndex = _childIndex;
+  newIt->_gapThreshold = _gapThreshold;
+  assert(hasChild() == newIt->hasChild());
+  assert(getChildReversed() == newIt->getChildReversed());
   return GappedBottomSegmentIteratorPtr(newIt);
 }
 
@@ -269,6 +277,12 @@ GappedBottomSegmentIteratorConstPtr DefaultGappedBottomSegmentIterator::copy() c
 {
   const DefaultGappedBottomSegmentIterator* newIt =
      new DefaultGappedBottomSegmentIterator(_left, _childIndex, _gapThreshold);
+  newIt->_left->copy(_left);
+  newIt->_right->copy(_right);
+  newIt->_childIndex = _childIndex;
+  newIt->_gapThreshold = _gapThreshold;
+  assert(hasChild() == newIt->hasChild());
+  assert(getChildReversed() == newIt->getChildReversed());
   return GappedBottomSegmentIteratorConstPtr(newIt);
 }
 
@@ -279,6 +293,8 @@ void DefaultGappedBottomSegmentIterator::copy(
   _right->copy(ts->getRight());
   _childIndex = ts->getChildIndex();
   _gapThreshold = ts->getGapThreshold();
+  assert(hasChild() == ts->hasChild());
+  assert(getChildReversed() == ts->getChildReversed());
 }
 
 void DefaultGappedBottomSegmentIterator::toParent(
@@ -287,11 +303,17 @@ void DefaultGappedBottomSegmentIterator::toParent(
   TopSegmentIteratorConstPtr leftChild = ts->getLeft()->copy();
   TopSegmentIteratorConstPtr rightChild = ts->getRight()->copy();
 
+  const Genome* child = ts->getLeft()->getTopSegment()->getGenome();
+  const Genome* parent = child->getParent();
+  _childIndex = parent->getChildIndex(child);
+
   toRightNextUngapped(leftChild);
   toLeftNextUngapped(rightChild);
 
   _left->toParent(leftChild);
   _right->toParent(rightChild);
+
+  // should extend here?!
 }
 
 bool DefaultGappedBottomSegmentIterator::equals(
@@ -378,6 +400,11 @@ bool DefaultGappedBottomSegmentIterator::hasChild() const
   toRightNextUngapped(_temp);
   toLeftNextUngapped(_temp2);
 
+  if (_left->equals(_right))
+  {
+    assert(_temp->equals(_left) && _temp2->equals(_right));
+  }
+
   assert(_temp->hasChild(_childIndex) == _temp2->hasChild(_childIndex));
   return _temp->hasChild(_childIndex);
 }
@@ -391,6 +418,12 @@ bool DefaultGappedBottomSegmentIterator::getChildReversed() const
 
     toRightNextUngapped(_temp);
     toLeftNextUngapped(_temp2);
+    
+    if (_left->equals(_right))
+    {
+      assert(_temp->equals(_left) && _temp2->equals(_right));
+    }
+
     assert(_temp->hasChild(_childIndex) && _temp2->hasChild(_childIndex));
     assert(_temp->getBottomSegment()->getChildReversed(_childIndex) == 
            _temp2->getBottomSegment()->getChildReversed(_childIndex));
@@ -427,6 +460,10 @@ bool DefaultGappedBottomSegmentIterator::compatible(
     return false;
   }
 
+  if (_leftChild->hasNextParalogy() != _rightChild->hasNextParalogy())
+  {
+    return false;
+  }
   if ((!_leftChild->getReversed() && 
        _leftChild->leftOf(_rightChild->getStartPosition()) == false) ||
       (_leftChild->getReversed() && 
@@ -448,7 +485,7 @@ bool DefaultGappedBottomSegmentIterator::compatible(
     assert(_leftChild->isLast() == false);
     _leftChild->toRight();
     if (_leftChild->hasParent() == true || 
-        _leftChild->getLength() >= _gapThreshold)
+        _leftChild->getLength() > _gapThreshold)
     {
       if (_leftChild->equals(_rightChild))
       {
@@ -457,6 +494,47 @@ bool DefaultGappedBottomSegmentIterator::compatible(
       else
       {
         return false;
+      }
+    }
+  }
+
+  _leftChild->toChild(left, _childIndex);
+  _rightChild->toChild(right, _childIndex);
+  if (_leftChild->hasNextParalogy() == true)
+  {
+    _leftDup->copy(_leftChild);
+    _leftDup->toNextParalogy();
+    _rightDup->copy(_rightChild);
+    _rightDup->toNextParalogy();
+  
+    if ((_leftDup->getReversed() == false && 
+         _leftDup->leftOf(_rightDup->getStartPosition()) == false) ||
+        (_leftDup->getReversed() == true && 
+         _rightDup->leftOf(_leftDup->getStartPosition()) == false))
+    {
+      return false;
+    }
+    if (_leftDup->getTopSegment()->getSequence() != 
+        _rightDup->getTopSegment()->getSequence())
+    {
+      return false;
+    }
+
+    while (true)
+    {
+      assert(_leftDup->isLast() == false);
+      _leftDup->toRight();
+      if (_leftDup->hasParent() == true || 
+          _leftDup->getLength() > _gapThreshold)
+      {
+        if (_leftDup->equals(_rightDup))
+        {
+          break;
+        }
+        else
+        {
+          return false;
+        }
       }
     }
   }
@@ -472,18 +550,13 @@ void DefaultGappedBottomSegmentIterator::extendRight() const
   {
     return;
   }
-//  cout << "calling ER on " << _right->getBottomSegment()->getArrayIndex();
   toRightNextUngapped(_right);
   _temp->copy(_right);
 
-  while ((!_right->getReversed() && !_right->getBottomSegment()->isLast()) ||
-         (_right->getReversed() && !_right->getBottomSegment()->isFirst()))
+  while (_right->isLast() == false)
   {
     _right->toRight();
-    toRightNextUngapped(_right);
-//    cout << "\ndoing THANG on " << _temp->getBottomSegment()->getArrayIndex()
-    //       << ", " <<  _right->getBottomSegment()->getArrayIndex() << endl;
-    
+    toRightNextUngapped(_right);    
   
     if ((_right->hasChild(_childIndex) == false && 
          _right->getLength() > _gapThreshold) ||
@@ -512,8 +585,7 @@ void DefaultGappedBottomSegmentIterator::extendLeft() const
   toLeftNextUngapped(_left);
   _temp->copy(_left);
   
-  while ((!_left->getReversed() && !_left->getBottomSegment()->isFirst()) ||
-         (_left->getReversed() && !_left->getBottomSegment()->isLast()))
+  while (_left->isFirst() == false)
   {
     _left->toLeft();
     toLeftNextUngapped(_left);

@@ -33,6 +33,7 @@ struct ConsStats
 
    // stats from new rearragnemtn 
    typedef Average<hal_size_t> Avg;
+   Avg _nothingLength;
    Avg _inversionLength;
    Avg _insertionLength;
    Avg _deletionLength;
@@ -48,8 +49,7 @@ class HalCons
 {
 public:
 
-   HalCons();
-   HalCons(hal::AlignmentConstPtr alignment); 
+   HalCons(hal::AlignmentConstPtr alignment, hal_size_t gapThreshold); 
    virtual ~HalCons();
 
    void printCsv(std::ostream& outStream) const;
@@ -65,6 +65,7 @@ protected:
 
    BranchMap _branchMap;
    hal::AlignmentConstPtr _alignment;
+   hal_size_t _gapThreshold;
 
 };
 

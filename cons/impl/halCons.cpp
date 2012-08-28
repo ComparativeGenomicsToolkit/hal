@@ -11,12 +11,8 @@
 using namespace std;
 using namespace hal;
 
-HalCons::HalCons()
-{
-
-}
-
-HalCons::HalCons(AlignmentConstPtr alignment)
+HalCons::HalCons(AlignmentConstPtr alignment, hal_size_t gapThreshold) :
+  _gapThreshold(gapThreshold)
 {
   analyzeAlignment(alignment);
 }
@@ -33,7 +29,8 @@ void HalCons::printCsv(ostream& outStream) const
      " Deletions, DeletionBases, Inversions,"
      " InvertedBases, Duplications, DuplicatedBases, Transpositions,"
      " TranspositionBases, Other, OtherBases, GapInsertions," 
-     " GapInsertedBases, GapDeletions, GapDeletedBases" << endl;
+     " GapInsertedBases, GapDeletions, GapDeletedBases, Nothings,"
+     " NothingBases" << endl;
 
   BranchMap::const_iterator i = _branchMap.begin();
   for (; i != _branchMap.end(); ++i)
@@ -58,7 +55,9 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._gapInsertionLength.getCount() << ", " 
               << stats._gapInsertionLength.getSum() << ", "
               << stats._gapDeletionLength.getCount() << ", " 
-              << stats._gapDeletionLength.getSum()
+              << stats._gapDeletionLength.getSum() << ", "
+              << stats._nothingLength.getCount() << ", " 
+              << stats._nothingLength.getSum()
               <<endl;
   }
 
@@ -150,7 +149,7 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
 
   // do the gapped deletions by scanning the parent
   GappedBottomSegmentIteratorConstPtr gappedBottom = 
-     parent->getGappedBottomSegmentIterator(0, childIndex, 10);
+     parent->getGappedBottomSegmentIterator(0, childIndex, _gapThreshold);
 
   while (gappedBottom->getRightArrayIndex() < parent->getNumBottomSegments())
   {
@@ -162,7 +161,21 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
     gappedBottom->toRight();
   }
 
+  GappedTopSegmentIteratorConstPtr gappedTop = 
+     genome->getGappedTopSegmentIterator(0, _gapThreshold);
+
+  while (gappedTop->getRightArrayIndex() < genome->getNumTopSegments())
+  {
+    hal_size_t numGaps = gappedTop->getNumGaps();
+    if (numGaps > 0)
+    {
+      stats._gapInsertionLength.add(gappedTop->getNumGapBases(), numGaps);
+    }
+    gappedTop->toRight();
+  }
+
   RearrangementPtr r = genome->getRearrangement();
+  r->setGapLengthThreshold(_gapThreshold);
   do {
     switch (r->getID())
     {
@@ -181,14 +194,12 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
     case Rearrangement::Duplication:
       stats._duplicationLength.add(r->getLength());
       break;
+    case Rearrangement::Nothing:
+      stats._nothingLength.add(r->getLength());
+      break;
     default:
       stats._otherLength.add(r->getLength());
       break;
-    }
-    hal_size_t numGaps = r->getNumContainedGaps();
-    if (numGaps > 0)
-    {
-      stats._gapInsertionLength.add(r->getNumContainedGapBases(), numGaps);
     }
   } 
   while (r->identifyNext() == true);
