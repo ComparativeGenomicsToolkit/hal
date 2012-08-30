@@ -191,7 +191,7 @@ void RearrangementInsertionTest::createCallBack(AlignmentPtr alignment)
 {
   size_t numSequences = 3;
   size_t numSegmentsPerSequence = 10;
-  size_t segmentLength = 5;
+  size_t segmentLength = 50;
   
   addIdenticalParentChild(alignment, numSequences, numSegmentsPerSequence,
                           segmentLength);
@@ -202,14 +202,25 @@ void RearrangementInsertionTest::createCallBack(AlignmentPtr alignment)
   BottomSegmentIteratorPtr bi = parent->getBottomSegmentIterator();
   
   // insertion smaller than gap threshold
+  bi->toRight();  
   makeInsertion(bi);
 
-  // insertion larger than gap threshold
-  bi->toRight();
-  bi->toRight();
-  makeInsertion(bi);
-  bi->toRight();
-  makeInsertion(bi);
+  // stagger insertions to prevent gapped iterators from being larger
+  // than a segment
+  size_t count = 0;
+  for (bi = parent->getBottomSegmentIterator();
+       bi != parent->getBottomSegmentEndIterator();
+       bi->toRight())
+  {
+    if (bi->hasChild(0))
+    {
+      bi->getBottomSegment()->setChildReversed(0, count % 2);
+      TopSegmentIteratorPtr ti = child->getTopSegmentIterator();
+      ti->toChild(bi, 0);
+      ti->getTopSegment()->setParentReversed(count % 2);
+      ++count;
+    }
+  }
 
   // insertion larger than gap threshold but that contains gaps
 }
@@ -223,7 +234,27 @@ void RearrangementInsertionTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* parent = alignment->openGenome("parent");
   
   RearrangementPtr r = child->getRearrangement();
-//  bool res = r->identifyFromLeftBreakpoint(parent->getTopSegmentIterator());
+  size_t count = 0;
+  do
+  {
+    hal_index_t leftIdx = 
+       r->getLeftBreakpoint()->getTopSegment()->getArrayIndex();
+    if (leftIdx == 1)
+    {
+      CuAssertTrue(_testCase, r->getID() == Rearrangement::Insertion);
+    }
+    else if (leftIdx == 2)
+    {
+      // side effect of makeInsertion causes a deletion right next door
+      CuAssertTrue(_testCase, r->getID() == Rearrangement::Deletion);
+    }
+    else
+    {
+      CuAssertTrue(_testCase, r->getID() != Rearrangement::Insertion &&
+                   r->getID() != Rearrangement::Deletion);
+    }
+  }
+  while (r->identifyNext() == true);
   
 }
 
@@ -396,34 +427,34 @@ void halRearrangementInsertionTest(CuTest *testCase)
 
 void halRearrangementSimpleInversionTest(CuTest *testCase)
 {
-//  try 
+  try 
   {
     RearrangementSimpleInversionTest tester;
     tester.check(testCase);
   }
-//   catch (...) 
+   catch (...) 
   {
-//    CuAssertTrue(testCase, false);
+    CuAssertTrue(testCase, false);
   } 
 }
 
 void halRearrangementGappedInversionTest(CuTest *testCase)
 {
-//  try 
+  try 
   {
     RearrangementGappedInversionTest tester;
     tester.check(testCase);
   }
-//   catch (...) 
+  catch (...) 
   {
-//    CuAssertTrue(testCase, false);
+    CuAssertTrue(testCase, false);
   } 
 }
 
 CuSuite* halRearrangementTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
-//  SUITE_ADD_TEST(suite, halRearrangementInsertionTest);
+  SUITE_ADD_TEST(suite, halRearrangementInsertionTest);
   SUITE_ADD_TEST(suite, halRearrangementSimpleInversionTest);
   SUITE_ADD_TEST(suite, halRearrangementGappedInversionTest);
   return suite;
