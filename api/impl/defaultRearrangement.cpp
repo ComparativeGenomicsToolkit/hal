@@ -31,11 +31,13 @@ DefaultRearrangement::DefaultRearrangement(const Genome* childGenome,
   assert(_parent != NULL);
   // just allocating here -- need to be properly init
   _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold);
+  _next = _cur->copy();
   _left = _cur->copy();
   _right = _left->copy();
   _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold);
   _rightParent = _leftParent->copy();
-  _tempParent = _leftParent->copy();
+  _curParent = _leftParent->copy();
+  _nextParent = _leftParent->copy();
   _top = _cur->getLeft()->copy();
 }
 
@@ -131,18 +133,19 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
       if (_left->hasParent() == true && _right->hasParent() == true && 
           _cur->hasParent() == true)
       {
-        _tempParent->toParent(_cur);
+        _curParent->toParent(_cur);
         _leftParent->toParent(_left);
         _rightParent->toParent(_right);
-
-/*    cout << "\n\ndoing complex\n" 
-         << "cur " << _cur 
-         << "\nleft ** " << _left
-         << "\nright ** " << _right
-         << "\ntp ** " << _tempParent
-         << "\nlp ** " << _leftParent 
-         << "\nrp ** " << _rightParent << endl;
-
+/*
+        cout << "\n\ncomplex\n"
+             << "cur " << _cur 
+             << "\nleft ** " << _left
+             << "\nright ** " << _right
+             << "\ntp ** " << _curParent
+             << "\nlp ** " << _leftParent 
+             << "\nrp ** " << _rightParent << endl;
+*/
+/*
     if (_cur->getLeft()->getTopSegment()->getArrayIndex() == 1219)
     {
       GappedBottomSegmentIteratorConstPtr bt = _leftParent->copy();
@@ -203,6 +206,7 @@ void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
   assert(_parent != NULL);
 
   _cur->setLeft(topSegment);
+  _next->copy(_cur);
   _left->copy(_cur);
   _right->copy(_left);
 }
@@ -223,7 +227,7 @@ bool DefaultRearrangement::scanNothingCycle(
   {
     return false;
   }
-  _tempParent->toParent(_cur);
+  _curParent->toParent(_cur);
   if (first == false)
   {
     _left->toLeft();
@@ -232,14 +236,14 @@ bool DefaultRearrangement::scanNothingCycle(
       return false;
     }
     _leftParent->toParent(_left);
-    if (_leftParent->adjacentTo(_tempParent) == false)
+    if (_leftParent->adjacentTo(_curParent) == false)
     {
       return false;
     }
     if (_left->getParentReversed() == true)
     {
       if (_cur->getParentReversed() == false || 
-          _leftParent->rightOf(_tempParent->getStartPosition()) == false)
+          _leftParent->rightOf(_curParent->getStartPosition()) == false)
       {
          return false;
       }
@@ -247,7 +251,7 @@ bool DefaultRearrangement::scanNothingCycle(
     else
     {
       if (_cur->getParentReversed() == true || 
-          _leftParent->leftOf(_tempParent->getStartPosition()) == false)
+          _leftParent->leftOf(_curParent->getStartPosition()) == false)
       {
          return false;
       }
@@ -261,14 +265,14 @@ bool DefaultRearrangement::scanNothingCycle(
       return false;
     }
     _rightParent->toParent(_right);
-    if (_rightParent->adjacentTo(_tempParent) == false)
+    if (_rightParent->adjacentTo(_curParent) == false)
     {
       return false;
     }
     if (_right->getParentReversed() == true)
     {
       if (_cur->getParentReversed() == false || 
-          _rightParent->leftOf(_tempParent->getStartPosition()) == false)
+          _rightParent->leftOf(_curParent->getStartPosition()) == false)
       {
          return false;
       }
@@ -276,7 +280,7 @@ bool DefaultRearrangement::scanNothingCycle(
     else
     {
       if (_cur->getParentReversed() == true || 
-          _rightParent->rightOf(_tempParent->getStartPosition()) == false)
+          _rightParent->rightOf(_curParent->getStartPosition()) == false)
       {
          return false;
       }
@@ -299,7 +303,7 @@ bool DefaultRearrangement::scanInversionCycle(
   {
     return false;
   }
-  _tempParent->toParent(_cur);
+  _curParent->toParent(_cur);
   if (first == false)
   {
     _left->toLeft();
@@ -308,7 +312,7 @@ bool DefaultRearrangement::scanInversionCycle(
       return false;
     }
     _leftParent->toParent(_left);
-    if (_leftParent->adjacentTo(_tempParent) == false)
+    if (_leftParent->adjacentTo(_curParent) == false)
     {
       return false;
     }
@@ -321,7 +325,7 @@ bool DefaultRearrangement::scanInversionCycle(
       return false;
     }
     _rightParent->toParent(_right);
-    if (_rightParent->adjacentTo(_tempParent) == false)
+    if (_rightParent->adjacentTo(_curParent) == false)
     {
       return false;
     }
@@ -343,6 +347,23 @@ bool DefaultRearrangement::scanInsertionCycle(
   {
     return false;
   }
+
+  // eat up any adjacent insertions so they don't get double counted
+  while (_next->hasParent() == false && _next->isLast() == false)
+  {
+    _right->copy(_next);
+    _right->toRight();
+    if (_right->hasParent() == false)
+    {
+      _next->copy(_right);
+    }
+    else
+    {
+      break;
+    }
+  }
+  _right->copy(_next);
+  assert(_next->equals(_cur) || _next->hasParent() == false);
 
   // Case 1a) current segment is left endpoint.  we consider insertion
   // if right neighbour has parent
@@ -494,8 +515,8 @@ bool DefaultRearrangement::scanTranslocationCycle(
   }
   else
   {
-    _tempParent->toParent(_right);
-    return _tempParent->equals(_rightParent);
+    _curParent->toParent(_right);
+    return _curParent->equals(_rightParent);
   }
   return false;
 }

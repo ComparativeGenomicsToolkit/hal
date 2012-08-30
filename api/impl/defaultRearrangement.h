@@ -54,8 +54,9 @@ private:
    
    hal_size_t _gapThreshold;
 
-   GappedTopSegmentIteratorConstPtr _left, _cur, _right;
-   GappedBottomSegmentIteratorConstPtr _leftParent, _rightParent, _tempParent;
+   GappedTopSegmentIteratorConstPtr _left, _cur, _next, _right;
+   GappedBottomSegmentIteratorConstPtr _leftParent, _curParent, _nextParent,
+   _rightParent;
    TopSegmentIteratorConstPtr _top;
    
    hal_size_t _childIndex;
