@@ -63,7 +63,7 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
         HDF5TopSegment segment(NULL, &myArray, i);
         segment.setStartPosition(i * 1);
         segment.setLength(i * 2);
-        segment.setNextParalogyIndex(i * 3);
+        segment.setNextParalogyIndex(i * 3 + 1);
         segment.setParentIndex(i * 4);
         segment.setParentReversed(i % 2 ? true : false);
         segment.setBottomParseIndex(i * 5);
@@ -84,7 +84,7 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
          CuAssertTrue(testCase,
                       segment.getLength() == i * 2);
          CuAssertTrue(testCase,
-                      segment.getNextParalogyIndex() == (hal_index_t)i * 3);
+                      segment.getNextParalogyIndex() == (hal_index_t)i * 3 + 1);
          CuAssertTrue(testCase,
                       segment.getParentIndex() == (hal_index_t)i * 4);
          CuAssertTrue(testCase,
@@ -134,7 +134,7 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
           HDF5BottomSegment segment(NULL, &myArray, i);
           segment.setStartPosition(i * 1);
           segment.setLength(i * 2);
-          segment.setNextParalogyIndex(i * 3);
+          segment.setNextParalogyIndex(i * 3 + 1);
           segment.setTopParseIndex(i * 5);
           segment.setTopParseOffset(i * 6);
           for (hsize_t j = 0; j < numChildren; ++j)
@@ -159,7 +159,7 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
           CuAssertTrue(testCase,
                        segment.getLength() == i * 2);
           CuAssertTrue(testCase,
-                       segment.getNextParalogyIndex() == (hal_index_t)i * 3);
+                       segment.getNextParalogyIndex() == (hal_index_t)i * 3 +1);
           CuAssertTrue(testCase,
                        segment.getTopParseIndex() == (hal_index_t)i * 5);
           CuAssertTrue(testCase,
