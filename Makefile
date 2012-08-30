@@ -20,4 +20,4 @@ test: all
 doxy : ${modules:%=doxy.%}
 
 doxy.%:
-	cd $* && make doxy
+	cd api && make doxy
