@@ -28,14 +28,27 @@ void HalCons::printCsv(ostream& outStream) const
      " ParentLength, Subtitutions, Insertions, InsertedBases,"
      " Deletions, DeletionBases, Inversions,"
      " InvertedBases, Duplications, DuplicatedBases, Transpositions,"
-     " TranspositionBases, Other, OtherBases, GapInsertions," 
-     " GapInsertedBases, GapDeletions, GapDeletedBases, Nothings,"
-     " NothingBases" << endl;
+     " TranspositionBases, Other, GapInsertions," 
+     " GapInsertedBases, GapDeletions, GapDeletedBases" 
+            << endl;
 
   BranchMap::const_iterator i = _branchMap.begin();
   for (; i != _branchMap.end(); ++i)
   {
     const ConsStats& stats = i->second;
+
+    // right now the break pairs of all detected events get marked as
+    // other, so we subtract them from the total as they were already
+    // counted.  (this may result in a slight underestimation of other
+    // in some cases which will need to be looked into later
+    hal_index_t otherCount = stats._otherLength.getCount() -
+       stats._insertionLength.getCount() -
+       stats._deletionLength.getCount() - 
+       stats._inversionLength.getCount() -
+       stats._duplicationLength.getCount() -
+       stats._transpositionLength.getCount();
+    otherCount = max(otherCount, (hal_index_t)0);
+       
     outStream << i->first.first << ", " << i->first.second << ", "
               << stats._branchLength << ", " 
               << stats._genomeLength << ", " << stats._parentLength << ", "
@@ -50,14 +63,13 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._duplicationLength.getSum() << ", "
               << stats._transpositionLength.getCount() << ", "
               << stats._transpositionLength.getSum() << ", "
-              << stats._otherLength.getCount() << ", "
-              << stats._otherLength.getSum() << ", "
+              << otherCount << ", "
               << stats._gapInsertionLength.getCount() << ", " 
               << stats._gapInsertionLength.getSum() << ", "
               << stats._gapDeletionLength.getCount() << ", " 
-              << stats._gapDeletionLength.getSum() << ", "
-              << stats._nothingLength.getCount() << ", " 
-              << stats._nothingLength.getSum()
+              << stats._gapDeletionLength.getSum() 
+//              << stats._nothingLength.getCount() << ", " 
+//              << stats._nothingLength.getSum()
               <<endl;
   }
 
@@ -106,7 +118,7 @@ void HalCons::analyzeGenomeRecursive(const string& genomeName)
         ++stats._numInserts;
         stats._numInsertBases += topIt->getLength();
       }
-      else
+      if (topIt->hasParent() == true)
       {
         parIt->toParent(topIt);
         if (parIt->getReversed() == true)
