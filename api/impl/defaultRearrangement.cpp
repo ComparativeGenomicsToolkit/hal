@@ -370,7 +370,16 @@ bool DefaultRearrangement::scanInsertionCycle(
   if (first)
   {
     _right->toRight();
-    return _right->hasParent();
+    if (_cur->hasParent() == false)
+    {
+      return true;
+    }
+    else if (_right->hasParent())
+    {
+      _curParent->toParent(_cur);
+      _rightParent->toParent(_right);
+      return _rightParent->adjacentTo(_curParent) == false;      
+    }
   }
 
   // Case 1b) current segment is right endpoint.  we consider insertion
@@ -378,7 +387,16 @@ bool DefaultRearrangement::scanInsertionCycle(
   else if (last)
   {
     _left->toLeft();
-    return _left->hasParent();
+    if (_cur->hasParent() == false)
+    {
+      return true;
+    }
+    else if (_left->hasParent())
+    {
+      _curParent->toParent(_cur);
+      _leftParent->toParent(_left);
+      return _leftParent->adjacentTo(_curParent) == false;      
+    }
   }
 
   // Case 2) current segment has a left neigbhour and a right neigbour
