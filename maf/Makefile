@@ -8,6 +8,8 @@ libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
 libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
 libTests = tests/*.cpp 
 libTestsHeaders = tests/*.h 
+libHalTestsAll := $(wildcard ../api/tests/*.cpp)
+libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 
 all : ${libPath}/halMafExport.a ${binPath}/hal2maf ${binPath}/halMafTests
 
@@ -26,4 +28,4 @@ ${binPath}/hal2maf : impl/hal2maf.cpp ${libPath}/halMafExport.a ${libPath}/halLi
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/hal2maf impl/hal2maf.cpp ${libPath}/halMafExport.a ${libPath}/halLib.a ${basicLibs}
 
 ${binPath}/halMafTests : ${libTests} ${libTestsHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halMafTests ${libTests} ${libPath}/halLib.a ${libPath}/halMafExport.a ${basicLibs}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halMafTests ${libHalTests} ${libTests} ${libPath}/halLib.a ${libPath}/halMafExport.a ${basicLibs}
