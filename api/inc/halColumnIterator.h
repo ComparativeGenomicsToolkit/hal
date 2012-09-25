@@ -44,6 +44,13 @@ public:
     * genoem sequence */
    virtual void toRight() const = 0;
 
+   /** Use this method to bound iteration loops.  When the column iterator
+    * is retrieved from the sequence or genome, the last column is specfied.
+    * toRight() cna then be called until lastColumn is true.  */
+   virtual bool lastColumn() const = 0;
+
+   // BROKEN  use lastColumn() method instead for terminating iteration
+   // loops. 
    /** Test if column iterator is left  (only in terms
     * of the reference genome) as another iterator.  Used to bound
     * a loop, for example.  in the case of paralogy, the rightmost

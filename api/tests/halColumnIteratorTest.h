@@ -39,4 +39,10 @@ struct ColumnIteratorInvTest : public AlignmentTest
    void checkGenome(const hal::Genome* genome);
 };
 
+struct ColumnIteratorGapTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
 #endif

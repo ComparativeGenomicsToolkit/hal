@@ -84,7 +84,8 @@ public:
    virtual ColumnIteratorConstPtr getColumnIterator(
      const Genome* root = NULL,
      hal_size_t maxInsertLength = 0,
-     hal_index_t position = 0) const = 0;
+     hal_index_t position = 0,
+     hal_index_t lastPosition = NULL_INDEX) const = 0;
 
    /** Get a DNA end iterator (one beyond last element in list) 
     * @param position Index of last position to be iterated over

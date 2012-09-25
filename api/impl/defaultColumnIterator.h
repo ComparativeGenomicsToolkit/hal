@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 #include "halColumnIterator.h"
+#include "halRearrangement.h"
 
 namespace hal {
 
@@ -22,6 +23,7 @@ public:
    DefaultColumnIterator(const hal::Sequence* reference, 
                          const hal::Genome* root,
                          hal_index_t columnIndex,
+                         hal_index_t lastIndex,
                          hal_size_t maxInsertionLength,
                          bool endIterator);
    
@@ -31,7 +33,9 @@ public:
     * genoem sequence */
     void toRight() const;
 
-    bool leftOf(ColumnIteratorConstPtr other) const;
+   bool lastColumn() const;
+
+   bool leftOf(ColumnIteratorConstPtr other) const;
    
    const hal::Genome* getReferenceGenome() const;
    const hal::Sequence* getReferenceSequence() const;
@@ -74,18 +78,22 @@ private:
    {
       const Sequence* _sequence;
       hal_index_t _index;
+      hal_index_t _lastIndex;
       bool _reversed;
       LinkedTopIteratorPtr _top;
       LinkedBottomIteratorPtr _bottom;
+      RearrangementPtr _rearrangement;
       VisitSet _visitSet;
    };
 
    typedef std::stack<StackEntry> ActiveStack;
 
 private:
-
-   void init(const hal::Sequence* ref, hal_index_t index, 
+   void pushStack(const Sequence* ref, hal_index_t index, 
+                  hal_index_t lastIndex, bool update) const;
+   void init(const hal::Sequence* ref, hal_index_t index,
              bool endIterator) const;
+   bool handleDeletion() const;
    void resetColMap() const;
    void eraseColMap() const;
    void recursiveUpdate(bool init) const;
@@ -112,11 +120,14 @@ private:
    // seem like a dumb excercise though. 
    mutable const Genome* _root;
    mutable ActiveStack _stack;
+   mutable const Sequence* _ref;
    mutable size_t _curInsertionLength;
 
    mutable hal_size_t _maxInsertionLength;
 
    mutable ColumnMap _colMap;
+   mutable TopSegmentIteratorConstPtr _top;
+   mutable TopSegmentIteratorConstPtr _next;
 };
 
 

@@ -80,7 +80,8 @@ public:
 
    ColumnIteratorConstPtr getColumnIterator(const Genome* root,
                                             hal_size_t maxInsertLength,
-                                            hal_index_t position) const;
+                                            hal_index_t position,
+                                            hal_index_t lastPosition) const;
 
    ColumnIteratorConstPtr getColumnEndIterator(hal_index_t position) const;
 

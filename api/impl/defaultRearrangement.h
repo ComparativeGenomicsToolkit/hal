@@ -35,6 +35,8 @@ public:
    TopSegmentIteratorConstPtr getLeftBreakpoint() const;
    TopSegmentIteratorConstPtr getRightBreakpoint() const;
    bool identifyFromLeftBreakpoint(TopSegmentIteratorConstPtr topSegment);
+   bool identifyDeletionFromLeftBreakpoint(
+     TopSegmentIteratorConstPtr topSegment);
    bool identifyNext();
    hal_size_t getGapLengthThreshold() const;
    void setGapLengthThreshold(hal_size_t threshold);

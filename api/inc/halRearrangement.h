@@ -54,7 +54,12 @@ public:
     * is found, the rearrangement cannot be identified and false is returned */
    virtual bool identifyFromLeftBreakpoint(TopSegmentIteratorConstPtr
                                            topSegment) = 0;
-   
+
+   /** Test if segment at given index corresponds to a deletion 
+    * (shortcut method used by column iterator) */
+   virtual bool identifyDeletionFromLeftBreakpoint(TopSegmentIteratorConstPtr
+                                                   topSegment) = 0;
+
    /** Start scanning from last identified breakpoint */
    virtual bool identifyNext() = 0;
 

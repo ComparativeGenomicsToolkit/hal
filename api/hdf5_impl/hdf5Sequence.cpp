@@ -211,11 +211,21 @@ DNAIteratorConstPtr HDF5Sequence::getDNAEndIterator() const
 }
 
 ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
-  const Genome* root, hal_size_t maxInsertLength, hal_index_t position) const
+  const Genome* root, hal_size_t maxInsertLength, hal_index_t position,
+  hal_index_t lastPosition) const
 {
-  hal_size_t idx = position + getStartPosition();
+  hal_index_t idx = (hal_index_t)(position + getStartPosition());
+  hal_index_t lastIdx;
+  if (lastPosition == NULL_INDEX)
+  {
+    lastIdx = (hal_index_t)(getStartPosition() + getSequenceLength() - 1);
+  }
+  else
+  {
+    lastIdx = (hal_index_t)(lastPosition + getStartPosition());
+  }
   const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(this, root, idx, maxInsertLength, false);
+     new DefaultColumnIterator(this, root, idx, lastIdx, maxInsertLength, false);
   return ColumnIteratorConstPtr(newIt);
 }
 
@@ -232,7 +242,7 @@ ColumnIteratorConstPtr HDF5Sequence::getColumnEndIterator(
     idx = position + getStartPosition() + 1;
   }
   const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(this, NULL, idx, 0, true);
+     new DefaultColumnIterator(this, NULL, idx, NULL_INDEX, 0, true);
   return ColumnIteratorConstPtr(newIt);
 }
 

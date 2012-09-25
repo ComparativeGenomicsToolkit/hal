@@ -18,6 +18,7 @@ using namespace hal;
 DefaultColumnIterator::DefaultColumnIterator(const Sequence* reference, 
                                              const Genome* root,
                                              hal_index_t columnIndex,
+                                             hal_index_t lastColumnIndex,
                                              hal_size_t maxInsertLength,
                                              bool endIterator)
 :
@@ -26,6 +27,10 @@ DefaultColumnIterator::DefaultColumnIterator(const Sequence* reference,
 {
   // note columnIndex in genome (not sequence) coordinates
   init(reference, columnIndex, endIterator);
+
+  // allocate temp iterators
+  _top = reference->getTopSegmentIterator(0);
+  _next = _top->copy();
 }
    
 DefaultColumnIterator::~DefaultColumnIterator()
@@ -82,7 +87,20 @@ hal_index_t DefaultColumnIterator::moveRightToNextUnvisited(
 
 void DefaultColumnIterator::toRight() const
 {
-  recursiveUpdate(false);
+  // we've hit the last index.  let's pop the stack. 
+  // if we're at the bottom of the stack, something bad's happened
+  // (maybe better to throw ane exception..)
+  bool stackPushed = false;
+  if (_stack.top()._index == _stack.top()._lastIndex && _stack.size() > 1)
+  {
+    _stack.pop();
+    recursiveUpdate(true);
+  }
+  else
+  {
+    stackPushed = handleDeletion();
+  }
+  recursiveUpdate(stackPushed == true);
 
 #ifndef NDEBUG
   set<pair<const Sequence*, hal_index_t> > coordSet;
@@ -100,10 +118,17 @@ void DefaultColumnIterator::toRight() const
 #endif
 }
 
+bool DefaultColumnIterator::lastColumn() const
+{
+  return _stack.top()._sequence == _ref && 
+     _stack.top()._index == _stack.top()._lastIndex;
+}
+
 // NOTE, will need changing once the stack gets used 
 // ACTUALLY ITS BROKEN NOW 
 bool DefaultColumnIterator::leftOf(ColumnIteratorConstPtr other) const
 {
+/*
   ColumnMap::const_iterator thisIt = _colMap.find(_stack.top()._sequence);
   const ColumnMap* otherMap = other->getColumnMap();
   assert (_stack.top()._sequence == other->getReferenceSequence());
@@ -116,6 +141,7 @@ bool DefaultColumnIterator::leftOf(ColumnIteratorConstPtr other) const
     DNASet::const_iterator otherDNA = otherIt->second->begin();
     return (*thisDNA)->leftOf(*otherDNA);
   }
+*/
   return false;
 }
 
@@ -159,6 +185,48 @@ void DefaultColumnIterator::defragment() const
   }
 }
 
+void DefaultColumnIterator::pushStack(const Sequence* ref, 
+                                      hal_index_t index,
+                                      hal_index_t lastIndex,
+                                      bool update) const
+{
+  // put ther reference on the stack
+  RearrangementPtr rearrangement(NULL);
+
+  // We only use rearrangements to detect deletions right now. Doing it in
+  // both directions will really confuse things and doesn't fit the interface
+  // as well.  This means that if the current reference sequence will only
+  // have gaps in it related to ancestors.  If the reference is the root
+  // then we can't even initialise the rearrangement object in the current
+  // implementation.
+  if (ref->getGenome()->getParent() != NULL)
+  {
+    rearrangement = ref->getRearrangement(0);
+    rearrangement->setGapLengthThreshold(0);
+  }
+
+  StackEntry se = {ref,
+                   index,
+                   lastIndex,
+                   false,
+                   LinkedTopIteratorPtr(new LinkedTopIterator()),
+                   LinkedBottomIteratorPtr(new LinkedBottomIterator()),
+                   rearrangement,
+                   VisitSet()};
+  _stack.push(se);
+
+  if (update == true)
+  {  
+    // might be an end interator.  in that case, do not recurse. 
+    if ((hal_size_t)index < ref->getStartPosition() + ref->getSequenceLength())
+    {
+      recursiveUpdate(true);
+    }
+  }
+
+  _ref= ref;
+}
+
 void DefaultColumnIterator::init(const Sequence* ref, hal_index_t index,
                                  bool endIterator) const
 { 
@@ -168,23 +236,76 @@ void DefaultColumnIterator::init(const Sequence* ref, hal_index_t index,
     _stack.pop();
   }
 
-  // put ther reference on the stack
-  StackEntry se = {ref,
-                   index,
-                   false,
-                   LinkedTopIteratorPtr(new LinkedTopIterator()),
-                   LinkedBottomIteratorPtr(new LinkedBottomIterator()),
-                   VisitSet()};
-  _stack.push(se);
+  const Genome* genome = ref->getGenome();
+  hal_index_t lastIndex = (hal_index_t)genome->getSequenceLength() - 1;
 
-  if (endIterator == false)
-  {  
-    // might be an end interator.  in that case, do not recurse. 
-    if ((hal_size_t)index < ref->getStartPosition() + ref->getSequenceLength())
+  pushStack(ref, index, lastIndex, endIterator == false);
+}
+
+bool DefaultColumnIterator::handleDeletion() const
+{
+  if (_stack.top()._sequence->getGenome()->getParent() != NULL)
+  {
+    // test if we are the last base of a segment (
+    // since there obviously can't be a deletion in any other
+    // case:
+    _top->copy(_stack.top()._top->_it);
+    if (_top->getEndOffset() == 0)
     {
-      recursiveUpdate(true);
+      const Genome* parent = _top->getTopSegment()->getGenome()->getParent();
+      if (_top->getReversed() == false)
+      {
+        cout << "testing " << _top << endl;
+        _top->slice(0, 0);
+        assert(_stack.top()._rearrangement->getGapLengthThreshold() == 0);
+        if (_stack.top()._rearrangement->identifyDeletionFromLeftBreakpoint(
+              _top) == true)
+        {
+          BottomSegmentIteratorConstPtr bot = 
+             parent->getBottomSegmentIterator(0);
+          bot->toParent(_top);
+          _next->copy(_top);
+          if (_next->isLast() == false)
+          {
+            _next->toRight();
+            hal_index_t start = _next->getStartPosition();
+            hal_index_t last = start + _next->getLength() - 1;
+            assert(last >+ start);
+            cout << "pushing " << start << " , " << last << endl;
+            pushStack(bot->getBottomSegment()->getSequence(), start, last, 
+                      true);
+            return true;
+          }
+        }
+      }
+      else
+      {
+        _top->copy(_stack.top()._top->_it);
+        if (_top->isLast() == false)
+        {
+          // rearrangement doesn't work on inverted source sequence! 
+          // so we do a test from the left neighbour
+          _next->copy(_top);
+          _next->toRight();
+          _next->toReverse();
+          if (_stack.top()._rearrangement->identifyDeletionFromLeftBreakpoint(
+                _next) == true)
+          {
+            BottomSegmentIteratorConstPtr bot = 
+               parent->getBottomSegmentIterator(0);
+            bot->toParent(_top);
+            hal_index_t start = bot->getStartPosition();
+            hal_index_t last = _next->getStartPosition() - 1;
+            assert(last < start);
+            pushStack(bot->getBottomSegment()->getSequence(), start, last, 
+                      true);
+            return true;
+          }
+        }
+      }
     }
   }
+  return false;
 }
 
 // Starting from the reference sequence which is determined 
@@ -222,8 +343,8 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
       // do not handle iterating over multiple reference sequnces for now
       assert(topIt->_it->getTopSegment()->getSequence() == refSequence);
       if (_stack.top()._index < 0 || _stack.top()._index >= 
-          refSequence->getStartPosition() + 
-          (hal_index_t)refSequence->getSequenceLength())
+          (hal_index_t)(refSequence->getStartPosition() + 
+                        refSequence->getSequenceLength()))
       {
         return;
       }
@@ -232,7 +353,7 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
       {
         topIt->_it->toRight();
       }
-      hal_index_t offset = _stack.top()._index -  topIt->_it->getStartPosition();
+      hal_index_t offset = _stack.top()._index - topIt->_it->getStartPosition();
       assert(offset >= 0 && offset < (hal_index_t)topIt->_it->getLength());
       topIt->_it->slice(offset, topIt->_it->getLength() - offset - 1);
       topIt->_dna->jumpTo(_stack.top()._index);
@@ -241,8 +362,8 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
     assert(topIt->_dna->getArrayIndex() == _stack.top()._index);
     
     if (_stack.top()._index >= 0 && 
-        _stack.top()._index < refSequence->getStartPosition() + 
-        (hal_index_t)refSequence->getSequenceLength())
+        _stack.top()._index < (hal_index_t)(refSequence->getStartPosition() +
+                                            refSequence->getSequenceLength()))
     {
       assert(topIt->_it->getStartPosition() == topIt->_dna->getArrayIndex());
       updateParent(topIt);
@@ -268,8 +389,8 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
       nextFreeIndex();
       assert(bottomIt->_it->getBottomSegment()->getSequence() == refSequence);
       if (_stack.top()._index < 0 || _stack.top()._index >= 
-          refSequence->getStartPosition() + 
-          (hal_index_t)refSequence->getSequenceLength())
+          (hal_index_t)(refSequence->getStartPosition() + 
+                        refSequence->getSequenceLength()))
       {
         return;
       }
@@ -291,8 +412,8 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
     hal_size_t numChildren = refSequence->getGenome()->getNumChildren();
     bottomIt->_children.resize(numChildren);
     if (_stack.top()._index >= 0 && 
-        _stack.top()._index <  refSequence->getStartPosition() + 
-        (hal_index_t)refSequence->getSequenceLength())
+        _stack.top()._index <  (hal_index_t)(refSequence->getStartPosition() + 
+                                             refSequence->getSequenceLength()))
     {
       assert(bottomIt->_it->getStartPosition() == 
              bottomIt->_dna->getArrayIndex());
