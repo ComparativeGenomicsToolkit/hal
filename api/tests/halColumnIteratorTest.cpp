@@ -562,7 +562,7 @@ void ColumnIteratorGapTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* grandpa = alignment->openGenome("grandpa");
   const Sequence* grandpaSeq = grandpa->getSequence("gseq");
 
-  ColumnIteratorConstPtr colIterator = dad->getColumnIterator();
+  ColumnIteratorConstPtr colIterator = dad->getColumnIterator(NULL, 1000);
   for (size_t i = 0; i < 12; ++i)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
@@ -656,11 +656,11 @@ void halColumnIteratorGapTest(CuTest *testCase)
 CuSuite* halColumnIteratorTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
-  SUITE_ADD_TEST(suite, halColumnIteratorBaseTest);
-  SUITE_ADD_TEST(suite, halColumnIteratorDepthTest);
+/*  SUITE_ADD_TEST(suite, halColumnIteratorBaseTest);
+    SUITE_ADD_TEST(suite, halColumnIteratorDepthTest);*/
   SUITE_ADD_TEST(suite, halColumnIteratorDupTest);
-  SUITE_ADD_TEST(suite, halColumnIteratorInvTest);
-  SUITE_ADD_TEST(suite, halColumnIteratorGapTest);
+/*  SUITE_ADD_TEST(suite, halColumnIteratorInvTest);
+    SUITE_ADD_TEST(suite, halColumnIteratorGapTest);*/
   return suite;
 }
 

@@ -95,12 +95,20 @@ void DefaultColumnIterator::toRight() const
   {
     _stack.pop();
     recursiveUpdate(true);
+    cout << "popped\n\n";
   }
   else
   {
+    cout << "calling HANDLE wwith " << stackPushed << " idx=" 
+       << _stack.top()._index
+       << endl;
     stackPushed = handleDeletion();
   }
+  cout << "calling RU wwith " << stackPushed << " idx=" 
+       << _stack.top()._index
+       << endl;
   recursiveUpdate(stackPushed == true);
+  cout << "after RU idx = " << _stack.top()._index << endl;
 
 #ifndef NDEBUG
   set<pair<const Sequence*, hal_index_t> > coordSet;
@@ -253,13 +261,14 @@ bool DefaultColumnIterator::handleDeletion() const
     if (_top->getEndOffset() == 0)
     {
       const Genome* parent = _top->getTopSegment()->getGenome()->getParent();
+      RearrangementPtr rearrangement = _stack.top()._rearrangement;
       if (_top->getReversed() == false)
       {
         cout << "testing " << _top << endl;
         _top->slice(0, 0);
-        assert(_stack.top()._rearrangement->getGapLengthThreshold() == 0);
-        if (_stack.top()._rearrangement->identifyDeletionFromLeftBreakpoint(
-              _top) == true)
+        assert(rearrangement->getGapLengthThreshold() == 0);
+        if (rearrangement->identifyDeletionFromLeftBreakpoint(_top) == true && 
+            rearrangement->getLength() <= _maxInsertionLength)
         {
           BottomSegmentIteratorConstPtr bot = 
              parent->getBottomSegmentIterator(0);
@@ -288,8 +297,8 @@ bool DefaultColumnIterator::handleDeletion() const
           _next->copy(_top);
           _next->toRight();
           _next->toReverse();
-          if (_stack.top()._rearrangement->identifyDeletionFromLeftBreakpoint(
-                _next) == true)
+          if (rearrangement->identifyDeletionFromLeftBreakpoint(_next) == true 
+              && rearrangement->getLength() <= _maxInsertionLength)
           {
             BottomSegmentIteratorConstPtr bot = 
                parent->getBottomSegmentIterator(0);
