@@ -590,7 +590,7 @@ void HDF5Genome::setSubString(const string& inString,
 
 RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position) const
 {
-  assert(position >= 0 && position < getNumTopSegments());
+  assert(position >= 0 && position < (hal_index_t)getNumTopSegments());
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
   DefaultRearrangement* rea = new DefaultRearrangement(this);
   rea->identifyFromLeftBreakpoint(top);

@@ -563,12 +563,12 @@ void ColumnIteratorGapTest::checkCallBack(AlignmentConstPtr alignment)
   const Sequence* grandpaSeq = grandpa->getSequence("gseq");
 
   ColumnIteratorConstPtr colIterator = dad->getColumnIterator(NULL, 1000);
-  for (size_t i = 0; i < 12; ++i)
+  for (hal_index_t i = 0; i < 12; ++i)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
     if (i < 4 || i >= 8)
     {
-      size_t dadCol = i < 4 ? i : i - 4;
+      hal_index_t dadCol = i < 4 ? i : i - 4;
       ColumnIterator::DNASet* entry = colMap->find(dadSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);    
       DNAIteratorConstPtr dna = entry->at(0);
@@ -690,7 +690,7 @@ void ColumnIteratorMultiGapTest::checkCallBack(AlignmentConstPtr alignment)
                dad && dadSeq && grandpa && grandpaSeq && adam && adamSeq);
 
   ColumnIteratorConstPtr colIterator = dad->getColumnIterator(NULL, 1000);
-  for (size_t i = 0; i < 16; ++i)
+  for (hal_index_t i = 0; i < 16; ++i)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
 
@@ -885,7 +885,7 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(AlignmentConstPtr alignment)
                dad && dadSeq && grandpa && grandpaSeq && adam && adamSeq);
 
   ColumnIteratorConstPtr colIterator = dad->getColumnIterator(NULL, 1000);
-  for (size_t i = 0; i < 16; ++i)
+  for (hal_index_t i = 0; i < 16; ++i)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
 
