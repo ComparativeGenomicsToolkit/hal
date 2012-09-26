@@ -780,6 +780,201 @@ void ColumnIteratorMultiGapTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
+void ColumnIteratorMultiGapInvTest::createCallBack(AlignmentPtr alignment)
+{
+  double branchLength = 1e-10;
+
+  alignment->addRootGenome("adam");
+  alignment->addLeafGenome("grandpa", "adam", branchLength);
+  alignment->addLeafGenome("dad", "grandpa", branchLength);
+
+  vector<Sequence::Info> dims(1);
+
+  Genome* adam = alignment->openGenome("adam");
+  dims[0] = Sequence::Info("aseq", 16, 0, 4);
+  adam->setDimensions(dims);
+
+  Genome* grandpa = alignment->openGenome("grandpa");
+  dims[0] = Sequence::Info("gseq", 12, 3, 3);
+  grandpa->setDimensions(dims);
+
+  Genome* dad = alignment->openGenome("dad");
+  dims[0] = Sequence::Info("dseq", 8, 2, 0);
+  dad->setDimensions(dims);
+
+  BottomSegmentIteratorPtr bi;
+  BottomSegmentStruct bs;
+  TopSegmentIteratorPtr ti;
+  TopSegmentStruct ts;
+
+  // seg - seg - GAP - seg
+  // seg - seg - seg
+  // seg = GAP - seg
+  bi = adam->getBottomSegmentIterator(0);
+  bs.set(0, 4);
+  bs.applyTo(bi);
+  bi->getBottomSegment()->setChildIndex(0, 0);
+
+  bi = adam->getBottomSegmentIterator(1);
+  bs.set(4, 4);
+  bs.applyTo(bi);
+  bi->getBottomSegment()->setChildIndex(0, 1);
+  bi->getBottomSegment()->setChildReversed(0, true);
+
+  bi = adam->getBottomSegmentIterator(2);
+  bs.set(8, 4);
+  bs.applyTo(bi);
+  bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
+  
+  bi = adam->getBottomSegmentIterator(3);
+  bs.set(12, 4);
+  bs.applyTo(bi);
+  bi->getBottomSegment()->setChildIndex(0, 2);
+
+  ti = grandpa->getTopSegmentIterator(0);
+  ts.set(0, 4, 0, false, 0);
+  ts.applyTo(ti);
+
+  ti = grandpa->getTopSegmentIterator(1);
+  ts.set(4, 4, 1, true, 1);
+  ts.applyTo(ti);
+
+  ti = grandpa->getTopSegmentIterator(2);
+  ts.set(8, 4, 3, false, 2);
+  ts.applyTo(ti);
+
+  bi = grandpa->getBottomSegmentIterator(0);
+  bs.set(0, 4, 0);
+  bs.applyTo(bi);
+  bi->getBottomSegment()->setChildIndex(0, 0);
+
+  bi = grandpa->getBottomSegmentIterator(1);
+  bs.set(4, 4, 1);
+  bs.applyTo(bi);
+  bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
+
+  bi = grandpa->getBottomSegmentIterator(2);
+  bs.set(8, 4, 2);
+  bs.applyTo(bi);
+  bi->getBottomSegment()->setChildIndex(0, 1);
+
+  ti = dad->getTopSegmentIterator(0);
+  ts.set(0, 4, 0);
+  ts.applyTo(ti);
+
+  ti = dad->getTopSegmentIterator(1);
+  ts.set(4, 4, 2);
+  ts.applyTo(ti);
+
+  adam->setString("ACGTAAAATTTTGGGG");
+  grandpa->setString("ACGTAAAAGGGG");
+  dad->setString("ACGTGGGG");
+}
+
+void ColumnIteratorMultiGapInvTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  validateAlignment(alignment);
+  const Genome* dad = alignment->openGenome("dad");
+  const Sequence* dadSeq = dad->getSequence("dseq");
+  const Genome* grandpa = alignment->openGenome("grandpa");
+  const Sequence* grandpaSeq = grandpa->getSequence("gseq");
+  const Genome* adam = alignment->openGenome("adam");
+  const Sequence* adamSeq = adam->getSequence("aseq");
+
+  CuAssertTrue(_testCase,
+               dad && dadSeq && grandpa && grandpaSeq && adam && adamSeq);
+
+  ColumnIteratorConstPtr colIterator = dad->getColumnIterator(NULL, 1000);
+  for (size_t i = 0; i < 16; ++i)
+  {
+    const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
+
+    if (i < 4)
+    {
+      CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
+      ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      DNAIteratorConstPtr dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i);
+
+      CuAssertTrue(_testCase, colMap->find(grandpaSeq) != colMap->end());
+      entry = colMap->find(grandpaSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == grandpaSeq);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i);
+
+      CuAssertTrue(_testCase, colMap->find(dadSeq) != colMap->end());
+      entry = colMap->find(dadSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == dadSeq);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i);
+    }
+    else if (i < 8)
+    {
+      CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
+      ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      DNAIteratorConstPtr dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == 11 - i);
+
+      CuAssertTrue(_testCase, colMap->find(grandpaSeq) != colMap->end());
+      entry = colMap->find(grandpaSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == grandpaSeq);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i);
+      
+      CuAssertTrue(_testCase, colMap->find(dadSeq) == colMap->end() ||
+                   colMap->find(dadSeq)->second->size() == 0);      
+    }
+    else if (i < 12)
+    {
+      CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
+      ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      DNAIteratorConstPtr dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
+
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i);
+      
+      CuAssertTrue(_testCase, colMap->find(grandpaSeq) == colMap->end() ||
+                   colMap->find(grandpaSeq)->second->size() == 0);      
+
+      CuAssertTrue(_testCase, colMap->find(dadSeq) == colMap->end() ||
+                   colMap->find(dadSeq)->second->size() == 0);      
+    }
+    else
+    {
+      CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
+      ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      DNAIteratorConstPtr dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i);
+
+      CuAssertTrue(_testCase, colMap->find(grandpaSeq) != colMap->end());
+      entry = colMap->find(grandpaSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == grandpaSeq);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i - 4);
+
+      CuAssertTrue(_testCase, colMap->find(dadSeq) != colMap->end());      
+      entry = colMap->find(dadSeq)->second;
+      CuAssertTrue(_testCase, entry->size() == 1);
+      dna = entry->at(0);
+      CuAssertTrue(_testCase, dna->getSequence() == dadSeq);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i - 8);
+    }
+
+    colIterator->toRight();
+  }
+}
+
 void halColumnIteratorBaseTest(CuTest *testCase)
 {
   try 
@@ -858,6 +1053,19 @@ void halColumnIteratorMultiGapTest(CuTest *testCase)
   } 
 }
 
+void halColumnIteratorMultiGapInvTest(CuTest *testCase)
+{
+  try 
+  {
+    ColumnIteratorMultiGapInvTest tester;
+    tester.check(testCase);
+  }
+  catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
 CuSuite* halColumnIteratorTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
@@ -867,6 +1075,7 @@ CuSuite* halColumnIteratorTestSuite(void)
   SUITE_ADD_TEST(suite, halColumnIteratorInvTest);
   SUITE_ADD_TEST(suite, halColumnIteratorGapTest);
   SUITE_ADD_TEST(suite, halColumnIteratorMultiGapTest);
+  SUITE_ADD_TEST(suite, halColumnIteratorMultiGapInvTest);
   return suite;
 }
 

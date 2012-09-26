@@ -45,4 +45,17 @@ struct ColumnIteratorGapTest : public AlignmentTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
+struct ColumnIteratorMultiGapTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
+struct ColumnIteratorMultiGapInvTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
+
 #endif
