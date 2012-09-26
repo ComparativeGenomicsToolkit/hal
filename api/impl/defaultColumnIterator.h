@@ -79,6 +79,7 @@ private:
       const Sequence* _sequence;
       hal_index_t _index;
       hal_index_t _lastIndex;
+      hal_size_t _cumSize; 
       bool _reversed;
       LinkedTopIteratorPtr _top;
       LinkedBottomIteratorPtr _bottom;
@@ -93,7 +94,8 @@ private:
                   hal_index_t lastIndex, bool update) const;
    void init(const hal::Sequence* ref, hal_index_t index,
              bool endIterator) const;
-   bool handleDeletion() const;
+   bool handleDeletionRecursive(LinkedTopIteratorPtr topIt, int from) const;
+   bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
    void resetColMap() const;
    void eraseColMap() const;
    void recursiveUpdate(bool init) const;

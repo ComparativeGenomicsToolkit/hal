@@ -87,28 +87,23 @@ hal_index_t DefaultColumnIterator::moveRightToNextUnvisited(
 
 void DefaultColumnIterator::toRight() const
 {
-  // we've hit the last index.  let's pop the stack. 
-  // if we're at the bottom of the stack, something bad's happened
-  // (maybe better to throw ane exception..)
-  bool stackPushed = false;
-  if (_stack.top()._index == _stack.top()._lastIndex && _stack.size() > 1)
+  bool stackPushed = handleDeletionRecursive(_stack.top()._top, -2);
+  if (stackPushed)
   {
-    _stack.pop();
+    // pushed stack and moved right, now update
     recursiveUpdate(true);
-    cout << "popped\n\n";
   }
-  else
+  else 
   {
-    cout << "calling HANDLE wwith " << stackPushed << " idx=" 
-       << _stack.top()._index
-       << endl;
-    stackPushed = handleDeletion();
+    if (_stack.top()._index == _stack.top()._lastIndex && _stack.size() > 1)
+    {
+      // pop stack to already visited state
+      _stack.pop();
+      recursiveUpdate(true);
+    }
+    // move right
+    recursiveUpdate(false);
   }
-  cout << "calling RU wwith " << stackPushed << " idx=" 
-       << _stack.top()._index
-       << endl;
-  recursiveUpdate(stackPushed == true);
-  cout << "after RU idx = " << _stack.top()._index << endl;
 
 #ifndef NDEBUG
   set<pair<const Sequence*, hal_index_t> > coordSet;
@@ -213,9 +208,16 @@ void DefaultColumnIterator::pushStack(const Sequence* ref,
     rearrangement->setGapLengthThreshold(0);
   }
 
+  hal_size_t cumulativeSize = 0;
+  if (_stack.size() > 0)
+  {
+    cumulativeSize = _stack.top()._cumSize + abs(lastIndex - index + 1);
+  }
+
   StackEntry se = {ref,
                    index,
                    lastIndex,
+                   cumulativeSize,
                    false,
                    LinkedTopIteratorPtr(new LinkedTopIterator()),
                    LinkedBottomIteratorPtr(new LinkedBottomIterator()),
@@ -250,25 +252,77 @@ void DefaultColumnIterator::init(const Sequence* ref, hal_index_t index,
   pushStack(ref, index, lastIndex, endIterator == false);
 }
 
-bool DefaultColumnIterator::handleDeletion() const
+// from is child index or -1 if coming from parent. -2 coming from nowhere.
+// scan the graph (which was already made with recursive update)
+// looking for deletions. if found, handle deletion is called, the 
+// stack is pushed and return is true
+bool DefaultColumnIterator::handleDeletionRecursive(LinkedTopIteratorPtr topIt,
+                                                    int from) const
 {
-  if (_stack.top()._sequence->getGenome()->getParent() != NULL)
+  TopSegmentIteratorConstPtr top = topIt->_it;
+  if (top.get() != NULL)
+  {
+    if (handleDeletion(top) == true)
+    {
+      return true;
+    }
+    // recurse up to parent
+    if (from != -1 && top->hasParent() == true && 
+        topIt->_parent.get() != NULL && 
+        topIt->_parent->_topParse.get() != NULL)
+    {
+      TopSegmentIteratorConstPtr parent = topIt->_parent->_topParse->_it;
+      if (parent.get() != NULL)
+      {
+        const Genome* parGenome = parent->getTopSegment()->getGenome();
+        const Genome* chiGenome = top->getTopSegment()->getGenome();
+        hal_index_t childIndex = parGenome->getChildIndex(chiGenome);
+        if (handleDeletionRecursive(topIt->_parent->_topParse, childIndex))
+        {
+          return true;
+        }
+      }
+    }
+    // recurse down to children
+    if (top->hasParseDown() == true && topIt->_bottomParse.get() != NULL)
+    {
+      LinkedBottomIteratorPtr linkedBottom = topIt->_bottomParse;
+      for (int i = 0; i < (int)linkedBottom->_children.size(); ++i)
+      {
+        LinkedTopIteratorPtr child = linkedBottom->_children[i];
+        if (int(i) != from && child.get() != NULL && child->_it.get() != NULL)
+        {
+          if (handleDeletionRecursive(child, -1))
+          {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool DefaultColumnIterator::handleDeletion(TopSegmentIteratorConstPtr 
+  inputTopIterator) const
+{
+  if (inputTopIterator->getTopSegment()->getGenome()->getParent() != NULL)
   {
     // test if we are the last base of a segment (
     // since there obviously can't be a deletion in any other
     // case:
-    _top->copy(_stack.top()._top->_it);
+    _top->copy(inputTopIterator);
     if (_top->getEndOffset() == 0)
     {
       const Genome* parent = _top->getTopSegment()->getGenome()->getParent();
       RearrangementPtr rearrangement = _stack.top()._rearrangement;
       if (_top->getReversed() == false)
       {
-        cout << "testing " << _top << endl;
         _top->slice(0, 0);
         assert(rearrangement->getGapLengthThreshold() == 0);
         if (rearrangement->identifyDeletionFromLeftBreakpoint(_top) == true && 
-            rearrangement->getLength() <= _maxInsertionLength)
+            rearrangement->getLength() + _stack.top()._cumSize 
+            <= _maxInsertionLength)
         {
           BottomSegmentIteratorConstPtr bot = 
              parent->getBottomSegmentIterator(0);
@@ -280,7 +334,8 @@ bool DefaultColumnIterator::handleDeletion() const
             hal_index_t start = _next->getStartPosition();
             hal_index_t last = start + _next->getLength() - 1;
             assert(last >+ start);
-            cout << "pushing " << start << " , " << last << endl;
+//            cout << "pushing " << bot->getBottomSegment()->getSequence() 
+//                 << "  " << start << " , " << last << endl;
             pushStack(bot->getBottomSegment()->getSequence(), start, last, 
                       true);
             return true;
@@ -289,7 +344,7 @@ bool DefaultColumnIterator::handleDeletion() const
       }
       else
       {
-        _top->copy(_stack.top()._top->_it);
+        _top->copy(inputTopIterator);
         if (_top->isLast() == false)
         {
           // rearrangement doesn't work on inverted source sequence! 
@@ -298,7 +353,8 @@ bool DefaultColumnIterator::handleDeletion() const
           _next->toRight();
           _next->toReverse();
           if (rearrangement->identifyDeletionFromLeftBreakpoint(_next) == true 
-              && rearrangement->getLength() <= _maxInsertionLength)
+              && rearrangement->getLength() + _stack.top()._cumSize <= 
+              _maxInsertionLength)
           {
             BottomSegmentIteratorConstPtr bot = 
                parent->getBottomSegmentIterator(0);
