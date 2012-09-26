@@ -15,7 +15,6 @@
 #include "hdf5TopSegmentIterator.h"
 #include "hdf5BottomSegmentIterator.h"
 #include "hdf5DNAIterator.h"
-#include "defaultColumnIterator.h"
 #include "defaultRearrangement.h"
 #include "defaultGappedTopSegmentIterator.h"
 #include "defaultGappedBottomSegmentIterator.h"
@@ -533,28 +532,6 @@ DNAIteratorConstPtr HDF5Genome::getDNAIterator(hal_index_t position) const
 DNAIteratorConstPtr HDF5Genome::getDNAEndIterator() const
 {
   return getDNAIterator(getSequenceLength());
-}
-
-ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
-  const Genome* root, hal_size_t maxInsertLength, hal_index_t position,
-  hal_index_t lastPosition) const
-{
-  assert(position <= (hal_index_t)_dnaArray.getSize());
-  const Sequence* sequence = getSequenceBySite(position);
-  const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(sequence, root, position, lastPosition,
-                               maxInsertLength, false);
-  return ColumnIteratorConstPtr(newIt);
-}
-
-ColumnIteratorConstPtr HDF5Genome::getColumnEndIterator(
-  hal_index_t position) const
-{
-  position = position == NULL_INDEX ? getSequenceLength() : position + 1;
-  const Sequence* sequence = getSequenceBySite(position-1);
-   const DefaultColumnIterator* newIt = 
-      new DefaultColumnIterator(sequence, NULL, position, NULL_INDEX, 0, true);
-  return ColumnIteratorConstPtr(newIt);
 }
 
 void HDF5Genome::getString(string& outString) const

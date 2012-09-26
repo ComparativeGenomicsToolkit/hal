@@ -76,23 +76,6 @@ public:
    /** Get a DNA end iterator (one beyond last element in list) */
    virtual DNAIteratorConstPtr getDNAEndIterator() const = 0;
 
-   /** Get a column iterator 
-    * @param root Root genome of the column (now genomes above it 
-    * are explored).  By default will be root genome of alignment 
-    * @param maxInsertLength maximum insertion to be traversed
-    * @param position Index in genome of returned iterator */
-   virtual ColumnIteratorConstPtr getColumnIterator(
-     const Genome* root = NULL,
-     hal_size_t maxInsertLength = 0,
-     hal_index_t position = 0,
-     hal_index_t lastPosition = NULL_INDEX) const = 0;
-
-   /** Get a DNA end iterator (one beyond last element in list) 
-    * @param position Index of last position to be iterated over
-    * (NULL_INDEX means end of sequence) */
-   virtual ColumnIteratorConstPtr getColumnEndIterator(
-     hal_index_t position = NULL_INDEX) const = 0;
-
    /** Get the character string underlying the segmented sequence
     * @param outString String object into which we copy the result */
    virtual void getString(std::string& outString) const = 0;

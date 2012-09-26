@@ -38,53 +38,6 @@ DefaultColumnIterator::~DefaultColumnIterator()
   eraseColMap();
 }
 
-/*
-hal_index_t DefaultColumnIterator::moveRightToNextUnvisited(
-  LinkedTopIteratorPtr topIt) const
-{
-  // move one column to the right (as normal)
-  hal_index_t position = topIt->_it->getStartPosition() + 1;
-  topIt->_it->toRight(position);
-  const TopSegment* topSeg = topIt->_it->getTopSegment();
-  const Genome* genome = topSeg->getGenome();
-  hal_size_t numSeg = genome->getNumTopSegments();
-
-  VisitSet::iterator i;
-  while((hal_size_t)topSeg->getArrayIndex() < numSeg)
-  {  
-    i = _topVisited.find(VisitFlag(genome, topSeg->getArrayIndex()));
-    if (i != _topVisited.end())
-    {
-      // todo : we should be able to delete here (since we won't pass again)
-      //_topVisited.remove(i);
-
-      // move an entire segment to the right
-      topIt->_it->slice(0, 0);
-      topIt->_it->toRight();
-    }
-    else
-    {
-      break;
-    }
-  }
-  
-  if ((hal_size_t)topSeg->getArrayIndex() == numSeg)
-  {
-    return genome->getSequenceLength();
-  }
-  else
-  {
-    if (topIt->_it->getLength() > 1)
-    {
-      assert(topIt->_it->getStartOffset() == 0);
-      topIt->_it->slice(0, topSeg->getLength() - 1);
-    }
-  }
-  assert(topIt->_it->getLength() == 1);
-  return topIt->_it->getStartPosition();
-}
-*/
-
 void DefaultColumnIterator::toRight() const
 {
   bool stackPushed = handleDeletionRecursive(_stack.top()._top, -2);
@@ -126,28 +79,6 @@ bool DefaultColumnIterator::lastColumn() const
   return _stack.top()._sequence == _ref && 
      _stack.top()._index == _stack.top()._lastIndex;
 }
-
-// NOTE, will need changing once the stack gets used 
-// ACTUALLY ITS BROKEN NOW 
-bool DefaultColumnIterator::leftOf(ColumnIteratorConstPtr other) const
-{
-/*
-  ColumnMap::const_iterator thisIt = _colMap.find(_stack.top()._sequence);
-  const ColumnMap* otherMap = other->getColumnMap();
-  assert (_stack.top()._sequence == other->getReferenceSequence());
-  ColumnMap::const_iterator otherIt = otherMap->find(
-    other->getReferenceSequence());
-  if (thisIt != _colMap.end() && otherIt != otherMap->end() &&
-      thisIt->second->empty() == false && otherIt->second->empty() == false)
-  {
-    DNASet::const_reverse_iterator thisDNA = thisIt->second->rbegin();
-    DNASet::const_iterator otherDNA = otherIt->second->begin();
-    return (*thisDNA)->leftOf(*otherDNA);
-  }
-*/
-  return false;
-}
-
 
 const Genome* DefaultColumnIterator::getReferenceGenome() const 
 {

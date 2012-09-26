@@ -26,11 +26,12 @@ void ColumnIteratorBaseTest::checkCallBack(AlignmentConstPtr alignment)
 {
   validateAlignment(alignment);
   const Genome* genome = alignment->openGenome(alignment->getRootName());
+  const Sequence* sequence = genome->getSequenceBySite(0);
   assert(genome != NULL);
 
   // Iterate over the genome, ensuring that base i aligns to single 
   // other base
-  ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
+  ColumnIteratorConstPtr colIterator = sequence->getColumnIterator();
   for (size_t columnNumber = 0; columnNumber < genome->getSequenceLength(); 
        ++columnNumber)
   {
@@ -121,7 +122,8 @@ void ColumnIteratorDepthTest::createCallBack(AlignmentPtr alignment)
 void ColumnIteratorDepthTest::checkGenome(const Genome* genome)
 {
   assert(genome != NULL);
-  ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
+  const Sequence* sequence = genome->getSequenceBySite(0);
+  ColumnIteratorConstPtr colIterator = sequence->getColumnIterator();
   for (size_t columnNumber = 0; columnNumber < genome->getSequenceLength(); 
        ++columnNumber)
   {
@@ -242,8 +244,8 @@ void ColumnIteratorDupTest::createCallBack(AlignmentPtr alignment)
 void ColumnIteratorDupTest::checkGenome(const Genome* genome)
 {
   assert(genome != NULL);
-  ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
-  ColumnIteratorConstPtr endIterator = genome->getColumnEndIterator();
+  const Sequence* sequence = genome->getSequenceBySite(0);
+  ColumnIteratorConstPtr colIterator = sequence->getColumnIterator();
   size_t colNumber = 0;
   for (; colNumber < genome->getSequenceLength(); colIterator->toRight(), 
           ++colNumber)
@@ -406,8 +408,8 @@ void ColumnIteratorInvTest::createCallBack(AlignmentPtr alignment)
 void ColumnIteratorInvTest::checkGenome(const Genome* genome)
 {
   assert(genome != NULL);
-  ColumnIteratorConstPtr colIterator = genome->getColumnIterator();
-  ColumnIteratorConstPtr endIterator = genome->getColumnEndIterator();
+  const Sequence* sequence = genome->getSequenceBySite(0);
+  ColumnIteratorConstPtr colIterator = sequence->getColumnIterator();
   size_t colNumber = 0;
   for (; colNumber < genome->getSequenceLength(); colIterator->toRight(), 
           ++colNumber)
@@ -562,7 +564,7 @@ void ColumnIteratorGapTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* grandpa = alignment->openGenome("grandpa");
   const Sequence* grandpaSeq = grandpa->getSequence("gseq");
 
-  ColumnIteratorConstPtr colIterator = dad->getColumnIterator(NULL, 1000);
+  ColumnIteratorConstPtr colIterator = dadSeq->getColumnIterator(NULL, 1000);
   for (hal_index_t i = 0; i < 12; ++i)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
@@ -689,7 +691,7 @@ void ColumnIteratorMultiGapTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase,
                dad && dadSeq && grandpa && grandpaSeq && adam && adamSeq);
 
-  ColumnIteratorConstPtr colIterator = dad->getColumnIterator(NULL, 1000);
+  ColumnIteratorConstPtr colIterator = dadSeq->getColumnIterator(NULL, 1000);
   for (hal_index_t i = 0; i < 16; ++i)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
@@ -884,7 +886,7 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase,
                dad && dadSeq && grandpa && grandpaSeq && adam && adamSeq);
 
-  ColumnIteratorConstPtr colIterator = dad->getColumnIterator(NULL, 1000);
+  ColumnIteratorConstPtr colIterator = dadSeq->getColumnIterator(NULL, 1000);
   for (hal_index_t i = 0; i < 16; ++i)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();

@@ -48,14 +48,6 @@ public:
     * is retrieved from the sequence or genome, the last column is specfied.
     * toRight() cna then be called until lastColumn is true.  */
    virtual bool lastColumn() const = 0;
-
-   // BROKEN  use lastColumn() method instead for terminating iteration
-   // loops. 
-   /** Test if column iterator is left  (only in terms
-    * of the reference genome) as another iterator.  Used to bound
-    * a loop, for example.  in the case of paralogy, the rightmost
-    * position of this is compared to the leftmost position of other*/
-   virtual bool leftOf(ColumnIteratorConstPtr other) const = 0;
    
    /** Get a pointer to the reference genome for the column iterator */
    virtual const hal::Genome* getReferenceGenome() const = 0;
@@ -86,23 +78,6 @@ protected:
 };
 
 inline ColumnIterator::~ColumnIterator() {}
-
-inline bool operator<(ColumnIteratorConstPtr p1,
-                      ColumnIteratorConstPtr p2) 
-{
-  if (p1.get() == NULL && p2.get() == NULL)
-  {
-    return false;
-  }
-  else if (p1.get() == NULL || p2.get() == NULL)
-  {
-    return p1.get() == NULL;
-  }
-  else
-  {
-    return p1->leftOf(p2);
-  }
-}
 
 }
 
