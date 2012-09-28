@@ -11,7 +11,7 @@
 using namespace std;
 using namespace hal;
 
-MafExport::MafExport()
+MafExport::MafExport() : _maxRefGap(0)
 {
 
 }
@@ -19,6 +19,11 @@ MafExport::MafExport()
 MafExport::~MafExport()
 {
 
+}
+
+void MafExport::setMaxRefGap(hal_size_t maxRefGap)
+{
+  _maxRefGap = maxRefGap;
 }
 
 void MafExport::writeHeader()
@@ -54,7 +59,7 @@ void MafExport::convertGenome(ostream& mafStream,
 
   while (doneLen < length)
   {
-    assert(pos < genome->getSequenceLength());
+    assert(pos < (hal_index_t)genome->getSequenceLength());
     const Sequence* sequence = genome->getSequenceBySite(pos);
     assert(sequence != NULL);
     hal_index_t seqStart = pos - sequence->getStartPosition();
@@ -82,25 +87,20 @@ void MafExport::convertSequence(ostream& mafStream,
   {
     throw hal_exception("Invalid range specified for convertSequence");
   }
+  hal_index_t lastPosition = startPosition + (hal_index_t)(length - 1);
   _mafStream = &mafStream;
   _alignment = alignment;
   writeHeader();
 
   ColumnIteratorConstPtr colIt = sequence->getColumnIterator(root,
-                                                             0, 
-                                                             startPosition);
+                                                             _maxRefGap, 
+                                                             startPosition,
+                                                             lastPosition);
   _mafBlock.initBlock(colIt);
   assert(_mafBlock.canAppendColumn(colIt) == true);
  
-  // this could use a cleanup.  but for now we convert to genome coordinates
-  // and rely on the iterator's array index for the loop.  (should use the
-  // end iterator but it's not workign yet.  On a related note, this won't
-  // gracefully support insertions via the stack so the loop will have to
-  // be updated for this as well)
-  hal_index_t genomeStart = sequence->getStartPosition() + startPosition;
-  hal_index_t genomeEnd = genomeStart + (hal_index_t)length;
   size_t numBlocks = 0;
-  while (colIt->getArrayIndex() < genomeEnd)
+  while (colIt->lastColumn() == false)
   {
     if (_mafBlock.canAppendColumn(colIt) == false)
     {

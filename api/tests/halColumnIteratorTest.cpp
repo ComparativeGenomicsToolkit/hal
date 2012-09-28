@@ -204,7 +204,9 @@ void ColumnIteratorDupTest::createCallBack(AlignmentPtr alignment)
 
     bi = dad->getBottomSegmentIterator(i);
     bi->getBottomSegment()->setChildIndex(0, i);
+    bi->getBottomSegment()->setChildReversed(0, false);
     bi->getBottomSegment()->setChildIndex(1, i);
+    bi->getBottomSegment()->setChildReversed(1, false);
     bs.set(i * segLength, segLength);
     bs.applyTo(bi);
   }  
@@ -345,11 +347,13 @@ void ColumnIteratorInvTest::createCallBack(AlignmentPtr alignment)
 
     bi = dad->getBottomSegmentIterator(i);
     bi->getBottomSegment()->setChildIndex(0, i);
+    bi->getBottomSegment()->setChildReversed(0, false);
     bs.set(i * segLength, segLength, i, 0);
     bs.applyTo(bi);
 
     bi = grandpa->getBottomSegmentIterator(i);
     bi->getBottomSegment()->setChildIndex(0, i);
+    bi->getBottomSegment()->setChildReversed(0, false);
     bs.set(i * segLength, segLength);
     bs.applyTo(bi);
   }  
@@ -533,6 +537,7 @@ void ColumnIteratorGapTest::createCallBack(AlignmentPtr alignment)
   bs.set(0, 4);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 0);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   bi = grandpa->getBottomSegmentIterator(1);
   bs.set(4, 4);
@@ -543,6 +548,7 @@ void ColumnIteratorGapTest::createCallBack(AlignmentPtr alignment)
   bs.set(8, 4);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 1);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   ti = dad->getTopSegmentIterator(0);
   ts.set(0, 4, 0);
@@ -622,11 +628,13 @@ void ColumnIteratorMultiGapTest::createCallBack(AlignmentPtr alignment)
   bs.set(0, 4);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 0);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   bi = adam->getBottomSegmentIterator(1);
   bs.set(4, 4);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 1);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   bi = adam->getBottomSegmentIterator(2);
   bs.set(8, 4);
@@ -637,6 +645,7 @@ void ColumnIteratorMultiGapTest::createCallBack(AlignmentPtr alignment)
   bs.set(12, 4);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 2);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   ti = grandpa->getTopSegmentIterator(0);
   ts.set(0, 4, 0, false, 0);
@@ -654,16 +663,19 @@ void ColumnIteratorMultiGapTest::createCallBack(AlignmentPtr alignment)
   bs.set(0, 4, 0);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 0);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   bi = grandpa->getBottomSegmentIterator(1);
   bs.set(4, 4, 1);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   bi = grandpa->getBottomSegmentIterator(2);
   bs.set(8, 4, 2);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 1);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   ti = dad->getTopSegmentIterator(0);
   ts.set(0, 4, 0);
@@ -681,6 +693,7 @@ void ColumnIteratorMultiGapTest::createCallBack(AlignmentPtr alignment)
 void ColumnIteratorMultiGapTest::checkCallBack(AlignmentConstPtr alignment)
 {
   validateAlignment(alignment);
+
   const Genome* dad = alignment->openGenome("dad");
   const Sequence* dadSeq = dad->getSequence("dseq");
   const Genome* grandpa = alignment->openGenome("grandpa");
@@ -688,10 +701,18 @@ void ColumnIteratorMultiGapTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* adam = alignment->openGenome("adam");
   const Sequence* adamSeq = adam->getSequence("aseq");
 
+
+  BottomSegmentIteratorConstPtr bi = grandpa->getBottomSegmentIterator(2);
+  TopSegmentIteratorConstPtr ti = dad->getTopSegmentIterator(1);
+  
+  assert (bi->getBottomSegment()->getChildReversed(0) == 
+          ti->getTopSegment()->getParentReversed());
+  
   CuAssertTrue(_testCase,
                dad && dadSeq && grandpa && grandpaSeq && adam && adamSeq);
 
   ColumnIteratorConstPtr colIterator = dadSeq->getColumnIterator(NULL, 1000);
+
   for (hal_index_t i = 0; i < 16; ++i)
   {
     const ColumnIterator::ColumnMap* colMap = colIterator->getColumnMap();
@@ -816,6 +837,7 @@ void ColumnIteratorMultiGapInvTest::createCallBack(AlignmentPtr alignment)
   bs.set(0, 4);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 0);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   bi = adam->getBottomSegmentIterator(1);
   bs.set(4, 4);
@@ -832,6 +854,7 @@ void ColumnIteratorMultiGapInvTest::createCallBack(AlignmentPtr alignment)
   bs.set(12, 4);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 2);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   ti = grandpa->getTopSegmentIterator(0);
   ts.set(0, 4, 0, false, 0);
@@ -849,16 +872,19 @@ void ColumnIteratorMultiGapInvTest::createCallBack(AlignmentPtr alignment)
   bs.set(0, 4, 0);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 0);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   bi = grandpa->getBottomSegmentIterator(1);
   bs.set(4, 4, 1);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   bi = grandpa->getBottomSegmentIterator(2);
   bs.set(8, 4, 2);
   bs.applyTo(bi);
   bi->getBottomSegment()->setChildIndex(0, 1);
+  bi->getBottomSegment()->setChildReversed(0, false);
 
   ti = dad->getTopSegmentIterator(0);
   ts.set(0, 4, 0);
@@ -1072,7 +1098,7 @@ CuSuite* halColumnIteratorTestSuite(void)
 {
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halColumnIteratorBaseTest);
-  SUITE_ADD_TEST(suite, halColumnIteratorDepthTest);
+  SUITE_ADD_TEST(suite, halColumnIteratorDepthTest); 
   SUITE_ADD_TEST(suite, halColumnIteratorDupTest);
   SUITE_ADD_TEST(suite, halColumnIteratorInvTest);
   SUITE_ADD_TEST(suite, halColumnIteratorGapTest);

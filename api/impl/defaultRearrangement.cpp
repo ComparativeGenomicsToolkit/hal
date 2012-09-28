@@ -20,22 +20,25 @@ using namespace hal;
 const hal_size_t DefaultRearrangement::DefaultGapThreshold = 10;
 
 DefaultRearrangement::DefaultRearrangement(const Genome* childGenome,
-                                           hal_size_t gapThreshold) :
+                                           hal_size_t gapThreshold,
+                                           bool atomic) :
+  _gapThreshold(gapThreshold),
+  _atomic(atomic),
+  _childIndex(1000),
   _genome(childGenome),
   _parent(NULL),
-  _gapThreshold(gapThreshold),
-  _childIndex(1000),
   _id(Invalid)
 {
   _parent = childGenome->getParent();
   assert(_parent != NULL);
   // just allocating here -- need to be properly init
-  _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold);
+  _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold, _atomic);
   assert(_cur->getGapThreshold() == _gapThreshold);
   _next = _cur->copy();
   _left = _cur->copy();
   _right = _left->copy();
-  _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold);
+  _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold,
+    _atomic);
   _rightParent = _leftParent->copy();
   _curParent = _leftParent->copy();
   _nextParent = _leftParent->copy();
@@ -176,13 +179,43 @@ bool DefaultRearrangement::identifyDeletionFromLeftBreakpoint(
   return false;
 }
 
+pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
+{
+  pair<hal_index_t, hal_index_t> range;
+  range.first = _leftParent->getLeft()->getStartPosition();
+  range.second = _leftParent->getRight()->getStartPosition() + 
+     (hal_index_t)(_leftParent->getRight()->getLength() - 1);
+  return range;
+}
+
+bool DefaultRearrangement::identifyInsertionFromLeftBreakpoint(
+  TopSegmentIteratorConstPtr topSegment)
+{
+  if (scanInsertionCycle(topSegment) == true &&
+      _cur->hasParent() == false)
+  {
+    return true;
+  }
+  return false;
+}
+
+pair<hal_index_t, hal_index_t> DefaultRearrangement::getInsertedRange() const
+{
+  pair<hal_index_t, hal_index_t> range;
+  range.first = _cur->getLeft()->getStartPosition();
+  range.second = _cur->getRight()->getStartPosition() + 
+     (hal_index_t)(_cur->getRight()->getLength() - 1);
+  return range;
+}
+
 bool DefaultRearrangement::identifyNext()
 {
   assert(_cur->getReversed() == false);
   // don't like this.  need to refactor interface to make better
   // use of gapped iterators
   _top->copy(_cur->getRight());
-  if (_top->getTopSegment()->getArrayIndex() < _genome->getNumTopSegments() - 1)
+  if (_top->getTopSegment()->getArrayIndex() < 
+      (hal_index_t)(_genome->getNumTopSegments() - 1))
   {
     _top->toRight();
     identifyFromLeftBreakpoint(_top);
@@ -202,15 +235,27 @@ hal_size_t DefaultRearrangement::getGapLengthThreshold() const
 void DefaultRearrangement::setGapLengthThreshold(hal_size_t threshold)
 {
   _gapThreshold = threshold;
-  _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold);
+  _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold, _atomic);
   _next = _cur->copy();
   _left = _cur->copy();
   _right = _left->copy();
-  _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold);
+  _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold,
+    _atomic);
   _rightParent = _leftParent->copy();
   _curParent = _leftParent->copy();
   _nextParent = _leftParent->copy();
   _top = _cur->getLeft()->copy();
+}
+
+bool DefaultRearrangement::getAtomic() const
+{
+  return _atomic;
+}
+
+void DefaultRearrangement::setAtomic(bool atomic)
+{
+  _atomic = atomic;
+  setGapLengthThreshold(0);
 }
 
 void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
@@ -226,7 +271,19 @@ void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
   _left->copy(_cur);
   _right->copy(_left);
   assert(_cur->getGapThreshold() == _gapThreshold);
+  assert(_next->getGapThreshold() == _gapThreshold);
+  assert(_left->getGapThreshold() == _gapThreshold);
+  assert(_right->getGapThreshold() == _gapThreshold);
   assert(_leftParent->getGapThreshold() == _gapThreshold);
+  assert(_rightParent->getGapThreshold() == _gapThreshold);
+  assert(_curParent->getGapThreshold() == _gapThreshold);
+  assert(_cur->getAtomic() == _atomic);
+  assert(_next->getAtomic() == _atomic);
+  assert(_left->getAtomic() == _atomic);
+  assert(_right->getAtomic() == _atomic);
+  assert(_leftParent->getAtomic() == _atomic);
+  assert(_rightParent->getAtomic() == _atomic);
+  assert(_curParent->getAtomic() == _atomic);
 }
 
 // Segment corresponds to no rearrangemnt.  This will happen when 
@@ -456,9 +513,11 @@ bool DefaultRearrangement::scanDeletionCycle(
 {
   assert(topSegment.get());
   resetStatus(topSegment);
+  assert(_atomic != true || _cur->getNumSegments() == 1);
 
   bool first = _cur->isFirst();
   bool last = _cur->isLast();
+
   if (_cur->hasParent() == false || (first && last))
   {
     return false;
@@ -486,6 +545,11 @@ bool DefaultRearrangement::scanDeletionCycle(
   {
     _leftParent->toParent(_cur);
     _right->toRight();
+
+    assert(_leftParent->getGapThreshold() == _gapThreshold);
+    assert(_cur->getGapThreshold() == _gapThreshold);
+    assert(_atomic != true || _leftParent->getNumSegments() == 1);
+    assert(_atomic != true || _right->getNumSegments() == 1);
     if (_right->hasParent() == false)
     {
       return false;
@@ -540,7 +604,7 @@ bool DefaultRearrangement::scanTranslocationCycle(
 
   _leftParent->toParent(_cur);
   bool pFirst = _leftParent->isFirst();
-  bool pLast = _leftParent->isLast();
+  //bool pLast = _leftParent->isLast();
   _rightParent->copy(_leftParent);
 
   first ? _right->toRight() : _right->toLeft();

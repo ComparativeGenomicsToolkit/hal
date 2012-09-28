@@ -193,6 +193,10 @@ void hal::createRandomDimensions(hal::AlignmentPtr alignment,
     {
       numBottomSegments = 0;
     }
+    if (numBottomSegments == 0 && numTopSegments == 0)
+    {
+      length = 0;
+    }
 
     vector<Sequence::Info> dimensions;
     dimensions.push_back(Sequence::Info(genome->getName() + "_seq", 

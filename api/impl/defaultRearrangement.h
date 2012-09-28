@@ -23,7 +23,8 @@ public:
    static const hal_size_t DefaultGapThreshold;
 
    DefaultRearrangement(const Genome* childGenome, 
-                        hal_size_t gapThreshold = DefaultGapThreshold);
+                        hal_size_t gapThreshold = DefaultGapThreshold,
+                        bool atomic = false);
 
    ~DefaultRearrangement();
    
@@ -37,9 +38,15 @@ public:
    bool identifyFromLeftBreakpoint(TopSegmentIteratorConstPtr topSegment);
    bool identifyDeletionFromLeftBreakpoint(
      TopSegmentIteratorConstPtr topSegment);
+   std::pair<hal_index_t, hal_index_t> getDeletedRange() const;
+   bool identifyInsertionFromLeftBreakpoint(
+     TopSegmentIteratorConstPtr topSegment);
+   std::pair<hal_index_t, hal_index_t> getInsertedRange() const;
    bool identifyNext();
    hal_size_t getGapLengthThreshold() const;
    void setGapLengthThreshold(hal_size_t threshold);
+   bool getAtomic() const;
+   void setAtomic(bool atomic);
 
 private:
    
@@ -55,6 +62,7 @@ private:
 private:
    
    hal_size_t _gapThreshold;
+   bool _atomic;
 
    GappedTopSegmentIteratorConstPtr _left, _cur, _next, _right;
    GappedBottomSegmentIteratorConstPtr _leftParent, _curParent, _nextParent,

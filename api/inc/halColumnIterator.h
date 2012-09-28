@@ -81,4 +81,27 @@ inline ColumnIterator::~ColumnIterator() {}
 
 }
 
+#ifndef NDEBUG
+#include "halGenome.h"
+namespace hal {
+inline std::ostream& operator<<(std::ostream& os, ColumnIteratorConstPtr ci)
+{
+  const ColumnIterator::ColumnMap* cmap = ci->getColumnMap();
+  for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin();
+       i != cmap->end(); ++i)
+  {
+    os << i->first->getName() << ": ";
+    for (size_t j = 0; j < i->second->size(); ++j)
+    {
+      os << i->second->at(j)->getArrayIndex() << ", ";
+    }
+    os << "\n";
+  }
+
+  return os;
+}
+}
+#endif
+
+
 #endif

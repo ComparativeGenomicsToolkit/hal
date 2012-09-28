@@ -17,12 +17,15 @@ using namespace hal;
 
 DefaultGappedTopSegmentIterator::DefaultGappedTopSegmentIterator(
   TopSegmentIteratorConstPtr left,
-  hal_size_t gapThreshold) :
-  _gapThreshold(gapThreshold)
+  hal_size_t gapThreshold,
+  bool atomic) :
+  _gapThreshold(gapThreshold),
+  _atomic(atomic)
 {
   const Genome* genome = left->getTopSegment()->getGenome();
   const Genome* parent = genome->getParent();
   assert(genome && parent);
+  assert(atomic == false || _gapThreshold == 0);
   _childIndex = parent->getChildIndex(genome);
   _left = left->copy();
   _right = left->copy();
@@ -46,6 +49,11 @@ hal_size_t DefaultGappedTopSegmentIterator::getGapThreshold() const
   return _gapThreshold;
 }
 
+bool DefaultGappedTopSegmentIterator::getAtomic() const
+{
+  return _atomic;
+}
+
 hal_size_t DefaultGappedTopSegmentIterator::getChildIndex() const
 {
   return _childIndex;
@@ -54,7 +62,7 @@ hal_size_t DefaultGappedTopSegmentIterator::getChildIndex() const
 hal_size_t DefaultGappedTopSegmentIterator::getNumSegments() const
 {
   return (hal_size_t)abs(_right->getTopSegment()->getArrayIndex() - 
-                         _left->getTopSegment()->getArrayIndex() + 1);
+                         _left->getTopSegment()->getArrayIndex()) + 1;
 }
 
 hal_size_t DefaultGappedTopSegmentIterator::getNumGaps() const
@@ -262,7 +270,7 @@ bool DefaultGappedTopSegmentIterator::overlaps(hal_index_t genomePos) const
 GappedTopSegmentIteratorPtr DefaultGappedTopSegmentIterator::copy()
 {
   DefaultGappedTopSegmentIterator* newIt =
-     new DefaultGappedTopSegmentIterator(_left, _gapThreshold);
+     new DefaultGappedTopSegmentIterator(_left, _gapThreshold, _atomic);
   newIt->_left->copy(_left);
   newIt->_right->copy(_right);
   newIt->_childIndex = _childIndex;
@@ -276,7 +284,7 @@ GappedTopSegmentIteratorPtr DefaultGappedTopSegmentIterator::copy()
 GappedTopSegmentIteratorConstPtr DefaultGappedTopSegmentIterator::copy() const
 {
   const DefaultGappedTopSegmentIterator* newIt =
-     new DefaultGappedTopSegmentIterator(_left, _gapThreshold);
+     new DefaultGappedTopSegmentIterator(_left, _gapThreshold, _atomic);
   newIt->_left->copy(_left);
   newIt->_right->copy(_right);
   newIt->_childIndex = _childIndex;
@@ -570,7 +578,8 @@ bool DefaultGappedTopSegmentIterator::compatible(
 void DefaultGappedTopSegmentIterator::extendRight() const
 {
   _right->copy(_left);
-  if ((!_right->getReversed() && _right->getTopSegment()->isLast()) ||
+  if (_atomic == true ||
+      (!_right->getReversed() && _right->getTopSegment()->isLast()) ||
       (_right->getReversed() && _right->getTopSegment()->isFirst()))
   {
     return;
@@ -600,7 +609,8 @@ void DefaultGappedTopSegmentIterator::extendRight() const
 void DefaultGappedTopSegmentIterator::extendLeft() const
 {
   _left->copy(_right);
-  if ((!_left->getReversed() && _left->getTopSegment()->isFirst()) ||
+  if (_atomic == true ||
+      (!_left->getReversed() && _left->getTopSegment()->isFirst()) ||
       (_left->getReversed() && _left->getTopSegment()->isLast()))
   {
     return;

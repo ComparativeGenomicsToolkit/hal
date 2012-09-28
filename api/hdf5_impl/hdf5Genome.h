@@ -134,10 +134,11 @@ public:
    RearrangementPtr getRearrangement(hal_index_t position) const;
 
    GappedTopSegmentIteratorConstPtr getGappedTopSegmentIterator(
-     hal_index_t i, hal_size_t gapThreshold) const;
+     hal_index_t i, hal_size_t gapThreshold, bool atomic) const;
 
    GappedBottomSegmentIteratorConstPtr getGappedBottomSegmentIterator(
-     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const;
+     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
+     bool atomic) const;
 
 
    // HDF5 SPECIFIC 

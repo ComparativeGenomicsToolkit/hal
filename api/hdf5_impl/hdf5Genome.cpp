@@ -575,20 +575,22 @@ RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position) const
 }
 
 GappedTopSegmentIteratorConstPtr HDF5Genome::getGappedTopSegmentIterator(
-  hal_index_t i, hal_size_t gapThreshold) const
+  hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
   DefaultGappedTopSegmentIterator* gt = 
-     new DefaultGappedTopSegmentIterator(top, gapThreshold);
+     new DefaultGappedTopSegmentIterator(top, gapThreshold, atomic);
   return GappedTopSegmentIteratorConstPtr(gt);
 }
 
 GappedBottomSegmentIteratorConstPtr HDF5Genome::getGappedBottomSegmentIterator(
-     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const
+  hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
+  bool atomic) const
 {
   BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
   DefaultGappedBottomSegmentIterator* gb = 
-     new DefaultGappedBottomSegmentIterator(bot, childIdx, gapThreshold);
+     new DefaultGappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
+                                            atomic);
   return GappedBottomSegmentIteratorConstPtr(gb);
 }
 

@@ -83,8 +83,6 @@ public:
                                             hal_index_t position,
                                             hal_index_t lastPosition) const;
 
-   ColumnIteratorConstPtr getColumnEndIterator(hal_index_t position) const;
-
    void getString(std::string& outString) const;
 
    void setString(const std::string& inString);
@@ -99,10 +97,11 @@ public:
    RearrangementPtr getRearrangement(hal_index_t position) const;
 
    GappedTopSegmentIteratorConstPtr getGappedTopSegmentIterator(
-     hal_index_t i, hal_size_t gapThreshold) const;
+     hal_index_t i, hal_size_t gapThreshold, bool atomic) const;
 
    GappedBottomSegmentIteratorConstPtr getGappedBottomSegmentIterator(
-     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const;
+     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
+     bool atomic) const;
 
 
    // LOCAL NON-INTERFACE METHODS

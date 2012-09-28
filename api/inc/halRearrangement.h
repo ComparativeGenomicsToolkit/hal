@@ -60,6 +60,22 @@ public:
    virtual bool identifyDeletionFromLeftBreakpoint(TopSegmentIteratorConstPtr
                                                    topSegment) = 0;
 
+   /** Get the range in the parent that was deleted.  Only valid to call 
+       this immediately after identifying a deletion with either of the
+       above two functions.  Otherwise, results are undefined */
+   virtual std::pair<hal_index_t, hal_index_t> getDeletedRange() const = 0;
+
+   /** Test if segment at given index corresponds to a breakpoint right
+    * before an insertion 
+    * (shortcut method used by column iterator) */
+   virtual bool identifyInsertionFromLeftBreakpoint(TopSegmentIteratorConstPtr
+                                                    topSegment) = 0;
+
+   /** Get the range in the parent that was inserted.  Only valid to call 
+    * this immediately after identifying a insertion.
+    * Otherwise, results are undefined */
+   virtual std::pair<hal_index_t, hal_index_t> getInsertedRange() const = 0;
+
    /** Start scanning from last identified breakpoint */
    virtual bool identifyNext() = 0;
 
@@ -68,8 +84,17 @@ public:
    virtual hal_size_t getGapLengthThreshold() const = 0;
 
    /** Specify the maximum size of a simple indel such that it will be 
-    * considered a gap (and factored out of breakpoint computations) */
+    * considered a gap (and factored out of breakpoint computations)  */
    virtual void setGapLengthThreshold(hal_size_t threshold) = 0;
+
+   /** Set atomic behaviour (so gaps and compatible segments are not
+    * used to merge larger segments.  Will overcount rearrangements but
+    * useful sometimes (ie column iteraor).  Will automatically
+    * set the gap threshold to 0.*/
+   virtual void setAtomic(bool atomic) = 0;
+   
+   /* Get the atomic behaviour */
+   virtual bool getAtomic() const = 0;
 
 protected:
    friend class counted_ptr<Rearrangement>;

@@ -24,8 +24,7 @@ public:
                          const hal::Genome* root,
                          hal_index_t columnIndex,
                          hal_index_t lastIndex,
-                         hal_size_t maxInsertionLength,
-                         bool endIterator);
+                         hal_size_t maxInsertionLength);
    
    ~DefaultColumnIterator();
 
@@ -91,11 +90,12 @@ private:
 
 private:
    void pushStack(const Sequence* ref, hal_index_t index, 
-                  hal_index_t lastIndex, bool update) const;
-   void init(const hal::Sequence* ref, hal_index_t index,
-             bool endIterator) const;
-   bool handleDeletionRecursive(LinkedTopIteratorPtr topIt, int from) const;
+                  hal_index_t lastIndex, bool reversed, bool update) const;
+   void init(const hal::Sequence* ref, hal_index_t index, 
+             hal_index_t lastIndex) const;
+   bool handleGapRecursive(LinkedTopIteratorPtr topIt, int from) const;
    bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
+   bool handleInsertion(TopSegmentIteratorConstPtr inputTopIterator) const;
    void resetColMap() const;
    void eraseColMap() const;
    void recursiveUpdate(bool init) const;

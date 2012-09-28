@@ -17,7 +17,7 @@ int halRunAllTests(void) {
   CuSuiteAddSuite(suite, halSequenceTestSuite()); 
   CuSuiteAddSuite(suite, halColumnIteratorTestSuite()); 
   CuSuiteAddSuite(suite, halGappedSegmentIteratorTestSuite());
-  CuSuiteAddSuite(suite, halRearrangementTestSuite());  
+  CuSuiteAddSuite(suite, halRearrangementTestSuite()); 
   CuSuiteAddSuite(suite, halValidateTestSuite());  
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);

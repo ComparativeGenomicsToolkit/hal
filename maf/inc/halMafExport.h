@@ -36,6 +36,8 @@ public:
                         hal_size_t length = 0,
                         const Genome* root = NULL);
 
+   void setMaxRefGap(hal_size_t maxRefGap);
+
 protected:
 
    void writeHeader();
@@ -45,6 +47,7 @@ protected:
    AlignmentConstPtr _alignment;
    std::ostream* _mafStream;
    MafBlock _mafBlock;
+   hal_size_t _maxRefGap;
 };
 
 }

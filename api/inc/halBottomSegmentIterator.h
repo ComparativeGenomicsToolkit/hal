@@ -83,7 +83,8 @@ inline std::ostream& operator<<(std::ostream& os,
     os << " rev=" << bs->getReversed();
     for (hal_size_t i = 0; i < bseg->getNumChildren(); ++i)
     {
-      os << " childIdx[" << i << "]=" << bseg->getChildIndex(i);
+      os << " chIdx[" << i << "]=" << bseg->getChildIndex(i);
+      os << " chRev[" << i << "]=" << bseg->getChildReversed(i);
     }
   }
   return os;

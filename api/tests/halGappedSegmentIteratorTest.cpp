@@ -126,14 +126,14 @@ void GappedSegmentSimpleIteratorTest2::createCallBack(AlignmentPtr alignment)
   Genome* child = parent->getChild(0);
   TopSegmentIteratorPtr ti = child->getTopSegmentIterator();
   BottomSegmentIteratorPtr bi = parent->getBottomSegmentIterator();
-  int i = 0;
+  hal_index_t i = 0;
   bool reversed = true;
   while (ti != child->getTopSegmentEndIterator())
   {
     if (i % 5 == 0)
     {
       reversed = !reversed;
-      if (reversed && i < parent->getNumBottomSegments() - 1)
+      if (reversed && i < (hal_index_t)(parent->getNumBottomSegments() - 1))
       {
         makeInversion(ti, 5);
       }
@@ -264,8 +264,8 @@ void GappedSegmentIteratorIndelTest::createCallBack(AlignmentPtr alignment)
   Genome* child = parent->getChild(0);
   TopSegmentIteratorPtr ti = child->getTopSegmentIterator();
   BottomSegmentIteratorPtr bi = parent->getBottomSegmentIterator();
-  int i = 0;
-  bool reversed = true;
+//  int i = 0;
+//  bool reversed = true;
 
   bi = parent->getBottomSegmentIterator(0);
   makeDelGap(bi);

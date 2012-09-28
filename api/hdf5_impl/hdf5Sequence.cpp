@@ -225,24 +225,7 @@ ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
     lastIdx = (hal_index_t)(lastPosition + getStartPosition());
   }
   const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(this, root, idx, lastIdx, maxInsertLength, false);
-  return ColumnIteratorConstPtr(newIt);
-}
-
-ColumnIteratorConstPtr HDF5Sequence::getColumnEndIterator(
-  hal_index_t position) const
-{
-  hal_size_t idx;
-  if (position == NULL_INDEX)
-  {
-    idx = getSequenceLength();
-  }
-  else
-  {
-    idx = position + getStartPosition() + 1;
-  }
-  const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(this, NULL, idx, NULL_INDEX, 0, true);
+     new DefaultColumnIterator(this, root, idx, lastIdx, maxInsertLength);
   return ColumnIteratorConstPtr(newIt);
 }
 
@@ -291,21 +274,23 @@ RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position) const
 }
 
 GappedTopSegmentIteratorConstPtr HDF5Sequence::getGappedTopSegmentIterator(
-  hal_index_t i, hal_size_t gapThreshold) const
+  hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
   DefaultGappedTopSegmentIterator* gt = 
-     new DefaultGappedTopSegmentIterator(top, gapThreshold);
+     new DefaultGappedTopSegmentIterator(top, gapThreshold, atomic);
   return GappedTopSegmentIteratorConstPtr(gt);
 }
 
 GappedBottomSegmentIteratorConstPtr 
 HDF5Sequence::getGappedBottomSegmentIterator(
-     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const
+  hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
+  bool atomic) const
 {
   BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
   DefaultGappedBottomSegmentIterator* gb = 
-     new DefaultGappedBottomSegmentIterator(bot, childIdx, gapThreshold);
+     new DefaultGappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
+                                            atomic);
   return GappedBottomSegmentIteratorConstPtr(gb);
 }
 // LOCAL

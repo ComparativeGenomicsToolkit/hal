@@ -20,12 +20,14 @@ class DefaultGappedTopSegmentIterator : public GappedTopSegmentIterator
 public:
 
    DefaultGappedTopSegmentIterator(TopSegmentIteratorConstPtr left,
-                                   hal_size_t gapThreshold);
+                                   hal_size_t gapThreshold,
+                                   bool atomic);
 
    ~DefaultGappedTopSegmentIterator();
 
    // Gpped Segment Iterator methods
    hal_size_t getGapThreshold() const;
+   bool getAtomic() const;
    hal_size_t getChildIndex() const;
    hal_size_t getNumSegments() const;
    hal_size_t getNumGaps() const;
@@ -93,7 +95,8 @@ private:
    mutable TopSegmentIteratorConstPtr _temp;
    mutable TopSegmentIteratorConstPtr _temp2;
    mutable hal_size_t _childIndex;
-   mutable hal_size_t _gapThreshold;            
+   mutable hal_size_t _gapThreshold;
+   mutable bool _atomic;
   
 };
 

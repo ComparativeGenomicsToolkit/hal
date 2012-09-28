@@ -71,6 +71,13 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
                             genome->getName() + " child=" +
                             childGenome->getName());
       }
+      if (childSegment->getParentReversed() != 
+          bottomSegment->getChildReversed(child))
+      {
+        throw hal_exception("parent / child reversal mismatch (parent=" +
+                            genome->getName() + " child=" +
+                            childGenome->getName());
+      }
     }
   }
 
@@ -364,24 +371,28 @@ void hal::validateGenome(const Genome* genome)
     totalLength += sequence->getSequenceLength();
 
     // make sure it doesn't overlap any other sequences;
-    const Sequence* s1 =
-       genome->getSequenceBySite(sequence->getStartPosition());
-    if (s1 == NULL || s1->getName() != sequence->getName())
+    if (sequence->getSequenceLength() > 0)
     {
-      stringstream ss;
-      ss << "Sequence " << sequence->getName() << " has a bad overlap in "
-         << genome->getName();
-      throw hal_exception(ss.str());
-    }
-    const Sequence* s2 = 
-       genome->getSequenceBySite(sequence->getStartPosition() +
-                                 sequence->getSequenceLength() - 1);
-    if (s2 == NULL || s2->getName() != sequence->getName())
-    {
-      stringstream ss;
-      ss << "Sequence " << sequence->getName() << " has a bad overlap in "
-         << genome->getName();
-      throw hal_exception(ss.str());
+      const Sequence* s1 =
+         genome->getSequenceBySite(sequence->getStartPosition());
+
+      if (s1 == NULL || s1->getName() != sequence->getName())
+      {
+        stringstream ss;
+        ss << "Sequence " << sequence->getName() << " has a bad overlap in "
+           << genome->getName();
+        throw hal_exception(ss.str());
+      }
+      const Sequence* s2 = 
+         genome->getSequenceBySite(sequence->getStartPosition() +
+                                   sequence->getSequenceLength() - 1);
+      if (s2 == NULL || s2->getName() != sequence->getName())
+      {
+        stringstream ss;
+        ss << "Sequence " << sequence->getName() << " has a bad overlap in "
+           << genome->getName();
+        throw hal_exception(ss.str());
+      }
     }
   }
 
@@ -408,6 +419,14 @@ void hal::validateGenome(const Genome* genome)
     stringstream ss;
     ss << "Problem: genome has " << genomeBottom << " bottom segments but "
        << "sequences have " << totalBottom << " bottom segments";
+    throw hal_exception(ss.str());
+  }
+
+  if (genomeLength > 0 && genomeTop == 0 && genomeBottom == 0)
+  {
+    stringstream ss;
+    ss << "Problem: genome " << genome->getName() << " has length " 
+       << genomeLength << "but no segments";
     throw hal_exception(ss.str());
   }
   

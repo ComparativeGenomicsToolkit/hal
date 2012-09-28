@@ -22,6 +22,8 @@ public:
    
    virtual hal_size_t getGapThreshold() const = 0;
 
+   virtual bool getAtomic() const = 0;
+
    virtual hal_size_t getChildIndex() const = 0;
    
    virtual hal_size_t getNumSegments() const = 0;

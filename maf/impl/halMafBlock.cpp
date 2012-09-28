@@ -6,14 +6,20 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include "halMafBlock.h"
 
 using namespace std;
 using namespace hal;
 
-MafBlock::MafBlock()
-{
+const hal_index_t MafBlock::defaultMaxLength = 1000;
 
+MafBlock::MafBlock(hal_index_t maxLength) : _maxLength(maxLength)
+{
+  if (_maxLength <= 0)
+  {
+    _maxLength = numeric_limits<hal_index_t>::max();
+  }
 }
 
 MafBlock::~MafBlock()
@@ -131,14 +137,16 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
     
     ++entry->_length;
     
-    assert(dna->getReversed() == true || 
-           dna->getArrayIndex() - sequence->getStartPosition() == 
-           entry->_start + entry->_length - 1);
+    assert(dna->getReversed() == true || (hal_index_t)
+           (dna->getArrayIndex() - sequence->getStartPosition()) == 
+           (hal_index_t)
+           (entry->_start + entry->_length - 1));
 
-    assert(dna->getReversed() == false || 
-           entry->_srcLength - 1 - 
-           (dna->getArrayIndex() - sequence->getStartPosition())  == 
-           entry->_start + entry->_length - 1);
+    assert(dna->getReversed() == false || (hal_index_t)
+           (entry->_srcLength - 1 - 
+            (dna->getArrayIndex() - sequence->getStartPosition()))  == 
+           (hal_index_t)
+           (entry->_start + entry->_length - 1));
 
     entry->_sequence->append(dna->getChar());
   }
@@ -298,8 +306,9 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
         assert(entry->_name == sequence->getName());
         if (entry->_start != NULL_INDEX)
         {
-          if (entry->_length > 0 && 
-              (entry->_strand == '-') != (*d)->getReversed())
+          if (entry->_length >= _maxLength ||
+              (entry->_length > 0 && 
+               (entry->_strand == '-') != (*d)->getReversed()))
           {
             return false;
           }

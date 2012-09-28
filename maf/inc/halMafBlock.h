@@ -52,8 +52,9 @@ struct MafBlockEntry
 class MafBlock
 {
 public:
+   static const hal_index_t defaultMaxLength;
 
-   MafBlock();
+   MafBlock(hal_index_t maxLength = defaultMaxLength);
    ~MafBlock();
 
    void initBlock(ColumnIteratorConstPtr col);
@@ -73,6 +74,7 @@ protected:
    Entries _entries;
    Entries::const_iterator _reference;
    std::vector<MafBlockString*> _stringBuffers;
+   hal_index_t _maxLength;
 
    typedef hal::ColumnIterator::ColumnMap ColumnMap;
    typedef hal::ColumnIterator::DNASet DNASet;

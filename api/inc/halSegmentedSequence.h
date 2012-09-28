@@ -112,7 +112,7 @@ public:
     * get the last iterator from a sequence  (not a big deal since
     * the functinality is already in the implementation (extendLeft)*/
    virtual GappedTopSegmentIteratorConstPtr getGappedTopSegmentIterator(
-     hal_index_t i, hal_size_t gapThreshold) const = 0;
+     hal_index_t i, hal_size_t gapThreshold, bool atomic = false) const = 0;
 
    /** Get a gapped iterator  (experimental) 
     * REMINDER: ther iterator is extended from the left-to-right along
@@ -120,7 +120,8 @@ public:
     * get the last iterator from a sequence  (not a big deal since
     * the functinality is already in the implementation (extendLeft)*/
    virtual GappedBottomSegmentIteratorConstPtr getGappedBottomSegmentIterator(
-     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold) const = 0;
+     hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
+     bool atomic = false) const = 0;
 
        
 
