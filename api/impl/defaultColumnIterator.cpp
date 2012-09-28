@@ -344,7 +344,6 @@ bool DefaultColumnIterator::handleDeletion(TopSegmentIteratorConstPtr
 bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr 
                                             inputTopIterator) const
 {
-  return false;
   if (inputTopIterator->getTopSegment()->getGenome()->getParent() != NULL &&
       inputTopIterator->getTopSegment()->getGenome()->getParent() != _root )
   {
