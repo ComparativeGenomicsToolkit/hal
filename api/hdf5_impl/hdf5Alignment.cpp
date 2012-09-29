@@ -400,14 +400,23 @@ string HDF5Alignment::getNewickTree() const
 
 string HDF5Alignment::getVersion() const
 {
-  HDF5MetaData versionMeta(_file, VersionGroupName);
-  if (versionMeta.has(VersionGroupName) == false)
+  try
+  {
+    H5::Exception::dontPrint();
+    _file->openGroup(VersionGroupName);  
+    HDF5MetaData versionMeta(_file, VersionGroupName);
+    if (versionMeta.has(VersionGroupName) == false)
+    {
+      throw Exception();
+    }
+    return versionMeta.get(VersionGroupName);
+  }
+  catch (Exception& e)
   {
     // since there was no version tag at the beginning,
     // we retroactively consider it 0.0
     return "0.0";
   }
-  return versionMeta.get(VersionGroupName);
 }
 
 void HDF5Alignment::writeTree()
