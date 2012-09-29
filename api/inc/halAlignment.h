@@ -112,6 +112,9 @@ public:
    /** Get a newick-formatted phylogeny to the alignment */
    virtual std::string getNewickTree() const = 0;
 
+   /** Get version used to create the file */
+   virtual std::string getVersion() const = 0;
+
 protected:
    friend class counted_ptr<Alignment>;
    friend class counted_ptr<const Alignment>;

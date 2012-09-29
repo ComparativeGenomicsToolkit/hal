@@ -162,7 +162,7 @@ void CLParser::printUsage(ostream& os) const
   os << endl;
   if (_description.empty() == false)
   {
-    os << _exeName << ": " << _description << endl << endl;
+    os << _exeName << " v" << HAL_VERSION << ": " << _description << "\n\n";
   }
   os << "USAGE:\n" << _exeName << " [Options]";
   for (size_t i = 0; i < _args.size(); ++i)

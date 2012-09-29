@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(path);
     alignment->setOptionsFromParser(optionsParser);
     HalStats halStats(alignment);
-    cout << endl << halStats;
+    cout << endl << "hal v" << alignment->getVersion() << "\n" << halStats;
   }
   catch(hal_exception& e)
   {

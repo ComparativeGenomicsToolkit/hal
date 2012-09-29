@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <fstream>
 #include <deque>
+#include <sstream>
+#include "halCommon.h"
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
@@ -26,6 +28,7 @@ using namespace H5;
 const H5std_string HDF5Alignment::MetaGroupName = "Meta";
 const H5std_string HDF5Alignment::TreeGroupName = "Phylogeny";
 const H5std_string HDF5Alignment::GenomesGroupName = "Genomes";
+const H5std_string HDF5Alignment::VersionGroupName = "Verison";
 
 HDF5Alignment::HDF5Alignment() :
   _file(NULL),
@@ -71,10 +74,12 @@ void HDF5Alignment::createNew(const string& alignmentPath)
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
   _file->createGroup(GenomesGroupName);
+  _file->createGroup(VersionGroupName);
   delete _metaData;
   _metaData = new HDF5MetaData(_file, MetaGroupName);
   _tree = NULL;
   _dirty = true;
+  writeVersion();
 }
 
 // todo: properly handle readonly
@@ -88,6 +93,13 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
     throw hal_exception("Unable to open " + alignmentPath);
   }
   _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
+  if (!compatibleWithVersion(getVersion()))
+  {
+    stringstream ss;
+    ss << "HAL API v" << HAL_VERSION << " incompatible with format v" 
+       << getVersion() << " HAL file.";
+    throw hal_exception(ss.str());
+  }
   delete _metaData;
   _metaData = new HDF5MetaData(_file, MetaGroupName);
   loadTree();
@@ -117,7 +129,7 @@ void HDF5Alignment::close()
       delete _metaData;
       _metaData = NULL;
     }
-  
+    writeVersion();
     map<string, HDF5Genome*>::iterator mapIt;
     for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt)
     {
@@ -386,6 +398,18 @@ string HDF5Alignment::getNewickTree() const
   }
 }
 
+string HDF5Alignment::getVersion() const
+{
+  HDF5MetaData versionMeta(_file, VersionGroupName);
+  if (versionMeta.has(VersionGroupName) == false)
+  {
+    // since there was no version tag at the beginning,
+    // we retroactively consider it 0.0
+    return "0.0";
+  }
+  return versionMeta.get(VersionGroupName);
+}
+
 void HDF5Alignment::writeTree()
 {
   if (_dirty == false)
@@ -405,6 +429,18 @@ void HDF5Alignment::writeTree()
   HDF5MetaData treeMeta(_file, TreeGroupName);
   treeMeta.set(TreeGroupName, treeString);
   free(treeString);
+}
+
+void HDF5Alignment::writeVersion()
+{
+  if (_dirty == false)
+     return;
+  
+  assert(_file != NULL);
+  HDF5MetaData versionMeta(_file, VersionGroupName);
+  stringstream ss;
+  ss << HAL_VERSION;
+  versionMeta.set(VersionGroupName, ss.str());
 }
 
 static void addNodeToMap(stTree* node, map<string, stTree*>& nodeMap)

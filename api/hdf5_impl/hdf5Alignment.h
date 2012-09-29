@@ -71,6 +71,8 @@ public:
 
    std::string getNewickTree() const;
 
+   std::string getVersion() const;
+
 protected:
    // Nobody creates this class except through the interface. 
    friend AlignmentPtr hdf5AlignmentInstance();
@@ -91,6 +93,7 @@ protected:
    
    void loadTree();
    void writeTree();
+   void writeVersion();
    void addGenomeToTree(const std::string& name,
                         const std::pair<std::string, double>& parentName,
                         const std::vector<std::pair<std::string, double> >&
@@ -107,6 +110,7 @@ protected:
    static const H5std_string MetaGroupName;
    static const H5std_string TreeGroupName;
    static const H5std_string GenomesGroupName;
+   static const H5std_string VersionGroupName;
    stTree* _tree;
    mutable std::map<std::string, stTree*> _nodeMap;
    bool _dirty;
