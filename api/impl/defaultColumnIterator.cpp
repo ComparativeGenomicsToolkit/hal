@@ -353,7 +353,7 @@ bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
     // since there obviously can't be a deletion in any other
     // case:
     _top->copy(inputTopIterator);
-    if (_top->getEndOffset() == 0)
+    if (_top->getEndOffset() == 0 && _top->isLast() == false)
     {
       RearrangementPtr rearrangement = _stack.top()._rearrangement;
       // test if next segment is inserted. if so, push to stack.
