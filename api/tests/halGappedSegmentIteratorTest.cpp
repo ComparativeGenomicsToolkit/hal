@@ -42,14 +42,14 @@ GappedSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* parent = alignment->openGenome("parent");
 
   GappedTopSegmentIteratorConstPtr gtsIt = 
-     child->getGappedTopSegmentIterator(0, 100000000000);
+     child->getGappedTopSegmentIterator(0, 9999999);
   GappedBottomSegmentIteratorConstPtr gbsIt = 
-     parent->getGappedBottomSegmentIterator(0, 0, 100000000000);
+     parent->getGappedBottomSegmentIterator(0, 0, 9999999);
   GappedTopSegmentIteratorConstPtr gtsItRev = 
-     child->getGappedTopSegmentIterator(0, 100000000000);
+     child->getGappedTopSegmentIterator(0, 9999999);
   gtsItRev->toReverse();
   GappedBottomSegmentIteratorConstPtr gbsItRev = 
-     parent->getGappedBottomSegmentIterator(0, 0, 100000000000);
+     parent->getGappedBottomSegmentIterator(0, 0, 9999999);
   gbsItRev->toReverse();
 
   for (size_t i = 0; i < child->getNumTopSegments(); ++i)
@@ -80,14 +80,14 @@ GappedSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
   }
 
   gtsIt = child->getGappedTopSegmentIterator(
-    child->getNumTopSegments() - 1, 100000000000);
+    child->getNumTopSegments() - 1, 9999999);
   gbsIt = parent->getGappedBottomSegmentIterator(
-    child->getNumTopSegments() - 1, 0, 100000000000);
+    child->getNumTopSegments() - 1, 0, 9999999);
   gtsItRev = child->getGappedTopSegmentIterator(
-    child->getNumTopSegments() - 1, 100000000000);
+    child->getNumTopSegments() - 1, 9999999);
   gtsItRev->toReverse();
   gbsItRev = parent->getGappedBottomSegmentIterator(
-    child->getNumTopSegments() - 1, 0, 100000000000);
+    child->getNumTopSegments() - 1, 0, 9999999);
   gbsItRev->toReverse();
 
   for (hal_index_t i = child->getNumTopSegments() - 1; i >= 0; --i)
@@ -152,14 +152,14 @@ GappedSegmentSimpleIteratorTest2::checkCallBack(AlignmentConstPtr alignment)
   const Genome* parent = alignment->openGenome("parent");
 
   GappedTopSegmentIteratorConstPtr gtsIt = 
-     child->getGappedTopSegmentIterator(0, 100000000000);
+     child->getGappedTopSegmentIterator(0, 9999999);
   GappedBottomSegmentIteratorConstPtr gbsIt = 
-     parent->getGappedBottomSegmentIterator(0, 0, 100000000000);
+     parent->getGappedBottomSegmentIterator(0, 0, 9999999);
   GappedTopSegmentIteratorConstPtr gtsItRev = 
-     child->getGappedTopSegmentIterator(0, 100000000000);
+     child->getGappedTopSegmentIterator(0, 9999999);
   gtsItRev->toReverse();
   GappedBottomSegmentIteratorConstPtr gbsItRev = 
-     parent->getGappedBottomSegmentIterator(0, 0, 100000000000);
+     parent->getGappedBottomSegmentIterator(0, 0, 9999999);
   gbsItRev->toReverse();
 
   for (size_t i = 0; i < child->getNumTopSegments(); i += 5)
@@ -215,14 +215,14 @@ GappedSegmentSimpleIteratorTest2::checkCallBack(AlignmentConstPtr alignment)
   }
 
   gtsIt = child->getGappedTopSegmentIterator(
-    child->getNumTopSegments() - 5, 100000000000);
+    child->getNumTopSegments() - 5, 9999999);
   gbsIt = parent->getGappedBottomSegmentIterator(
-    child->getNumTopSegments() - 5, 0, 100000000000);
+    child->getNumTopSegments() - 5, 0, 9999999);
   gtsItRev = child->getGappedTopSegmentIterator(
-    child->getNumTopSegments() - 5, 100000000000);
+    child->getNumTopSegments() - 5, 9999999);
   gtsItRev->toReverse();
   gbsItRev = parent->getGappedBottomSegmentIterator(
-    child->getNumTopSegments() - 5, 0, 100000000000);
+    child->getNumTopSegments() - 5, 0, 9999999);
   gbsItRev->toReverse();
 
   for (hal_index_t i = child->getNumTopSegments() - 1; i >= 0; i -= 5)
@@ -296,15 +296,15 @@ GappedSegmentIteratorIndelTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* parent = alignment->openGenome("parent");
 
   GappedTopSegmentIteratorConstPtr gtsIt = 
-     child->getGappedTopSegmentIterator(0, 100000000000);
+     child->getGappedTopSegmentIterator(0, 9999999);
 
   GappedBottomSegmentIteratorConstPtr gbsIt = 
-     parent->getGappedBottomSegmentIterator(0, 0, 100000000000);
+     parent->getGappedBottomSegmentIterator(0, 0, 9999999);
   GappedTopSegmentIteratorConstPtr gtsItRev = 
-     child->getGappedTopSegmentIterator(0, 100000000000);
+     child->getGappedTopSegmentIterator(0, 9999999);
   gtsItRev->toReverse();
   GappedBottomSegmentIteratorConstPtr gbsItRev = 
-     parent->getGappedBottomSegmentIterator(0, 0, 100000000000);
+     parent->getGappedBottomSegmentIterator(0, 0, 9999999);
      gbsItRev->toReverse();
 
   for (size_t i = 0; i < child->getNumTopSegments(); i += 20)
@@ -362,14 +362,14 @@ GappedSegmentIteratorIndelTest::checkCallBack(AlignmentConstPtr alignment)
     }
 
   gtsIt = child->getGappedTopSegmentIterator(
-    child->getNumTopSegments() - 20, 100000000000);
+    child->getNumTopSegments() - 20, 9999999);
   gbsIt = parent->getGappedBottomSegmentIterator(
-    child->getNumTopSegments() - 20, 0, 100000000000); 
+    child->getNumTopSegments() - 20, 0, 9999999); 
   gtsItRev = child->getGappedTopSegmentIterator(
-    child->getNumTopSegments() - 20, 100000000000);
+    child->getNumTopSegments() - 20, 9999999);
   gtsItRev->toReverse();
   gbsItRev = parent->getGappedBottomSegmentIterator(
-    child->getNumTopSegments() - 20, 0, 100000000000);
+    child->getNumTopSegments() - 20, 0, 9999999);
   gbsItRev->toReverse();
 
   for (hal_index_t i = child->getNumTopSegments() - 1; i >= 0; i -= 20)
