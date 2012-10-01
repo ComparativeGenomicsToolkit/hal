@@ -185,6 +185,7 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
   range.first = _leftParent->getLeft()->getStartPosition();
   range.second = _leftParent->getRight()->getStartPosition() + 
      (hal_index_t)(_leftParent->getRight()->getLength() - 1);
+  assert(range.first <= range.second);
   return range;
 }
 
@@ -205,6 +206,12 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getInsertedRange() const
   range.first = _cur->getLeft()->getStartPosition();
   range.second = _cur->getRight()->getStartPosition() + 
      (hal_index_t)(_cur->getRight()->getLength() - 1);
+  assert (_cur->getLeft()->hasParent() == false);
+  assert (_cur->getRight()->hasParent() == false);
+  if (range.first >= range.second)
+  {
+    swap(range.first, range.second);
+  }
   return range;
 }
 

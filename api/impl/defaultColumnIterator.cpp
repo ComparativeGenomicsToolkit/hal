@@ -291,7 +291,8 @@ bool DefaultColumnIterator::handleDeletion(TopSegmentIteratorConstPtr
             pair<hal_index_t, hal_index_t> deletedRange = 
                rearrangement->getDeletedRange();
             assert(deletedRange.first <= deletedRange.second);
-/*            cout << "deletion found in " << _top << endl;
+/*
+            cout << "deletion found in " << _top << endl;
             cout << "pushing " 
                  << bot->getBottomSegment()->getSequence()->getName()
                  << "  " << deletedRange.first << " , " 
@@ -328,6 +329,14 @@ bool DefaultColumnIterator::handleDeletion(TopSegmentIteratorConstPtr
                  rearrangement->getDeletedRange();
               swap(deletedRange.first, deletedRange.second);
               assert(deletedRange.first >= deletedRange.second);
+/*
+            cout << "inverse deletion found in " << _top << endl;
+            cout << "pushing " 
+                 << bot->getBottomSegment()->getSequence()->getName()
+                 << "  " << deletedRange.first << " , " 
+                 << deletedRange.second << endl;
+*/
+
               pushStack(bot->getBottomSegment()->getSequence(), 
                         deletedRange.first, deletedRange.second, 
                         true, true);
@@ -366,6 +375,24 @@ bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
       {
         pair<hal_index_t, hal_index_t> insertedRange = 
            rearrangement->getInsertedRange();
+        if (_top->getReversed())
+        {
+          swap(insertedRange.first, insertedRange.second);
+          assert(insertedRange.first >= insertedRange.second);
+        }
+        else
+        {
+          assert(insertedRange.second >= insertedRange.first);
+                    
+        }
+/*
+        cout << "\ninsertion found in " << _top << endl;
+        cout << "pushing " 
+             << _top->getTopSegment()->getSequence()->getName()
+             << "  " << insertedRange.first -
+           _top->getTopSegment()->getSequence()->getStartPosition()<< " , " 
+             << insertedRange.second << endl;
+*/               
         pushStack(_top->getTopSegment()->getSequence(), insertedRange.first,
                   insertedRange.second, _top->getReversed(), true);
         return true;
