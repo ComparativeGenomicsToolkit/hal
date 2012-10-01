@@ -86,7 +86,7 @@ private:
       VisitSet _visitSet;
    };
 
-   typedef std::stack<StackEntry> ActiveStack;
+   typedef std::vector<StackEntry> ActiveStack;
 
 private:
    void pushStack(const Sequence* ref, hal_index_t index, 
