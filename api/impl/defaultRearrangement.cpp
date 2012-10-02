@@ -171,6 +171,7 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
 bool DefaultRearrangement::identifyDeletionFromLeftBreakpoint(
   TopSegmentIteratorConstPtr topSegment)
 {
+  assert(topSegment->getReversed() == false);
   if (scanDeletionCycle(topSegment) == true &&
       _leftParent->hasChild() == false)
   {
@@ -192,6 +193,7 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
 bool DefaultRearrangement::identifyInsertionFromLeftBreakpoint(
   TopSegmentIteratorConstPtr topSegment)
 {
+  assert(topSegment->getReversed() == false);
   if (scanInsertionCycle(topSegment) == true &&
       _cur->hasParent() == false)
   {

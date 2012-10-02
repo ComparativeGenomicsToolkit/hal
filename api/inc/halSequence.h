@@ -85,7 +85,8 @@ public:
      const Genome* root = NULL,
      hal_size_t maxInsertLength = 0,
      hal_index_t position = 0,
-     hal_index_t lastPosition = NULL_INDEX) const = 0;
+     hal_index_t lastPosition = NULL_INDEX,
+     bool noDupes = false) const = 0;
 
 protected:
    

@@ -37,6 +37,7 @@ public:
                         const Genome* root = NULL);
 
    void setMaxRefGap(hal_size_t maxRefGap);
+   void setNoDupes(bool noDupes);
 
 protected:
 
@@ -48,6 +49,7 @@ protected:
    std::ostream* _mafStream;
    MafBlock _mafBlock;
    hal_size_t _maxRefGap;
+   bool _noDupes;
 };
 
 }

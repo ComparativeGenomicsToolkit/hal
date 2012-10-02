@@ -24,7 +24,8 @@ public:
                          const hal::Genome* root,
                          hal_index_t columnIndex,
                          hal_index_t lastIndex,
-                         hal_size_t maxInsertionLength);
+                         hal_size_t maxInsertionLength,
+                         bool noDupes);
    
    ~DefaultColumnIterator();
 
@@ -72,6 +73,7 @@ private:
    };
 
    typedef std::set<hal_index_t> VisitSet;
+   typedef std::map<const Genome*, VisitSet*> VisitCache;
 
    struct StackEntry 
    {
@@ -83,7 +85,6 @@ private:
       LinkedTopIteratorPtr _top;
       LinkedBottomIteratorPtr _bottom;
       RearrangementPtr _rearrangement;
-      VisitSet _visitSet;
    };
 
    typedef std::vector<StackEntry> ActiveStack;
@@ -113,6 +114,8 @@ private:
    void colMapInsert(DNAIteratorConstPtr dnaIt, 
                      bool updateVisitSet = true) const;
    bool checkRange(DNAIteratorConstPtr dnaIt) const;
+   bool checkUnvisited(const std::pair<hal_index_t, hal_index_t>& range,
+                       const Genome* genome) const;
    
 private:
 
@@ -126,10 +129,12 @@ private:
    mutable size_t _curInsertionLength;
 
    mutable hal_size_t _maxInsertionLength;
+   mutable bool _noDupes;
 
    mutable ColumnMap _colMap;
    mutable TopSegmentIteratorConstPtr _top;
    mutable TopSegmentIteratorConstPtr _next;
+   mutable VisitCache _visitCache;
 };
 
 

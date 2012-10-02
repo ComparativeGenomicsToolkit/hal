@@ -19,10 +19,12 @@ DefaultColumnIterator::DefaultColumnIterator(const Sequence* reference,
                                              const Genome* root,
                                              hal_index_t columnIndex,
                                              hal_index_t lastColumnIndex,
-                                             hal_size_t maxInsertLength)
+                                             hal_size_t maxInsertLength,
+                                             bool noDupes)
 :
   _root(root),
-  _maxInsertionLength(maxInsertLength)
+  _maxInsertionLength(maxInsertLength),
+  _noDupes(noDupes)
 {
   if (lastColumnIndex == NULL_INDEX)
   {
@@ -30,27 +32,34 @@ DefaultColumnIterator::DefaultColumnIterator(const Sequence* reference,
        (hal_index_t)(reference->getSequenceLength() - 1);
   }
 
-  // note columnIndex in genome (not sequence) coordinates
-  init(reference, columnIndex, lastColumnIndex);
-
   // allocate temp iterators
   _top = reference->getTopSegmentIterator(0);
   _next = _top->copy();
+
+  // note columnIndex in genome (not sequence) coordinates
+  init(reference, columnIndex, lastColumnIndex);
 }
    
 DefaultColumnIterator::~DefaultColumnIterator()
 {
   eraseColMap();
+  for (VisitCache::iterator i = _visitCache.begin();
+       i != _visitCache.end(); ++i)
+  {
+    delete i->second;
+  }
 }
 
 void DefaultColumnIterator::toRight() const
 {
-  /*cout << "stack seq " << _stack.back()._sequence->getName()
+/*
+  cout << "stack seq " << _stack.back()._sequence->getName()
        << " size " << _stack.size() 
        << " index " << _stack.back()._index 
        << " last " << _stack.back()._lastIndex << endl;
-  */
-  bool stackPushed = handleGapRecursive(_stack.back()._top, -2);
+*/
+//  bool stackPushed = handleGapRecursive(_stack.back()._top, -2);
+  bool stackPushed = false;
   if (stackPushed)
   {
     // pushed stack and moved right, now update
@@ -181,8 +190,7 @@ void DefaultColumnIterator::pushStack(const Sequence* ref,
                    reversed,
                    LinkedTopIteratorPtr(new LinkedTopIterator()),
                    LinkedBottomIteratorPtr(new LinkedBottomIterator()),
-                   rearrangement,
-                   VisitSet()};
+                   rearrangement};
   _stack.push_back(se);
 
   if (update == true)
@@ -241,6 +249,8 @@ bool DefaultColumnIterator::handleGapRecursive(LinkedTopIteratorPtr topIt,
         topIt->_parent->_topParse.get() != NULL)
     {
       TopSegmentIteratorConstPtr parent = topIt->_parent->_topParse->_it;
+      assert(topIt->_parent->_topParse->_dna->getArrayIndex() == 
+             topIt->_parent->_dna->getArrayIndex());
       if (parent.get() != NULL)
       {
         const Genome* parGenome = parent->getTopSegment()->getGenome();
@@ -256,10 +266,13 @@ bool DefaultColumnIterator::handleGapRecursive(LinkedTopIteratorPtr topIt,
     if (top->hasParseDown() == true && topIt->_bottomParse.get() != NULL)
     {
       LinkedBottomIteratorPtr linkedBottom = topIt->_bottomParse;
+      assert(linkedBottom->_dna->getArrayIndex() == 
+             topIt->_dna->getArrayIndex());
       for (int i = 0; i < (int)linkedBottom->_children.size(); ++i)
       {
         LinkedTopIteratorPtr child = linkedBottom->_children[i];
-        if (int(i) != from && child.get() != NULL && child->_it.get() != NULL)
+        if (int(i) != from && linkedBottom->_it->hasChild(i) &&
+            child.get() != NULL && child->_it.get() != NULL)
         {
           if (handleGapRecursive(child, -1))
           {
@@ -275,85 +288,50 @@ bool DefaultColumnIterator::handleGapRecursive(LinkedTopIteratorPtr topIt,
 bool DefaultColumnIterator::handleDeletion(TopSegmentIteratorConstPtr 
   inputTopIterator) const
 {
-  if (inputTopIterator->getTopSegment()->getGenome()->getParent() != NULL &&
-      inputTopIterator->getTopSegment()->getGenome()->getParent() != _root )
+  if (inputTopIterator->hasParent() == true)
   {
-    // test if we are the last base of a segment (
-    // since there obviously can't be a deletion in any other
-    // case:
     _top->copy(inputTopIterator);
+    bool reversed = _top->getReversed();
+    if (reversed == true)
+    {
+      _top->toReverse();
+    }
+    // only handle a deletion if we are immediately left of the breakpoint   
     if (_top->getEndOffset() == 0)
     {
       const Genome* parent = _top->getTopSegment()->getGenome()->getParent();
       RearrangementPtr rearrangement = _stack.back()._rearrangement;
-      if (_top->getReversed() == false)
+      _top->slice(0, 0);
+      assert(rearrangement->getAtomic() == true);
+      if (rearrangement->identifyDeletionFromLeftBreakpoint(_top) == true && 
+          rearrangement->getLength() + _stack.back()._cumSize 
+          <= _maxInsertionLength)
       {
-        _top->slice(0, 0);
-        assert(rearrangement->getAtomic() == true);
-        if (rearrangement->identifyDeletionFromLeftBreakpoint(_top) == true && 
-            rearrangement->getLength() + _stack.back()._cumSize 
-            <= _maxInsertionLength)
+        pair<hal_index_t, hal_index_t> deletedRange = 
+           rearrangement->getDeletedRange();
+        if (reversed == true)
         {
-          BottomSegmentIteratorConstPtr bot = 
-             parent->getBottomSegmentIterator(0);
-          bot->toParent(_top);
-          if (bot->isLast() == false)
-          {
-            pair<hal_index_t, hal_index_t> deletedRange = 
-               rearrangement->getDeletedRange();
-            assert(deletedRange.first <= deletedRange.second);
-/*
-            cout << "deletion found in " << _top << endl;
-            cout << "pushing " 
-                 << bot->getBottomSegment()->getSequence()->getName()
-                 << "  " << deletedRange.first << " , " 
-                 << deletedRange.second << endl;
-*/
-            pushStack(bot->getBottomSegment()->getSequence(), 
-                      deletedRange.first, deletedRange.second, 
-                      false, true);
-            return true;
-          }
+          swap(deletedRange.first, deletedRange.second);
+          assert(deletedRange.first >= deletedRange.second);
         }
-      }
-      else
-      {
-        _top->copy(inputTopIterator);
-        if (_top->isLast() == false)
-        {
-          // rearrangement doesn't work on inverted source sequence! 
-          // so we do a test from the left neighbour's left neighbour. 
-          _next->copy(_top);
-          _next->toRight();
-          if (_next->isLast() == false)
-          {
-            _next->toRight();
-            _next->toReverse();
-            if (rearrangement->identifyDeletionFromLeftBreakpoint(_next) == true 
-                && rearrangement->getLength() + _stack.back()._cumSize <= 
-                _maxInsertionLength)
-            {
-              BottomSegmentIteratorConstPtr bot = 
-                 parent->getBottomSegmentIterator(0);
-              bot->toParent(_next);
-              pair<hal_index_t, hal_index_t> deletedRange = 
-                 rearrangement->getDeletedRange();
-              swap(deletedRange.first, deletedRange.second);
-              assert(deletedRange.first >= deletedRange.second);
-/*
-            cout << "inverse deletion found in " << _top << endl;
-            cout << "pushing " 
-                 << bot->getBottomSegment()->getSequence()->getName()
-                 << "  " << deletedRange.first << " , " 
-                 << deletedRange.second << endl;
-*/
 
-              pushStack(bot->getBottomSegment()->getSequence(), 
-                        deletedRange.first, deletedRange.second, 
-                        true, true);
-              return true;
-            }
-          }
+        BottomSegmentIteratorConstPtr bot = 
+           parent->getBottomSegmentIterator(0);
+        bot->toParent(_top);
+        
+        if (checkUnvisited(deletedRange, parent) == true)
+        {
+          /*   cout << "deletion found in " << bot << endl;
+          cout << "pushing " 
+               << bot->getBottomSegment()->getSequence()->getName()
+               << "  " << deletedRange.first << " , " 
+               << deletedRange.second << endl;
+          */
+          pushStack(bot->getBottomSegment()->getSequence(), 
+                    deletedRange.first, deletedRange.second, 
+                    reversed, true);
+
+          return true;
         }
       }
     }
@@ -364,16 +342,19 @@ bool DefaultColumnIterator::handleDeletion(TopSegmentIteratorConstPtr
 bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr 
                                             inputTopIterator) const
 {
-  if (inputTopIterator->getTopSegment()->getGenome()->getParent() != NULL &&
-      inputTopIterator->getTopSegment()->getGenome()->getParent() != _root )
+  if (inputTopIterator->hasParent() == true)
   {
-    assert(inputTopIterator->getTopSegment()->getSequence() != 
-           _stack.back()._sequence);
     // test if we are the last base of a segment (
     // since there obviously can't be a deletion in any other
     // case:
     _top->copy(inputTopIterator);
-    if (_top->getEndOffset() == 0 && _top->isLast() == false)
+    bool reversed = _top->getReversed();
+    if (reversed == true)
+    {
+      _top->toReverse();
+    }
+    // only handle an insertion if we are immediately left of the break       
+    if (_top->getEndOffset() == 0)
     {
       RearrangementPtr rearrangement = _stack.back()._rearrangement;
       // test if next segment is inserted. if so, push to stack.
@@ -386,27 +367,28 @@ bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
       {
         pair<hal_index_t, hal_index_t> insertedRange = 
            rearrangement->getInsertedRange();
-        if (_top->getReversed())
+        if (reversed == true)
         {
           swap(insertedRange.first, insertedRange.second);
           assert(insertedRange.first >= insertedRange.second);
         }
-        else
+        
+        if (checkUnvisited(insertedRange, _top->getTopSegment()->getGenome()) 
+            == true)
         {
-          assert(insertedRange.second >= insertedRange.first);
-                    
-        }
 /*
-        cout << "\ninsertion found in " << _top << endl;
-        cout << "pushing " 
-             << _top->getTopSegment()->getSequence()->getName()
-             << "  " << insertedRange.first -
-           _top->getTopSegment()->getSequence()->getStartPosition()<< " , " 
-             << insertedRange.second << endl;
-*/               
-        pushStack(_top->getTopSegment()->getSequence(), insertedRange.first,
-                  insertedRange.second, _top->getReversed(), true);
-        return true;
+          cout << "\ninsertion found in " << inputTopIterator << endl;
+          cout << "pushing " 
+               << _top->getTopSegment()->getSequence()->getName()
+               << "  " << insertedRange.first -
+             _top->getTopSegment()->getSequence()->getStartPosition()<< " , " 
+               << insertedRange.second -
+             _top->getTopSegment()->getSequence()->getStartPosition()<< endl;
+*/        
+          pushStack(_top->getTopSegment()->getSequence(), insertedRange.first,
+                    insertedRange.second, reversed, true);
+          return true;
+        }
       }
     }
   }
@@ -436,11 +418,18 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
       topIt->_it = refSequence->getTopSegmentIterator();
       topIt->_it->toSite(_stack.back()._index, true);
       topIt->_dna = refGenome->getDNAIterator(_stack.back()._index);
+      if (_stack.back()._reversed == true)
+      {
+        topIt->_it->toReverse();
+        assert(topIt->_it->getReversed() == true);
+        topIt->_dna->toReverse();
+        assert(topIt->_dna->getReversed() == true);
+      }
     }
     else
     {
       assert(topIt->_it.get() != NULL);
-      assert(topIt->_it->getReversed() == false);
+      assert(topIt->_it->getReversed() == _stack.back()._reversed);
       nextFreeIndex();
       
       // do not handle iterating over multiple reference sequnces for now
@@ -452,6 +441,7 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
         return;
       }
       topIt->_it->slice(0, 0);
+      // catch up to nextfreeindex
       while (topIt->_it->overlaps(_stack.back()._index) == false)
       {
         topIt->_it->toRight();
@@ -635,8 +625,8 @@ void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt,
     bottomIt->_children[index]->_dna->setReversed(
       bottomIt->_children[index]->_it->getReversed());
     colMapInsert(bottomIt->_children[index]->_dna);
-/*
-    cout << "updating genome " << childGenome->getName() 
+
+/*    cout << "updating genome " << childGenome->getName() 
          << " (son of " << genome->getName() << ")"
          << " parent index " 
          << bottomIt->_dna->getArrayIndex()
@@ -644,7 +634,7 @@ void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt,
          << endl;
     cout << "parent it " << bottomIt->_it << endl;
     cout << "child it " << bottomIt->_children[index]->_it << endl << endl;
-*/    
+*/
     //recurse on paralgous siblings
     updateNextTopDup(bottomIt->_children[index]);
 
@@ -656,7 +646,8 @@ void DefaultColumnIterator::updateChild(LinkedBottomIteratorPtr bottomIt,
 void DefaultColumnIterator::updateNextTopDup(LinkedTopIteratorPtr topIt) const
 {
   assert (topIt->_it.get() != NULL);
-  if (topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX ||
+  if (_noDupes == true ||
+      topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX ||
       !checkRange(topIt->_dna))
   {
     return;
@@ -784,13 +775,22 @@ void DefaultColumnIterator::updateParseDown(LinkedTopIteratorPtr topIt) const
 
 void DefaultColumnIterator::nextFreeIndex() const
 {
-  hal_index_t index = _stack.back()._index + 1;
-  VisitSet::iterator i = _stack.back()._visitSet.find(index);
-  while (i != _stack.back()._visitSet.end())
+  hal_index_t index = _stack.back()._index;
+  hal_index_t offset = _stack.back()._reversed == false ? 1 : -1;
+  index += offset;
+
+  VisitCache::iterator cacheIt = 
+     _visitCache.find(_stack.back()._sequence->getGenome());
+  if (cacheIt != _visitCache.end())
   {
-//    _stack.back()._visitSet.erase(i);
-    index += _stack.back()._reversed == false ? 1 : -1;
-    i = _stack.back()._visitSet.find(index);
+    VisitSet* visitSet = cacheIt->second;
+    VisitSet::iterator i = visitSet->find(index);
+    while (i != visitSet->end())
+    {
+//    visitSet->erase(i);
+      index += offset;
+      i = visitSet->find(index);
+    }
   }
   assert (index > _stack.back()._index);
   _stack.back()._index = index;
@@ -814,10 +814,16 @@ void DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt,
   }
   
   // add to the duplication visit set if it's the reference
-  if (updateVisitSet == true &&
-      sequence->getGenome() == _stack.back()._sequence->getGenome())
+  if (updateVisitSet == true)
   {
-    _stack.back()._visitSet.insert(dnaIt->getArrayIndex());
+    VisitCache::iterator cacheIt = _visitCache.find(sequence->getGenome());
+    if (cacheIt == _visitCache.end())
+    {
+      VisitSet* newSet = new VisitSet();
+      cacheIt = _visitCache.insert(
+        pair<const Genome*, VisitSet*>(sequence->getGenome(), newSet)).first;
+    }
+    cacheIt->second->insert(dnaIt->getArrayIndex());
   }
 }
 
@@ -838,4 +844,18 @@ bool DefaultColumnIterator::checkRange(DNAIteratorConstPtr dnaIt) const
     }
   }
   return true;
+}
+
+bool DefaultColumnIterator::checkUnvisited(const pair<hal_index_t, hal_index_t>& 
+                                           range, const Genome* genome) const
+{
+  VisitCache::iterator i = _visitCache.find(genome);
+  bool found = false;
+  if (i != _visitCache.end())
+  {
+    found = 
+       i->second->find(range.first) != i->second->end() ||
+       i->second->find(range.second) != i->second->end();
+  }
+  return !found;
 }

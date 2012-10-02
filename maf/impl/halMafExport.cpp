@@ -11,7 +11,7 @@
 using namespace std;
 using namespace hal;
 
-MafExport::MafExport() : _maxRefGap(0)
+MafExport::MafExport() : _maxRefGap(0), _noDupes(false)
 {
 
 }
@@ -24,6 +24,11 @@ MafExport::~MafExport()
 void MafExport::setMaxRefGap(hal_size_t maxRefGap)
 {
   _maxRefGap = maxRefGap;
+}
+
+void MafExport::setNoDupes(bool noDupes)
+{
+  _noDupes = noDupes;
 }
 
 void MafExport::writeHeader()
@@ -95,7 +100,8 @@ void MafExport::convertSequence(ostream& mafStream,
   ColumnIteratorConstPtr colIt = sequence->getColumnIterator(root,
                                                              _maxRefGap, 
                                                              startPosition,
-                                                             lastPosition);
+                                                             lastPosition,
+                                                             _noDupes);
   _mafBlock.initBlock(colIt);
   assert(_mafBlock.canAppendColumn(colIt) == true);
  

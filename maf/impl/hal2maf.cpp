@@ -39,6 +39,9 @@ static CLParserPtr initParser()
   optionsParser->addOption("maxRefGap", 
                            "maximum gap length in reference", 
                            0);
+  optionsParser->addOptionFlag("noDupes", 
+                               "ignore paralogy edges", 
+                               false);
                            
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
@@ -55,6 +58,7 @@ int main(int argc, char** argv)
   hal_index_t start;
   hal_size_t length;
   hal_size_t maxRefGap;
+  bool noDupes;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -66,6 +70,7 @@ int main(int argc, char** argv)
     start = optionsParser->getOption<hal_index_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
     maxRefGap = optionsParser->getOption<hal_size_t>("maxRefGap");
+    noDupes = optionsParser->getFlag("noDupes");
   }
   catch(exception& e)
   {
@@ -128,6 +133,7 @@ int main(int argc, char** argv)
 
     MafExport mafExport;
     mafExport.setMaxRefGap(maxRefGap);
+    mafExport.setNoDupes(noDupes);
     
     if (refSequence == NULL)
     {
