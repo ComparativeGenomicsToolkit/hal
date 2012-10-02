@@ -175,8 +175,10 @@ bool DefaultRearrangement::identifyDeletionFromLeftBreakpoint(
   if (scanDeletionCycle(topSegment) == true &&
       _leftParent->hasChild() == false)
   {
+    _id = Deletion;
     return true;
   }
+  _id = Invalid;
   return false;
 }
 
@@ -187,6 +189,7 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
   range.second = _leftParent->getRight()->getStartPosition() + 
      (hal_index_t)(_leftParent->getRight()->getLength() - 1);
   assert(range.first <= range.second);
+  assert(range.second - range.first == (hal_index_t)(getLength() - 1));
   return range;
 }
 
@@ -197,8 +200,10 @@ bool DefaultRearrangement::identifyInsertionFromLeftBreakpoint(
   if (scanInsertionCycle(topSegment) == true &&
       _cur->hasParent() == false)
   {
+    _id = Insertion;
     return true;
   }
+  _id = Invalid;
   return false;
 }
 
@@ -214,6 +219,7 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getInsertedRange() const
   {
     swap(range.first, range.second);
   }
+  assert(range.second - range.first == (hal_index_t)(getLength() - 1));
   return range;
 }
 

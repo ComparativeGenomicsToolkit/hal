@@ -1087,7 +1087,7 @@ CuSuite* halColumnIteratorTestSuite(void)
   SUITE_ADD_TEST(suite, halColumnIteratorBaseTest);
   SUITE_ADD_TEST(suite, halColumnIteratorDepthTest); 
   SUITE_ADD_TEST(suite, halColumnIteratorDupTest);
-  SUITE_ADD_TEST(suite, halColumnIteratorInvTest);
+  SUITE_ADD_TEST(suite, halColumnIteratorInvTest); 
   SUITE_ADD_TEST(suite, halColumnIteratorGapTest);
   SUITE_ADD_TEST(suite, halColumnIteratorMultiGapTest);
   SUITE_ADD_TEST(suite, halColumnIteratorMultiGapInvTest);

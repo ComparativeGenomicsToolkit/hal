@@ -35,8 +35,6 @@ public:
 
    bool lastColumn() const;
 
-   bool leftOf(ColumnIteratorConstPtr other) const;
-   
    const hal::Genome* getReferenceGenome() const;
    const hal::Sequence* getReferenceSequence() const;
 
@@ -78,6 +76,7 @@ private:
    struct StackEntry 
    {
       const Sequence* _sequence;
+      hal_index_t _firstIndex;
       hal_index_t _index;
       hal_index_t _lastIndex;
       hal_size_t _cumSize; 
@@ -90,32 +89,25 @@ private:
    typedef std::vector<StackEntry> ActiveStack;
 
 private:
-   void pushStack(const Sequence* ref, hal_index_t index, 
+   void pushStack(ActiveStack& stack, const Sequence* ref, hal_index_t index, 
                   hal_index_t lastIndex, bool reversed, bool update) const;
-   void init(const hal::Sequence* ref, hal_index_t index, 
-             hal_index_t lastIndex) const;
-   bool handleGapRecursive(LinkedTopIteratorPtr topIt, int from) const;
    bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
    bool handleInsertion(TopSegmentIteratorConstPtr inputTopIterator) const;
    void resetColMap() const;
    void eraseColMap() const;
    void recursiveUpdate(bool init) const;
-   hal_index_t moveRightToNextUnvisited(LinkedTopIteratorPtr topIt) const;
 
    void updateParent(LinkedTopIteratorPtr topIt) const;
    void updateChild(LinkedBottomIteratorPtr bottomIt, 
                     hal_size_t index) const;
    void updateNextTopDup(LinkedTopIteratorPtr topIt) const;
-   void updateNextBottomDup(LinkedBottomIteratorPtr bottomIt) const;
    void updateParseUp(LinkedBottomIteratorPtr bottomIt) const;
    void updateParseDown(LinkedTopIteratorPtr topIt) const;
 
-   void nextFreeIndex() const;
-   void colMapInsert(DNAIteratorConstPtr dnaIt, 
-                     bool updateVisitSet = true) const;
+   bool inBounds() const;
+   bool nextFreeIndex() const;
+   bool colMapInsert(DNAIteratorConstPtr dnaIt) const;
    bool checkRange(DNAIteratorConstPtr dnaIt) const;
-   bool checkUnvisited(const std::pair<hal_index_t, hal_index_t>& range,
-                       const Genome* genome) const;
    
 private:
 
@@ -125,6 +117,7 @@ private:
    // seem like a dumb excercise though. 
    mutable const Genome* _root;
    mutable ActiveStack _stack;
+   mutable ActiveStack _indelStack;
    mutable const Sequence* _ref;
    mutable size_t _curInsertionLength;
 
