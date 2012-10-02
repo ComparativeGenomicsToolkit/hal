@@ -58,8 +58,7 @@ void DefaultColumnIterator::toRight() const
        << " index " << _stack.back()._index 
        << " last " << _stack.back()._lastIndex << endl;
 */
-//  bool stackPushed = handleGapRecursive(_stack.back()._top, -2);
-  bool stackPushed = false;
+  bool stackPushed = handleGapRecursive(_stack.back()._top, -2);
   if (stackPushed)
   {
     // pushed stack and moved right, now update
@@ -814,7 +813,10 @@ void DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt,
   }
   
   // add to the duplication visit set if it's the reference
-  if (updateVisitSet == true)
+  // (or we allow inserts, in which case everything needs to get added)
+  if (updateVisitSet == true &&  
+      (_maxInsertionLength > 0 || 
+       sequence->getGenome() == _stack.back()._sequence->getGenome()))
   {
     VisitCache::iterator cacheIt = _visitCache.find(sequence->getGenome());
     if (cacheIt == _visitCache.end())
