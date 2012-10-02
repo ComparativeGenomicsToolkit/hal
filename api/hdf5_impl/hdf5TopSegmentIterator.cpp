@@ -131,6 +131,7 @@ void HDF5TopSegmentIterator::toReverse() const
 {
   assert (inRange() == true);
   _reversed = !_reversed;
+  swap(_startOffset, _endOffset);
 }
 
 void HDF5TopSegmentIterator::toSite(hal_index_t position, bool slice) const
@@ -189,6 +190,10 @@ void HDF5TopSegmentIterator::toSite(hal_index_t position, bool slice) const
      _startOffset = position - _topSegment.getStartPosition();
      _endOffset = _topSegment.getStartPosition() + _topSegment.getLength()
         - position - 1;
+     if (_reversed)
+     {
+       swap(_startOffset, _endOffset);
+     }
   }  
 }
 

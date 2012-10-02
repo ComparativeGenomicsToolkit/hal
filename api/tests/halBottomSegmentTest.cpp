@@ -477,14 +477,14 @@ void BottomSegmentIteratorReverseTest::checkCallBack(AlignmentConstPtr alignment
   
   CuAssertTrue(_testCase, ti->getStartPosition() == 1);
   CuAssertTrue(_testCase, ti->getLength() == 6);
-  CuAssertTrue(_testCase, bi2->getStartPosition() == 8);
+  CuAssertTrue(_testCase, bi2->getStartPosition() == 6);
   CuAssertTrue(_testCase, bi2->getLength() == 6);
 
   string buffer;
   ti->getString(buffer);
   CuAssertTrue(_testCase, buffer == "CCTACG");
   bi2->getString(buffer);
-  CuAssertTrue(_testCase, buffer == "CACGTA");
+  CuAssertTrue(_testCase, buffer == "CGTAGG");
 
   ti = parent1->getTopSegmentIterator();
   CuAssertTrue(_testCase, ti->getReversed() == false);

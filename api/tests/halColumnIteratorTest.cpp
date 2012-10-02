@@ -459,44 +459,31 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
         if (colNumber >= 0 && colNumber < 10)
         {
           CuAssertTrue(_testCase, dnaIt->getReversed() == false);
-          CuAssertTrue(_testCase, 
-                       dnaIt->getArrayIndex() == (hal_index_t)colNumber);
 
           // inversion on bottom branch
           CuAssertTrue(_testCase, dadIt->getReversed() == true);
-          CuAssertTrue(_testCase, 
-                       dadIt->getArrayIndex() == 9 - (hal_index_t)colNumber);
 
           CuAssertTrue(_testCase, graIt->getReversed() == true);
-          CuAssertTrue(_testCase, 
-                       graIt->getArrayIndex() == 9 - (hal_index_t)colNumber);
         }
         else if (colNumber >= 10 && colNumber < 20)
         {
           CuAssertTrue(_testCase, dnaIt->getReversed() == false);
-          CuAssertTrue(_testCase, 
-                       dnaIt->getArrayIndex() == (hal_index_t)colNumber);
 
           // inversion on bottom branch
           CuAssertTrue(_testCase, dadIt->getReversed() == true);
-          CuAssertTrue(_testCase, 
-                       dadIt->getArrayIndex() == 29 - (hal_index_t)colNumber);
 
           // inversion on top branch
           CuAssertTrue(_testCase, graIt->getReversed() == false);
-          CuAssertTrue(_testCase, 
-                       graIt->getArrayIndex() == (hal_index_t)colNumber);
 
         }
-        else
-        {
-          CuAssertTrue(_testCase, 
-                       dnaIt->getArrayIndex() == (hal_index_t)colNumber);
-          CuAssertTrue(_testCase, 
-                       dadIt->getArrayIndex() == (hal_index_t)colNumber);
-          CuAssertTrue(_testCase, 
-                       graIt->getArrayIndex() == (hal_index_t)colNumber);
-        }
+        
+        CuAssertTrue(_testCase, 
+                     dnaIt->getArrayIndex() == (hal_index_t)colNumber);
+        CuAssertTrue(_testCase, 
+                     dadIt->getArrayIndex() == (hal_index_t)colNumber);
+        CuAssertTrue(_testCase, 
+                     graIt->getArrayIndex() == (hal_index_t)colNumber);
+        
       }
     }
   }
@@ -947,7 +934,7 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(AlignmentConstPtr alignment)
       CuAssertTrue(_testCase, entry->size() == 1);
       DNAIteratorConstPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
-      CuAssertTrue(_testCase, dna->getArrayIndex() == 11 - i);
+      CuAssertTrue(_testCase, dna->getArrayIndex() == i);
 
       CuAssertTrue(_testCase, colMap->find(grandpaSeq) != colMap->end());
       entry = colMap->find(grandpaSeq)->second;
