@@ -112,4 +112,26 @@ inline bool operator<(DNAIteratorConstPtr p1,
 
 }
 
+#ifndef NDEBUG
+#include "halGenome.h"
+namespace hal {
+inline std::ostream& operator<<(std::ostream& os, 
+                                DNAIteratorConstPtr dna)
+{
+  const Genome* genome = dna->getGenome();
+  os << "dna: ";
+  os << "Genome=" << genome->getName();
+  os << " Seq=" << dna->getSequence()->getName();
+  os << " idx=" << dna->getArrayIndex();
+
+  if (dna->getArrayIndex() >= 0 && 
+      dna->getArrayIndex() < (hal_index_t)genome->getSequenceLength())
+  {
+    os << " val=" << dna->getChar();
+  }
+  return os;
+}
+}
+#endif
+
 #endif
