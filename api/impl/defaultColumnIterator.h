@@ -80,7 +80,6 @@ private:
       hal_index_t _index;
       hal_index_t _lastIndex;
       hal_size_t _cumSize; 
-      bool _reversed;
       LinkedTopIteratorPtr _top;
       LinkedBottomIteratorPtr _bottom;
       RearrangementPtr _rearrangement;
@@ -90,7 +89,7 @@ private:
 
 private:
    void pushStack(ActiveStack& stack, const Sequence* ref, hal_index_t index, 
-                  hal_index_t lastIndex, bool reversed, bool update) const;
+                  hal_index_t lastIndex, bool update) const;
    bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
    bool handleInsertion(TopSegmentIteratorConstPtr inputTopIterator) const;
    void resetColMap() const;
