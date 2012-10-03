@@ -199,7 +199,11 @@ void DefaultColumnIterator::pushStack(ActiveStack& stack,
                    index,
                    lastIndex,
                    cumulativeSize,
-                   reversed,
+                   //reversed,
+                   //DEUBUG
+                   //
+                   //
+                   false,
                    LinkedTopIteratorPtr(new LinkedTopIterator()),
                    LinkedBottomIteratorPtr(new LinkedBottomIterator()),
                    rearrangement};
@@ -609,6 +613,8 @@ void DefaultColumnIterator::updateParseUp(LinkedBottomIteratorPtr bottomIt)
       bottomIt->_topParse->_it->getStartPosition());
     bottomIt->_topParse->_dna->setReversed(
       bottomIt->_topParse->_it->getReversed());
+    assert(bottomIt->_topParse->_dna->getArrayIndex() ==
+           bottomIt->_dna->getArrayIndex());
 
     // recurse on parse link's parent
     updateParent(bottomIt->_topParse);
@@ -650,6 +656,9 @@ void DefaultColumnIterator::updateParseDown(LinkedTopIteratorPtr topIt) const
       topIt->_bottomParse->_it->getStartPosition());
     topIt->_bottomParse->_dna->setReversed(
       topIt->_bottomParse->_it->getReversed());
+    assert(topIt->_bottomParse->_dna->getArrayIndex() ==
+           topIt->_dna->getArrayIndex());
+
 /*
     cout << "doing parse down on " << genome->getName()
          << " where incoming index is " << topIt->_dna->getArrayIndex()
@@ -722,7 +731,7 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
       updateCache = true;
     }
   }
-  
+
   bool found = false;
   VisitCache::iterator cacheIt = _visitCache.find(sequence->getGenome());
   if (updateCache == true)

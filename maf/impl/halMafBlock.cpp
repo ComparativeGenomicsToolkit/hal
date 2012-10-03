@@ -132,7 +132,7 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
     assert(entry->_name == sequence->getName());
     assert(entry->_strand == dna->getReversed() ? '-' : '+');
     assert(entry->_srcLength == (hal_index_t)sequence->getSequenceLength());
-    
+
     ++entry->_length;
     
     assert((hal_index_t)
@@ -320,11 +320,13 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
 ostream& hal::operator<<(ostream& os, const MafBlockEntry& mafBlockEntry)
 {
   hal_index_t start = mafBlockEntry._start;
-  if ( mafBlockEntry._strand == '-')
+  if (mafBlockEntry._strand == '-')
   {
-    start = mafBlockEntry._srcLength - 1 - mafBlockEntry._start;
+    start = mafBlockEntry._srcLength - mafBlockEntry._start - 
+       mafBlockEntry._length; 
   }
-  os << "s\t" << mafBlockEntry._name << '\t' << mafBlockEntry._start << '\t'
+
+  os << "s\t" << mafBlockEntry._name << '\t' << start << '\t'
      << mafBlockEntry._length << '\t' << mafBlockEntry._strand << '\t' 
      << mafBlockEntry._srcLength << '\t';
   
