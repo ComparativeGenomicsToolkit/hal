@@ -15,7 +15,7 @@
 using namespace std;
 using namespace hal;
 
-DefaultColumnIterator::DefaultColumnIterator(const Sequence* reference, 
+DefaultColumnIterator::DefaultColumnIterator(const Genome* reference, 
                                              const Genome* root,
                                              hal_index_t columnIndex,
                                              hal_index_t lastColumnIndex,
@@ -26,30 +26,28 @@ DefaultColumnIterator::DefaultColumnIterator(const Sequence* reference,
   _maxInsertionLength(maxInsertLength),
   _noDupes(noDupes)
 {
-  if (lastColumnIndex == NULL_INDEX)
-  {
-    lastColumnIndex = reference->getStartPosition() + 
-       (hal_index_t)(reference->getSequenceLength() - 1);
-  }
+  assert (columnIndex >= 0 && lastColumnIndex >= columnIndex && 
+          lastColumnIndex < (hal_index_t)reference->getSequenceLength());
 
   // allocate temp iterators
   _top = reference->getTopSegmentIterator(0);
   _next = _top->copy();
 
   // need to allocate the rearrangement from 
-  const Genome* genome = reference->getGenome();
-  if (genome->getParent() != NULL)
+  if (reference->getParent() != NULL)
   {
-    _rearrangement = genome->getRearrangement();
+    _rearrangement = reference->getRearrangement();
   }
-  else if (genome->getNumChildren() > 0)
+  else if (reference->getNumChildren() > 0)
   {
-    _rearrangement = genome->getChild(0)->getRearrangement();
+    _rearrangement = reference->getChild(0)->getRearrangement();
   }
   _rearrangement->setAtomic(true);
+  const Sequence* sequence = reference->getSequenceBySite(columnIndex);
+  assert(sequence != NULL);
 
   // note columnIndex in genome (not sequence) coordinates
-  _stack.push(reference, columnIndex, lastColumnIndex);
+  _stack.push(sequence, columnIndex, lastColumnIndex);
   toRight();
 }
    
@@ -100,6 +98,18 @@ void DefaultColumnIterator::toRight() const
     
     // move the index right
     ++_stack.top()->_index;
+
+    // jump to next sequence in genome if necessary
+    const Sequence* seq = _stack.top()->_sequence;
+    if (_stack.size() == 1 && 
+        _stack.top()->_index >= (hal_index_t)(seq->getStartPosition() + 
+                                              seq->getSequenceLength()) &&
+        _stack.top()->_index < (hal_index_t)(seq->getGenome()->getSequenceLength()))
+    {
+      _stack.top()->_sequence = 
+         seq->getGenome()->getSequenceBySite(_stack.top()->_index);
+      assert(_stack.top()->_sequence != NULL);
+    }
   }
   while (_break == true);
 

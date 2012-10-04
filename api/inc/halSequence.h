@@ -76,18 +76,6 @@ public:
    /** Get the index of the sequence in the genome's bottom segment array */
    virtual hal_index_t getBottomSegmentArrayIndex() const = 0;
 
-   /** Get a column iterator 
-    * @param root Root genome of the column (now genomes above it 
-    * are explored).  By default will be root genome of alignment 
-    * @param maxInsertLength maximum insertion to be traversed
-    * @param position Index in genome of returned iterator */
-   virtual ColumnIteratorConstPtr getColumnIterator(
-     const Genome* root = NULL,
-     hal_size_t maxInsertLength = 0,
-     hal_index_t position = 0,
-     hal_index_t lastPosition = NULL_INDEX,
-     bool noDupes = false) const = 0;
-
 protected:
    
    /** Destructor */

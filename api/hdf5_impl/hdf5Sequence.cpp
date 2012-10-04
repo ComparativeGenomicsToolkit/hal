@@ -224,8 +224,16 @@ ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
   {
     lastIdx = (hal_index_t)(lastPosition + getStartPosition());
   }
+  if (position < 0 || 
+      lastPosition >= (hal_index_t)(getStartPosition() + getSequenceLength()))
+  {
+    stringstream ss;
+    ss << "HDF5Sequence::getColumnIteratorsetString: input indices "
+       << "(" << position << ", " << lastPosition << ") out of bounds";
+    throw hal_exception(ss.str());
+  }
   const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(this, root, idx, lastIdx, maxInsertLength, 
+     new DefaultColumnIterator(getGenome(), root, idx, lastIdx, maxInsertLength, 
                                noDupes);
   return ColumnIteratorConstPtr(newIt);
 }

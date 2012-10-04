@@ -22,7 +22,7 @@ class DefaultColumnIterator : public ColumnIterator
 {
 public:
 
-   DefaultColumnIterator(const hal::Sequence* reference, 
+   DefaultColumnIterator(const hal::Genome* reference, 
                          const hal::Genome* root,
                          hal_index_t columnIndex,
                          hal_index_t lastIndex,
