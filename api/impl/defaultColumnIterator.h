@@ -14,6 +14,7 @@
 #include "halColumnIterator.h"
 #include "halRearrangement.h"
 #include "halCommon.h"
+#include "columnIteratorStack.h"
 
 namespace hal {
 
@@ -48,64 +49,31 @@ public:
 
 private:
 
-   struct LinkedTopIterator;
-   typedef smart_ptr<LinkedTopIterator>::type LinkedTopIteratorPtr;
-   struct LinkedBottomIterator;
-   typedef smart_ptr<LinkedBottomIterator>::type LinkedBottomIteratorPtr;
-
-   struct LinkedBottomIterator 
-   {
-      BottomSegmentIteratorConstPtr _it;
-      DNAIteratorConstPtr _dna;
-      LinkedTopIteratorPtr _topParse;
-      std::vector<LinkedTopIteratorPtr> _children;
-      LinkedBottomIteratorPtr _nextDup;
-   };
-
-   struct LinkedTopIterator 
-   {
-      TopSegmentIteratorConstPtr _it;
-      DNAIteratorConstPtr _dna;
-      LinkedBottomIteratorPtr _bottomParse;
-      LinkedBottomIteratorPtr _parent;
-      LinkedTopIteratorPtr _nextDup;
-   };
+   typedef ColumnIteratorStack::LinkedBottomIterator LinkedBottomIterator;
+   typedef ColumnIteratorStack::LinkedTopIterator LinkedTopIterator;
+   typedef ColumnIteratorStack::Entry StackEntry;
    
    typedef std::map<const Genome*, PositionCache*> VisitCache;
 
-   struct StackEntry 
-   {
-      const Sequence* _sequence;
-      hal_index_t _firstIndex;
-      hal_index_t _index;
-      hal_index_t _lastIndex;
-      hal_size_t _cumSize; 
-      LinkedTopIteratorPtr _top;
-      LinkedBottomIteratorPtr _bottom;
-   };
-
-   typedef std::vector<StackEntry> ActiveStack;
-
 private:
-   void pushStack(ActiveStack& stack, const Sequence* ref, hal_index_t index, 
-                  hal_index_t lastIndex, bool update) const;
+
+   void recursiveUpdate(bool init) const;
    bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
    bool handleInsertion(TopSegmentIteratorConstPtr inputTopIterator) const;
-   void resetColMap() const;
-   void eraseColMap() const;
-   void recursiveUpdate(bool init) const;
 
-   void updateParent(LinkedTopIteratorPtr topIt) const;
-   void updateChild(LinkedBottomIteratorPtr bottomIt, 
-                    hal_size_t index) const;
-   void updateNextTopDup(LinkedTopIteratorPtr topIt) const;
-   void updateParseUp(LinkedBottomIteratorPtr bottomIt) const;
-   void updateParseDown(LinkedTopIteratorPtr topIt) const;
+   void updateParent(LinkedTopIterator* topIt) const;
+   void updateChild(LinkedBottomIterator* bottomIt, hal_size_t index) const;
+   void updateNextTopDup(LinkedTopIterator* topIt) const;
+   void updateParseUp(LinkedBottomIterator* bottomIt) const;
+   void updateParseDown(LinkedTopIterator* topIt) const;
 
    bool inBounds() const;
    void nextFreeIndex() const;
    bool colMapInsert(DNAIteratorConstPtr dnaIt) const;
    bool checkRange(DNAIteratorConstPtr dnaIt) const;
+
+   void resetColMap() const;
+   void eraseColMap() const;
    
 private:
 
@@ -114,8 +82,8 @@ private:
    // the fact that this iterator has no writable interface makes it
    // seem like a dumb excercise though. 
    mutable const Genome* _root;
-   mutable ActiveStack _stack;
-   mutable ActiveStack _indelStack;
+   mutable ColumnIteratorStack _stack;
+   mutable ColumnIteratorStack _indelStack;
    mutable const Sequence* _ref;
    mutable size_t _curInsertionLength;
 
