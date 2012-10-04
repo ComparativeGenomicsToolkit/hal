@@ -22,19 +22,12 @@ public:
 
    virtual ~MafExport();
 
-   void convertGenome(std::ostream& mafStream,
-                      AlignmentConstPtr alignment,
-                      const Genome* genome,
-                      hal_index_t startPosition = 0,
-                      hal_size_t length = 0,
-                      const Genome* root = NULL);
-
-   void convertSequence(std::ostream& mafStream,
-                        AlignmentConstPtr alignment,
-                        const Sequence* sequence,
-                        hal_index_t startPosition = 0,
-                        hal_size_t length = 0,
-                        const Genome* root = NULL);
+   void convertSegmentedSequence(std::ostream& mafStream,
+                                 AlignmentConstPtr alignment,
+                                 const SegmentedSequence* seq,
+                                 hal_index_t startPosition,
+                                 hal_size_t length,
+                                 const Genome* root);
 
    void setMaxRefGap(hal_size_t maxRefGap);
    void setNoDupes(bool noDupes);

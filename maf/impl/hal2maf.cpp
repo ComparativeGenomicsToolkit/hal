@@ -112,11 +112,13 @@ int main(int argc, char** argv)
     {
       refGenome = alignment->openGenome(alignment->getRootName());
     }
+    const SegmentedSequence* ref = refGenome;
     
     const Sequence* refSequence = NULL;
     if (refSequenceName != "\"\"")
     {
       refSequence = refGenome->getSequence(refSequenceName);
+      ref = refSequence;
       if (refSequence == NULL)
       {
         throw hal_exception(string("Reference sequence, ") + refSequenceName + 
@@ -134,17 +136,9 @@ int main(int argc, char** argv)
     MafExport mafExport;
     mafExport.setMaxRefGap(maxRefGap);
     mafExport.setNoDupes(noDupes);
-    
-    if (refSequence == NULL)
-    {
-      mafExport.convertGenome(mafStream, alignment, refGenome, 
-                              start, length, rootGenome);
-    }
-    else
-    {
-      mafExport.convertSequence(mafStream, alignment, refSequence,
-                                start, length, rootGenome);
-    }
+
+    mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
+                                       start, length, rootGenome);
 
   }
   catch(hal_exception& e)

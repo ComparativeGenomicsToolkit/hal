@@ -41,67 +41,34 @@ void MafExport::writeHeader()
   }
 }
 
-void MafExport::convertGenome(ostream& mafStream,
-                              AlignmentConstPtr alignment,
-                              const Genome* genome,
-                              hal_index_t startPosition,
-                              hal_size_t length,
-                              const Genome* root)
+void MafExport::convertSegmentedSequence(ostream& mafStream,
+                                         AlignmentConstPtr alignment,
+                                         const SegmentedSequence* seq,
+                                         hal_index_t startPosition,
+                                         hal_size_t length,
+                                         const Genome* root)
 {
-  if (length == 0)
-  {
-    length = genome->getSequenceLength() - startPosition;
-  }
-  if ((hal_size_t)startPosition + length > genome->getSequenceLength())
+  assert(seq != NULL);
+  if (startPosition >= (hal_index_t)seq->getSequenceLength() ||
+      (hal_size_t)startPosition + length > seq->getSequenceLength())
   {
     throw hal_exception("Invalid range specified for convertGenome");
   }
-  _mafStream = &mafStream;
-  _alignment = alignment;
-  writeHeader();
-  hal_index_t pos = startPosition;
-  hal_size_t doneLen = 0;
-
-  while (doneLen < length)
-  {
-    assert(pos < (hal_index_t)genome->getSequenceLength());
-    const Sequence* sequence = genome->getSequenceBySite(pos);
-    assert(sequence != NULL);
-    hal_index_t seqStart = pos - sequence->getStartPosition();
-    hal_size_t curLen = min(length - doneLen, 
-                            sequence->getSequenceLength() - seqStart);
-    assert(curLen > 0);
-    convertSequence(mafStream, alignment, sequence, seqStart, curLen, root);
-    pos += curLen;
-    doneLen += curLen;
-  }
-}
-
-void MafExport::convertSequence(ostream& mafStream,
-                                AlignmentConstPtr alignment,
-                                const Sequence* sequence,
-                                hal_index_t startPosition,
-                                hal_size_t length,
-                                const Genome* root)
-{
   if (length == 0)
   {
-    length = sequence->getSequenceLength();
-  }
-  if ((hal_size_t)startPosition + length > sequence->getSequenceLength())
-  {
-    throw hal_exception("Invalid range specified for convertSequence");
+    length = seq->getSequenceLength() - startPosition;
   }
   hal_index_t lastPosition = startPosition + (hal_index_t)(length - 1);
+
   _mafStream = &mafStream;
   _alignment = alignment;
   writeHeader();
 
-  ColumnIteratorConstPtr colIt = sequence->getColumnIterator(root,
-                                                             _maxRefGap, 
-                                                             startPosition,
-                                                             lastPosition,
-                                                             _noDupes);
+  ColumnIteratorConstPtr colIt = seq->getColumnIterator(root,
+                                                        _maxRefGap, 
+                                                        startPosition,
+                                                        lastPosition,
+                                                        _noDupes);
   _mafBlock.initBlock(colIt);
   assert(_mafBlock.canAppendColumn(colIt) == true);
  

@@ -548,7 +548,7 @@ ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
       lastPosition >= (hal_index_t)(getSequenceLength()))
   {
     stringstream ss;
-    ss << "HDF5Genome::getColumnIteratorsetString: input indices "
+    ss << "HDF5Genome::getColumnIterator: input indices "
        << "(" << position << ", " << lastPosition << ") out of bounds";
     throw hal_exception(ss.str());
   }
