@@ -13,6 +13,7 @@
 #include <map>
 #include "halColumnIterator.h"
 #include "halRearrangement.h"
+#include "halCommon.h"
 
 namespace hal {
 
@@ -69,9 +70,8 @@ private:
       LinkedBottomIteratorPtr _parent;
       LinkedTopIteratorPtr _nextDup;
    };
-
-   typedef std::set<hal_index_t> VisitSet;
-   typedef std::map<const Genome*, VisitSet*> VisitCache;
+   
+   typedef std::map<const Genome*, PositionCache*> VisitCache;
 
    struct StackEntry 
    {
@@ -82,7 +82,6 @@ private:
       hal_size_t _cumSize; 
       LinkedTopIteratorPtr _top;
       LinkedBottomIteratorPtr _bottom;
-      RearrangementPtr _rearrangement;
    };
 
    typedef std::vector<StackEntry> ActiveStack;
@@ -104,7 +103,7 @@ private:
    void updateParseDown(LinkedTopIteratorPtr topIt) const;
 
    bool inBounds() const;
-   bool nextFreeIndex() const;
+   void nextFreeIndex() const;
    bool colMapInsert(DNAIteratorConstPtr dnaIt) const;
    bool checkRange(DNAIteratorConstPtr dnaIt) const;
    
@@ -120,6 +119,7 @@ private:
    mutable const Sequence* _ref;
    mutable size_t _curInsertionLength;
 
+   mutable RearrangementPtr _rearrangement;
    mutable hal_size_t _maxInsertionLength;
    mutable bool _noDupes;
 
@@ -127,6 +127,7 @@ private:
    mutable TopSegmentIteratorConstPtr _top;
    mutable TopSegmentIteratorConstPtr _next;
    mutable VisitCache _visitCache;
+   mutable bool _break;
 };
 
 

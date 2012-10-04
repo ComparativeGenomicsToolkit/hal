@@ -8,6 +8,7 @@
 #define _HALCOMMON_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include <locale>
@@ -90,6 +91,28 @@ inline hal_size_t hammingDistance(const std::string& s1, const std::string& s2)
   return dist;
 }
 
+/** keep track of bases by storing 2d intervals 
+ * For example, if we want to flag positions in a genome
+ * that we have visited, this structure will be fairly 
+ * efficient provided positions are clustered into intervals */
+class PositionCache
+{
+public:
+   PositionCache() : _size(0) {}
+   bool insert(hal_index_t pos);
+   bool find(hal_index_t pos) const;
+   void clear();
+   bool check() const;
+   hal_size_t size() const { return _size; }
+   hal_size_t numIntervals() const { return _set.size(); }
+protected:
+   // sorted by last index, so each interval is (last, first)
+   typedef std::map<hal_index_t, hal_index_t> IntervalSet;
+   IntervalSet _set;
+   hal_size_t _size;
+};
+
 }
+
 #endif
 

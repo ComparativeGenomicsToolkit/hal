@@ -7,6 +7,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <cassert>
+#include <cmath>
+#include <ctime>
 #include "halColumnIteratorTest.h"
 #include "halRandomData.h"
 #include "halBottomSegmentTest.h"
@@ -990,6 +992,42 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
+void ColumnIteratorPositionCacheTest::createCallBack(AlignmentPtr alignment)
+{
+}
+
+void ColumnIteratorPositionCacheTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  size_t trials = 10;
+  size_t sizes[] = {10, 100, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 1000000};
+  size_t entries = 10000;
+  set<hal_index_t> truth;
+  PositionCache cache;
+  srand(time(NULL));
+
+  for (size_t i = 0; i < trials; ++i)
+  {
+    for (size_t j = 0; j < entries; ++j)
+    {
+      hal_index_t val = (hal_index_t)rand() % sizes[i];
+      bool r = truth.insert(val).second;
+      bool r2 = cache.insert(val);
+      CuAssertTrue(_testCase, r == r2);
+      CuAssertTrue(_testCase, truth.size() == cache.size());
+    }
+    CuAssertTrue(_testCase, cache.check());
+    for (size_t j = 0; j < entries * 2; ++j)
+    {
+      hal_index_t val = (hal_index_t)rand() % sizes[i];
+      bool r = truth.find(val) != truth.end();
+      bool r2 = cache.find(val);
+      CuAssertTrue(_testCase, r == r2);
+    }
+    truth.clear();
+    cache.clear();
+  }
+}
+
 void halColumnIteratorBaseTest(CuTest *testCase)
 {
   try 
@@ -1081,6 +1119,19 @@ void halColumnIteratorMultiGapInvTest(CuTest *testCase)
   } 
 }
 
+void halColumnIteratorPositionCacheTest(CuTest *testCase)
+{
+  try 
+  {
+    ColumnIteratorPositionCacheTest tester;
+    tester.check(testCase);
+  }
+  catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
 CuSuite* halColumnIteratorTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
@@ -1091,6 +1142,7 @@ CuSuite* halColumnIteratorTestSuite(void)
   SUITE_ADD_TEST(suite, halColumnIteratorGapTest);
   SUITE_ADD_TEST(suite, halColumnIteratorMultiGapTest);
   SUITE_ADD_TEST(suite, halColumnIteratorMultiGapInvTest);
+  SUITE_ADD_TEST(suite, halColumnIteratorPositionCacheTest);
   return suite;
 }
 
