@@ -72,7 +72,6 @@ private:
    bool inBounds() const;
    void nextFreeIndex() const;
    bool colMapInsert(DNAIteratorConstPtr dnaIt) const;
-   bool checkRange(DNAIteratorConstPtr dnaIt) const;
 
    void resetColMap() const;
    void eraseColMap() const;

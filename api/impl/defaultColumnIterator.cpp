@@ -409,8 +409,8 @@ void DefaultColumnIterator::updateParent(LinkedTopIterator* topIt) const
 {
   const Genome* genome = topIt->_it->getTopSegment()->getGenome();
  
-  if (!_break && genome != _root && topIt->_it->hasParent() && 
-      checkRange(topIt->_dna))
+  if (!_break && genome != _root && topIt->_it->hasParent())
+
   {
     const Genome* parentGenome = genome->getParent();
 
@@ -472,7 +472,7 @@ void DefaultColumnIterator::updateParent(LinkedTopIterator* topIt) const
 void DefaultColumnIterator::updateChild(LinkedBottomIterator* bottomIt, 
                                         hal_size_t index) const
 {
-  if (!_break && bottomIt->_it->hasChild(index) && checkRange(bottomIt->_dna))
+  if (!_break && bottomIt->_it->hasChild(index))
   {
     assert(index < bottomIt->_children.size());
     const Genome* genome = bottomIt->_it->getBottomSegment()->getGenome();
@@ -524,8 +524,7 @@ void DefaultColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
 {
   assert (topIt->_it.get() != NULL);
   if (_break || _noDupes == true ||
-      topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX ||
-      !checkRange(topIt->_dna))
+      topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX)
   {
     return;
   }
@@ -575,7 +574,7 @@ void DefaultColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
 void DefaultColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
    const
 {
-  if (!_break && bottomIt->_it->hasParseUp() && checkRange(bottomIt->_dna))
+  if (!_break && bottomIt->_it->hasParseUp())
   {
     const Genome* genome = bottomIt->_it->getBottomSegment()->getGenome();
 
@@ -607,7 +606,7 @@ void DefaultColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
  
 void DefaultColumnIterator::updateParseDown(LinkedTopIterator* topIt) const
 {
-  if (!_break && topIt->_it->hasParseDown() && checkRange(topIt->_dna))
+  if (!_break && topIt->_it->hasParseDown())
   {
     const Genome* genome = topIt->_it->getTopSegment()->getGenome();
 
@@ -736,18 +735,6 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
   }
 
   return !found;
-}
-
-bool DefaultColumnIterator::checkRange(DNAIteratorConstPtr dnaIt) const
-{
-  StackEntry* entry = _stack.top();
-  if (dnaIt->getSequence() == entry->_sequence)
-  {
-    assert (entry->_sequence->getGenome() == dnaIt->getGenome());
-    // todo: check should be two-sided
-    return dnaIt->getArrayIndex() >= entry->_index;
-  }
-  return true;
 }
 
 void DefaultColumnIterator::resetColMap() const
