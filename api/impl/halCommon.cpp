@@ -33,6 +33,29 @@ vector<string> hal::chopString(const string& inString,
   return outVector;
 }
 
+size_t hal::getGenomesInSpanningTree(const Genome* root, 
+                                     const set<const Genome*>& inputSet,
+                                     set<const Genome*>& outputSet)
+{
+  size_t score = inputSet.find(root) != inputSet.end() ? 1 : 0;
+  vector<size_t> childScores(root->getNumChildren());
+  size_t sum = 0;
+  size_t maxVal = 0;
+  for (size_t i = 0; i < childScores.size(); ++i)
+  {
+    childScores[i] = getGenomesInSpanningTree(root->getChild(i),
+                                              inputSet, outputSet);
+    sum += childScores[i];
+    maxVal = max(maxVal, childScores[i]);
+  }
+  score += sum;
+  if (score > maxVal)
+  {
+    outputSet.insert(root);
+  }
+  return score;
+}
+
 bool PositionCache::insert(hal_index_t pos)
 {
   IntervalSet::iterator i = _set.lower_bound(pos);

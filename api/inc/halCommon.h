@@ -91,6 +91,12 @@ inline hal_size_t hammingDistance(const std::string& s1, const std::string& s2)
   return dist;
 }
 
+/* Given a set of genomes (input set) return all genomes in the spanning
+ * tree (root should be the root of the alignment */
+size_t getGenomesInSpanningTree(const Genome* root, 
+                                const std::set<const Genome*>& inputSet,
+                                std::set<const Genome*>& outputSet);
+
 /** keep track of bases by storing 2d intervals 
  * For example, if we want to flag positions in a genome
  * that we have visited, this structure will be fairly 
