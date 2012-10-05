@@ -81,10 +81,11 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                                         _noAncestors);
   _mafBlock.initBlock(colIt);
   assert(_mafBlock.canAppendColumn(colIt) == true);
- 
+  _mafBlock.appendColumn(colIt);
   size_t numBlocks = 0;
-  do
+  while (colIt->lastColumn() == false)
   {
+    colIt->toRight();
     if (_mafBlock.canAppendColumn(colIt) == false)
     {
       // erase empty entries from the column.  helps when there are 
@@ -99,9 +100,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
       assert(_mafBlock.canAppendColumn(colIt) == true);
     }
     _mafBlock.appendColumn(colIt);
-    colIt->toRight();
   }
-  while (colIt->lastColumn() == false);
   mafStream << _mafBlock << endl;
 }
 
