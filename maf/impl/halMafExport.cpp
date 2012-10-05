@@ -63,6 +63,10 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
   {
     length = seq->getSequenceLength() - startPosition;
   }
+  if (length == 0)
+  {
+    throw hal_exception("Cannot convert zero length sequence");
+  }
   hal_index_t lastPosition = startPosition + (hal_index_t)(length - 1);
 
   _mafStream = &mafStream;
@@ -79,7 +83,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
   assert(_mafBlock.canAppendColumn(colIt) == true);
  
   size_t numBlocks = 0;
-  while (colIt->lastColumn() == false)
+  do
   {
     if (_mafBlock.canAppendColumn(colIt) == false)
     {
@@ -97,6 +101,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
     _mafBlock.appendColumn(colIt);
     colIt->toRight();
   }
+  while (colIt->lastColumn() == false);
   mafStream << _mafBlock << endl;
 }
 
