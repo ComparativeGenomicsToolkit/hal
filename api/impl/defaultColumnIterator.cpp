@@ -63,14 +63,6 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
     getGenomesInSpanningTree(_targets, _scope);
   }
   
-  cout << "targets ";
-  for (set<const Genome*>::const_iterator i = _targets.begin(); 
-       i != _targets.end(); ++i)
-  {
-    cout << (*i)->getName() << " ";
-  }
-  cout << endl;
-
   // note columnIndex in genome (not sequence) coordinates
   _stack.push(sequence, columnIndex, lastColumnIndex);
 
