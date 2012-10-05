@@ -42,6 +42,9 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("noDupes", 
                                "ignore paralogy edges", 
                                false);
+  optionsParser->addOptionFlag("noAncestors", 
+                               "don't write ancestral sequences", 
+                               false);
                            
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
@@ -59,6 +62,7 @@ int main(int argc, char** argv)
   hal_size_t length;
   hal_size_t maxRefGap;
   bool noDupes;
+  bool noAncestors;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -71,6 +75,7 @@ int main(int argc, char** argv)
     length = optionsParser->getOption<hal_size_t>("length");
     maxRefGap = optionsParser->getOption<hal_size_t>("maxRefGap");
     noDupes = optionsParser->getFlag("noDupes");
+    noAncestors = optionsParser->getFlag("noAncestors");
   }
   catch(exception& e)
   {
@@ -136,6 +141,7 @@ int main(int argc, char** argv)
     MafExport mafExport;
     mafExport.setMaxRefGap(maxRefGap);
     mafExport.setNoDupes(noDupes);
+    mafExport.setNoAncestors(noAncestors);
 
     mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
                                        start, length, rootGenome);

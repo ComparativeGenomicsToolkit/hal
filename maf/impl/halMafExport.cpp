@@ -31,6 +31,11 @@ void MafExport::setNoDupes(bool noDupes)
   _noDupes = noDupes;
 }
 
+void MafExport::setNoAncestors(bool noAncestors)
+{
+  _noAncestors = noAncestors;
+}
+
 void MafExport::writeHeader()
 {
   assert(_mafStream != NULL);
@@ -68,7 +73,8 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                                         _maxRefGap, 
                                                         startPosition,
                                                         lastPosition,
-                                                        _noDupes);
+                                                        _noDupes,
+                                                        _noAncestors);
   _mafBlock.initBlock(colIt);
   assert(_mafBlock.canAppendColumn(colIt) == true);
  
@@ -83,6 +89,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
       {
         colIt->defragment();
       }
+
       mafStream << _mafBlock << '\n';
       _mafBlock.initBlock(colIt);
       assert(_mafBlock.canAppendColumn(colIt) == true);

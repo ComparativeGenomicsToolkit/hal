@@ -124,7 +124,8 @@ public:
                                             hal_size_t maxInsertLength,
                                             hal_index_t position,
                                             hal_index_t lastPosition,
-                                            bool noDupes) const;
+                                            bool noDupes,
+                                            bool noAncestors) const;
 
    void getString(std::string& outString) const;
 

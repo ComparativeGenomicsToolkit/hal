@@ -537,7 +537,7 @@ DNAIteratorConstPtr HDF5Genome::getDNAEndIterator() const
 
 ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
   const Genome* root, hal_size_t maxInsertLength, hal_index_t position,
-  hal_index_t lastPosition, bool noDupes) const
+  hal_index_t lastPosition, bool noDupes, bool noAncestors) const
 {
   hal_index_t lastIdx = lastPosition;
   if (lastPosition == NULL_INDEX)
@@ -554,7 +554,7 @@ ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
   }
   const DefaultColumnIterator* newIt = 
      new DefaultColumnIterator(this, root, position, lastIdx, 
-                               maxInsertLength, noDupes);
+                               maxInsertLength, noDupes, noAncestors);
   return ColumnIteratorConstPtr(newIt);
 }
 

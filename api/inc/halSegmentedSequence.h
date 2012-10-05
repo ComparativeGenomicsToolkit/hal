@@ -86,7 +86,8 @@ public:
      hal_size_t maxInsertLength = 0,
      hal_index_t position = 0,
      hal_index_t lastPosition = NULL_INDEX,
-     bool noDupes = false) const = 0;
+     bool noDupes = false,
+     bool noAncestors = false) const = 0;
 
    /** Get the character string underlying the segmented sequence
     * @param outString String object into which we copy the result */

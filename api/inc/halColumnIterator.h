@@ -55,6 +55,9 @@ public:
    /** Get a pointer to the reference sequence for the column iterator */
    virtual const hal::Sequence* getReferenceSequence() const = 0;
 
+   /** Get the position in the reference sequence */
+   virtual hal_index_t getReferenceSequencePosition() const = 0;
+
    /** Get a pointer to the column map */
    virtual const ColumnMap* getColumnMap() const = 0;
 

@@ -27,7 +27,8 @@ public:
                          hal_index_t columnIndex,
                          hal_index_t lastIndex,
                          hal_size_t maxInsertionLength,
-                         bool noDupes);
+                         bool noDupes,
+                         bool noAncestors);
    
    ~DefaultColumnIterator();
 
@@ -39,6 +40,7 @@ public:
 
    const hal::Genome* getReferenceGenome() const;
    const hal::Sequence* getReferenceSequence() const;
+   hal_index_t getReferenceSequencePosition() const;
 
    /** Get a pointer to the column map */
    const ColumnMap* getColumnMap() const;
@@ -90,6 +92,7 @@ private:
    mutable RearrangementPtr _rearrangement;
    mutable hal_size_t _maxInsertionLength;
    mutable bool _noDupes;
+   mutable bool _noAncestors;
 
    mutable ColumnMap _colMap;
    mutable TopSegmentIteratorConstPtr _top;

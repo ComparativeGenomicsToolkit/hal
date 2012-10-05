@@ -20,11 +20,13 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
                                              hal_index_t columnIndex,
                                              hal_index_t lastColumnIndex,
                                              hal_size_t maxInsertLength,
-                                             bool noDupes)
+                                             bool noDupes,
+                                             bool noAncestors)
 :
   _root(root),
   _maxInsertionLength(maxInsertLength),
-  _noDupes(noDupes)
+  _noDupes(noDupes),
+  _noAncestors(noAncestors)
 {
   assert (columnIndex >= 0 && lastColumnIndex >= columnIndex && 
           lastColumnIndex < (hal_index_t)reference->getSequenceLength());
@@ -45,9 +47,11 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
   _rearrangement->setAtomic(true);
   const Sequence* sequence = reference->getSequenceBySite(columnIndex);
   assert(sequence != NULL);
+  _ref =sequence;    
 
   // note columnIndex in genome (not sequence) coordinates
   _stack.push(sequence, columnIndex, lastColumnIndex);
+
   toRight();
 }
    
@@ -109,11 +113,10 @@ void DefaultColumnIterator::toRight() const
       _stack.top()->_sequence = 
          seq->getGenome()->getSequenceBySite(_stack.top()->_index);
       assert(_stack.top()->_sequence != NULL);
+      _ref = _stack.top()->_sequence;    
     }
   }
   while (_break == true);
-
-  _ref = _stack.top()->_sequence;    
 
   // push the indel stack.  
   _stack.pushStack(_indelStack);
@@ -158,6 +161,12 @@ const Sequence* DefaultColumnIterator::getReferenceSequence() const
   return _ref;
 }
 
+hal_index_t DefaultColumnIterator::getReferenceSequencePosition() const 
+{
+  return _stack[0]->_index - _ref->getStartPosition();
+}
+
+
 const DefaultColumnIterator::ColumnMap* DefaultColumnIterator::getColumnMap() 
 const
 {
@@ -167,7 +176,7 @@ const
 hal_index_t DefaultColumnIterator::getArrayIndex() const
 {
   assert(_stack.size() > 0);
-  return _stack.top()->_index;
+  return _stack[0]->_index;
 }
 
 void DefaultColumnIterator::defragment() const
@@ -710,7 +719,8 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
   }
 
   // insert into the column data structure to pass out to client
-  if (found == false)
+  if (found == false && 
+      (!_noAncestors || dnaIt->getGenome()->getNumChildren() == 0))
   {
     ColumnMap::iterator i = _colMap.lower_bound(sequence);
     if(i != _colMap.end() && !(_colMap.key_comp()(sequence, i->first)))

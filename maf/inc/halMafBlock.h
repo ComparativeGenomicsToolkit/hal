@@ -75,6 +75,7 @@ protected:
    Entries::const_iterator _reference;
    std::vector<MafBlockString*> _stringBuffers;
    hal_index_t _maxLength;
+   hal_index_t _refIndex;
 
    typedef hal::ColumnIterator::ColumnMap ColumnMap;
    typedef hal::ColumnIterator::DNASet DNASet;

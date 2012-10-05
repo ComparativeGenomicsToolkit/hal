@@ -31,6 +31,8 @@ public:
 
    void setMaxRefGap(hal_size_t maxRefGap);
    void setNoDupes(bool noDupes);
+   void setNoAncestors(bool noAncestors);
+
 
 protected:
 
@@ -43,6 +45,7 @@ protected:
    MafBlock _mafBlock;
    hal_size_t _maxRefGap;
    bool _noDupes;
+   bool _noAncestors;
 };
 
 }
