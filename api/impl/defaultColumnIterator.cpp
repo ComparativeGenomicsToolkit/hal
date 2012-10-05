@@ -16,14 +16,13 @@ using namespace std;
 using namespace hal;
 
 DefaultColumnIterator::DefaultColumnIterator(const Genome* reference, 
-                                             const Genome* root,
+                                             const set<const Genome*>* targets,
                                              hal_index_t columnIndex,
                                              hal_index_t lastColumnIndex,
                                              hal_size_t maxInsertLength,
                                              bool noDupes,
                                              bool noAncestors)
 :
-  _root(root),
   _maxInsertionLength(maxInsertLength),
   _noDupes(noDupes),
   _noAncestors(noAncestors)
@@ -48,6 +47,29 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
   const Sequence* sequence = reference->getSequenceBySite(columnIndex);
   assert(sequence != NULL);
   _ref =sequence;    
+
+  // compute all genomes in search scope (spanning tree of reference and targets)
+  // if targets is empty we just visit everything. 
+  if (targets != NULL && !targets->empty())
+  {
+    _targets = *targets;
+    _targets.insert(reference);
+    const Genome* root = reference;
+    while (root->getParent() != NULL)
+    {
+      // stupid!
+      root = root->getParent();
+    }
+    getGenomesInSpanningTree(_targets, _scope);
+  }
+  
+  cout << "targets ";
+  for (set<const Genome*>::const_iterator i = _targets.begin(); 
+       i != _targets.end(); ++i)
+  {
+    cout << (*i)->getName() << " ";
+  }
+  cout << endl;
 
   // note columnIndex in genome (not sequence) coordinates
   _stack.push(sequence, columnIndex, lastColumnIndex);
@@ -408,9 +430,7 @@ bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
 void DefaultColumnIterator::updateParent(LinkedTopIterator* topIt) const
 {
   const Genome* genome = topIt->_it->getTopSegment()->getGenome();
- 
-  if (!_break && genome != _root && topIt->_it->hasParent())
-
+  if (!_break && topIt->_it->hasParent() && parentInScope(genome))
   {
     const Genome* parentGenome = genome->getParent();
 
@@ -472,10 +492,10 @@ void DefaultColumnIterator::updateParent(LinkedTopIterator* topIt) const
 void DefaultColumnIterator::updateChild(LinkedBottomIterator* bottomIt, 
                                         hal_size_t index) const
 {
-  if (!_break && bottomIt->_it->hasChild(index))
+  const Genome* genome = bottomIt->_it->getBottomSegment()->getGenome();
+  if (!_break && bottomIt->_it->hasChild(index) && childInScope(genome, index))
   {
     assert(index < bottomIt->_children.size());
-    const Genome* genome = bottomIt->_it->getBottomSegment()->getGenome();
     const Genome* childGenome = genome->getChild(index);
 
     // no linked iterator for child. we create a new one and add linke in
@@ -680,6 +700,7 @@ void DefaultColumnIterator::nextFreeIndex() const
 bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
 {
   const Sequence* sequence = dnaIt->getSequence();
+  const Genome* genome = dnaIt->getGenome();
   assert(sequence != NULL);
   
   // All reference bases need to get added to the cache
@@ -700,14 +721,14 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
   }
 
   bool found = false;
-  VisitCache::iterator cacheIt = _visitCache.find(sequence->getGenome());
+  VisitCache::iterator cacheIt = _visitCache.find(genome);
   if (updateCache == true)
   {
     if (cacheIt == _visitCache.end())
     {
       PositionCache* newSet = new PositionCache();
       cacheIt = _visitCache.insert(pair<const Genome*, PositionCache*>(
-                                     sequence->getGenome(), newSet)).first;
+                                     genome, newSet)).first;
     }
     found = cacheIt->second->insert(dnaIt->getArrayIndex()) == false;
   }
@@ -719,7 +740,8 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
 
   // insert into the column data structure to pass out to client
   if (found == false && 
-      (!_noAncestors || dnaIt->getGenome()->getNumChildren() == 0))
+      (!_noAncestors || genome->getNumChildren() == 0) &&
+      (_targets.empty() || _targets.find(genome) != _targets.end()))
   {
     ColumnMap::iterator i = _colMap.lower_bound(sequence);
     if(i != _colMap.end() && !(_colMap.key_comp()(sequence, i->first)))

@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <string>
+#include <set>
 #include <vector>
 #include "halMafBlock.h"
 
@@ -27,7 +28,7 @@ public:
                                  const SegmentedSequence* seq,
                                  hal_index_t startPosition,
                                  hal_size_t length,
-                                 const Genome* root);
+                                 const std::set<const Genome*>& targets);
 
    void setMaxRefGap(hal_size_t maxRefGap);
    void setNoDupes(bool noDupes);

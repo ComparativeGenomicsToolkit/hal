@@ -4,6 +4,7 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <sstream>
+#include <map>
 #include "halDefs.h"
 #include "hal.h"
 
@@ -33,27 +34,97 @@ vector<string> hal::chopString(const string& inString,
   return outVector;
 }
 
-size_t hal::getGenomesInSpanningTree(const Genome* root, 
-                                     const set<const Genome*>& inputSet,
-                                     set<const Genome*>& outputSet)
+static size_t lcaRecursive(const Genome* genome,
+                           const set<const Genome*>& inputSet,
+                           map<const Genome*, size_t>& table)
 {
-  size_t score = inputSet.find(root) != inputSet.end() ? 1 : 0;
-  vector<size_t> childScores(root->getNumChildren());
-  size_t sum = 0;
-  size_t maxVal = 0;
-  for (size_t i = 0; i < childScores.size(); ++i)
+  size_t score = 0;
+  if (inputSet.find(genome) != inputSet.end())
   {
-    childScores[i] = getGenomesInSpanningTree(root->getChild(i),
-                                              inputSet, outputSet);
-    sum += childScores[i];
-    maxVal = max(maxVal, childScores[i]);
+    score = 1;
   }
-  score += sum;
-  if (score > maxVal)
+  for (hal_size_t i = 0; i < genome->getNumChildren(); ++i)
   {
-    outputSet.insert(root);
+    score += lcaRecursive(genome->getChild(i), inputSet, table);
   }
+  table.insert(pair<const Genome*, size_t>(genome, score));
   return score;
+}
+
+const Genome* hal::getLowestCommonAncestor(const set<const Genome*>& inputSet)
+{
+  if (inputSet.empty())
+     return NULL;
+  // dumb algorithm but it's friday and i'm too tired to think
+  const Genome* root = *inputSet.begin();
+  while (root->getParent() != NULL)
+  {
+     root = root->getParent();
+  }
+  map<const Genome*, size_t> table;
+  lcaRecursive(root, inputSet, table);
+  const Genome* lca = root;
+  bool found = false;
+  while (!found)
+  {
+    found = true;
+    hal_size_t score = table.find(lca)->second;
+    for (hal_size_t i = 0; found && i < lca->getNumChildren(); ++i)
+    {
+      if (table.find(lca->getChild(i))->second == score)
+      {
+        lca = lca->getChild(i);
+        found = false;
+      }
+    }
+  }
+  return lca;
+}
+
+static bool spanningRecursive(const Genome* genome, set<const Genome*>& outputSet, 
+                              bool below = false)
+{
+  bool above = false;
+  if (outputSet.find(genome) != outputSet.end())
+  {
+    below = true;
+    above = true;
+  }
+  hal_size_t numChildren = genome->getNumChildren();
+  for (hal_size_t i = 0; i < numChildren; ++i)
+  {
+    bool childAbove = spanningRecursive(genome->getChild(i), outputSet, below);
+    above = above || childAbove;
+  }
+
+  if (above && below)
+  {
+    outputSet.insert(genome);
+  }
+  return above;  
+}
+
+void hal::getGenomesInSpanningTree(const set<const Genome*>& inputSet,
+                              set<const Genome*>& outputSet)
+{
+  const Genome* lca = getLowestCommonAncestor(inputSet);
+  if (lca== NULL)
+     return;
+  outputSet = inputSet;
+  outputSet.insert(lca);
+  spanningRecursive(lca, outputSet);
+}
+
+
+void hal::getGenomesInSubTree(const Genome* root, 
+                              set<const Genome*>& outputSet)
+{
+  outputSet.insert(root);
+  hal_size_t numChildren = root->getNumChildren();
+  for (hal_size_t i = 0; i < numChildren; ++i)
+  {
+    getGenomesInSubTree(root->getChild(i), outputSet);
+  }
 }
 
 bool PositionCache::insert(hal_index_t pos)

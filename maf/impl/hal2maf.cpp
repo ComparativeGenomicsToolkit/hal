@@ -36,6 +36,10 @@ static CLParserPtr initParser()
   optionsParser->addOption("rootGenome", 
                            "name of root genome (none if empty)", 
                            "\"\"");
+  optionsParser->addOption("targetGenomes",
+                           "comma-separated (no spaces) list of target genomes "
+                           "(others are excluded) (vist all if empty)",
+                           "\"\"");
   optionsParser->addOption("maxRefGap", 
                            "maximum gap length in reference", 
                            0);
@@ -57,6 +61,7 @@ int main(int argc, char** argv)
   string mafPath;
   string refGenomeName;
   string rootGenomeName;
+  string targetGenomes;
   string refSequenceName;
   hal_index_t start;
   hal_size_t length;
@@ -70,12 +75,19 @@ int main(int argc, char** argv)
     mafPath = optionsParser->getArgument<string>("mafFile");
     refGenomeName = optionsParser->getOption<string>("refGenome");
     rootGenomeName = optionsParser->getOption<string>("rootGenome");
+    targetGenomes = optionsParser->getOption<string>("targetGenomes");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     start = optionsParser->getOption<hal_index_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
     maxRefGap = optionsParser->getOption<hal_size_t>("maxRefGap");
     noDupes = optionsParser->getFlag("noDupes");
     noAncestors = optionsParser->getFlag("noAncestors");
+
+    if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
+    {
+      throw hal_exception("--rootGenome and --targetGenomes options are "
+                          " mutually exclusive");
+    }
   }
   catch(exception& e)
   {
@@ -91,7 +103,8 @@ int main(int argc, char** argv)
     {
       throw hal_exception("hal alignmenet is empty");
     }
-
+    
+    set<const Genome*> targetSet;
     const Genome* rootGenome = NULL;
     if (rootGenomeName != "\"\"")
     {
@@ -100,6 +113,25 @@ int main(int argc, char** argv)
       {
         throw hal_exception(string("Root genome, ") + rootGenomeName + 
                             ", not found in alignment");
+      }
+      if (rootGenomeName != alignment->getRootName())
+      {
+        getGenomesInSubTree(rootGenome, targetSet);
+      }
+    }
+
+    if (targetGenomes != "\"\"")
+    {
+      vector<string> targetNames = chopString(targetGenomes, ",");
+      for (size_t i = 0; i < targetNames.size(); ++i)
+      {
+        const Genome* tgtGenome = alignment->openGenome(targetNames[i]);
+        if (tgtGenome == NULL)
+        {
+          throw hal_exception(string("Target genome, ") + targetNames[i] + 
+                              ", not found in alignment");
+        }
+        targetSet.insert(tgtGenome);
       }
     }
 
@@ -144,7 +176,7 @@ int main(int argc, char** argv)
     mafExport.setNoAncestors(noAncestors);
 
     mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
-                                       start, length, rootGenome);
+                                       start, length, targetSet);
 
   }
   catch(hal_exception& e)

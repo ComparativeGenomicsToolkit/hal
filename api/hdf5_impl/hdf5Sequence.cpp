@@ -6,6 +6,7 @@
 #include <string>
 #include <cstring>
 #include <sstream>
+#include <set>
 #include <iostream>
 #include "hdf5Sequence.h"
 #include "hdf5DNAIterator.h"
@@ -211,8 +212,9 @@ DNAIteratorConstPtr HDF5Sequence::getDNAEndIterator() const
 }
 
 ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
-  const Genome* root, hal_size_t maxInsertLength, hal_index_t position,
-  hal_index_t lastPosition, bool noDupes, bool noAncestors) const
+  const std::set<const Genome*>* targets, hal_size_t maxInsertLength, 
+  hal_index_t position, hal_index_t lastPosition, bool noDupes,
+  bool noAncestors) const
 {
   hal_index_t idx = (hal_index_t)(position + getStartPosition());
   hal_index_t lastIdx;
@@ -233,8 +235,8 @@ ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
     throw hal_exception(ss.str());
   }
   const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(getGenome(), root, idx, lastIdx, maxInsertLength, 
-                               noDupes, noAncestors);
+     new DefaultColumnIterator(getGenome(), targets, idx, lastIdx, 
+                               maxInsertLength, noDupes, noAncestors);
   return ColumnIteratorConstPtr(newIt);
 }
 

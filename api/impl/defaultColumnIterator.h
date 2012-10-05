@@ -23,7 +23,7 @@ class DefaultColumnIterator : public ColumnIterator
 public:
 
    DefaultColumnIterator(const hal::Genome* reference, 
-                         const hal::Genome* root,
+                         const std::set<const Genome*>* targets,
                          hal_index_t columnIndex,
                          hal_index_t lastIndex,
                          hal_size_t maxInsertionLength,
@@ -69,7 +69,8 @@ private:
    void updateParseUp(LinkedBottomIterator* bottomIt) const;
    void updateParseDown(LinkedTopIterator* topIt) const;
 
-   bool inBounds() const;
+   bool parentInScope(const Genome*) const;
+   bool childInScope(const Genome*, hal_size_t child) const;
    void nextFreeIndex() const;
    bool colMapInsert(DNAIteratorConstPtr dnaIt) const;
 
@@ -82,7 +83,8 @@ private:
    // other iterators (which provide both const and non-const access)
    // the fact that this iterator has no writable interface makes it
    // seem like a dumb excercise though. 
-   mutable const Genome* _root;
+   mutable std::set<const Genome*> _targets;
+   mutable std::set<const Genome*> _scope;
    mutable ColumnIteratorStack _stack;
    mutable ColumnIteratorStack _indelStack;
    mutable const Sequence* _ref;
@@ -100,8 +102,18 @@ private:
    mutable bool _break;
 };
 
+inline bool DefaultColumnIterator::parentInScope(const Genome* genome) const
+{
+  assert(genome != NULL && genome->getParent() != NULL);
+  return _scope.empty() || _scope.find(genome->getParent()) != _scope.end();
+}
 
-
+inline bool DefaultColumnIterator::childInScope(const Genome* genome,
+                                                hal_size_t child) const
+{
+  assert(genome != NULL && genome->getChild(child) != NULL);
+  return _scope.empty() || _scope.find(genome->getChild(child)) != _scope.end();
+}
 
 }
 #endif

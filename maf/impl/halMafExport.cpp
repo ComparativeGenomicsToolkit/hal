@@ -51,7 +51,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                          const SegmentedSequence* seq,
                                          hal_index_t startPosition,
                                          hal_size_t length,
-                                         const Genome* root)
+                                         const set<const Genome*>& targets)
 {
   assert(seq != NULL);
   if (startPosition >= (hal_index_t)seq->getSequenceLength() ||
@@ -69,7 +69,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
   _alignment = alignment;
   writeHeader();
 
-  ColumnIteratorConstPtr colIt = seq->getColumnIterator(root,
+  ColumnIteratorConstPtr colIt = seq->getColumnIterator(&targets,
                                                         _maxRefGap, 
                                                         startPosition,
                                                         lastPosition,

@@ -8,6 +8,7 @@
 #define _HALSEGMENTEDSEQUENCE_H
 
 #include "halDefs.h"
+#include <set>
 
 namespace hal {
 
@@ -82,7 +83,7 @@ public:
     * @param maxInsertLength maximum insertion to be traversed
     * @param position Index in genome of returned iterator */
    virtual ColumnIteratorConstPtr getColumnIterator(
-     const Genome* root = NULL,
+     const std::set<const Genome*>* targets = NULL,
      hal_size_t maxInsertLength = 0,
      hal_index_t position = 0,
      hal_index_t lastPosition = NULL_INDEX,
