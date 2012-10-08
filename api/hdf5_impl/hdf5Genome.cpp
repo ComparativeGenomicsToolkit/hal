@@ -29,6 +29,7 @@ const string HDF5Genome::topArrayName = "TOP_ARRAY";
 const string HDF5Genome::bottomArrayName = "BOTTOM_ARRAY";
 const string HDF5Genome::sequenceArrayName = "SEQUENCE_ARRAY";
 const string HDF5Genome::metaGroupName = "Meta";
+const string HDF5Genome::rupGroupName = "Rup";
 
 HDF5Genome::HDF5Genome(const string& name,
                        HDF5Alignment* alignment,
@@ -39,6 +40,7 @@ HDF5Genome::HDF5Genome(const string& name,
   _name(name),
   _dcprops(dcProps),
   _numChildrenInBottomArray(0),
+  _totalSequenceLength(0),
   _parentCache(NULL)
 {
   assert(!name.empty());
@@ -54,12 +56,19 @@ HDF5Genome::HDF5Genome(const string& name,
     _group = h5Parent->createGroup(name);
   }
   _metaData = new HDF5MetaData(&_group, metaGroupName);
+  _rup = new HDF5MetaData(&_group, rupGroupName);
+  _totalSequenceLength = _dnaArray.getSize() * 2;
+  if (_rup->has(rupGroupName) && _rup->get(rupGroupName) == "1")
+  {
+    --_totalSequenceLength;
+  }
 }
 
 
 HDF5Genome::~HDF5Genome()
 {
   delete _metaData;
+  delete _rup;
   deleteSequenceCache();
 }
 
@@ -68,7 +77,7 @@ HDF5Genome::~HDF5Genome()
 void HDF5Genome::setDimensions(
   const vector<Sequence::Info>& sequenceDimensions)
 {
-  hal_size_t totalSequenceLength = 0;
+  _totalSequenceLength = 0;
   hal_size_t totalSeq = sequenceDimensions.size();
   hal_size_t maxName = 0;
   
@@ -83,7 +92,7 @@ void HDF5Genome::setDimensions(
        i != sequenceDimensions.end(); 
        ++i)
   {
-    totalSequenceLength += i->_length;
+    _totalSequenceLength += i->_length;
     maxName = max(static_cast<hal_size_t>(i->_name.length()), maxName);
     topDimensions.push_back(
       Sequence::UpdateInfo(i->_name, i->_numTopSegments));
@@ -108,10 +117,20 @@ void HDF5Genome::setDimensions(
     _group.unlink(sequenceArrayName);
   }
   catch (H5::Exception){}
-  if (totalSequenceLength > 0)
+  if (_totalSequenceLength > 0)
   {
+    hal_size_t arrayLength = _totalSequenceLength / 2;
+    if (_totalSequenceLength % 2)
+    {
+      ++arrayLength;
+      _rup->set(rupGroupName, "1");
+    }
+    else
+    {
+      _rup->set(rupGroupName, "0");
+    }
     _dnaArray.create(&_group, dnaArrayName, HDF5DNA::dataType(), 
-                     totalSequenceLength, _dcprops);
+                     arrayLength, _dcprops);
   }
   if (totalSeq > 0)
   {
@@ -456,7 +475,7 @@ const string& HDF5Genome::getName() const
 
 hal_size_t HDF5Genome::getSequenceLength() const
 {
-  return _dnaArray.getSize();
+  return _totalSequenceLength;
 }
 
 hal_size_t HDF5Genome::getNumTopSegments() const
@@ -628,6 +647,7 @@ void HDF5Genome::write()
   _topArray.write();
   _bottomArray.write();
   _metaData->write();
+  _rup->write();
   _sequenceArray.write();
 }
 
@@ -637,7 +657,7 @@ void HDF5Genome::read()
   try
   {
     _group.openDataSet(dnaArrayName);
-    _dnaArray.load(&_group, dnaArrayName);
+    _dnaArray.load(&_group, dnaArrayName);    
   }
   catch (H5::Exception){}
   try

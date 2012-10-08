@@ -57,13 +57,15 @@ protected:
 inline bool HDF5DNAIterator::inRange() const
 {
   return _index >= 0 && 
-     _index < (hal_index_t)_genome->_dnaArray.getSize();
+     _index < (hal_index_t)_genome->_totalSequenceLength &&
+     _index / 2 < (hal_index_t)_genome->_dnaArray.getSize();
 }
 
 inline hal_dna_t HDF5DNAIterator::getChar() const
 {
   assert(inRange() == true);
-  hal_dna_t c = _genome->_dnaArray.getValue<hal_dna_t>(_index, 0);
+  hal_dna_t c = _genome->_dnaArray.getValue<hal_dna_t>(_index / 2, 0);
+  c = HDF5DNA::unpack(_index, c);
   if (_reversed)
   {
     c = reverseComplement(c);
@@ -77,11 +79,18 @@ inline void HDF5DNAIterator::setChar(hal_dna_t c)
   {
     throw hal_exception("Trying to set character out of range");
   }
+  else if (isNucleotide(c) == false)
+  {
+    throw hal_exception("Trying to set invalid charachter: " + c);
+  }
   if (_reversed)
   {
     c = reverseComplement(c);
   }
-  _genome->_dnaArray.setValue(_index, 0, c);
+  unsigned char old = _genome->_dnaArray.getValue<hal_dna_t>(_index / 2, 0);
+  HDF5DNA::pack(c, _index, old);
+  _genome->_dnaArray.setValue(_index / 2, 0, old);
+  assert(getChar() == !_reversed ? c : reverseComplement(c));
 }
 
 inline void HDF5DNAIterator::toLeft() const

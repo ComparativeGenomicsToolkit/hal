@@ -40,7 +40,7 @@ string AlignmentTest::randomString(hal_size_t length)
     case 9 : c = 'n'; break;
     default: c = '?'; break;
     }
-    s[i] = r;
+    s[i] = c;
   }
   return s;
 }
