@@ -383,7 +383,7 @@ bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
     _top->copy(inputTopIterator);
     bool reversed = _top->getReversed();
     // only handle an insertion if we are immediately left of the break       
-    if (_top->getEndOffset() == 0 && !_top->isLast())
+    if (_top->getEndOffset() == 0 && _top->isLast() == false)
     {
       _rearrangement->setAtomic(true);
       _top->slice(0, 0);
@@ -696,7 +696,7 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
   assert(sequence != NULL);
   
   // All reference bases need to get added to the cache
-  bool updateCache = sequence == _stack[0]->_sequence;
+  bool updateCache = genome == _stack[0]->_sequence->getGenome();
   if (_maxInsertionLength == 0)
   {
     // Unless we don't do indels.  Here we just add reference elements
@@ -706,7 +706,7 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
   }
   for (size_t i = 1; i < _stack.size() && !updateCache; ++i)
   {
-    if (sequence == _stack[i]->_sequence)
+    if (genome == _stack[i]->_sequence->getGenome())
     {
       updateCache = true;
     }
