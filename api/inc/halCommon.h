@@ -76,6 +76,34 @@ inline hal_bool_t isNucleotide(hal_dna_t c)
   return result;
 }
 
+inline bool isTransition(hal_dna_t c1, hal_dna_t c2)
+{
+  assert(isNucleotide(c1) && isNucleotide(c2));
+  char x = std::toupper((char)c1);
+  char y = std::toupper((char)c2);
+  switch(x)
+  {
+  case 'A' : return y == 'G';
+  case 'C' : return y == 'T';
+  case 'G' : return y == 'A';
+  case 'T' : return y == 'C';
+  default: break;
+  }
+  return false;
+}
+
+inline bool isSubstitution(hal_dna_t c1, hal_dna_t c2)
+{
+  return std::toupper(c1) != std::toupper(c2);
+}
+
+inline bool isTransversion(hal_dna_t c1, hal_dna_t c2)
+{
+  char x = std::toupper((char)c1);
+  char y = std::toupper((char)c2);
+  return (x != y && x != 'N' && y != 'N' && !isTransition(c1, c2));
+}
+
 /** Count the mutations between two DNA strings */
 inline hal_size_t hammingDistance(const std::string& s1, const std::string& s2)
 {
@@ -83,7 +111,7 @@ inline hal_size_t hammingDistance(const std::string& s1, const std::string& s2)
   hal_size_t dist = 0;
   for (size_t i = 0; i < s1.length(); ++i)
   {
-    if (std::toupper(s1[i]) != std::toupper(s2[i]))
+    if (isSubstitution(s1[i], s2[i]) == true)
     {
       ++dist;
     }

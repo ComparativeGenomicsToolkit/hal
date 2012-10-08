@@ -17,22 +17,18 @@ namespace hal {
 
 struct ConsStats
 {
-   // old stats
+   typedef Average<hal_size_t> Avg;
+   // Tree Information
    hal_size_t _genomeLength;
    hal_size_t _parentLength;
    double _branchLength;
-   hal_size_t _subs;
-   hal_size_t _numInserts;
-   hal_size_t _numInsertBases;
-   hal_size_t _numDeletes;
-   hal_size_t _numDeleteBases;
-   hal_size_t _numInverts;
-   hal_size_t _numInvertBases;
-   hal_size_t _numDups;
-   hal_size_t _numDupBases;
 
-   // stats from new rearragnemtn 
-   typedef Average<hal_size_t> Avg;
+   // Subsitution Information
+   hal_size_t _subs;
+   hal_size_t _transitions;
+   hal_size_t _transversions;
+
+   // Rearrangement Information
    Avg _nothingLength;
    Avg _inversionLength;
    Avg _insertionLength;
@@ -42,7 +38,6 @@ struct ConsStats
    Avg _otherLength;
    Avg _gapInsertionLength;
    Avg _gapDeletionLength;
-
 };
 
 class HalCons
@@ -59,6 +54,8 @@ protected:
 
    void analyzeGenomeRecursive(const std::string& genomeName);   
    void rearrangementAnalysis(const Genome* genome, ConsStats& stats);
+   void subsAndGapInserts(GappedTopSegmentIteratorConstPtr gappedTop, 
+                          ConsStats& stats);
 
    typedef std::pair<std::string, std::string> StrPair;
    typedef std::map<StrPair, ConsStats> BranchMap;

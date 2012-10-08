@@ -95,7 +95,7 @@ void makeInsGap(TopSegmentIteratorPtr ti)
   while (bi != biEnd)
   {
     hal_index_t childIndex = bi->getBottomSegment()->getChildIndex(0);
-    if (childIndex == genome->getNumTopSegments() - 1)
+    if (childIndex == (hal_index_t)(genome->getNumTopSegments() - 1))
     {
       bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
     }
@@ -136,7 +136,6 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
   {
     hal_index_t prevIndex2 = bi->getBottomSegment()->getChildIndex(0);
     bool prevReversed2 = bi->getBottomSegment()->getChildReversed(0);
-    hal_index_t childIndex = bi->getBottomSegment()->getChildIndex(0);
     bi2 = bi->copy();
     assert(bi2->getReversed() == false);
     bi2->toLeft();
@@ -150,7 +149,7 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
   while (ti != tiEnd)
   {
     hal_index_t parentIndex = ti->getTopSegment()->getParentIndex();
-    if (parentIndex == parent->getNumBottomSegments() - 1)
+    if (parentIndex == (hal_index_t)(parent->getNumBottomSegments() - 1))
     {
       ti->getTopSegment()->setParentIndex(NULL_INDEX);
     }
@@ -231,10 +230,8 @@ void RearrangementInsertionTest::checkCallBack(AlignmentConstPtr alignment)
   TopSegmentIteratorConstPtr ti;
 
   const Genome* child = alignment->openGenome("child");
-  const Genome* parent = alignment->openGenome("parent");
   
   RearrangementPtr r = child->getRearrangement();
-  size_t count = 0;
   do
   {
     hal_index_t leftIdx = 
@@ -296,14 +293,9 @@ RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
   TopSegmentIteratorConstPtr ti;
 
   const Genome* child = alignment->openGenome("child");
-  const Genome* parent = alignment->openGenome("parent");
   
-  size_t numSequences = child->getNumSequences();
   size_t numSegmentsPerSequence = 
      child->getSequenceIterator()->getSequence()->getNumTopSegments();
-  size_t segmentLength = 
-     child->getTopSegmentIterator()->getTopSegment()->getLength();
-
 
   RearrangementPtr r = child->getRearrangement();
 
@@ -312,8 +304,8 @@ RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
   {
     hal_index_t leftIdx = 
        r->getLeftBreakpoint()->getTopSegment()->getArrayIndex();
-    if (leftIdx == 1 || leftIdx == numSegmentsPerSequence - 1 ||
-        leftIdx == (numSegmentsPerSequence * 2) )
+    if (leftIdx == 1 || leftIdx == (hal_index_t)(numSegmentsPerSequence - 1) ||
+        leftIdx == (hal_index_t)(numSegmentsPerSequence * 2) )
     {
       CuAssertTrue(_testCase, r->getID() == Rearrangement::Inversion);
     }
@@ -387,14 +379,7 @@ RearrangementGappedInversionTest::checkCallBack(AlignmentConstPtr alignment)
   TopSegmentIteratorConstPtr ti;
 
   const Genome* child = alignment->openGenome("child");
-  const Genome* parent = alignment->openGenome("parent");
-  
-  size_t numSequences = child->getNumSequences();
-  size_t numSegmentsPerSequence = 
-     child->getSequenceIterator()->getSequence()->getNumTopSegments();
-  size_t segmentLength = 
-     child->getTopSegmentIterator()->getTopSegment()->getLength();
-  
+    
   RearrangementPtr r = child->getRearrangement();
   do
   {

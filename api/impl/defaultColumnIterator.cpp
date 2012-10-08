@@ -383,7 +383,7 @@ bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
     _top->copy(inputTopIterator);
     bool reversed = _top->getReversed();
     // only handle an insertion if we are immediately left of the break       
-    if (_top->getEndOffset() == 0)
+    if (_top->getEndOffset() == 0 && !_top->isLast())
     {
       _rearrangement->setAtomic(true);
       _top->slice(0, 0);

@@ -25,11 +25,11 @@ HalCons::~HalCons()
 void HalCons::printCsv(ostream& outStream) const
 {
   outStream << "GenomeName, ParentName, BranchLength, GenomeLength," 
-     " ParentLength, Subtitutions, Insertions, InsertedBases,"
-     " Deletions, DeletionBases, Inversions,"
+     " ParentLength, Subtitutions, Transitions, Transversions,"
+     " GapInsertions, GapInsertedBases, GapDeletions, GapDeletedBases," 
+     " Insertions, InsertionBases, Deletions, DeletionBases, Inversions,"
      " InvertedBases, Duplications, DuplicatedBases, Transpositions,"
-     " TranspositionBases, Other, GapInsertions," 
-     " GapInsertedBases, GapDeletions, GapDeletedBases" 
+     " TranspositionBases, Other" 
             << endl;
 
   BranchMap::const_iterator i = _branchMap.begin();
@@ -53,6 +53,12 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._branchLength << ", " 
               << stats._genomeLength << ", " << stats._parentLength << ", "
               << stats._subs << ", "
+              << stats._transitions << ", "
+              << stats._transversions << ", "
+              << stats._gapInsertionLength.getCount() << ", " 
+              << stats._gapInsertionLength.getSum() << ", "
+              << stats._gapDeletionLength.getCount() << ", " 
+              << stats._gapDeletionLength.getSum() << ", "
               << stats._insertionLength.getCount() << ", " 
               << stats._insertionLength.getSum() << ", "
               << stats._deletionLength.getCount() << ", " 
@@ -64,12 +70,6 @@ void HalCons::printCsv(ostream& outStream) const
               << stats._transpositionLength.getCount() << ", "
               << stats._transpositionLength.getSum() << ", "
               << otherCount << ", "
-              << stats._gapInsertionLength.getCount() << ", " 
-              << stats._gapInsertionLength.getSum() << ", "
-              << stats._gapDeletionLength.getCount() << ", " 
-              << stats._gapDeletionLength.getSum() 
-//              << stats._nothingLength.getCount() << ", " 
-//              << stats._nothingLength.getSum()
               <<endl;
   }
 
@@ -99,7 +99,6 @@ void HalCons::analyzeGenomeRecursive(const string& genomeName)
   const Genome* parent = genome->getParent();
   if (parent != NULL)
   {
-    rearrangementAnalysis(genome, stats);
     TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
     TopSegmentIteratorConstPtr topEnd = genome->getTopSegmentEndIterator();
     BottomSegmentIteratorConstPtr parIt = parent->getBottomSegmentIterator();
@@ -110,35 +109,9 @@ void HalCons::analyzeGenomeRecursive(const string& genomeName)
     stats._parentLength = parent->getSequenceLength();
     stats._branchLength = _alignment->getBranchLength(parent->getName(),
                                                       genome->getName());
-    
-    for (; topIt != topEnd; topIt->toRight())
-    {
-      if (topIt->hasParent() == false || topIt->hasNextParalogy() == false)
-      {
-        ++stats._numInserts;
-        stats._numInsertBases += topIt->getLength();
-      }
-      if (topIt->hasParent() == true)
-      {
-        parIt->toParent(topIt);
-        if (parIt->getReversed() == true)
-        {
-          ++stats._numInverts;
-          stats._numInvertBases += topIt->getLength();
-        }
-        parIt->getString(strBufParent);
-        topIt->getString(strBuf);
-        stats._subs += hammingDistance(strBuf, strBufParent);
-        
-        if (topIt->hasNextParalogy() == true)
-        {
-          ++stats._numDups;
-          stats._numDupBases += topIt->getLength();
-        }
-      }
-    }
-    //TODO: DELETIONS!!!
-    
+   
+    rearrangementAnalysis(genome, stats);
+     
     StrPair branchName(genome->getName(), parent->getName());
     _branchMap.insert(pair<StrPair, ConsStats>(branchName, stats));
 
@@ -163,7 +136,8 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
   GappedBottomSegmentIteratorConstPtr gappedBottom = 
      parent->getGappedBottomSegmentIterator(0, childIndex, _gapThreshold);
 
-  while (gappedBottom->getRightArrayIndex() < parent->getNumBottomSegments())
+  while (gappedBottom->getRightArrayIndex() < 
+         (hal_index_t)parent->getNumBottomSegments())
   {
     hal_size_t numGaps = gappedBottom->getNumGaps();
     if (numGaps > 0)
@@ -173,22 +147,17 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
     gappedBottom->toRight();
   }
 
-  GappedTopSegmentIteratorConstPtr gappedTop = 
+  GappedTopSegmentIteratorConstPtr gappedTop =
      genome->getGappedTopSegmentIterator(0, _gapThreshold);
-
-  while (gappedTop->getRightArrayIndex() < genome->getNumTopSegments())
-  {
-    hal_size_t numGaps = gappedTop->getNumGaps();
-    if (numGaps > 0)
-    {
-      stats._gapInsertionLength.add(gappedTop->getNumGapBases(), numGaps);
-    }
-    gappedTop->toRight();
-  }
 
   RearrangementPtr r = genome->getRearrangement();
   r->setGapLengthThreshold(_gapThreshold);
-  do {
+  do {    
+    // get the number of gaps from the current range of the rearrangement
+    // (this should cover the entire genome)
+    gappedTop->setLeft(r->getLeftBreakpoint());
+    subsAndGapInserts(gappedTop, stats);
+        
     switch (r->getID())
     {
     case Rearrangement::Inversion:
@@ -215,4 +184,51 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
     }
   } 
   while (r->identifyNext() == true);
+}
+
+void HalCons::subsAndGapInserts(GappedTopSegmentIteratorConstPtr gappedTop, 
+                                ConsStats& stats)
+{
+  assert(gappedTop->getReversed() == false);
+  hal_size_t numGaps = gappedTop->getNumGaps();
+  if (numGaps > 0)
+  {
+    stats._gapInsertionLength.add(gappedTop->getNumGapBases(), numGaps);
+  }
+
+  string parent, child;
+  TopSegmentIteratorConstPtr l = gappedTop->getLeft();
+  TopSegmentIteratorConstPtr r = gappedTop->getRight();
+  BottomSegmentIteratorConstPtr p = 
+     l->getTopSegment()->getGenome()->getParent()->getBottomSegmentIterator();
+
+  for (TopSegmentIteratorConstPtr i = l->copy(); 
+       i->getTopSegment()->getArrayIndex() <= r->getTopSegment()->getArrayIndex();
+       i->toRight())
+  {
+    if (i->hasParent())
+    {
+      p->toParent(i);
+      i->getString(child);
+      p->getString(parent);
+      assert(child.length() == parent.length());
+      for (size_t j = 0; j < child.length(); ++j)
+      {
+        if (isTransition(child[j], parent[j]))
+        {
+          ++stats._transitions;
+          ++stats._subs;
+        }
+        else if (isTransversion(child[j], parent[j]))
+        {
+          ++stats._transversions;
+          ++stats._subs;
+        }
+        else if (isSubstitution(child[j], parent[j]))
+        {
+          ++stats._subs;
+        }
+      }
+    }
+  }
 }
