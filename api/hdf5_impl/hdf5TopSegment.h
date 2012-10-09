@@ -163,8 +163,8 @@ inline hal_index_t HDF5TopSegment::getStartPosition() const
 inline void 
 HDF5TopSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
 {
-  if (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
-      startPos + length > _genome->_totalSequenceLength)
+  if (_genome && (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
+                  startPos + length > _genome->_totalSequenceLength))
   {
     throw hal_exception("Trying to set top segment coordinate out of range");
   }

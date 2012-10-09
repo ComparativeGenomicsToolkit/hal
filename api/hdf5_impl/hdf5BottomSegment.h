@@ -165,8 +165,8 @@ inline void
 HDF5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
 {
   assert(_index >= 0);
-  if (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
-      startPos + length > _genome->_totalSequenceLength)
+  if (_genome && (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
+                  startPos + length > _genome->_totalSequenceLength))
   {
     throw hal_exception("Trying to set bottom segment coordinate out of range");
   }
