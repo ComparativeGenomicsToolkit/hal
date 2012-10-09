@@ -492,12 +492,6 @@ bool DefaultGappedTopSegmentIterator::compatible(
   {
     return false;
   }
-  if (left->hasNextParalogy() == true && 
-      left->getTopSegment()->getNextParalogyReversed() !=
-      right->getTopSegment()->getNextParalogyReversed())
-  {
-    return false;
-  }
 
   if ((!_leftParent->getReversed() && 
        _leftParent->leftOf(_rightParent->getStartPosition()) == false) ||
@@ -539,7 +533,11 @@ bool DefaultGappedTopSegmentIterator::compatible(
     _leftDup->toNextParalogy();
     _rightDup->copy(right);
     _rightDup->toNextParalogy();
-  
+    
+    if (_leftDup->getReversed() != _rightDup->getReversed())
+    {
+      return false;
+    }
     if ((_leftDup->getReversed() == false && 
          _leftDup->leftOf(_rightDup->getStartPosition()) == false) ||
         (_leftDup->getReversed() == true && 

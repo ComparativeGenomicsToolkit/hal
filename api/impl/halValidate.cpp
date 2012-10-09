@@ -229,21 +229,6 @@ void hal::validateTopSegment(const TopSegment* topSegment)
          << ". Paralogous top segments must share same parent.";
       throw hal_exception(ss.str());
     }
-    bool reversed = pti->getTopSegment()->getParentReversed() != 
-       topSegment->getParentReversed();
-    if (reversed != topSegment->getNextParalogyReversed())
-    {
-      stringstream ss;
-      ss << "Top segment " << topSegment->getArrayIndex() 
-         << " has parent reversed flag " << topSegment->getParentReversed()
-         << " and next paralogy reversed flag " 
-         << topSegment->getNextParalogyReversed() 
-         << ", but next paraglog " 
-         << topSegment->getNextParalogyIndex() << " has parent reversed flag " 
-         << pti->getTopSegment()->getParentReversed() 
-         << ". Next paralgoy reversed flag is true iff the parent reversed "
-         "flags are different.";
-    }
   }
 }
 

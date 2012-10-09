@@ -59,14 +59,6 @@ public:
     * homologous to this segment */
    virtual void setNextParalogyIndex(hal_index_t parIdx) = 0;
 
-   /** Get flag determing if next paralogous segment aligns to the current
-    * one in the reverse complement */
-   virtual hal_bool_t getNextParalogyReversed() const = 0;
-
-   /** Set flag determing if the next paralogous segment is reversed
-    * @param parReversed flag */
-   virtual void setNextParalogyReversed(hal_bool_t parReversed) = 0;
-
    /** Get the index of the parent of the left neighbour of this segment
     * in the genome (use isLeft first to check the left  
     * current segment is the first segment in a sequence) */
