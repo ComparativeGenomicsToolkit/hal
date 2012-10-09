@@ -21,7 +21,6 @@ void BottomSegmentStruct::setRandom(hal_size_t numChildren)
 {
   _length = rand();
   _startPosition = rand();
-  _nextParalogyIndex = rand();
    _arrayIndex = rand();
   _topParseIndex = rand();
   _topParseOffset = rand();
@@ -38,14 +37,12 @@ void BottomSegmentStruct::setRandom(hal_size_t numChildren)
 void BottomSegmentStruct::set(hal_index_t startPosition,
                               hal_size_t length,
                               hal_index_t topParseIndex,
-                              hal_offset_t topParseOffset,
-                              hal_index_t nextParalogyIndex)
+                              hal_offset_t topParseOffset)
 {
   _startPosition = startPosition;
   _length = length;
   _topParseIndex = topParseIndex;
   _topParseOffset = topParseOffset;
-  _nextParalogyIndex = nextParalogyIndex;
 }
 
 void BottomSegmentStruct::applyTo(BottomSegmentIteratorPtr it) const
@@ -53,7 +50,6 @@ void BottomSegmentStruct::applyTo(BottomSegmentIteratorPtr it) const
   BottomSegment* seg = it->getBottomSegment();
   seg->setLength(_length);
   seg->setStartPosition(_startPosition);
-  seg->setNextParalogyIndex(_nextParalogyIndex);
   seg->setTopParseIndex(_topParseIndex);
   seg->setTopParseOffset(_topParseOffset);
   for (hal_size_t i = 0; i < _children.size(); ++i)
@@ -69,7 +65,6 @@ void BottomSegmentStruct::compareTo(BottomSegmentIteratorConstPtr it,
   const BottomSegment* seg = it->getBottomSegment();
   CuAssertTrue(testCase, _length == seg->getLength());
   CuAssertTrue(testCase, _startPosition == seg->getStartPosition());
-  CuAssertTrue(testCase, _nextParalogyIndex == seg->getNextParalogyIndex());
   CuAssertTrue(testCase, _topParseIndex == seg->getTopParseIndex());
   CuAssertTrue(testCase, _topParseOffset == seg->getTopParseOffset());
   CuAssertTrue(testCase, _children.size() == seg->getNumChildren());

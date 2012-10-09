@@ -62,22 +62,6 @@ public:
     * @param startPos Start position */
    void setStartPosition(hal_index_t startPos);
 
-   /** Get index of the next paralogous segment in the genome */
-   hal_index_t getNextParalogyIndex() const;
-
-   /** Set index of the next paralogous segment in the genome 
-    * @param parIdx of next segment in same genome that is 
-    * homologous to this segment */
-   void setNextParalogyIndex(hal_index_t parIdx);
-
-   /** Get flag determing if next paralogous segment aligns to the current
-    * one in the reverse complement */
-   hal_bool_t getNextParalogyReversed() const;
-
-   /** Set flag determing if the next paralogous segment is reversed
-    * @param parReversed flag */
-   void setNextParalogyReversed(hal_bool_t parReversed);
-
    /** Get the number of child genomes (note this is a number of slots
     * and that the current segment could actually have fewer children) */
    hal_size_t getNumChildren() const;
@@ -164,8 +148,6 @@ protected:
    static const size_t lengthOffset;
    static const size_t topIndexOffset;
    static const size_t topOffsetOffset;
-   static const size_t parIndexOffset;
-   static const size_t parReversedOffset;
    static const size_t firstChildOffset;
    static const size_t totalSize(hal_size_t numChildren);
 
@@ -221,27 +203,6 @@ inline const Sequence* HDF5BottomSegment::getSequence() const
 inline Sequence* HDF5BottomSegment::getSequence()
 {
   return _genome->getSequenceBySite(getStartPosition());
-}
-
-inline hal_index_t HDF5BottomSegment::getNextParalogyIndex() const
-{
-  return _array->getValue<hal_index_t>(_index, parIndexOffset);
-}
-
-inline void HDF5BottomSegment::setNextParalogyIndex(hal_index_t parIdx)
-{
-  assert(_index >= 0);
-  _array->setValue((hsize_t)_index, parIndexOffset, parIdx);
-}
-
-inline hal_bool_t HDF5BottomSegment::getNextParalogyReversed() const
-{
-  return _array->getValue<hal_bool_t>(_index, parReversedOffset);
-}
-
-inline void HDF5BottomSegment::setNextParalogyReversed(hal_bool_t parReversed)
-{
-  _array->setValue((hsize_t)_index, parReversedOffset, parReversed);
 }
 
 inline hal_size_t HDF5BottomSegment::getNumChildren() const

@@ -15,7 +15,6 @@
 struct BottomSegmentStruct {
    hal_size_t _length;
    hal_index_t _startPosition;
-   hal_index_t _nextParalogyIndex;
    std::vector<std::pair<hal_index_t, hal_bool_t> >_children;
    hal_index_t _arrayIndex;
    hal_index_t _topParseIndex;
@@ -27,8 +26,7 @@ struct BottomSegmentStruct {
    void set(hal_index_t startPosition,
             hal_size_t length,
             hal_index_t topParseIndex = hal::NULL_INDEX,
-            hal_offset_t topParseOffset = 0,
-            hal_index_t nextParalogyIndex = hal::NULL_INDEX);
+            hal_offset_t topParseOffset = 0);
 };
 
 

@@ -36,8 +36,6 @@ public:
    void toRight(hal_index_t rightCutoff = NULL_INDEX) const;
    void toReverse() const;
    void toSite(hal_index_t position, bool slice = true) const;
-   bool hasNextParalogy() const;
-   void toNextParalogy() const;
    hal_offset_t getStartOffset() const;
    hal_offset_t getEndOffset() const;
    void slice(hal_offset_t startOffset, hal_offset_t endOffset) const;

@@ -31,6 +31,8 @@ public:
    virtual bool equals(GappedTopSegmentIteratorConstPtr other) const = 0;
    virtual bool adjacentTo(GappedTopSegmentIteratorConstPtr other) const = 0;
    virtual bool hasParent() const = 0;
+   virtual bool hasNextParalogy() const = 0;
+   virtual void toNextParalogy() const = 0;
    virtual bool getParentReversed() const = 0;
 
    virtual TopSegmentIteratorConstPtr getLeft() const = 0;

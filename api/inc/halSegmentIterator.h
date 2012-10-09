@@ -47,12 +47,6 @@ public:
     * though it should be faster on average*/
    virtual void toSite(hal_index_t position, bool slice = true) const = 0;
 
-   /** check if there is a next paralogy */
-   virtual bool hasNextParalogy() const = 0;
-
-   /** move to the next paralgous segment */
-   virtual void toNextParalogy() const = 0;
-   
    /** Get the iterator's start offset.  This is used when moving
     * vertically and following the parse index.  Any part of the
     * segment before the start offset is ignored by the iterator */  

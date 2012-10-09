@@ -197,23 +197,6 @@ void HDF5BottomSegmentIterator::toSite(hal_index_t position, bool slice) const
   }  
 }
 
-bool HDF5BottomSegmentIterator::hasNextParalogy() const
-{
-  return _bottomSegment.getNextParalogyIndex() != NULL_INDEX;
-}
-
-void HDF5BottomSegmentIterator::toNextParalogy() const
-{
-  assert (inRange() == true);
-  assert(_bottomSegment.getNextParalogyIndex() != NULL_INDEX);
-  bool rev = _bottomSegment.getNextParalogyReversed();
-  _bottomSegment._index = _bottomSegment.getNextParalogyIndex();
-  if(rev == true)
-  {
-    toReverse();
-  }
-}
-
 hal_offset_t HDF5BottomSegmentIterator::getStartOffset() const
 {
   assert (inRange() == true);

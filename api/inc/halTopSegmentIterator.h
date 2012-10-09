@@ -35,6 +35,8 @@ public:
    virtual bool equals(TopSegmentIteratorConstPtr other) const = 0;
    virtual bool hasParent() const = 0;
    virtual bool hasParseDown() const = 0;
+   virtual bool hasNextParalogy() const = 0;
+   virtual void toNextParalogy() const = 0;
 
 protected:
    friend class counted_ptr<TopSegmentIterator>;

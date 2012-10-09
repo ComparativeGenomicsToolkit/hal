@@ -46,22 +46,6 @@ public:
     * @param startPos Start position */
    virtual void setStartPosition(hal_index_t startPos) = 0;
 
-   /** Get index of the next paralogous segment in the genome */
-   virtual hal_index_t getNextParalogyIndex() const = 0;
-
-   /** Set index of the next paralogous segment in the genome 
-    * @param parIdx of next segment in same genome that is 
-    * homologous to this segment */
-   virtual void setNextParalogyIndex(hal_index_t parIdx) = 0;
-
-   /** Get flag determing if next paralogous segment aligns to the current
-    * one in the reverse complement */
-   virtual hal_bool_t getNextParalogyReversed() const = 0;
-
-   /** Set flag determing if the next paralogous segment is reversed
-    * @param parReversed flag */
-   virtual void setNextParalogyReversed(hal_bool_t parReversed) = 0;
-
    /** Get the index of the segment in the segment array */
    virtual hal_index_t getArrayIndex() const = 0;
 

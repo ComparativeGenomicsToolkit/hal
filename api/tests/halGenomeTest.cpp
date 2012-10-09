@@ -177,14 +177,14 @@ void halGenomeUpdateTest(CuTest *testCase)
 
 void halGenomeStringTest(CuTest *testCase)
 {
-  //try
+  try
   {
     GenomeStringTest tester;
     tester.check(testCase);
   }
-  // catch (...) 
+   catch (...) 
   {
-//    CuAssertTrue(testCase, false);
+    CuAssertTrue(testCase, false);
   }
 }
 
