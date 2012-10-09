@@ -16,8 +16,7 @@ using namespace hal;
 const size_t HDF5BottomSegment::genomeIndexOffset = 0;
 const size_t HDF5BottomSegment::lengthOffset = sizeof(hal_index_t);
 const size_t HDF5BottomSegment::topIndexOffset = lengthOffset + sizeof(hal_size_t);
-const size_t HDF5BottomSegment::topOffsetOffset = topIndexOffset + sizeof(hal_index_t);
-const size_t HDF5BottomSegment::firstChildOffset = topOffsetOffset + sizeof(hal_offset_t);
+const size_t HDF5BottomSegment::firstChildOffset = topIndexOffset + sizeof(hal_index_t);
 const size_t HDF5BottomSegment::totalSize(hal_size_t numChildren)
 {
   return firstChildOffset + numChildren * (sizeof(hal_index_t) + sizeof(hal_bool_t));
@@ -129,7 +128,6 @@ H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
   dataType.insertMember("genomeIdx", genomeIndexOffset, PredType::NATIVE_INT64);
   dataType.insertMember("length", lengthOffset, PredType::NATIVE_HSIZE);
   dataType.insertMember("topIdx", topIndexOffset, PredType::NATIVE_INT64);
-  dataType.insertMember("topOffset", topOffsetOffset, PredType::NATIVE_UINT64);
   for(hsize_t i = 0; i < numChildren; ++i)
   {
     std::stringstream ss;
@@ -151,4 +149,20 @@ hal_size_t HDF5BottomSegment::numChildrenFromDataType(
 {
   return (dataType.getSize() - firstChildOffset) / 
      (sizeof(hal_index_t) + sizeof(hal_bool_t));
+}
+
+hal_offset_t HDF5BottomSegment::getTopParseOffset() const
+{
+  assert(_index >= 0);
+  hal_offset_t offset = 0;
+  hal_index_t topIndex = getTopParseIndex();
+  if (topIndex != NULL_INDEX)
+  {
+    HDF5TopSegment ts(_genome, &_genome->_topArray, topIndex);
+    assert(ts.getStartPosition() <= getStartPosition());
+    assert((hal_index_t)(ts.getStartPosition() + ts.getLength()) 
+           >= getStartPosition());
+    offset = getStartPosition() - ts.getStartPosition();
+  }
+  return offset;
 }

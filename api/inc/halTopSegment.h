@@ -46,11 +46,6 @@ public:
     * start coordinate of this segment */
    virtual hal_offset_t getBottomParseOffset() const = 0;
 
-   /** Set the offset in the bottom parse segment that aligns with the
-    * start coordinate of this segment 
-    * @param botParseOffset offset */
-   virtual void setBottomParseOffset(hal_offset_t botParseOffset) = 0;
-
    /** Get index of the next paralogous segment in the genome */
    virtual hal_index_t getNextParalogyIndex() const = 0;
 

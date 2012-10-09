@@ -16,8 +16,7 @@ using namespace hal;
 
 const size_t HDF5TopSegment::genomeIndexOffset = 0;
 const size_t HDF5TopSegment::bottomIndexOffset = sizeof(hal_index_t);
-const size_t HDF5TopSegment::bottomOffsetOffset = bottomIndexOffset + sizeof(hal_index_t);
-const size_t HDF5TopSegment::parIndexOffset = bottomOffsetOffset + sizeof(hal_offset_t);
+const size_t HDF5TopSegment::parIndexOffset = bottomIndexOffset + sizeof(hal_index_t);
 const size_t HDF5TopSegment::parentIndexOffset = parIndexOffset + sizeof(hal_index_t);
 const size_t HDF5TopSegment::parentReversedOffset = parentIndexOffset + sizeof(hal_index_t);
 const size_t HDF5TopSegment::totalSize = parentReversedOffset + sizeof(hal_bool_t);
@@ -201,11 +200,25 @@ H5::CompType HDF5TopSegment::dataType()
   H5::CompType dataType(totalSize);
   dataType.insertMember("genomeIdx", genomeIndexOffset, PredType::NATIVE_INT64);
   dataType.insertMember("bottomIdx", bottomIndexOffset, PredType::NATIVE_INT64);
-  dataType.insertMember("bottomOffset", bottomOffsetOffset, PredType::NATIVE_UINT64);
   dataType.insertMember("paralogyIdx", parIndexOffset, PredType::NATIVE_INT64);
   dataType.insertMember("parentIdx", parentIndexOffset, PredType::NATIVE_INT64);
   dataType.insertMember("reverseFlag", parentReversedOffset, PredType::NATIVE_CHAR);
 
   return dataType;
 }
-
+   
+hal_offset_t HDF5TopSegment::getBottomParseOffset() const
+{
+  assert(_index >= 0);
+  hal_offset_t offset = 0;
+  hal_index_t bottomIndex = getBottomParseIndex();
+  if (bottomIndex != NULL_INDEX)
+  {
+    HDF5BottomSegment bs(_genome, &_genome->_bottomArray, bottomIndex);
+    assert(bs.getStartPosition() <= getStartPosition());
+    assert((hal_index_t)(bs.getStartPosition() + bs.getLength()) 
+           >= getStartPosition());
+    offset = getStartPosition() - bs.getStartPosition();
+  }
+  return offset;
+}

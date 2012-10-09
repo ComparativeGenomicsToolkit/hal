@@ -66,7 +66,6 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
         segment.setParentIndex(i * 4);
         segment.setParentReversed(i % 2 ? true : false);
         segment.setBottomParseIndex(i * 5);
-        segment.setBottomParseOffset(i * 6);
       }
       myArray.write();
       file.flush(H5F_SCOPE_LOCAL);
@@ -90,8 +89,6 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
                       segment.getParentReversed() == i % 2 ? true : false);
          CuAssertTrue(testCase,
                       segment.getBottomParseIndex() == (hal_index_t)i * 5);
-         CuAssertTrue(testCase,
-                      segment.getBottomParseOffset() == (hal_offset_t)i * 6);
       }
     }
     catch(Exception& exception)
@@ -133,7 +130,6 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
           HDF5BottomSegment segment(NULL, &myArray, i);
           segment.setCoordinates(i, 1);
           segment.setTopParseIndex(i * 5);
-          segment.setTopParseOffset(i * 6);
           for (hsize_t j = 0; j < numChildren; ++j)
           {
             segment.setChildIndex(j, i * 4 + j);
@@ -157,8 +153,6 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
                        segment.getLength() == 1);
           CuAssertTrue(testCase,
                        segment.getTopParseIndex() == (hal_index_t)i * 5);
-          CuAssertTrue(testCase,
-                       segment.getTopParseOffset() == (hal_offset_t)i * 6);
           for (hsize_t j = 0; j < numChildren; ++j)
           {
             CuAssertTrue(testCase,

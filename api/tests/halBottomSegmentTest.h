@@ -18,15 +18,13 @@ struct BottomSegmentStruct {
    std::vector<std::pair<hal_index_t, hal_bool_t> >_children;
    hal_index_t _arrayIndex;
    hal_index_t _topParseIndex;
-   hal_offset_t _topParseOffset;
    void setRandom(hal_size_t numChildren);
    void applyTo(hal::BottomSegmentIteratorPtr it) const;
    void compareTo(hal::BottomSegmentIteratorConstPtr it,
      CuTest* testCase) const;
    void set(hal_index_t startPosition,
             hal_size_t length,
-            hal_index_t topParseIndex = hal::NULL_INDEX,
-            hal_offset_t topParseOffset = 0);
+            hal_index_t topParseIndex = hal::NULL_INDEX);
 };
 
 

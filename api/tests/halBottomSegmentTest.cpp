@@ -23,7 +23,6 @@ void BottomSegmentStruct::setRandom(hal_size_t numChildren)
   _startPosition = rand();
    _arrayIndex = rand();
   _topParseIndex = rand();
-  _topParseOffset = rand();
   _children.clear();
   for (hal_size_t i = 0; i < numChildren; ++i)
   {
@@ -36,13 +35,11 @@ void BottomSegmentStruct::setRandom(hal_size_t numChildren)
 
 void BottomSegmentStruct::set(hal_index_t startPosition,
                               hal_size_t length,
-                              hal_index_t topParseIndex,
-                              hal_offset_t topParseOffset)
+                              hal_index_t topParseIndex)
 {
   _startPosition = startPosition;
   _length = length;
   _topParseIndex = topParseIndex;
-  _topParseOffset = topParseOffset;
 }
 
 void BottomSegmentStruct::applyTo(BottomSegmentIteratorPtr it) const
@@ -50,7 +47,6 @@ void BottomSegmentStruct::applyTo(BottomSegmentIteratorPtr it) const
   BottomSegment* seg = it->getBottomSegment();
   seg->setCoordinates(_startPosition, _length);
   seg->setTopParseIndex(_topParseIndex);
-  seg->setTopParseOffset(_topParseOffset);
   for (hal_size_t i = 0; i < _children.size(); ++i)
   {
     seg->setChildIndex(i, _children[i].first);
@@ -65,7 +61,6 @@ void BottomSegmentStruct::compareTo(BottomSegmentIteratorConstPtr it,
   CuAssertTrue(testCase, _length == seg->getLength());
   CuAssertTrue(testCase, _startPosition == seg->getStartPosition());
   CuAssertTrue(testCase, _topParseIndex == seg->getTopParseIndex());
-  CuAssertTrue(testCase, _topParseOffset == seg->getTopParseOffset());
   CuAssertTrue(testCase, _children.size() == seg->getNumChildren());
   for (hal_size_t i = 0; i < _children.size(); ++i)
   {
@@ -218,11 +213,11 @@ void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case1->setDimensions(seqVec);
   
   ti = case1->getTopSegmentIterator();
-  ts.set(0, 10, NULL_INDEX, false, 0, 0);
+  ts.set(0, 10, NULL_INDEX, false, 0);
   ts.applyTo(ti);
   
   bi = case1->getBottomSegmentIterator();
-  bs.set(0, 10, 0, 0);
+  bs.set(0, 10, 0);
   bs.applyTo(bi);
 
   // case 2: bottom segment is completely contained in top segment
@@ -231,17 +226,17 @@ void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case2->setDimensions(seqVec);
   
   ti = case2->getTopSegmentIterator();
-  ts.set(0, 9, NULL_INDEX, false, 0, 0);
+  ts.set(0, 9, NULL_INDEX, false, 0);
   ts.applyTo(ti);
 
   bi = case2->getBottomSegmentIterator();
-  bs.set(0, 3, 0, 0);
+  bs.set(0, 3, 0);
   bs.applyTo(bi);
   bi->toRight();
-  bs.set(3, 4, 0, 0);
+  bs.set(3, 4, 0);
   bs.applyTo(bi);
   bi->toRight();
-  bs.set(7, 3, 0, 0);
+  bs.set(7, 3, 0);
   bs.applyTo(bi);
 
   // case 3 top segment is completely contained in bottom segment
@@ -250,17 +245,17 @@ void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case3->setDimensions(seqVec);
 
   ti = case3->getTopSegmentIterator();
-  ts.set(0, 3, NULL_INDEX, false, 0, 0);
+  ts.set(0, 3, NULL_INDEX, false, 0);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(3, 4, NULL_INDEX, false, 0, 3);
+  ts.set(3, 4, NULL_INDEX, false, 0);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(7, 3, NULL_INDEX, false, 0, 7);
+  ts.set(7, 3, NULL_INDEX, false, 0);
   ts.applyTo(ti);
 
   bi = case3->getBottomSegmentIterator();
-  bs.set(0, 9, 0, 0);
+  bs.set(0, 9, 0);
   bs.applyTo(bi);
  
   // case 4: top segment overhangs bottom segment on the left
@@ -269,14 +264,14 @@ void BottomSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   case4->setDimensions(seqVec);
 
   ti = case4->getTopSegmentIterator();
-  ts.set(0, 9, NULL_INDEX, false, 0, 0);
+  ts.set(0, 9, NULL_INDEX, false, 0);
   ts.applyTo(ti);
 
   bi = case4->getBottomSegmentIterator();
-  bs.set(0, 5, 0, 0);
+  bs.set(0, 5, 0);
   bs.applyTo(bi);
   bi->toRight();
-  bs.set(5, 5, 0, 0);
+  bs.set(5, 5, 0);
   bs.applyTo(bi);
 }
 
@@ -427,19 +422,19 @@ void BottomSegmentIteratorReverseTest::createCallBack(AlignmentPtr alignment)
   child1->setString("CCCTACGTGC");
 
   bi = parent1->getBottomSegmentIterator();
-  bs.set(0, 10, 0, 0);
+  bs.set(0, 10, 0);
   bs._children.push_back(pair<hal_size_t, bool>(0, true));
   bs.applyTo(bi);
      
   ti = child1->getTopSegmentIterator();
-  ts.set(0, 10, 0, true, 0, 0);
+  ts.set(0, 10, 0, true, 0);
   ts.applyTo(ti);
 
   ti = parent1->getTopSegmentIterator();
-  ts.set(0, 5, 0, false, 0, 0);
+  ts.set(0, 5, 0, false, 0);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(5, 5, 0, false, 0, 5);
+  ts.set(5, 5, 0, false, 0);
   ts.applyTo(ti);
 }
 

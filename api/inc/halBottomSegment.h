@@ -56,11 +56,6 @@ public:
     * this segment */
    virtual hal_offset_t getTopParseOffset() const = 0;
 
-   /** Set offset in associated top segment of start coordinate of 
-    * this segment 
-    * @param parpArseOffset offset in parent */
-   virtual void setTopParseOffset(hal_offset_t parseOffset) = 0;
-
    /** Get the index of the child of the left neighbour of this segment
     * in the genome (use isLeft first to check if the left neighbour
     * is in the same sequence)

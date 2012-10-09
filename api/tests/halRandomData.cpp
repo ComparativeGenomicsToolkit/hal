@@ -218,12 +218,10 @@ void hal::createRandomDimensions(hal::AlignmentPtr alignment,
       if (numTopSegments > 0)
       {
         bottomSegment->setTopParseIndex((i * botSegSize) / topSegSize);
-        bottomSegment->setTopParseOffset((i * botSegSize) % topSegSize);
       }
       else
       {
         bottomSegment->setTopParseIndex(NULL_INDEX);
-        bottomSegment->setTopParseOffset(0);
       }
       botIt->toRight();
     }
@@ -246,12 +244,10 @@ void hal::createRandomDimensions(hal::AlignmentPtr alignment,
       if (numBottomSegments > 0)
       {
         topSegment->setBottomParseIndex((i * topSegSize) / botSegSize);
-        topSegment->setBottomParseOffset((i * topSegSize) % botSegSize);
       }
       else
       {
         topSegment->setBottomParseIndex(NULL_INDEX);
-        topSegment->setBottomParseOffset(0);
       }
       topIt->toRight();
     }

@@ -101,11 +101,6 @@ public:
     * start coordinate of this segment */
    hal_offset_t getBottomParseOffset() const;
 
-   /** Set the offset in the bottom parse segment that aligns with the
-    * start coordinate of this segment 
-    * @param botParseOffset offset */
-   void setBottomParseOffset(hal_offset_t botParseOffset);
-
    /** Get the index of the parent of the left neighbour of this segment
     * returns NULL_INDEX if the left neighbour has no parent or the 
     * current segment is the first segment in a sequence */
@@ -142,7 +137,6 @@ protected:
 
    static const size_t genomeIndexOffset;
    static const size_t bottomIndexOffset;
-   static const size_t bottomOffsetOffset;
    static const size_t parIndexOffset;
    static const size_t parentIndexOffset;
    static const size_t parentReversedOffset;
@@ -154,6 +148,7 @@ protected:
 };
 
 //INLINE members
+
 inline hal_index_t HDF5TopSegment::getStartPosition() const
 {
   return _array->getValue<hal_index_t>(_index, genomeIndexOffset);
@@ -237,16 +232,6 @@ inline hal_index_t HDF5TopSegment::getBottomParseIndex() const
 inline void HDF5TopSegment::setBottomParseIndex(hal_index_t parseIndex)
 {
   _array->setValue(_index, bottomIndexOffset, parseIndex);
-}
-   
-inline hal_offset_t HDF5TopSegment::getBottomParseOffset() const
-{
-  return _array->getValue<hal_offset_t>(_index, bottomOffsetOffset);
-}
-
-inline void HDF5TopSegment::setBottomParseOffset(hal_offset_t parseOffset)
-{
-  _array->setValue(_index, bottomOffsetOffset, parseOffset);
 }
 
 inline hal_index_t HDF5TopSegment::getArrayIndex() const

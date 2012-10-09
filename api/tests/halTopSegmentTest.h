@@ -20,14 +20,12 @@ struct TopSegmentStruct {
    bool _parentReversed;
    hal_index_t _arrayIndex;
    hal_index_t _bottomParseIndex;
-   hal_offset_t _bottomParseOffset;
    void setRandom();
    void set(hal_index_t startPosition,
             hal_size_t length,
             hal_index_t parentIndex = hal::NULL_INDEX,
             bool parentReversed = false,
             hal_index_t bottomParseIndex = hal::NULL_INDEX,
-            hal_offset_t bottomParseOffset = 0,
             hal_index_t nextParalogyIndex = hal::NULL_INDEX);
    void applyTo(hal::TopSegmentIteratorPtr it) const;
    void compareTo(hal::TopSegmentIteratorConstPtr it,

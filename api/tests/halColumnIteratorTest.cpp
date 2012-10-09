@@ -106,7 +106,7 @@ void ColumnIteratorDepthTest::createCallBack(AlignmentPtr alignment)
     ts.applyTo(ti);
 
     ti = dad->getTopSegmentIterator(i);
-    ts.set(i * segLength, segLength, i, false, i, 0);
+    ts.set(i * segLength, segLength, i, false, i);
     ts.applyTo(ti);
 
     bi = dad->getBottomSegmentIterator(i);
@@ -114,7 +114,7 @@ void ColumnIteratorDepthTest::createCallBack(AlignmentPtr alignment)
     bi->getBottomSegment()->setChildReversed(0, false);
     bi->getBottomSegment()->setChildIndex(1, i);
     bi->getBottomSegment()->setChildReversed(1, false);;
-    bs.set(i * segLength, segLength, i, 0);
+    bs.set(i * segLength, segLength, i);
     bs.applyTo(bi);
 
     bi = grandpa->getBottomSegmentIterator(i);
@@ -348,13 +348,13 @@ void ColumnIteratorInvTest::createCallBack(AlignmentPtr alignment)
     ts.set(i * segLength, segLength, i);
     ts.applyTo(ti);
     ti = dad->getTopSegmentIterator(i);
-    ts.set(i * segLength, segLength, i, false, i, 0);
+    ts.set(i * segLength, segLength, i, false, i);
     ts.applyTo(ti);
 
     bi = dad->getBottomSegmentIterator(i);
     bi->getBottomSegment()->setChildIndex(0, i);
     bi->getBottomSegment()->setChildReversed(0, false);
-    bs.set(i * segLength, segLength, i, 0);
+    bs.set(i * segLength, segLength, i);
     bs.applyTo(bi);
 
     bi = grandpa->getBottomSegmentIterator(i);
