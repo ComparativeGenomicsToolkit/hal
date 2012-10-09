@@ -71,7 +71,7 @@ protected:
 inline bool HDF5TopSegmentIterator::inRange() const
 {
   return _topSegment._index >= 0 && _topSegment._index < 
-     (hal_index_t)_topSegment._genome->_topArray.getSize();
+     (hal_index_t)_topSegment._genome->getNumTopSegments();
 }
 
 }

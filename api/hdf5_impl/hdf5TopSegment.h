@@ -38,10 +38,6 @@ public:
    /** Get the length of the segment (number of bases) */
    hal_size_t getLength() const;
 
-   /** Set the length of the segment
-    * @param length New length of segment */
-   void setLength(hal_size_t length);
-
    /** Get the containing (read-only) genome */
    const Genome* getGenome() const;
 
@@ -58,8 +54,9 @@ public:
    hal_index_t getStartPosition() const;
 
    /** Set the segment's start position in the genome 
-    * @param startPos Start position */
-   void setStartPosition(hal_index_t startPos);
+    * @param startPos Start position 
+    * @param length Length */
+   void setCoordinates(hal_index_t startPos, hal_size_t length);
 
    /** Get index of the next paralogous segment in the genome */
    hal_index_t getNextParalogyIndex() const;
@@ -144,7 +141,6 @@ public:
 protected:
 
    static const size_t genomeIndexOffset;
-   static const size_t lengthOffset;
    static const size_t bottomIndexOffset;
    static const size_t bottomOffsetOffset;
    static const size_t parIndexOffset;
@@ -165,20 +161,22 @@ inline hal_index_t HDF5TopSegment::getStartPosition() const
 }
 
 inline void 
-HDF5TopSegment::setStartPosition(hal_index_t startPos)
+HDF5TopSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
 {
+  if (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
+      startPos + length > _genome->_totalSequenceLength)
+  {
+    throw hal_exception("Trying to set top segment coordinate out of range");
+  }
+      
   _array->setValue(_index, genomeIndexOffset, startPos);
+  _array->setValue(_index + 1, genomeIndexOffset, startPos + length);
 }
 
 inline hal_size_t HDF5TopSegment::getLength() const
 {
-  return _array->getValue<hal_size_t>(_index, lengthOffset);
-}
-
-inline void 
-HDF5TopSegment::setLength(hal_size_t length)
-{
-  _array->setValue(_index, lengthOffset, length);
+  return _array->getValue<hal_size_t>(_index + 1, genomeIndexOffset) - 
+     _array->getValue<hal_size_t>(_index, genomeIndexOffset);
 }
 
 inline const Genome* HDF5TopSegment::getGenome() const

@@ -39,10 +39,6 @@ public:
    /** Get the length of the segment (number of bases) */
    hal_size_t getLength() const;
 
-   /** Set the length of the segment
-    * @param length New length of segment */
-   void setLength(hal_size_t length);
-
    /** Get the containing (read-only) genome */
    const Genome* getGenome() const;
 
@@ -60,7 +56,7 @@ public:
 
    /** Set the segment's start position in the genome 
     * @param startPos Start position */
-   void setStartPosition(hal_index_t startPos);
+   void setCoordinates(hal_index_t startPos, hal_size_t length);
 
    /** Get the number of child genomes (note this is a number of slots
     * and that the current segment could actually have fewer children) */
@@ -166,23 +162,24 @@ inline hal_index_t HDF5BottomSegment::getStartPosition() const
 }
 
 inline void 
-HDF5BottomSegment::setStartPosition(hal_index_t startPos)
+HDF5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
 {
   assert(_index >= 0);
+  if (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
+      startPos + length > _genome->_totalSequenceLength)
+  {
+    throw hal_exception("Trying to set bottom segment coordinate out of range");
+  }
+  
   _array->setValue((hsize_t)_index, genomeIndexOffset, startPos);
+  _array->setValue(_index + 1, genomeIndexOffset, startPos + length);
 }
 
 inline hal_size_t HDF5BottomSegment::getLength() const
 {
   assert(_index >= 0);
-  return _array->getValue<hal_size_t>((hsize_t)_index, lengthOffset);
-}
-
-inline void 
-HDF5BottomSegment::setLength(hal_size_t length)
-{
-  assert(_index >= 0);
-  _array->setValue((hsize_t)_index, lengthOffset, length);
+  return _array->getValue<hal_size_t>(_index + 1, genomeIndexOffset) - 
+     _array->getValue<hal_size_t>(_index, genomeIndexOffset);
 }
 
 inline const Genome* HDF5BottomSegment::getGenome() const

@@ -210,8 +210,7 @@ void hal::createRandomDimensions(hal::AlignmentPtr alignment,
     for (size_t i = 0; i < genome->getNumBottomSegments(); ++i)
     {
       BottomSegment* bottomSegment = botIt->getBottomSegment();
-      bottomSegment->setStartPosition(i * botSegSize);
-      bottomSegment->setLength(botSegSize);
+      bottomSegment->setCoordinates(i * botSegSize, botSegSize);
       for (size_t j = 0; j < numChildren; ++j)
       {
         bottomSegment->setChildIndex(j, NULL_INDEX);
@@ -233,17 +232,17 @@ void hal::createRandomDimensions(hal::AlignmentPtr alignment,
     for (size_t i = 0; i < genome->getNumTopSegments(); ++i)
     {
       TopSegment* topSegment = topIt->getTopSegment();
-      topSegment->setStartPosition(i * topSegSize);
       topSegment->setParentIndex(NULL_INDEX);
+      hal_size_t tsLength = 0;
       if (i < genome->getNumTopSegments() - 1 || length % topSegSize == 0)
       {
-         topSegment->setLength(topSegSize);
+        tsLength = topSegSize;
       }
       else
       {
-          topSegment->setLength(length % topSegSize);
+        tsLength = length % topSegSize;
       }     
-    
+      topSegment->setCoordinates(i * topSegSize, tsLength);
       if (numBottomSegments > 0)
       {
         topSegment->setBottomParseIndex((i * topSegSize) / botSegSize);

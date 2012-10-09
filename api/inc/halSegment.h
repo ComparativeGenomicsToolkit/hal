@@ -23,10 +23,6 @@ public:
    /** Get the length of the segment (number of bases) */
    virtual hal_size_t getLength() const = 0;
 
-   /** Set the length of the segment
-    * @param length New length of segment */
-   virtual void setLength(hal_size_t length) = 0;
-
    /** Get the containing (read-only) genome */
    virtual const Genome* getGenome() const = 0;
 
@@ -43,8 +39,9 @@ public:
    virtual hal_index_t getStartPosition() const = 0;
 
    /** Set the segment's start position in the genome 
-    * @param startPos Start position */
-   virtual void setStartPosition(hal_index_t startPos) = 0;
+    * @param startPos Start position 
+    * @param length Length*/
+   virtual void setCoordinates(hal_index_t startPos, hal_size_t length) = 0;
 
    /** Get the index of the segment in the segment array */
    virtual hal_index_t getArrayIndex() const = 0;

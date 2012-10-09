@@ -57,12 +57,11 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
       {
         cparms.setChunk(1, &chunkSize);
       }
-      myArray.create(&file, datasetName, datatype, N, cparms);
+      myArray.create(&file, datasetName, datatype, N + 1, cparms);
       for (hsize_t i = 0; i < N; ++i)
       {
         HDF5TopSegment segment(NULL, &myArray, i);
-        segment.setStartPosition(i * 1);
-        segment.setLength(i * 2);
+        segment.setCoordinates(i, 1);
         segment.setNextParalogyIndex(i * 3 + 1);
         segment.setParentIndex(i * 4);
         segment.setParentReversed(i % 2 ? true : false);
@@ -80,9 +79,9 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
       {
          HDF5TopSegment segment(NULL, &readArray, i);
          CuAssertTrue(testCase, 
-                      segment.getStartPosition() == (hal_index_t)i * 1);
+                      segment.getStartPosition() == (hal_index_t)i);
          CuAssertTrue(testCase,
-                      segment.getLength() == i * 2);
+                      segment.getLength() == 1);
          CuAssertTrue(testCase,
                       segment.getNextParalogyIndex() == (hal_index_t)i * 3 + 1);
          CuAssertTrue(testCase,
@@ -128,12 +127,11 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
         {
           cparms.setChunk(1, &chunkSize);
         }
-        myArray.create(&file, datasetName, datatype, N, cparms);
+        myArray.create(&file, datasetName, datatype, N + 1, cparms);
         for (hsize_t i = 0; i < N; ++i)
         {
           HDF5BottomSegment segment(NULL, &myArray, i);
-          segment.setStartPosition(i * 1);
-          segment.setLength(i * 2);
+          segment.setCoordinates(i, 1);
           segment.setTopParseIndex(i * 5);
           segment.setTopParseOffset(i * 6);
           for (hsize_t j = 0; j < numChildren; ++j)
@@ -156,7 +154,7 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
           CuAssertTrue(testCase, 
                        segment.getStartPosition() == (hal_index_t)i * 1);
           CuAssertTrue(testCase,
-                       segment.getLength() == i * 2);
+                       segment.getLength() == 1);
           CuAssertTrue(testCase,
                        segment.getTopParseIndex() == (hal_index_t)i * 5);
           CuAssertTrue(testCase,

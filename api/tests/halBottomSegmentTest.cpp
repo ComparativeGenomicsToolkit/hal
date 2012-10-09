@@ -48,8 +48,7 @@ void BottomSegmentStruct::set(hal_index_t startPosition,
 void BottomSegmentStruct::applyTo(BottomSegmentIteratorPtr it) const
 {
   BottomSegment* seg = it->getBottomSegment();
-  seg->setLength(_length);
-  seg->setStartPosition(_startPosition);
+  seg->setCoordinates(_startPosition, _length);
   seg->setTopParseIndex(_topParseIndex);
   seg->setTopParseOffset(_topParseOffset);
   for (hal_size_t i = 0; i < _children.size(); ++i)
@@ -187,8 +186,7 @@ void BottomSegmentSequenceTest::createCallBack(AlignmentPtr alignment)
 
   ancGenome->setSubString("CACACATTC", 500, 9);
   BottomSegmentIteratorPtr bsIt = ancGenome->getBottomSegmentIterator(100);
-  bsIt->getBottomSegment()->setStartPosition(500);
-  bsIt->getBottomSegment()->setLength(9);
+  bsIt->getBottomSegment()->setCoordinates(500, 9);
 }
 
 void BottomSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)

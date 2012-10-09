@@ -47,8 +47,7 @@ void TopSegmentStruct::set(hal_index_t startPosition,
 void TopSegmentStruct::applyTo(TopSegmentIteratorPtr it) const
 {
   TopSegment* seg = it->getTopSegment();
-  seg->setLength(_length);
-  seg->setStartPosition(_startPosition);
+  seg->setCoordinates(_startPosition, _length);
   seg->setNextParalogyIndex(_nextParalogyIndex);
   seg->setParentIndex(_parentIndex);
   seg->setParentReversed(_parentReversed);
@@ -177,8 +176,7 @@ void TopSegmentSequenceTest::createCallBack(AlignmentPtr alignment)
 
   ancGenome->setSubString("CACACATTC", 500, 9);
   TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator(100);
-  tsIt->getTopSegment()->setStartPosition(500);
-  tsIt->getTopSegment()->setLength(9);
+  tsIt->getTopSegment()->setCoordinates(500, 9);
 }
 
 void TopSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)

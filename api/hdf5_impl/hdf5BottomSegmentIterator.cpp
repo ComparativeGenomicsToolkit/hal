@@ -67,7 +67,7 @@ void HDF5BottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
       _endOffset = _bottomSegment.getLength() - _startOffset;
       _startOffset = 0;
     }    
-    if ((hal_size_t)_bottomSegment._index < _bottomSegment._array->getSize() &&
+    if ((hal_size_t)_bottomSegment._index < _bottomSegment._genome->getNumBottomSegments() &&
         leftCutoff != NULL_INDEX && overlaps(leftCutoff))
     {
       _startOffset = _bottomSegment.getStartPosition() + 
@@ -75,7 +75,7 @@ void HDF5BottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
     }
   }
    assert((hal_size_t)_bottomSegment._index >= 
-          _bottomSegment._array->getSize() ||
+          _bottomSegment._genome->getNumBottomSegments() ||
           _bottomSegment._index < 0 || 
           _startOffset + _endOffset <= _bottomSegment.getLength());
 }
@@ -95,7 +95,7 @@ void HDF5BottomSegmentIterator::toRight(hal_index_t rightCutoff) const
       _endOffset = 0;
     }
     
-    if ((hal_size_t)_bottomSegment._index < _bottomSegment._array->getSize() &&
+    if ((hal_size_t)_bottomSegment._index < _bottomSegment._genome->getNumBottomSegments() &&
         rightCutoff != NULL_INDEX && overlaps(rightCutoff))
     {
       _endOffset = _bottomSegment.getStartPosition() +
@@ -122,7 +122,7 @@ void HDF5BottomSegmentIterator::toRight(hal_index_t rightCutoff) const
     }
   }
   assert ((hal_size_t)_bottomSegment._index >= 
-          _bottomSegment._array->getSize() ||
+          _bottomSegment._genome->getNumBottomSegments() ||
           _bottomSegment._index < 0 || 
           _startOffset + _endOffset <= _bottomSegment.getLength());
 }

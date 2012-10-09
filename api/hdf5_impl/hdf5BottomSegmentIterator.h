@@ -72,7 +72,7 @@ protected:
 inline bool HDF5BottomSegmentIterator::inRange() const
 {
   return _bottomSegment._index >= 0 && _bottomSegment._index < 
-     (hal_index_t)_bottomSegment._genome->_bottomArray.getSize();
+     (hal_index_t)_bottomSegment._genome->getNumBottomSegments();
 }
 
 }

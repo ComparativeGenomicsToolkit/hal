@@ -73,19 +73,23 @@ void ColumnIteratorDepthTest::createCallBack(AlignmentPtr alignment)
   Genome* son1 = alignment->openGenome("son1");
   dims[0] = Sequence::Info("seq", seqLength, numSegments, 0);
   son1->setDimensions(dims);
+  son1->setString(string(seqLength, 'A'));
   
   Genome* son2 = alignment->openGenome("son2");
   dims[0] = Sequence::Info("seq", seqLength, numSegments, 0);
   son2->setDimensions(dims);
+  son2->setString(string(seqLength, 'C'));
 
   Genome* dad = alignment->openGenome("dad");
   dims[0] = Sequence::Info("seq", seqLength, numSegments, numSegments);
   dad->setDimensions(dims);
+  dad->setString(string(seqLength, 'G'));
 
   Genome* grandpa = alignment->openGenome("grandpa");
   dims[0] = Sequence::Info("seq", seqLength, 0, numSegments);
   grandpa->setDimensions(dims);
-  
+  grandpa->setString(string(seqLength, 'T'));
+
   BottomSegmentIteratorPtr bi;
   BottomSegmentStruct bs;
   TopSegmentIteratorPtr ti;
@@ -150,7 +154,7 @@ void ColumnIteratorDepthTest::checkGenome(const Genome* genome)
 
 void ColumnIteratorDepthTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  // validateAlignment(alignment);
+  validateAlignment(alignment);
   const Genome* genome = alignment->openGenome("grandpa");
   checkGenome(genome);
   genome = alignment->openGenome("dad");
