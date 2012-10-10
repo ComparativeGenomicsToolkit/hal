@@ -82,7 +82,7 @@ public:
 
    template <class Y> 
    counted_ptr& operator=(const counted_ptr<Y>& r) {
-     if ((const void*)this == (const void*)(&r))
+     if ((const void*)this != (const void*)(&r))
      {
        release();
        acquire<Y>(r.itsCounter);
@@ -177,7 +177,7 @@ public:
 
    template <class Y> 
    counted_ptr& operator=(const counted_ptr<Y>& r) {
-     if ((const void*)this == (const void*)(&r))
+     if ((const void*)this != (const void*)(&r))
      {
        release();
        acquire<Y>(r.itsCounter);
