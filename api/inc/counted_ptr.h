@@ -9,13 +9,18 @@
  * http://ootips.org/yonat/4dev/smart-pointers.html
  * http://ootips.org/yonat/4dev/counted_ptr.h
  *
- * but (poorly) hacked to support const casting.  Should replace with
- * a proper implementation, but using the standard shared_ptr<>
- * is pretty heavy on the dependency front (only in super new c++ 
- * compilers and boost). 
- */
-
-/*
+ * but modified to support static casting and non-const to const casting.  
+ * So we should  currently allow assigning 
+ * from counted_ptr<X*> to counted_ptr<const X*>, as well as from
+ * counted_ptr<DERIVED*> to counted_ptr<BASE*> (and const variations
+ * therof).  Dynamic (ie from BASE to DERIVED) casting could be added in
+ * later but it would require a new function like counted_ptr.downcast(..).
+ *
+ * Standardized reference counting smart pointers can be found in Boost and
+ * newer gcc's but I do not want to introduce a dependency on either of these
+ * for such a small issue.  
+ *
+ *
  * counted_ptr - simple reference counted pointer.
  *
  * The is a non-intrusive implementation that allocates an additional
@@ -25,21 +30,8 @@
 #ifndef COUNTED_PTR_H
 #define COUNTED_PTR_H
 
-/* For ANSI-challenged compilers, you may want to #define
- * NO_MEMBER_TEMPLATES or explicit */
-
 namespace hal {
 
-template <typename T>
-struct counted_ptr_remove_const
-{
-    typedef T type;
-};
-template <typename T>
-struct counted_ptr_remove_const<const T>
-{
-    typedef T type;
-};
 
 template<typename X>
 struct ptr_counter {
@@ -48,163 +40,185 @@ struct ptr_counter {
    unsigned    count;
 }; 
 
-template<typename X>
-struct ptr_counter<const X> {
-   ptr_counter(const X* p = 0, unsigned c = 1) : ptr(p), count(c) {}
-   const X*          ptr;
-   unsigned    count;
-   
-   ptr_counter& operator=(const ptr_counter<typename counted_ptr_remove_const<X>::type>& other) {
-     ptr = other.ptr;
-     count = other.count;
-   }
-};
-template <class X> class counted_ptr
+template <class X> 
+class counted_ptr
 {
 public:
-   friend class counted_ptr<const X>;
-   typedef X element_type;
+   template <typename XX> friend class counted_ptr;
    typedef ptr_counter<X> counter;
 
-    explicit counted_ptr(X* p = 0) // allocate a new counter
-      : itsCounter(0) {if (p) itsCounter = new counter(p);}
-    ~counted_ptr()
-        {release();}
-    counted_ptr(const counted_ptr& r) throw()
-        {acquire(r.itsCounter);}
-    counted_ptr& operator=(const counted_ptr& r)
-    {
-        if (this != &r) {
-            release();
-            acquire(r.itsCounter);
-        }
-        return *this;
-    } 
+   explicit counted_ptr(X* p = 0) // allocate a new counter
+     : itsCounter(0) {
+     if (p) itsCounter = new counter(p);
+   }
 
+   ~counted_ptr() {
+     release();
+   }
 
-    /*
-#ifndef NO_MEMBER_TEMPLATES
-    template <class Y> friend class counted_ptr<Y>;
-    template <class Y> counted_ptr(const counted_ptr<Y>& r) throw()
-        {acquire(r.itsCounter);}
-    template <class Y> counted_ptr& operator=(const counted_ptr<Y>& r)
-    {
-        if (this != &r) {
-            release();
-            acquire(r.itsCounter);
-        }
-        return *this;
-    }
-#endif // NO_MEMBER_TEMPLATES
-    */
-
-    X& operator*()  const throw()   {return *itsCounter->ptr;}
-    X* operator->() const throw()   {return itsCounter->ptr;}
-    X* get()        const throw()   {return itsCounter ? itsCounter->ptr : 0;}
-    bool unique()   const throw()
-        {return (itsCounter ? itsCounter->count == 1 : true);}
-
-private:
-
-   counter* itsCounter;
-
-    void acquire(counter* c) throw()
-    { // increment the count
-        itsCounter = c;
-        if (c) ++c->count;
-    }
-
-    void release()
-    { // decrement the count, delete if it is 0
-        if (itsCounter) {
-            if (--itsCounter->count == 0) {
-                delete itsCounter->ptr;
-                delete itsCounter;
-            }
-            itsCounter = 0;
-        }
-    }
-};
-
-
-template <class X> class counted_ptr<const X>
-{
-public:
-    typedef const X element_type;
-   typedef ptr_counter<const X> counter;
-
-    explicit counted_ptr(const X* p = 0) // allocate a new counter
-        : itsCounter(0) {if (p) itsCounter = new counter(p);}
-   ~counted_ptr()
-        {release();}
-    counted_ptr(const counted_ptr& r) throw()
-        {acquire(r.itsCounter);}
-    counted_ptr& operator=(const counted_ptr& r)
-    {
-        if (this != &r) {
-            release();
-            acquire(r.itsCounter);
-        }
-        return *this;
-    }
-
-   counted_ptr(const counted_ptr<typename counted_ptr_remove_const<X>::type>& r) throw()
-      {acquire(r.itsCounter);}
-   counted_ptr& operator=(const counted_ptr<typename counted_ptr_remove_const<X>::type>& r)
-   {
-     if (this != &r) {
+   // important to keep the default copy constructor overloaded
+   // (even if the templated version below seems to cover it) 
+   // to prevent the compiler from making its own and breaking everything
+   counted_ptr(const counted_ptr& r) {
+     acquire<X>(r.itsCounter);
+   }
+   
+   // important to keep the default assignment operator overloaded
+   // (even if the templated version below seems to cover it) 
+   // to prevent the compiler from making its own and breaking everything
+   counted_ptr& operator=(const counted_ptr& r) {
+     if (this != &r)
+     {
        release();
-       acquire(r.itsCounter);
+       acquire<X>(r.itsCounter);
      }
      return *this;
    }
-/*
-#ifndef NO_MEMBER_TEMPLATES
-    template <class Y> friend class counted_ptr<Y>;
-    template <class Y> counted_ptr(const counted_ptr<Y>& r) throw()
-        {acquire(r.itsCounter);}
-    template <class Y> counted_ptr& operator=(const counted_ptr<Y>& r)
-    {
-        if (this != &r) {
-            release();
-            acquire(r.itsCounter);
-        }
-        return *this;
-    }
-#endif // NO_MEMBER_TEMPLATES
-*/
-    const X& operator*()  const throw()   {return *itsCounter->ptr;}
-    const X* operator->() const throw()   {return itsCounter->ptr;}
-    const X* get()        const throw()   {return itsCounter ? itsCounter->ptr : 0;}
-    bool unique()   const throw()
-        {return (itsCounter ? itsCounter->count == 1 : true);}
+   
+   template <class Y> 
+   counted_ptr(const counted_ptr<Y>& r) {
+     acquire<Y>(r.itsCounter);
+   }
+
+   template <class Y> 
+   counted_ptr& operator=(const counted_ptr<Y>& r) {
+     if ((const void*)this == (const void*)(&r))
+     {
+       release();
+       acquire<Y>(r.itsCounter);
+     }
+     return *this;
+   }
+  
+   X& operator*()  const   {return *itsCounter->ptr;}
+   X* operator->() const   {return itsCounter->ptr;}
+   X* get()        const   {return itsCounter ? itsCounter->ptr : 0;}
+   bool unique()   const {
+     return (itsCounter ? itsCounter->count == 1 : true);
+   }
 
 private:
 
    counter* itsCounter;
 
-    void acquire(counter* c) throw()
-    { // increment the count
-        itsCounter = c;
-        if (c) ++c->count;
-    }
+   template <typename Y>
+   void acquire(ptr_counter<Y>* c) {
+     if (c) {
+       (void)static_cast<X*>(c->ptr);
+       itsCounter = reinterpret_cast<counter*>(c);
+       ++c->count;
+     }
+     else {
+       itsCounter = NULL;
+     }
+   }
 
-    void acquire(ptr_counter<typename counted_ptr_remove_const<X>::type>* c) throw()
-    { // increment the count
-      itsCounter = (ptr_counter<const X>*)c;
-        if (c) ++c->count;
-    }
-
-    void release()
-    { // decrement the count, delete if it is 0
-        if (itsCounter) {
-            if (--itsCounter->count == 0) {
-                delete itsCounter->ptr;
-                delete itsCounter;
-            }
-            itsCounter = 0;
-        }
-    }
+   void release() {
+     if (itsCounter) {
+       if (--itsCounter->count == 0) {
+         delete itsCounter->ptr;
+         delete itsCounter;
+       }
+       itsCounter = 0;
+     }
+   }
 };
+
+// need to specialize on constant template parameters so we can 
+// properly account for the const to non-const assignments.  this is
+// the only way i could figure out how to do it anyway, since the 
+// regular template just seems to understand types and not consts...
+template <class X> 
+class counted_ptr<const X>
+{
+public:
+   template <typename XX> friend class counted_ptr;
+   typedef ptr_counter<const X> counter;
+
+   explicit counted_ptr(const X* p = 0) // allocate a new counter
+     : itsCounter(0) {
+     if (p) itsCounter = new counter(p);
+   }
+
+   ~counted_ptr() {
+     release();
+   }
+
+   // important to keep the default copy constructor overloaded
+   // (even if the templated version below seems to cover it) 
+   // to prevent the compiler from making its own and breaking everything
+   counted_ptr(const counted_ptr<const X>& r) {
+     acquire<const X>(r.itsCounter);
+   }
+   counted_ptr(const counted_ptr<X>& r) {
+     acquire<const X>(reinterpret_cast<counter*>(r.itsCounter));
+   }
+   
+   // important to keep the default assignment operator overloaded
+   // (even if the templated version below seems to cover it) 
+   // to prevent the compiler from making its own and breaking everything
+   counted_ptr<const X>& operator=(const counted_ptr<const X>& r) {
+     if (this != &r)
+     {
+       release();
+       acquire<const X>(r.itsCounter);
+     }
+     return *this;
+   }
+   counted_ptr<const X>& operator=(
+     const counted_ptr<X>& r) {
+     return this->operator=(reinterpret_cast<const counted_ptr<const X>&>(r));
+   }
+  
+   template <class Y> 
+   counted_ptr(const counted_ptr<Y>& r) {
+     acquire<Y>(r.itsCounter);
+   }
+
+   template <class Y> 
+   counted_ptr& operator=(const counted_ptr<Y>& r) {
+     if ((const void*)this == (const void*)(&r))
+     {
+       release();
+       acquire<Y>(r.itsCounter);
+     }
+     return *this;
+   }
+   
+   const X& operator*()  const   {return *itsCounter->ptr;}
+   const X* operator->() const   {return itsCounter->ptr;}
+   const X* get()        const   {return itsCounter ? itsCounter->ptr : 0;}
+   bool unique()   const {
+     return (itsCounter ? itsCounter->count == 1 : true);
+   }
+
+private:
+
+   counter* itsCounter;
+
+   template <typename Y>
+   void acquire(ptr_counter<Y>* c) {
+     if (c) {
+       (void)static_cast<const X*>(c->ptr);
+       itsCounter = reinterpret_cast<counter*>(c);
+       ++c->count;
+     }
+     else {
+       itsCounter = NULL;
+     }
+   }
+
+   void release() {
+     if (itsCounter) {
+       if (--itsCounter->count == 0) {
+         delete itsCounter->ptr;
+         delete itsCounter;
+       }
+       itsCounter = 0;
+     }
+   }
+};
+
+
 }
 #endif // COUNTED_PTR_H
