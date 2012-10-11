@@ -10,8 +10,8 @@
 #include <iostream>
 #include "hdf5Sequence.h"
 #include "hdf5DNAIterator.h"
-#include "hdf5TopSegmentIterator.h"
-#include "hdf5BottomSegmentIterator.h"
+#include "defaultTopSegmentIterator.h"
+#include "defaultBottomSegmentIterator.h"
 #include "defaultColumnIterator.h"
 #include "defaultRearrangement.h"
 #include "defaultGappedTopSegmentIterator.h"

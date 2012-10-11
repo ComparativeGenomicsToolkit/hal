@@ -4,27 +4,22 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#ifndef _HDF5BOTTOMSEGMENTITERATOR_H
-#define _HDF5BOTTOMSEGMENTITERATOR_H
+#ifndef _DEFAULTBOTTOMSEGMENTITERATOR_H
+#define _DEFAULTBOTTOMSEGMENTITERATOR_H
 
-#include <limits>
-#include <H5Cpp.h>
 #include "halBottomSegmentIterator.h"
-#include "hdf5ExternalArray.h"
-#include "hdf5Genome.h"
-#include "hdf5BottomSegment.h"
 
 namespace hal {
 
-class HDF5BottomSegmentIterator : public BottomSegmentIterator
+class DefaultBottomSegmentIterator : public BottomSegmentIterator
 {
 public:
    
-   HDF5BottomSegmentIterator(BottomSegment* segment,
+   DefaultBottomSegmentIterator(BottomSegment* segment,
                              hal_size_t startOffset = 0, 
                              hal_size_t endOffset = 0,
                              bool inverted = false);
-   virtual ~HDF5BottomSegmentIterator();
+   virtual ~DefaultBottomSegmentIterator();
    
    // SEGMENT INTERFACE
    virtual void setArrayIndex(const Genome* genome, 
@@ -92,7 +87,7 @@ protected:
    mutable bool _reversed;
 };
 
-inline bool HDF5BottomSegmentIterator::inRange() const
+inline bool DefaultBottomSegmentIterator::inRange() const
 {
   return getArrayIndex() >= 0 && getArrayIndex() < 
      (hal_index_t)getGenome()->getNumBottomSegments();

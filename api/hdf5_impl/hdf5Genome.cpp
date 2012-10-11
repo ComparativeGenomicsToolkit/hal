@@ -12,8 +12,8 @@
 #include "hdf5BottomSegment.h"
 #include "hdf5Sequence.h"
 #include "hdf5SequenceIterator.h"
-#include "hdf5TopSegmentIterator.h"
-#include "hdf5BottomSegmentIterator.h"
+#include "defaultTopSegmentIterator.h"
+#include "defaultBottomSegmentIterator.h"
 #include "hdf5DNAIterator.h"
 #include "defaultColumnIterator.h"
 #include "defaultRearrangement.h"
@@ -490,7 +490,7 @@ TopSegmentIteratorPtr HDF5Genome::getTopSegmentIterator(hal_index_t position)
   HDF5TopSegment* newSeg = new HDF5TopSegment(this, &_topArray, position);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
-  HDF5TopSegmentIterator* newIt = new HDF5TopSegmentIterator(newSeg);
+  DefaultTopSegmentIterator* newIt = new DefaultTopSegmentIterator(newSeg);
   return TopSegmentIteratorPtr(newIt);
 }
 
@@ -503,7 +503,7 @@ TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
                                               position);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
-  HDF5TopSegmentIterator* newIt = new HDF5TopSegmentIterator(newSeg);
+  DefaultTopSegmentIterator* newIt = new DefaultTopSegmentIterator(newSeg);
   return TopSegmentIteratorConstPtr(newIt);
 }
 
@@ -520,7 +520,7 @@ BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
                                                     position);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
-  HDF5BottomSegmentIterator* newIt = new HDF5BottomSegmentIterator(newSeg);
+  DefaultBottomSegmentIterator* newIt = new DefaultBottomSegmentIterator(newSeg);
   return BottomSegmentIteratorPtr(newIt);
 }
 
@@ -533,7 +533,7 @@ BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
                                                     position);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
-  HDF5BottomSegmentIterator* newIt = new HDF5BottomSegmentIterator(newSeg);
+  DefaultBottomSegmentIterator* newIt = new DefaultBottomSegmentIterator(newSeg);
   return BottomSegmentIteratorConstPtr(newIt);
 }
 

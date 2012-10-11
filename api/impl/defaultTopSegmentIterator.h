@@ -4,23 +4,22 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#ifndef _HDF5TOPSEGMENTITERATOR_H
-#define _HDF5TOPSEGMENTITERATOR_H
+#ifndef _DEFAULTTOPSEGMENTITERATOR_H
+#define _DEFAULTTOPSEGMENTITERATOR_H
 
-#include <H5Cpp.h>
 #include "halTopSegmentIterator.h"
 
 namespace hal {
 
 
-class HDF5TopSegmentIterator : public TopSegmentIterator
+class DefaultTopSegmentIterator : public TopSegmentIterator
 {
 public:
-   HDF5TopSegmentIterator(TopSegment* topSegment,
+   DefaultTopSegmentIterator(TopSegment* topSegment,
                           hal_offset_t startOffset = 0, 
                           hal_offset_t endOffset = 0,
                           bool inverted = false);
-   virtual ~HDF5TopSegmentIterator();
+   virtual ~DefaultTopSegmentIterator();
    
    // SEGMENT INTERFACE
    virtual void setArrayIndex(const Genome* genome, 
@@ -92,7 +91,7 @@ protected:
    mutable bool _reversed;
 };
 
-inline bool HDF5TopSegmentIterator::inRange() const
+inline bool DefaultTopSegmentIterator::inRange() const
 {
   return getArrayIndex() >= 0 && getArrayIndex() < 
      (hal_index_t)getGenome()->getNumTopSegments();

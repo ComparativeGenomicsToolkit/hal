@@ -8,7 +8,6 @@
 #include <iostream>
 #include <algorithm>
 #include "hdf5SequenceIterator.h"
-#include "hdf5BottomSegmentIterator.h"
 
 using namespace std;
 using namespace H5;
