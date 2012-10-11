@@ -55,6 +55,13 @@ DefaultGappedBottomSegmentIterator::~DefaultGappedBottomSegmentIterator()
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
+void DefaultGappedBottomSegmentIterator::setArrayIndex(const Genome* genome, 
+                                                       hal_index_t arrayIndex) 
+  const
+{
+  setLeft(genome->getBottomSegmentIterator(arrayIndex));
+}
+
 const Genome* DefaultGappedBottomSegmentIterator::getGenome() const
 {
   return _left->getGenome();
@@ -471,6 +478,12 @@ BottomSegmentIteratorConstPtr DefaultGappedBottomSegmentIterator::getLeft() cons
 BottomSegmentIteratorConstPtr DefaultGappedBottomSegmentIterator::getRight() const
 {
   return _right;
+}
+
+void 
+DefaultGappedBottomSegmentIterator::setLeft(BottomSegmentIteratorConstPtr bi) const
+{
+  throw hal_exception("setLeft not currently supported in bottom iterator");
 }
 
 //////////////////////////////////////////////////////////////////////////////

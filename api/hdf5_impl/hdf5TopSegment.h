@@ -36,6 +36,7 @@ public:
    ~HDF5TopSegment();
 
    // SEGMENT INTERFACE
+   void setArrayIndex(const Genome* genome, hal_index_t arrayIndex) const;
    const Genome* getGenome() const;
    Genome* getGenome();
    const Sequence* getSequence() const;
@@ -86,6 +87,17 @@ private:
 };
 
 //INLINE members
+
+inline void HDF5TopSegment::setArrayIndex(const Genome* genome, 
+                                             hal_index_t arrayIndex) const
+{
+  const HDF5Genome* h5Genome = dynamic_cast<const HDF5Genome*>(genome);
+  assert(h5Genome != NULL);
+  _genome = const_cast<HDF5Genome*>(h5Genome);
+  _array = &_genome->_topArray;
+  assert(arrayIndex < (hal_index_t)_array->getSize());
+  _index = arrayIndex;
+}
 
 inline hal_index_t HDF5TopSegment::getStartPosition() const
 {

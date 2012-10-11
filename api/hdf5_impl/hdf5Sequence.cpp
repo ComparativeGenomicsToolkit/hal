@@ -147,18 +147,14 @@ TopSegmentIteratorPtr HDF5Sequence::getTopSegmentIterator(
   hal_index_t position)
 {
   hal_size_t idx = position + getTopSegmentArrayIndex();
-  HDF5TopSegmentIterator* newIt = new HDF5TopSegmentIterator(_genome, idx);
-  return TopSegmentIteratorPtr(newIt);
+  return _genome->getTopSegmentIterator(idx);
 }
 
 TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentIterator(
   hal_index_t position) const
 {
   hal_size_t idx = position + getTopSegmentArrayIndex();
-  HDF5Genome* genome = const_cast<HDF5Genome*>(_genome);
-  const HDF5TopSegmentIterator* newIt = 
-     new HDF5TopSegmentIterator(genome, idx);
-  return TopSegmentIteratorConstPtr(newIt);
+  return _genome->getTopSegmentIterator(idx);
 }
 
 TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentEndIterator() const
@@ -170,19 +166,14 @@ BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
   hal_index_t position)
 {
   hal_size_t idx = position + getBottomSegmentArrayIndex();
-  HDF5BottomSegmentIterator* newIt = 
-     new HDF5BottomSegmentIterator(_genome, idx);
-  return BottomSegmentIteratorPtr(newIt);
+  return _genome->getBottomSegmentIterator(idx);
 }
 
 BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentIterator(
   hal_index_t position) const
 {
   hal_size_t idx = position + getBottomSegmentArrayIndex();
-  HDF5Genome* genome = const_cast<HDF5Genome*>(_genome);
-  const HDF5BottomSegmentIterator* newIt = 
-     new HDF5BottomSegmentIterator(genome, idx);
-  return BottomSegmentIteratorConstPtr(newIt);
+  return _genome->getBottomSegmentIterator(idx);
 }
 
 BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentEndIterator() const

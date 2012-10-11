@@ -86,8 +86,8 @@ public:
    virtual hal_index_t getRightChildIndex(hal_size_t i) const = 0;
 
 protected:
-
-   /** Destructor */
+   friend class counted_ptr<BottomSegment>;
+   friend class counted_ptr<const BottomSegment>;
    virtual ~BottomSegment() = 0;
 };
 

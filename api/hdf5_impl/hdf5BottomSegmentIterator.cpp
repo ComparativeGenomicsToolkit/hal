@@ -7,25 +7,22 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include "hal.h"
 #include "hdf5BottomSegmentIterator.h"
-#include "hdf5TopSegmentIterator.h"
-#include "hdf5DNAIterator.h"
 
 using namespace std;
-using namespace H5;
 using namespace hal;
 
-HDF5BottomSegmentIterator::HDF5BottomSegmentIterator(HDF5Genome* genome, 
-                                               hal_index_t index,
-                                               hal_size_t startOffset, 
-                                               hal_size_t endOffset,
-                                               bool reversed) :
-  _bottomSegment(genome, &genome->_bottomArray, index),
+HDF5BottomSegmentIterator::HDF5BottomSegmentIterator(BottomSegment* bottomSegment, 
+                                                     hal_size_t startOffset, 
+                                                     hal_size_t endOffset,
+                                                     bool reversed) :
+  _bottomSegment(bottomSegment),
   _startOffset(startOffset),
   _endOffset(endOffset),
   _reversed(reversed)
 {
- 
+
 }
 
 HDF5BottomSegmentIterator::~HDF5BottomSegmentIterator()
@@ -35,24 +32,30 @@ HDF5BottomSegmentIterator::~HDF5BottomSegmentIterator()
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
+void HDF5BottomSegmentIterator::setArrayIndex(const Genome* genome, 
+                                              hal_index_t arrayIndex) const
+{
+  _bottomSegment->setArrayIndex(genome, arrayIndex);
+}
+
 const Genome* HDF5BottomSegmentIterator::getGenome() const
 {
-  return _bottomSegment.getGenome();
+  return _bottomSegment->getGenome();
 }
 
 Genome* HDF5BottomSegmentIterator::getGenome()
 {
-  return _bottomSegment.getGenome();
+  return _bottomSegment->getGenome();
 }
 
 const Sequence* HDF5BottomSegmentIterator::getSequence() const
 {
-  return _bottomSegment.getSequence();
+  return _bottomSegment->getSequence();
 }
 
 Sequence* HDF5BottomSegmentIterator::getSequence()
 {
-  return _bottomSegment.getSequence();
+  return _bottomSegment->getSequence();
 }
 
 hal_index_t HDF5BottomSegmentIterator::getStartPosition() const
@@ -60,11 +63,11 @@ hal_index_t HDF5BottomSegmentIterator::getStartPosition() const
   assert (inRange() == true);
   if (_reversed == false)
   {
-    return _bottomSegment.getStartPosition() + _startOffset;
+    return _bottomSegment->getStartPosition() + _startOffset;
   }
   else
   {
-    return _bottomSegment.getStartPosition() + _bottomSegment.getLength() - 
+    return _bottomSegment->getStartPosition() + _bottomSegment->getLength() - 
        _startOffset - 1;
   }
 }
@@ -85,14 +88,14 @@ hal_index_t HDF5BottomSegmentIterator::getEndPosition() const
 hal_size_t HDF5BottomSegmentIterator::getLength() const
 {
   assert (inRange() == true);
-  assert (_endOffset + _startOffset <= _bottomSegment.getLength());
-  return _bottomSegment.getLength() - _endOffset - _startOffset;
+  assert (_endOffset + _startOffset <= _bottomSegment->getLength());
+  return _bottomSegment->getLength() - _endOffset - _startOffset;
 }
 
 void HDF5BottomSegmentIterator::getString(std::string& outString) const
 {
   assert (inRange() == true);
-  _bottomSegment.getString(outString);
+  _bottomSegment->getString(outString);
   if (_reversed == true)
   {
     reverseComplement(outString);
@@ -103,18 +106,18 @@ void HDF5BottomSegmentIterator::getString(std::string& outString) const
 void HDF5BottomSegmentIterator::setCoordinates(hal_index_t startPos, 
                                                hal_size_t length)
 {
-  _bottomSegment.setCoordinates(startPos, length);
+  _bottomSegment->setCoordinates(startPos, length);
 }
 
 hal_index_t HDF5BottomSegmentIterator::getArrayIndex() const
 {
-  return _bottomSegment.getArrayIndex();
+  return _bottomSegment->getArrayIndex();
 }
 
 bool HDF5BottomSegmentIterator::leftOf(hal_index_t genomePos) const
 {
   assert(genomePos != NULL_INDEX);
-  assert(_bottomSegment.getStartPosition() != NULL_INDEX);
+  assert(_bottomSegment->getStartPosition() != NULL_INDEX);
   if (_reversed == false)
   {
     return (hal_index_t)(getStartPosition() + getLength()) <= genomePos;
@@ -128,7 +131,7 @@ bool HDF5BottomSegmentIterator::leftOf(hal_index_t genomePos) const
 bool HDF5BottomSegmentIterator::rightOf(hal_index_t genomePos) const
 {
   assert(genomePos != NULL_INDEX);
-  assert(_bottomSegment.getStartPosition() != NULL_INDEX);
+  assert(_bottomSegment->getStartPosition() != NULL_INDEX);
   if (_reversed == false)
   {
     return getStartPosition() > genomePos;
@@ -146,12 +149,12 @@ bool HDF5BottomSegmentIterator::overlaps(hal_index_t genomePos) const
 
 bool HDF5BottomSegmentIterator::isFirst() const
 {
-  return !_reversed ? _bottomSegment.isFirst() : _bottomSegment.isLast();
+  return !_reversed ? _bottomSegment->isFirst() : _bottomSegment->isLast();
 }
 
 bool HDF5BottomSegmentIterator::isLast() const
 {
-  return !_reversed ? _bottomSegment.isLast() : _bottomSegment.isFirst();
+  return !_reversed ? _bottomSegment->isLast() : _bottomSegment->isFirst();
 }
 
 
@@ -160,77 +163,77 @@ bool HDF5BottomSegmentIterator::isLast() const
 //////////////////////////////////////////////////////////////////////////////
 hal_size_t HDF5BottomSegmentIterator::getNumChildren() const
 {
-  return _bottomSegment.getNumChildren();
+  return _bottomSegment->getNumChildren();
 }
 
 hal_index_t HDF5BottomSegmentIterator::getChildIndex(hal_size_t i) const
 {
-  return _bottomSegment.getChildIndex(i);
+  return _bottomSegment->getChildIndex(i);
 }
 
 hal_index_t HDF5BottomSegmentIterator::getChildIndexG(const Genome* childGenome)
 const
 {
-  return _bottomSegment.getChildIndexG(childGenome);
+  return _bottomSegment->getChildIndexG(childGenome);
 }
 
 bool HDF5BottomSegmentIterator::hasChild(hal_size_t child) const
 {
-  return _bottomSegment.hasChild(child);
+  return _bottomSegment->hasChild(child);
 }
 
 bool HDF5BottomSegmentIterator::hasChildG(const Genome* childGenome) const
 {
-  return _bottomSegment.hasChildG(childGenome);
+  return _bottomSegment->hasChildG(childGenome);
 }
 
 void HDF5BottomSegmentIterator::setChildIndex(hal_size_t i, 
                                               hal_index_t childIndex)
 {
-  _bottomSegment.setChildIndex(i, childIndex);
+  _bottomSegment->setChildIndex(i, childIndex);
 }
 
 bool HDF5BottomSegmentIterator::getChildReversed(hal_size_t i) const
 {
-  return _bottomSegment.getChildReversed(i);
+  return _bottomSegment->getChildReversed(i);
 }
 
 void HDF5BottomSegmentIterator::setChildReversed(hal_size_t child,
                                                  bool isReversed)
 {
-  _bottomSegment.setChildReversed(child, isReversed);
+  _bottomSegment->setChildReversed(child, isReversed);
 }
 
 hal_index_t HDF5BottomSegmentIterator::getTopParseIndex() const
 {
-  return _bottomSegment.getTopParseIndex();
+  return _bottomSegment->getTopParseIndex();
 }
 
 void HDF5BottomSegmentIterator::setTopParseIndex(hal_index_t parseIndex)
 {
-  _bottomSegment.setTopParseIndex(parseIndex);
+  _bottomSegment->setTopParseIndex(parseIndex);
 }
 
 hal_offset_t HDF5BottomSegmentIterator::getTopParseOffset() const
 {
-  return _bottomSegment.getTopParseOffset();
+  return _bottomSegment->getTopParseOffset();
 }
 
 bool HDF5BottomSegmentIterator::hasParseUp() const
 {
-  return _bottomSegment.hasParseUp();
+  return _bottomSegment->hasParseUp();
 }
 
 hal_index_t HDF5BottomSegmentIterator::getLeftChildIndex(hal_size_t i) const
 {
   assert(_startOffset == 0 && _endOffset == 0);
-  return _bottomSegment.getLeftChildIndex(i);
+  return _bottomSegment->getLeftChildIndex(i);
 }
 
 hal_index_t HDF5BottomSegmentIterator::getRightChildIndex(hal_size_t i) const
 {
   assert(_startOffset == 0 && _endOffset == 0);
-  return _bottomSegment.getRightChildIndex(i);
+  return _bottomSegment->getRightChildIndex(i);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -242,18 +245,18 @@ void HDF5BottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
   {
     if (_startOffset == 0)
     {
-      --_bottomSegment._index;
+      _bottomSegment->setArrayIndex(getGenome(), getArrayIndex() - 1);
       _endOffset = 0;
     }
     else
     {
-      _endOffset = _bottomSegment.getLength() - _startOffset;
+      _endOffset = _bottomSegment->getLength() - _startOffset;
       _startOffset = 0;
     }
     if (leftCutoff != NULL_INDEX && overlaps(leftCutoff))
     {
-      assert(_bottomSegment.getStartPosition() <= leftCutoff);
-      _startOffset = leftCutoff - _bottomSegment.getStartPosition();
+      assert(_bottomSegment->getStartPosition() <= leftCutoff);
+      _startOffset = leftCutoff - _bottomSegment->getStartPosition();
     }
   }
   
@@ -261,25 +264,26 @@ void HDF5BottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
   {
     if (_startOffset == 0)
     {
-      ++_bottomSegment._index;
+      _bottomSegment->setArrayIndex(getGenome(), getArrayIndex() + 1);
       _endOffset = 0;
     }
     else
     {
-      _endOffset = _bottomSegment.getLength() - _startOffset;
+      _endOffset = _bottomSegment->getLength() - _startOffset;
       _startOffset = 0;
     }    
-    if ((hal_size_t)_bottomSegment._index < _bottomSegment._genome->getNumBottomSegments() &&
+    if ((hal_size_t)_bottomSegment->getArrayIndex() <
+        _bottomSegment->getGenome()->getNumBottomSegments() &&
         leftCutoff != NULL_INDEX && overlaps(leftCutoff))
     {
-      _startOffset = _bottomSegment.getStartPosition() + 
-         _bottomSegment.getLength() - 1 - leftCutoff;
+      _startOffset = _bottomSegment->getStartPosition() + 
+         _bottomSegment->getLength() - 1 - leftCutoff;
     }
   }
-   assert((hal_size_t)_bottomSegment._index >= 
-          _bottomSegment._genome->getNumBottomSegments() ||
-          _bottomSegment._index < 0 || 
-          _startOffset + _endOffset <= _bottomSegment.getLength());
+  assert((hal_size_t)_bottomSegment->getArrayIndex() >= 
+         _bottomSegment->getGenome()->getNumBottomSegments() ||
+         _bottomSegment->getArrayIndex() < 0 || 
+          _startOffset + _endOffset <= _bottomSegment->getLength());
 }
 
 void HDF5BottomSegmentIterator::toRight(hal_index_t rightCutoff) const  
@@ -288,20 +292,21 @@ void HDF5BottomSegmentIterator::toRight(hal_index_t rightCutoff) const
   {
     if (_endOffset == 0)
     {
-      ++_bottomSegment._index;
+      _bottomSegment->setArrayIndex(getGenome(), getArrayIndex() + 1);
       _startOffset = 0;
     }
     else
     {
-      _startOffset =  _bottomSegment.getLength() - _endOffset;
+      _startOffset =  _bottomSegment->getLength() - _endOffset;
       _endOffset = 0;
     }
     
-    if ((hal_size_t)_bottomSegment._index < _bottomSegment._genome->getNumBottomSegments() &&
+    if ((hal_size_t)_bottomSegment->getArrayIndex() < 
+        _bottomSegment->getGenome()->getNumBottomSegments() &&
         rightCutoff != NULL_INDEX && overlaps(rightCutoff))
     {
-      _endOffset = _bottomSegment.getStartPosition() +
-         _bottomSegment.getLength() - rightCutoff - 1;
+      _endOffset = _bottomSegment->getStartPosition() +
+         _bottomSegment->getLength() - rightCutoff - 1;
     }
   }
   
@@ -309,24 +314,24 @@ void HDF5BottomSegmentIterator::toRight(hal_index_t rightCutoff) const
   {
     if (_endOffset == 0)
     {
-      --_bottomSegment._index;
+      _bottomSegment->setArrayIndex(getGenome(), getArrayIndex() - 1);
       _startOffset = 0;
     }
     else
     {
-      _startOffset =  _bottomSegment.getLength() - _endOffset;
+      _startOffset =  _bottomSegment->getLength() - _endOffset;
       _endOffset = 0;
     }
 
     if (rightCutoff != NULL_INDEX && overlaps(rightCutoff))
     {
-      _endOffset = rightCutoff - _bottomSegment.getStartPosition(); 
+      _endOffset = rightCutoff - _bottomSegment->getStartPosition(); 
     }
   }
-  assert ((hal_size_t)_bottomSegment._index >= 
-          _bottomSegment._genome->getNumBottomSegments() ||
-          _bottomSegment._index < 0 || 
-          _startOffset + _endOffset <= _bottomSegment.getLength());
+  assert ((hal_size_t)_bottomSegment->getArrayIndex() >= 
+          _bottomSegment->getGenome()->getNumBottomSegments() ||
+          _bottomSegment->getArrayIndex() < 0 || 
+          _startOffset + _endOffset <= _bottomSegment->getLength());
 }
 
 void HDF5BottomSegmentIterator::toReverse() const
@@ -338,50 +343,58 @@ void HDF5BottomSegmentIterator::toReverse() const
 
 void HDF5BottomSegmentIterator::toSite(hal_index_t position, bool slice) const
 {
-  hal_index_t len = (hal_index_t)_bottomSegment._genome->getSequenceLength();
-  hal_index_t nseg = (hal_index_t)_bottomSegment._genome->getNumBottomSegments();
+  const Genome* genome = getGenome();
+  hal_index_t len = (hal_index_t)genome->getSequenceLength();
+  hal_index_t nseg = (hal_index_t)genome->getNumBottomSegments();
 
   assert(len != 0);
   double avgLen = (double)len / (double)nseg;
   hal_index_t hint = (hal_index_t)
      min(nseg - 1., avgLen * ((double)position / (double)len));
-  _bottomSegment._index = hint;
+  _bottomSegment->setArrayIndex(genome, hint);
   _startOffset = 0;
   _endOffset = 0;
 
   // out of range
   if (position < 0)
   {
-    _bottomSegment._index = -1;
+    _bottomSegment->setArrayIndex(genome, NULL_INDEX);
     return;
   }
   else if (position >= len)
   {
-    _bottomSegment._index = len;
+    _bottomSegment->setArrayIndex(genome, len);
     return;
   }
   
   hal_index_t left = 0;
   hal_index_t right = nseg - 1;
-  assert(_bottomSegment._index  >= 0 &&  _bottomSegment._index < nseg);
+  assert(_bottomSegment->getArrayIndex() >= 0 &&  
+         _bottomSegment->getArrayIndex() < nseg);
   
   while (overlaps(position) == false)
   {
     assert(left != right);
     if (rightOf(position) == true)
     {
-      right = _bottomSegment._index;
-      _bottomSegment._index -= max((_bottomSegment._index - left) / 2,
-                                   (hal_index_t)1);
-      assert(_bottomSegment._index  >= 0 &&  _bottomSegment._index < nseg);
+      right = _bottomSegment->getArrayIndex();
+      hal_index_t delta =  max((_bottomSegment->getArrayIndex() - left) / 2,
+                               (hal_index_t)1);
+      _bottomSegment->setArrayIndex(genome, 
+                                    _bottomSegment->getArrayIndex() - delta);
+      assert(_bottomSegment->getArrayIndex()  >= 0 &&  
+             _bottomSegment->getArrayIndex() < nseg);
     }
     else
     {
       assert(leftOf(position) == true);
-      left = _bottomSegment._index;
-      _bottomSegment._index += max((right - _bottomSegment._index) / 2,
-                                   (hal_index_t)1);
-      assert(_bottomSegment._index  >= 0 &&  _bottomSegment._index < nseg);
+      left = _bottomSegment->getArrayIndex();
+      hal_index_t delta = max((right - _bottomSegment->getArrayIndex()) / 2,
+                              (hal_index_t)1);
+      _bottomSegment->setArrayIndex(genome, 
+                                    _bottomSegment->getArrayIndex() + delta);
+      assert(_bottomSegment->getArrayIndex()  >= 0 &&
+             _bottomSegment->getArrayIndex() < nseg);
     }
   }
   
@@ -389,8 +402,8 @@ void HDF5BottomSegmentIterator::toSite(hal_index_t position, bool slice) const
   
   if (slice == true)
   {
-     _startOffset = position - _bottomSegment.getStartPosition();
-     _endOffset = _bottomSegment.getStartPosition() + _bottomSegment.getLength()
+     _startOffset = position - _bottomSegment->getStartPosition();
+     _endOffset = _bottomSegment->getStartPosition() + _bottomSegment->getLength()
         - position - 1;
      if (_reversed)
      {
@@ -401,21 +414,19 @@ void HDF5BottomSegmentIterator::toSite(hal_index_t position, bool slice) const
 
 hal_offset_t HDF5BottomSegmentIterator::getStartOffset() const
 {
-  assert (inRange() == true);
   return _startOffset;
 }
 
 hal_offset_t HDF5BottomSegmentIterator::getEndOffset() const
 {
-  assert (inRange() == true);
   return _endOffset;
 }
 
 void HDF5BottomSegmentIterator::slice(hal_offset_t startOffset, 
                                       hal_offset_t endOffset) const
 {
-  assert(startOffset < _bottomSegment.getLength());
-  assert(endOffset < _bottomSegment.getLength());
+  assert(startOffset < _bottomSegment->getLength());
+  assert(endOffset < _bottomSegment->getLength());
   _startOffset = startOffset;
   _endOffset = endOffset;
 }
@@ -432,16 +443,12 @@ bool HDF5BottomSegmentIterator::getReversed() const
 void HDF5BottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
 {
   assert (inRange() == true);
-  const HDF5TopSegmentIterator* h5ts = 
-     reinterpret_cast<const HDF5TopSegmentIterator*>(ts.get());
-  _bottomSegment._genome = static_cast<HDF5Genome*>(
-    h5ts->_topSegment._genome->getParent());
-  _bottomSegment._index = h5ts->_topSegment.getParentIndex();
-  _bottomSegment._array = &_bottomSegment._genome->_bottomArray;
-  _startOffset = h5ts->_startOffset;
-  _endOffset = h5ts->_endOffset;
-  _reversed = h5ts->_reversed;
-  if (h5ts->_topSegment.getParentReversed() == true)
+  _bottomSegment->setArrayIndex(ts->getGenome()->getParent(),
+                                ts->getParentIndex());
+  _startOffset = ts->getStartOffset();
+  _endOffset = ts->getEndOffset();
+  _reversed = ts->getReversed();
+  if (ts->getParentReversed() == true)
   {
     toReverse();
   }
@@ -451,96 +458,93 @@ void
 HDF5BottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
 {
   assert (inRange() == true);
-  const HDF5TopSegmentIterator* h5ts = 
-     reinterpret_cast<const HDF5TopSegmentIterator*>(ts.get());
+
+  const Genome* genome = ts->getGenome();
+  hal_index_t index = ts->getBottomParseIndex();
   
-  _bottomSegment._genome = h5ts->_topSegment._genome;
-  _bottomSegment._index = h5ts->_topSegment.getBottomParseIndex();
-  _bottomSegment._array = &h5ts->_topSegment._genome->_bottomArray;
-  _reversed = h5ts->_reversed;
+  _bottomSegment->setArrayIndex(genome, index);
+  _reversed = ts->getReversed();
   
-  hal_index_t startPos = h5ts->getStartPosition();
-  while (startPos >= _bottomSegment.getStartPosition() + 
-         (hal_index_t)_bottomSegment.getLength())
+  hal_index_t startPos = ts->getStartPosition();
+  while (startPos >= _bottomSegment->getStartPosition() + 
+         (hal_index_t)_bottomSegment->getLength())
   {
-    ++_bottomSegment._index;
+    _bottomSegment->setArrayIndex(genome, ++index);
   }
   
   if (_reversed == false)
   {
-    _startOffset = startPos - _bottomSegment.getStartPosition();    
-    hal_index_t topEnd = _bottomSegment.getStartPosition() + 
-       (hal_index_t)_bottomSegment.getLength();
-    hal_index_t botEnd = h5ts->getStartPosition() + 
-       (hal_index_t)h5ts->getLength();
+    _startOffset = startPos - _bottomSegment->getStartPosition();    
+    hal_index_t topEnd = _bottomSegment->getStartPosition() + 
+       (hal_index_t)_bottomSegment->getLength();
+    hal_index_t botEnd = ts->getStartPosition() + 
+       (hal_index_t)ts->getLength();
     _endOffset = max((hal_index_t)0, topEnd - botEnd);
   }
   else
   {
-    _startOffset = _bottomSegment.getStartPosition() + 
-       _bottomSegment.getLength() - 1
+    _startOffset = _bottomSegment->getStartPosition() + 
+       _bottomSegment->getLength() - 1
        - startPos;
-    hal_index_t topEnd = _bottomSegment.getStartPosition();
-    hal_index_t botEnd = h5ts->getStartPosition() - 
-       (hal_index_t)h5ts->getLength() + 1;
+    hal_index_t topEnd = _bottomSegment->getStartPosition();
+    hal_index_t botEnd = ts->getStartPosition() - 
+       (hal_index_t)ts->getLength() + 1;
     _endOffset = max((hal_index_t)0, botEnd - topEnd);  
   }
-  assert (_startOffset + _endOffset <= _bottomSegment.getLength());
+  assert (_startOffset + _endOffset <= _bottomSegment->getLength());
 }
 
 BottomSegmentIteratorPtr HDF5BottomSegmentIterator::copy()
 {
   assert (inRange() == true);
-  HDF5BottomSegmentIterator* newIt = 
-     new HDF5BottomSegmentIterator(_bottomSegment._genome, 
-                                _bottomSegment._index,
-                                _startOffset,
-                                _endOffset,
-                                _reversed);
-  return BottomSegmentIteratorPtr(newIt);
+  BottomSegmentIteratorPtr newIt = 
+     getGenome()->getBottomSegmentIterator(getArrayIndex());
+  if (_reversed)
+  {
+    newIt->toReverse();
+  }
+  newIt->slice(_startOffset, _endOffset);
+  return newIt;
 }
 
 BottomSegmentIteratorConstPtr HDF5BottomSegmentIterator::copy() const
 {
   assert (inRange() == true);
-  const HDF5BottomSegmentIterator* newIt = 
-     new HDF5BottomSegmentIterator(_bottomSegment._genome, 
-                                _bottomSegment._index,
-                                _startOffset,
-                                _endOffset,
-                                _reversed);
-  return BottomSegmentIteratorConstPtr(newIt);
+  BottomSegmentIteratorConstPtr newIt = 
+     getGenome()->getBottomSegmentIterator(getArrayIndex());
+  if (_reversed)
+  {
+    newIt->toReverse();
+  }
+  newIt->slice(_startOffset, _endOffset);
+  return newIt;
 }
 
 void HDF5BottomSegmentIterator::copy(BottomSegmentIteratorConstPtr bs) const
 {
   assert(bs.get() != NULL);
-  const HDF5BottomSegmentIterator* h5bs = 
-     reinterpret_cast<const HDF5BottomSegmentIterator*>(bs.get());
-  _bottomSegment._array = h5bs->_bottomSegment._array;
-  _bottomSegment._genome = h5bs->_bottomSegment._genome;
-  _bottomSegment._index = h5bs->_bottomSegment._index;
-  _startOffset = h5bs->_startOffset;
-  _endOffset = h5bs->_endOffset;
-  _reversed = h5bs->_reversed;
+  _bottomSegment->setArrayIndex(bs->getGenome(), bs->getArrayIndex());
+  _startOffset = bs->getStartOffset();
+  _endOffset = bs->getEndOffset();
+  _reversed = bs->getReversed();
 }
 
 BottomSegment* HDF5BottomSegmentIterator::getBottomSegment()
 {
-  return &_bottomSegment;
+  // Deprecated now, but so much current code relies on these functions
+  return _bottomSegment.get();
 }
 
 const BottomSegment* HDF5BottomSegmentIterator::getBottomSegment() const
 {
-  return &_bottomSegment;
+  // Deprecated now, but so much current code relies on these functions
+  return _bottomSegment.get();
 }
 
 bool HDF5BottomSegmentIterator::equals(BottomSegmentIteratorConstPtr other) const
 {
-  const HDF5BottomSegmentIterator* h5Other = reinterpret_cast<
-     const HDF5BottomSegmentIterator*>(other.get());
-  assert(_bottomSegment.getGenome() == h5Other->_bottomSegment.getGenome());
-  return _bottomSegment._index == h5Other->_bottomSegment._index;
+  assert(_bottomSegment->getGenome() == other->getGenome());
+  return getArrayIndex() == other->getArrayIndex();
 }
 
 

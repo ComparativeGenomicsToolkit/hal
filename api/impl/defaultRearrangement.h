@@ -26,40 +26,40 @@ public:
                         hal_size_t gapThreshold = DefaultGapThreshold,
                         bool atomic = false);
 
-   ~DefaultRearrangement();
+   virtual ~DefaultRearrangement();
    
    // Rearrangement Interface Methods
-   ID getID() const;
-   hal_size_t getLength() const;
-   hal_size_t getNumContainedGaps() const;
-   hal_size_t getNumContainedGapBases() const;
-   TopSegmentIteratorConstPtr getLeftBreakpoint() const;
-   TopSegmentIteratorConstPtr getRightBreakpoint() const;
-   bool identifyFromLeftBreakpoint(TopSegmentIteratorConstPtr topSegment);
-   bool identifyDeletionFromLeftBreakpoint(
+   virtual ID getID() const;
+   virtual hal_size_t getLength() const;
+   virtual hal_size_t getNumContainedGaps() const;
+   virtual hal_size_t getNumContainedGapBases() const;
+   virtual TopSegmentIteratorConstPtr getLeftBreakpoint() const;
+   virtual TopSegmentIteratorConstPtr getRightBreakpoint() const;
+   virtual bool identifyFromLeftBreakpoint(TopSegmentIteratorConstPtr topSegment);
+   virtual bool identifyDeletionFromLeftBreakpoint(
      TopSegmentIteratorConstPtr topSegment);
-   std::pair<hal_index_t, hal_index_t> getDeletedRange() const;
-   bool identifyInsertionFromLeftBreakpoint(
+   virtual std::pair<hal_index_t, hal_index_t> getDeletedRange() const;
+   virtual bool identifyInsertionFromLeftBreakpoint(
      TopSegmentIteratorConstPtr topSegment);
-   std::pair<hal_index_t, hal_index_t> getInsertedRange() const;
-   bool identifyNext();
-   hal_size_t getGapLengthThreshold() const;
-   void setGapLengthThreshold(hal_size_t threshold);
-   bool getAtomic() const;
-   void setAtomic(bool atomic);
+   virtual std::pair<hal_index_t, hal_index_t> getInsertedRange() const;
+   virtual bool identifyNext();
+   virtual hal_size_t getGapLengthThreshold() const;
+   virtual void setGapLengthThreshold(hal_size_t threshold);
+   virtual bool getAtomic() const;
+   virtual void setAtomic(bool atomic);
 
-private:
+protected:
    
-   void resetStatus(TopSegmentIteratorConstPtr topSegment);
+   virtual void resetStatus(TopSegmentIteratorConstPtr topSegment);
    
-   bool scanNothingCycle(TopSegmentIteratorConstPtr topSegment);
-   bool scanInversionCycle(TopSegmentIteratorConstPtr topSegment);
-   bool scanInsertionCycle(TopSegmentIteratorConstPtr topSegment);
-   bool scanDeletionCycle(TopSegmentIteratorConstPtr topSegment);
-   bool scanTranslocationCycle(TopSegmentIteratorConstPtr topSegment);
-   bool scanDuplicationCycle(TopSegmentIteratorConstPtr topSegment);
+   virtual bool scanNothingCycle(TopSegmentIteratorConstPtr topSegment);
+   virtual bool scanInversionCycle(TopSegmentIteratorConstPtr topSegment);
+   virtual bool scanInsertionCycle(TopSegmentIteratorConstPtr topSegment);
+   virtual bool scanDeletionCycle(TopSegmentIteratorConstPtr topSegment);
+   virtual bool scanTranslocationCycle(TopSegmentIteratorConstPtr topSegment);
+   virtual bool scanDuplicationCycle(TopSegmentIteratorConstPtr topSegment);
 
-private:
+protected:
    
    hal_size_t _gapThreshold;
    bool _atomic;

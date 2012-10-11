@@ -46,6 +46,13 @@ DefaultGappedTopSegmentIterator::~DefaultGappedTopSegmentIterator()
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
+void DefaultGappedTopSegmentIterator::setArrayIndex(const Genome* genome, 
+                                                    hal_index_t arrayIndex) 
+  const
+{
+  setLeft(genome->getTopSegmentIterator(arrayIndex));
+}
+
 const Genome* DefaultGappedTopSegmentIterator::getGenome() const
 {
   return _left->getGenome();

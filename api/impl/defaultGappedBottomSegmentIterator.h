@@ -27,7 +27,9 @@ public:
 
    virtual ~DefaultGappedBottomSegmentIterator();
 
-  // SEGMENT INTERFACE
+   // SEGMENT INTERFACE
+   virtual void setArrayIndex(const Genome* genome, 
+                              hal_index_t arrayIndex) const;
    virtual const Genome* getGenome() const;
    virtual Genome* getGenome();
    virtual const Sequence* getSequence() const;
@@ -76,6 +78,7 @@ public:
    virtual bool getChildReversed() const;
    virtual BottomSegmentIteratorConstPtr getLeft() const;
    virtual BottomSegmentIteratorConstPtr getRight() const;
+   virtual void setLeft(BottomSegmentIteratorConstPtr bs) const;
 
 private:
    

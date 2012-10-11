@@ -30,26 +30,19 @@ public:
                          bool noDupes,
                          bool noAncestors);
    
-   ~DefaultColumnIterator();
+   virtual ~DefaultColumnIterator();
 
-   /** Move column iterator one column to the right along reference
-    * genoem sequence */
-    void toRight() const;
+   // COLUMN ITERATOR INTERFACE
+   virtual void toRight() const;
+   virtual bool lastColumn() const;
+   virtual const hal::Genome* getReferenceGenome() const;
+   virtual const hal::Sequence* getReferenceSequence() const;
+   virtual hal_index_t getReferenceSequencePosition() const;
+   virtual const ColumnMap* getColumnMap() const;
+   virtual hal_index_t getArrayIndex() const;
+   virtual void defragment() const;
 
-   bool lastColumn() const;
-
-   const hal::Genome* getReferenceGenome() const;
-   const hal::Sequence* getReferenceSequence() const;
-   hal_index_t getReferenceSequencePosition() const;
-
-   /** Get a pointer to the column map */
-   const ColumnMap* getColumnMap() const;
-
-   hal_index_t getArrayIndex() const;
-
-   void defragment() const;
-
-private:
+protected:
 
    typedef ColumnIteratorStack::LinkedBottomIterator LinkedBottomIterator;
    typedef ColumnIteratorStack::LinkedTopIterator LinkedTopIterator;
@@ -57,7 +50,7 @@ private:
    
    typedef std::map<const Genome*, PositionCache*> VisitCache;
 
-private:
+protected:
 
    void recursiveUpdate(bool init) const;
    bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
@@ -77,7 +70,7 @@ private:
    void resetColMap() const;
    void eraseColMap() const;
    
-private:
+protected:
 
    // everything's mutable to keep const behaviour consistent with
    // other iterators (which provide both const and non-const access)

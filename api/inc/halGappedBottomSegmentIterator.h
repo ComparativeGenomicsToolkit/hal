@@ -58,6 +58,12 @@ public:
     * right segment will be extended as far as possible */
    virtual BottomSegmentIteratorConstPtr getRight() const = 0;
 
+   /** Reset the gapped iterator.
+    * @param ts This will be the left segment of the current iterator. The 
+    * right segment will be extended as far as possible */
+   virtual void setLeft(BottomSegmentIteratorConstPtr bs) const = 0;
+
+
 protected:
    friend class counted_ptr<GappedBottomSegmentIterator>;
    friend class counted_ptr<const GappedBottomSegmentIterator>;

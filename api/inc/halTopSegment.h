@@ -75,8 +75,8 @@ public:
    virtual hal_index_t getRightParentIndex() const = 0;
 
 protected:
-
-   /** Destructor */
+   friend class counted_ptr<TopSegment>;
+   friend class counted_ptr<const TopSegment>;
    virtual ~TopSegment() = 0;
 };
 

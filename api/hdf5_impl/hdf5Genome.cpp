@@ -487,7 +487,10 @@ hal_size_t HDF5Genome::getNumBottomSegments() const
 TopSegmentIteratorPtr HDF5Genome::getTopSegmentIterator(hal_index_t position)
 {
   assert(position <= (hal_index_t)getNumTopSegments());
-  HDF5TopSegmentIterator* newIt = new HDF5TopSegmentIterator(this, position);                                                             
+  HDF5TopSegment* newSeg = new HDF5TopSegment(this, &_topArray, position);
+  // ownership of newSeg is passed into newIt, whose lifespan is 
+  // governed by the returned smart pointer
+  HDF5TopSegmentIterator* newIt = new HDF5TopSegmentIterator(newSeg);
   return TopSegmentIteratorPtr(newIt);
 }
 
@@ -496,8 +499,11 @@ TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
 {
   assert(position <= (hal_index_t)getNumTopSegments());
   HDF5Genome* genome = const_cast<HDF5Genome*>(this);
-  const HDF5TopSegmentIterator* newIt = 
-     new HDF5TopSegmentIterator(genome, position);
+  HDF5TopSegment* newSeg = new HDF5TopSegment(genome, &genome->_topArray, 
+                                              position);
+  // ownership of newSeg is passed into newIt, whose lifespan is 
+  // governed by the returned smart pointer
+  HDF5TopSegmentIterator* newIt = new HDF5TopSegmentIterator(newSeg);
   return TopSegmentIteratorConstPtr(newIt);
 }
 
@@ -510,8 +516,11 @@ BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
   hal_index_t position)
 {
   assert(position <= (hal_index_t)getNumBottomSegments());
-  HDF5BottomSegmentIterator* newIt = 
-     new HDF5BottomSegmentIterator(this, position);
+  HDF5BottomSegment* newSeg = new HDF5BottomSegment(this, &_bottomArray, 
+                                                    position);
+  // ownership of newSeg is passed into newIt, whose lifespan is 
+  // governed by the returned smart pointer
+  HDF5BottomSegmentIterator* newIt = new HDF5BottomSegmentIterator(newSeg);
   return BottomSegmentIteratorPtr(newIt);
 }
 
@@ -520,8 +529,11 @@ BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
 {
   assert(position <= (hal_index_t)getNumBottomSegments());
   HDF5Genome* genome = const_cast<HDF5Genome*>(this);
-  const HDF5BottomSegmentIterator* newIt = 
-     new HDF5BottomSegmentIterator(genome, position);
+  HDF5BottomSegment* newSeg = new HDF5BottomSegment(genome, &genome->_bottomArray, 
+                                                    position);
+  // ownership of newSeg is passed into newIt, whose lifespan is 
+  // governed by the returned smart pointer
+  HDF5BottomSegmentIterator* newIt = new HDF5BottomSegmentIterator(newSeg);
   return BottomSegmentIteratorConstPtr(newIt);
 }
 

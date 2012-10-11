@@ -31,19 +31,29 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
           lastColumnIndex < (hal_index_t)reference->getSequenceLength());
 
   // allocate temp iterators
-  _top = reference->getTopSegmentIterator(0);
-  _next = _top->copy();
+  if (reference->getNumTopSegments() > 0)
+  {
+    _top = reference->getTopSegmentIterator(0);
+    _next = _top->copy();
+  }
+  else if (reference->getChild(0) != NULL)
+  {
+    _top = reference->getChild(0)->getTopSegmentIterator(0);
+    _next = _top->copy();
+  }
 
   // need to allocate the rearrangement from 
   if (reference->getParent() != NULL)
   {
     _rearrangement = reference->getRearrangement();
+    _rearrangement->setAtomic(true);
   }
   else if (reference->getNumChildren() > 0)
   {
     _rearrangement = reference->getChild(0)->getRearrangement();
+    _rearrangement->setAtomic(true);
   }
-  _rearrangement->setAtomic(true);
+
   const Sequence* sequence = reference->getSequenceBySite(columnIndex);
   assert(sequence != NULL);
   _ref =sequence;    
