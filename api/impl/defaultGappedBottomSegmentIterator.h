@@ -15,7 +15,8 @@ namespace hal {
  * Default (implementation independent) implementation of 
  * GappedBottomSegmentIterator interface 
  */
-class DefaultGappedBottomSegmentIterator : public GappedBottomSegmentIterator
+class DefaultGappedBottomSegmentIterator : 
+     public virtual GappedBottomSegmentIterator
 {
 public:
 
@@ -24,51 +25,57 @@ public:
                                       hal_size_t gapThreshold,
                                       bool atomic);
 
-   ~DefaultGappedBottomSegmentIterator();
+   virtual ~DefaultGappedBottomSegmentIterator();
 
-   // Gpped Segment Iterator methods
-   hal_size_t getGapThreshold() const;
-   bool getAtomic() const;
-   hal_size_t getChildIndex() const;
-   hal_size_t getNumSegments() const;
-   hal_size_t getNumGaps() const;
-   hal_size_t getNumGapBases() const;
-   bool isLast() const;
-   bool isFirst() const;
-   hal_index_t getLeftArrayIndex() const;
-   hal_index_t getRightArrayIndex() const;
-   const Sequence* getSequence() const;
-   
-   // Segment Iterator methods
-   void toLeft(hal_index_t leftCutoff) const;
-   void toRight(hal_index_t rightCutoff) const;
-   void toReverse() const;
-   void toSite(hal_index_t position, bool slice = true) const;
-   bool hasNextParalogy() const;
-   void toNextParalogy() const;
-   hal_offset_t getStartOffset() const;
-   hal_offset_t getEndOffset() const;
-   void slice(hal_offset_t startOffset,
-              hal_offset_t endOffset) const;
-   hal_index_t getStartPosition() const;
-   hal_size_t getLength() const;
-   hal_bool_t getReversed() const;
-   void getString(std::string& outString) const;
-   bool leftOf(hal_index_t genomePos) const;
-   bool rightOf(hal_index_t genomePos) const;
-   bool overlaps(hal_index_t genomePos) const;
+  // SEGMENT INTERFACE
+   virtual const Genome* getGenome() const;
+   virtual Genome* getGenome();
+   virtual const Sequence* getSequence() const;
+   virtual Sequence* getSequence();
+   virtual hal_index_t getStartPosition() const;
+   virtual hal_index_t getEndPosition() const;
+   virtual hal_size_t getLength() const;
+   virtual void getString(std::string& outString) const;
+   virtual void setCoordinates(hal_index_t startPos, hal_size_t length);
+   virtual hal_index_t getArrayIndex() const;
+   virtual bool leftOf(hal_index_t genomePos) const;
+   virtual bool rightOf(hal_index_t genomePos) const;
+   virtual bool overlaps(hal_index_t genomePos) const;
+   virtual bool isFirst() const;
+   virtual bool isLast() const;
 
-   // GappedBottomSegmentIterator Interface Methods
-   GappedBottomSegmentIteratorPtr copy();
-   GappedBottomSegmentIteratorConstPtr copy() const;
-   void copy(GappedBottomSegmentIteratorConstPtr bs) const;
-   void toParent(GappedTopSegmentIteratorConstPtr ts) const;
-   bool equals(GappedBottomSegmentIteratorConstPtr other) const;
-   bool adjacentTo(GappedBottomSegmentIteratorConstPtr other) const;
-   bool hasChild() const;
-   bool getChildReversed() const;
-   BottomSegmentIteratorConstPtr getLeft() const;
-   BottomSegmentIteratorConstPtr getRight() const;
+   // SEGMENT ITERATOR INTERFACE
+   virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const;
+   virtual void toRight(hal_index_t rightCutoff = NULL_INDEX) const;
+   virtual void toReverse() const;
+   virtual void toSite(hal_index_t position, bool slice = true) const;
+   virtual hal_offset_t getStartOffset() const;
+   virtual hal_offset_t getEndOffset() const;
+   virtual void slice(hal_offset_t startOffset,
+                      hal_offset_t endOffset) const;
+   virtual bool getReversed() const;
+
+   // GAPPED SEGMENT ITERATOR INTERFACE
+   virtual hal_size_t getGapThreshold() const;
+   virtual bool getAtomic() const;
+   virtual hal_size_t getChildIndex() const;
+   virtual hal_size_t getNumSegments() const;
+   virtual hal_size_t getNumGaps() const;
+   virtual hal_size_t getNumGapBases() const;
+   virtual hal_index_t getLeftArrayIndex() const;
+   virtual hal_index_t getRightArrayIndex() const;
+
+   // GAPPED BOTTOM SEGMENT ITERATOR INTERFACE
+   virtual GappedBottomSegmentIteratorPtr copy();
+   virtual GappedBottomSegmentIteratorConstPtr copy() const;
+   virtual void copy(GappedBottomSegmentIteratorConstPtr ts) const;
+   virtual void toParent(GappedTopSegmentIteratorConstPtr ts) const;
+   virtual bool equals(GappedBottomSegmentIteratorConstPtr other) const;
+   virtual bool adjacentTo(GappedBottomSegmentIteratorConstPtr other) const;
+   virtual bool hasChild() const;
+   virtual bool getChildReversed() const;
+   virtual BottomSegmentIteratorConstPtr getLeft() const;
+   virtual BottomSegmentIteratorConstPtr getRight() const;
 
 private:
    

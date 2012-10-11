@@ -34,6 +34,27 @@ vector<string> hal::chopString(const string& inString,
   return outVector;
 }
 
+void hal::reverseComplement(std::string& s)
+{
+  if (!s.empty())
+  {
+    size_t n = s.length() / 2;
+    if (s.length() % 2)
+    {
+      ++n;
+    }
+    char buf;
+    size_t j;
+    for (size_t i = 0; i < n; ++i)
+    {
+      j = s.length() - 1 - i;
+      buf = reverseComplement(s[i]);
+      s[i] = reverseComplement(s[j]);
+      s[j] = buf;
+    }
+  }
+}
+
 static size_t lcaRecursive(const Genome* genome,
                            const set<const Genome*>& inputSet,
                            map<const Genome*, size_t>& table)

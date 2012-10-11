@@ -15,7 +15,7 @@ namespace hal {
 /** 
  * Interface for a bottom segment of DNA
  */
-class BottomSegment : public Segment
+class BottomSegment : virtual public Segment
 {
 public:
 
@@ -27,6 +27,18 @@ public:
     * @param i index of child to query */
    virtual hal_index_t getChildIndex(hal_size_t i) const = 0;
 
+   /** Get the index of a child segment (OR NULL_INDEX if none)
+    * @param childGenome genome of child to query */
+   virtual hal_index_t getChildIndexG(const Genome* childGenome) const = 0;
+
+   /** Test if child segment exists 
+    * @param child index of child genome */
+   virtual bool hasChild(hal_size_t child) const = 0;
+
+   /** Test if child segment exists 
+    * @param child Child genome */
+   virtual bool hasChildG(const Genome* childGenome) const = 0;
+
    /** Set the index of a child segment (OR NULL_INDEX if none)
     * @param i index of child to set 
     * @param childIndex index of segment in child to set */
@@ -35,13 +47,13 @@ public:
    /** Get whether descent segment for ith child is mapped to the 
     * reverse complement of this segment 
     * @param i index of child to query */
-   virtual hal_bool_t getChildReversed(hal_size_t i) const = 0;
+   virtual bool getChildReversed(hal_size_t i) const = 0;
 
    /** Set whether descent segment for ith child is mapped to the 
     * reverse complement of this segment 
     * @param i index of child to set 
     * @param isReverse flag */
-   virtual void setChildReversed(hal_size_t child, hal_bool_t isReversed) = 0;
+   virtual void setChildReversed(hal_size_t child, bool isReversed) = 0;
 
    /** Get index of top segment in samge genome that contains
     * this segment's start coordinate */
@@ -56,29 +68,22 @@ public:
     * this segment */
    virtual hal_offset_t getTopParseOffset() const = 0;
 
+   /** Test if there is a top parse segment in the genome that contains
+    * the start positon of the current iterator (should be true if not
+    * in root */
+   virtual bool hasParseUp() const = 0;
+
    /** Get the index of the child of the left neighbour of this segment
     * in the genome (use isLeft first to check if the left neighbour
     * is in the same sequence)
-    * @param i index of child to set */
+    * @param i index of child genome to query */
    virtual hal_index_t getLeftChildIndex(hal_size_t i) const = 0;
 
    /** Get the right of the child of the left neighbour of this segment
     * in the genome (use isRight first to check if the right neighbour
     * is in the same sequence)
-    * @param i index of child to set */
+    * @param i index of child genome to query */
    virtual hal_index_t getRightChildIndex(hal_size_t i) const = 0;
-
-   /** Test if the segment is the result of a simple deletion (ie gap): 
-    * both its left and right neighbours are adjacent in the child
-    *  (or are genome extremities) 
-    * @param i index of child genome */
-   virtual bool isGapDeletion(hal_size_t i) const = 0;
-
-   /** Test if the segment is an inversion between two sets of homologous
-    * segments.  ie its left and right neighbours' childs are adjacent
-    * to its child in the descendant, but the oriernations are different 
-    * @param i index of child genome */
-   virtual bool isSimpleInversion(hal_size_t i) const = 0;
 
 protected:
 

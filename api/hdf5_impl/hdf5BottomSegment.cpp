@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include "hdf5BottomSegment.h"
 #include "hdf5TopSegment.h"
+#include "hdf5DNAIterator.h"
 
 using namespace std;
 using namespace H5;
@@ -19,7 +20,7 @@ const size_t HDF5BottomSegment::topIndexOffset = lengthOffset + sizeof(hal_size_
 const size_t HDF5BottomSegment::firstChildOffset = topIndexOffset + sizeof(hal_index_t);
 const size_t HDF5BottomSegment::totalSize(hal_size_t numChildren)
 {
-  return firstChildOffset + numChildren * (sizeof(hal_index_t) + sizeof(hal_bool_t));
+  return firstChildOffset + numChildren * (sizeof(hal_index_t) + sizeof(bool));
 }
 
 HDF5BottomSegment::HDF5BottomSegment(HDF5Genome* genome,
@@ -37,118 +38,11 @@ HDF5BottomSegment::~HDF5BottomSegment()
   
 }
 
-bool HDF5BottomSegment::isGapDeletion(hal_size_t i) const
-{
-  if (getChildIndex(i) != NULL_INDEX)
-  {
-    return false;
-  }
-
-  HDF5Genome* childGenome =  reinterpret_cast<HDF5Genome*>(
-    _genome->getChild(i));
-
-  hal_index_t leftChildIndex = NULL_INDEX;
-  const Sequence* leftChildSequence = NULL;
-  hal_index_t rightChildIndex = NULL_INDEX;
-  const Sequence* rightChildSequence = NULL;
-
-  // walk down to child of left neighbour
-  if (isFirst() == false)
-  {
-    leftChildIndex = getLeftChildIndex(i);
-    if (leftChildIndex != NULL_INDEX)
-    {
-      HDF5TopSegment leftChild(childGenome, &childGenome->_topArray,
-                               leftChildIndex);
-      leftChildSequence = leftChild.getSequence();
-    }
-  }
-
-  // wlak down to child of right neighbour
-  if (isLast() == false)
-  {
-    rightChildIndex = getRightChildIndex(i);
-    if (rightChildIndex != NULL_INDEX)
-    {
-      HDF5TopSegment rightChild(childGenome, &childGenome->_topArray,
-                                rightChildIndex);
-      rightChildSequence = rightChild.getSequence();
-    }
-  }
-
-  // case 1) gap deletion inside a sequence
-  if (leftChildIndex != NULL_INDEX && rightChildIndex != NULL_INDEX &&
-      abs(rightChildIndex - leftChildIndex) == 1 &&
-      leftChildSequence == rightChildSequence)
-  {
-    return true;
-  }
-
-  // case 2) gap deletion at beginning of sequence
-  if (leftChildIndex == NULL_INDEX && rightChildIndex != NULL_INDEX &&
-      rightChildIndex == rightChildSequence->getTopSegmentArrayIndex())
-  {
-    return true;
-  }
-  
-  // case 3) gap insertion at end of sequence
-  if (rightChildIndex == NULL_INDEX && leftChildIndex != NULL_INDEX &&
-      leftChildIndex == leftChildSequence->getTopSegmentArrayIndex() +
-      (hal_index_t)leftChildSequence->getNumTopSegments() - 1)
-  {
-    return true;
-  }
-
-  return false;
-}
-
-bool HDF5BottomSegment::isSimpleInversion(hal_size_t i) const
-{
-  if (getChildIndex(i) == NULL_INDEX)
-  {
-    return false;
-  }
-  HDF5Genome* childGenome =  reinterpret_cast<HDF5Genome*>(
-    _genome->getChild(i));
-  HDF5TopSegment ts(childGenome, &childGenome->_topArray, getChildIndex(i));
-  return ts.isSimpleInversion();
-}
-
-H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
-{
-  // the in-memory representations and hdf5 representations 
-  // don't necessarily have to be the same, but it simplifies 
-  // testing for now. 
-  assert(PredType::NATIVE_INT64.getSize() == sizeof(hal_index_t));
-  assert(PredType::NATIVE_UINT64.getSize() == sizeof(hal_offset_t));
-  assert(PredType::NATIVE_HSIZE.getSize() == sizeof(hal_size_t));
-  assert(PredType::NATIVE_CHAR.getSize() == sizeof(hal_bool_t));
-
-  H5::CompType dataType(totalSize(numChildren));
-  dataType.insertMember("genomeIdx", genomeIndexOffset, PredType::NATIVE_INT64);
-  dataType.insertMember("length", lengthOffset, PredType::NATIVE_HSIZE);
-  dataType.insertMember("topIdx", topIndexOffset, PredType::NATIVE_INT64);
-  for(hsize_t i = 0; i < numChildren; ++i)
-  {
-    std::stringstream ss;
-    ss << i;
-    H5std_string number = ss.str();
-    dataType.insertMember("childIdx" + number, firstChildOffset + 
-                          i * (sizeof(hal_index_t) + sizeof(hal_bool_t)), 
-                          PredType::NATIVE_INT64);
-    dataType.insertMember("reverseFlag" + number, firstChildOffset + 
-                          i * (sizeof(hal_index_t) + sizeof(hal_bool_t)) +
-                          sizeof(hal_index_t), 
-                          PredType::NATIVE_CHAR);
-  }
-  return dataType;
-}
-
 hal_size_t HDF5BottomSegment::numChildrenFromDataType(
   const H5::DataType& dataType)
 {
   return (dataType.getSize() - firstChildOffset) / 
-     (sizeof(hal_index_t) + sizeof(hal_bool_t));
+     (sizeof(hal_index_t) + sizeof(bool));
 }
 
 hal_offset_t HDF5BottomSegment::getTopParseOffset() const
@@ -166,3 +60,55 @@ hal_offset_t HDF5BottomSegment::getTopParseOffset() const
   }
   return offset;
 }
+
+void HDF5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
+{
+  assert(_index >= 0);
+  if (_genome && (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
+                  startPos + length > _genome->_totalSequenceLength))
+  {
+    throw hal_exception("Trying to set bottom segment coordinate out of range");
+  }
+  
+  _array->setValue((hsize_t)_index, genomeIndexOffset, startPos);
+  _array->setValue(_index + 1, genomeIndexOffset, startPos + length);
+}
+
+void HDF5BottomSegment::getString(string& outString) const
+{
+  HDF5DNAIterator di(const_cast<HDF5Genome*>(_genome), getStartPosition());
+  di.readString(outString, getLength()); 
+}
+
+
+// HDF5 SPECIFIC
+H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
+{
+  // the in-memory representations and hdf5 representations 
+  // don't necessarily have to be the same, but it simplifies 
+  // testing for now. 
+  assert(PredType::NATIVE_INT64.getSize() == sizeof(hal_index_t));
+  assert(PredType::NATIVE_UINT64.getSize() == sizeof(hal_offset_t));
+  assert(PredType::NATIVE_HSIZE.getSize() == sizeof(hal_size_t));
+  assert(PredType::NATIVE_CHAR.getSize() == sizeof(bool));
+
+  H5::CompType dataType(totalSize(numChildren));
+  dataType.insertMember("genomeIdx", genomeIndexOffset, PredType::NATIVE_INT64);
+  dataType.insertMember("length", lengthOffset, PredType::NATIVE_HSIZE);
+  dataType.insertMember("topIdx", topIndexOffset, PredType::NATIVE_INT64);
+  for(hsize_t i = 0; i < numChildren; ++i)
+  {
+    std::stringstream ss;
+    ss << i;
+    H5std_string number = ss.str();
+    dataType.insertMember("childIdx" + number, firstChildOffset + 
+                          i * (sizeof(hal_index_t) + sizeof(bool)), 
+                          PredType::NATIVE_INT64);
+    dataType.insertMember("reverseFlag" + number, firstChildOffset + 
+                          i * (sizeof(hal_index_t) + sizeof(bool)) +
+                          sizeof(hal_index_t), 
+                          PredType::NATIVE_CHAR);
+  }
+  return dataType;
+}
+

@@ -59,7 +59,6 @@
  *
  */
 
-#include "counted_ptr.h"
 #include "halDefs.h"
 #include "halCommon.h"
 #include "halAlignmentInstance.h"

@@ -576,11 +576,11 @@ void TopSegmentIsGapTest::checkCallBack(AlignmentConstPtr alignment)
     ti = child1->getTopSegmentIterator(i);
     if (i == 8 || i == 10)
     {
-      CuAssertTrue(_testCase, ti->getTopSegment()->isGapInsertion());
+//      CuAssertTrue(_testCase, ti->getTopSegment()->isGapInsertion());
     }
     else
     {
-      CuAssertTrue(_testCase, !ti->getTopSegment()->isGapInsertion());
+//      CuAssertTrue(_testCase, !ti->getTopSegment()->isGapInsertion());
     }
   }
 }

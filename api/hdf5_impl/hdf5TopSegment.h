@@ -35,105 +35,43 @@ public:
    /** Destructor */
    ~HDF5TopSegment();
 
-   /** Get the length of the segment (number of bases) */
-   hal_size_t getLength() const;
-
-   /** Get the containing (read-only) genome */
+   // SEGMENT INTERFACE
    const Genome* getGenome() const;
-
-   /** Get the containing genome */
    Genome* getGenome();
-
-   /** Get the containing (read-only) sequence */
    const Sequence* getSequence() const;
-
-   /** Get the containing sequence */
    Sequence* getSequence();
-
-   /** Get the segment's start position in the genome */
    hal_index_t getStartPosition() const;
-
-   /** Set the segment's start position in the genome 
-    * @param startPos Start position 
-    * @param length Length */
+   hal_index_t getEndPosition() const;
+   hal_size_t getLength() const;
+   void getString(std::string& outString) const;
    void setCoordinates(hal_index_t startPos, hal_size_t length);
-
-   /** Get index of the next paralogous segment in the genome */
-   hal_index_t getNextParalogyIndex() const;
-
-   /** Set index of the next paralogous segment in the genome 
-    * @param parIdx of next segment in same genome that is 
-    * homologous to this segment */
-   void setNextParalogyIndex(hal_index_t parIdx);
-
-   /** Get flag determing if next paralogous segment aligns to the current
-    * one in the reverse complement */
-   hal_bool_t getNextParalogyReversed() const;
-
-   /** Set flag determing if the next paralogous segment is reversed
-    * @param parReversed flag */
-   void setNextParalogyReversed(hal_bool_t parReversed);
-
-   /** Get index of the homologous segmenet in the ancestral genome */
-   hal_index_t getParentIndex() const;
-   
-   /** Set the index of the homologous segment in the ancestra genome 
-    * @param parIdx parent index to set */
-   void setParentIndex(hal_index_t parIdx);
-
-   /** Check whether segment is mapped to parent's reverse complement */
-   hal_bool_t getParentReversed() const;
-
-   /** Set whether segment is mapped to parent's reverse complement 
-    * @param isReversed Flag */
-   void setParentReversed(hal_bool_t isReversed);
-
-   /** Get the index of the bottom segment in genome that contains the
-    * start coordinate of this top segment */
-   hal_index_t getBottomParseIndex() const;
-
-   /** Set the index of the bototm segment in the genome that contains the
-    * start coordinate of this top segment 
-    * @param botParseIndx index to set */
-   void setBottomParseIndex(hal_index_t botParseIdx);
-
-   /** Get the offset in the bottom parse segment that aligns with the
-    * start coordinate of this segment */
-   hal_offset_t getBottomParseOffset() const;
-
-   /** Get the index of the parent of the left neighbour of this segment
-    * returns NULL_INDEX if the left neighbour has no parent or the 
-    * current segment is the first segment in a sequence */
-   virtual hal_index_t getLeftParentIndex() const;
-
-   /** Get the index of the parent of the right neighbour of this segment
-    * returns NULL_INDEX if the right neighbour has no parent or the 
-    * current segment is the first segment in a sequence */
-   virtual hal_index_t getRightParentIndex() const;
-
-   /** Test if the segment is the result of a simple inseriton (ie gap): 
-    * both its left and right neighbours are adjacent in the parent
-    *  (or are genome extremities) */
-   bool isGapInsertion() const;
-   
-   /** Test if the segment is an inversion between two sets of homologous
-    * segments.  ie its left and right neighbours' parents are adjacent
-    * to its parent in the ancestor, but the oriernations are different */
-   bool isSimpleInversion() const;
-
-   static H5::CompType dataType();
-
-   /** Get the index of the segment in the segment array */
    hal_index_t getArrayIndex() const;
-
-   /** Check whether segment is the first segment of a sequence */
+   bool leftOf(hal_index_t genomePos) const;
+   bool rightOf(hal_index_t genomePos) const;
+   bool overlaps(hal_index_t genomePos) const;
    bool isFirst() const;
-
-   /** Check whether segment is the last segment of a sequence */
    bool isLast() const;
 
+   // TOP SEGMENT INTERFACE
+   hal_index_t getParentIndex() const;
+   bool hasParent() const;
+   void setParentIndex(hal_index_t parIdx);
+   bool getParentReversed() const;
+   void setParentReversed(bool isReversed);
+   hal_index_t getBottomParseIndex() const;
+   void setBottomParseIndex(hal_index_t botParseIdx);
+   hal_offset_t getBottomParseOffset() const;
+   bool hasParseDown() const;
+   hal_index_t getNextParalogyIndex() const;
+   bool hasNextParalogy() const;
+   void setNextParalogyIndex(hal_index_t parIdx);
+   hal_index_t getLeftParentIndex() const;
+   hal_index_t getRightParentIndex() const;
+  
+   // HDF5 SPECIFIC
+   static H5::CompType dataType();
    
-protected:
+private:
 
    static const size_t genomeIndexOffset;
    static const size_t bottomIndexOffset;
@@ -154,17 +92,9 @@ inline hal_index_t HDF5TopSegment::getStartPosition() const
   return _array->getValue<hal_index_t>(_index, genomeIndexOffset);
 }
 
-inline void 
-HDF5TopSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
+inline hal_index_t HDF5TopSegment::getEndPosition() const
 {
-  if (_genome && (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
-                  startPos + length > _genome->_totalSequenceLength))
-  {
-    throw hal_exception("Trying to set top segment coordinate out of range");
-  }
-      
-  _array->setValue(_index, genomeIndexOffset, startPos);
-  _array->setValue(_index + 1, genomeIndexOffset, startPos + length);
+  return getStartPosition() + (hal_index_t)(getLength() - 1);
 }
 
 inline hal_size_t HDF5TopSegment::getLength() const
@@ -193,9 +123,19 @@ inline Sequence* HDF5TopSegment::getSequence()
   return _genome->getSequenceBySite(getStartPosition());
 }
 
+inline bool HDF5TopSegment::hasParseDown() const
+{
+  return getBottomParseIndex() != NULL_INDEX;
+}
+
 inline hal_index_t HDF5TopSegment::getNextParalogyIndex() const
 {
   return _array->getValue<hal_index_t>(_index, parIndexOffset);
+}
+
+inline bool HDF5TopSegment::hasNextParalogy() const
+{
+  return getNextParalogyIndex() != NULL_INDEX;
 }
 
 inline void HDF5TopSegment::setNextParalogyIndex(hal_index_t parIdx)
@@ -209,17 +149,22 @@ inline hal_index_t HDF5TopSegment::getParentIndex() const
   return _array->getValue<hal_index_t>(_index, parentIndexOffset);
 }
 
+inline bool HDF5TopSegment::hasParent() const
+{
+  return getParentIndex() != NULL_INDEX;
+}
+
 inline void HDF5TopSegment::setParentIndex(hal_index_t parentIndex)
 {
   _array->setValue(_index, parentIndexOffset, parentIndex);
 }
 
-inline hal_bool_t HDF5TopSegment::getParentReversed() const
+inline bool HDF5TopSegment::getParentReversed() const
 {
-  return _array->getValue<hal_bool_t>(_index, parentReversedOffset); 
+  return _array->getValue<bool>(_index, parentReversedOffset); 
 }
 
-inline void HDF5TopSegment::setParentReversed(hal_bool_t isReversed)
+inline void HDF5TopSegment::setParentReversed(bool isReversed)
 {
   _array->setValue(_index, parentReversedOffset, isReversed);
 }
@@ -237,6 +182,21 @@ inline void HDF5TopSegment::setBottomParseIndex(hal_index_t parseIndex)
 inline hal_index_t HDF5TopSegment::getArrayIndex() const
 {
   return _index;
+}
+
+inline bool HDF5TopSegment::leftOf(hal_index_t genomePos) const
+{
+  return getEndPosition() < genomePos;
+}
+
+inline bool HDF5TopSegment::rightOf(hal_index_t genomePos) const
+{
+  return getStartPosition() > genomePos;
+}
+
+inline bool HDF5TopSegment::overlaps(hal_index_t genomePos) const
+{
+  return !leftOf(genomePos) && !rightOf(genomePos);
 }
 
 inline bool HDF5TopSegment::isFirst() const

@@ -15,23 +15,26 @@ namespace hal {
 /** 
  * Interface for a top segment of DNA
  */
-class TopSegment : public Segment
+class TopSegment : virtual public Segment
 {
 public:
   
    /** Get index of the homologous segmenet in the ancestral genome */
    virtual hal_index_t getParentIndex() const = 0;
+
+   /* Check if segment has a parent bottom segment */
+   virtual bool hasParent() const = 0;
    
    /** Set the index of the homologous segment in the ancestra genome 
     * @param parIdx parent index to set */
    virtual void setParentIndex(hal_index_t parIdx) = 0;
 
    /** Check whether segment is mapped to parent's reverse complement */
-   virtual hal_bool_t getParentReversed() const = 0;
+   virtual bool getParentReversed() const = 0;
 
    /** Set whether segment is mapped to parent's reverse complement 
     * @param isReversed Flag */
-   virtual void setParentReversed(hal_bool_t isReversed) = 0;
+   virtual void setParentReversed(bool isReversed) = 0;
 
    /** Get the index of the bottom segment in genome that contains the
     * start coordinate of this top segment */
@@ -46,9 +49,16 @@ public:
     * start coordinate of this segment */
    virtual hal_offset_t getBottomParseOffset() const = 0;
 
+   /* Check if segment has a "down" parse bottom segment in the same genome.
+    * This segment should exist by definition unless in a leaf genome */
+   virtual bool hasParseDown() const = 0;
+
    /** Get index of the next paralogous segment in the genome */
    virtual hal_index_t getNextParalogyIndex() const = 0;
 
+   /* Check if top segment has a paralgy in the same genome */
+   virtual bool hasNextParalogy() const = 0;
+   
    /** Set index of the next paralogous segment in the genome 
     * @param parIdx of next segment in same genome that is 
     * homologous to this segment */
@@ -63,16 +73,6 @@ public:
     * in the genome (use isRight right to check the left  
     * current segment is the last segment in a sequence) */
    virtual hal_index_t getRightParentIndex() const = 0;
-
-   /** Test if the segment is the result of a simple inseriton (ie gap): 
-    * both its left and right neighbours are adjacent in the parent
-    *  (or are genome extremities) */
-   virtual bool isGapInsertion() const = 0;
-
-   /** Test if the segment is an inversion between two sets of homologous
-    * segments.  ie its left and right neighbours' parents are adjacent
-    * to its parent in the ancestor, but the oriernations are different */
-   virtual bool isSimpleInversion() const = 0;
 
 protected:
 

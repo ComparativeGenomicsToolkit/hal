@@ -239,7 +239,7 @@ void hal::validateSequence(const Sequence* sequence)
   hal_size_t length = sequence->getSequenceLength();
   for (hal_size_t i = 0; i < length; ++i)
   {
-    hal_dna_t c = dnaIt->getChar();
+    char c = dnaIt->getChar();
     if (isNucleotide(c) == false)
     {
       stringstream ss;

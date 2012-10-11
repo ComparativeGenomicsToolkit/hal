@@ -15,7 +15,7 @@
 struct BottomSegmentStruct {
    hal_size_t _length;
    hal_index_t _startPosition;
-   std::vector<std::pair<hal_index_t, hal_bool_t> >_children;
+   std::vector<std::pair<hal_index_t, bool> >_children;
    hal_index_t _arrayIndex;
    hal_index_t _topParseIndex;
    void setRandom(hal_size_t numChildren);

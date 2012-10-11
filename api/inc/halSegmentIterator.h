@@ -17,7 +17,7 @@ namespace hal {
  * for top and bottom iterators.  A segment iterator implements 
  * the segment as well as the iterator interface. 
  */
-class SegmentIterator 
+class SegmentIterator : public virtual Segment
 {
 public:
 
@@ -63,47 +63,10 @@ public:
    virtual void slice(hal_offset_t startOffset = 0,
                       hal_offset_t endOffset = 0) const = 0;
 
-   /** Get the start position of the iterator's segment.  The parse
-    * offset is taken into account, so it will return the segment's
-    * start position plus the startoffset.  Note that the start position
-    * is currently always in FORWARD GENOME coordinates.  That said,
-    * if the segment iterator is in reverse orientation, the segment
-    * is read from right (startposition) to left (startposition - length -1)*/
-   virtual hal_index_t getStartPosition() const = 0;
-
-   /** Get the length of the iterator's segment.  The parse offset's
-    * are taken into account.  So this will return the segment's 
-    * length minues the sum of the two offsets */
-   virtual hal_size_t getLength() const = 0;
 
    /** Check whether iterator is on segment's reverse complement */
-   virtual hal_bool_t getReversed() const = 0;
-   
-   /** Get the DNA string corresponding to the iterator from the genome 
-    * @param outString string into which the results are copied */
-   virtual void getString(std::string& outString) const = 0;
+   virtual bool getReversed() const = 0;
 
-   /** Determine if current segment is to the left of a genome coordinate
-    * @param genomePos Index of DNA character in genome */
-   virtual bool leftOf(hal_index_t genomePos) const = 0;
-
-   /** Determine if current segment is to the right of a genome coordinate
-    * @param genomePos Index of DNA character in genome */
-   virtual bool rightOf(hal_index_t genomePos) const = 0;
-
-   /** Determine if current segment is to the right of a genome coordinate
-    * @param genomePos Index of DNA character in genome */
-   virtual bool overlaps(hal_index_t genomePos) const = 0;
-
-   /** Is the first segment of a sequence 
-    * ie has index 0 in sequence if not reversed or index n-1 if is
-    * reversed */
-   virtual bool isFirst() const = 0;
-
-   /** Is the last segment of a sequence 
-    * ie has index n-1 in sequence if not reversed or index 0 if is
-    * reversed */
-   virtual bool isLast() const = 0;
 
 protected:
    friend class counted_ptr<SegmentIterator>;

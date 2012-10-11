@@ -24,8 +24,8 @@ public:
    HDF5DNAIterator(HDF5Genome* genome, hal_index_t index);
    ~HDF5DNAIterator();
    
-   hal_dna_t getChar() const;
-   void setChar(hal_dna_t c);
+   char getChar() const;
+   void setChar(char c);
    void toLeft() const;
    void toRight() const;
    void jumpTo(hal_size_t index) const;
@@ -61,10 +61,10 @@ inline bool HDF5DNAIterator::inRange() const
      _index / 2 < (hal_index_t)_genome->_dnaArray.getSize();
 }
 
-inline hal_dna_t HDF5DNAIterator::getChar() const
+inline char HDF5DNAIterator::getChar() const
 {
   assert(inRange() == true);
-  hal_dna_t c = _genome->_dnaArray.getValue<hal_dna_t>(_index / 2, 0);
+  char c = _genome->_dnaArray.getValue<char>(_index / 2, 0);
   c = HDF5DNA::unpack(_index, c);
   if (_reversed)
   {
@@ -73,7 +73,7 @@ inline hal_dna_t HDF5DNAIterator::getChar() const
   return c;
 }
 
-inline void HDF5DNAIterator::setChar(hal_dna_t c)
+inline void HDF5DNAIterator::setChar(char c)
 {
   if (inRange() == false) 
   {
@@ -87,7 +87,7 @@ inline void HDF5DNAIterator::setChar(hal_dna_t c)
   {
     c = reverseComplement(c);
   }
-  unsigned char old = _genome->_dnaArray.getValue<hal_dna_t>(_index / 2, 0);
+  unsigned char old = _genome->_dnaArray.getValue<char>(_index / 2, 0);
   HDF5DNA::pack(c, _index, old);
   _genome->_dnaArray.setValue(_index / 2, 0, old);
   assert(getChar() == !_reversed ? c : reverseComplement(c));
@@ -113,7 +113,7 @@ inline void HDF5DNAIterator::toReverse() const
   _reversed = !_reversed;
 }
 
-inline hal_bool_t HDF5DNAIterator::getReversed() const
+inline bool HDF5DNAIterator::getReversed() const
 {
   return _reversed;
 }

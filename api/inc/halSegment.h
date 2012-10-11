@@ -20,9 +20,6 @@ class Segment
 {
 public:
  
-   /** Get the length of the segment (number of bases) */
-   virtual hal_size_t getLength() const = 0;
-
    /** Get the containing (read-only) genome */
    virtual const Genome* getGenome() const = 0;
 
@@ -35,8 +32,25 @@ public:
    /** Get the containing sequence */
    virtual Sequence* getSequence() = 0;
 
-   /** Get the segment's start position in the genome */
+   /** Get the start position of the segment. Note that the start position
+    * is currently always in FORWARD GENOME coordinates.  That said,
+    * if the underlying object is an iterator is in reverse orientation, 
+    * the segment is read from right (startposition) to left 
+    * (startposition - length -1)
+    * Similarly, if called from an iterator, the slicing offsets are taken
+    * into account */
    virtual hal_index_t getStartPosition() const = 0;
+
+   /** Get the segment's end position (start + len - 1) in the genome
+    * Slicing and reversal will apply as above for iterators */
+   virtual hal_index_t getEndPosition() const = 0;
+
+   /** Get the length of the segment (number of bases)*/
+   virtual hal_size_t getLength() const = 0;
+   
+   /** Get the DNA string corresponding to the segment from the genome 
+    * @param outString string into which the results are copied */
+   virtual void getString(std::string& outString) const = 0;
 
    /** Set the segment's start position in the genome 
     * @param startPos Start position 
@@ -46,12 +60,25 @@ public:
    /** Get the index of the segment in the segment array */
    virtual hal_index_t getArrayIndex() const = 0;
 
-   /** Check whether segment is the first segment of a sequence */
+   /** Determine if current segment is to the left of a genome coordinate
+    * @param genomePos Index of DNA character in genome */
+   virtual bool leftOf(hal_index_t genomePos) const = 0;
+
+   /** Determine if current segment is to the right of a genome coordinate
+    * @param genomePos Index of DNA character in genome */
+   virtual bool rightOf(hal_index_t genomePos) const = 0;
+
+   /** Determine if current segment is to the right of a genome coordinate
+    * @param genomePos Index of DNA character in genome */
+   virtual bool overlaps(hal_index_t genomePos) const = 0;
+
+   /** Check whether segment is the first segment of a sequence 
+    * if underlying object is reversed iterator, then checks if last*/
    virtual bool isFirst() const = 0;
 
-   /** Check whether segment is the last segment of a sequence */
+   /** Check whether segment is the last segment of a sequence
+    * if underlying object is reversed iterator, then checks if first*/
    virtual bool isLast() const = 0;
-
 
 protected:
    

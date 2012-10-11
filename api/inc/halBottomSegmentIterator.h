@@ -18,19 +18,40 @@ namespace hal {
  * interface and some new methods for jumping around the genome.  
  * Always hidden in smart pointers in the public interface. 
  */
-class BottomSegmentIterator : public SegmentIterator
+class BottomSegmentIterator : public virtual BottomSegment,
+                              public virtual SegmentIterator
 {
 public:
+   /** Return a new copy of the iterator */
    virtual BottomSegmentIteratorPtr copy() = 0;
+
+   /** Return a new copy of the iterator */
    virtual BottomSegmentIteratorConstPtr copy() const = 0;
+
+   /** Copy an input iterator.  More efficient than the above methods
+    * as no new iterator needs to be allocated 
+    * @param ts Iterator to copy */
    virtual void copy(BottomSegmentIteratorConstPtr bs) const = 0;
+
+   /** Move the iterator to the parent segment of a given iterator
+    * @param ts Iterator whose parent to move to */
    virtual void toParent(TopSegmentIteratorConstPtr ts) const = 0; 
-   virtual void toParseDown(TopSegmentIteratorConstPtr bs) const = 0;
+
+   /** Move the iterator down to the bottom segment containg the
+    * start position of the given iterator in the same genome
+    * @param ts Top iterator to parse down on */
+   virtual void toParseDown(TopSegmentIteratorConstPtr ts) const = 0;
+
+   /** DEPRECATED */
    virtual BottomSegment* getBottomSegment() = 0;
+
+   /** DEPRECATED */
    virtual const BottomSegment* getBottomSegment() const = 0;
+
+   /** Test equality with other iterator (current implementation does not
+    * take into account reverse state or offsets -- too review)
+    * @param other Iterator to test equality to */
    virtual bool equals(BottomSegmentIteratorConstPtr other) const = 0;
-   virtual bool hasChild(hal_size_t child) const = 0;
-   virtual bool hasParseUp() const = 0;
 
 protected:
    friend class counted_ptr<BottomSegmentIterator>;

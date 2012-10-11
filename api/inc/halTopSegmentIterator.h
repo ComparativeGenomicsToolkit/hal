@@ -19,23 +19,53 @@ namespace hal {
  * interface and some new methods for jumping around the genome.  
  * Always hidden in smart pointers in the public interface. 
  */
-class TopSegmentIterator : public SegmentIterator
+class TopSegmentIterator : public virtual TopSegment,
+                           public virtual SegmentIterator
 {
 public:
+   /** Return a new copy of the iterator */
    virtual TopSegmentIteratorPtr copy() = 0;
+
+   /** Return a new copy of the iterator */
    virtual TopSegmentIteratorConstPtr copy() const = 0;
+
+   /** Copy an input iterator.  More efficient than the above methods
+    * as no new iterator needs to be allocated 
+    * @param ts Iterator to copy */
    virtual void copy(TopSegmentIteratorConstPtr ts) const = 0;
 
+   /** Move the iterator to the child of a given bottom segment
+    * @param bs Bottom segment whose child will be moved to
+    * @param child Index of child in bottom segment's genome */
    virtual void toChild(BottomSegmentIteratorConstPtr bs, 
                         hal_size_t child) const = 0;
+
+   /** Move the iterator to the child of a given bottom segment
+    * @param bs Bottom segment whose child will be moved to
+    * @param childGenome genome of child in bottom segment */
+   virtual void toChildG(BottomSegmentIteratorConstPtr bs, 
+                         const Genome* childGenome) const = 0;
+   
+   /** Given a bottom segment, move to the top segment that contains
+    * its start position.  The genome remains unchanged.  The iterator
+    * will be sliced accordingly (reversed state also taken into account)
+    * @param bs Bottom segment to parse up from */
    virtual void toParseUp(BottomSegmentIteratorConstPtr bs) const = 0;
-   virtual void toSite(hal_index_t position, bool slice = true) const = 0;
+
+   /** DEPRECATED */
    virtual TopSegment* getTopSegment() = 0;
+
+   /** DEPRECATED */
    virtual const TopSegment* getTopSegment() const = 0;
+
+   /** Test equality with other iterator (current implementation does not
+    * take into account reverse state or offsets -- too review)
+    * @param other Iterator to test equality to */
    virtual bool equals(TopSegmentIteratorConstPtr other) const = 0;
-   virtual bool hasParent() const = 0;
-   virtual bool hasParseDown() const = 0;
-   virtual bool hasNextParalogy() const = 0;
+
+   /** Move iterator to next paralgous segment.  Iterator will be reversed
+   * if the next segment is in a different orientation wrt their common
+   * parent */
    virtual void toNextParalogy() const = 0;
 
 protected:

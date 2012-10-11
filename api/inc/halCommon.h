@@ -37,7 +37,7 @@ std::vector<std::string> chopString(const std::string& inString,
 /** Get the DNA reverse complement of a character.
  * If the input is not a nucleotide, then just return it as is
  * (ie no error checking) */
-inline hal_dna_t reverseComplement(hal_dna_t c)
+inline char reverseComplement(char c)
 {
   switch (c)
   {
@@ -54,10 +54,13 @@ inline hal_dna_t reverseComplement(hal_dna_t c)
   return c;
 }
 
+/** Get the reversed complement of a string (in place */
+void reverseComplement(std::string& s);
+
 /** Check if a DNA character is a valid base (or n-chracter) */
-inline hal_bool_t isNucleotide(hal_dna_t c)
+inline bool isNucleotide(char c)
 {
-  hal_bool_t result = false;
+  bool result = false;
   switch (c)
   {
   case 'A' : 
@@ -76,7 +79,7 @@ inline hal_bool_t isNucleotide(hal_dna_t c)
   return result;
 }
 
-inline bool isTransition(hal_dna_t c1, hal_dna_t c2)
+inline bool isTransition(char c1, char c2)
 {
   assert(isNucleotide(c1) && isNucleotide(c2));
   char x = std::toupper((char)c1);
@@ -92,12 +95,12 @@ inline bool isTransition(hal_dna_t c1, hal_dna_t c2)
   return false;
 }
 
-inline bool isSubstitution(hal_dna_t c1, hal_dna_t c2)
+inline bool isSubstitution(char c1, char c2)
 {
   return std::toupper(c1) != std::toupper(c2);
 }
 
-inline bool isTransversion(hal_dna_t c1, hal_dna_t c2)
+inline bool isTransversion(char c1, char c2)
 {
   char x = std::toupper((char)c1);
   char y = std::toupper((char)c2);

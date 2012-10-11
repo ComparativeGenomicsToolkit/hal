@@ -20,12 +20,12 @@ public:
 
    /** Get the DNA character at this position (if revsersed is set
     * the reverse compelement is returned */
-   virtual hal_dna_t getChar() const = 0;
+   virtual char getChar() const = 0;
 
    /** Set the DNA character at this position (if revsersed is set
     * the reverse compelement is stored
     * @param c DNA character to set */
-   virtual void setChar(hal_dna_t c) = 0;
+   virtual void setChar(char c) = 0;
 
    /** Move to previous position (equiv. to toRight if reversed)*/
    virtual void toLeft() const = 0;
