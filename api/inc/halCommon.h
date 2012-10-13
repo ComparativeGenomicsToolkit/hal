@@ -134,29 +134,6 @@ void getGenomesInSpanningTree(const std::set<const Genome*>& inputSet,
 void getGenomesInSubTree(const Genome* root, 
                          std::set<const Genome*>& outputSet);
 
-
-/** keep track of bases by storing 2d intervals 
- * For example, if we want to flag positions in a genome
- * that we have visited, this structure will be fairly 
- * efficient provided positions are clustered into intervals */
-class PositionCache
-{
-public:
-   PositionCache() : _size(0) {}
-   bool insert(hal_index_t pos);
-   bool find(hal_index_t pos) const;
-   void clear();
-   bool check() const;
-   hal_size_t size() const { return _size; }
-   hal_size_t numIntervals() const { return _set.size(); }
-protected:
-   // sorted by last index, so each interval is (last, first)
-   typedef std::map<hal_index_t, hal_index_t> IntervalSet;
-   IntervalSet _set;
-   hal_size_t _size;
-};
-
 }
 
 #endif
-
