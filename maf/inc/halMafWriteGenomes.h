@@ -32,12 +32,12 @@ public:
 
    void convert(const std::string& mafPath,
                 const std::string& refGenomeName,
+                const std::set<std::string>& targets,
                 const DimMap& dimMap,
                 AlignmentPtr alignment);
                          
 private:
    
-   std::string genomeName(const std::string fullName) const;
    MapRange getRefSequences() const;
    MapRange getNextSequences(DimMap::const_iterator jprev) const;
 

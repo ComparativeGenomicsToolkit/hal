@@ -27,7 +27,7 @@ MafScanDimensions::~MafScanDimensions()
   }
 }
 
-void MafScanDimensions::scan(const std::string& mafPath)
+void MafScanDimensions::scan(const string& mafPath, const set<string>& targets)
 {
   for (DimMap::iterator i = _dimMap.begin(); i != _dimMap.end(); ++i)
   {
@@ -35,7 +35,7 @@ void MafScanDimensions::scan(const std::string& mafPath)
   }
   _dimMap.clear();
 
-  MafScanner::scan(mafPath);
+  MafScanner::scan(mafPath, targets);
 
   updateDimensionsGlobal();
 }

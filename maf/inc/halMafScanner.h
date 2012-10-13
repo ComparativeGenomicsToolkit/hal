@@ -25,7 +25,8 @@ class MafScanner
 public:
    MafScanner();
    virtual ~MafScanner();
-   virtual void scan(const std::string& mafPath);
+   virtual void scan(const std::string& mafPath, 
+                     const std::set<std::string>& targetSet);
 
    struct Row {
       std::string _sequenceName;
@@ -44,8 +45,10 @@ protected:
    virtual void end() = 0;
    void nextLine();
    void updateMask();
+   std::string genomeName(const std::string fullName) const;
 
    std::ifstream _mafFile;
+   std::set<std::string> _targets;
    
    Block _block;
    size_t _rows;

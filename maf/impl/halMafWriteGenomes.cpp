@@ -27,6 +27,7 @@ MafWriteGenomes::~MafWriteGenomes()
 
 void MafWriteGenomes::convert(const string& mafPath,
                               const string& refGenomeName,
+                              const set<string>& targets,
                               const DimMap& dimMap,
                               AlignmentPtr alignment)
 {
@@ -36,12 +37,6 @@ void MafWriteGenomes::convert(const string& mafPath,
 
   createGenomes();
   
-}
-
-std::string MafWriteGenomes::genomeName(const std::string fullName) const
-{
-  assert(fullName.find('.') != string::npos);
-  return fullName.substr(0, fullName.find('.'));
 }
 
 MafWriteGenomes::MapRange MafWriteGenomes::getRefSequences() const

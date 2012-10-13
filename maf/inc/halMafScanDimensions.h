@@ -37,7 +37,8 @@ public:
 
    MafScanDimensions();
    ~MafScanDimensions();
-   void scan(const std::string& mafPath);
+   void scan(const std::string& mafPath, 
+             const std::set<std::string>& targetSet);
    const DimMap& getDimensions() const;
    
 protected:

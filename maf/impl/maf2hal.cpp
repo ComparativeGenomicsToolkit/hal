@@ -89,12 +89,21 @@ int main(int argc, char** argv)
       alignment->setOptionsFromParser(optionsParser);
       alignment->createNew(halPath);
     }
+    
+    vector<string> targetNames;
+    if (targetGenomes != "\"\"")
+    {
+      targetNames = chopString(targetGenomes, ",");
+    }
+    set<string> targetSet(targetNames.begin(), targetNames.end());
+    targetSet.insert(refGenomeName);
 
     MafScanDimensions dScan;
-    dScan.scan(mafPath);
+    dScan.scan(mafPath, targetSet);
     MafWriteGenomes writer;
-    writer.convert(mafPath, refGenomeName, dScan.getDimensions(), alignment);
-
+    writer.convert(mafPath, refGenomeName, targetSet, dScan.getDimensions(),
+                   alignment);
+    
     const MafScanDimensions::DimMap& dimMap = dScan.getDimensions();
     for (MafScanDimensions::DimMap::const_iterator i = dimMap.begin();
          i != dimMap.end(); ++i)

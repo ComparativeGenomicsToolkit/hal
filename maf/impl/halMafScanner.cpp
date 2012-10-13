@@ -24,8 +24,9 @@ MafScanner::~MafScanner()
 
 }
 
-void MafScanner::scan(const std::string& mafFilePath)
+void MafScanner::scan(const string& mafFilePath, const set<string>& targets)
 {
+  _targets = targets;
   _mafFile.open(mafFilePath.c_str());
 
   if (!_mafFile)
@@ -42,9 +43,12 @@ void MafScanner::scan(const std::string& mafFilePath)
     _mafFile >> buffer;
     if (buffer == "a")
     {
-      updateMask();
-      aLine();
-      nextLine();
+      if (_rows > 0)
+      {
+        updateMask();
+        aLine();
+        nextLine();
+      }
       _rows = 0;
     }
     else if (buffer == "s")
@@ -70,13 +74,27 @@ void MafScanner::scan(const std::string& mafFilePath)
            << _block[_rows - 2]._startPosition;
         throw hal_exception(ss.str());
       }
-      sLine();
+
+      if (_targets.size() > 1 && // (will always include reference) 
+          _targets.find(genomeName(row._sequenceName)) == _targets.end())
+      {
+        // genome not in targets, pretend like it never happened. 
+        --_rows;
+      }
+      else
+      {
+        sLine();
+      }
     }
     else
     {
       nextLine();
     }
   }
+   if (_rows > 0)
+   {
+     updateMask();
+   }
   end();  
   _mafFile.close();
 }
@@ -98,10 +116,12 @@ void MafScanner::updateMask()
   {
     size_t length = _block[0]._line.length();
     _mask.resize(length, false);
-    
+
+    // scan left to right
     for (size_t i = 1; i < length; ++i)
     {
-      for (size_t j = 0; j < _rows && _mask[j] == true; ++j)
+      // scan up to down
+      for (size_t j = 0; j < _rows && _mask[i] == false; ++j)
       {
         // beginning of gap run. add position of first gap to mask
         if (_block[j]._line[i] == '-' && _block[j]._line[i-1] != '-')
@@ -117,4 +137,11 @@ void MafScanner::updateMask()
     }
   }
 }
+
+std::string MafScanner::genomeName(const std::string fullName) const
+{
+  assert(fullName.find('.') != string::npos);
+  return fullName.substr(0, fullName.find('.'));
+}
+
 
