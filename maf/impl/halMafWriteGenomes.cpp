@@ -233,6 +233,7 @@ void MafWriteGenomes::initArrayIndexes(size_t col)
       }
       else
       {
+        ++rowInfo._arrayIndex;
         assert(startMap.find(row._startPosition + col - rowInfo._gaps) 
                != startMap.end());
         assert(startMap.find(row._startPosition + col - rowInfo._gaps)->second
