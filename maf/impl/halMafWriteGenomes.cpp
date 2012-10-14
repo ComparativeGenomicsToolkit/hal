@@ -35,8 +35,8 @@ void MafWriteGenomes::convert(const string& mafPath,
   _dimMap = &dimMap;
   _alignment = alignment;
 
-  createGenomes();
-  
+  createGenomes();  
+  MafScanner::scan(mafPath, targets);
 }
 
 MafWriteGenomes::MapRange MafWriteGenomes::getRefSequences() const
@@ -156,7 +156,8 @@ void MafWriteGenomes::createGenomes()
       for (DimMap::const_iterator i = curRange.first; i != curRange.second; ++i)
       {
         genomeDimensions.push_back(
-          Sequence::Info(i->first, i->second->_length, i->second->_segments, 0));
+          Sequence::Info(i->first, i->second->_length, 
+                         i->second->_segments, 0));
       }
       Genome* childGenome = _alignment->openGenome(childName);
       assert(childGenome != NULL);
@@ -166,23 +167,97 @@ void MafWriteGenomes::createGenomes()
   }
 }
 
-
-void MafWriteGenomes::scan(const std::string& mafPath)
+void MafWriteGenomes::convertBlock()
 {
+  assert(_rows > 0);
+  initArrayIndexes(0);
+  
+  
+}
 
+void MafWriteGenomes::initArrayIndexes(size_t col)
+{
+  if (col == 0)
+  {
+    if (_blockInfo.size() < _rows)
+    {
+      _blockInfo.resize(_rows);
+    }
+    for (size_t i = 0; i < _rows; ++i)
+    {
+      _blockInfo[i]._arrayIndex = NULL_INDEX;
+      _blockInfo[i]._gaps = 0;
+      assert(_dimMap->find(_block[i]._sequenceName) != _dimMap->end());
+      _blockInfo[i]._record = _dimMap->find(_block[i]._sequenceName)->second;
+    }
+  }
+  else
+  {
+    assert(_blockInfo.size() >= _rows);
+  }
+
+  // our range will be [col, last)
+  size_t last = col + 1;
+  while (last < _mask.size() && _mask[last] == true)
+  {
+    ++last;
+  }
+
+  for (size_t i = 0; i < _rows; ++i)
+  {
+    std::string& line = _block[i]._line;
+    RowInfo& rowInfo = _blockInfo[i];
+    if (line[col] == '-')
+    {
+      rowInfo._gaps += last - col;
+    }
+    else
+    {
+      if (rowInfo._arrayIndex == NULL_INDEX)
+      {
+        MafScanDimensions::Interval interval(col, last - 1);
+        pair<MafScanDimensions::IntervalList::const_iterator,
+             MafScanDimensions::IntervalList::const_iterator> range = 
+           equal_range(rowInfo._record->_intervals.begin(), 
+                       rowInfo._record->_intervals.end(), interval);
+        assert(range.first != rowInfo._record->_intervals.end());
+        assert(range.second == range.first);
+        rowInfo._arrayIndex = range.first - rowInfo._record->_intervals.begin();
+      }
+      else
+      {
+        ++rowInfo._arrayIndex;
+      }
+    }
+  }
 }
 
 void MafWriteGenomes::aLine()
 {
-
+  assert(_rows <= _block.size());
+  if (_rows > 0)
+  {
+    convertBlock();
+  }
 }
 
 void MafWriteGenomes::sLine()
 {
-
+  MafScanner::Row& row = _block[_rows-1];
+  
+  // CONVERT TO FORWARD COORDINATES
+  if (row._strand == '-')
+  {
+    row._startPosition = row._srcLength - 1 - row._length;
+    reverseComplement(row._line);
+  }
 }
 
 void MafWriteGenomes::end()
 {
-
+  assert(_rows <= _block.size());
+  if (_rows > 0)
+  {
+    convertBlock();
+  }
 }

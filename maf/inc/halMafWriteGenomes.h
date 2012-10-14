@@ -20,7 +20,9 @@
 namespace hal {
 
 /** update the HAL graph from the dimension information scanned
- * from the input MAF file, thumbing our nose at the haters as we do it! */
+ * from the input MAF file, thumbing our nose at the haters as we do it!
+ * remember that we convert lines to forward coordates as we read them
+ * (but leave the strand character unchanged as a reminder */
 class MafWriteGenomes : private MafScanner
 {
 public:
@@ -28,6 +30,7 @@ public:
    ~MafWriteGenomes();
    
    typedef MafScanDimensions::DimMap DimMap;
+   typedef MafScanDimensions::Record Record;
    typedef std::pair<DimMap::const_iterator, DimMap::const_iterator> MapRange;
 
    void convert(const std::string& mafPath,
@@ -42,18 +45,26 @@ private:
    MapRange getNextSequences(DimMap::const_iterator jprev) const;
 
    void createGenomes();
+   void convertBlock();
+   void initArrayIndexes(size_t col);
 
-   void scan(const std::string& mafPath);
    void aLine();
    void sLine();
    void end();
 
 private:
    
+   struct RowInfo 
+   {
+      hal_index_t _arrayIndex;
+      size_t _gaps;
+      const Record* _record;
+   };
+
    std::string _refName;
    const DimMap* _dimMap;
    AlignmentPtr _alignment;
-
+   std::vector<RowInfo> _blockInfo;
 };
 
 }
