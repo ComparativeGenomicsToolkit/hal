@@ -31,6 +31,7 @@ public:
    
    typedef MafScanDimensions::DimMap DimMap;
    typedef MafScanDimensions::Record Record;
+   typedef MafScanDimensions::StartMap StartMap;
    typedef std::pair<DimMap::const_iterator, DimMap::const_iterator> MapRange;
 
    void convert(const std::string& mafPath,

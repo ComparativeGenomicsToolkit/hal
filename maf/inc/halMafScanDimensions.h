@@ -22,14 +22,12 @@ namespace hal {
 class MafScanDimensions : public MafScanner
 {
 public:
-
-   typedef std::pair<hal_size_t, hal_size_t> Interval;
-   typedef std::vector<Interval> IntervalList;
+   // map start position to array index
+   typedef std::map<hal_size_t, hal_size_t> StartMap;
    struct Record 
    {
       hal_size_t _length;
-      hal_size_t _segments;
-      IntervalList _intervals;
+      StartMap _startMap;
    };
    typedef std::map<std::string, Record*> DimMap;
 
@@ -46,7 +44,7 @@ protected:
    void sLine();
    void end();
    void updateDimensionsFromBlock();
-   void updateDimensionsGlobal();
+   void updateArrayIndices();
 
 protected:
       

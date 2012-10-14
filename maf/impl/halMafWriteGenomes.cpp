@@ -128,12 +128,13 @@ void MafWriteGenomes::createGenomes()
     if (newRef == false)
     {
       updateDimensions.push_back(
-        Sequence::UpdateInfo(i->first, i->second->_segments));
+        Sequence::UpdateInfo(i->first, i->second->_startMap.size()));
     }
     else
     {
       genomeDimensions.push_back(
-        Sequence::Info(i->first, i->second->_length, 0, i->second->_segments));
+        Sequence::Info(i->first, i->second->_length, 0, 
+                       i->second->_startMap.size()));
     }    
   }
   if (newRef == false)
@@ -157,7 +158,7 @@ void MafWriteGenomes::createGenomes()
       {
         genomeDimensions.push_back(
           Sequence::Info(i->first, i->second->_length, 
-                         i->second->_segments, 0));
+                         i->second->_startMap.size(), 0));
       }
       Genome* childGenome = _alignment->openGenome(childName);
       assert(childGenome != NULL);
@@ -170,9 +171,16 @@ void MafWriteGenomes::createGenomes()
 void MafWriteGenomes::convertBlock()
 {
   assert(_rows > 0);
+  assert(_block[0]._line.length() == _mask.size());
   initArrayIndexes(0);
-  
-  
+
+  for (size_t col = 1; col < _mask.size(); ++col)
+  {
+    if (_mask[col] == true)
+    {
+      initArrayIndexes(col);
+    }
+  }
 }
 
 void MafWriteGenomes::initArrayIndexes(size_t col)
@@ -198,7 +206,7 @@ void MafWriteGenomes::initArrayIndexes(size_t col)
 
   // our range will be [col, last)
   size_t last = col + 1;
-  while (last < _mask.size() && _mask[last] == true)
+  while (last < _mask.size() && _mask[last] == false)
   {
     ++last;
   }
@@ -206,6 +214,7 @@ void MafWriteGenomes::initArrayIndexes(size_t col)
   for (size_t i = 0; i < _rows; ++i)
   {
     std::string& line = _block[i]._line;
+    Row& row = _block[i];
     RowInfo& rowInfo = _blockInfo[i];
     if (line[col] == '-')
     {
@@ -213,20 +222,21 @@ void MafWriteGenomes::initArrayIndexes(size_t col)
     }
     else
     {
+      const StartMap& startMap = rowInfo._record->_startMap;
       if (rowInfo._arrayIndex == NULL_INDEX)
       {
-        MafScanDimensions::Interval interval(col, last - 1);
-        pair<MafScanDimensions::IntervalList::const_iterator,
-             MafScanDimensions::IntervalList::const_iterator> range = 
-           equal_range(rowInfo._record->_intervals.begin(), 
-                       rowInfo._record->_intervals.end(), interval);
-        assert(range.first != rowInfo._record->_intervals.end());
-        assert(range.second == range.first);
-        rowInfo._arrayIndex = range.first - rowInfo._record->_intervals.begin();
+        assert(rowInfo._gaps <= col);
+        hal_size_t startPos = row._startPosition + col - rowInfo._gaps;
+        StartMap::const_iterator mapIt = startMap.find(startPos);
+        assert(mapIt != startMap.end());
+        rowInfo._arrayIndex = mapIt->second;
       }
       else
       {
-        ++rowInfo._arrayIndex;
+        assert(startMap.find(row._startPosition + col - rowInfo._gaps) 
+               != startMap.end());
+        assert(startMap.find(row._startPosition + col - rowInfo._gaps)->second
+               == (hal_size_t)rowInfo._arrayIndex);
       }
     }
   }

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
+#include <algorithm>
 
 #include "halMafScanner.h"
 
@@ -91,10 +92,10 @@ void MafScanner::scan(const string& mafFilePath, const set<string>& targets)
       nextLine();
     }
   }
-   if (_rows > 0)
-   {
-     updateMask();
-   }
+  if (_rows > 0)
+  {
+    updateMask();
+  }
   end();  
   _mafFile.close();
 }
@@ -115,7 +116,8 @@ void MafScanner::updateMask()
   if (_rows > 0)
   {
     size_t length = _block[0]._line.length();
-    _mask.resize(length, false);
+    _mask.resize(length);
+    fill(_mask.begin(), _mask.end(), false);
 
     // scan left to right
     for (size_t i = 1; i < length; ++i)
@@ -129,7 +131,7 @@ void MafScanner::updateMask()
           _mask[i] = true;
         }
         // end of gap run. add position of first non gap to mask
-        else if (_block[j]._line[j] != '-' && _block[j]._line[i-1] == '-')
+        else if (_block[j]._line[i] != '-' && _block[j]._line[i-1] == '-')
         {
           _mask[i] = true;
         }
