@@ -49,6 +49,7 @@ private:
    void convertBlock();
    void initBlockInfo(size_t col);
    void convertSegments(size_t col);
+   void setBlockEndSegments();
 
    void aLine();
    void sLine();
@@ -63,16 +64,17 @@ private:
       hal_size_t _start;
       hal_size_t _length;
       const Record* _record;
-      const Genome* _genome;
+      Genome* _genome;
    };
 
    std::string _refName;
+   Genome* _refGenome;
    hal_index_t _refRow;
    const DimMap* _dimMap;
    AlignmentPtr _alignment;
    std::vector<RowInfo> _blockInfo;
    TopSegmentIteratorPtr _topSegment;
-   BottomSegmentIteratorPtr _bottomSegment;
+   BottomSegmentIteratorPtr _bottomSegment, _refBottom;
    std::map<const Genome*, hal_size_t> _childIdxMap;
 };
 

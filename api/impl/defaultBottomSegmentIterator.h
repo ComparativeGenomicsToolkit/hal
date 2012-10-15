@@ -22,6 +22,8 @@ public:
    virtual ~DefaultBottomSegmentIterator();
    
    // SEGMENT INTERFACE
+   virtual void setArrayIndex(Genome* genome, 
+                              hal_index_t arrayIndex);
    virtual void setArrayIndex(const Genome* genome, 
                               hal_index_t arrayIndex) const;
    virtual const Genome* getGenome() const;

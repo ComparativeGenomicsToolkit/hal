@@ -55,6 +55,12 @@ DefaultGappedBottomSegmentIterator::~DefaultGappedBottomSegmentIterator()
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
+void DefaultGappedBottomSegmentIterator::setArrayIndex(Genome* genome, 
+                                                       hal_index_t arrayIndex)
+{
+  setLeft(genome->getBottomSegmentIterator(arrayIndex));
+}
+
 void DefaultGappedBottomSegmentIterator::setArrayIndex(const Genome* genome, 
                                                        hal_index_t arrayIndex) 
   const

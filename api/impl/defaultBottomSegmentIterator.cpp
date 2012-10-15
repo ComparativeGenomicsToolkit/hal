@@ -33,8 +33,14 @@ DefaultBottomSegmentIterator::~DefaultBottomSegmentIterator()
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
+void DefaultBottomSegmentIterator::setArrayIndex( Genome* genome, 
+                                                  hal_index_t arrayIndex)
+{
+  _bottomSegment->setArrayIndex(genome, arrayIndex);
+}
+
 void DefaultBottomSegmentIterator::setArrayIndex(const Genome* genome, 
-                                              hal_index_t arrayIndex) const
+                                                 hal_index_t arrayIndex) const
 {
   _bottomSegment->setArrayIndex(genome, arrayIndex);
 }

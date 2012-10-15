@@ -33,6 +33,12 @@ DefaultTopSegmentIterator::~DefaultTopSegmentIterator()
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
+void DefaultTopSegmentIterator::setArrayIndex( Genome* genome, 
+                                               hal_index_t arrayIndex)
+{
+  _topSegment->setArrayIndex(genome, arrayIndex);
+}
+
 void DefaultTopSegmentIterator::setArrayIndex(const Genome* genome, 
                                            hal_index_t arrayIndex) const
 {
