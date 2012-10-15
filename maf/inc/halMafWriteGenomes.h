@@ -46,6 +46,7 @@ private:
    MapRange getNextSequences(DimMap::const_iterator jprev) const;
 
    void createGenomes();
+   void initGenomes();
    void convertBlock();
    void initBlockInfo(size_t col);
    void convertSegments(size_t col);
