@@ -47,7 +47,8 @@ private:
 
    void createGenomes();
    void convertBlock();
-   void initArrayIndexes(size_t col);
+   void initBlockInfo(size_t col);
+   void convertSegments(size_t col);
 
    void aLine();
    void sLine();
@@ -59,13 +60,20 @@ private:
    {
       hal_index_t _arrayIndex;
       size_t _gaps;
+      hal_size_t _start;
+      hal_size_t _length;
       const Record* _record;
+      const Genome* _genome;
    };
 
    std::string _refName;
+   hal_index_t _refRow;
    const DimMap* _dimMap;
    AlignmentPtr _alignment;
    std::vector<RowInfo> _blockInfo;
+   TopSegmentIteratorPtr _topSegment;
+   BottomSegmentIteratorPtr _bottomSegment;
+   std::map<const Genome*, hal_size_t> _childIdxMap;
 };
 
 }

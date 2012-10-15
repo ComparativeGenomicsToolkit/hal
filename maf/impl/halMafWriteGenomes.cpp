@@ -34,7 +34,9 @@ void MafWriteGenomes::convert(const string& mafPath,
   _refName = refGenomeName;
   _dimMap = &dimMap;
   _alignment = alignment;
-
+  _topSegment = TopSegmentIteratorPtr();
+  _bottomSegment = BottomSegmentIteratorPtr();
+  _childIdxMap.clear();
   createGenomes();  
   MafScanner::scan(mafPath, targets);
 }
@@ -145,6 +147,10 @@ void MafWriteGenomes::createGenomes()
   {
     refGenome->setDimensions(genomeDimensions);
   }
+  if (refGenome->getNumBottomSegments() > 0)
+  {
+    _bottomSegment = refGenome->getBottomSegmentIterator();
+  }
 
   // do the child genome dimensions
   curRange = getNextSequences(_dimMap->begin());
@@ -163,8 +169,19 @@ void MafWriteGenomes::createGenomes()
       Genome* childGenome = _alignment->openGenome(childName);
       assert(childGenome != NULL);
       childGenome->setDimensions(genomeDimensions);
+      if (_topSegment.get() == NULL && childGenome->getNumTopSegments() > 0)
+      {
+        _topSegment = childGenome->getTopSegmentIterator();
+      }
     }
     curRange = getNextSequences(curRange.second);
+  }
+
+  // update the child idx map
+  for (size_t i = 0; i < refGenome->getNumChildren(); ++i)
+  {
+    _childIdxMap.insert(pair<const Genome*, hal_size_t>(
+                          refGenome->getChild(i), i));
   }
 }
 
@@ -172,18 +189,18 @@ void MafWriteGenomes::convertBlock()
 {
   assert(_rows > 0);
   assert(_block[0]._line.length() == _mask.size());
-  initArrayIndexes(0);
-
-  for (size_t col = 1; col < _mask.size(); ++col)
+  
+  for (size_t col = 0; col < _mask.size(); ++col)
   {
-    if (_mask[col] == true)
+    if (_mask[col] == true || col == 0)
     {
-      initArrayIndexes(col);
+      initBlockInfo(col);
+      convertSegments(col);
     }
   }
 }
 
-void MafWriteGenomes::initArrayIndexes(size_t col)
+void MafWriteGenomes::initBlockInfo(size_t col)
 {
   if (col == 0)
   {
@@ -191,12 +208,24 @@ void MafWriteGenomes::initArrayIndexes(size_t col)
     {
       _blockInfo.resize(_rows);
     }
+    _refRow = NULL_INDEX;
     for (size_t i = 0; i < _rows; ++i)
     {
       _blockInfo[i]._arrayIndex = NULL_INDEX;
       _blockInfo[i]._gaps = 0;
       assert(_dimMap->find(_block[i]._sequenceName) != _dimMap->end());
       _blockInfo[i]._record = _dimMap->find(_block[i]._sequenceName)->second;
+      string curName = genomeName(_block[i]._sequenceName);
+      _blockInfo[i]._genome = _alignment->openGenome(curName);
+      if (curName == _refName)
+      {
+        if (_refRow == NULL_INDEX || 
+            _block[i]._startPosition < _block[_refRow]._startPosition)
+        {
+          _refRow = i;
+        }
+      }
+      assert(_blockInfo[i]._genome != NULL);
     }
   }
   else
@@ -222,23 +251,57 @@ void MafWriteGenomes::initArrayIndexes(size_t col)
     }
     else
     {
+      rowInfo._start = row._startPosition + col - rowInfo._gaps;
+      rowInfo._length = last - col;
       const StartMap& startMap = rowInfo._record->_startMap;
       if (rowInfo._arrayIndex == NULL_INDEX)
       {
         assert(rowInfo._gaps <= col);
-        hal_size_t startPos = row._startPosition + col - rowInfo._gaps;
-        StartMap::const_iterator mapIt = startMap.find(startPos);
+        StartMap::const_iterator mapIt = startMap.find(rowInfo._start);
         assert(mapIt != startMap.end());
         rowInfo._arrayIndex = mapIt->second;
       }
       else
       {
         ++rowInfo._arrayIndex;
-        assert(startMap.find(row._startPosition + col - rowInfo._gaps) 
-               != startMap.end());
-        assert(startMap.find(row._startPosition + col - rowInfo._gaps)->second
+        assert(startMap.find(rowInfo._start) != startMap.end());
+        assert(startMap.find(rowInfo._start)->second
                == (hal_size_t)rowInfo._arrayIndex);
       }
+    }
+  }
+}
+
+void MafWriteGenomes::convertSegments(size_t col)
+{
+  // do the reference first
+  if (_refRow != NULL_INDEX)
+  {
+    RowInfo& rowInfo = _blockInfo[_refRow];
+    Row& row = _block[_refRow];
+    cout << rowInfo._genome->getName() << endl;
+    _bottomSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
+    _bottomSegment->setCoordinates(rowInfo._start, rowInfo._length);
+    // _bottomSegment->setString(row._line.substr(col, rowInfo._length);
+    for (size_t i = 0; i < _bottomSegment->getNumChildren(); ++i)
+    {
+      _bottomSegment->setChildIndex(i, NULL_INDEX);
+      _bottomSegment->setChildReversed(i, false);
+    }
+  }
+  
+  for (size_t i = 0; i < _rows; ++i)
+  {
+    if (i != _refRow)
+    {
+      RowInfo& rowInfo = _blockInfo[_refRow];
+      Row& row = _block[_refRow];
+      _topSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
+      assert(rowInfo._start + rowInfo._length <= 
+             _topSegment->getSequence()->getSequenceLength());
+      _topSegment->setCoordinates(rowInfo._start, rowInfo._length);
+      // _topSegment->setString(row._line.substr(col, rowInfo._length);
+      
     }
   }
 }
