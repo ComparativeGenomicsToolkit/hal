@@ -521,7 +521,8 @@ void MafWriteGenomes::sLine()
   // CONVERT TO FORWARD COORDINATES
   if (row._strand == '-')
   {
-    row._startPosition = row._srcLength - 1 - row._length;
+    hal_index_t endPosition = row._srcLength - 1 - row._startPosition;
+    row._startPosition = endPosition - row._length + 1; 
     reverseComplement(row._line);
   }
 }
