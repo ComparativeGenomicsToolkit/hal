@@ -14,7 +14,7 @@ using namespace hal;
 using namespace std;
 using namespace H5;
 
-const hsize_t HDF5CLParser::DefaultChunkSize = 2500;
+const hsize_t HDF5CLParser::DefaultChunkSize = 3500;
 const hsize_t HDF5CLParser::DefaultDeflate = 2;
 const hsize_t HDF5CLParser::DefaultCacheMDCElems = 113;
 const hsize_t HDF5CLParser::DefaultCacheRDCElems = 10009;

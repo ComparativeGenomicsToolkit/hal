@@ -129,8 +129,15 @@ void HDF5Genome::setDimensions(
     {
       _rup->set(rupGroupName, "0");
     }
+    // increase chunksize of dna array by factor of 32 because 
+    // elements so much smaller
+    DSetCreatPropList dnaProp(_dcprops);
+    hsize_t dnaChunkSize;
+    dnaProp.getChunk(1, &dnaChunkSize);
+    dnaChunkSize *= 32;
+    dnaProp.setChunk(1, &dnaChunkSize);
     _dnaArray.create(&_group, dnaArrayName, HDF5DNA::dataType(), 
-                     arrayLength, _dcprops);
+                     arrayLength, dnaProp);
   }
   if (totalSeq > 0)
   {

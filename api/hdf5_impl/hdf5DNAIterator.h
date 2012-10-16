@@ -38,8 +38,8 @@ public:
    Sequence* getSequence();
    hal_index_t getArrayIndex() const;
 
-   bool equals(DNAIteratorConstPtr other) const;
-   bool leftOf(DNAIteratorConstPtr other) const;
+   bool equals(DNAIteratorConstPtr& other) const;
+   bool leftOf(DNAIteratorConstPtr& other) const;
 
    void readString(std::string& outString, hal_size_t length) const;
 
@@ -148,7 +148,7 @@ inline hal_index_t HDF5DNAIterator::getArrayIndex() const
   return _index;
 }
 
-inline bool HDF5DNAIterator::equals(DNAIteratorConstPtr other) const
+inline bool HDF5DNAIterator::equals(DNAIteratorConstPtr& other) const
 {
   const HDF5DNAIterator* h5Other = reinterpret_cast<
      const HDF5DNAIterator*>(other.get());
@@ -156,7 +156,7 @@ inline bool HDF5DNAIterator::equals(DNAIteratorConstPtr other) const
   return _index == h5Other->_index;
 }
 
-inline bool HDF5DNAIterator::leftOf(DNAIteratorConstPtr other) const
+inline bool HDF5DNAIterator::leftOf(DNAIteratorConstPtr& other) const
 {
   const HDF5DNAIterator* h5Other = reinterpret_cast<
      const HDF5DNAIterator*>(other.get());

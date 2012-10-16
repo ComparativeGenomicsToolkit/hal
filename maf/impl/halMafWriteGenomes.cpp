@@ -202,7 +202,7 @@ void MafWriteGenomes::initGenomes()
   {
     dna = _refGenome->getDNAIterator();
     dnaEnd = _refGenome->getDNAEndIterator();
-    while (dna != dnaEnd)
+    while (!dna->equals(dnaEnd))
     {
       dna->setChar('N');
       dna->toRight();
@@ -227,7 +227,7 @@ void MafWriteGenomes::initGenomes()
     {
       dna = child->getDNAIterator();
       dnaEnd = child->getDNAEndIterator();
-      while (dna != dnaEnd)
+      while (!dna->equals(dnaEnd))
       {
         dna->setChar('N');
         dna->toRight();

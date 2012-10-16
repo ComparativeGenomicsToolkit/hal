@@ -38,20 +38,36 @@ void hal::reverseComplement(std::string& s)
 {
   if (!s.empty())
   {
-    size_t n = s.length() / 2;
-    if (s.length() % 2)
-    {
-      ++n;
-    }
+    size_t j = s.length() - 1;
+    size_t i = 0;
     char buf;
-    size_t j;
-    for (size_t i = 0; i < n; ++i)
+    do
     {
-      j = s.length() - 1 - i;
+      while (j > 0 && s[j] == '-')
+      {
+        --j;
+      }
+      while (i < s.length() - 1 && s[i] == '-')
+      {
+        ++i;
+      }
+      
+      if (i >= j || s[i] == '-' || s[j] == '-')
+      {
+        if (i == j && s[i] != '-')
+        {
+          s[i] = reverseComplement(s[i]);
+        }
+        break;
+      }
+
       buf = reverseComplement(s[i]);
       s[i] = reverseComplement(s[j]);
       s[j] = buf;
-    }
+
+      ++i;
+      --j;
+    } while (true);
   }
 }
 

@@ -63,10 +63,10 @@ public:
    virtual hal_index_t getArrayIndex() const = 0;
 
    /** Compare (array indexes) of two iterators */
-   virtual bool equals(DNAIteratorConstPtr other) const = 0;
+   virtual bool equals(DNAIteratorConstPtr& other) const = 0;
 
    /** Compare (array indexes) of two iterators */
-   virtual bool leftOf(DNAIteratorConstPtr other) const = 0;
+   virtual bool leftOf(DNAIteratorConstPtr& other) const = 0;
 
 protected:
 
@@ -77,46 +77,13 @@ protected:
 
 inline DNAIterator::~DNAIterator() {}
 
-inline bool operator==(DNAIteratorConstPtr p1,
-                       DNAIteratorConstPtr p2) 
-{
-  if (p1.get() == NULL || p2.get() == NULL)
-  {
-    return p1.get() == NULL && p2.get() == NULL;
-  }
-  return p1->equals(p2);
-}
-
-inline bool operator!=(DNAIteratorConstPtr p1,
-                       DNAIteratorConstPtr p2)
-{
-  return !(p1 == p2);
-}
-
-inline bool operator<(DNAIteratorConstPtr p1,
-                      DNAIteratorConstPtr p2)
-{
-  if (p1.get() == NULL && p2.get() == NULL)
-  {
-    return false;
-  }
-  else if (p1.get() == NULL || p2.get() == NULL)
-  {
-    return p1.get() == NULL;
-  }
-  else
-  {
-    return p1->leftOf(p2);
-  }
-}
-
 }
 
 #ifndef NDEBUG
 #include "halGenome.h"
 namespace hal {
 inline std::ostream& operator<<(std::ostream& os, 
-                                DNAIteratorConstPtr dna)
+                                const DNAIterator* dna)
 {
   const Genome* genome = dna->getGenome();
   os << "dna: ";
