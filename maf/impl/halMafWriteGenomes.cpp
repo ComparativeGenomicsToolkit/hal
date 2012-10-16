@@ -35,6 +35,7 @@ void MafWriteGenomes::convert(const string& mafPath,
   _dimMap = &dimMap;
   _alignment = alignment;
   _topSegment = TopSegmentIteratorPtr();
+  _paraTop = TopSegmentIteratorPtr();
   _bottomSegment = BottomSegmentIteratorPtr();
   _refBottom = BottomSegmentIteratorPtr();
   _childIdxMap.clear();
@@ -176,6 +177,7 @@ void MafWriteGenomes::createGenomes()
       if (_topSegment.get() == NULL && childGenome->getNumTopSegments() > 0)
       {
         _topSegment = childGenome->getTopSegmentIterator();
+        _paraTop = childGenome->getTopSegmentIterator();
       }
     }
     curRange = getNextSequences(curRange.second);
@@ -185,7 +187,7 @@ void MafWriteGenomes::createGenomes()
   for (size_t i = 0; i < _refGenome->getNumChildren(); ++i)
   {
     Genome* child = _refGenome->getChild(i);
-    _childIdxMap.insert(pair<const Genome*, hal_size_t>(child, i));
+    _childIdxMap.insert(pair<Genome*, hal_size_t>(child, i));
   }
 }
 
@@ -249,6 +251,8 @@ void MafWriteGenomes::convertBlock()
   assert(_rows > 0);
   assert(_block[0]._line.length() == _mask.size());
   
+  initParaMap();
+
   for (size_t col = 0; col < _mask.size(); ++col)
   {
     if (_mask[col] == true || col == 0)
@@ -336,6 +340,27 @@ void MafWriteGenomes::initBlockInfo(size_t col)
   }
 }
 
+void MafWriteGenomes::initParaMap()
+{
+  for (ParaMap::iterator pIt = _paraMap.begin(); pIt != _paraMap.end(); ++pIt)
+  {
+    pIt->second.clear();
+  }
+
+  for (size_t i = 0; i < _rows; ++i)
+  {
+    Row& row = _block[i];
+    Genome* genome = _alignment->openGenome(genomeName(row._sequenceName));
+    assert(genome != NULL);
+    Sequence* sequence = genome->getSequence(row._sequenceName);
+    assert(sequence != NULL);
+    Paralogy para = {sequence->getStartPosition() + row._startPosition, i};
+    pair<ParaMap::iterator, bool> res = _paraMap.insert(
+      pair<Genome*, ParaSet>(genome, ParaSet()));
+    res.first->second.insert(para);    
+  }
+}
+
 void MafWriteGenomes::convertSegments(size_t col)
 {
   // do the reference first
@@ -345,7 +370,8 @@ void MafWriteGenomes::convertSegments(size_t col)
     RowInfo& rowInfo = _blockInfo[_refRow];
     Row& row = _block[_refRow];
     _refBottom->setArrayIndex(_refGenome, rowInfo._arrayIndex);
-    seq = _refBottom->getSequence();
+    seq =  _refGenome->getSequence(row._sequenceName);
+    assert(seq != NULL);
     _refBottom->setCoordinates(seq->getStartPosition() + rowInfo._start, 
                                rowInfo._length);
     seq->setSubString(
@@ -360,10 +386,11 @@ void MafWriteGenomes::convertSegments(size_t col)
       RowInfo& rowInfo = _blockInfo[i];
       Row& row = _block[i];
       Genome* genome = rowInfo._genome;
+      seq = genome->getSequence(row._sequenceName);
+      assert(seq != NULL);
       if (genome == _refGenome)
       {
         _bottomSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
-        seq = _bottomSegment->getSequence();
         _bottomSegment->setCoordinates(seq->getStartPosition() + rowInfo._start,
                                        rowInfo._length);
         seq->setSubString(
@@ -373,7 +400,6 @@ void MafWriteGenomes::convertSegments(size_t col)
       else
       {
         _topSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
-        seq = _topSegment->getSequence();
         _topSegment->setCoordinates(seq->getStartPosition() + rowInfo._start,
                                     rowInfo._length);   
         seq->setSubString(
@@ -387,11 +413,46 @@ void MafWriteGenomes::convertSegments(size_t col)
           _refBottom->setChildReversed(childIndex, reversed);
           _topSegment->setParentIndex(_refBottom->getArrayIndex());
           _topSegment->setParentReversed(reversed);
-        }
-        else
-        {
+          updateParalogy(i);
         }
       }
+    }
+  }
+}
+ 
+// _top segment needs to be coherent -- we expect its alreay set. 
+// only update paralogy if it's already been created (ie previous row)
+void MafWriteGenomes::updateParalogy(size_t i)
+{
+  RowInfo& rowInfo = _blockInfo[i];
+  Row& row = _block[i];
+
+  ParaMap::iterator pIt = _paraMap.find(rowInfo._genome);
+  assert(pIt != _paraMap.end());
+  ParaSet& paraSet = pIt->second;
+  if (paraSet.size() > 1)
+  {
+    Sequence* sequence = rowInfo._genome->getSequence(row._sequenceName);
+    assert(sequence != NULL);
+    Paralogy query = {sequence->getStartPosition() + row._startPosition, 0};
+    ParaSet::iterator sIt = paraSet.find(query);
+    assert(sIt != paraSet.end());
+
+    ParaSet::iterator next = circularNext(i, paraSet, sIt);
+    if (next->_row < i)
+    {
+      RowInfo& nextInfo = _blockInfo[next->_row];
+      assert(nextInfo._length > 0);
+      _topSegment->setNextParalogyIndex(nextInfo._arrayIndex);
+    }
+
+    ParaSet::iterator prev = circularPrev(i, paraSet, sIt);
+    if (prev->_row < i)
+    {
+      RowInfo& prevInfo = _blockInfo[prev->_row];
+      assert(prevInfo._length > 0);
+      _paraTop->setArrayIndex(prevInfo._genome, prevInfo._arrayIndex);
+      _paraTop->setNextParalogyIndex(rowInfo._arrayIndex);
     }
   }
 }
@@ -414,25 +475,30 @@ void MafWriteGenomes::setBlockEndSegments()
         StartMap::const_iterator mapIt = startMap.find(start);
         hal_index_t arrayIndex = mapIt->second;
         ++mapIt;
+        hal_index_t length;
         if (mapIt != startMap.end())
         {
-          hal_index_t length = mapIt->first - start;
-          assert(length > 0);
-          assert(start + length <= (hal_index_t)row._srcLength);
-          if (rowInfo._genome == _refGenome)
-          {
-            _bottomSegment->setArrayIndex(rowInfo._genome, arrayIndex);
-            Sequence* seq = _bottomSegment->getSequence();
-            _bottomSegment->setCoordinates(seq->getStartPosition() + start, 
-                                           length);
-          }
-          else
-          {
-            _topSegment->setArrayIndex(rowInfo._genome, arrayIndex);
-            Sequence* seq = _topSegment->getSequence();
-            _topSegment->setCoordinates(seq->getStartPosition() + start,
-                                        length);
-          }
+          length = mapIt->first - start;
+        }
+        else
+        {
+          length = row._srcLength - start;
+        }
+        assert(length > 0);
+        assert(start + length <= (hal_index_t)row._srcLength);
+        if (rowInfo._genome == _refGenome)
+        {
+          _bottomSegment->setArrayIndex(rowInfo._genome, arrayIndex);
+          Sequence* seq = _bottomSegment->getSequence();
+          _bottomSegment->setCoordinates(seq->getStartPosition() + start, 
+                                         length);
+        }
+        else
+        {
+          _topSegment->setArrayIndex(rowInfo._genome, arrayIndex);
+          Sequence* seq = _topSegment->getSequence();
+          _topSegment->setCoordinates(seq->getStartPosition() + start,
+                                      length);
         }
       }
     }
@@ -467,4 +533,42 @@ void MafWriteGenomes::end()
   {
     convertBlock();
   }
+}
+
+MafWriteGenomes::ParaSet::iterator 
+MafWriteGenomes::circularNext(size_t row, ParaSet& paraSet, ParaSet::iterator i)
+{
+  ParaSet::iterator j = i;
+  do
+  {
+    ++j;
+    if (j == paraSet.end())
+    {
+      j = paraSet.begin();
+    }
+    if (_blockInfo[j->_row]._length > 0)
+    {
+      break;
+    }
+  } while (i != j);
+  return j;
+}
+
+MafWriteGenomes::ParaSet::iterator
+MafWriteGenomes::circularPrev(size_t row, ParaSet& paraSet, ParaSet::iterator i)
+{
+  ParaSet::iterator j = i;
+  do
+  {
+    if (j == paraSet.begin())
+    {
+      j = paraSet.end();
+    }
+    --j;
+    if (_blockInfo[j->_row]._length > 0)
+    {
+      break;
+    }
+  } while (i != j);
+  return j;
 }

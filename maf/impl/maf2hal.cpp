@@ -9,6 +9,7 @@
 #include <fstream>
 #include "halMafScanDimensions.h"
 #include "halMafWriteGenomes.h"
+#include "halMafScanReference.h"
 
 using namespace std;
 using namespace hal;
@@ -17,8 +18,10 @@ static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->addArgument("mafFile", "output maf file");
-  optionsParser->addArgument("refGenome", "name of reference genome in MAF");
   optionsParser->addArgument("halFile", "input hal file");
+  optionsParser->addOption("refGenome", "name of reference genome in MAF "
+                           "(first found if empty)",
+                           "\"\"");
   optionsParser->addOption("targetGenomes",
                            "comma-separated (no spaces) list of target genomes "
                            "(others are excluded) (vist all if empty)",
@@ -46,7 +49,7 @@ int main(int argc, char** argv)
     optionsParser->parseOptions(argc, argv);
     halPath = optionsParser->getArgument<string>("halFile");
     mafPath = optionsParser->getArgument<string>("mafFile");
-    refGenomeName = optionsParser->getArgument<string>("refGenome");
+    refGenomeName = optionsParser->getOption<string>("refGenome");
     targetGenomes = optionsParser->getOption<string>("targetGenomes");
     append = optionsParser->getFlag("append");
   }
@@ -67,7 +70,16 @@ int main(int argc, char** argv)
     {
       throw hal_exception("Error opening HAL file: " + halPath);
     }
-    
+
+    if (refGenomeName ==  "\"\"")
+    {
+      MafScanReference nameGetter;
+      refGenomeName = nameGetter.getRefName(mafPath);
+      if (refGenomeName.empty())
+      {
+        throw hal_exception("Unable to find a single genome name in maf file");
+      }
+    }
     AlignmentPtr alignment;
     if (append == true)
     {

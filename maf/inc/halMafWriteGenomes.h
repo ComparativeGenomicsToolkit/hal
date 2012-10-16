@@ -49,7 +49,9 @@ private:
    void initGenomes();
    void convertBlock();
    void initBlockInfo(size_t col);
+   void initParaMap();
    void convertSegments(size_t col);
+   void updateParalogy(size_t i);
    void setBlockEndSegments();
 
    void aLine();
@@ -68,15 +70,35 @@ private:
       Genome* _genome;
    };
 
+   struct Paralogy
+   {
+      hal_index_t _start;
+      size_t _row;
+      bool operator<(const Paralogy& p) const { return _start < p._start; }
+   };
+   typedef std::set<Paralogy> ParaSet;
+   typedef std::map<Genome*, ParaSet> ParaMap;
+
+private:
+
+   ParaSet::iterator circularNext(size_t row, ParaSet& paraSet, 
+                                  ParaSet::iterator i);
+   ParaSet::iterator circularPrev(size_t row, ParaSet& paraSet,
+                                  ParaSet::iterator i);
+
+private:
+
    std::string _refName;
    Genome* _refGenome;
    hal_index_t _refRow;
    const DimMap* _dimMap;
    AlignmentPtr _alignment;
    std::vector<RowInfo> _blockInfo;
-   TopSegmentIteratorPtr _topSegment;
+   TopSegmentIteratorPtr _topSegment, _paraTop;
    BottomSegmentIteratorPtr _bottomSegment, _refBottom;
-   std::map<const Genome*, hal_size_t> _childIdxMap;
+   std::map<Genome*, hal_size_t> _childIdxMap;
+   ParaMap _paraMap;
+   
 };
 
 }
