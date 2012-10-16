@@ -150,7 +150,7 @@ void MafScanDimensions::updateDimensionsFromBlock()
       hal_size_t start = row._startPosition;
       if (row._strand == '-')
       {
-        start = row._srcLength - 1 - row._startPosition;
+        start = row._srcLength - 1 - (row._startPosition + row._length - 1);
       }
       startIndex.first = start;
       rec->_startMap.insert(startIndex);
