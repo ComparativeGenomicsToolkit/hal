@@ -245,6 +245,7 @@ void MafWriteGenomes::initGenomes()
       }
     }
   }
+  cout << "initialization done" << endl;
 }
 
 void MafWriteGenomes::convertBlock()
