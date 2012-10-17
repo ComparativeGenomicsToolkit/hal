@@ -18,7 +18,7 @@ const hsize_t HDF5CLParser::DefaultChunkSize = 1000;
 const hsize_t HDF5CLParser::DefaultDeflate = 2;
 const hsize_t HDF5CLParser::DefaultCacheMDCElems = 113;
 const hsize_t HDF5CLParser::DefaultCacheRDCElems = 599999;
-const hsize_t HDF5CLParser::DefaultCacheRDCBytes = 52428800;
+const hsize_t HDF5CLParser::DefaultCacheRDCBytes = 15728640;
 const double HDF5CLParser::DefaultCacheW0 = 0.75;
 
 HDF5CLParser::HDF5CLParser(bool createOptions) :
