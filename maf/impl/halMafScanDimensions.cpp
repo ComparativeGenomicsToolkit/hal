@@ -194,7 +194,8 @@ void MafScanDimensions::updateDimensionsFromBlock()
 void MafScanDimensions::updateArrayIndices()
 {
   string curName, prevName;
-  hal_size_t arrayIndex, prevIndex;
+  hal_size_t arrayIndex = 0;
+  hal_size_t prevIndex = 0;
   for (DimMap::iterator i = _dimMap.begin(); i != _dimMap.end(); ++i)
   {
     assert(i->second != NULL);
