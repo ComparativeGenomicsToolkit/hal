@@ -133,13 +133,13 @@ void MafWriteGenomes::createGenomes()
     if (newRef == false)
     {
       updateDimensions.push_back(
-        Sequence::UpdateInfo(i->first, i->second->_startMap.size()));
+        Sequence::UpdateInfo(i->first, i->second->_numSegments));
     }
     else
     {
       genomeDimensions.push_back(
         Sequence::Info(i->first, i->second->_length, 0, 
-                       i->second->_startMap.size()));
+                       i->second->_numSegments));
     }    
   }
   if (newRef == false)
@@ -168,7 +168,7 @@ void MafWriteGenomes::createGenomes()
       {
         genomeDimensions.push_back(
           Sequence::Info(i->first, i->second->_length, 
-                         i->second->_startMap.size(), 0));
+                         i->second->_numSegments, 0));
       }
       Genome* childGenome = _alignment->openGenome(childName);
       assert(childGenome != NULL);
@@ -317,18 +317,22 @@ void MafWriteGenomes::initBlockInfo(size_t col)
       const StartMap& startMap = rowInfo._record->_startMap;
       if (rowInfo._arrayIndex == NULL_INDEX)
       {
+        assert(rowInfo._start == row._startPosition);
         assert(rowInfo._gaps <= col);
         StartMap::const_iterator mapIt = startMap.find(rowInfo._start);
         assert(mapIt != startMap.end());
-        rowInfo._arrayIndex = mapIt->second;
+        rowInfo._arrayIndex = mapIt->second._index;
         assert(rowInfo._arrayIndex >= 0);
       }
       else
       {
         ++rowInfo._arrayIndex;
-        assert(startMap.find(rowInfo._start) != startMap.end());
-        assert(startMap.find(rowInfo._start)->second
-               == (hal_size_t)rowInfo._arrayIndex);
+#ifndef NDEBUG
+        StartMap::const_iterator mapIt = startMap.find(row._startPosition);
+        assert(mapIt != startMap.end());
+        assert(rowInfo._arrayIndex - mapIt->second._index <
+               mapIt->second._count);
+#endif
       }
       if (rowInfo._genome == _refGenome && rowInfo._length > 0 && 
           (_refRow == NULL_INDEX || 
@@ -391,6 +395,7 @@ void MafWriteGenomes::convertSegments(size_t col)
       if (genome == _refGenome)
       {
         _bottomSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
+        assert(rowInfo._start + rowInfo._length <= seq->getSequenceLength());
         _bottomSegment->setCoordinates(seq->getStartPosition() + rowInfo._start,
                                        rowInfo._length);
         seq->setSubString(
@@ -400,6 +405,7 @@ void MafWriteGenomes::convertSegments(size_t col)
       else
       {
         _topSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
+        assert(rowInfo._start + rowInfo._length <= seq->getSequenceLength());
         _topSegment->setCoordinates(seq->getStartPosition() + rowInfo._start,
                                     rowInfo._length);   
         seq->setSubString(
@@ -411,9 +417,11 @@ void MafWriteGenomes::convertSegments(size_t col)
           bool reversed = row._strand != _block[_refRow]._strand;
           _refBottom->setChildIndex(childIndex, rowInfo._arrayIndex);
           _refBottom->setChildReversed(childIndex, reversed);
+          assert(_topSegment->getParentIndex() == NULL_INDEX);
           _topSegment->setParentIndex(_refBottom->getArrayIndex());
           _topSegment->setParentReversed(reversed);
           updateParalogy(i);
+          assert(_topSegment->getLength() == _refBottom->getLength());
         }
       }
     }
@@ -473,32 +481,40 @@ void MafWriteGenomes::setBlockEndSegments()
       {
         const StartMap& startMap = rowInfo._record->_startMap;
         StartMap::const_iterator mapIt = startMap.find(start);
-        hal_index_t arrayIndex = mapIt->second;
-        ++mapIt;
-        hal_index_t length;
-        if (mapIt != startMap.end())
+        // count greater than 1 means already segmented
+        if (mapIt->second._count == 1)
         {
-          length = mapIt->first - start;
-        }
-        else
-        {
-          length = row._srcLength - start;
-        }
-        assert(length > 0);
-        assert(start + length <= (hal_index_t)row._srcLength);
-        if (rowInfo._genome == _refGenome)
-        {
-          _bottomSegment->setArrayIndex(rowInfo._genome, arrayIndex);
-          Sequence* seq = _bottomSegment->getSequence();
-          _bottomSegment->setCoordinates(seq->getStartPosition() + start, 
-                                         length);
-        }
-        else
-        {
-          _topSegment->setArrayIndex(rowInfo._genome, arrayIndex);
-          Sequence* seq = _topSegment->getSequence();
-          _topSegment->setCoordinates(seq->getStartPosition() + start,
-                                      length);
+          hal_index_t arrayIndex = mapIt->second._index;
+          ++mapIt;
+          hal_index_t length;
+          if (mapIt != startMap.end())
+          {
+            length = mapIt->first - start;
+          }
+          else
+          {
+            length = row._srcLength - start;
+          }
+          assert(length > 0);
+          assert(start + length <= (hal_index_t)row._srcLength);
+          if (rowInfo._genome == _refGenome)
+          {
+            _bottomSegment->setArrayIndex(rowInfo._genome, arrayIndex);
+            Sequence* seq = _bottomSegment->getSequence();
+            assert((hal_size_t)start + length <= seq->getSequenceLength());
+            _bottomSegment->setCoordinates(seq->getStartPosition() + start, 
+                                           length);
+          }
+          else
+          {
+            _topSegment->setArrayIndex(rowInfo._genome, arrayIndex);
+            Sequence* seq = _topSegment->getSequence();
+            assert(!_topSegment->hasParent() || _topSegment->getLength() ==
+                   (hal_size_t)length);
+            assert((hal_size_t)start + length <= seq->getSequenceLength());
+            _topSegment->setCoordinates(seq->getStartPosition() + start,
+                                        length);
+          }
         }
       }
     }

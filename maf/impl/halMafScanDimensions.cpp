@@ -125,7 +125,10 @@ void MafScanDimensions::updateDimensionsFromBlock()
     pair<string, Record*> newRec(row._sequenceName, NULL);
     pair<DimMap::iterator, bool> result = _dimMap.insert(newRec);
     Record*& rec = result.first->second;
-    pair<hal_size_t, hal_size_t> startIndex(0, (hal_size_t)-1);
+    pair<hal_size_t, ArrayInfo> startIndex;
+    startIndex.first = 0;
+    startIndex.second._index = 0; 
+    startIndex.second._count = 1;
     if (result.second == false && row._srcLength != rec->_length)
     {
       assert(rec != NULL);
@@ -140,6 +143,7 @@ void MafScanDimensions::updateDimensionsFromBlock()
       rec = new Record(); 
       startIndex.first = 0;
       rec->_startMap.insert(startIndex);
+      rec->_numSegments = 0;
     }
     rec->_length = row._srcLength;
     
@@ -148,13 +152,14 @@ void MafScanDimensions::updateDimensionsFromBlock()
       // add the begnning of the line as a segment start position
       // also add the last + 1 segments as a start position if in range
       hal_size_t start = row._startPosition;
+      hal_size_t end = start + row._length;
       if (row._strand == '-')
       {
         start = row._srcLength - 1 - (row._startPosition + row._length - 1);
+        end = row._srcLength - row._startPosition;
       }
       startIndex.first = start;
-      rec->_startMap.insert(startIndex);
-      hal_size_t end = start + row._length;
+      StartMap::iterator smIt = rec->_startMap.insert(startIndex).first;
       if (end < row._srcLength)
       {
         startIndex.first = end;
@@ -162,6 +167,7 @@ void MafScanDimensions::updateDimensionsFromBlock()
       }
 
       size_t numGaps = 0;
+      hal_size_t interiorStart;
 
       for (size_t j = 0; j < length; ++j)
       {
@@ -174,8 +180,11 @@ void MafScanDimensions::updateDimensionsFromBlock()
         // j in forward segment coordinates.  
         else if (_mask[j] == true && (row._line[j] != '-'))
         {
-          startIndex.first = start + j - numGaps;
-          rec->_startMap.insert(startIndex);
+          interiorStart = start + j - numGaps;
+          if (interiorStart > start)
+          {
+            ++smIt->second._count;
+          }
         }
       }
     }
@@ -184,16 +193,28 @@ void MafScanDimensions::updateDimensionsFromBlock()
 
 void MafScanDimensions::updateArrayIndices()
 {
+  string curName, prevName;
+  hal_size_t arrayIndex, prevIndex;
   for (DimMap::iterator i = _dimMap.begin(); i != _dimMap.end(); ++i)
   {
     assert(i->second != NULL);
+    curName = genomeName(i->first);
+    assert(!curName.empty());
+    if (curName != prevName)
+    {
+      arrayIndex = 0;
+      prevIndex = 0;
+    }
     // compute the array index for each start position in the map
-    hal_size_t arrayIndex = 0;
     StartMap& startMap = i->second->_startMap;
     for (StartMap::iterator j = startMap.begin(); j != startMap.end(); ++j)
     {
-      j->second = arrayIndex++;
-      assert(j->first >= j->second);
-    }
+      j->second._index = arrayIndex;
+      arrayIndex += j->second._count;
+      assert (j->second._count > 0);
+    }    
+    i->second->_numSegments = arrayIndex - prevIndex;
+    prevName = curName;
+    prevIndex = arrayIndex;
   }
 }

@@ -23,10 +23,17 @@ class MafScanDimensions : public MafScanner
 {
 public:
    // map start position to array index
-   typedef std::map<hal_size_t, hal_size_t> StartMap;
+   struct ArrayInfo 
+   {
+      hal_size_t _index;
+      hal_size_t _count;
+   };
+   typedef std::map<hal_size_t, ArrayInfo> StartMap;
+
    struct Record 
    {
       hal_size_t _length;
+      hal_size_t _numSegments;
       StartMap _startMap;
    };
    typedef std::map<std::string, Record*> DimMap;

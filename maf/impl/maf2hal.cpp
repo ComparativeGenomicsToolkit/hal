@@ -121,7 +121,7 @@ int main(int argc, char** argv)
          i != dimMap.end(); ++i)
     {
       cout << i->first << ":  " << i->second->_length << ", "
-           << i->second->_startMap.size() << "  ";
+           << i->second->_numSegments << "  ";
       if (i->second->_startMap.size() < 20)
       {
         MafScanDimensions::StartMap::const_iterator smIt;
