@@ -529,7 +529,7 @@ void MafWriteGenomes::aLine()
   if (_rows > 0)
   {
     convertBlock();
-    if (_numBlocks % 100000 == 0)
+    if (_numBlocks % 1000000 == 0)
     {
       cout << "block " << _numBlocks << endl;
       system("date");
