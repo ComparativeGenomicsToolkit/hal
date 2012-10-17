@@ -87,9 +87,8 @@ inline void HDF5DNAIterator::setChar(char c)
   {
     c = reverseComplement(c);
   }
-  unsigned char old = _genome->_dnaArray.getValue<char>(_index / 2, 0);
-  HDF5DNA::pack(c, _index, old);
-  _genome->_dnaArray.setValue(_index / 2, 0, old);
+  char* old = _genome->_dnaArray.getUpdate(_index / 2);
+  HDF5DNA::pack(c, _index, (unsigned char&)*old);
   assert(getChar() == !_reversed ? c : reverseComplement(c));
 }
 
