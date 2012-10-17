@@ -143,7 +143,7 @@ void MafScanner::updateMask()
   }
 }
 
-std::string MafScanner::genomeName(const std::string fullName) const
+std::string MafScanner::genomeName(const std::string fullName)
 {
   assert(fullName.find('.') != string::npos);
   return fullName.substr(0, fullName.find('.'));

@@ -28,6 +28,7 @@ public:
    virtual void scan(const std::string& mafPath, 
                      const std::set<std::string>& targetSet);
    hal_size_t getNumBlocks() const { return _numBlocks; }
+   static std::string genomeName(const std::string fullName);
 
    struct Row {
       std::string _sequenceName;
@@ -46,7 +47,7 @@ protected:
    virtual void end() = 0;
    void nextLine();
    void updateMask();
-   std::string genomeName(const std::string fullName) const;
+
 
    std::ifstream _mafFile;
    std::set<std::string> _targets;

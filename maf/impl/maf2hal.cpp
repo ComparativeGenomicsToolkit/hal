@@ -112,25 +112,29 @@ int main(int argc, char** argv)
 
     MafScanDimensions dScan;
     dScan.scan(mafPath, targetSet);
-    
+
+    string prevGenome, curGenome;
+    hal_size_t segmentCount = 0;
+    hal_size_t setCount = 0;
+    hal_size_t sequenceCount = 0;
     const MafScanDimensions::DimMap& dimMap = dScan.getDimensions();
     for (MafScanDimensions::DimMap::const_iterator i = dimMap.begin();
          i != dimMap.end(); ++i)
     {
-      cout << i->first << ":  " << i->second->_length << ", "
-           << i->second->_startMap.size() 
-           << " " << i->second->_numSegments << "  ";
-      if (i->second->_startMap.size() < 20)
+      curGenome = MafScanner::genomeName(i->first);
+      if (prevGenome.empty() == false && curGenome != prevGenome)
       {
-        MafScanDimensions::StartMap::const_iterator smIt;
-        for (smIt = i->second->_startMap.begin();
-             smIt != i->second->_startMap.end();
-             ++smIt)
-        {
-          cout << smIt->first << ",";
-        }
+        cout << prevGenome << ":  " <<  segmentCount << " segments, "
+             << setCount << " set entries, " << sequenceCount << " sequences"
+             << endl;
+        segmentCount = 0;
+        setCount = 0;
+        sequenceCount = 0;
       }
-      cout << "\n";
+      segmentCount += i->second->_numSegments;
+      setCount += i->second->_startMap.size();
+      sequenceCount++;
+      prevGenome = curGenome;
     }
     cout << "Total Number of blocks in maf: " << dScan.getNumBlocks() << "\n";
 
