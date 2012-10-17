@@ -27,6 +27,7 @@ public:
    virtual ~MafScanner();
    virtual void scan(const std::string& mafPath, 
                      const std::set<std::string>& targetSet);
+   hal_size_t getNumBlocks() const { return _numBlocks; }
 
    struct Row {
       std::string _sequenceName;
@@ -53,7 +54,7 @@ protected:
    Block _block;
    size_t _rows;
    Mask _mask;
-  
+   hal_size_t _numBlocks;
 };
 
 }

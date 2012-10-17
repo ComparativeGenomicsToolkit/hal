@@ -14,11 +14,11 @@ using namespace hal;
 using namespace std;
 using namespace H5;
 
-const hsize_t HDF5CLParser::DefaultChunkSize = 3500;
+const hsize_t HDF5CLParser::DefaultChunkSize = 1000;
 const hsize_t HDF5CLParser::DefaultDeflate = 2;
 const hsize_t HDF5CLParser::DefaultCacheMDCElems = 113;
-const hsize_t HDF5CLParser::DefaultCacheRDCElems = 10009;
-const hsize_t HDF5CLParser::DefaultCacheRDCBytes = 10485760;
+const hsize_t HDF5CLParser::DefaultCacheRDCElems = 599999;
+const hsize_t HDF5CLParser::DefaultCacheRDCBytes = 52428800;
 const double HDF5CLParser::DefaultCacheW0 = 0.75;
 
 HDF5CLParser::HDF5CLParser(bool createOptions) :
@@ -32,7 +32,8 @@ HDF5CLParser::HDF5CLParser(bool createOptions) :
   }
   addOption("cacheMDC", "number of metadata slots in hdf5 cache",
             DefaultCacheMDCElems);
-  addOption("cacheRDC", "number of regular slots in hdf5 cache",
+  addOption("cacheRDC", "number of regular slots in hdf5 cache.  should be"
+            " a prime number ~= 10 * DefaultCacheRDCBytes / chunk",
             DefaultCacheRDCElems);
   addOption("cacheBytes", "maximum size in bytes of regular hdf5 cache",
             DefaultCacheRDCBytes);

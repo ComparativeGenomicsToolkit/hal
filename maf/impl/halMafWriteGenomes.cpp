@@ -223,6 +223,7 @@ void MafWriteGenomes::initGenomes()
   for (size_t i = 0; i < numChildren; ++i)
   {
     Genome* child = _refGenome->getChild(i);
+    cout << "initializing " << child->getName() << endl;
     if (child->getSequenceLength() > 0)
     {
       dna = child->getDNAIterator();
@@ -411,6 +412,7 @@ void MafWriteGenomes::convertSegments(size_t col)
         seq->setSubString(
           row._line.substr(col, rowInfo._length), rowInfo._start, 
           rowInfo._length);     
+
         if (_refRow != NULL_INDEX)
         {
           childIndex = _childIdxMap.find(rowInfo._genome)->second;
@@ -527,6 +529,11 @@ void MafWriteGenomes::aLine()
   if (_rows > 0)
   {
     convertBlock();
+    if (_numBlocks % 100000 == 0)
+    {
+      cout << "block " << _numBlocks << endl;
+      system("date");
+    }
   }
 }
 

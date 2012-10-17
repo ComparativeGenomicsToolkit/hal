@@ -98,7 +98,6 @@ private:
    BottomSegmentIteratorPtr _bottomSegment, _refBottom;
    std::map<Genome*, hal_size_t> _childIdxMap;
    ParaMap _paraMap;
-   
 };
 
 }

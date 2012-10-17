@@ -29,6 +29,7 @@ void MafScanner::scan(const string& mafFilePath, const set<string>& targets)
 {
   _targets = targets;
   _mafFile.open(mafFilePath.c_str());
+  _numBlocks = 0;
 
   if (!_mafFile)
   {
@@ -48,6 +49,7 @@ void MafScanner::scan(const string& mafFilePath, const set<string>& targets)
       {
         updateMask();
         aLine();
+        ++_numBlocks;
         nextLine();
       }
       _rows = 0;
@@ -95,6 +97,7 @@ void MafScanner::scan(const string& mafFilePath, const set<string>& targets)
   if (_rows > 0)
   {
     updateMask();
+    ++_numBlocks;
   }
   end();  
   _mafFile.close();

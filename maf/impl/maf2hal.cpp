@@ -16,7 +16,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = hdf5CLParserInstance(true);
   optionsParser->addArgument("mafFile", "output maf file");
   optionsParser->addArgument("halFile", "input hal file");
   optionsParser->addOption("refGenome", "name of reference genome in MAF "
@@ -112,16 +112,14 @@ int main(int argc, char** argv)
 
     MafScanDimensions dScan;
     dScan.scan(mafPath, targetSet);
-    MafWriteGenomes writer;
-    writer.convert(mafPath, refGenomeName, targetSet, dScan.getDimensions(),
-                   alignment);
     
     const MafScanDimensions::DimMap& dimMap = dScan.getDimensions();
     for (MafScanDimensions::DimMap::const_iterator i = dimMap.begin();
          i != dimMap.end(); ++i)
     {
       cout << i->first << ":  " << i->second->_length << ", "
-           << i->second->_numSegments << "  ";
+           << i->second->_startMap.size() 
+           << " " << i->second->_numSegments << "  ";
       if (i->second->_startMap.size() < 20)
       {
         MafScanDimensions::StartMap::const_iterator smIt;
@@ -134,6 +132,12 @@ int main(int argc, char** argv)
       }
       cout << "\n";
     }
+    cout << "Total Number of blocks in maf: " << dScan.getNumBlocks() << "\n";
+
+    MafWriteGenomes writer;
+    writer.convert(mafPath, refGenomeName, targetSet, dScan.getDimensions(),
+                   alignment);
+
 
   }try{}
   catch(hal_exception& e)
