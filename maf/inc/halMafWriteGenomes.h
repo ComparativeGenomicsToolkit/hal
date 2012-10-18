@@ -52,7 +52,7 @@ private:
    void initParaMap();
    void convertSegments(size_t col);
    void updateParalogy(size_t i);
-   void setBlockEndSegments();
+   void initEmptySegments();
 
    void aLine();
    void sLine();

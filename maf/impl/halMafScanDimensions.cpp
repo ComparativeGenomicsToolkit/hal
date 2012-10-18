@@ -129,6 +129,7 @@ void MafScanDimensions::updateDimensionsFromBlock()
     startIndex.first = 0;
     startIndex.second._index = 0; 
     startIndex.second._count = 1;
+    startIndex.second._written = 0;
     if (result.second == false && row._srcLength != rec->_length)
     {
       assert(rec != NULL);

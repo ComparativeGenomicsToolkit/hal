@@ -25,8 +25,9 @@ public:
    // map start position to array index
    struct ArrayInfo 
    {
-      hal_size_t _index : 48;
+      hal_size_t _index : 47;
       hal_size_t _count : 16;
+      mutable hal_size_t _written : 1;
    };
    typedef std::map<hal_size_t, ArrayInfo> StartMap;
 

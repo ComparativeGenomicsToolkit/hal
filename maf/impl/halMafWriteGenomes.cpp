@@ -40,8 +40,8 @@ void MafWriteGenomes::convert(const string& mafPath,
   _refBottom = BottomSegmentIteratorPtr();
   _childIdxMap.clear();
   createGenomes();  
-  initGenomes();
   MafScanner::scan(mafPath, targets);
+  initEmptySegments();
 }
 
 MafWriteGenomes::MapRange MafWriteGenomes::getRefSequences() const
@@ -191,63 +191,6 @@ void MafWriteGenomes::createGenomes()
   }
 }
 
-void MafWriteGenomes::initGenomes()
-{ 
-  DNAIteratorPtr dna;
-  DNAIteratorConstPtr dnaEnd; 
-  BottomSegmentIteratorConstPtr bend;
-  TopSegmentIteratorConstPtr tend;
-  size_t numChildren = _refGenome->getNumChildren();
-  if (_refGenome->getSequenceLength() > 0)
-  {
-    dna = _refGenome->getDNAIterator();
-    dnaEnd = _refGenome->getDNAEndIterator();
-    while (!dna->equals(dnaEnd))
-    {
-      dna->setChar('N');
-      dna->toRight();
-    }
-    _bottomSegment = _refGenome->getBottomSegmentIterator();
-    bend = _refGenome->getBottomSegmentEndIterator();
-    while (_bottomSegment != bend)
-    {
-      for (size_t i = 0; i < numChildren; ++i)
-      {
-        _bottomSegment->setChildIndex(i, NULL_INDEX);
-        _bottomSegment->setChildReversed(i, false);
-        _bottomSegment->setTopParseIndex(NULL_INDEX);
-      }
-      _bottomSegment->toRight();
-    }
-  }
-  for (size_t i = 0; i < numChildren; ++i)
-  {
-    Genome* child = _refGenome->getChild(i);
-    cout << "initializing " << child->getName() << endl;
-    if (child->getSequenceLength() > 0)
-    {
-      dna = child->getDNAIterator();
-      dnaEnd = child->getDNAEndIterator();
-      while (!dna->equals(dnaEnd))
-      {
-        dna->setChar('N');
-        dna->toRight();
-      }
-      _topSegment = child->getTopSegmentIterator();
-      tend = child->getTopSegmentEndIterator();
-      while (_topSegment != tend)
-      {
-        _topSegment->setParentIndex(NULL_INDEX);
-        _topSegment->setParentReversed(NULL_INDEX);
-        _topSegment->setNextParalogyIndex(NULL_INDEX);
-        _topSegment->setBottomParseIndex(NULL_INDEX);
-        _topSegment->toRight();
-      }
-    }
-  }
-  cout << "initialization done" << endl;
-}
-
 void MafWriteGenomes::convertBlock()
 {
   assert(_rows > 0);
@@ -263,7 +206,6 @@ void MafWriteGenomes::convertBlock()
       convertSegments(col);
     }
   }
-  setBlockEndSegments();
 }
 
 void MafWriteGenomes::initBlockInfo(size_t col)
@@ -324,6 +266,8 @@ void MafWriteGenomes::initBlockInfo(size_t col)
         StartMap::const_iterator mapIt = startMap.find(rowInfo._start);
         assert(mapIt != startMap.end());
         rowInfo._arrayIndex = mapIt->second._index;
+        assert(mapIt->second._written == 0);
+        mapIt->second._written = 1;
         assert(rowInfo._arrayIndex >= 0);
       }
       else
@@ -371,6 +315,7 @@ void MafWriteGenomes::convertSegments(size_t col)
 {
   // do the reference first
   Sequence* seq;
+  size_t numChildren = _refGenome->getNumChildren();
   if (_refRow != NULL_INDEX)
   {
     RowInfo& rowInfo = _blockInfo[_refRow];
@@ -380,6 +325,12 @@ void MafWriteGenomes::convertSegments(size_t col)
     assert(seq != NULL);
     _refBottom->setCoordinates(seq->getStartPosition() + rowInfo._start, 
                                rowInfo._length);
+    _refBottom->setTopParseIndex(NULL_INDEX);
+    for (size_t i = 0; i < numChildren; ++i)
+    {
+      _refBottom->setChildIndex(i, NULL_INDEX);
+      _refBottom->setChildReversed(i, false);
+    }    
     seq->setSubString(
       row._line.substr(col, rowInfo._length), rowInfo._start, rowInfo._length);
   }
@@ -397,9 +348,14 @@ void MafWriteGenomes::convertSegments(size_t col)
       if (genome == _refGenome)
       {
         _bottomSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
-        assert(rowInfo._start + rowInfo._length <= seq->getSequenceLength());
         _bottomSegment->setCoordinates(seq->getStartPosition() + rowInfo._start,
                                        rowInfo._length);
+        _bottomSegment->setTopParseIndex(NULL_INDEX);
+        for (size_t i = 0; i < numChildren; ++i)
+        {
+          _bottomSegment->setChildIndex(i, NULL_INDEX);
+          _bottomSegment->setChildReversed(i, false);
+        }
         seq->setSubString(
           row._line.substr(col, rowInfo._length), rowInfo._start, 
           rowInfo._length);
@@ -407,24 +363,25 @@ void MafWriteGenomes::convertSegments(size_t col)
       else
       {
         _topSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
-        assert(rowInfo._start + rowInfo._length <= seq->getSequenceLength());
         _topSegment->setCoordinates(seq->getStartPosition() + rowInfo._start,
                                     rowInfo._length);   
-        seq->setSubString(
-          row._line.substr(col, rowInfo._length), rowInfo._start, 
-          rowInfo._length);     
+
+        _topSegment->setNextParalogyIndex(NULL_INDEX);
+        _topSegment->setBottomParseIndex(NULL_INDEX);        
 
         if (_refRow != NULL_INDEX)
         {
+          assert(_topSegment->getLength() == _refBottom->getLength());
           childIndex = _childIdxMap.find(rowInfo._genome)->second;
           bool reversed = row._strand != _block[_refRow]._strand;
-          _refBottom->setChildIndex(childIndex, rowInfo._arrayIndex);
-          _refBottom->setChildReversed(childIndex, reversed);
-          assert(_topSegment->getParentIndex() == NULL_INDEX);
           _topSegment->setParentIndex(_refBottom->getArrayIndex());
           _topSegment->setParentReversed(reversed);
           updateParalogy(i);
-          assert(_topSegment->getLength() == _refBottom->getLength());
+        }
+        else
+        {
+          _topSegment->setParentIndex(NULL_INDEX);
+          _topSegment->setParentReversed(false);
         }
       }
     }
@@ -468,56 +425,69 @@ void MafWriteGenomes::updateParalogy(size_t i)
   }
 }
 
-void MafWriteGenomes::setBlockEndSegments()
+void MafWriteGenomes::initEmptySegments()
 {
-  for (size_t i = 0; i < _rows; ++i)
+  for (DimMap::const_iterator dmIt = _dimMap->begin(); dmIt != _dimMap->end();
+       ++dmIt)
   {
-    RowInfo& rowInfo = _blockInfo[i];
-    Row& row = _block[i];
+    Genome* genome = _alignment->openGenome(genomeName(dmIt->first));
+    size_t numChildren = genome->getNumChildren();
+    Sequence* sequence = genome->getSequence(dmIt->first);
+    assert(genome != NULL && sequence != NULL);    
+    const StartMap& startMap = dmIt->second->_startMap;
 
-    if (row._length > 0)
+    for (StartMap::const_iterator smIt = startMap.begin();
+         smIt != startMap.end(); ++smIt)
     {
-      hal_index_t start = row._startPosition + row._length;
-      assert(start <= (hal_index_t)row._srcLength);
-
-      if (start < (hal_index_t)row._srcLength)
+      if (smIt->second._written == 0)
       {
-        const StartMap& startMap = rowInfo._record->_startMap;
-        StartMap::const_iterator mapIt = startMap.find(start);
-        // count greater than 1 means already segmented
-        if (mapIt->second._count == 1)
+        const MafScanDimensions::ArrayInfo& arrayInfo = smIt->second;
+        hal_size_t startPosition = smIt->first;
+        hal_size_t length = 0;
+        if ((genome == _refGenome && 
+            arrayInfo._index == sequence->getBottomSegmentArrayIndex() +
+             sequence->getNumBottomSegments() - 1) ||
+            (genome != _refGenome && 
+             arrayInfo._index == sequence->getTopSegmentArrayIndex() +
+            sequence->getNumTopSegments() - 1))
+
         {
-          hal_index_t arrayIndex = mapIt->second._index;
-          ++mapIt;
-          hal_index_t length;
-          if (mapIt != startMap.end())
+          length = sequence->getSequenceLength() - startPosition;
+        }
+        else
+        {
+          StartMap::const_iterator nextIt = smIt;
+          ++nextIt;
+          assert(nextIt != startMap.end());
+          assert(nextIt->second._written == 1);
+          length = nextIt->first - startPosition;
+        }
+        if (genome == _refGenome)
+        {
+          _bottomSegment->setArrayIndex(genome, arrayInfo._index);
+          _bottomSegment->setCoordinates(sequence->getStartPosition() + 
+                                         startPosition, length);
+          _bottomSegment->setTopParseIndex(NULL_INDEX);
+          for (size_t i = 0; i < numChildren; ++i)
           {
-            length = mapIt->first - start;
+            _bottomSegment->setChildIndex(i, NULL_INDEX);
+            _bottomSegment->setChildReversed(i, false);
           }
-          else
-          {
-            length = row._srcLength - start;
-          }
-          assert(length > 0);
-          assert(start + length <= (hal_index_t)row._srcLength);
-          if (rowInfo._genome == _refGenome)
-          {
-            _bottomSegment->setArrayIndex(rowInfo._genome, arrayIndex);
-            Sequence* seq = _bottomSegment->getSequence();
-            assert((hal_size_t)start + length <= seq->getSequenceLength());
-            _bottomSegment->setCoordinates(seq->getStartPosition() + start, 
-                                           length);
-          }
-          else
-          {
-            _topSegment->setArrayIndex(rowInfo._genome, arrayIndex);
-            Sequence* seq = _topSegment->getSequence();
-            assert(!_topSegment->hasParent() || _topSegment->getLength() ==
-                   (hal_size_t)length);
-            assert((hal_size_t)start + length <= seq->getSequenceLength());
-            _topSegment->setCoordinates(seq->getStartPosition() + start,
-                                        length);
-          }
+        }
+        else
+        {
+          _topSegment->setArrayIndex(genome, arrayInfo._index);
+          _topSegment->setCoordinates(sequence->getStartPosition() + 
+                                      startPosition, length);
+          _topSegment->setBottomParseIndex(NULL_INDEX);
+          _topSegment->setParentIndex(NULL_INDEX);
+          _topSegment->setParentReversed(false);
+          _topSegment->setNextParalogyIndex(NULL_INDEX);
+        }
+        DNAIteratorPtr dna = sequence->getDNAIterator(startPosition);
+        for (hal_size_t i = 0; i < length; ++i)
+        {
+          dna->setChar('N');
         }
       }
     }
