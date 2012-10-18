@@ -374,6 +374,8 @@ void MafWriteGenomes::convertSegments(size_t col)
           assert(_topSegment->getLength() == _refBottom->getLength());
           childIndex = _childIdxMap.find(rowInfo._genome)->second;
           bool reversed = row._strand != _block[_refRow]._strand;
+          _refBottom->setChildIndex(childIndex, rowInfo._arrayIndex);
+          _refBottom->setChildReversed(childIndex, reversed);
           _topSegment->setParentIndex(_refBottom->getArrayIndex());
           _topSegment->setParentReversed(reversed);
           updateParalogy(i);
