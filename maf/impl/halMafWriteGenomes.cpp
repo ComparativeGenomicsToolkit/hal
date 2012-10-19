@@ -289,7 +289,7 @@ void MafWriteGenomes::initBlockInfo(size_t col)
           rowInfo._skip = true;
         }
       }
-      else
+      else if (rowInfo._skip == false)
       {
         ++rowInfo._arrayIndex;
 #ifndef NDEBUG
