@@ -227,6 +227,7 @@ void MafWriteGenomes::initBlockInfo(size_t col)
       _blockInfo[i]._genome = 
          _alignment->openGenome(genomeName(_block[i]._sequenceName));
       assert(_blockInfo[i]._genome != NULL);
+      _blockInfo[i]._skip = false;
     }
   }
   else
@@ -259,16 +260,34 @@ void MafWriteGenomes::initBlockInfo(size_t col)
       rowInfo._start = row._startPosition + col - rowInfo._gaps;
       rowInfo._length = last - col;
       const StartMap& startMap = rowInfo._record->_startMap;
-      if (rowInfo._arrayIndex == NULL_INDEX)
+      if (rowInfo._arrayIndex == NULL_INDEX && rowInfo._skip == false)
       {
         assert(rowInfo._start == row._startPosition);
         assert(rowInfo._gaps <= col);
         StartMap::const_iterator mapIt = startMap.find(rowInfo._start);
         assert(mapIt != startMap.end());
-        rowInfo._arrayIndex = mapIt->second._index;
-        assert(mapIt->second._written == 0);
-        mapIt->second._written = 1;
-        assert(rowInfo._arrayIndex >= 0);
+        if (mapIt->second._count != 0 && mapIt->second._written == 0)
+        {
+          rowInfo._arrayIndex = mapIt->second._index;
+          mapIt->second._written = 1;
+          assert(rowInfo._arrayIndex >= 0);
+        }
+        else
+        {
+          if (i == (hal_size_t)_refRow)
+          {
+            stringstream ss;
+            ss << "duplication detected in reference at row with start "
+               "position (in + coordinates) " << row._startPosition;
+            throw hal_exception(ss.str());
+          }
+          else
+          {
+            cout << "skipping " << row._sequenceName << ", " 
+                 << row._startPosition << "\n";
+          }
+          rowInfo._skip = true;
+        }
       }
       else
       {
@@ -338,7 +357,8 @@ void MafWriteGenomes::convertSegments(size_t col)
   hal_size_t childIndex;
   for (size_t i = 0; i < _rows; ++i)
   {
-    if ((hal_index_t)i != _refRow && _blockInfo[i]._length > 0)
+    if ((hal_index_t)i != _refRow && _blockInfo[i]._length > 0 &&
+      _blockInfo[i]._skip == false)
     {
       RowInfo& rowInfo = _blockInfo[i];
       Row& row = _block[i];
@@ -441,8 +461,9 @@ void MafWriteGenomes::initEmptySegments()
     for (StartMap::const_iterator smIt = startMap.begin();
          smIt != startMap.end(); ++smIt)
     {
-      if (smIt->second._written == 0)
+      if (smIt->second._written == 0 && smIt->second._count > 0)
       {
+        assert(smIt->second._isStart == 0 || smIt->first == 0);
         const MafScanDimensions::ArrayInfo& arrayInfo = smIt->second;
         hal_size_t startPosition = smIt->first;
         hal_size_t length = 0;
@@ -461,7 +482,6 @@ void MafWriteGenomes::initEmptySegments()
           StartMap::const_iterator nextIt = smIt;
           ++nextIt;
           assert(nextIt != startMap.end());
-          assert(nextIt->second._written == 1);
           length = nextIt->first - startPosition;
         }
         if (genome == _refGenome)

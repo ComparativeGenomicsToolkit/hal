@@ -16,7 +16,7 @@ using namespace hal;
 
 MafScanDimensions::MafScanDimensions() : MafScanner()
 {
-
+  assert(sizeof(ArrayInfo) == sizeof(hal_size_t));
 }
 
 MafScanDimensions::~MafScanDimensions()
@@ -130,6 +130,8 @@ void MafScanDimensions::updateDimensionsFromBlock()
     startIndex.second._index = 0; 
     startIndex.second._count = 1;
     startIndex.second._written = 0;
+    startIndex.second._isEnd = 0;
+    startIndex.second._isStart = 1;
     if (result.second == false && row._srcLength != rec->_length)
     {
       assert(rec != NULL);
@@ -160,31 +162,66 @@ void MafScanDimensions::updateDimensionsFromBlock()
         end = row._srcLength - row._startPosition;
       }
       startIndex.first = start;
-      StartMap::iterator smIt = rec->_startMap.insert(startIndex).first;
-      if (end < row._srcLength)
-      {
-        startIndex.first = end;
-        rec->_startMap.insert(startIndex);
-      }
+      pair<StartMap::iterator, bool> smResult = 
+         rec->_startMap.insert(startIndex);
+      StartMap::iterator smIt = smResult.first;
+      smIt->second._isStart = 1;
+      bool bad = false;
 
-      size_t numGaps = 0;
-      hal_size_t interiorStart;
-
-      for (size_t j = 0; j < length; ++j)
+      // check for duplication / inconsistency:
+      // 1) new interval overlaps with existing interval
+      if (smResult.second == true)
       {
-        if (row._line[j] == '-')
+        StartMap::iterator next = smIt;
+        ++next;
+        if (next != rec->_startMap.end())
         {
-          ++numGaps;
-        }
-        // valid segmentation between j-1 and j:
-        // we add the start coordinate of the segment beginning at 
-        // j in forward segment coordinates.  
-        else if (_mask[j] == true && (row._line[j] != '-'))
-        {
-          interiorStart = start + j - numGaps;
-          if (interiorStart > start)
+          if (next->second._isEnd == 1 || 
+              next->first - smIt->first < row._length)
           {
-            ++smIt->second._count;
+            smIt->second._count = 0;
+            bad = true;
+          }
+        }
+      }
+      // 2) new interval lands on start position of existing interval
+      // existing is unchanged but we don't do anything else. 
+      else if (smIt->second._isEnd == 0)
+      {
+        bad = true;
+      }
+      
+      if (bad == false)
+      {
+        if (end < row._srcLength)
+        {
+          startIndex.first = end;
+          startIndex.second._isEnd = 1;
+          startIndex.second._isStart = 0;
+          pair<StartMap::iterator, bool> endResult = 
+             rec->_startMap.insert(startIndex);
+          endResult.first->second._isEnd = 1;
+        }
+
+        size_t numGaps = 0;
+        hal_size_t interiorStart;
+
+        for (size_t j = 0; j < length; ++j)
+        {
+          if (row._line[j] == '-')
+          {
+            ++numGaps;
+          }
+          // valid segmentation between j-1 and j:
+          // we add the start coordinate of the segment beginning at 
+          // j in forward segment coordinates.  
+          else if (_mask[j] == true && (row._line[j] != '-'))
+          {
+            interiorStart = start + j - numGaps;
+            if (interiorStart > start)
+            {
+              ++smIt->second._count;
+            }
           }
         }
       }
@@ -213,7 +250,6 @@ void MafScanDimensions::updateArrayIndices()
     {
       j->second._index = arrayIndex;
       arrayIndex += j->second._count;
-      assert (j->second._count > 0);
     }    
     i->second->_numSegments = arrayIndex - prevIndex;
     prevName = curName;

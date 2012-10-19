@@ -68,6 +68,7 @@ private:
       hal_size_t _length;
       const Record* _record;
       Genome* _genome;
+      bool _skip;
    };
 
    struct Paralogy
