@@ -295,7 +295,8 @@ void MafWriteGenomes::initBlockInfo(size_t col)
 #ifndef NDEBUG
         StartMap::const_iterator mapIt = startMap.find(row._startPosition);
         assert(mapIt != startMap.end());
-        assert(rowInfo._arrayIndex - mapIt->second._index <
+        assert(mapIt->second._count == 0 ||
+               rowInfo._arrayIndex - mapIt->second._index <
                mapIt->second._count);
 #endif
       }
