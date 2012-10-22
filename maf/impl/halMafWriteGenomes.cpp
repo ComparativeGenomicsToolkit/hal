@@ -490,7 +490,9 @@ void MafWriteGenomes::initEmptySegments()
         else
         {
           StartMap::const_iterator nextIt = smIt;
-          ++nextIt;
+          do {
+            ++nextIt;
+          } while (nextIt != startMap.end() && nextIt->second._count == 0);
           assert(nextIt != startMap.end());
           length = nextIt->first - startPosition;
         }

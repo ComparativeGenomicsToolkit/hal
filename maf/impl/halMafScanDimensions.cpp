@@ -173,7 +173,9 @@ void MafScanDimensions::updateDimensionsFromBlock()
       if (smResult.second == true)
       {
         StartMap::iterator next = smIt;
-        ++next;
+        do {
+          ++next;
+        } while (next != rec->_startMap.end() && next->second._count == 0);
         if (next != rec->_startMap.end())
         {
           if (next->second._isEnd == 1 || 
