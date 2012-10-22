@@ -57,11 +57,15 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
       if (childSegment->getLength() != bottomSegment->getLength())
       {
         stringstream ss;
-        ss << "Child " << child << " length of segment " 
-           << bottomSegment->getArrayIndex() 
-           << " in genome " << genome->getName() << " has length " 
-           << childSegment->getLength() << " which does not match "
-           << bottomSegment->getLength();
+        ss << "Child " << child << " with index " 
+           << childSegment->getArrayIndex()
+           << " and start position " << childSegment->getStartPosition() 
+           << " and sequence " << childSegment->getSequence()->getName()
+           << " has length " << childSegment->getLength()
+           << " but parent with index " << bottomSegment->getArrayIndex() 
+           << " and start position " << bottomSegment->getStartPosition()
+           << " in sequence " << bottomSegment->getSequence()->getName() 
+           << " has length " << bottomSegment->getLength();
         throw hal_exception(ss.str());
       }
       if (childSegment->getNextParalogyIndex() == NULL_INDEX &&
