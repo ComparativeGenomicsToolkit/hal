@@ -130,8 +130,7 @@ void MafScanDimensions::updateDimensionsFromBlock()
     startIndex.second._index = 0; 
     startIndex.second._count = 1;
     startIndex.second._written = 0;
-    startIndex.second._isEnd = 0;
-    startIndex.second._isStart = 1;
+    startIndex.second._empty = 0;
     if (result.second == false && row._srcLength != rec->_length)
     {
       assert(rec != NULL);
@@ -145,7 +144,9 @@ void MafScanDimensions::updateDimensionsFromBlock()
     {
       rec = new Record(); 
       startIndex.first = 0;
+      startIndex.second._empty = 1;
       rec->_startMap.insert(startIndex);
+      startIndex.second._empty = 0;
       rec->_numSegments = 0;
     }
     rec->_length = row._srcLength;
@@ -165,44 +166,82 @@ void MafScanDimensions::updateDimensionsFromBlock()
       pair<StartMap::iterator, bool> smResult = 
          rec->_startMap.insert(startIndex);
       StartMap::iterator smIt = smResult.first;
-      smIt->second._isStart = 1;
       bool bad = false;
 
       // check for duplication / inconsistency:
-      // 1) new interval overlaps with existing interval
-      if (smResult.second == true)
-      {
-        StartMap::iterator next = smIt;
-        do {
-          ++next;
-        } while (next != rec->_startMap.end() && next->second._count == 0);
-        if (next != rec->_startMap.end())
-        {
-          if (next->second._isEnd == 1 || 
-              next->first - smIt->first < row._length)
-          {
-            smIt->second._count = 0;
-            bad = true;
-          }
-        }
-      }
-      // 2) new interval lands on start position of existing interval
+      // 1) new interval lands on start position of existing interval
       // existing is unchanged but we don't do anything else. 
-      else if (smIt->second._isEnd == 0)
+      if (smResult.second == false && smIt->second._empty == 0)
       {
         bad = true;
       }
-      
-      if (bad == false)
+
+      // 2) new interval overlaps with existing interval
+      // set count to 0 if new, ignore otherwise
+      StartMap::iterator next = smIt;
+      ++next;
+      while (next != rec->_startMap.end() && !bad)
       {
+        if (next->second._count > 0)
+        {
+          if (smIt->first + row._length > next->first)
+          {
+            bad = true;
+          }
+          else
+          {
+            break;
+          }
+        }
+        ++next;
+      }
+
+      // 3) new interval overlaps a previous interval that is not 
+      // empty
+      if (!bad && smResult.second == true && smIt != rec->_startMap.begin())
+      {
+        StartMap::iterator prev = smIt;
+        --prev;
+        while (!bad)
+        {
+          if (prev->second._count > 0)
+          {
+            if (prev->second._empty == 0)
+            {
+              bad = true;
+            }
+            else
+            {
+              break;
+            }
+          }
+          if (prev == rec->_startMap.begin())
+          {
+            break;
+          }
+          --prev;
+        }
+      }
+
+      if (bad == true)
+      {
+        if (smResult.second == true)
+        {
+          rec->_startMap.erase(smIt);
+        }
+        rec->_badPosSet.insert(FilePosition(_mafFile.tellg(), i));
+      }
+      else
+      {
+        smIt->second._empty = 0;
+        assert(smIt->second._count == 1);
         if (end < row._srcLength)
         {
           startIndex.first = end;
-          startIndex.second._isEnd = 1;
-          startIndex.second._isStart = 0;
+          startIndex.second._empty = 1;
+          startIndex.second._count = 1;
           pair<StartMap::iterator, bool> endResult = 
-             rec->_startMap.insert(startIndex);
-          endResult.first->second._isEnd = 1;
+             rec->_startMap.insert(startIndex);              
         }
 
         size_t numGaps = 0;
@@ -250,6 +289,7 @@ void MafScanDimensions::updateArrayIndices()
     StartMap& startMap = i->second->_startMap;
     for (StartMap::iterator j = startMap.begin(); j != startMap.end(); ++j)
     {
+      assert(j->second._count > 0);
       j->second._index = arrayIndex;
       arrayIndex += j->second._count;
     }    

@@ -260,13 +260,17 @@ void MafWriteGenomes::initBlockInfo(size_t col)
       rowInfo._start = row._startPosition + col - rowInfo._gaps;
       rowInfo._length = last - col;
       const StartMap& startMap = rowInfo._record->_startMap;
+      const PosSet& posSet = rowInfo._record->_badPosSet;
       if (rowInfo._arrayIndex == NULL_INDEX && rowInfo._skip == false)
       {
         assert(rowInfo._start == row._startPosition);
         assert(rowInfo._gaps <= col);
         StartMap::const_iterator mapIt = startMap.find(rowInfo._start);
-        assert(mapIt != startMap.end());
-        if (mapIt->second._count != 0 && mapIt->second._written == 0)
+
+        if (mapIt != startMap.end() &&
+            mapIt->second._written == 0 &&
+            mapIt->second._empty == 0 && 
+            posSet.find(FilePosition(_mafFile.tellg(), i)) == posSet.end())
         {
           rowInfo._arrayIndex = mapIt->second._index;
           mapIt->second._written = 1;
@@ -274,42 +278,25 @@ void MafWriteGenomes::initBlockInfo(size_t col)
         }
         else
         {
-          if (i == (hal_size_t)_refRow)
-          {
-            stringstream ss;
-            ss << "duplication detected in reference at row with start "
-               "position (in + coordinates) " << row._startPosition;
-            throw hal_exception(ss.str());
-          }
-          else
-          {
-            cout << "skipping " << row._sequenceName << ", " 
-                 << row._startPosition << "\n";
-          }
           rowInfo._skip = true;
+          if (mapIt->second._empty == 0)
+          {
+            if (i == (hal_size_t)_refRow)
+            {
+              stringstream ss;
+              ss << "duplication detected in reference at row with start "
+                 "position (in + coordinates) " << row._startPosition;
+              throw hal_exception(ss.str());
+            }
+          }
         }
       }
       else if (rowInfo._skip == false)
       {
         ++rowInfo._arrayIndex;
-#ifndef NDEBUG
-        StartMap::const_iterator mapIt = startMap.find(row._startPosition);
-        assert(mapIt != startMap.end());
-        if ((mapIt->second._count == 0 ||
-            rowInfo._arrayIndex - mapIt->second._index <
-             mapIt->second._count) == false)
-        {
-          cout << mapIt->second._count << " " << mapIt->second._index 
-               << " " << mapIt->second._written << " " 
-               << mapIt->second._isStart << " " << mapIt->second._isEnd
-               << endl;
-        }
-        assert(mapIt->second._count == 0 ||
-               rowInfo._arrayIndex - mapIt->second._index <
-               mapIt->second._count);
-#endif
       }
-      if (rowInfo._genome == _refGenome && rowInfo._length > 0 && 
+      if (!rowInfo._skip && rowInfo._genome == _refGenome && 
+          rowInfo._length > 0 && 
           (_refRow == NULL_INDEX || 
            _block[i]._startPosition < _block[_refRow]._startPosition))
       {
@@ -386,9 +373,6 @@ void MafWriteGenomes::convertSegments(size_t col)
           _bottomSegment->setChildIndex(i, NULL_INDEX);
           _bottomSegment->setChildReversed(i, false);
         }
-        seq->setSubString(
-          row._line.substr(col, rowInfo._length), rowInfo._start, 
-          rowInfo._length);
       }
       else
       {
@@ -416,6 +400,9 @@ void MafWriteGenomes::convertSegments(size_t col)
           _topSegment->setParentReversed(false);
         }
       }
+      seq->setSubString(
+        row._line.substr(col, rowInfo._length), rowInfo._start, 
+        rowInfo._length);
     }
   }
 }
@@ -473,7 +460,7 @@ void MafWriteGenomes::initEmptySegments()
     {
       if (smIt->second._written == 0 && smIt->second._count > 0)
       {
-        assert(smIt->second._isStart == 0 || smIt->first == 0);
+        assert(smIt->second._empty == 1);
         const MafScanDimensions::ArrayInfo& arrayInfo = smIt->second;
         hal_size_t startPosition = smIt->first;
         hal_size_t length = 0;
@@ -522,6 +509,7 @@ void MafWriteGenomes::initEmptySegments()
         for (hal_size_t i = 0; i < length; ++i)
         {
           dna->setChar('N');
+          dna->toRight();
         }
       }
     }

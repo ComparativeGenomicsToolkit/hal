@@ -117,23 +117,30 @@ int main(int argc, char** argv)
     hal_size_t segmentCount = 0;
     hal_size_t setCount = 0;
     hal_size_t sequenceCount = 0;
+    hal_size_t skipCount = 0;
     const MafScanDimensions::DimMap& dimMap = dScan.getDimensions();
     for (MafScanDimensions::DimMap::const_iterator i = dimMap.begin();
          i != dimMap.end(); ++i)
     {
       curGenome = MafScanner::genomeName(i->first);
-      if (prevGenome.empty() == false && curGenome != prevGenome)
+      MafScanDimensions::DimMap::const_iterator next = i;
+      ++next;
+      if (prevGenome.empty() == false && (curGenome != prevGenome ||
+                                          next == dimMap.end()))
       {
         cout << prevGenome << ":  " <<  segmentCount << " segments, "
-             << setCount << " set entries, " << sequenceCount << " sequences"
+             << setCount << " set entries, " << skipCount << " dupe rows, "
+             << sequenceCount << " sequences"
              << endl;
         segmentCount = 0;
         setCount = 0;
+        skipCount = 0;
         sequenceCount = 0;
       }
       segmentCount += i->second->_numSegments;
       setCount += i->second->_startMap.size();
       sequenceCount++;
+      skipCount += i->second->_badPosSet.size();
       prevGenome = curGenome;
     }
     cout << "Total Number of blocks in maf: " << dScan.getNumBlocks() << "\n";

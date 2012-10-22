@@ -25,19 +25,22 @@ public:
    // map start position to array index
    struct ArrayInfo 
    {
-      hal_size_t _index : 45;
-      hal_size_t _count : 16;
+      hal_size_t _index : 42;
+      hal_size_t _count : 20;
+      hal_size_t _empty : 1;
       mutable hal_size_t _written : 1;
-      hal_size_t _isEnd : 1;
-      hal_size_t _isStart : 1;
    };
    typedef std::map<hal_size_t, ArrayInfo> StartMap;
+
+   typedef std::pair<std::streampos, size_t> FilePosition;
+   typedef std::set<FilePosition> PosSet;
 
    struct Record 
    {
       hal_size_t _length;
       hal_size_t _numSegments;
       StartMap _startMap;
+      PosSet _badPosSet;
    };
    typedef std::map<std::string, Record*> DimMap;
 
