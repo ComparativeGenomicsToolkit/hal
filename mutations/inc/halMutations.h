@@ -4,8 +4,8 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#ifndef _HALCONS_H
-#define _HALCONS_H
+#ifndef _HALMUTATIONS_H
+#define _HALMUTATIONS_H
 
 #include <iostream>
 #include <string>
@@ -40,12 +40,12 @@ struct ConsStats
    Avg _gapDeletionLength;
 };
 
-class HalCons
+class Mutations
 {
 public:
 
-   HalCons(hal::AlignmentConstPtr alignment, hal_size_t gapThreshold); 
-   virtual ~HalCons();
+   Mutations(hal::AlignmentConstPtr alignment, hal_size_t gapThreshold); 
+   virtual ~Mutations();
 
    void printCsv(std::ostream& outStream) const;
    void analyzeAlignment(hal::AlignmentConstPtr alignment);
@@ -68,7 +68,7 @@ protected:
 
 }
 
-inline std::ostream& operator<<(std::ostream& os, const hal::HalCons& halCons)
+inline std::ostream& operator<<(std::ostream& os, const hal::Mutations& halCons)
 {
   halCons.printCsv(os);
   return os;

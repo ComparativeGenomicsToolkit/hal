@@ -6,23 +6,23 @@
 
 #include <deque>
 #include <cassert>
-#include "halCons.h"
+#include "halMutations.h"
 
 using namespace std;
 using namespace hal;
 
-HalCons::HalCons(AlignmentConstPtr alignment, hal_size_t gapThreshold) :
+Mutations::Mutations(AlignmentConstPtr alignment, hal_size_t gapThreshold) :
   _gapThreshold(gapThreshold)
 {
   analyzeAlignment(alignment);
 }
 
-HalCons::~HalCons()
+Mutations::~Mutations()
 {
 
 }
 
-void HalCons::printCsv(ostream& outStream) const
+void Mutations::printCsv(ostream& outStream) const
 {
   outStream << "GenomeName, ParentName, BranchLength, GenomeLength," 
      " ParentLength, Subtitutions, Transitions, Transversions,"
@@ -76,7 +76,7 @@ void HalCons::printCsv(ostream& outStream) const
   outStream << endl;
 }
 
-void HalCons::analyzeAlignment(AlignmentConstPtr alignment)
+void Mutations::analyzeAlignment(AlignmentConstPtr alignment)
 {
   _branchMap.clear();
   _alignment = alignment;
@@ -90,7 +90,7 @@ void HalCons::analyzeAlignment(AlignmentConstPtr alignment)
   _alignment = AlignmentConstPtr();
 }
 
-void HalCons::analyzeGenomeRecursive(const string& genomeName)
+void Mutations::analyzeGenomeRecursive(const string& genomeName)
 {
   const Genome* genome = _alignment->openGenome(genomeName);
   assert(genome != NULL);
@@ -125,7 +125,7 @@ void HalCons::analyzeGenomeRecursive(const string& genomeName)
   }
 }
 
-void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
+void Mutations::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
 {
   const Genome* parent = genome->getParent();
   hal_index_t childIndex = parent->getChildIndex(genome);
@@ -186,8 +186,8 @@ void HalCons::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
   while (r->identifyNext() == true);
 }
 
-void HalCons::subsAndGapInserts(GappedTopSegmentIteratorConstPtr gappedTop, 
-                                ConsStats& stats)
+void Mutations::subsAndGapInserts(GappedTopSegmentIteratorConstPtr gappedTop, 
+                                  ConsStats& stats)
 {
   assert(gappedTop->getReversed() == false);
   hal_size_t numGaps = gappedTop->getNumGaps();
