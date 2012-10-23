@@ -11,10 +11,9 @@
 using namespace std;
 using namespace hal;
 
-Mutations::Mutations(AlignmentConstPtr alignment, hal_size_t gapThreshold) :
-  _gapThreshold(gapThreshold)
+Mutations::Mutations()
 {
-  analyzeAlignment(alignment);
+
 }
 
 Mutations::~Mutations()
@@ -24,60 +23,27 @@ Mutations::~Mutations()
 
 void Mutations::printCsv(ostream& outStream) const
 {
-  outStream << "GenomeName, ParentName, BranchLength, GenomeLength," 
-     " ParentLength, Subtitutions, Transitions, Transversions,"
-     " GapInsertions, GapInsertedBases, GapDeletions, GapDeletedBases," 
-     " Insertions, InsertionBases, Deletions, DeletionBases, Inversions,"
-     " InvertedBases, Duplications, DuplicatedBases, Transpositions,"
-     " TranspositionBases, Other" 
-            << endl;
+  outStream << "GenomeName, ParentName, ";
+  MutationsStats::printHeader(outStream);
+  outStream << endl;
 
   BranchMap::const_iterator i = _branchMap.begin();
   for (; i != _branchMap.end(); ++i)
   {
-    const ConsStats& stats = i->second;
-
-    // right now the break pairs of all detected events get marked as
-    // other, so we subtract them from the total as they were already
-    // counted.  (this may result in a slight underestimation of other
-    // in some cases which will need to be looked into later
-    hal_index_t otherCount = stats._otherLength.getCount() -
-       stats._insertionLength.getCount() -
-       stats._deletionLength.getCount() - 
-       stats._inversionLength.getCount() -
-       stats._duplicationLength.getCount() -
-       stats._transpositionLength.getCount();
-    otherCount = max(otherCount, (hal_index_t)0);
-       
+    const MutationsStats& stats = i->second;       
     outStream << i->first.first << ", " << i->first.second << ", "
-              << stats._branchLength << ", " 
-              << stats._genomeLength << ", " << stats._parentLength << ", "
-              << stats._subs << ", "
-              << stats._transitions << ", "
-              << stats._transversions << ", "
-              << stats._gapInsertionLength.getCount() << ", " 
-              << stats._gapInsertionLength.getSum() << ", "
-              << stats._gapDeletionLength.getCount() << ", " 
-              << stats._gapDeletionLength.getSum() << ", "
-              << stats._insertionLength.getCount() << ", " 
-              << stats._insertionLength.getSum() << ", "
-              << stats._deletionLength.getCount() << ", " 
-              << stats._deletionLength.getSum() << ", "
-              << stats._inversionLength.getCount() << ", " 
-              << stats._inversionLength.getSum() << ", "
-              << stats._duplicationLength.getCount() << ", " 
-              << stats._duplicationLength.getSum() << ", "
-              << stats._transpositionLength.getCount() << ", "
-              << stats._transpositionLength.getSum() << ", "
-              << otherCount << ", "
-              <<endl;
+              << stats << endl;
   }
 
   outStream << endl;
 }
 
-void Mutations::analyzeAlignment(AlignmentConstPtr alignment)
+void Mutations::analyzeAlignment(AlignmentConstPtr alignment,
+                                 hal_size_t gapThreshold,
+                                 const set<string>* targetSet)
 {
+  _gapThreshold = gapThreshold;
+  _targetSet = targetSet;
   _branchMap.clear();
   _alignment = alignment;
   
@@ -94,10 +60,11 @@ void Mutations::analyzeGenomeRecursive(const string& genomeName)
 {
   const Genome* genome = _alignment->openGenome(genomeName);
   assert(genome != NULL);
-  ConsStats stats = {0};
+  MutationsStats stats = {0};
 
   const Genome* parent = genome->getParent();
-  if (parent != NULL)
+  if (parent != NULL && 
+      (!_targetSet || _targetSet->find(genomeName) != _targetSet->end()))
   {
     TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
     TopSegmentIteratorConstPtr topEnd = genome->getTopSegmentEndIterator();
@@ -113,7 +80,7 @@ void Mutations::analyzeGenomeRecursive(const string& genomeName)
     rearrangementAnalysis(genome, stats);
      
     StrPair branchName(genome->getName(), parent->getName());
-    _branchMap.insert(pair<StrPair, ConsStats>(branchName, stats));
+    _branchMap.insert(pair<StrPair, MutationsStats>(branchName, stats));
 
     _alignment->closeGenome(parent);
   }
@@ -125,7 +92,7 @@ void Mutations::analyzeGenomeRecursive(const string& genomeName)
   }
 }
 
-void Mutations::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
+void Mutations::rearrangementAnalysis(const Genome* genome, MutationsStats& stats)
 {
   const Genome* parent = genome->getParent();
   hal_index_t childIndex = parent->getChildIndex(genome);
@@ -187,7 +154,7 @@ void Mutations::rearrangementAnalysis(const Genome* genome, ConsStats& stats)
 }
 
 void Mutations::subsAndGapInserts(GappedTopSegmentIteratorConstPtr gappedTop, 
-                                  ConsStats& stats)
+                                  MutationsStats& stats)
 {
   assert(gappedTop->getReversed() == false);
   hal_size_t numGaps = gappedTop->getNumGaps();
@@ -203,7 +170,8 @@ void Mutations::subsAndGapInserts(GappedTopSegmentIteratorConstPtr gappedTop,
      l->getTopSegment()->getGenome()->getParent()->getBottomSegmentIterator();
 
   for (TopSegmentIteratorConstPtr i = l->copy(); 
-       i->getTopSegment()->getArrayIndex() <= r->getTopSegment()->getArrayIndex();
+       i->getTopSegment()->getArrayIndex() <= 
+          r->getTopSegment()->getArrayIndex();
        i->toRight())
   {
     if (i->hasParent())
