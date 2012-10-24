@@ -66,13 +66,14 @@ void Liftover::convert(AlignmentConstPtr alignment,
 }
 
 void Liftover::liftInterval()
-{
-  
+{  
   _colIt = _srcSequence->getColumnIterator(&_tgtSet, 0, _inStart, _inEnd - 1);
   do 
   {
-    
-  } while (_colIt->lastColumn() == false);
+    const ColumnMap* colMap = _colIt->getColumnMap();
+    colIt->toRight();
+  } 
+  while (_colIt->lastColumn() == false);
   
 }
 

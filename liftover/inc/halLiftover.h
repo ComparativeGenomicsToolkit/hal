@@ -34,6 +34,9 @@ protected:
    void writeBedLine();
    void liftInterval();
 
+   typedef ColumnIterator::DNASet DNASet;
+   typedef ColumnIterator::ColumnMap ColumnMap;
+
    AlignmentConstPtr _alignment;
    std::ifstream* _inputFile;
    std::ofstream* _outputFile;
