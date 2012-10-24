@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include "halMutations.h"
+#include "halDetailedMutations.h"
 
 using namespace std;
 using namespace hal;
