@@ -26,12 +26,14 @@ void Liftover::convert(AlignmentConstPtr alignment,
                        const Genome* srcGenome,
                        ifstream* inputFile,
                        const Genome* tgtGenome,
-                       ofstream* outputFile)
+                       ofstream* outputFile,
+                       bool addDupeColumn)
 {
   _srcGenome = srcGenome;
   _inputFile = inputFile;
   _tgtGenome = tgtGenome;
   _outputFile = outputFile;
+  _addDupeColumn = addDupeColumn;
   _missedSet.clear();
   _tgtSet.clear();
   assert(_srcGenome && _inputFile && tgtGenome && outputFile);
@@ -70,7 +72,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
 
 void Liftover::liftInterval()
 {  
-  map<const Sequence*, PositionCache*> posCacheMap;
+  PositionMap posCacheMap;
   _colIt = _srcSequence->getColumnIterator(&_tgtSet, 0, _inStart, _inEnd - 1);
   do 
   {
@@ -81,11 +83,13 @@ void Liftover::liftInterval()
       {
         const DNASet* dSet = i->second;
         const Sequence* seq = i->first;
+        // if we're not adding the column, don't bother keeping track
+        hal_size_t paralogyFactor = _addDupeColumn ? dSet->size() : 0;
+        SeqIndex seqIdx(seq, paralogyFactor);
         for (DNASet::const_iterator j = dSet->begin(); j != dSet->end(); ++j)
         {
-          pair<map<const Sequence*, PositionCache*>::iterator, bool> res =
-             posCacheMap.insert(pair<const Sequence*, PositionCache*>(
-                                  seq, NULL));
+          pair<PositionMap::iterator, bool> res =
+             posCacheMap.insert(pair<SeqIndex, PositionCache*>(seqIdx, NULL));
           if (res.second == true)
           {
             res.first->second = new PositionCache();
@@ -98,10 +102,11 @@ void Liftover::liftInterval()
   } 
   while (_colIt->lastColumn() == false);
 
-  map<const Sequence*, PositionCache*>::iterator pcmIt;
+  PositionMap::iterator pcmIt;
   for (pcmIt = posCacheMap.begin(); pcmIt != posCacheMap.end(); ++pcmIt)
   {
-    const Sequence* seq = pcmIt->first;
+    const Sequence* seq = pcmIt->first.first;
+    _outParalogy = pcmIt->first.second;
     hal_size_t seqStart = seq->getStartPosition();
     PositionCache* posCache = pcmIt->second;
     const IntervalSet* iSet = posCache->getIntervalSet();
@@ -143,6 +148,11 @@ void Liftover::writeBedLine()
   for (size_t i = 0; i < _data.size(); ++i)
   {
     *_outputFile << '\t' << _data[i];
+  }
+  if (_addDupeColumn)
+  {
+    assert(_outParalogy > 0);
+    *_outputFile << '\t' << _outParalogy;
   }
   *_outputFile << '\n';
 }

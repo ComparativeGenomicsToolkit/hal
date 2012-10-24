@@ -7,8 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
-#include "halMutations.h"
-#include "halDetailedMutations.h"
+#include "halBranchMutations.h"
 
 using namespace std;
 using namespace hal;
@@ -95,7 +94,7 @@ int main(int argc, char** argv)
       cerr << "\nWarning: The --start and --length options are only taken into "
          " account when outputting bed files with the --snpFile and/or "
          "--svFile options" << endl;
-    }
+    }    
   }
   catch(exception& e)
   {
@@ -193,32 +192,11 @@ int main(int argc, char** argv)
       }
     }
     
-    // convert back to strings since mtuations class will close genomes
-    set<string> targetNames;
-    if (!snpStream.is_open() && !svStream.is_open())
-    {
-      if (targetSet.empty() == false)
-      {
-        if (refGenome != NULL)
-        {
-          targetNames.insert(refGenome->getName());
-        }
-        else
-        {
-          targetNames.insert(alignment->getRootName());
-        }
-        for (set<const Genome*>::iterator i = targetSet.begin();
-             i != targetSet.end(); ++i)
-        {
-          targetNames.insert((*i)->getName());
-        }
-      }
-
-      Mutations mutations;
-      mutations.analyzeAlignment(alignment, maxGap,
-                                 targetSet.empty() ? NULL : &targetNames);
-      cout << endl << mutations;
-    }
+    assert(ref != NULL);
+    BranchMutations mutations;
+    mutations.analyzeAlignment(alignment, maxGap, &snpStream, &svStream,
+                               ref, start, length, &targetSet);
+    cout << "print summary here" << endl;
   }
   catch(hal_exception& e)
   {

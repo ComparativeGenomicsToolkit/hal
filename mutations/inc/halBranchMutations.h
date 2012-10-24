@@ -4,26 +4,26 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#ifndef _HALDETAILEDMUTATIONS_H
-#define _HALDETAILEDMUTATIONS_H
+#ifndef _HALBRANCHMUTATIONS_H
+#define _HALBRANCHMUTATIONS_H
 
 #include <iostream>
 #include <string>
-#include <vector>
+#include <map>
 #include "hal.h"
 #include "halMutationsStats.h"
 
 namespace hal {
 
-class DetailedMutations
+class BranchMutations
 {
 public:
 
-   DetailedMutations();
-   virtual ~DetailedMutations();
+   BranchMutations();
+   virtual ~BranchMutations();
 
    void printCsv(std::ostream& outStream) const;
-   void analyzeAlignment(hal::AlignmentConstPtr alignment,
+   void analyzeAlignment(AlignmentConstPtr alignment,
                          hal_size_t gapThreshold,
                          std::ostream* snpStream,
                          std::ostream* svStream,
@@ -34,12 +34,16 @@ public:
 
 protected:
 
+   typedef std::map<const Genome*, PositionCache*> CacheMap;
+   typedef std::map<const Genome*, MutationsStats> StatsMap;
+
    AlignmentConstPtr _alignment;
    std::ostream* _snpStream;
    std::ostream* _svStream;
    hal_size_t _maxGap;
    ColumnIteratorConstPtr _colIt;
-
+   CacheMap _cacheMap;
+   StatsMap _statsMap;
 };
 
 }

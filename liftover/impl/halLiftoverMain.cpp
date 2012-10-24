@@ -20,6 +20,9 @@ static CLParserPtr initParser()
   optionsParser->addArgument("srcBed", "path of input bed file");
   optionsParser->addArgument("tgtGenome", "target genome name");
   optionsParser->addArgument("tgtBed", "path of output bed file");
+  optionsParser->addOptionFlag("addDupeColumn", "add column to output bed "
+                               "with integer number of paralgous mappings in "
+                               "target", false);
   return optionsParser;
 }
 
@@ -32,6 +35,7 @@ int main(int argc, char** argv)
   string srcBedPath;
   string tgtGenomeName;
   string tgtBedPath;
+  bool dupeCol;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -40,6 +44,7 @@ int main(int argc, char** argv)
     srcBedPath =  optionsParser->getArgument<string>("srcBed");
     tgtGenomeName = optionsParser->getArgument<string>("tgtGenome");
     tgtBedPath =  optionsParser->getArgument<string>("tgtBed");
+    dupeCol = optionsParser->getFlag("addDupeColumn");
   }
   catch(exception& e)
   {
@@ -82,7 +87,8 @@ int main(int argc, char** argv)
     }
     
     Liftover liftover;
-    liftover.convert(alignment, srcGenome, &srcBed, tgtGenome, &tgtBed);
+    liftover.convert(alignment, srcGenome, &srcBed, tgtGenome, &tgtBed, 
+                     dupeCol);
 
   }
   catch(hal_exception& e)

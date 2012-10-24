@@ -26,7 +26,8 @@ public:
                 const Genome* srcGenome,
                 std::ifstream* inputFile,
                 const Genome* tgtGenome,
-                std::ofstream* outputFile);
+                std::ofstream* outputFile,
+                bool addDupeColumn);
                    
 protected:
 
@@ -37,12 +38,16 @@ protected:
    typedef ColumnIterator::DNASet DNASet;
    typedef ColumnIterator::ColumnMap ColumnMap;
    typedef PositionCache::IntervalSet IntervalSet;
-
+   
+   typedef std::pair<const Sequence*, hal_size_t> SeqIndex;
+   typedef std::map<SeqIndex, PositionCache*> PositionMap;
+   
 protected: 
 
    AlignmentConstPtr _alignment;
    std::ifstream* _inputFile;
    std::ofstream* _outputFile;
+   bool _addDupeColumn;
    
    // current bed line
    std::string _inName;
@@ -54,6 +59,7 @@ protected:
    std::string _outName;
    hal_size_t _outStart;
    hal_size_t _outEnd;
+   hal_size_t _outParalogy;
 
    const Genome* _srcGenome;
    const Genome* _tgtGenome;

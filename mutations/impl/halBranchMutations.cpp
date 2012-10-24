@@ -6,22 +6,22 @@
 
 #include <deque>
 #include <cassert>
-#include "halDetailedMutations.h"
+#include "halBranchMutations.h"
 
 using namespace std;
 using namespace hal;
 
-DetailedMutations::DetailedMutations()
+BranchMutations::BranchMutations()
 {
 
 }
 
-DetailedMutations::~DetailedMutations()
+BranchMutations::~BranchMutations()
 {
 
 }
 
-void DetailedMutations::analyzeAlignment(AlignmentConstPtr alignment,
+void BranchMutations::analyzeAlignment(AlignmentConstPtr alignment,
                                          hal_size_t gapThreshold,
                                          ostream* snpStream,
                                          ostream* svStream,
@@ -48,22 +48,23 @@ void DetailedMutations::analyzeAlignment(AlignmentConstPtr alignment,
 
   _alignment = alignment;
 
+  hal_size_t iteration = 0;
   ColumnIteratorConstPtr colIt = reference->getColumnIterator(targets,
                                                               gapThreshold, 
                                                               startPosition,
-                                                              lastPosition);
-  
-  while (colIt->lastColumn() == false)
+                                                              lastPosition); 
+  do 
   {
-    colIt->toRight();
+
     
     // erase empty entries from the column.  helps when there are 
     // millions of sequences (ie from fastas with lots of scaffolds)
-    // if (numBlocks++ % 1000 == 0)
-    // {
-    //  colIt->defragment();
-    // }
+    if (iteration++ % 1000 == 0)
+    {
+      colIt->defragment();
+    }
+    colIt->toRight();
   }
-
+  while (colIt->lastColumn() == false);
 }
 

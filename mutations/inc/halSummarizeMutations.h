@@ -16,12 +16,12 @@
 
 namespace hal {
 
-class Mutations
+class SummarizeMutations
 {
 public:
 
-   Mutations();
-   virtual ~Mutations();
+   SummarizeMutations();
+   virtual ~SummarizeMutations();
 
    void printCsv(std::ostream& outStream) const;
    void analyzeAlignment(hal::AlignmentConstPtr alignment,
@@ -46,7 +46,8 @@ protected:
 
 }
 
-inline std::ostream& operator<<(std::ostream& os, const hal::Mutations& halCons)
+inline std::ostream& operator<<(std::ostream& os, 
+                                const hal::SummarizeMutations& halCons)
 {
   halCons.printCsv(os);
   return os;
