@@ -71,7 +71,7 @@ void Liftover::liftInterval()
   do 
   {
     const ColumnMap* colMap = _colIt->getColumnMap();
-    colIt->toRight();
+    _colIt->toRight();
   } 
   while (_colIt->lastColumn() == false);
   
