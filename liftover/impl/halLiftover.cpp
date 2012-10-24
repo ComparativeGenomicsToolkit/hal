@@ -102,13 +102,14 @@ void Liftover::liftInterval()
   for (pcmIt = posCacheMap.begin(); pcmIt != posCacheMap.end(); ++pcmIt)
   {
     const Sequence* seq = pcmIt->first;
+    hal_size_t seqStart = seq->getStartPosition();
     PositionCache* posCache = pcmIt->second;
     const IntervalSet* iSet = posCache->getIntervalSet();
     _outName = seq->getName();
     for (IntervalSet::const_iterator k = iSet->begin(); k != iSet->end(); ++k)
     {
-      _outStart = k->second;
-      _outEnd = k->first + 1;
+      _outStart = k->second - seqStart;
+      _outEnd = k->first + 1 - seqStart;
       writeBedLine();
     }
     delete posCache;
@@ -122,7 +123,7 @@ bool Liftover::readBedLine()
   getline(*_inputFile, _buffer);
   istringstream ss(_buffer);
   ss >> _inName;
-  if (!ss.bad() && !ss.eof() && _inName[0] != '#')
+  if (ss.bad() || ss.eof() || _inName[0] == '#')
   {
     return false;
   }

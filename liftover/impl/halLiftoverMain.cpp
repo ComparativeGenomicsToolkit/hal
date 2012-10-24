@@ -80,6 +80,9 @@ int main(int argc, char** argv)
     {
       throw hal_exception("Error opening tgtBed, " + tgtBedPath);
     }
+    
+    Liftover liftover;
+    liftover.convert(alignment, srcGenome, &srcBed, tgtGenome, &tgtBed);
 
   }
   catch(hal_exception& e)
@@ -92,6 +95,6 @@ int main(int argc, char** argv)
     cerr << "Exception caught: " << e.what() << endl;
     return 1;
   }
-  
+
   return 0;
 }
