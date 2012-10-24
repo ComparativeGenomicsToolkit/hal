@@ -22,13 +22,12 @@ BranchMutations::~BranchMutations()
 }
 
 void BranchMutations::analyzeAlignment(AlignmentConstPtr alignment,
-                                         hal_size_t gapThreshold,
-                                         ostream* snpStream,
-                                         ostream* svStream,
-                                         const SegmentedSequence* reference,
-                                         hal_index_t startPosition,
-                                         hal_size_t length,
-                                         const set<const Genome*>* targets)
+                                       hal_size_t gapThreshold,
+                                       ostream* svStream,
+                                       ostream* snpStream,
+                                       const SegmentedSequence* reference,
+                                       hal_index_t startPosition,
+                                       hal_size_t length)
 {
   assert(reference != NULL);
   if (startPosition >= (hal_index_t)reference->getSequenceLength() ||
@@ -44,27 +43,8 @@ void BranchMutations::analyzeAlignment(AlignmentConstPtr alignment,
   {
     throw hal_exception("Cannot convert zero length sequence");
   }
-  hal_index_t lastPosition = startPosition + (hal_index_t)(length - 1);
 
   _alignment = alignment;
 
-  hal_size_t iteration = 0;
-  ColumnIteratorConstPtr colIt = reference->getColumnIterator(targets,
-                                                              gapThreshold, 
-                                                              startPosition,
-                                                              lastPosition); 
-  do 
-  {
-
-    
-    // erase empty entries from the column.  helps when there are 
-    // millions of sequences (ie from fastas with lots of scaffolds)
-    if (iteration++ % 1000 == 0)
-    {
-      colIt->defragment();
-    }
-    colIt->toRight();
-  }
-  while (colIt->lastColumn() == false);
 }
 

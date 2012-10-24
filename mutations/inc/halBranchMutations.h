@@ -25,12 +25,11 @@ public:
    void printCsv(std::ostream& outStream) const;
    void analyzeAlignment(AlignmentConstPtr alignment,
                          hal_size_t gapThreshold,
-                         std::ostream* snpStream,
                          std::ostream* svStream,
+                         std::ostream* snpStream,
                          const SegmentedSequence* reference,
                          hal_index_t startPosition,
-                         hal_size_t length,
-                         const std::set<const Genome*>* targets);
+                         hal_size_t length);
 
 protected:
 

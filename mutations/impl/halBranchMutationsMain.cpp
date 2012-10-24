@@ -16,9 +16,9 @@ static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->addArgument("halFile", "input hal file");
+  optionsParser->addArgument("svFile", "bed file to write structural "
+                             "rearrangements");
   optionsParser->addOption("snpFile", "bed file write point mutations to",
-                           "\"\"");
-  optionsParser->addOption("svFile", "bed file write rearrangements to",
                            "\"\"");
   optionsParser->addOption("refGenome", 
                            "name of reference genome (root if empty).  all "
@@ -37,21 +37,13 @@ static CLParserPtr initParser()
                            " if specified) to convert.  If set to 0,"
                            " the entire thing is converted",
                            0);
-  optionsParser->addOption("rootGenome", 
-                           "name of root genome (none if empty)", 
-                           "\"\"");
-  optionsParser->addOption("targetGenomes",
-                           "comma-separated (no spaces) list of target genomes "
-                           "(others are excluded) (vist all if empty)",
-                           "\"\"");
   optionsParser->addOption("maxGap", 
                            "maximum indel length to be considered a gap.  Gaps "
                            " can be nested within other rearrangements.", 
                            20);
                            
-  optionsParser->setDescription("Identify mutations event in the alignment.  "
-                                "Summary statistics are printed to stdout and "
-                                "optional details are written in bed format.");
+  optionsParser->setDescription("Identify mutations on branch between given "
+                                "genome and its parent.");
   return optionsParser;
 }
 
@@ -63,8 +55,6 @@ int main(int argc, char** argv)
   string snpPath;
   string svPath;
   string refGenomeName;
-  string rootGenomeName;
-  string targetGenomes;
   string refSequenceName;
   hal_index_t start;
   hal_size_t length;
@@ -73,28 +63,13 @@ int main(int argc, char** argv)
   {
     optionsParser->parseOptions(argc, argv);
     halPath = optionsParser->getArgument<string>("halFile");
+    svPath = optionsParser->getArgument<string>("svFile");
     snpPath = optionsParser->getOption<string>("snpFile");
-    svPath = optionsParser->getOption<string>("svFile");
     refGenomeName = optionsParser->getOption<string>("refGenome");
-    rootGenomeName = optionsParser->getOption<string>("rootGenome");
-    targetGenomes = optionsParser->getOption<string>("targetGenomes");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     start = optionsParser->getOption<hal_index_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
     maxGap = optionsParser->getOption<hal_size_t>("maxGap");
-
-    if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
-    {
-      throw hal_exception("--rootGenome and --targetGenomes options are "
-                          " mutually exclusive");
-    }
-
-    if ((start != 0 || length != 0) && (snpPath == "\"\"" && svPath == "\"\""))
-    {
-      cerr << "\nWarning: The --start and --length options are only taken into "
-         " account when outputting bed files with the --snpFile and/or "
-         "--svFile options" << endl;
-    }    
   }
   catch(exception& e)
   {
@@ -112,37 +87,6 @@ int main(int argc, char** argv)
       throw hal_exception("hal alignmenet is empty");
     }
     
-    set<const Genome*> targetSet;
-    const Genome* rootGenome = NULL;
-    if (rootGenomeName != "\"\"")
-    {
-      rootGenome = alignment->openGenome(rootGenomeName);
-      if (rootGenome == NULL)
-      {
-        throw hal_exception(string("Root genome, ") + rootGenomeName + 
-                            ", not found in alignment");
-      }
-      if (rootGenomeName != alignment->getRootName())
-      {
-        getGenomesInSubTree(rootGenome, targetSet);
-      }
-    }
-
-    if (targetGenomes != "\"\"")
-    {
-      vector<string> targetNames = chopString(targetGenomes, ",");
-      for (size_t i = 0; i < targetNames.size(); ++i)
-      {
-        const Genome* tgtGenome = alignment->openGenome(targetNames[i]);
-        if (tgtGenome == NULL)
-        {
-          throw hal_exception(string("Target genome, ") + targetNames[i] + 
-                              ", not found in alignment");
-        }
-        targetSet.insert(tgtGenome);
-      }
-    }
-
     const Genome* refGenome = NULL;
     if (refGenomeName != "\"\"")
     {
@@ -172,6 +116,13 @@ int main(int argc, char** argv)
       }
     }
 
+    ofstream svStream;
+    svStream.open(svPath.c_str());
+    if (!svStream)
+    {
+      throw hal_exception("Error opening " + svPath);
+    }
+  
     ofstream snpStream;
     if (snpPath != "\"\"")
     {
@@ -182,21 +133,10 @@ int main(int argc, char** argv)
       }
     }
 
-    ofstream svStream;
-    if (svPath != "\"\"")
-    {
-      svStream.open(svPath.c_str());
-      if (!svStream)
-      {
-        throw hal_exception("Error opening " + svPath);
-      }
-    }
-    
     assert(ref != NULL);
     BranchMutations mutations;
-    mutations.analyzeAlignment(alignment, maxGap, &snpStream, &svStream,
-                               ref, start, length, &targetSet);
-    cout << "print summary here" << endl;
+    mutations.analyzeAlignment(alignment, maxGap, &svStream, &snpStream,
+                               ref, start, length);
   }
   catch(hal_exception& e)
   {
