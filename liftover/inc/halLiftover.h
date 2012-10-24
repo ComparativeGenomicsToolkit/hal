@@ -30,12 +30,15 @@ public:
                    
 protected:
 
-   void readBedLine();
+   bool readBedLine();
    void writeBedLine();
    void liftInterval();
 
    typedef ColumnIterator::DNASet DNASet;
    typedef ColumnIterator::ColumnMap ColumnMap;
+   typedef PositionCache::IntervalSet IntervalSet;
+
+protected: 
 
    AlignmentConstPtr _alignment;
    std::ifstream* _inputFile;
@@ -47,6 +50,8 @@ protected:
    hal_size_t _inEnd;
    std::vector<std::string> _data;
 
+   std::string _buffer;
+   std::string _outName;
    hal_size_t _outStart;
    hal_size_t _outEnd;
 

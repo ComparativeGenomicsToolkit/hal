@@ -40,49 +40,108 @@ void Liftover::convert(AlignmentConstPtr alignment,
 
   while (!inputFile->bad() && !inputFile->eof())
   {
-    readBedLine();
-    _srcSequence = _srcGenome->getSequence(_inName);
-    if (_srcSequence == NULL)
+    bool lineRead  = readBedLine();
+    if (lineRead == true)
     {
-      pair<set<string>::iterator, bool> result = _missedSet.insert(_inName);
-      if (result.second == true)
+      _srcSequence = _srcGenome->getSequence(_inName);
+      if (_srcSequence == NULL)
       {
-        std::cerr << "Unable to find sequence " << _inName << " in genome "
-                  << srcGenome->getName() << endl;
+        pair<set<string>::iterator, bool> result = _missedSet.insert(_inName);
+        if (result.second == true)
+        {
+          std::cerr << "Unable to find sequence " << _inName << " in genome "
+                    << srcGenome->getName() << endl;
+        }
       }
-    }
-    
-    else if (_inEnd >= _srcSequence->getSequenceLength())
-    {
-      std::cerr << "Skipping interval with endpoint " << _inEnd 
-                << "because sequence " << _inName << " has length " 
-                << _srcSequence->getSequenceLength() << endl;
-    }
-    else
-    {
-      liftInterval();
+      
+      else if (_inEnd >= _srcSequence->getSequenceLength())
+      {
+        std::cerr << "Skipping interval with endpoint " << _inEnd 
+                  << "because sequence " << _inName << " has length " 
+                  << _srcSequence->getSequenceLength() << endl;
+      }
+      else
+      {
+        liftInterval();
+      }
     }
   }
 }
 
 void Liftover::liftInterval()
 {  
+  map<const Sequence*, PositionCache*> posCacheMap;
   _colIt = _srcSequence->getColumnIterator(&_tgtSet, 0, _inStart, _inEnd - 1);
   do 
   {
-    const ColumnMap* colMap = _colIt->getColumnMap();
+    const ColumnMap* cMap = _colIt->getColumnMap();
+    for (ColumnMap::const_iterator i = cMap->begin(); i != cMap->end(); ++i)
+    {
+      if (i->first->getGenome() == _tgtGenome)
+      {
+        const DNASet* dSet = i->second;
+        const Sequence* seq = i->first;
+        for (DNASet::const_iterator j = dSet->begin(); j != dSet->end(); ++j)
+        {
+          pair<map<const Sequence*, PositionCache*>::iterator, bool> res =
+             posCacheMap.insert(pair<const Sequence*, PositionCache*>(
+                                  seq, NULL));
+          if (res.second == true)
+          {
+            res.first->second = new PositionCache();
+          }
+          res.first->second->insert((*j)->getArrayIndex());
+        }
+      }
+    }
     _colIt->toRight();
   } 
   while (_colIt->lastColumn() == false);
-  
+
+  map<const Sequence*, PositionCache*>::iterator pcmIt;
+  for (pcmIt = posCacheMap.begin(); pcmIt != posCacheMap.end(); ++pcmIt)
+  {
+    const Sequence* seq = pcmIt->first;
+    PositionCache* posCache = pcmIt->second;
+    const IntervalSet* iSet = posCache->getIntervalSet();
+    _outName = seq->getName();
+    for (IntervalSet::const_iterator k = iSet->begin(); k != iSet->end(); ++k)
+    {
+      _outStart = k->second;
+      _outEnd = k->first + 1;
+      writeBedLine();
+    }
+    delete posCache;
+  }
 }
 
-void Liftover::readBedLine()
+bool Liftover::readBedLine()
 {
-
+  _buffer.clear();
+  _data.clear();
+  getline(*_inputFile, _buffer);
+  istringstream ss(_buffer);
+  ss >> _inName;
+  if (!ss.bad() && !ss.eof() && _inName[0] != '#')
+  {
+    return false;
+  }
+  ss >> _inStart >> _inEnd;
+  string token;
+  while (!ss.bad() && !ss.eof())
+  {
+    ss >> token;
+    _data.push_back(token);
+  }
+  return !ss.bad();
 }
 
 void Liftover::writeBedLine()
 {
-
+  *_outputFile << _outName << '\t' << _outStart << '\t' << _outEnd;
+  for (size_t i = 0; i < _data.size(); ++i)
+  {
+    *_outputFile << '\t' << _data[i];
+  }
+  *_outputFile << '\n';
 }

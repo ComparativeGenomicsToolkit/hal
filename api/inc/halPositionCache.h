@@ -25,6 +25,9 @@ class PositionCache
 public:
    PositionCache() : _size(0) {}
 
+  // sorted by last index, so each interval is (last, first)
+   typedef std::map<hal_index_t, hal_index_t> IntervalSet;
+ 
    bool insert(hal_index_t pos);
    bool find(hal_index_t pos) const;
    void clear();
@@ -32,10 +35,10 @@ public:
    hal_size_t size() const { return _size; }
    hal_size_t numIntervals() const { return _set.size(); }
 
+   const IntervalSet* getIntervalSet() { return &_set; }
+
 protected:
 
-   // sorted by last index, so each interval is (last, first)
-   typedef std::map<hal_index_t, hal_index_t> IntervalSet;
    IntervalSet _set;
    hal_size_t _size;
 };
