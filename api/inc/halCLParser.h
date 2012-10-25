@@ -112,6 +112,9 @@ protected:
 
    template<typename T> T convertFromString(const std::string& token) const;
 
+   static size_t lineWidth;
+   static std::string multiLine(const std::string& line, size_t indent);
+
    struct Option {
       std::string _description;
       std::string _defaultValue;

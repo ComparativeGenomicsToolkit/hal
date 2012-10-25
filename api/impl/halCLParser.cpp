@@ -11,6 +11,8 @@
 using namespace std;
 using namespace hal;
 
+size_t CLParser::lineWidth = 85;
+
 CLParser::CLParser() :
   _prefix("--"),
   _maxArgLen(0),
@@ -162,7 +164,12 @@ void CLParser::printUsage(ostream& os) const
   os << endl;
   if (_description.empty() == false)
   {
-    os << _exeName << " v" << HAL_VERSION << ": " << _description << "\n\n";
+    stringstream vstring;
+    vstring << HAL_VERSION;
+    os << _exeName << " v" << vstring.str() << ": " 
+       << multiLine(_description, _exeName.length() + 
+                    vstring.str().length() + 4)
+       << "\n\n";
   }
   os << "USAGE:\n" << _exeName << " [Options]";
   for (size_t i = 0; i < _args.size(); ++i)
@@ -174,7 +181,9 @@ void CLParser::printUsage(ostream& os) const
   for (size_t i = 0; i < _args.size(); ++i)
   {
     string spacer(_maxArgLen - _args[i]._name.length(), ' ');
-    os << _args[i]._name << ":   " << spacer << _args[i]._description << endl;
+    os << _args[i]._name << ":   " << spacer
+       << multiLine(_args[i]._description, _maxArgLen + 4) 
+       << endl;
   }
   os << endl;
   os << "OPTIONS:\n";
@@ -189,8 +198,10 @@ void CLParser::printUsage(ostream& os) const
       spacerLen -= 8;
     }
     string spacer(spacerLen, ' ');
-    os << ":   " << spacer << i->second._description << " [default = " << 
-       i->second._defaultValue << "]" << endl;
+    os << ":   " << spacer  
+       << multiLine(i->second._description + " [default = " +
+                    i->second._defaultValue + "]", 14 + _maxOptLen) 
+       << endl;
   }
   os << endl;
   if (_example.empty() == false)
@@ -210,3 +221,41 @@ void CLParser::setExample(const std::string& example)
   _example = example;
 }
    
+string CLParser::multiLine(const string& line, size_t indent)
+{
+  if (indent >= lineWidth || line.length() + indent <= lineWidth)
+  {
+    return line;
+  }
+  string output;
+  size_t width = 0;
+  for (size_t i = 0; i < line.length(); ++i)
+  {
+    output += line[i];
+    ++width;
+    if (i != 0 && i != line.length() - 1 && width >= (lineWidth - indent))
+    {
+      bool inserted = false;
+      if (!isspace(line[i]) && !isspace(line[i+1]))
+      {
+        for (size_t j = 1; j < (lineWidth - indent) / 2 && !inserted; ++j)
+        {
+          assert(i > j);
+          if (isspace(line[i - j]))
+          {
+            inserted = true;
+            output.insert((i - j) + 1, string("\n") + string(indent, ' '));
+            width = j;
+          }
+        }
+      }
+      if (!inserted)
+      {
+        output += '\n';
+        output += string(indent, ' ');
+        width = 0;
+      }
+    }    
+  }
+  return output;
+}
