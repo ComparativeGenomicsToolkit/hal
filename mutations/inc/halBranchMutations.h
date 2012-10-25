@@ -11,7 +11,6 @@
 #include <string>
 #include <map>
 #include "hal.h"
-#include "halMutationsStats.h"
 
 namespace hal {
 
@@ -23,27 +22,34 @@ public:
    virtual ~BranchMutations();
 
    void printCsv(std::ostream& outStream) const;
-   void analyzeAlignment(AlignmentConstPtr alignment,
-                         hal_size_t gapThreshold,
-                         std::ostream* refBedStream,
-                         std::ostream* refFileStream,
-                         std::ostream* refSnpStream,
-                         const SegmentedSequence* reference,
-                         hal_index_t startPosition,
-                         hal_size_t length);
+   void analyzeBranch(AlignmentConstPtr alignment,
+                      hal_size_t gapThreshold,
+                      std::ostream* refBedStream,
+                      std::ostream* delBedStream,
+                      std::ostream* snpBedStream,
+                      const Genome* reference,
+                      hal_index_t startPosition,
+                      hal_size_t length);
 
 protected:
 
-   typedef std::map<const Genome*, PositionCache*> CacheMap;
-   typedef std::map<const Genome*, MutationsStats> StatsMap;
+   void writeRearrangement();
+   void writeSubstitutions();
+   void writeGapInsertions();
+   void writeGapDeletion();
+
+protected:
 
    AlignmentConstPtr _alignment;
+   std::ostream* _refStream;
+   std::ostream* _delStream;
    std::ostream* _snpStream;
-   std::ostream* _svStream;
    hal_size_t _maxGap;
-   ColumnIteratorConstPtr _colIt;
-   CacheMap _cacheMap;
-   StatsMap _statsMap;
+   const SegmentedSequence* _reference;
+   hal_size_t _start;
+   hal_size_t _length;
+
+   RearrangementPtr _rearrangement;
 };
 
 }

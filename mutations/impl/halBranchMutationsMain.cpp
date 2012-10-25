@@ -96,31 +96,35 @@ int main(int argc, char** argv)
     }
     
     const Genome* refGenome = NULL;
-    if (refGenomeName != "\"\"")
+    refGenome = alignment->openGenome(refGenomeName);
+    if (refGenome == NULL)
     {
-      refGenome = alignment->openGenome(refGenomeName);
-      if (refGenome == NULL)
-      {
-        throw hal_exception(string("Reference genome, ") + refGenomeName + 
-                            ", not found in alignment");
-      }
+      throw hal_exception(string("Reference genome, ") + refGenomeName + 
+                          ", not found in alignment");
     }
-    else
+    if (refGenome->getName() == alignment->getRootName())
     {
-      refGenome = alignment->openGenome(alignment->getRootName());
+      throw hal_exception("Reference genome must denote bottom node in "
+                          "a branch, and therefore cannot be the root.");
     }
-    const SegmentedSequence* ref = refGenome;
-    
+    if (start + length >= refGenome->getSequenceLength())
+    {
+      throw hal_exception(string("Invalid range for ") + refGenomeName);
+    }
+
     const Sequence* refSequence = NULL;
     if (refSequenceName != "\"\"")
     {
       refSequence = refGenome->getSequence(refSequenceName);
-      ref = refSequence;
       if (refSequence == NULL)
       {
         throw hal_exception(string("Reference sequence, ") + refSequenceName + 
                             ", not found in reference genome, " + 
                             refGenome->getName());
+      }
+      if (start + length >= refSequence->getSequenceLength())
+      {
+        throw hal_exception(string("Invalid range for ") + refSequenceName);
       }
     }
 
@@ -151,10 +155,9 @@ int main(int argc, char** argv)
       }
     }
 
-    assert(ref != NULL);
     BranchMutations mutations;
-    mutations.analyzeAlignment(alignment, maxGap, &refBedStream, &delBedStream,
-                               &snpBedStream, ref, start, length);
+    mutations.analyzeBranch(alignment, maxGap, &refBedStream, &delBedStream,
+                            &snpBedStream, refGenome, start, length);
   }
   catch(hal_exception& e)
   {
