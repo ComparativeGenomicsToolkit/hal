@@ -126,6 +126,7 @@ int main(int argc, char** argv)
       {
         throw hal_exception(string("Invalid range for ") + refSequenceName);
       }
+      start += refSequence->getStartPosition();
     }
 
     ofstream refBedStream;

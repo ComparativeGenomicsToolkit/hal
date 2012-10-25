@@ -43,10 +43,10 @@ public:
     * on the gap threshold that can be specified below...*/
    virtual hal_size_t getNumContainedGapBases() const = 0;
 
-   /** Left breakpoint is specified by the right cap of the returned segment */
+   /** Left breakpoint is specified by the first base of the returned segment */
    virtual TopSegmentIteratorConstPtr getLeftBreakpoint() const = 0;
 
-   /** Right breakpoint is specified by the left cap of the returned segment */
+   /** Right breakpoint is specified by the last base of the returned segment */
    virtual TopSegmentIteratorConstPtr getRightBreakpoint() const = 0;
 
    /** Identify the rearrangement by scanning along the genome, skipping 
