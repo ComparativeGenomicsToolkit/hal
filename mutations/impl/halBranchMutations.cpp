@@ -23,8 +23,9 @@ BranchMutations::~BranchMutations()
 
 void BranchMutations::analyzeAlignment(AlignmentConstPtr alignment,
                                        hal_size_t gapThreshold,
-                                       ostream* svStream,
-                                       ostream* snpStream,
+                                       ostream* refBedStream,
+                                       ostream* refFileStream,
+                                       ostream* refSnpStream,
                                        const SegmentedSequence* reference,
                                        hal_index_t startPosition,
                                        hal_size_t length)

@@ -25,8 +25,9 @@ public:
    void printCsv(std::ostream& outStream) const;
    void analyzeAlignment(AlignmentConstPtr alignment,
                          hal_size_t gapThreshold,
-                         std::ostream* svStream,
-                         std::ostream* snpStream,
+                         std::ostream* refBedStream,
+                         std::ostream* refFileStream,
+                         std::ostream* refSnpStream,
                          const SegmentedSequence* reference,
                          hal_index_t startPosition,
                          hal_size_t length);

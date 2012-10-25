@@ -16,13 +16,19 @@ static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addArgument("svFile", "bed file to write structural "
-                             "rearrangements");
-  optionsParser->addOption("snpFile", "bed file write point mutations to",
+  optionsParser->addArgument("refGenome", 
+                             "name of reference genome (analyzed branch is "
+                             "this genome and its parent).");
+  optionsParser->addArgument("refFile", 
+                             "bed file to write structural "
+                             "rearrangements in reference genome coordinates");
+  optionsParser->addOption("deletionFile", 
+                           "bed file to write deletions in "
+                           "reference's parent genome coordinates",
                            "\"\"");
-  optionsParser->addOption("refGenome", 
-                           "name of reference genome (root if empty).  all "
-                           "bed coordinates will be mapped to this genome", 
+  optionsParser->addOption("snpFile", 
+                           "bed file write point mutations to "
+                           "in reference genome coordinates",
                            "\"\"");
   optionsParser->addOption("refSequence",
                            "name of reference sequence within reference genome"
@@ -52,8 +58,9 @@ int main(int argc, char** argv)
   CLParserPtr optionsParser = initParser();
 
   string halPath;
-  string snpPath;
-  string svPath;
+  string refBedPath;
+  string delBedPath;
+  string snpBedPath;
   string refGenomeName;
   string refSequenceName;
   hal_index_t start;
@@ -63,9 +70,10 @@ int main(int argc, char** argv)
   {
     optionsParser->parseOptions(argc, argv);
     halPath = optionsParser->getArgument<string>("halFile");
-    svPath = optionsParser->getArgument<string>("svFile");
-    snpPath = optionsParser->getOption<string>("snpFile");
-    refGenomeName = optionsParser->getOption<string>("refGenome");
+    refGenomeName = optionsParser->getArgument<string>("refGenome");
+    refBedPath = optionsParser->getArgument<string>("refFile");
+    delBedPath = optionsParser->getOption<string>("deletionFile");
+    snpBedPath = optionsParser->getOption<string>("snpFile");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     start = optionsParser->getOption<hal_index_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
@@ -116,27 +124,37 @@ int main(int argc, char** argv)
       }
     }
 
-    ofstream svStream;
-    svStream.open(svPath.c_str());
-    if (!svStream)
+    ofstream refBedStream;
+    refBedStream.open(refBedPath.c_str());
+    if (!refBedStream)
     {
-      throw hal_exception("Error opening " + svPath);
+      throw hal_exception("Error opening " + refBedPath);
     }
   
-    ofstream snpStream;
-    if (snpPath != "\"\"")
+    ofstream delBedStream;
+    if (delBedPath != "\"\"")
     {
-      snpStream.open(snpPath.c_str());
-      if (!snpStream)
+      delBedStream.open(delBedPath.c_str());
+      if (!delBedStream)
       {
-        throw hal_exception("Error opening " + snpPath);
+        throw hal_exception("Error opening " + delBedPath);
+      }
+    }
+
+    ofstream snpBedStream;
+    if (snpBedPath != "\"\"")
+    {
+      snpBedStream.open(snpBedPath.c_str());
+      if (!snpBedStream)
+      {
+        throw hal_exception("Error opening " + snpBedPath);
       }
     }
 
     assert(ref != NULL);
     BranchMutations mutations;
-    mutations.analyzeAlignment(alignment, maxGap, &svStream, &snpStream,
-                               ref, start, length);
+    mutations.analyzeAlignment(alignment, maxGap, &refBedStream, &delBedStream,
+                               &snpBedStream, ref, start, length);
   }
   catch(hal_exception& e)
   {
