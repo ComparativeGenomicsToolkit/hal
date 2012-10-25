@@ -63,7 +63,7 @@ protected:
 
    RearrangementPtr _rearrangement;
    TopSegmentIteratorConstPtr _top;
-   BottomSegmentIteratorConstPtr _bottom;
+   BottomSegmentIteratorConstPtr _bottom1, _bottom2;
 };
 
 }

@@ -22,8 +22,9 @@ static CLParserPtr initParser()
   optionsParser->addArgument("refFile", 
                              "bed file to write structural "
                              "rearrangements in reference genome coordinates");
-  optionsParser->addOption("deletionFile", 
-                           "bed file to write deletions in "
+  optionsParser->addOption("parentFile", 
+                           "bed file to write rearrangements "
+                           "(deletions and duplications) in "
                            "reference's parent genome coordinates",
                            "\"\"");
   optionsParser->addOption("snpFile", 
@@ -59,7 +60,7 @@ int main(int argc, char** argv)
 
   string halPath;
   string refBedPath;
-  string delBedPath;
+  string parentBedPath;
   string snpBedPath;
   string refGenomeName;
   string refSequenceName;
@@ -72,7 +73,7 @@ int main(int argc, char** argv)
     halPath = optionsParser->getArgument<string>("halFile");
     refGenomeName = optionsParser->getArgument<string>("refGenome");
     refBedPath = optionsParser->getArgument<string>("refFile");
-    delBedPath = optionsParser->getOption<string>("deletionFile");
+    parentBedPath = optionsParser->getOption<string>("parentFile");
     snpBedPath = optionsParser->getOption<string>("snpFile");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     start = optionsParser->getOption<hal_index_t>("start");
@@ -136,13 +137,13 @@ int main(int argc, char** argv)
       throw hal_exception("Error opening " + refBedPath);
     }
   
-    ofstream delBedStream;
-    if (delBedPath != "\"\"")
+    ofstream parentBedStream;
+    if (parentBedPath != "\"\"")
     {
-      delBedStream.open(delBedPath.c_str());
-      if (!delBedStream)
+      parentBedStream.open(parentBedPath.c_str());
+      if (!parentBedStream)
       {
-        throw hal_exception("Error opening " + delBedPath);
+        throw hal_exception("Error opening " + parentBedPath);
       }
     }
 
@@ -157,7 +158,7 @@ int main(int argc, char** argv)
     }
 
     BranchMutations mutations;
-    mutations.analyzeBranch(alignment, maxGap, &refBedStream, &delBedStream,
+    mutations.analyzeBranch(alignment, maxGap, &refBedStream, &parentBedStream,
                             &snpBedStream, refGenome, start, length);
   }
   catch(hal_exception& e)

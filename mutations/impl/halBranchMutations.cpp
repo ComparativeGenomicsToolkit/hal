@@ -71,7 +71,8 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
 
   _top  = reference->getTopSegmentIterator();
   _top->toSite(startPosition);
-  _bottom = reference->getParent()->getBottomSegmentIterator();
+  _bottom1 = reference->getParent()->getBottomSegmentIterator();
+  _bottom2 = reference->getParent()->getBottomSegmentIterator();
   
   _rearrangement = reference->getRearrangement(_top->getArrayIndex());
   _rearrangement->setGapLengthThreshold(_maxGap);
@@ -169,9 +170,9 @@ void BranchMutations::writeSubstitutions()
   do {
     if (_top->hasParent())
     {
-      _bottom->toParent(_top);
+      _bottom1->toParent(_top);
       _top->getString(tstring);
-      _bottom->getString(bstring);
+      _bottom1->getString(bstring);
       assert(tstring.length() == bstring.length());
 
       for (hal_index_t i = 0; i < (hal_index_t)tstring.length(); ++i)
@@ -271,15 +272,24 @@ void BranchMutations::writeDuplication()
   {
     return;
   }
-/*
-  pair<hal_index_t, hal_index_t> pos = _rearrangement->getDeletedRange();
-  assert((pos.second - pos.first) + 1 > _maxGap);
-  const Sequence* seq = _reference->getParent()->getSeqeunceBySite(pos.first);
-  assert(seq != NULL);
+  _bottom1->toParent(_rearrangement->getLeftBreakpoint());
+  _bottom2->toParent(_rearrangement->getRightBreakpoint());
+  if (_bottom1->getReversed())
+  {
+    assert(_bottom2->getReversed());
+    swap(_bottom1, _bottom2);
+    _bottom1->toReverse();
+    _bottom2->toReverse();           
+  }
+  
+  assert(_bottom1->getArrayIndex() <= _bottom2->getArrayIndex());
+
+  hal_index_t startPos = _bottom1->getStartPosition();
+  hal_index_t endPos = _bottom2->getEndPosition();
+  const Sequence* seq = _bottom1->getSequence();
   
   *_parentStream << seq->getName() << '\t' 
-              << startPos - seq->getStartPosition() << '\t'
-              << endPos - seq->getStartPosition() << '\t'
-              << deletionBedTag << '\n';
-*/
+                 << startPos - seq->getStartPosition() << '\t'
+                 << endPos - seq->getStartPosition() << '\t'
+                 << duplicationBedTag << '\n';
 }
