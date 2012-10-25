@@ -12,11 +12,11 @@
 using namespace std;
 using namespace hal;
 
-const string BranchMutations::inversionBedTag = "INV";
-const string BranchMutations::insertionBedTag = "INS";
-const string BranchMutations::deletionBedTag = "DEL";
-const string BranchMutations::transpositionBedTag = "TPO";
-const string BranchMutations::duplicationBedTag = "DUP";
+const string BranchMutations::inversionBedTag = "V";
+const string BranchMutations::insertionBedTag = "I";
+const string BranchMutations::deletionBedTag = "D";
+const string BranchMutations::transpositionBedTag = "P";
+const string BranchMutations::duplicationBedTag = "D";
 const string BranchMutations::gapInsertionBedTag = "GI";
 const string BranchMutations::gapDeletionBedTag = "GD";
 string BranchMutations::substitutionBedTag(char parent, char child)
@@ -138,7 +138,7 @@ void BranchMutations::writeInsertionOrInversion()
   
   *_refStream << _sequence->getName() << '\t' 
               << startPos - _sequence->getStartPosition() << '\t'
-              << endPos - _sequence->getStartPosition() << '\t';
+              << endPos + 1 - _sequence->getStartPosition() << '\t';
 
   if (_rearrangement->getID() ==  Rearrangement::Inversion)
   {
@@ -186,7 +186,7 @@ void BranchMutations::writeSubstitutions()
         {        
           *_snpStream << _sequence->getName() << '\t'
                       << pos - _sequence->getStartPosition() << '\t' 
-                      << pos - _sequence->getStartPosition() << 't'
+                      << pos + 1 - _sequence->getStartPosition() << '\t'
                       << substitutionBedTag(p, c) << '\n';
         }
       }
@@ -218,7 +218,7 @@ void BranchMutations::writeGapInsertions()
 
       *_refStream << _sequence->getName() << '\t' 
                   << startPos - _sequence->getStartPosition() << '\t'
-                  << endPos - _sequence->getStartPosition() << '\t'
+                  << endPos + 1 - _sequence->getStartPosition() << '\t'
                   << gapInsertionBedTag << '\n';      
     }
     _top->toRight();
@@ -242,7 +242,7 @@ void BranchMutations::writeDeletion()
   
   *_parentStream << seq->getName() << '\t' 
               << pos.first - seq->getStartPosition() << '\t'
-              << pos.second - seq->getStartPosition() << '\t'
+              << pos.second + 1 - seq->getStartPosition() << '\t'
               << deletionBedTag << '\n';
 }
 
@@ -261,7 +261,7 @@ void BranchMutations::writeGapDeletion()
   
     *_parentStream << seq->getName() << '\t' 
                    << pos.first - seq->getStartPosition() << '\t'
-                   << pos.second - seq->getStartPosition() << '\t'
+                   << pos.second + 1 - seq->getStartPosition() << '\t'
                    << gapDeletionBedTag << '\n'; 
   }  
 }
@@ -290,6 +290,6 @@ void BranchMutations::writeDuplication()
   
   *_parentStream << seq->getName() << '\t' 
                  << startPos - seq->getStartPosition() << '\t'
-                 << endPos - seq->getStartPosition() << '\t'
+                 << endPos + 1 - seq->getStartPosition() << '\t'
                  << duplicationBedTag << '\n';
 }

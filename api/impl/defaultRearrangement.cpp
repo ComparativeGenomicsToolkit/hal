@@ -98,11 +98,11 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
   }
   else if (scanInsertionCycle(topSegment) == true)
   {
-    if (_cur->hasParent() == true)
+    if (_cur->hasParent() == true && !_cur->isFirst() && !_cur->isLast())
     {
       _id = Transposition;
     }
-    else
+    else if (_cur->hasParent() == false)
     {
       _id = _cur->getLength() > _gapThreshold ? Insertion : Gap;
     }

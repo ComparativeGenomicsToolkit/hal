@@ -127,7 +127,17 @@ int main(int argc, char** argv)
       {
         throw hal_exception(string("Invalid range for ") + refSequenceName);
       }
+      if (length == 0)
+      {
+        length = refSequence->getSequenceLength() - start;
+      }
       start += refSequence->getStartPosition();
+    }
+
+    if (length == 0)
+    {
+      assert(refSequence == NULL);
+      length = refGenome->getSequenceLength() - start;
     }
 
     ofstream refBedStream;
