@@ -223,6 +223,21 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getInsertedRange() const
   return range;
 }
 
+pair<hal_index_t, hal_index_t> DefaultRearrangement::getDuplicatedRange() const
+{
+  pair<hal_index_t, hal_index_t> range;
+  assert(_cur->hasParent() == true);
+  _curParent->toParent(_cur);  
+  range.first = _curParent->getLeft()->getStartPosition();
+  range.second = _curParent->getRight()->getStartPosition() + 
+     (hal_index_t)(_cur->getRight()->getLength() - 1);
+  if (range.first >= range.second)
+  {
+    swap(range.first, range.second);
+  }
+  return range;
+}
+
 bool DefaultRearrangement::identifyNext()
 {
   assert(_cur->getReversed() == false);
@@ -646,6 +661,7 @@ bool DefaultRearrangement::scanDuplicationCycle(
   
   if (_cur->hasNextParalogy() == true)
   {
+    assert(_cur->hasParent() == true);
     _right->toNextParalogy();
     if (_right->getLeftArrayIndex() > _cur->getLeftArrayIndex())
     {

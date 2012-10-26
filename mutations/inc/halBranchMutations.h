@@ -48,6 +48,7 @@ protected:
    void writeDeletion();
    void writeGapDeletion();
    void writeDuplication();
+   void writeHeaders();
 
 protected:
 
@@ -60,6 +61,8 @@ protected:
    const Sequence* _sequence;
    hal_size_t _start;
    hal_size_t _length;
+   std::string _refName;
+   std::string _parName;
 
    RearrangementPtr _rearrangement;
    TopSegmentIteratorConstPtr _top;

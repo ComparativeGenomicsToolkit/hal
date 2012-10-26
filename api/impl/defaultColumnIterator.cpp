@@ -42,18 +42,20 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
     _next = _top->copy();
   }
 
-  // need to allocate the rearrangement from 
-  if (reference->getParent() != NULL)
+  if (_maxInsertionLength > 0)
   {
-    _rearrangement = reference->getRearrangement();
-    _rearrangement->setAtomic(true);
+    // need to allocate the rearrangement from 
+    if (reference->getParent() != NULL)
+    {
+      _rearrangement = reference->getRearrangement();
+      _rearrangement->setAtomic(true);
+    }
+    else if (reference->getNumChildren() > 0)
+    {
+      _rearrangement = reference->getChild(0)->getRearrangement();
+      _rearrangement->setAtomic(true);
+    }
   }
-  else if (reference->getNumChildren() > 0)
-  {
-    _rearrangement = reference->getChild(0)->getRearrangement();
-    _rearrangement->setAtomic(true);
-  }
-
   const Sequence* sequence = reference->getSequenceBySite(columnIndex);
   assert(sequence != NULL);
   _ref =sequence;    

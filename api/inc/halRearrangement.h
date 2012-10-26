@@ -76,6 +76,11 @@ public:
     * Otherwise, results are undefined */
    virtual std::pair<hal_index_t, hal_index_t> getInsertedRange() const = 0;
 
+   /** Get the range in the parent that was duplicated.  Only valid to call 
+    * this immediately after identifying a duplication.
+    * Otherwise, results are undefined */
+   virtual std::pair<hal_index_t, hal_index_t> getDuplicatedRange() const = 0;
+
    /** Start scanning from last identified breakpoint */
    virtual bool identifyNext() = 0;
 

@@ -16,7 +16,7 @@ const string BranchMutations::inversionBedTag = "V";
 const string BranchMutations::insertionBedTag = "I";
 const string BranchMutations::deletionBedTag = "D";
 const string BranchMutations::transpositionBedTag = "P";
-const string BranchMutations::duplicationBedTag = "D";
+const string BranchMutations::duplicationBedTag = "U";
 const string BranchMutations::gapInsertionBedTag = "GI";
 const string BranchMutations::gapDeletionBedTag = "GD";
 string BranchMutations::substitutionBedTag(char parent, char child)
@@ -66,6 +66,8 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _refStream = refBedStream;
   _parentStream = parentBedStream;
   _snpStream = snpBedStream;
+  _refName = _reference->getName();
+  _parName = _reference->getParent()->getName();
 
   hal_index_t end = startPosition + (hal_index_t)length - 1;
 
@@ -77,6 +79,8 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _rearrangement = reference->getRearrangement(_top->getArrayIndex());
   _rearrangement->setGapLengthThreshold(_maxGap);
   
+  writeHeaders();
+
   do {
     _sequence = _reference->getSequenceBySite(
       _rearrangement->getLeftBreakpoint()->getStartPosition());
@@ -151,10 +155,10 @@ void BranchMutations::writeInsertionOrInversion()
   else
   {
     assert(_rearrangement->getID() ==  Rearrangement::Transposition);
-    *_refStream << transpositionBedTag;
+    *_refStream << transpositionBedTag << '\t';
   }
   
-  *_refStream << '\n';
+  *_refStream << _parName << '\t' << _refName << '\n';
 }
 
 void BranchMutations::writeSubstitutions()
@@ -187,7 +191,8 @@ void BranchMutations::writeSubstitutions()
           *_snpStream << _sequence->getName() << '\t'
                       << pos - _sequence->getStartPosition() << '\t' 
                       << pos + 1 - _sequence->getStartPosition() << '\t'
-                      << substitutionBedTag(p, c) << '\n';
+                      << substitutionBedTag(p, c) 
+                      << _parName << '\t' << _refName<< '\n';
         }
       }
     }
@@ -219,7 +224,8 @@ void BranchMutations::writeGapInsertions()
       *_refStream << _sequence->getName() << '\t' 
                   << startPos - _sequence->getStartPosition() << '\t'
                   << endPos + 1 - _sequence->getStartPosition() << '\t'
-                  << gapInsertionBedTag << '\n';      
+                  << gapInsertionBedTag 
+                  << _parName << '\t' << _refName << '\n';      
     }
     _top->toRight();
   }
@@ -241,9 +247,10 @@ void BranchMutations::writeDeletion()
   assert(seq != NULL);
   
   *_parentStream << seq->getName() << '\t' 
-              << pos.first - seq->getStartPosition() << '\t'
-              << pos.second + 1 - seq->getStartPosition() << '\t'
-              << deletionBedTag << '\n';
+                 << pos.first - seq->getStartPosition() << '\t'
+                 << pos.second + 1 - seq->getStartPosition() << '\t'
+                 << deletionBedTag << '\t'
+                 << _parName << '\t' << _refName << '\n'; 
 }
 
 void BranchMutations::writeGapDeletion()
@@ -262,7 +269,8 @@ void BranchMutations::writeGapDeletion()
     *_parentStream << seq->getName() << '\t' 
                    << pos.first - seq->getStartPosition() << '\t'
                    << pos.second + 1 - seq->getStartPosition() << '\t'
-                   << gapDeletionBedTag << '\n'; 
+                   << gapDeletionBedTag << '\t'
+                   << _parName << '\t' << _refName << '\n';
   }  
 }
 
@@ -272,24 +280,31 @@ void BranchMutations::writeDuplication()
   {
     return;
   }
-  _bottom1->toParent(_rearrangement->getLeftBreakpoint());
-  _bottom2->toParent(_rearrangement->getRightBreakpoint());
-  if (_bottom1->getReversed())
-  {
-    assert(_bottom2->getReversed());
-    swap(_bottom1, _bottom2);
-    _bottom1->toReverse();
-    _bottom2->toReverse();           
-  }
+  pair<hal_index_t, hal_index_t> pos = _rearrangement->getDuplicatedRange();
   
-  assert(_bottom1->getArrayIndex() <= _bottom2->getArrayIndex());
-
-  hal_index_t startPos = _bottom1->getStartPosition();
-  hal_index_t endPos = _bottom2->getEndPosition();
-  const Sequence* seq = _bottom1->getSequence();
+  const Sequence* seq = _reference->getParent()->getSequenceBySite(pos.first);
+  assert(seq != NULL);
   
   *_parentStream << seq->getName() << '\t' 
-                 << startPos - seq->getStartPosition() << '\t'
-                 << endPos + 1 - seq->getStartPosition() << '\t'
-                 << duplicationBedTag << '\n';
+                 << pos.first - seq->getStartPosition() << '\t'
+                 << pos.second + 1 - seq->getStartPosition() << '\t'
+                 << duplicationBedTag << '\t'
+                 << _parName << '\t' << _refName << '\n';
+}
+
+void BranchMutations::writeHeaders()
+{
+  string header("#Sequence\tStart\tEnd\tMutationID\tParentGenome\tChildGenome\n"
+                "#I=Insertion D=Deletion GI(D)=GapInsertion(GapDeletion) "
+                "V=Inversion P=Transposition U=Duplication\n");
+  *_refStream << header;
+  if (_parentStream)
+  {
+    *_parentStream << header;
+  }
+  if (_snpStream)
+  {
+    *_snpStream << header;
+  }
+  
 }

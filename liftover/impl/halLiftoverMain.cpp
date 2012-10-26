@@ -71,7 +71,7 @@ int main(int argc, char** argv)
     const Genome* tgtGenome = alignment->openGenome(tgtGenomeName);
     if (tgtGenome == NULL)
     {
-      throw hal_exception(string("tgtGenome, ") + srcGenomeName + 
+      throw hal_exception(string("tgtGenome, ") + tgtGenomeName + 
                           ", not found in alignment");
     }
     

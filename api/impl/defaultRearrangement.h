@@ -42,6 +42,7 @@ public:
    virtual bool identifyInsertionFromLeftBreakpoint(
      TopSegmentIteratorConstPtr topSegment);
    virtual std::pair<hal_index_t, hal_index_t> getInsertedRange() const;
+   virtual std::pair<hal_index_t, hal_index_t> getDuplicatedRange() const;
    virtual bool identifyNext();
    virtual hal_size_t getGapLengthThreshold() const;
    virtual void setGapLengthThreshold(hal_size_t threshold);
