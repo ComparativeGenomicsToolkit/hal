@@ -24,6 +24,7 @@ public:
    void printCsv(std::ostream& outStream) const;
    void analyzeBranch(AlignmentConstPtr alignment,
                       hal_size_t gapThreshold,
+                      double nThreshold,
                       std::ostream* refBedStream,
                       std::ostream* parentBedStream,
                       std::ostream* snpBedStream,
@@ -57,6 +58,7 @@ protected:
    std::ostream* _parentStream;
    std::ostream* _snpStream;
    hal_size_t _maxGap;
+   double _nThreshold;
    const Genome* _reference;
    const Sequence* _sequence;
    hal_size_t _start;

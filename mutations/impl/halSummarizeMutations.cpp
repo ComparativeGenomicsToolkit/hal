@@ -39,10 +39,12 @@ void SummarizeMutations::printCsv(ostream& outStream) const
 }
 
 void SummarizeMutations::analyzeAlignment(AlignmentConstPtr alignment,
-                                 hal_size_t gapThreshold,
-                                 const set<string>* targetSet)
+                                          hal_size_t gapThreshold,
+                                          double nThreshold,
+                                          const set<string>* targetSet)
 {
   _gapThreshold = gapThreshold;
+  _nThreshold = nThreshold;
   _targetSet = targetSet;
   _branchMap.clear();
   _alignment = alignment;
@@ -118,8 +120,7 @@ void SummarizeMutations::rearrangementAnalysis(const Genome* genome,
   GappedTopSegmentIteratorConstPtr gappedTop =
      genome->getGappedTopSegmentIterator(0, _gapThreshold);
 
-  RearrangementPtr r = genome->getRearrangement();
-  r->setGapLengthThreshold(_gapThreshold);
+  RearrangementPtr r = genome->getRearrangement(0, _gapThreshold, _nThreshold);
   do {    
     // get the number of gaps from the current range of the rearrangement
     // (this should cover the entire genome)

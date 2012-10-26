@@ -231,7 +231,7 @@ void RearrangementInsertionTest::checkCallBack(AlignmentConstPtr alignment)
 
   const Genome* child = alignment->openGenome("child");
   
-  RearrangementPtr r = child->getRearrangement();
+  RearrangementPtr r = child->getRearrangement(0, 10, 1);
   do
   {
     hal_index_t leftIdx = 
@@ -297,9 +297,9 @@ RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
   size_t numSegmentsPerSequence = 
      child->getSequenceIterator()->getSequence()->getNumTopSegments();
 
-  RearrangementPtr r = child->getRearrangement();
+  RearrangementPtr r = child->getRearrangement(0, 10, 1);
 
-  r = child->getRearrangement();
+  r = child->getRearrangement(0, 10, 1);
   do
   {
     hal_index_t leftIdx = 
@@ -380,7 +380,7 @@ RearrangementGappedInversionTest::checkCallBack(AlignmentConstPtr alignment)
 
   const Genome* child = alignment->openGenome("child");
     
-  RearrangementPtr r = child->getRearrangement();
+  RearrangementPtr r = child->getRearrangement(0, 10, 1);
   do
   {
     hal_index_t leftIdx = 

@@ -53,6 +53,7 @@ public:
    bool overlaps(hal_index_t genomePos) const;
    bool isFirst() const;
    bool isLast() const;
+   bool isMissingData(double nThreshold) const;
 
    // TOP SEGMENT INTERFACE
    hal_index_t getParentIndex() const;

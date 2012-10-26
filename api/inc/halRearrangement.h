@@ -25,7 +25,8 @@ class Rearrangement
 public:
 
    enum ID { Insertion = 0, Deletion, Duplication, Translocation, 
-             Transposition, Inversion, Complex, Invalid, Gap, Nothing};
+             Transposition, Inversion, Complex, Invalid, Gap, 
+             Missing, Nothing};
 
    /** Get the ID of the rearrangement */
    virtual ID getID() const = 0;
@@ -101,6 +102,18 @@ public:
    /* Get the atomic behaviour */
    virtual bool getAtomic() const = 0;
 
+   /* Set the threshold for missing data (N's) in a rearranged segment
+    * @param nThreshold Value between 0 and 1.  If the number of N's
+    * in the rearranged segment / segment length > nThreshold, then 
+    * the rearrangement is termed "missing data".  */
+   virtual void setNThreshold(double nThreshold) = 0;
+
+   /* Get the threshold for missing data (N's) in a rearranged segment
+    * If the number of N's
+    * in the rearranged segment / segment length > nThreshold, then 
+    * the rearrangement is termed "missing data". */
+   virtual double getNThreshold() const = 0;
+   
 protected:
    friend class counted_ptr<Rearrangement>;
    friend class counted_ptr<const Rearrangement>;

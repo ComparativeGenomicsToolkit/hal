@@ -164,6 +164,10 @@ bool DefaultBottomSegmentIterator::isLast() const
   return !_reversed ? _bottomSegment->isLast() : _bottomSegment->isFirst();
 }
 
+bool DefaultBottomSegmentIterator::isMissingData(double nThreshold) const
+{
+  return _bottomSegment->isMissingData(nThreshold);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // BOTTOM SEGMENT INTERFACE

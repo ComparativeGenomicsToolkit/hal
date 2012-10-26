@@ -41,6 +41,7 @@ BranchMutations::~BranchMutations()
 
 void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
                                     hal_size_t gapThreshold,
+                                    double nThreshold,
                                     ostream* refBedStream,
                                     ostream* parentBedStream,
                                     ostream* snpBedStream,
@@ -63,6 +64,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _length = length;
   _alignment = alignment;
   _maxGap = gapThreshold;
+  _nThreshold = nThreshold;
   _refStream = refBedStream;
   _parentStream = parentBedStream;
   _snpStream = snpBedStream;
@@ -76,8 +78,8 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _bottom1 = reference->getParent()->getBottomSegmentIterator();
   _bottom2 = reference->getParent()->getBottomSegmentIterator();
   
-  _rearrangement = reference->getRearrangement(_top->getArrayIndex());
-  _rearrangement->setGapLengthThreshold(_maxGap);
+  _rearrangement = reference->getRearrangement(_top->getArrayIndex(),
+                                               _maxGap, _nThreshold);
   
   writeHeaders();
 
@@ -108,8 +110,8 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   // kind of stupid, but we do a second pass to get the gapped deletions
   _top  = reference->getTopSegmentIterator();
   _top->toSite(startPosition);
-  _rearrangement = reference->getRearrangement(_top->getArrayIndex());   
-  _rearrangement->setAtomic(true);
+  _rearrangement = reference->getRearrangement(_top->getArrayIndex(), 0,
+                                               _nThreshold, true);   
   do {
     switch (_rearrangement->getID())
     {

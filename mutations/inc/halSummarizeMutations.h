@@ -26,6 +26,7 @@ public:
    void printCsv(std::ostream& outStream) const;
    void analyzeAlignment(hal::AlignmentConstPtr alignment,
                          hal_size_t gapThreshold,
+                         double nThreshold,
                          const std::set<std::string>* targetSet = NULL);
 
 protected:
@@ -41,6 +42,7 @@ protected:
    BranchMap _branchMap;
    hal::AlignmentConstPtr _alignment;
    hal_size_t _gapThreshold;
+   double _nThreshold;
    const std::set<std::string>* _targetSet;
 };
 

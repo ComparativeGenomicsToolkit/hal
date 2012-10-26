@@ -94,6 +94,12 @@ public:
    /** Check whether segment is the last segment of a sequence
     * if underlying object is reversed iterator, then checks if first*/
    virtual bool isLast() const = 0;
+   
+   /** Test if the fraction of N's in the segment is greater than 
+    * a given threshold.
+    * @param nThreshold Maximum fraction of N's in the segment for it 
+    * to no be considered missing data */
+   virtual bool isMissingData(double nThreshold) const = 0;
 
 protected:
    friend class counted_ptr<Segment>;

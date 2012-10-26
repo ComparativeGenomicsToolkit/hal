@@ -617,11 +617,17 @@ void HDF5Genome::setSubString(const string& inString,
   dnaIt.writeString(inString, length);
 }
 
-RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position) const
+RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position,
+                                              hal_size_t gapLengthThreshold,
+                                              double nThreshold,
+                                              bool atomic) const
 {
   assert(position >= 0 && position < (hal_index_t)getNumTopSegments());
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
-  DefaultRearrangement* rea = new DefaultRearrangement(this);
+  DefaultRearrangement* rea = new DefaultRearrangement(this,
+                                                       gapLengthThreshold,
+                                                       nThreshold,
+                                                       atomic);
   rea->identifyFromLeftBreakpoint(top);
   return RearrangementPtr(rea);
 }

@@ -18,12 +18,15 @@ using namespace hal;
 // maximum size a simple indel can be to be considered a gap (and not
 // a rearrangement)
 const hal_size_t DefaultRearrangement::DefaultGapThreshold = 10;
+const double DefaultRearrangement::DefaultNThreshold = 0.10;
 
 DefaultRearrangement::DefaultRearrangement(const Genome* childGenome,
                                            hal_size_t gapThreshold,
+                                           double nThreshold,
                                            bool atomic) :
   _gapThreshold(gapThreshold),
   _atomic(atomic),
+  _nThreshold(nThreshold),
   _childIndex(1000),
   _genome(childGenome),
   _parent(NULL),
@@ -94,11 +97,15 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
   }
   else if (scanInversionCycle(topSegment) == true)
   {
-    _id = Inversion;
+    _id = _cur->isMissingData(_nThreshold) ? Missing : Inversion;
   }
   else if (scanInsertionCycle(topSegment) == true)
   {
-    if (_cur->hasParent() == true && !_cur->isFirst() && !_cur->isLast())
+    if (_cur->isMissingData(_nThreshold) == true)
+    {
+      _id = Missing;
+    }
+    else if (_cur->hasParent() == true && !_cur->isFirst() && !_cur->isLast())
     {
       _id = Transposition;
     }
@@ -109,7 +116,11 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
   }
   else if (scanDeletionCycle(topSegment) == true) 
   {
-    if (_leftParent->hasChild() == false)
+    if (_leftParent->isMissingData(_nThreshold) == true)
+    {
+      _id = Missing;
+    }
+    else if (_leftParent->hasChild() == false)
     {
       _id = _leftParent->getLength() > _gapThreshold ? Deletion : Gap;
     }
@@ -120,10 +131,11 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
   }
   else if (scanDuplicationCycle(topSegment) == true)
   {
-    _id = Duplication;
+    _id = _cur->isMissingData(_nThreshold) ? Missing : Duplication;
   }
   else
   {
+/*
     resetStatus(topSegment);
     if (_cur->isFirst() == false && _cur->isLast() == false)
     {
@@ -135,7 +147,7 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
         _curParent->toParent(_cur);
         _leftParent->toParent(_left);
         _rightParent->toParent(_right);
-/*
+
         cout << "\n\ncomplex\n"
              << "cur " << _cur 
              << "\nleft ** " << _left
@@ -158,10 +170,10 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
       scanDeletionCycle(topSegment);
 //      exit(10);
     }
-*/
+
       }
     }
-
+*/
     _id = Complex;
   }
   
@@ -286,6 +298,23 @@ void DefaultRearrangement::setAtomic(bool atomic)
 {
   _atomic = atomic;
   setGapLengthThreshold(0);
+}
+
+void DefaultRearrangement::setNThreshold(double nThreshold)
+{
+  if (nThreshold < 0 || nThreshold > 1)
+  {
+    stringstream ss;
+    ss << "Invalid nThreshold, " << nThreshold << ", specified. "
+       "must be between 0 and 1.";       
+    throw hal_exception(ss.str());
+  }
+  _nThreshold = nThreshold;
+}
+
+double DefaultRearrangement::getNThreshold() const
+{
+  return _nThreshold;
 }
 
 void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)

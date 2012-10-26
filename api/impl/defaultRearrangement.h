@@ -21,9 +21,11 @@ class DefaultRearrangement : public Rearrangement
 {
 public:
    static const hal_size_t DefaultGapThreshold;
+   static const double DefaultNThreshold;
 
    DefaultRearrangement(const Genome* childGenome, 
                         hal_size_t gapThreshold = DefaultGapThreshold,
+                        double nThreshold = DefaultNThreshold,
                         bool atomic = false);
 
    virtual ~DefaultRearrangement();
@@ -48,6 +50,8 @@ public:
    virtual void setGapLengthThreshold(hal_size_t threshold);
    virtual bool getAtomic() const;
    virtual void setAtomic(bool atomic);
+   virtual void setNThreshold(double nThreshold);
+   virtual double getNThreshold() const;
 
 protected:
    
@@ -64,6 +68,7 @@ protected:
    
    hal_size_t _gapThreshold;
    bool _atomic;
+   double _nThreshold;
 
    GappedTopSegmentIteratorConstPtr _left, _cur, _next, _right;
    GappedBottomSegmentIteratorConstPtr _leftParent, _curParent, _nextParent,

@@ -27,6 +27,10 @@ static CLParserPtr initParser()
                            "maximum indel length to be considered a gap.  Gaps "
                            " can be nested within other rearrangements.", 
                            20);
+  optionsParser->addOption("maxNFraction",
+                           "maximum franction of Ns in a rearranged segment "
+                           "for it to not be ignored as missing data.",
+                           .10);
                            
   optionsParser->setDescription("Print summary table of mutation events "
                                 "in the alignemt.");
@@ -42,6 +46,7 @@ int main(int argc, char** argv)
   string targetGenomes;
   string refSequenceName;
   hal_size_t maxGap;
+  double nThreshold;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -49,6 +54,7 @@ int main(int argc, char** argv)
     rootGenomeName = optionsParser->getOption<string>("rootGenome");
     targetGenomes = optionsParser->getOption<string>("targetGenomes");
     maxGap = optionsParser->getOption<hal_size_t>("maxGap");
+    nThreshold = optionsParser->getOption<double>("maxNFraction");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -116,7 +122,7 @@ int main(int argc, char** argv)
     }
     
     SummarizeMutations mutations;
-    mutations.analyzeAlignment(alignment, maxGap,
+    mutations.analyzeAlignment(alignment, maxGap, nThreshold,
                                targetSet.empty() ? NULL : &targetNames);
     cout << endl << mutations;
   }

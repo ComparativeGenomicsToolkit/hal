@@ -163,6 +163,10 @@ bool DefaultTopSegmentIterator::isLast() const
   return !_reversed ? _topSegment->isLast() : _topSegment->isFirst();
 }
 
+bool DefaultTopSegmentIterator::isMissingData(double nThreshold) const
+{
+  return _topSegment->isMissingData(nThreshold);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // TOP SEGMENT INTERFACE

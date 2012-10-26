@@ -116,9 +116,18 @@ public:
 
    /** Get a rearrangement object 
     * @param position Position of topsegment defining first breakpoint of
-    * rearrangement */
-   virtual RearrangementPtr getRearrangement(
-     hal_index_t position = 0) const = 0;
+    * rearrangement 
+    * @param gapLengthThreshold The maximum size of a simple indel such that
+    * it will be considered a gap (and factored out of breakpoint 
+    * computations)
+    * @param nThreshold Maximum fraction (between 0 and 1) of N's in a 
+    * rearrangement for it not to be flagged as missing data
+    * @param atomic Never merge segments together into a rearrangement.  
+    * Generally for internal use */
+   virtual RearrangementPtr getRearrangement(hal_index_t position,
+                                             hal_size_t gapLengthThreshold,
+                                             double nThreshold,
+                                             bool atomic = false) const = 0;
 
    /** Get a gapped iterator  (experimental) 
     * REMINDER: ther iterator is extended from the left-to-right along

@@ -138,8 +138,11 @@ public:
                              hal_size_t start,
                              hal_size_t length);
 
-   RearrangementPtr getRearrangement(hal_index_t position) const;
-
+   RearrangementPtr getRearrangement(hal_index_t position,
+                                     hal_size_t gapLengthThreshold,
+                                     double nThreshold,
+                                     bool atomic = false) const;
+   
    GappedTopSegmentIteratorConstPtr getGappedTopSegmentIterator(
      hal_index_t i, hal_size_t gapThreshold, bool atomic) const;
 

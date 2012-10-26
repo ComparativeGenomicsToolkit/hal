@@ -47,13 +47,11 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
     // need to allocate the rearrangement from 
     if (reference->getParent() != NULL)
     {
-      _rearrangement = reference->getRearrangement();
-      _rearrangement->setAtomic(true);
+      _rearrangement = reference->getRearrangement(0, 0, 1., true);
     }
     else if (reference->getNumChildren() > 0)
     {
-      _rearrangement = reference->getChild(0)->getRearrangement();
-      _rearrangement->setAtomic(true);
+      _rearrangement = reference->getChild(0)->getRearrangement(0, 0, 1., true);
     }
   }
   const Sequence* sequence = reference->getSequenceBySite(columnIndex);

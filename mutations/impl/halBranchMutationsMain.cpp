@@ -48,6 +48,10 @@ static CLParserPtr initParser()
                            "maximum indel length to be considered a gap.  Gaps "
                            " can be nested within other rearrangements.", 
                            20);
+  optionsParser->addOption("maxNFraction",
+                           "maximum franction of Ns in a rearranged segment "
+                           "for it to not be ignored as missing data.",
+                           .10);
                            
   optionsParser->setDescription("Identify mutations on branch between given "
                                 "genome and its parent.");
@@ -67,6 +71,7 @@ int main(int argc, char** argv)
   hal_index_t start;
   hal_size_t length;
   hal_size_t maxGap;
+  double nThreshold;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -79,6 +84,7 @@ int main(int argc, char** argv)
     start = optionsParser->getOption<hal_index_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
     maxGap = optionsParser->getOption<hal_size_t>("maxGap");
+    nThreshold = optionsParser->getOption<double>("maxNFraction");
   }
   catch(exception& e)
   {
@@ -168,7 +174,8 @@ int main(int argc, char** argv)
     }
 
     BranchMutations mutations;
-    mutations.analyzeBranch(alignment, maxGap, &refBedStream, &parentBedStream,
+    mutations.analyzeBranch(alignment, maxGap, nThreshold,
+                            &refBedStream, &parentBedStream,
                             &snpBedStream, refGenome, start, length);
   }
   catch(hal_exception& e)

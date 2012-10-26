@@ -41,6 +41,7 @@ public:
    virtual bool overlaps(hal_index_t genomePos) const;
    virtual bool isFirst() const;
    virtual bool isLast() const;
+   virtual bool isMissingData(double nThreshold) const;
 
     // TOP SEGMENT INTERFACE
    virtual hal_index_t getParentIndex() const;

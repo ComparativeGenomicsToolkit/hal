@@ -80,6 +80,35 @@ void HDF5BottomSegment::getString(string& outString) const
   di.readString(outString, getLength()); 
 }
 
+bool HDF5BottomSegment::isMissingData(double nThreshold) const
+{
+  if (nThreshold >= 1.0)
+  {
+    return false;
+  }  
+  HDF5DNAIterator di(const_cast<HDF5Genome*>(_genome), getStartPosition());
+  size_t length = getLength();
+  size_t maxNs = nThreshold * (double)length;
+  size_t Ns = 0;
+  char c;
+  for (size_t i = 0; i < length; ++i, di.toRight())
+  {
+    c = di.getChar();
+    if (c == 'N' || c == 'n')
+    {
+      ++Ns;
+    }
+    if (Ns > maxNs)
+    {
+      return true;
+    }
+    if ((length - i) < (maxNs - Ns))
+    {
+      break;
+    }
+  }
+  return false;
+}
 
 // HDF5 SPECIFIC
 H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
