@@ -42,6 +42,7 @@ void MafWriteGenomes::convert(const string& mafPath,
   createGenomes();  
   MafScanner::scan(mafPath, targets);
   initEmptySegments();
+  updateRefParseInfo();
 }
 
 MafWriteGenomes::MapRange MafWriteGenomes::getRefSequences() const
@@ -588,4 +589,60 @@ MafWriteGenomes::circularPrev(size_t row, ParaSet& paraSet, ParaSet::iterator i)
     }
   } while (i != j);
   return j;
+}
+
+void MafWriteGenomes::updateRefParseInfo()
+{
+  if (_refGenome->getParent() == NULL || _refGenome->getNumChildren() == 0)
+  {
+    return;
+  }
+  
+  // copied from CactusHalConverter::updateRootParseInfo() in
+  // cactus2hal/src/cactusHalConverter.cpp 
+  BottomSegmentIteratorPtr bottomIterator = 
+     _refGenome->getBottomSegmentIterator();
+  TopSegmentIteratorPtr topIterator = _refGenome->getTopSegmentIterator();
+  BottomSegmentIteratorConstPtr bend = _refGenome->getBottomSegmentEndIterator();
+  TopSegmentIteratorConstPtr tend = _refGenome->getTopSegmentEndIterator();
+
+  while (bottomIterator != bend && topIterator != tend)
+  {
+    bool bright = false;
+    bool tright = false;
+    BottomSegment* bseg = bottomIterator->getBottomSegment();
+    TopSegment* tseg = topIterator->getTopSegment();
+    hal_index_t bstart = bseg->getStartPosition();
+    hal_index_t bend = bstart + (hal_index_t)bseg->getLength();
+    hal_index_t tstart = tseg->getStartPosition();
+    hal_index_t tend = tstart + (hal_index_t)tseg->getLength();
+    
+    if (bstart >= tstart && bstart < tend)
+    {
+      bseg->setTopParseIndex(tseg->getArrayIndex());
+    }
+    if (bend <= tend || bstart == bend)
+    {
+      bright = true;
+    }
+        
+    if (tstart >= bstart && tstart < bend)
+    {
+      tseg->setBottomParseIndex(bseg->getArrayIndex());
+    }
+    if (tend <= bend || tstart == tend)
+    {
+      tright = true;
+    }
+
+    assert(bright || tright);
+    if (bright == true)
+    {
+      bottomIterator->toRight();
+    }
+    if (tright == true)
+    {
+      topIterator->toRight();
+    }
+  }
 }

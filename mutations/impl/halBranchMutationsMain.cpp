@@ -19,14 +19,13 @@ static CLParserPtr initParser()
   optionsParser->addArgument("refGenome", 
                              "name of reference genome (analyzed branch is "
                              "this genome and its parent).");
-  optionsParser->addArgument("refFile", 
+  optionsParser->addArgument("outRefFile", 
                              "bed file to write structural "
                              "rearrangements in reference genome coordinates");
-  optionsParser->addOption("parentFile", 
-                           "bed file to write rearrangements "
-                           "(deletions and duplications) in "
-                           "reference's parent genome coordinates",
-                           "\"\"");
+  optionsParser->addArgument("outParentFile", 
+                             "bed file to write rearrangements "
+                             "(deletions and duplications) in "
+                             "reference's parent genome coordinates");
   optionsParser->addOption("snpFile", 
                            "bed file write point mutations to "
                            "in reference genome coordinates",
@@ -77,8 +76,8 @@ int main(int argc, char** argv)
     optionsParser->parseOptions(argc, argv);
     halPath = optionsParser->getArgument<string>("halFile");
     refGenomeName = optionsParser->getArgument<string>("refGenome");
-    refBedPath = optionsParser->getArgument<string>("refFile");
-    parentBedPath = optionsParser->getOption<string>("parentFile");
+    refBedPath = optionsParser->getArgument<string>("outRefFile");
+    parentBedPath = optionsParser->getArgument<string>("outParentFile");
     snpBedPath = optionsParser->getOption<string>("snpFile");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     start = optionsParser->getOption<hal_index_t>("start");
@@ -154,13 +153,10 @@ int main(int argc, char** argv)
     }
   
     ofstream parentBedStream;
-    if (parentBedPath != "\"\"")
+    parentBedStream.open(parentBedPath.c_str());
+    if (!parentBedStream)
     {
-      parentBedStream.open(parentBedPath.c_str());
-      if (!parentBedStream)
-      {
-        throw hal_exception("Error opening " + parentBedPath);
-      }
+      throw hal_exception("Error opening " + parentBedPath);
     }
 
     ofstream snpBedStream;

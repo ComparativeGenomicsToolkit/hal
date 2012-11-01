@@ -148,11 +148,11 @@ void BranchMutations::writeInsertionOrInversion()
 
   if (_rearrangement->getID() ==  Rearrangement::Inversion)
   {
-    *_refStream << inversionBedTag;
+    *_refStream << inversionBedTag << '\t';
   }
   else if (_rearrangement->getID() ==  Rearrangement::Insertion)
   {
-    *_refStream << insertionBedTag;
+    *_refStream << insertionBedTag << '\t';
   }
   else
   {
@@ -193,7 +193,7 @@ void BranchMutations::writeSubstitutions()
           *_snpStream << _sequence->getName() << '\t'
                       << pos - _sequence->getStartPosition() << '\t' 
                       << pos + 1 - _sequence->getStartPosition() << '\t'
-                      << substitutionBedTag(p, c) 
+                      << substitutionBedTag(p, c) << '\t'
                       << _parName << '\t' << _refName<< '\n';
         }
       }
@@ -226,7 +226,7 @@ void BranchMutations::writeGapInsertions()
       *_refStream << _sequence->getName() << '\t' 
                   << startPos - _sequence->getStartPosition() << '\t'
                   << endPos + 1 - _sequence->getStartPosition() << '\t'
-                  << gapInsertionBedTag 
+                  << gapInsertionBedTag << '\t'
                   << _parName << '\t' << _refName << '\n';      
     }
     _top->toRight();

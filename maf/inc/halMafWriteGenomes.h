@@ -55,6 +55,7 @@ private:
    void convertSegments(size_t col);
    void updateParalogy(size_t i);
    void initEmptySegments();
+   void updateRefParseInfo();
 
    void aLine();
    void sLine();
