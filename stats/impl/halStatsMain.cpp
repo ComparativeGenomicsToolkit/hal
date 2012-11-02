@@ -55,8 +55,7 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(path);
-    alignment->setOptionsFromParser(optionsParser);
+    AlignmentConstPtr alignment = openHalAlignmentReadOnly(path, optionsParser);
 
     if (listGenomes == true && alignment->getNumGenomes() > 0)
     {

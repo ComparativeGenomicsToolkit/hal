@@ -58,7 +58,7 @@ hdf5AlignmentInstanceReadOnly(const H5::FileCreatPropList& fileCreateProps,
  * @param path Path of file to open 
  * @param options Command line options information */
 AlignmentPtr openHalAlignment(const std::string& path,
-                              CLParserConstPtr options = CLParserConstPtr()); 
+                              CLParserConstPtr options); 
 
 /** Get a read-only alignment instance from a file by 
  * automatically detecting which 
@@ -67,8 +67,7 @@ AlignmentPtr openHalAlignment(const std::string& path,
  * @param path Path of file to open 
  * @param options Command line options information */
 AlignmentConstPtr openHalAlignmentReadOnly(const std::string& path,
-                                           CLParserConstPtr options = 
-                                           CLParserConstPtr());  
+                                           CLParserConstPtr options);
 
 }
 
