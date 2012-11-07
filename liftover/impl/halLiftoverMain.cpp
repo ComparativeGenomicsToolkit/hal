@@ -23,6 +23,7 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("addDupeColumn", "add column to output bed "
                                "with integer number of paralgous mappings in "
                                "target", false);
+  optionsParser->addOptionFlag("append", "append results to tgtBed", false);
   return optionsParser;
 }
 
@@ -36,6 +37,7 @@ int main(int argc, char** argv)
   string tgtGenomeName;
   string tgtBedPath;
   bool dupeCol;
+  bool append;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -45,6 +47,7 @@ int main(int argc, char** argv)
     tgtGenomeName = optionsParser->getArgument<string>("tgtGenome");
     tgtBedPath =  optionsParser->getArgument<string>("tgtBed");
     dupeCol = optionsParser->getFlag("addDupeColumn");
+    append = optionsParser->getFlag("append");
   }
   catch(exception& e)
   {
@@ -80,7 +83,9 @@ int main(int argc, char** argv)
     {
       throw hal_exception("Error opening srcBed, " + srcBedPath);
     }
-    ofstream tgtBed(tgtBedPath.c_str());
+    
+    ios_base::openmode mode = append ? ios::out | ios::app : ios_base::out;
+    ofstream tgtBed(tgtBedPath.c_str(), mode);
     if (!tgtBed)
     {
       throw hal_exception("Error opening tgtBed, " + tgtBedPath);
