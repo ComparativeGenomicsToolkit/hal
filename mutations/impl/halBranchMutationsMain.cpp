@@ -34,6 +34,10 @@ static CLParserPtr initParser()
                            "name of reference sequence within reference genome"
                            " (all sequences if empty)",
                            "\"\"");
+  optionsParser->addOption("refTargets",
+                           "bed file coordinates of intervals in the reference "
+                           "genome to analyze",
+                           "\"\"");
   optionsParser->addOption("start",
                            "coordinate within reference genome (or sequence"
                            " if specified) to start at",
@@ -67,6 +71,7 @@ int main(int argc, char** argv)
   string snpBedPath;
   string refGenomeName;
   string refSequenceName;
+  string refTargetsPath;
   hal_index_t start;
   hal_size_t length;
   hal_size_t maxGap;
@@ -80,6 +85,7 @@ int main(int argc, char** argv)
     parentBedPath = optionsParser->getArgument<string>("outParentFile");
     snpBedPath = optionsParser->getOption<string>("snpFile");
     refSequenceName = optionsParser->getOption<string>("refSequence");
+    refTargetsPath = optionsParser->getOption<string>("refTargets");
     start = optionsParser->getOption<hal_index_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
     maxGap = optionsParser->getOption<hal_size_t>("maxGap");
@@ -169,10 +175,51 @@ int main(int argc, char** argv)
       }
     }
 
-    BranchMutations mutations;
-    mutations.analyzeBranch(alignment, maxGap, nThreshold,
-                            &refBedStream, &parentBedStream,
-                            &snpBedStream, refGenome, start, length);
+    ifstream refTargetsStream;
+    if (refTargetsPath != "\"\"")
+    {
+      refTargetsStream.open(refTargetsPath.c_str());
+      if (!refTargetsStream)
+      {
+        throw hal_exception("Error opening " + refTargetsPath);
+      }
+      string line;
+      hal_size_t end;
+      while (!refTargetsStream.bad() && !refTargetsStream.eof())
+      {
+        getline(refTargetsStream, line);
+        istringstream ss(line);
+        ss >> refSequenceName >> start >> end;
+        if (ss.bad() && (!refSequenceName.empty() || refSequenceName[0] != '#'))
+        {
+          cerr << "skipping malformed line " << line << " in " 
+               << refTargetsPath << "\n";
+        }
+        else
+        {
+          refSequence = refGenome->getSequence(refSequenceName);
+          length = end - start;
+          if (refSequence != NULL && length <= refSequence->getSequenceLength())
+          {
+            start = refSequence->getStartPosition() + start;
+            BranchMutations mutations;
+            mutations.analyzeBranch(alignment, maxGap, nThreshold,
+                                    &refBedStream, &parentBedStream,
+                                    snpBedStream.is_open() ? &snpBedStream : 
+                                    NULL, refGenome, start, length);
+
+          }
+        }
+      }
+    }
+    else
+    {
+      BranchMutations mutations;
+      mutations.analyzeBranch(alignment, maxGap, nThreshold,
+                              &refBedStream, &parentBedStream,
+                              snpBedStream.is_open() ? &snpBedStream : NULL, 
+                              refGenome, start, length);
+    }
   }
   catch(hal_exception& e)
   {

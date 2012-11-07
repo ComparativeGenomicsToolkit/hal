@@ -71,6 +71,8 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _refName = _reference->getName();
   _parName = _reference->getParent()->getName();
 
+  writeHeaders();
+
   hal_index_t end = startPosition + (hal_index_t)length - 1;
 
   _top  = reference->getTopSegmentIterator();
@@ -80,8 +82,6 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   
   _rearrangement = reference->getRearrangement(_top->getArrayIndex(),
                                                _maxGap, _nThreshold);
-  
-  writeHeaders();
 
   do {
     _sequence = _reference->getSequenceBySite(
@@ -299,12 +299,15 @@ void BranchMutations::writeHeaders()
   string header("#Sequence\tStart\tEnd\tMutationID\tParentGenome\tChildGenome\n"
                 "#I=Insertion D=Deletion GI(D)=GapInsertion(GapDeletion) "
                 "V=Inversion P=Transposition U=Duplication\n");
-  *_refStream << header;
-  if (_parentStream)
+  if (_refStream->tellp() == ios_base::beg)
+  {
+    *_refStream << header;
+  }
+  if (_parentStream && _parentStream->tellp() == ios_base::beg)
   {
     *_parentStream << header;
   }
-  if (_snpStream)
+  if (_snpStream && _snpStream->tellp() == ios_base::beg)
   {
     *_snpStream << header;
   }
