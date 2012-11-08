@@ -40,11 +40,12 @@ void SummarizeMutations::printCsv(ostream& outStream) const
 
 void SummarizeMutations::analyzeAlignment(AlignmentConstPtr alignment,
                                           hal_size_t gapThreshold,
-                                          double nThreshold,
+                                          double nThreshold, bool justSubs,
                                           const set<string>* targetSet)
 {
   _gapThreshold = gapThreshold;
   _nThreshold = nThreshold;
+  _justSubs = justSubs;
   _targetSet = targetSet;
   _branchMap.clear();
   _alignment = alignment;
@@ -78,9 +79,16 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
     stats._parentLength = parent->getSequenceLength();
     stats._branchLength = _alignment->getBranchLength(parent->getName(),
                                                       genome->getName());
-   
-    rearrangementAnalysis(genome, stats);
-     
+    
+    if (_justSubs == true)
+    {
+      substitutionAnalysis(genome, stats);
+    }
+    else
+    {
+      rearrangementAnalysis(genome, stats);
+    }
+
     StrPair branchName(genome->getName(), parent->getName());
     _branchMap.insert(pair<StrPair, MutationsStats>(branchName, stats));
 
@@ -91,6 +99,26 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
   for (hal_size_t i = 0; i < children.size(); ++i)
   {
     analyzeGenomeRecursive(children[i]);
+  }
+}
+
+// quickly count subsitutions without loading rearrangement machinery.
+// used for benchmarks for basic file scanning...
+void SummarizeMutations::substitutionAnalysis(const Genome* genome, 
+                                               MutationsStats& stats)
+{
+  const Genome* parent = genome->getParent();
+
+  StrPair branchName(genome->getName(), parent->getName());
+
+  GappedTopSegmentIteratorConstPtr gappedTop =
+     genome->getGappedTopSegmentIterator(0, _gapThreshold);
+
+  while (gappedTop->getRightArrayIndex() < 
+         (hal_index_t)genome->getNumTopSegments())
+  {
+    subsAndGapInserts(gappedTop, stats);
+    gappedTop->toRight();
   }
 }
 
@@ -159,10 +187,13 @@ void SummarizeMutations::subsAndGapInserts(
   GappedTopSegmentIteratorConstPtr gappedTop, MutationsStats& stats)
 {
   assert(gappedTop->getReversed() == false);
-  hal_size_t numGaps = gappedTop->getNumGaps();
-  if (numGaps > 0)
+  if (_justSubs == false)
   {
-    stats._gapInsertionLength.add(gappedTop->getNumGapBases(), numGaps);
+    hal_size_t numGaps = gappedTop->getNumGaps();
+    if (numGaps > 0)
+    {
+      stats._gapInsertionLength.add(gappedTop->getNumGapBases(), numGaps);
+    }
   }
 
   string parent, child;

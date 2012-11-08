@@ -31,7 +31,7 @@ static CLParserPtr initParser()
                            "maximum franction of Ns in a rearranged segment "
                            "for it to not be ignored as missing data.",
                            .10);
-                           
+  optionsParser->addOptionFlag("justSubs", "just count substitutions.", false);
   optionsParser->setDescription("Print summary table of mutation events "
                                 "in the alignemt.");
   return optionsParser;
@@ -47,6 +47,7 @@ int main(int argc, char** argv)
   string refSequenceName;
   hal_size_t maxGap;
   double nThreshold;
+  bool justSubs;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -55,6 +56,7 @@ int main(int argc, char** argv)
     targetGenomes = optionsParser->getOption<string>("targetGenomes");
     maxGap = optionsParser->getOption<hal_size_t>("maxGap");
     nThreshold = optionsParser->getOption<double>("maxNFraction");
+    justSubs = optionsParser->getFlag("justSubs");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -122,8 +124,9 @@ int main(int argc, char** argv)
     }
     
     SummarizeMutations mutations;
-    mutations.analyzeAlignment(alignment, maxGap, nThreshold,
+    mutations.analyzeAlignment(alignment, maxGap, nThreshold, justSubs,
                                targetSet.empty() ? NULL : &targetNames);
+
     cout << endl << mutations;
   }
   catch(hal_exception& e)

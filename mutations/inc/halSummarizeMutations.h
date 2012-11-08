@@ -27,11 +27,13 @@ public:
    void analyzeAlignment(hal::AlignmentConstPtr alignment,
                          hal_size_t gapThreshold,
                          double nThreshold,
+                         bool justSubs,
                          const std::set<std::string>* targetSet = NULL);
 
 protected:
 
    void analyzeGenomeRecursive(const std::string& genomeName);   
+   void substitutionAnalysis(const Genome* genome, MutationsStats& stats);
    void rearrangementAnalysis(const Genome* genome, MutationsStats& stats);
    void subsAndGapInserts(GappedTopSegmentIteratorConstPtr gappedTop, 
                           MutationsStats& stats);
@@ -43,6 +45,7 @@ protected:
    hal::AlignmentConstPtr _alignment;
    hal_size_t _gapThreshold;
    double _nThreshold;
+   bool _justSubs;
    const std::set<std::string>* _targetSet;
 };
 
