@@ -14,6 +14,9 @@ using namespace hal;
 static void printGenomes(ostream& os, AlignmentConstPtr alignment);
 static void printSequences(ostream& os, AlignmentConstPtr alignment, 
                           const string& genomeName);
+static void printSequenceStats(ostream& os, AlignmentConstPtr alignment, 
+                               const string& genomeName);
+
 
 int main(int argc, char** argv)
 {
@@ -24,11 +27,13 @@ int main(int argc, char** argv)
                                "in alignment", false);
   optionsParser->addOption("sequences", "print list of sequences in given "
                            "genome", "\"\"");
+  optionsParser->addOption("sequenceStats", "print stats for each sequence in "
+                           "given genome", "\"\"");
   optionsParser->addOptionFlag("tree", "print only the NEWICK tree", false);
-
   string path;
   bool listGenomes;
   string sequencesFromGenome;
+  string sequenceStatsFromGenome;
   bool tree;
   try
   {
@@ -36,15 +41,17 @@ int main(int argc, char** argv)
     path = optionsParser->getArgument<string>("halFile");
     listGenomes = optionsParser->getFlag("genomes");
     sequencesFromGenome = optionsParser->getOption<string>("sequences");
+    sequenceStatsFromGenome = optionsParser->getOption<string>("sequenceStats");
     tree = optionsParser->getFlag("tree");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
     if (tree == true) ++optCount;
+    if (sequenceStatsFromGenome != "\"\"") ++optCount;
     if (optCount > 1)
     {
-      throw hal_exception("--genomes, --sequences, and --tree options are "
-                          "mutually exclusive");
+      throw hal_exception("--genomes, --sequences, --tree, and --sequenceStats " 
+                          "options are mutually exclusive");
     }        
   }
   catch(exception& e)
@@ -68,6 +75,10 @@ int main(int argc, char** argv)
     else if (tree == true)
     {
       cout << alignment->getNewickTree() << endl;
+    }
+    else if (sequenceStatsFromGenome != "\"\"")
+    {
+      printSequenceStats(cout, alignment, sequenceStatsFromGenome);
     }
     else
     {
@@ -126,6 +137,31 @@ void printSequences(ostream& os, AlignmentConstPtr alignment,
         os << ",";
       }
       os << seqIt->getSequence()->getName();
+    }
+  }
+  os << endl;
+}
+
+void printSequenceStats(ostream& os, AlignmentConstPtr alignment, 
+                        const string& genomeName)
+{
+  const Genome* genome = alignment->openGenome(genomeName);
+  if (genome == NULL)
+  {
+    throw hal_exception(string("Genome ") + genomeName + " not found.");
+  }
+  if (genome->getNumSequences() > 0)
+  {
+    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+    os << "SequenceName, Length, NumTopSegments, NumBottomSegments" << endl;
+
+    for (; !seqIt->equals(seqEnd); seqIt->toNext())
+    {
+      os << seqIt->getSequence()->getName() << ", "
+         << seqIt->getSequence()->getSequenceLength() << ", "
+         << seqIt->getSequence()->getNumTopSegments() << ", "
+         << seqIt->getSequence()->getNumBottomSegments() << "\n";
     }
   }
   os << endl;

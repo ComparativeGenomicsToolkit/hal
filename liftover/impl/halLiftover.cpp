@@ -56,7 +56,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
         }
       }
       
-      else if (_inEnd >= _srcSequence->getSequenceLength())
+      else if (_inEnd > _srcSequence->getSequenceLength())
       {
         std::cerr << "Skipping interval with endpoint " << _inEnd 
                   << "because sequence " << _inName << " has length " 
