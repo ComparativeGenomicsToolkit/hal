@@ -299,15 +299,15 @@ void BranchMutations::writeHeaders()
   string header("#Sequence\tStart\tEnd\tMutationID\tParentGenome\tChildGenome\n"
                 "#I=Insertion D=Deletion GI(D)=GapInsertion(GapDeletion) "
                 "V=Inversion P=Transposition U=Duplication\n");
-  if (_refStream->tellp() == ios_base::beg)
+  if (_refStream->tellp() == streampos(0))
   {
     *_refStream << header;
   }
-  if (_parentStream && _parentStream->tellp() == ios_base::beg)
+  if (_parentStream && _parentStream->tellp() == streampos(0))
   {
     *_parentStream << header;
   }
-  if (_snpStream && _snpStream->tellp() == ios_base::beg)
+  if (_snpStream && _snpStream->tellp() == streampos(0))
   {
     *_snpStream << header;
   }
