@@ -127,11 +127,16 @@ void SummarizeMutations::substitutionAnalysis(const Genome* genome,
 
   for (hal_size_t i = 0; i < n; ++i)
   {
-    bottom->getString(gString);
+    bool readString = false;
     for (size_t j = 0; j < m; ++j)
     {
       if (bottom->hasChild(j))
       {
+        if (readString == false)
+        {
+          bottom->getString(gString);
+          readString = true;
+        }
         top->toChild(bottom, j);
         top->getString(cString);
         for (hal_size_t k = 0; k < gString.length(); ++k)
