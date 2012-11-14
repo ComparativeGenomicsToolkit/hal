@@ -63,11 +63,22 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
 {
   const Genome* genome = _alignment->openGenome(genomeName);
   assert(genome != NULL);
-  MutationsStats stats = {0};
-
   const Genome* parent = genome->getParent();
-  if (parent != NULL && 
-      (!_targetSet || _targetSet->find(genomeName) != _targetSet->end()))
+  MutationsStats stats = {0};
+  stats._genomeLength = genome->getSequenceLength();
+  if (parent != NULL)
+  {
+    stats._parentLength = parent->getSequenceLength();
+    stats._branchLength = _alignment->getBranchLength(parent->getName(),
+                                                      genome->getName());
+  }
+
+  if (_justSubs == true)
+  {
+    substitutionAnalysis(genome, stats);
+  }
+  else if (parent != NULL && 
+           (!_targetSet || _targetSet->find(genomeName) != _targetSet->end()))
   {
     TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
     TopSegmentIteratorConstPtr topEnd = genome->getTopSegmentEndIterator();
@@ -75,25 +86,15 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
     string strBuf;
     string strBufParent;
 
-    stats._genomeLength = genome->getSequenceLength();
-    stats._parentLength = parent->getSequenceLength();
-    stats._branchLength = _alignment->getBranchLength(parent->getName(),
-                                                      genome->getName());
-    
-    if (_justSubs == true)
-    {
-      substitutionAnalysis(genome, stats);
-    }
-    else
-    {
-      rearrangementAnalysis(genome, stats);
-    }
-
-    StrPair branchName(genome->getName(), parent->getName());
-    _branchMap.insert(pair<StrPair, MutationsStats>(branchName, stats));
+    rearrangementAnalysis(genome, stats);
 
     _alignment->closeGenome(parent);
   }
+  
+  string pname = parent != NULL ? parent->getName() : string();
+  StrPair branchName(genome->getName(), pname);
+  _branchMap.insert(pair<StrPair, MutationsStats>(branchName, stats));
+
   _alignment->closeGenome(genome);
   vector<string> children = _alignment->getChildNames(genomeName);
   for (hal_size_t i = 0; i < children.size(); ++i)
@@ -103,22 +104,46 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
 }
 
 // quickly count subsitutions without loading rearrangement machinery.
-// used for benchmarks for basic file scanning...
+// used for benchmarks for basic file scanning... and not much else since
+// the interface is still a bit wonky.
 void SummarizeMutations::substitutionAnalysis(const Genome* genome, 
                                                MutationsStats& stats)
 {
-  const Genome* parent = genome->getParent();
-
-  StrPair branchName(genome->getName(), parent->getName());
-
-  GappedTopSegmentIteratorConstPtr gappedTop =
-     genome->getGappedTopSegmentIterator(0, _gapThreshold);
-
-  while (gappedTop->getRightArrayIndex() < 
-         (hal_index_t)genome->getNumTopSegments())
+  if (genome->getNumChildren() == 0 || genome->getNumBottomSegments() == 0)
   {
-    subsAndGapInserts(gappedTop, stats);
-    gappedTop->toRight();
+    return;
+  }
+  const Genome* parent = genome->getParent();
+  string pname = parent != NULL ? parent->getName() : string();
+  StrPair branchName(genome->getName(), pname);
+
+  BottomSegmentIteratorConstPtr bottom = genome->getBottomSegmentIterator();
+  TopSegmentIteratorConstPtr top = genome->getChild(0)->getTopSegmentIterator();
+  
+  string gString, cString;
+
+  hal_size_t n = genome->getNumBottomSegments();
+  hal_size_t m = genome->getNumChildren();
+
+  for (hal_size_t i = 0; i < n; ++i)
+  {
+    bottom->getString(gString);
+    for (size_t j = 0; j < m; ++j)
+    {
+      if (bottom->hasChild(j))
+      {
+        top->toChild(bottom, j);
+        top->getString(cString);
+        for (hal_size_t k = 0; k < gString.length(); ++k)
+        {
+          if (gString[k] != cString[k])
+          {
+            ++stats._subs;
+          }
+        }
+      }
+    }
+    bottom->toRight();
   }
 }
 
@@ -187,13 +212,10 @@ void SummarizeMutations::subsAndGapInserts(
   GappedTopSegmentIteratorConstPtr gappedTop, MutationsStats& stats)
 {
   assert(gappedTop->getReversed() == false);
-  if (_justSubs == false)
+  hal_size_t numGaps = gappedTop->getNumGaps();
+  if (numGaps > 0)
   {
-    hal_size_t numGaps = gappedTop->getNumGaps();
-    if (numGaps > 0)
-    {
-      stats._gapInsertionLength.add(gappedTop->getNumGapBases(), numGaps);
-    }
+    stats._gapInsertionLength.add(gappedTop->getNumGapBases(), numGaps);
   }
 
   string parent, child;

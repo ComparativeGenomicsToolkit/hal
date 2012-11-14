@@ -31,7 +31,11 @@ static CLParserPtr initParser()
                            "maximum franction of Ns in a rearranged segment "
                            "for it to not be ignored as missing data.",
                            .10);
-  optionsParser->addOptionFlag("justSubs", "just count substitutions.", false);
+  optionsParser->addOptionFlag("justSubs", "just count substitutions. "
+                               " Note results are total subs between genome "
+                               " and all children, rather than branch results "
+                               " when using the normal interface.  For tuning "
+                               " and performance checking only", false);
   optionsParser->setDescription("Print summary table of mutation events "
                                 "in the alignemt.");
   return optionsParser;
