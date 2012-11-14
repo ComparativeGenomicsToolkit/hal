@@ -83,12 +83,8 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
     TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
     TopSegmentIteratorConstPtr topEnd = genome->getTopSegmentEndIterator();
     BottomSegmentIteratorConstPtr parIt = parent->getBottomSegmentIterator();
-    string strBuf;
-    string strBufParent;
 
     rearrangementAnalysis(genome, stats);
-
-    _alignment->closeGenome(parent);
   }
   
   string pname = parent != NULL ? parent->getName() : string();
@@ -96,6 +92,10 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
   _branchMap.insert(pair<StrPair, MutationsStats>(branchName, stats));
 
   _alignment->closeGenome(genome);
+  if (parent != NULL)
+  {
+    _alignment->closeGenome(parent);
+  }
   vector<string> children = _alignment->getChildNames(genomeName);
   for (hal_size_t i = 0; i < children.size(); ++i)
   {
