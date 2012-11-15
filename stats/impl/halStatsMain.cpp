@@ -16,6 +16,8 @@ static void printSequences(ostream& os, AlignmentConstPtr alignment,
                           const string& genomeName);
 static void printSequenceStats(ostream& os, AlignmentConstPtr alignment, 
                                const string& genomeName);
+static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
+                            const vector<string>& genomeNames);
 
 
 int main(int argc, char** argv)
@@ -30,10 +32,13 @@ int main(int argc, char** argv)
   optionsParser->addOption("sequenceStats", "print stats for each sequence in "
                            "given genome", "\"\"");
   optionsParser->addOptionFlag("tree", "print only the NEWICK tree", false);
+  optionsParser->addOption("path", "print branches on path between comma "
+                           "separated list of genomes", "\"\"");
   string path;
   bool listGenomes;
   string sequencesFromGenome;
   string sequenceStatsFromGenome;
+  string pathGenomes;
   bool tree;
   try
   {
@@ -43,14 +48,18 @@ int main(int argc, char** argv)
     sequencesFromGenome = optionsParser->getOption<string>("sequences");
     sequenceStatsFromGenome = optionsParser->getOption<string>("sequenceStats");
     tree = optionsParser->getFlag("tree");
+    pathGenomes = optionsParser->getOption<string>("path");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
     if (tree == true) ++optCount;
     if (sequenceStatsFromGenome != "\"\"") ++optCount;
+    if (sequenceStatsFromGenome != "\"\"") ++optCount;
+    if (pathGenomes != "\"\"") ++optCount;
     if (optCount > 1)
     {
-      throw hal_exception("--genomes, --sequences, --tree, and --sequenceStats " 
+      throw hal_exception("--genomes, --sequences, --tree, --path "
+                          "and --sequenceStats " 
                           "options are mutually exclusive");
     }        
   }
@@ -79,6 +88,10 @@ int main(int argc, char** argv)
     else if (sequenceStatsFromGenome != "\"\"")
     {
       printSequenceStats(cout, alignment, sequenceStatsFromGenome);
+    }
+    else if (pathGenomes !=  "\"\"")
+    {
+      printBranchPath(cout, alignment, chopString(pathGenomes, ","));
     }
     else
     {
@@ -162,6 +175,35 @@ void printSequenceStats(ostream& os, AlignmentConstPtr alignment,
          << seqIt->getSequence()->getSequenceLength() << ", "
          << seqIt->getSequence()->getNumTopSegments() << ", "
          << seqIt->getSequence()->getNumBottomSegments() << "\n";
+    }
+  }
+  os << endl;
+}
+
+static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
+                            const vector<string>& genomeNames)
+{
+  set<const Genome*> inputSet;
+  for (size_t i = 0; i < genomeNames.size(); ++i)
+  {
+    const Genome* genome = alignment->openGenome(genomeNames[i]);
+    if (genome == NULL)
+    {
+      throw hal_exception(string("Genome ") + genomeNames[i] + " not found");
+    }
+    inputSet.insert(genome);
+  }
+  set<const Genome*> outputSet;
+  getGenomesInSpanningTree(inputSet, outputSet);
+  
+  for (set<const Genome*>::const_iterator j = outputSet.begin(); 
+       j != outputSet.end(); ++j)
+  {
+    const Genome* genome = *j;
+    if (genome->getParent() != NULL && 
+        outputSet.find(genome->getParent()) != outputSet.end())
+    {
+      os << genome->getName() << " ";
     }
   }
   os << endl;
