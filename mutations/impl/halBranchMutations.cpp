@@ -213,7 +213,7 @@ void BranchMutations::writeGapInsertions()
     {
       startPos = _top->getStartPosition();
       endPos = _top->getEndPosition();
-      assert(startPos < _start + _length && endPos >= _start);
+
       if (startPos < _start)
       {
         startPos = _start;
@@ -222,12 +222,14 @@ void BranchMutations::writeGapInsertions()
       {
         endPos = _start + _length - 1;
       }
-
-      *_refStream << _sequence->getName() << '\t' 
-                  << startPos - _sequence->getStartPosition() << '\t'
-                  << endPos + 1 - _sequence->getStartPosition() << '\t'
-                  << gapInsertionBedTag << '\t'
-                  << _parName << '\t' << _refName << '\n';      
+      if (startPos >= _start && endPos <= _start + _length - 1)
+      {
+        *_refStream << _sequence->getName() << '\t' 
+                    << startPos - _sequence->getStartPosition() << '\t'
+                    << endPos + 1 - _sequence->getStartPosition() << '\t'
+                    << gapInsertionBedTag << '\t'
+                    << _parName << '\t' << _refName << '\n';      
+      }
     }
     _top->toRight();
   }
