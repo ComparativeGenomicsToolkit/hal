@@ -479,9 +479,9 @@ bool DefaultGappedBottomSegmentIterator::hasChild() const
   {
     assert(_temp->equals(_left) && _temp2->equals(_right));
   }
-
-  assert(_temp->hasChild(_childIndex) == _temp2->hasChild(_childIndex));
-  return _temp->hasChild(_childIndex);
+  // to do: verify edge cases
+  // assert(_temp->hasChild(_childIndex) == _temp2->hasChild(_childIndex));
+  return _temp->hasChild(_childIndex) && _temp2->hasChild(_childIndex);
 }
 
 bool DefaultGappedBottomSegmentIterator::getChildReversed() const

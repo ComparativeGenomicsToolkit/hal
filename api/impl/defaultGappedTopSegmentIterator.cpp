@@ -484,9 +484,10 @@ bool DefaultGappedTopSegmentIterator::hasParent() const
   
   toRightNextUngapped(_temp);
   toLeftNextUngapped(_temp2);
-
-  assert(_temp->hasParent() == _temp2->hasParent());
-  return _temp->hasParent();
+  
+  // to verify edge cases here
+  //assert(_temp->hasParent() == _temp2->hasParent());
+  return _temp->hasParent() && _temp2->hasParent();
 }
 
 bool DefaultGappedTopSegmentIterator::getParentReversed() const
