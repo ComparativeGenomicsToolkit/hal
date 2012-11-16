@@ -54,7 +54,6 @@ int main(int argc, char** argv)
     if (sequencesFromGenome != "\"\"") ++optCount;
     if (tree == true) ++optCount;
     if (sequenceStatsFromGenome != "\"\"") ++optCount;
-    if (sequenceStatsFromGenome != "\"\"") ++optCount;
     if (pathGenomes != "\"\"") ++optCount;
     if (optCount > 1)
     {
