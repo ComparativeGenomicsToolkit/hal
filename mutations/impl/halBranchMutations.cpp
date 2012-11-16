@@ -79,6 +79,16 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _top->toSite(startPosition);
   _bottom1 = reference->getParent()->getBottomSegmentIterator();
   _bottom2 = reference->getParent()->getBottomSegmentIterator();
+
+  if (refBedStream == NULL && parentBedStream == NULL)
+  {
+    assert(snpBedStream != NULL);
+    TopSegmentIteratorConstPtr last = _top->copy();
+    last->toSite(end);
+    last->toRight();
+    writeSubstitutions(_top, last);
+    return;
+  }
   
   _rearrangement = reference->getRearrangement(_top->getArrayIndex(),
                                                _maxGap, _nThreshold);
@@ -101,33 +111,40 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
     default:
       break;
     }
-    writeSubstitutions();
+    writeSubstitutions(_rearrangement->getLeftBreakpoint(),
+                       _rearrangement->getRightBreakpoint());
     writeGapInsertions();
   }
   while (_rearrangement->identifyNext() == true && 
          _rearrangement->getLeftBreakpoint()->getStartPosition() <= end);
   
   // kind of stupid, but we do a second pass to get the gapped deletions
-  _top  = reference->getTopSegmentIterator();
-  _top->toSite(startPosition);
-  _rearrangement = reference->getRearrangement(_top->getArrayIndex(), 0,
-                                               _nThreshold, true);   
-  do {
-    switch (_rearrangement->getID())
-    {
-    case Rearrangement::Deletion:
-      writeGapDeletion();
-    default:
-      break;
+  if (parentBedStream != NULL)
+  {
+    _top  = reference->getTopSegmentIterator();
+    _top->toSite(startPosition);
+    _rearrangement = reference->getRearrangement(_top->getArrayIndex(), 0,
+                                                 _nThreshold, true);   
+    do {
+      switch (_rearrangement->getID())
+      {
+      case Rearrangement::Deletion:
+        writeGapDeletion();
+      default:
+        break;
+      }
     }
+    while (_rearrangement->identifyNext() == true && 
+           _rearrangement->getLeftBreakpoint()->getStartPosition() <= end);
   }
-  while (_rearrangement->identifyNext() == true && 
-         _rearrangement->getLeftBreakpoint()->getStartPosition() <= end);
 }
 
 void BranchMutations::writeInsertionOrInversion()
 {
-  assert(_refStream != NULL);
+  if (_refStream == NULL)
+  {
+    return;
+  }
   hal_size_t startPos = _rearrangement->getLeftBreakpoint()->getStartPosition();
   hal_size_t endPos = _rearrangement->getRightBreakpoint()->getEndPosition();
   
@@ -163,7 +180,8 @@ void BranchMutations::writeInsertionOrInversion()
   *_refStream << _parName << '\t' << _refName << '\n';
 }
 
-void BranchMutations::writeSubstitutions()
+void BranchMutations::writeSubstitutions(TopSegmentIteratorConstPtr first,
+                                         TopSegmentIteratorConstPtr lastPlusOne)
 {
   if (_snpStream == NULL)
   {
@@ -171,11 +189,16 @@ void BranchMutations::writeSubstitutions()
   }
   string tstring, bstring;
   hal_size_t pos;
-  _top->copy(_rearrangement->getLeftBreakpoint());
+  _top->copy(first);
+  hal_index_t endIndex = lastPlusOne->getArrayIndex();
   assert(_top->getReversed() == false);
   do {
     if (_top->hasParent())
     {
+      if (_refStream == NULL && _parentStream == NULL)
+      {
+        _sequence = _top->getSequence();
+      }
       _bottom1->toParent(_top);
       _top->getString(tstring);
       _bottom1->getString(bstring);
@@ -200,12 +223,15 @@ void BranchMutations::writeSubstitutions()
     }
     _top->toRight();
   } 
-  while (_top->getArrayIndex() < 
-         _rearrangement->getRightBreakpoint()->getArrayIndex());
+  while (_top->getArrayIndex() < endIndex);
 }
 
 void BranchMutations::writeGapInsertions()
 {
+  if (_refStream == NULL)
+  {
+    return;
+  }
   hal_size_t startPos, endPos;
   _top->copy(_rearrangement->getLeftBreakpoint());
   do {
@@ -301,7 +327,7 @@ void BranchMutations::writeHeaders()
   string header("#Sequence\tStart\tEnd\tMutationID\tParentGenome\tChildGenome\n"
                 "#I=Insertion D=Deletion GI(D)=GapInsertion(GapDeletion) "
                 "V=Inversion P=Transposition U=Duplication\n");
-  if (_refStream->tellp() == streampos(0))
+  if (_refStream && _refStream->tellp() == streampos(0))
   {
     *_refStream << header;
   }

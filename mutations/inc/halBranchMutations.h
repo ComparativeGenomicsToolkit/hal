@@ -44,7 +44,8 @@ public:
 protected:
 
    void writeInsertionOrInversion();
-   void writeSubstitutions();
+   void writeSubstitutions(TopSegmentIteratorConstPtr first,
+                           TopSegmentIteratorConstPtr lastPlusOne);
    void writeGapInsertions();
    void writeDeletion();
    void writeGapDeletion();

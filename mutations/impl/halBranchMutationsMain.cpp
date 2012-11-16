@@ -19,13 +19,15 @@ static CLParserPtr initParser()
   optionsParser->addArgument("refGenome", 
                              "name of reference genome (analyzed branch is "
                              "this genome and its parent).");
-  optionsParser->addArgument("outRefFile", 
-                             "bed file to write structural "
-                             "rearrangements in reference genome coordinates");
-  optionsParser->addArgument("outParentFile", 
-                             "bed file to write rearrangements "
-                             "(deletions and duplications) in "
-                             "reference's parent genome coordinates");
+  optionsParser->addOption("refFile", 
+                           "bed file to write structural "
+                           "rearrangements in reference genome coordinates",
+                           "\"\"");
+  optionsParser->addOption("parentFile", 
+                           "bed file to write rearrangements "
+                           "(deletions and duplications) in "
+                           "reference's parent genome coordinates",
+                           "\"\"");
   optionsParser->addOption("snpFile", 
                            "bed file write point mutations to "
                            "in reference genome coordinates",
@@ -81,8 +83,8 @@ int main(int argc, char** argv)
     optionsParser->parseOptions(argc, argv);
     halPath = optionsParser->getArgument<string>("halFile");
     refGenomeName = optionsParser->getArgument<string>("refGenome");
-    refBedPath = optionsParser->getArgument<string>("outRefFile");
-    parentBedPath = optionsParser->getArgument<string>("outParentFile");
+    refBedPath = optionsParser->getOption<string>("refFile");
+    parentBedPath = optionsParser->getOption<string>("parentFile");
     snpBedPath = optionsParser->getOption<string>("snpFile");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     refTargetsPath = optionsParser->getOption<string>("refTargets");
@@ -123,6 +125,11 @@ int main(int argc, char** argv)
     {
       throw hal_exception(string("Invalid range for ") + refGenomeName);
     }
+    if (refBedPath == "\"\"" && parentBedPath == "\"\"" && snpBedPath == "\"\"")
+    {
+      throw hal_exception("at least one of --refFile, --parentFile or "
+                          "--snpFile must be specified");
+    }
 
     const Sequence* refSequence = NULL;
     if (refSequenceName != "\"\"")
@@ -152,17 +159,23 @@ int main(int argc, char** argv)
     }
 
     ofstream refBedStream;
-    refBedStream.open(refBedPath.c_str());
-    if (!refBedStream)
+    if (refBedPath != "\"\"")
     {
-      throw hal_exception("Error opening " + refBedPath);
+      refBedStream.open(refBedPath.c_str());
+      if (!refBedStream)
+      {
+        throw hal_exception("Error opening " + refBedPath);
+      }
     }
   
     ofstream parentBedStream;
-    parentBedStream.open(parentBedPath.c_str());
-    if (!parentBedStream)
+    if (parentBedPath != "\"\"")
     {
-      throw hal_exception("Error opening " + parentBedPath);
+      parentBedStream.open(parentBedPath.c_str());
+      if (!parentBedStream)
+      {
+        throw hal_exception("Error opening " + parentBedPath);
+      }
     }
 
     ofstream snpBedStream;
@@ -204,9 +217,13 @@ int main(int argc, char** argv)
             start = refSequence->getStartPosition() + start;
             BranchMutations mutations;
             mutations.analyzeBranch(alignment, maxGap, nThreshold,
-                                    &refBedStream, &parentBedStream,
+                                    refBedStream.is_open() ? &refBedStream : 
+                                    NULL, 
+                                    parentBedStream.is_open() ? 
+                                    &parentBedStream : NULL ,
                                     snpBedStream.is_open() ? &snpBedStream : 
-                                    NULL, refGenome, start, length);
+                                    NULL, 
+                                    refGenome, start, length);
 
           }
         }
@@ -216,7 +233,9 @@ int main(int argc, char** argv)
     {
       BranchMutations mutations;
       mutations.analyzeBranch(alignment, maxGap, nThreshold,
-                              &refBedStream, &parentBedStream,
+                              refBedStream.is_open() ? &refBedStream : NULL, 
+                              parentBedStream.is_open() ? &parentBedStream : 
+                              NULL ,
                               snpBedStream.is_open() ? &snpBedStream : NULL, 
                               refGenome, start, length);
     }
