@@ -379,7 +379,9 @@ void DefaultBottomSegmentIterator::toSite(hal_index_t position, bool slice) cons
   }
   
   hal_index_t left = 0;
+  hal_index_t leftStartPosition = 0;
   hal_index_t right = nseg - 1;
+  hal_index_t rightStartPosition = len - 1;
   assert(_bottomSegment->getArrayIndex() >= 0 &&  
          _bottomSegment->getArrayIndex() < nseg);
   
@@ -389,8 +391,11 @@ void DefaultBottomSegmentIterator::toSite(hal_index_t position, bool slice) cons
     if (rightOf(position) == true)
     {
       right = _bottomSegment->getArrayIndex();
-      hal_index_t delta =  max((_bottomSegment->getArrayIndex() - left) / 2,
-                               (hal_index_t)1);
+      rightStartPosition = _bottomSegment->getStartPosition();
+      avgLen = double(rightStartPosition - leftStartPosition) / (right - left);
+      hal_index_t delta = (hal_index_t)
+         max((rightStartPosition - position) / avgLen, 1.);
+      delta = min(delta, _bottomSegment->getArrayIndex());
       _bottomSegment->setArrayIndex(genome, 
                                     _bottomSegment->getArrayIndex() - delta);
       assert(_bottomSegment->getArrayIndex()  >= 0 &&  
@@ -400,8 +405,11 @@ void DefaultBottomSegmentIterator::toSite(hal_index_t position, bool slice) cons
     {
       assert(leftOf(position) == true);
       left = _bottomSegment->getArrayIndex();
-      hal_index_t delta = max((right - _bottomSegment->getArrayIndex()) / 2,
-                              (hal_index_t)1);
+      leftStartPosition = _bottomSegment->getStartPosition();
+      avgLen = double(rightStartPosition - leftStartPosition) / (right - left);
+      hal_index_t delta = (hal_index_t)
+         max((position - leftStartPosition) / avgLen, 1.);
+      delta = min(delta, nseg - 1 - _bottomSegment->getArrayIndex());
       _bottomSegment->setArrayIndex(genome, 
                                     _bottomSegment->getArrayIndex() + delta);
       assert(_bottomSegment->getArrayIndex()  >= 0 &&

@@ -375,18 +375,23 @@ void DefaultTopSegmentIterator::toSite(hal_index_t position, bool slice) const
   }
 
   hal_index_t left = 0;
+  hal_index_t leftStartPosition = 0;
   hal_index_t right = nseg - 1;
+  hal_index_t rightStartPosition = len - 1;
   assert(_topSegment->getArrayIndex()  >= 0 &&  
          _topSegment->getArrayIndex() < nseg);
-  
+
   while (overlaps(position) == false)
   {
     assert(left != right);
     if (rightOf(position) == true)
     {
       right = _topSegment->getArrayIndex();
-      hal_index_t delta = max((_topSegment->getArrayIndex() - left) / 2,
-                              (hal_index_t)1);
+      rightStartPosition = _topSegment->getStartPosition();
+      avgLen = double(rightStartPosition - leftStartPosition) / (right - left);
+      hal_index_t delta = (hal_index_t)
+         max((rightStartPosition - position) / avgLen, 1.);
+      delta = min(delta, _topSegment->getArrayIndex());
       _topSegment->setArrayIndex(genome, _topSegment->getArrayIndex() - delta);
       assert(_topSegment->getArrayIndex()  >= 0 &&
              _topSegment->getArrayIndex() < nseg);
@@ -395,8 +400,11 @@ void DefaultTopSegmentIterator::toSite(hal_index_t position, bool slice) const
     {
       assert(leftOf(position) == true);
       left = _topSegment->getArrayIndex();
-      hal_index_t delta = max((right - _topSegment->getArrayIndex()) / 2,
-                              (hal_index_t)1);
+      leftStartPosition = _topSegment->getStartPosition();
+      avgLen = double(rightStartPosition - leftStartPosition) / (right - left);
+      hal_index_t delta = (hal_index_t)
+         max((position - leftStartPosition) / avgLen, 1.);
+      delta = min(delta, nseg - 1 - _topSegment->getArrayIndex());
       _topSegment->setArrayIndex(genome, _topSegment->getArrayIndex() + delta);
       assert(_topSegment->getArrayIndex() >= 0 &&
              _topSegment->getArrayIndex() < nseg);
