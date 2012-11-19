@@ -27,6 +27,7 @@ struct MutationsStats
    hal_size_t _subs;
    hal_size_t _transitions;
    hal_size_t _transversions;
+   hal_size_t _matches;
 
    // Rearrangement Information
    Avg _nothingLength;

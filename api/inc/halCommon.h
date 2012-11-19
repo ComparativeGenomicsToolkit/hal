@@ -107,6 +107,11 @@ inline bool isTransversion(char c1, char c2)
   return (x != y && x != 'N' && y != 'N' && !isTransition(c1, c2));
 }
 
+inline bool isMissingData(char c)
+{
+  return c == 'n' || c == 'N';
+}
+
 /** Count the mutations between two DNA strings */
 inline hal_size_t hammingDistance(const std::string& s1, const std::string& s2)
 {

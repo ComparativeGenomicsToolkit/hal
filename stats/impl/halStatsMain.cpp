@@ -18,7 +18,7 @@ static void printSequenceStats(ostream& os, AlignmentConstPtr alignment,
                                const string& genomeName);
 static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
                             const vector<string>& genomeNames);
-
+static void printBranches(ostream& os, AlignmentConstPtr alignment); 
 
 int main(int argc, char** argv)
 {
@@ -32,6 +32,9 @@ int main(int argc, char** argv)
   optionsParser->addOption("sequenceStats", "print stats for each sequence in "
                            "given genome", "\"\"");
   optionsParser->addOptionFlag("tree", "print only the NEWICK tree", false);
+  optionsParser->addOptionFlag("branches", "print list of branches. "
+                               "Each branch is specified by the child genome", 
+                               false);
   optionsParser->addOption("path", "print branches on path between comma "
                            "separated list of genomes", "\"\"");
   string path;
@@ -40,6 +43,7 @@ int main(int argc, char** argv)
   string sequenceStatsFromGenome;
   string pathGenomes;
   bool tree;
+  bool branches;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -49,15 +53,17 @@ int main(int argc, char** argv)
     sequenceStatsFromGenome = optionsParser->getOption<string>("sequenceStats");
     tree = optionsParser->getFlag("tree");
     pathGenomes = optionsParser->getOption<string>("path");
+    branches = optionsParser->getFlag("branches");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
     if (tree == true) ++optCount;
     if (sequenceStatsFromGenome != "\"\"") ++optCount;
     if (pathGenomes != "\"\"") ++optCount;
+    if (branches) ++ optCount;
     if (optCount > 1)
     {
-      throw hal_exception("--genomes, --sequences, --tree, --path "
+      throw hal_exception("--genomes, --sequences, --tree, --path, --branches "
                           "and --sequenceStats " 
                           "options are mutually exclusive");
     }        
@@ -91,6 +97,10 @@ int main(int argc, char** argv)
     else if (pathGenomes !=  "\"\"")
     {
       printBranchPath(cout, alignment, chopString(pathGenomes, ","));
+    }
+    else if (branches == true)
+    {
+      printBranches(cout, alignment);
     }
     else
     {
@@ -207,3 +217,30 @@ static void printBranchPath(ostream& os, AlignmentConstPtr alignment,
   }
   os << endl;
 }
+
+static void printBranches(ostream& os, AlignmentConstPtr alignment)
+{
+  const Genome* root = alignment->openGenome(alignment->getRootName());
+  set<const Genome*> genomes;
+  getGenomesInSubTree(root, genomes);
+  genomes.insert(root);
+  bool first = true;
+  for (set<const Genome*>::iterator i = genomes.begin(); i != genomes.end();
+       ++i)
+  {
+    if ((*i)->getParent() != NULL)
+    {
+      if (!first)
+      {
+        os << " ";
+      }
+      else
+      {
+        first = false;
+      }
+      os << (*i)->getName();
+    }
+  }
+  os << endl;      
+}
+

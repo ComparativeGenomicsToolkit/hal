@@ -256,6 +256,10 @@ void SummarizeMutations::subsAndGapInserts(
         {
           ++stats._subs;
         }
+        else if (!isMissingData(child[j]) && !isMissingData(parent[j]))
+        {
+          ++stats._matches;
+        }
       }
     }
   }
