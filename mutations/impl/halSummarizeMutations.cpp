@@ -30,9 +30,12 @@ void SummarizeMutations::printCsv(ostream& outStream) const
   BranchMap::const_iterator i = _branchMap.begin();
   for (; i != _branchMap.end(); ++i)
   {
-    const MutationsStats& stats = i->second;       
-    outStream << i->first.first << ", " << i->first.second << ", "
-              << stats << endl;
+    if (_justSubs || i->first.second.empty() == false)
+    {
+      const MutationsStats& stats = i->second;       
+      outStream << i->first.first << ", " << i->first.second << ", "
+                << stats << endl;
+    }
   }
 
   outStream << endl;
