@@ -122,8 +122,8 @@ Functions</h2></td></tr>
 <tr class="memitem:af35b4a5ad59e706d3e8acd6bc0c06aae"><td class="memItemLeft" align="right" valign="top">AlignmentConstPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#af35b4a5ad59e706d3e8acd6bc0c06aae">hdf5AlignmentInstanceReadOnly</a> ()</td></tr>
 <tr class="memitem:ae94a3dce7f93a1536630c06a6bcc9159"><td class="memItemLeft" align="right" valign="top">AlignmentPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#ae94a3dce7f93a1536630c06a6bcc9159">hdf5AlignmentInstance</a> (const H5::FileCreatPropList &amp;fileCreateProps, const H5::FileAccPropList &amp;fileAccessProps, const H5::DSetCreatPropList &amp;datasetCreateProps)</td></tr>
 <tr class="memitem:a2195981fc4b509e5e0b65ffa971a7fe0"><td class="memItemLeft" align="right" valign="top">AlignmentConstPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#a2195981fc4b509e5e0b65ffa971a7fe0">hdf5AlignmentInstanceReadOnly</a> (const H5::FileCreatPropList &amp;fileCreateProps, const H5::FileAccPropList &amp;fileAccessProps, const H5::DSetCreatPropList &amp;datasetCreateProps)</td></tr>
-<tr class="memitem:ae53d20b3279aff57dc4668a91b0ce780"><td class="memItemLeft" align="right" valign="top">AlignmentPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#ae53d20b3279aff57dc4668a91b0ce780">openHalAlignment</a> (const std::string &amp;path, CLParserConstPtr options=CLParserConstPtr())</td></tr>
-<tr class="memitem:a0e1812c971eba1094a0634d3291310d6"><td class="memItemLeft" align="right" valign="top">AlignmentConstPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#a0e1812c971eba1094a0634d3291310d6">openHalAlignmentReadOnly</a> (const std::string &amp;path, CLParserConstPtr options=CLParserConstPtr())</td></tr>
+<tr class="memitem:a8cec382b66b75fe3c25cf994619435f5"><td class="memItemLeft" align="right" valign="top">AlignmentPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#a8cec382b66b75fe3c25cf994619435f5">openHalAlignment</a> (const std::string &amp;path, CLParserConstPtr options)</td></tr>
+<tr class="memitem:af7fa18d1488baff3f5eb786f36ec586c"><td class="memItemLeft" align="right" valign="top">AlignmentConstPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#af7fa18d1488baff3f5eb786f36ec586c">openHalAlignmentReadOnly</a> (const std::string &amp;path, CLParserConstPtr options)</td></tr>
 <tr class="memitem:a039e27ac1ca0739e1d4956e1ae457c04"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a039e27ac1ca0739e1d4956e1ae457c04"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator==</b> (BottomSegmentIteratorConstPtr p1, BottomSegmentIteratorConstPtr p2)</td></tr>
 <tr class="memitem:a3c5dbe71e745c12e56319d4156daffb6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3c5dbe71e745c12e56319d4156daffb6"></a>
@@ -148,6 +148,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>isTransition</b> (cha
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSubstitution</b> (char c1, char c2)</td></tr>
 <tr class="memitem:a51b108bdb99d2d16e873176608017f8e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a51b108bdb99d2d16e873176608017f8e"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isTransversion</b> (char c1, char c2)</td></tr>
+<tr class="memitem:aa1d1d51ebf44d6e83fd47ab8eacab088"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa1d1d51ebf44d6e83fd47ab8eacab088"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isMissingData</b> (char c)</td></tr>
 <tr class="memitem:ad2dde365c8197fb4fd43ef9985861e3e"><td class="memItemLeft" align="right" valign="top">hal_size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#ad2dde365c8197fb4fd43ef9985861e3e">hammingDistance</a> (const std::string &amp;s1, const std::string &amp;s2)</td></tr>
 <tr class="memitem:abf5cc80ac92936620875db2e33c3877b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abf5cc80ac92936620875db2e33c3877b"></a>
 const <a class="el" href="classhal_1_1_genome.html">Genome</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getLowestCommonAncestor</b> (const std::set&lt; const <a class="el" href="classhal_1_1_genome.html">Genome</a> * &gt; &amp;inputSet)</td></tr>
@@ -427,7 +429,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
 
 </div>
 </div>
-<a class="anchor" id="ae53d20b3279aff57dc4668a91b0ce780"></a>
+<a class="anchor" id="a8cec382b66b75fe3c25cf994619435f5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -441,7 +443,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">CLParserConstPtr&#160;</td>
-          <td class="paramname"><em>options</em> = <code>CLParserConstPtr()</code>&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -461,7 +463,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
 
 </div>
 </div>
-<a class="anchor" id="a0e1812c971eba1094a0634d3291310d6"></a>
+<a class="anchor" id="af7fa18d1488baff3f5eb786f36ec586c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -475,7 +477,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">CLParserConstPtr&#160;</td>
-          <td class="paramname"><em>options</em> = <code>CLParserConstPtr()</code>&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -642,7 +644,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 26 2012 17:01:30 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 20 2012 17:30:18 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.1.1
 </small></address>
