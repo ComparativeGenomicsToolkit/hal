@@ -222,7 +222,7 @@ bool DefaultTopSegmentIterator::hasParseDown() const
 
 hal_index_t DefaultTopSegmentIterator::getNextParalogyIndex() const
 {
-  return _topSegment->getBottomParseOffset();
+  return _topSegment->getNextParalogyIndex();
 }
 
 bool DefaultTopSegmentIterator::hasNextParalogy() const
