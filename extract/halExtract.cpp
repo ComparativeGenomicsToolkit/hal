@@ -16,8 +16,12 @@ static void getDimensions(const Genome* genome,
 
 static void copyGenome(const Genome* inGenome, Genome* outGenome);
 
+static void extractTree(const AlignmentConstPtr inAlignment,
+                        AlignmentPtr outAlignment, 
+                        const string& rootName);
+
 static void extract(const AlignmentConstPtr inAlignment,
-                    AlignmentPtr outAlignment, const std::string& rootName);
+                    AlignmentPtr outAlignment, const string& rootName);
 
 static CLParserPtr initParser()
 {
@@ -72,6 +76,7 @@ int main(int argc, char** argv)
       rootName = inAlignment->getRootName();
     }
 
+    extractTree(inAlignment, outAlignment, rootName);
     extract(inAlignment, outAlignment, rootName);
   }
   catch(hal_exception& e)
@@ -135,6 +140,7 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
   n = inGenome->getNumBottomSegments();
   assert(n == outGenome->getNumBottomSegments());
   hal_size_t nc = inGenome->getNumChildren();
+  assert(nc == outGenome->getNumChildren());
   for (; (hal_size_t)inBot->getArrayIndex() < n; inBot->toRight(),
           outBot->toRight())
   {
@@ -155,8 +161,9 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
   }
 }
 
-void extract(const AlignmentConstPtr inAlignment,
-             AlignmentPtr outAlignment, const string& rootName)
+static void extractTree(const AlignmentConstPtr inAlignment,
+                        AlignmentPtr outAlignment, 
+                        const string& rootName)
 {
   const Genome* genome = inAlignment->openGenome(rootName);
   if (genome == NULL)
@@ -178,16 +185,30 @@ void extract(const AlignmentConstPtr inAlignment,
   }
   assert(newGenome != NULL);
   
+  vector<string> childNames = inAlignment->getChildNames(rootName);
+  for (size_t i = 0; i < childNames.size(); ++i)
+  {
+    extractTree(inAlignment, outAlignment, childNames[i]);
+  }
+}
+
+
+void extract(const AlignmentConstPtr inAlignment,
+             AlignmentPtr outAlignment, const string& rootName)
+{
+  const Genome* genome = inAlignment->openGenome(rootName);
+  Genome* newGenome = outAlignment->openGenome(rootName);
+  assert(newGenome != NULL);
+
   vector<Sequence::Info> dimensions;
   getDimensions(genome, dimensions);
   newGenome->setDimensions(dimensions);
+
+  copyGenome(genome, newGenome);  
   
   vector<string> childNames = inAlignment->getChildNames(rootName);
   for (size_t i = 0; i < childNames.size(); ++i)
   {
     extract(inAlignment, outAlignment, childNames[i]);
   }
-
-  copyGenome(genome, newGenome);
-
 }
