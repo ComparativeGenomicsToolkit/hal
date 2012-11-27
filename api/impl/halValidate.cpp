@@ -226,11 +226,20 @@ void hal::validateTopSegment(const TopSegment* topSegment)
     if (pti->getTopSegment()->getParentIndex() != topSegment->getParentIndex())
     {
       stringstream ss;
-      ss << "Top segment " << topSegment->getArrayIndex() << " has parent index "
+      ss << "Top segment " << topSegment->getArrayIndex() 
+         << " has parent index "
          << topSegment->getParentIndex() << ", but next paraglog " 
          << topSegment->getNextParalogyIndex() << " has parent Index " 
          << pti->getTopSegment()->getParentIndex() 
          << ". Paralogous top segments must share same parent.";
+      throw hal_exception(ss.str());
+    }
+    if (paralogyIndex == topSegment->getArrayIndex())
+    {
+      stringstream ss;
+      ss << "Top segment " << topSegment->getArrayIndex() 
+         << " has paralogy index " << topSegment->getNextParalogyIndex()
+         << " which isn't allowed";
       throw hal_exception(ss.str());
     }
   }
