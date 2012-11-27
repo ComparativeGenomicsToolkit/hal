@@ -119,6 +119,7 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
   TopSegmentIteratorConstPtr inTop = inGenome->getTopSegmentIterator();
   TopSegmentIteratorPtr outTop = outGenome->getTopSegmentIterator();
   n = inGenome->getNumTopSegments();
+  assert(n == outGenome->getNumTopSegments());
   for (; (hal_size_t)inTop->getArrayIndex() < n; inTop->toRight(),
           outTop->toRight())
   {
@@ -132,6 +133,7 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
   BottomSegmentIteratorConstPtr inBot = inGenome->getBottomSegmentIterator();
   BottomSegmentIteratorPtr outBot = outGenome->getBottomSegmentIterator();
   n = inGenome->getNumBottomSegments();
+  assert(n == outGenome->getNumBottomSegments());
   hal_size_t nc = inGenome->getNumChildren();
   for (; (hal_size_t)inBot->getArrayIndex() < n; inBot->toRight(),
           outBot->toRight())
