@@ -14,6 +14,8 @@ using namespace hal;
 static void getDimensions(const Genome* genome,
                           vector<Sequence::Info>& dimensions);
 
+static void copyGenome(const Genome* inGenome, Genome* outGenome);
+
 static void extract(const AlignmentConstPtr inAlignment,
                     AlignmentPtr outAlignment, const std::string& rootName);
 
@@ -87,11 +89,71 @@ int main(int argc, char** argv)
 
 void getDimensions(const Genome* genome, vector<Sequence::Info>& dimensions)
 {
+  assert(dimensions.size() == 0);
+  SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
+  SequenceIteratorConstPtr seqEndIt = genome->getSequenceEndIterator();
+  for (; seqIt != seqEndIt; seqIt->toNext())
+  {
+    const Sequence* sequence = seqIt->getSequence();
+    Sequence::Info info(sequence->getName(),
+                        sequence->getSequenceLength(),
+                        sequence->getNumTopSegments(),
+                        sequence->getNumBottomSegments());
+    dimensions.push_back(info);
+  }
+}
 
+void copyGenome(const Genome* inGenome, Genome* outGenome)
+{
+  DNAIteratorConstPtr inDna = inGenome->getDNAIterator();
+  DNAIteratorPtr outDna = outGenome->getDNAIterator();
+  hal_size_t n = inGenome->getSequenceLength();
+  assert(n == outGenome->getSequenceLength());
+  for (; (hal_size_t)inDna->getArrayIndex() < n; inDna->toRight(), 
+          outDna->toRight())
+  {
+    outDna->setChar(inDna->getChar());
+  }
+
+  TopSegmentIteratorConstPtr inTop = inGenome->getTopSegmentIterator();
+  TopSegmentIteratorPtr outTop = outGenome->getTopSegmentIterator();
+  n = inGenome->getNumTopSegments();
+  for (; (hal_size_t)inTop->getArrayIndex() < n; inTop->toRight(),
+          outTop->toRight())
+  {
+    outTop->setCoordinates(inTop->getStartPosition(), inTop->getLength());
+    outTop->setParentIndex(inTop->getParentIndex());
+    outTop->setParentReversed(inTop->getParentReversed());
+    outTop->setBottomParseIndex(inTop->getBottomParseIndex());
+    outTop->setNextParalogyIndex(inTop->getNextParalogyIndex());
+  }
+
+  BottomSegmentIteratorConstPtr inBot = inGenome->getBottomSegmentIterator();
+  BottomSegmentIteratorPtr outBot = outGenome->getBottomSegmentIterator();
+  n = inGenome->getNumBottomSegments();
+  hal_size_t nc = inGenome->getNumChildren();
+  for (; (hal_size_t)inBot->getArrayIndex() < n; inBot->toRight(),
+          outBot->toRight())
+  {
+    outBot->setCoordinates(inBot->getStartPosition(), inBot->getLength());
+    for (hal_size_t child = 0; child < nc; ++child)
+    {
+      outBot->setChildIndex(child, inBot->getChildIndex(child));
+      outBot->setChildReversed(child, inBot->getChildReversed(child));
+    }
+    outBot->setTopParseIndex(inBot->getTopParseIndex());
+  }
+
+  const map<string, string>& meta = inGenome->getMetaData()->getMap();
+  map<string, string>::const_iterator i = meta.begin();
+  for (; i != meta.end(); ++i)
+  {
+    outGenome->getMetaData()->set(i->first, i->second);
+  }
 }
 
 void extract(const AlignmentConstPtr inAlignment,
-             AlignmentPtr outAlignment, const std::string& rootName)
+             AlignmentPtr outAlignment, const string& rootName)
 {
   const Genome* genome = inAlignment->openGenome(rootName);
   if (genome == NULL)
@@ -116,14 +178,13 @@ void extract(const AlignmentConstPtr inAlignment,
   vector<Sequence::Info> dimensions;
   getDimensions(genome, dimensions);
   newGenome->setDimensions(dimensions);
-
-  // copy dna
-  // copy top segments
-  // copy bottom segments
   
   vector<string> childNames = inAlignment->getChildNames(rootName);
   for (size_t i = 0; i < childNames.size(); ++i)
   {
     extract(inAlignment, outAlignment, childNames[i]);
   }
+
+  copyGenome(genome, newGenome);
+
 }
