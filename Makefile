@@ -1,5 +1,5 @@
 # order is important, libraries first
-modules = api stats randgen validate mutations maf liftover
+modules = api stats randgen validate mutations maf liftover extract
 
 .PHONY: all %.all clean %.clean doxy %.doxy
 
