@@ -58,15 +58,16 @@ int main(int argc, char** argv)
       throw hal_exception("input hal alignmenet is empty");
     }
 
-    AlignmentPtr outAlignment = openHalAlignment(outHalPath, 
-                                                 optionsParser);
+    AlignmentPtr outAlignment = hdf5AlignmentInstance();
+    outAlignment->setOptionsFromParser(optionsParser);
     outAlignment->createNew(outHalPath);
+
     if (outAlignment->getNumGenomes() != 0)
     {
       throw hal_exception("output hal alignmenet cannot be initialized");
     }
     
-    if (rootName != "\"\"" && inAlignment->getNumGenomes() != 0)
+    if (rootName == "\"\"" || inAlignment->getNumGenomes() != 0)
     {
       rootName = inAlignment->getRootName();
     }
