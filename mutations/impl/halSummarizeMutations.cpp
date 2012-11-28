@@ -132,7 +132,8 @@ void SummarizeMutations::substitutionAnalysis(const Genome* genome,
   for (hal_size_t i = 0; i < m; ++i)
   {
     string cName = genome->getChild(i)->getName();
-    if (_targetSet && _targetSet->find(cName) != _targetSet->end())
+    if (!_targetSet || 
+        (_targetSet && _targetSet->find(cName) != _targetSet->end()))
     {
       children.push_back(i);
     }
