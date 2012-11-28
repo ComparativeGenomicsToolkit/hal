@@ -99,6 +99,10 @@ int main(int argc, char** argv)
       {
         getGenomesInSubTree(rootGenome, targetSet);
       }
+      else
+      {
+        rootGenome = NULL;
+      }
     }
 
     if (targetGenomes != "\"\"")
