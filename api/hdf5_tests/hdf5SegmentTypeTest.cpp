@@ -57,7 +57,7 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
       {
         cparms.setChunk(1, &chunkSize);
       }
-      myArray.create(&file, datasetName, datatype, N + 1, cparms);
+      myArray.create(&file, datasetName, datatype, N + 1, &cparms);
       for (hsize_t i = 0; i < N; ++i)
       {
         HDF5TopSegment segment(NULL, &myArray, i);
@@ -124,7 +124,7 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
         {
           cparms.setChunk(1, &chunkSize);
         }
-        myArray.create(&file, datasetName, datatype, N + 1, cparms);
+        myArray.create(&file, datasetName, datatype, N + 1, &cparms);
         for (hsize_t i = 0; i < N; ++i)
         {
           HDF5BottomSegment segment(NULL, &myArray, i);

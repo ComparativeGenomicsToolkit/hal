@@ -145,6 +145,11 @@ void SummarizeMutations::substitutionAnalysis(const Genome* genome,
 
   for (hal_size_t i = 0; i < n; ++i)
   {
+    if (i % 1000000 == 0)
+    {
+      system("date");
+      cout << genome->getName() << " " << i << " (" << n << ")" << endl;
+    }
     bool readString = false;
     for (size_t j = 0; j < children.size(); ++j)
     {

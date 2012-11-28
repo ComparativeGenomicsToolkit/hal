@@ -42,8 +42,7 @@ public:
                const H5std_string& path, 
                const H5::DataType& dataType,
                hsize_t numElements,
-               H5::DSetCreatPropList cparms =
-               H5::DSetCreatPropList::DEFAULT);
+               const H5::DSetCreatPropList* inCparms = NULL);
  
    /** Load an existing dataset into memory
      * @param file Pointer to the HDF5 file in which to create array

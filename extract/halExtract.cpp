@@ -184,6 +184,9 @@ static void extractTree(const AlignmentConstPtr inAlignment,
                                               parent->getName(), rootName));
   }
   assert(newGenome != NULL);
+
+  inAlignment->closeGenome(genome);
+  outAlignment->closeGenome(newGenome);
   
   vector<string> childNames = inAlignment->getChildNames(rootName);
   for (size_t i = 0; i < childNames.size(); ++i)
@@ -206,6 +209,9 @@ void extract(const AlignmentConstPtr inAlignment,
 
   cout << "Extracting " << genome->getName() << endl;
   copyGenome(genome, newGenome);  
+
+  inAlignment->closeGenome(genome);
+  outAlignment->closeGenome(newGenome);
   
   vector<string> childNames = inAlignment->getChildNames(rootName);
   for (size_t i = 0; i < childNames.size(); ++i)

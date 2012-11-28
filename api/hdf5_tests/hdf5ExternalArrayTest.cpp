@@ -54,7 +54,7 @@ void hdf5ExternalArrayTestCreate(CuTest *testCase)
         cparms.setDeflate(2);
         cparms.setChunk(1, &chunkSize);
       }
-      myArray.create(&file, datasetName, datatype, N, cparms);
+      myArray.create(&file, datasetName, datatype, N, &cparms);
       for (hsize_t i = 0; i < N; ++i)
       {
         hsize_t* block = reinterpret_cast<hsize_t*>(myArray.getUpdate(i));
@@ -127,7 +127,7 @@ void hdf5ExternalArrayTestCompression(CuTest *testCase)
         cparms.setDeflate(9);
         cparms.setChunk(1, &chunkSize);
       }
-      myArray.create(&file, datasetName, datatype, N, cparms);
+      myArray.create(&file, datasetName, datatype, N, &cparms);
       for (hsize_t i = 0; i < N; ++i)
       {
         hsize_t* block = reinterpret_cast<hsize_t*>(myArray.getUpdate(i));

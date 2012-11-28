@@ -27,7 +27,7 @@ public:
 // inline members
 inline H5::PredType HDF5DNA::dataType()
 {
-  return H5::PredType::NATIVE_B8;
+  return H5::PredType::NATIVE_UINT8;
 }
 
 // we store two characters per byte. bit 1 is set for capital letter

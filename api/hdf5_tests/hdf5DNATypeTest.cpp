@@ -119,7 +119,7 @@ void hdf5DNATypeTest(CuTest *testCase)
         cparms.setChunk(1, &chunkSize);
       }
       hsize_t NEVEN = N % 2 ? N + 1 : N;
-      myArray.create(&file, datasetName, datatype, NEVEN / 2, cparms);
+      myArray.create(&file, datasetName, datatype, NEVEN / 2, &cparms);
       for (hsize_t i = 0; i < NEVEN / 2; ++i)
       {
         unsigned char value = 0U;

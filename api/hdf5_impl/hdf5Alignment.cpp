@@ -52,9 +52,9 @@ HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
   _tree(NULL),
   _dirty(false)
 {
-  _cprops = fileCreateProps;
-  _aprops = fileAccessProps;
-  _dcprops = datasetCreateProps;
+  _cprops.copy(fileCreateProps);
+  _aprops.copy(fileAccessProps);
+  _dcprops.copy(datasetCreateProps);
 }
 
 HDF5Alignment::~HDF5Alignment()

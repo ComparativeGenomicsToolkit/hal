@@ -30,6 +30,7 @@ const string HDF5Genome::bottomArrayName = "BOTTOM_ARRAY";
 const string HDF5Genome::sequenceArrayName = "SEQUENCE_ARRAY";
 const string HDF5Genome::metaGroupName = "Meta";
 const string HDF5Genome::rupGroupName = "Rup";
+const double HDF5Genome::dnaChunkScale = 10.;
 
 HDF5Genome::HDF5Genome(const string& name,
                        HDF5Alignment* alignment,
@@ -38,11 +39,11 @@ HDF5Genome::HDF5Genome(const string& name,
   _alignment(alignment),
   _h5Parent(h5Parent),
   _name(name),
-  _dcprops(dcProps),
   _numChildrenInBottomArray(0),
   _totalSequenceLength(0),
   _parentCache(NULL)
 {
+  _dcprops.copy(dcProps);
   assert(!name.empty());
   assert(alignment != NULL && h5Parent != NULL);
   H5::Exception::dontPrint();
@@ -62,6 +63,9 @@ HDF5Genome::HDF5Genome(const string& name,
   {
     --_totalSequenceLength;
   }
+
+  hsize_t chunk;
+  _dcprops.getChunk(1, &chunk);
 }
 
 
@@ -129,15 +133,24 @@ void HDF5Genome::setDimensions(
     {
       _rup->set(rupGroupName, "0");
     }
+    hsize_t chunk;
+    _dcprops.getChunk(1, &chunk);
+    // enalarge chunk size because dna bases are so much smaller
+    // than segments.  (about 30x). we default to 10x enlargement
+    // since the seem to compress about 3x worse.  
+    chunk *= dnaChunkScale;
+    DSetCreatPropList dnaDC;
+    dnaDC.copy(_dcprops);
+    dnaDC.setChunk(1, &chunk);
     _dnaArray.create(&_group, dnaArrayName, HDF5DNA::dataType(), 
-                     arrayLength, _dcprops);
+                     arrayLength, &dnaDC);
   }
   if (totalSeq > 0)
   {
     _sequenceArray.create(&_group, sequenceArrayName, 
                           // pad names a bit to allow renaming
                           HDF5Sequence::dataType(maxName + 32), 
-                          totalSeq, DSetCreatPropList());
+                          totalSeq, NULL);
     writeSequences(sequenceDimensions);
     
   }
@@ -266,7 +279,7 @@ void HDF5Genome::setGenomeTopDimensions(
   }
   catch (H5::Exception){}
   _topArray.create(&_group, topArrayName, HDF5TopSegment::dataType(), 
-                     numTopSegments + 1, _dcprops);
+                     numTopSegments + 1, &_dcprops);
   _parentCache = NULL;
 }
 
@@ -288,9 +301,20 @@ void HDF5Genome::setGenomeBottomDimensions(
   }
   catch (H5::Exception){}
   hal_size_t numChildren = _alignment->getChildNames(_name).size();
+ 
+  // scale down the chunk size in order to keep chunks proportional to
+  // the size of a bottom segment with two children.
+  hsize_t chunk;
+  _dcprops.getChunk(1, &chunk);  
+  double scale = numChildren < 3 ? 1. : 1. / (0.25 * numChildren);
+  chunk *= scale;
+  DSetCreatPropList botDC;
+  botDC.copy(_dcprops);
+  botDC.setChunk(1, &chunk);
+
   _bottomArray.create(&_group, bottomArrayName, 
                       HDF5BottomSegment::dataType(numChildren), 
-                      numBottomSegments + 1, _dcprops);
+                      numBottomSegments + 1, &botDC);
   _numChildrenInBottomArray = numChildren;
   _childCache.clear();
 }

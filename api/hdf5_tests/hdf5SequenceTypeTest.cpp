@@ -75,7 +75,7 @@ void hdf5SequenceTypeTest(CuTest *testCase)
         {
           cparms.setChunk(1, &chunkSize);
         }
-        myArray.create(&file, datasetName, datatype, N, cparms);
+        myArray.create(&file, datasetName, datatype, N, &cparms);
         hal_size_t totalTopSegments = 0;
         hal_size_t totalBottomSegments = 0;
         for (hsize_t i = 0; i < N; ++i)

@@ -35,7 +35,7 @@ void HDF5ExternalArray::create(CommonFG* file,
                                const H5std_string& path, 
                                const DataType& dataType,
                                hsize_t numElements,
-                               DSetCreatPropList cparms)
+                               const DSetCreatPropList* inCparms)
 {
   // copy in parameters
   _file = file;
@@ -44,6 +44,12 @@ void HDF5ExternalArray::create(CommonFG* file,
   _size = numElements;
   _dataSize = _dataType.getSize();
   _dataSpace = DataSpace(1, &_size);
+  
+  DSetCreatPropList cparms;
+  if (inCparms)
+  {
+    cparms.copy(*inCparms);
+  }
   
   // resolve chunking size (0 = do not chunk)
   if (cparms.getLayout() == H5D_CHUNKED)
@@ -66,7 +72,7 @@ void HDF5ExternalArray::create(CommonFG* file,
   {
     _chunkSize = 0;
   }
-  
+
   // create the internal data buffer
   _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
   _bufStart = 0;
@@ -94,7 +100,8 @@ void HDF5ExternalArray::load(CommonFG* file, const H5std_string& path,
   _dataSize = _dataType.getSize();
   assert(_dataSpace.getSimpleExtentNdims() == 1);  
   _dataSpace.getSimpleExtentDims(&_size, NULL);
-  DSetCreatPropList cparms = _dataSet.getCreatePlist();
+  DSetCreatPropList cparms;
+  cparms.copy(_dataSet.getCreatePlist());
   
   // resolve chunking size (0 = do not chunk)
   if (cparms.getLayout() == H5D_CHUNKED)

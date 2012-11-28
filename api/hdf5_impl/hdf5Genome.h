@@ -198,6 +198,8 @@ protected:
    static const std::string sequenceArrayName;
    static const std::string metaGroupName;
    static const std::string rupGroupName;
+
+   static const double dnaChunkScale;
 };
 
 
