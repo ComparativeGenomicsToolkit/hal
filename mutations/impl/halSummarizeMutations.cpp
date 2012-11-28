@@ -112,7 +112,8 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
 void SummarizeMutations::substitutionAnalysis(const Genome* genome, 
                                                MutationsStats& stats)
 {
-  if (genome->getNumChildren() == 0 || genome->getNumBottomSegments() == 0)
+  if (genome->getNumChildren() == 0 || genome->getNumBottomSegments() == 0 ||
+      (_targetSet && _targetSet->find(genome->getName()) == _targetSet->end()))
   {
     return;
   }
@@ -126,21 +127,34 @@ void SummarizeMutations::substitutionAnalysis(const Genome* genome,
   string gString, cString;
 
   hal_size_t n = genome->getNumBottomSegments();
+  vector<hal_size_t> children;
   hal_size_t m = genome->getNumChildren();
+  for (hal_size_t i = 0; i < m; ++i)
+  {
+    string cName = genome->getChild(i)->getName();
+    if (_targetSet && _targetSet->find(cName) != _targetSet->end())
+    {
+      children.push_back(i);
+    }
+  }
+  if (children.empty())
+  {
+    return;
+  }
 
   for (hal_size_t i = 0; i < n; ++i)
   {
     bool readString = false;
-    for (size_t j = 0; j < m; ++j)
+    for (size_t j = 0; j < children.size(); ++j)
     {
-      if (bottom->hasChild(j))
+      if (bottom->hasChild(children[j]))
       {
         if (readString == false)
         {
           bottom->getString(gString);
           readString = true;
         }
-        top->toChild(bottom, j);
+        top->toChild(bottom, children[j]);
         top->getString(cString);
         for (hal_size_t k = 0; k < gString.length(); ++k)
         {
