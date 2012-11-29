@@ -306,7 +306,7 @@ void HDF5Genome::setGenomeBottomDimensions(
   // the size of a bottom segment with two children.
   hsize_t chunk;
   _dcprops.getChunk(1, &chunk);  
-  double scale = numChildren < 3 ? 1. : 1. / (0.25 * numChildren);
+  double scale = numChildren < 10 ? 1. : 10. / numChildren;
   chunk *= scale;
   DSetCreatPropList botDC;
   botDC.copy(_dcprops);
