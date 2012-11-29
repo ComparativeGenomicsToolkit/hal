@@ -6,6 +6,7 @@
 
 #include <deque>
 #include <cassert>
+#include <locale>
 #include "halSummarizeMutations.h"
 
 using namespace std;
@@ -112,6 +113,7 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
 void SummarizeMutations::substitutionAnalysis(const Genome* genome, 
                                                MutationsStats& stats)
 {
+  assert(stats._subs == 0);
   if (genome->getNumChildren() == 0 || genome->getNumBottomSegments() == 0 ||
       (_targetSet && _targetSet->find(genome->getName()) == _targetSet->end()))
   {
@@ -145,11 +147,6 @@ void SummarizeMutations::substitutionAnalysis(const Genome* genome,
 
   for (hal_size_t i = 0; i < n; ++i)
   {
-    if (i % 1000000 == 0)
-    {
-      system("date");
-      cout << genome->getName() << " " << i << " (" << n << ")" << endl;
-    }
     bool readString = false;
     for (size_t j = 0; j < children.size(); ++j)
     {
@@ -162,9 +159,10 @@ void SummarizeMutations::substitutionAnalysis(const Genome* genome,
         }
         top->toChild(bottom, children[j]);
         top->getString(cString);
+        assert(gString.length() == cString.length());
         for (hal_size_t k = 0; k < gString.length(); ++k)
         {
-          if (gString[k] != cString[k])
+          if (isSubstitution(gString[k], cString[k]))
           {
             ++stats._subs;
           }
