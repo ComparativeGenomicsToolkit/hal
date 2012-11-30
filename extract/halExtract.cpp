@@ -11,7 +11,7 @@
 using namespace std;
 using namespace hal;
 
-static void getDimensions(const Genome* genome,
+static void getDimensions(AlignmentConstPtr outAlignment, const Genome* genome,
                           vector<Sequence::Info>& dimensions);
 
 static void copyGenome(const Genome* inGenome, Genome* outGenome);
@@ -93,18 +93,23 @@ int main(int argc, char** argv)
   return 0;
 }
 
-void getDimensions(const Genome* genome, vector<Sequence::Info>& dimensions)
+void getDimensions(AlignmentConstPtr outAlignment, const Genome* genome, 
+                   vector<Sequence::Info>& dimensions)
 {
   assert(dimensions.size() == 0);
   SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
   SequenceIteratorConstPtr seqEndIt = genome->getSequenceEndIterator();
+
+  bool root = outAlignment->getParentName(genome->getName()).empty();
+  bool leaf = outAlignment->getChildNames(genome->getName()).empty();     
+  
   for (; seqIt != seqEndIt; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     Sequence::Info info(sequence->getName(),
                         sequence->getSequenceLength(),
-                        sequence->getNumTopSegments(),
-                        sequence->getNumBottomSegments());
+                        root ? 0 : sequence->getNumTopSegments(),
+                        leaf ? 0 : sequence->getNumBottomSegments());
     dimensions.push_back(info);
   }
 }
@@ -123,8 +128,8 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
 
   TopSegmentIteratorConstPtr inTop = inGenome->getTopSegmentIterator();
   TopSegmentIteratorPtr outTop = outGenome->getTopSegmentIterator();
-  n = inGenome->getNumTopSegments();
-  assert(n == outGenome->getNumTopSegments());
+  n = outGenome->getNumTopSegments();
+  assert(n == 0 || n == inGenome->getNumTopSegments());
   for (; (hal_size_t)inTop->getArrayIndex() < n; inTop->toRight(),
           outTop->toRight())
   {
@@ -137,8 +142,8 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
 
   BottomSegmentIteratorConstPtr inBot = inGenome->getBottomSegmentIterator();
   BottomSegmentIteratorPtr outBot = outGenome->getBottomSegmentIterator();
-  n = inGenome->getNumBottomSegments();
-  assert(n == outGenome->getNumBottomSegments());
+  n = outGenome->getNumBottomSegments();
+  assert(n == 0 || n == inGenome->getNumBottomSegments());
   hal_size_t nc = inGenome->getNumChildren();
   assert(nc == outGenome->getNumChildren());
   for (; (hal_size_t)inBot->getArrayIndex() < n; inBot->toRight(),
@@ -204,7 +209,7 @@ void extract(const AlignmentConstPtr inAlignment,
   assert(newGenome != NULL);
 
   vector<Sequence::Info> dimensions;
-  getDimensions(genome, dimensions);
+  getDimensions(outAlignment, genome, dimensions);
   newGenome->setDimensions(dimensions);
 
   cout << "Extracting " << genome->getName() << endl;
