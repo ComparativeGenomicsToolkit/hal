@@ -12,6 +12,8 @@
 using namespace std;
 
 static size_t countBlock(vector<string> block, size_t rows);
+static char reverseComplement(char c);
+static void reverseComplement(std::string& s);
 
 // quick hacky tool to quickly count mutations in maf.  for benchmark baselines
 // g++ -O3 mafMutations.cpp -o mafMutations
@@ -57,6 +59,10 @@ int main(int argc, char** argv)
       }
       mafFile >> sequenceName >> startPosition >> length 
               >> strand >> srcLength >> block[rows];
+      if (strand == '-')
+      {
+        reverseComplement(block[rows]);
+      }
       if (!mafFile.good())
       {
         cerr << "problem parsing " << mafPath << endl;
@@ -104,4 +110,58 @@ size_t countBlock(vector<string> block, size_t rows)
     }
   }
   return count;
+}
+
+void reverseComplement(std::string& s)
+{
+  if (!s.empty())
+  {
+    size_t j = s.length() - 1;
+    size_t i = 0;
+    char buf;
+    do
+    {
+      while (j > 0 && s[j] == '-')
+      {
+        --j;
+      }
+      while (i < s.length() - 1 && s[i] == '-')
+      {
+        ++i;
+      }
+      
+      if (i >= j || s[i] == '-' || s[j] == '-')
+      {
+        if (i == j && s[i] != '-')
+        {
+          s[i] = reverseComplement(s[i]);
+        }
+        break;
+      }
+
+      buf = reverseComplement(s[i]);
+      s[i] = reverseComplement(s[j]);
+      s[j] = buf;
+
+      ++i;
+      --j;
+    } while (true);
+  }
+}
+
+char reverseComplement(char c)
+{
+  switch (c)
+  {
+  case 'A' : return 'T'; 
+  case 'a' : return 't'; 
+  case 'C' : return 'G'; 
+  case 'c' : return 'g';
+  case 'G' : return 'C';
+  case 'g' : return 'c';
+  case 'T' : return 'A';
+  case 't' : return 'a';
+  default : break;
+  }
+  return c;
 }
