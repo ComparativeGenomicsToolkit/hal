@@ -213,8 +213,6 @@ Example of HAL Genome Representation
 
 The following is obtained by running h5ls -v -r (included with hdf5) on an ancestral genome, in this case a small simulated human-chimp ancestor named sHuman-sChimp.  The genome itself is stored as a group.  It contains four important 1-dimensional arrays:
 
-	 halBranchMutations mammals.hal human --refFile ins.bed --parFile del.bed
-
 * BOTTOM_ARRAY: The bottom segments of the genome (containing alignment mapping to the descendants).  The size of each entry is dependent on the number of descendants.
 * DNA_ARRAY: The DNA bases, stored as two bases / byte
 * SEQUENCE_ARRAY: The names and lengths of subsequences (ie chromosomes or scaffolds in the genome)
