@@ -5,7 +5,6 @@ var searchData=
   ['segmentiterator',['SegmentIterator',['../classhal_1_1_segment_iterator.html',1,'hal']]],
   ['sequence',['Sequence',['../classhal_1_1_sequence.html',1,'hal']]],
   ['sequenceiterator',['SequenceIterator',['../classhal_1_1_sequence_iterator.html',1,'hal']]],
-  ['sequenceless',['SequenceLess',['../structhal_1_1_column_iterator_1_1_sequence_less.html',1,'hal::ColumnIterator']]],
   ['set',['set',['../classhal_1_1_meta_data.html#a43cb77fe791c1cc411b84262e759ca85',1,'hal::MetaData']]],
   ['setarrayindex',['setArrayIndex',['../classhal_1_1_segment.html#a2d022759a5136ec9a15ae70bd40a20c9',1,'hal::Segment::setArrayIndex(Genome *genome, hal_index_t arrayIndex)=0'],['../classhal_1_1_segment.html#ad9a39b6d7cd828953b15a06bf6a94ddc',1,'hal::Segment::setArrayIndex(const Genome *genome, hal_index_t arrayIndex) const =0']]],
   ['setatomic',['setAtomic',['../classhal_1_1_rearrangement.html#aea3f76daabc33b35594ed051bfb29c12',1,'hal::Rearrangement']]],
@@ -28,6 +27,5 @@ var searchData=
   ['setstring',['setString',['../classhal_1_1_segmented_sequence.html#aca5f111d4cd2c0189ee7554f77ff989b',1,'hal::SegmentedSequence']]],
   ['setsubstring',['setSubString',['../classhal_1_1_segmented_sequence.html#a4a45f3b249151a42bf1c296231c327cb',1,'hal::SegmentedSequence']]],
   ['settopparseindex',['setTopParseIndex',['../classhal_1_1_bottom_segment.html#ac83b5c218df47514e7810879df312147',1,'hal::BottomSegment']]],
-  ['slice',['slice',['../classhal_1_1_segment_iterator.html#a0d80d83afa8d7c31a590569e6077cfd7',1,'hal::SegmentIterator']]],
-  ['smart_5fptr',['smart_ptr',['../structhal_1_1smart__ptr.html',1,'hal']]]
+  ['slice',['slice',['../classhal_1_1_segment_iterator.html#a0d80d83afa8d7c31a590569e6077cfd7',1,'hal::SegmentIterator']]]
 ];

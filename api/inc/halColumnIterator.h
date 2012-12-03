@@ -19,7 +19,7 @@ namespace hal {
 /** 
  * Interface Column iterator for allowing traditional maf-like (left-to-right)  
  * parsing of a hal alignment.  Columns are iterated with respect to
- * a spefified reference genome.  This isn't the most efficient way
+ * a specified reference genome.  This isn't the most efficient way
  * to explore the hal structure, which is designed for bottom-up and/or
  * top-down traversal.  
  */
@@ -27,6 +27,7 @@ class ColumnIterator
 {
 public:
 
+   /// @cond TEST
    // we can compare genomes by pointers (because they are persistent
    // and unique, though it's still hacky) but we can't do the same 
    // for anything else, including sequences.  
@@ -36,6 +37,7 @@ public:
        s1->getGenome() == s2->getGenome() && 
        s1->getStartPosition() < s2->getStartPosition()); }
    };
+   /// @endcond
 
    typedef std::vector<hal::DNAIteratorConstPtr> DNASet;
    typedef std::map<const hal::Sequence*, DNASet*, SequenceLess> ColumnMap;

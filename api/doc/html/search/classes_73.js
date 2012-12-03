@@ -4,7 +4,5 @@ var searchData=
   ['segmentedsequence',['SegmentedSequence',['../classhal_1_1_segmented_sequence.html',1,'hal']]],
   ['segmentiterator',['SegmentIterator',['../classhal_1_1_segment_iterator.html',1,'hal']]],
   ['sequence',['Sequence',['../classhal_1_1_sequence.html',1,'hal']]],
-  ['sequenceiterator',['SequenceIterator',['../classhal_1_1_sequence_iterator.html',1,'hal']]],
-  ['sequenceless',['SequenceLess',['../structhal_1_1_column_iterator_1_1_sequence_less.html',1,'hal::ColumnIterator']]],
-  ['smart_5fptr',['smart_ptr',['../structhal_1_1smart__ptr.html',1,'hal']]]
+  ['sequenceiterator',['SequenceIterator',['../classhal_1_1_sequence_iterator.html',1,'hal']]]
 ];

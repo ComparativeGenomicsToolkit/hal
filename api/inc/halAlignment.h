@@ -14,9 +14,9 @@
 namespace hal {
 
 /** 
- * Interface for a hierarhcical alignment
- * TODO: revise tree-related stuff (maybe move to genome class)
- * or maybe just embed in the hdf5 hierarchy...
+ * Interface for a hierarhcical alignment.  Responsible for creating
+ * and accessing genomes and tree information.  Accesssing a HAL file must
+ * always start with an Alignment object
  */
 class Alignment
 {

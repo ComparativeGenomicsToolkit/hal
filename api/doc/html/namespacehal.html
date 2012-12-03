@@ -96,10 +96,6 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_bottom_segment_iterator.html">BottomSegmentIterator</a></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_c_l_parser.html">CLParser</a></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_column_iterator.html">ColumnIterator</a></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structhal_1_1ptr__counter.html">ptr_counter</a></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1counted__ptr.html">counted_ptr</a></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1counted__ptr_3_01const_01_x_01_4.html">counted_ptr&lt; const X &gt;</a></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structhal_1_1smart__ptr.html">smart_ptr</a></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_d_n_a_iterator.html">DNAIterator</a></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_gapped_bottom_segment_iterator.html">GappedBottomSegmentIterator</a></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_gapped_segment_iterator.html">GappedSegmentIterator</a></td></tr>
@@ -198,12 +194,7 @@ Variables</h2></td></tr>
 const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_INDEX</b></td></tr>
 </table>
 <hr/><a name="details" id="details"></a><h2>Detailed Description</h2>
-<div class="textblock"><p>HAL API namespace</p>
-<p>Based off of (what I assume to be free code) from <a href="http://ootips.org/yonat/4dev/smart-pointers.html">http://ootips.org/yonat/4dev/smart-pointers.html</a> <a href="http://ootips.org/yonat/4dev/counted_ptr.h">http://ootips.org/yonat/4dev/counted_ptr.h</a></p>
-<p>but modified to support static casting and non-const to const casting. So we should currently allow assigning from counted_ptr&lt;X*&gt; to counted_ptr&lt;const X*&gt;, as well as from counted_ptr&lt;DERIVED*&gt; to counted_ptr&lt;BASE*&gt; (and const variations therof). Dynamic (ie from BASE to DERIVED) casting could be added in later but it would require a new function like counted_ptr.downcast(..).</p>
-<p>Standardized reference counting smart pointers can be found in Boost and newer gcc's but I do not want to introduce a dependency on either of these for such a small issue.</p>
-<p><a class="el" href="classhal_1_1counted__ptr.html">counted_ptr</a> - simple reference counted pointer.</p>
-<p>The is a non-intrusive implementation that allocates an additional int and pointer for every counted object. </p>
+<div class="textblock"><p>HAL API namespace </p>
 </div><hr/><h2>Function Documentation</h2>
 <a class="anchor" id="a591f58c0f35620b9ec36c452ef143213"></a>
 <div class="memitem">
@@ -644,7 +635,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Dec 3 2012 10:11:13 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 3 2012 11:45:24 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.1.1
 </small></address>

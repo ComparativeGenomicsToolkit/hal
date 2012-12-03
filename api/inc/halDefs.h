@@ -45,21 +45,11 @@ namespace hal {
 
 extern const hal_index_t NULL_INDEX;
 
-/**
- * Smart pointer type.  Should be official one like boost::shared_ptr
- * but we use this guy's to avoid the dependency for now.  Goes in
- * a struct because typedef doesn't support template arguments otherwise. 
- */
-template <typename T>
-struct smart_ptr {
-   typedef counted_ptr<T> type;
-};
-
 // FORWARD DECLARATIONS
 #define HAL_FORWARD_DEC_CLASS(T) \
   class T;\
-  typedef smart_ptr<T>::type T ## Ptr;\
-  typedef smart_ptr<const T>::type T ## ConstPtr;
+  typedef counted_ptr<T> T ## Ptr;\
+  typedef counted_ptr<const T> T ## ConstPtr;
 
 HAL_FORWARD_DEC_CLASS(Alignment)
 HAL_FORWARD_DEC_CLASS(CLParser)
