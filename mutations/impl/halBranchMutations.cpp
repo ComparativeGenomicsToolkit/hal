@@ -330,7 +330,8 @@ void BranchMutations::writeHeaders()
 {
   string header("#Sequence\tStart\tEnd\tMutationID\tParentGenome\tChildGenome\n"
                 "#I=Insertion D=Deletion GI(D)=GapInsertion(GapDeletion) "
-                "V=Inversion P=Transposition U=Duplication\n");
+                "V=Inversion P=Transposition U=Duplication "
+                "DB=Deletion Breakpoint GDB=Gap Deletion Breakpoint\n");
   if (_refStream && _refStream->tellp() == streampos(0))
   {
     *_refStream << header;
