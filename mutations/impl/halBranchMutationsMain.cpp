@@ -131,10 +131,11 @@ int main(int argc, char** argv)
     {
       throw hal_exception(string("Invalid range for ") + refGenomeName);
     }
-    if (refBedPath == "\"\"" && parentBedPath == "\"\"" && snpBedPath == "\"\"")
+    if (refBedPath == "\"\"" && parentBedPath == "\"\"" 
+        && snpBedPath == "\"\"" && delBreakBedPath == "\"\"")
     {
-      throw hal_exception("at least one of --refFile, --parentFile or "
-                          "--snpFile must be specified");
+      throw hal_exception("at least one of --refFile, --parentFile, "
+                          "--snpFile or --delBreakFile must be specified");
     }
 
     const Sequence* refSequence = NULL;

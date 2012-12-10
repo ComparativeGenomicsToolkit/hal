@@ -15,10 +15,12 @@ using namespace hal;
 const string BranchMutations::inversionBedTag = "V";
 const string BranchMutations::insertionBedTag = "I";
 const string BranchMutations::deletionBedTag = "D";
+const string BranchMutations::deletionBreakBedTag = "DB";
 const string BranchMutations::transpositionBedTag = "P";
 const string BranchMutations::duplicationBedTag = "U";
 const string BranchMutations::gapInsertionBedTag = "GI";
 const string BranchMutations::gapDeletionBedTag = "GD";
+const string BranchMutations::gapDeletionBreakBedTag = "GDB";
 string BranchMutations::substitutionBedTag(char parent, char child)
 {
   assert(parent == toupper(parent));
@@ -82,7 +84,8 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _bottom1 = reference->getParent()->getBottomSegmentIterator();
   _bottom2 = reference->getParent()->getBottomSegmentIterator();
 
-  if (refBedStream == NULL && parentBedStream == NULL)
+  if (refBedStream == NULL && parentBedStream == NULL && 
+      delBreakBedStream == NULL)
   {
     assert(snpBedStream != NULL);
     TopSegmentIteratorConstPtr last = _top->copy();
@@ -101,8 +104,6 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
     switch (_rearrangement->getID())
     {
     case Rearrangement::Deletion:
-      writeDeletion();
-      writeDeletionBreakPoint();
       break;
     case Rearrangement::Inversion:     
     case Rearrangement::Transposition:
@@ -132,8 +133,8 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
       switch (_rearrangement->getID())
       {
       case Rearrangement::Deletion:
-        writeGapDeletion();
-        writeDeletionBreakPoint();
+        writeDeletion();
+        writeDeletionBreakPoint();      
       default:
         break;
       }
@@ -276,15 +277,15 @@ void BranchMutations::writeDeletion()
   }
 
   pair<hal_index_t, hal_index_t> pos = _rearrangement->getDeletedRange();
-  assert((pos.second - pos.first) + 1 > (hal_index_t)_maxGap);
+  hal_size_t length = (pos.second - pos.first) + 1;
   const Sequence* seq = _reference->getParent()->getSequenceBySite(pos.first);
   assert(seq != NULL);
   
   *_parentStream << seq->getName() << '\t' 
                  << pos.first - seq->getStartPosition() << '\t'
                  << pos.second + 1 - seq->getStartPosition() << '\t'
-                 << deletionBedTag << '\t'
-                 << _parName << '\t' << _refName << '\n'; 
+                 << (length > _maxGap ? deletionBedTag : gapDeletionBedTag)
+                 << '\t' << _parName << '\t' << _refName << '\n'; 
 }
 
 void BranchMutations::writeDeletionBreakPoint()
@@ -301,30 +302,10 @@ void BranchMutations::writeDeletionBreakPoint()
   *_delBreakStream << _sequence->getName() << '\t' 
                    << pos - _sequence->getStartPosition() << '\t'
                    << pos + 1 - _sequence->getStartPosition() << '\t'
-                   << (length > _maxGap ? deletionBedTag : gapDeletionBedTag)
+                 << (length > _maxGap ? deletionBreakBedTag : 
+                     gapDeletionBreakBedTag)
                    << '\t'
                    << _parName << '\t' << _refName << '\n'; 
-}
-
-void BranchMutations::writeGapDeletion()
-{
-  if (_parentStream == NULL)
-  {
-    return;
-  }
-
-  pair<hal_index_t, hal_index_t> pos = _rearrangement->getDeletedRange();
-  if ((pos.second - pos.first) + 1 < (hal_index_t)_maxGap)
-  {
-    const Sequence* seq = _reference->getParent()->getSequenceBySite(pos.first);
-    assert(seq != NULL);
-  
-    *_parentStream << seq->getName() << '\t' 
-                   << pos.first - seq->getStartPosition() << '\t'
-                   << pos.second + 1 - seq->getStartPosition() << '\t'
-                   << gapDeletionBedTag << '\t'
-                   << _parName << '\t' << _refName << '\n';
-  }  
 }
 
 void BranchMutations::writeDuplication()

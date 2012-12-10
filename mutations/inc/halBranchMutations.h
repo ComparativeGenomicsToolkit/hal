@@ -36,10 +36,12 @@ public:
    static const std::string inversionBedTag;
    static const std::string insertionBedTag;
    static const std::string deletionBedTag;
+   static const std::string deletionBreakBedTag;
    static const std::string transpositionBedTag;
    static const std::string duplicationBedTag;
    static const std::string gapInsertionBedTag;
    static const std::string gapDeletionBedTag;
+   static const std::string gapDeletionBreakBedTag;
    static std::string substitutionBedTag(char parent, char child);
 
 protected:
@@ -50,7 +52,6 @@ protected:
    void writeGapInsertions();
    void writeDeletion();
    void writeDeletionBreakPoint();
-   void writeGapDeletion();
    void writeDuplication();
    void writeHeaders();
 
