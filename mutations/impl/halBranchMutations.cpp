@@ -45,6 +45,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
                                     ostream* refBedStream,
                                     ostream* parentBedStream,
                                     ostream* snpBedStream,
+                                    ostream* delBreakBedStream,
                                     const Genome* reference,
                                     hal_index_t startPosition,
                                     hal_size_t length)
@@ -67,6 +68,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _nThreshold = nThreshold;
   _refStream = refBedStream;
   _parentStream = parentBedStream;
+  _delBreakStream = delBreakBedStream;
   _snpStream = snpBedStream;
   _refName = _reference->getName();
   _parName = _reference->getParent()->getName();
@@ -100,6 +102,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
     {
     case Rearrangement::Deletion:
       writeDeletion();
+      writeDeletionBreakPoint();
       break;
     case Rearrangement::Inversion:     
     case Rearrangement::Transposition:
@@ -119,7 +122,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
          _rearrangement->getLeftBreakpoint()->getStartPosition() <= end);
   
   // kind of stupid, but we do a second pass to get the gapped deletions
-  if (parentBedStream != NULL)
+  if (parentBedStream != NULL || delBreakBedStream != NULL)
   {
     _top  = reference->getTopSegmentIterator();
     _top->toSite(startPosition);
@@ -130,6 +133,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
       {
       case Rearrangement::Deletion:
         writeGapDeletion();
+        writeDeletionBreakPoint();
       default:
         break;
       }
@@ -281,6 +285,25 @@ void BranchMutations::writeDeletion()
                  << pos.second + 1 - seq->getStartPosition() << '\t'
                  << deletionBedTag << '\t'
                  << _parName << '\t' << _refName << '\n'; 
+}
+
+void BranchMutations::writeDeletionBreakPoint()
+{
+  if (_delBreakStream == NULL)
+  {
+    return;
+  }
+
+  pair<hal_index_t, hal_index_t> delRange = _rearrangement->getDeletedRange();
+  hal_size_t length = (delRange.second - delRange.first) + 1;
+  hal_index_t pos  = _rearrangement->getLeftBreakpoint()->getStartPosition();
+
+  *_delBreakStream << _sequence->getName() << '\t' 
+                   << pos - _sequence->getStartPosition() << '\t'
+                   << pos + 1 - _sequence->getStartPosition() << '\t'
+                   << (length > _maxGap ? deletionBedTag : gapDeletionBedTag)
+                   << '\t'
+                   << _parName << '\t' << _refName << '\n'; 
 }
 
 void BranchMutations::writeGapDeletion()

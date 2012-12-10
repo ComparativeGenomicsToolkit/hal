@@ -28,6 +28,7 @@ public:
                       std::ostream* refBedStream,
                       std::ostream* parentBedStream,
                       std::ostream* snpBedStream,
+                      std::ostream* delBreakBedStream,
                       const Genome* reference,
                       hal_index_t startPosition,
                       hal_size_t length);
@@ -48,6 +49,7 @@ protected:
                            TopSegmentIteratorConstPtr lastPlusOne);
    void writeGapInsertions();
    void writeDeletion();
+   void writeDeletionBreakPoint();
    void writeGapDeletion();
    void writeDuplication();
    void writeHeaders();
@@ -58,6 +60,7 @@ protected:
    std::ostream* _refStream;
    std::ostream* _parentStream;
    std::ostream* _snpStream;
+   std::ostream* _delBreakStream;
    hal_size_t _maxGap;
    double _nThreshold;
    const Genome* _reference;

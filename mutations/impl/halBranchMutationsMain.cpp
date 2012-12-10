@@ -32,6 +32,10 @@ static CLParserPtr initParser()
                            "bed file write point mutations to "
                            "in reference genome coordinates",
                            "\"\"");
+  optionsParser->addOption("delBreakFile", 
+                           "bed file write deletion breakpoints to "
+                           "in reference genome coordinates",
+                           "\"\"");
   optionsParser->addOption("refSequence",
                            "name of reference sequence within reference genome"
                            " (all sequences if empty)",
@@ -71,6 +75,7 @@ int main(int argc, char** argv)
   string refBedPath;
   string parentBedPath;
   string snpBedPath;
+  string delBreakBedPath;
   string refGenomeName;
   string refSequenceName;
   string refTargetsPath;
@@ -86,6 +91,7 @@ int main(int argc, char** argv)
     refBedPath = optionsParser->getOption<string>("refFile");
     parentBedPath = optionsParser->getOption<string>("parentFile");
     snpBedPath = optionsParser->getOption<string>("snpFile");
+    delBreakBedPath = optionsParser->getOption<string>("delBreakFile");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     refTargetsPath = optionsParser->getOption<string>("refTargets");
     start = optionsParser->getOption<hal_index_t>("start");
@@ -188,6 +194,16 @@ int main(int argc, char** argv)
       }
     }
 
+    ofstream delBreakBedStream;
+    if (delBreakBedPath != "\"\"")
+    {
+      delBreakBedStream.open(delBreakBedPath.c_str());
+      if (!delBreakBedStream)
+      {
+        throw hal_exception("Error opening " + delBreakBedPath);
+      }
+    }
+
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")
     {
@@ -223,6 +239,8 @@ int main(int argc, char** argv)
                                     &parentBedStream : NULL ,
                                     snpBedStream.is_open() ? &snpBedStream : 
                                     NULL, 
+                                    delBreakBedStream.is_open() ? 
+                                    &delBreakBedStream : NULL,
                                     refGenome, start, length);
 
           }
@@ -237,6 +255,8 @@ int main(int argc, char** argv)
                               parentBedStream.is_open() ? &parentBedStream : 
                               NULL ,
                               snpBedStream.is_open() ? &snpBedStream : NULL, 
+                              delBreakBedStream.is_open() ? 
+                              &delBreakBedStream : NULL,
                               refGenome, start, length);
     }
   }
