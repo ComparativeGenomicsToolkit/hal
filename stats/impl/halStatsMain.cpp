@@ -18,7 +18,13 @@ static void printSequenceStats(ostream& os, AlignmentConstPtr alignment,
                                const string& genomeName);
 static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
                             const vector<string>& genomeNames);
-static void printBranches(ostream& os, AlignmentConstPtr alignment); 
+static void printBranches(ostream& os, AlignmentConstPtr alignment);
+static void printChildren(ostream& os, AlignmentConstPtr alignment, 
+                          const string& genomeName);
+static void printParent(ostream& os, AlignmentConstPtr alignment, 
+                        const string& genomeName);
+static void printRootName(ostream& os, AlignmentConstPtr alignment);
+
 
 int main(int argc, char** argv)
 {
@@ -37,6 +43,12 @@ int main(int argc, char** argv)
                                false);
   optionsParser->addOption("path", "print branches on path between comma "
                            "separated list of genomes", "\"\"");
+  optionsParser->addOption("children", "print names of children of given "
+                           "genome", "\"\"");
+  optionsParser->addOptionFlag("root", "print root genome name", false);
+  optionsParser->addOption("parent", "print name of parent of given genome",
+                           "\"\"");
+
   string path;
   bool listGenomes;
   string sequencesFromGenome;
@@ -44,6 +56,9 @@ int main(int argc, char** argv)
   string pathGenomes;
   bool tree;
   bool branches;
+  string childrenFromGenome;
+  string parentFromGenome;
+  bool printRoot;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -54,6 +69,9 @@ int main(int argc, char** argv)
     tree = optionsParser->getFlag("tree");
     pathGenomes = optionsParser->getOption<string>("path");
     branches = optionsParser->getFlag("branches");
+    childrenFromGenome = optionsParser->getOption<string>("children");
+    parentFromGenome = optionsParser->getOption<string>("parent");
+    printRoot = optionsParser->getFlag("root");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -61,10 +79,13 @@ int main(int argc, char** argv)
     if (sequenceStatsFromGenome != "\"\"") ++optCount;
     if (pathGenomes != "\"\"") ++optCount;
     if (branches) ++ optCount;
+    if (childrenFromGenome != "\"\"") ++optCount;
+    if (parentFromGenome != "\"\"") ++optCount;
+    if (printRoot) ++optCount;
     if (optCount > 1)
     {
-      throw hal_exception("--genomes, --sequences, --tree, --path, --branches "
-                          "and --sequenceStats " 
+      throw hal_exception("--genomes, --sequences, --tree, --path, --branches, "
+                          "--sequenceStats, --children, --parent and --root " 
                           "options are mutually exclusive");
     }        
   }
@@ -101,6 +122,18 @@ int main(int argc, char** argv)
     else if (branches == true)
     {
       printBranches(cout, alignment);
+    }
+    else if (childrenFromGenome != "\"\"")
+    {
+      printChildren(cout, alignment, childrenFromGenome);
+    }
+    else if (parentFromGenome != "\"\"")
+    {
+      printParent(cout, alignment, parentFromGenome);
+    }
+    else if (printRoot == true)
+    {
+      printRootName(cout, alignment);
     }
     else
     {
@@ -244,3 +277,31 @@ static void printBranches(ostream& os, AlignmentConstPtr alignment)
   os << endl;      
 }
 
+void printChildren(ostream& os, AlignmentConstPtr alignment, 
+                   const string& genomeName)
+{
+  vector<string> children = alignment->getChildNames(genomeName);
+  for (size_t i = 0; i < children.size(); ++i)
+  {
+    os << children[i];
+    if (i != children.size() - 1)
+    {
+      os << " ";
+    }
+  }
+  os << endl;
+}
+
+void printParent(ostream& os, AlignmentConstPtr alignment, 
+                        const string& genomeName)
+{
+  if (genomeName != alignment->getRootName())
+  {
+    os << alignment->getParentName(genomeName) << endl;
+  }
+}
+
+void printRootName(ostream& os, AlignmentConstPtr alignment)
+{
+  os << alignment->getRootName() << endl;
+}
