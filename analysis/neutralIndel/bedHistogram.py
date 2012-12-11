@@ -125,16 +125,16 @@ def main(argv=None):
         argv = sys.argv
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("inputBEDFile", help="echo the string you use here")
-    parser.add_argument("outputPDF", help="output pdf")
+    parser.add_argument("bed", help="input bed")
+    parser.add_argument("pdf", help="output pdf")
+    parser.add_argument("--bin", default=10, type=int, help="bin size")
     args = parser.parse_args()
-    print args.inputBEDFile
 
-    binSize = 1
+    binSize = args.bin
     events =  BedMutations.defaultEvents
     bh = BedHistogram()
-    bh.loadFile(args.inputBEDFile, binSize, events)
-    bh.writeFigure(args.outputPDF)
+    bh.loadFile(args.bed, binSize, events)
+    bh.writeFigure(args.pdf)
 
 if __name__ == "__main__":
     sys.exit(main())

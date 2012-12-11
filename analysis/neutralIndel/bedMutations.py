@@ -57,7 +57,7 @@ class BedMutations:
                 self.prevRange = self.range
                 self.prevOp = self.op
                 self.sequence = tokens[0]
-                self.range = (tokens[1], tokens[2])
+                self.range = (int(tokens[1]), int(tokens[2]))
                 self.op = tokens[3]
                 if self.prevSequence != self.sequence:
                     self.prevSequence = None
@@ -73,5 +73,5 @@ class BedMutations:
 
     def __testIgnore(self, token):
         if token.find(self.substitutionBedTag) == 0:
-            return self.substitutionBedTag in self.events
-        return token in self.events
+            return self.substitutionBedTag not in self.events
+        return token not in self.events
