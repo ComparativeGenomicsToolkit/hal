@@ -31,10 +31,11 @@ from hal.analysis.neutralIndel.bedMutations import BedMutations
 class BedHistogram:
 
     def __init__(self):
+        self.linearY = True
         pass
                  
     # read bed file line by line, storing relevant info in class members
-    def loadFile(bedPath, binSize = 1,
+    def loadFile(self, bedPath, binSize = 1,
                  events = BedMutations.defaultEvents):
         
         self.bins = defaultdict(int)
@@ -48,14 +49,14 @@ class BedHistogram:
                 bin = d / binSize
                 self.bins[bin] += 1
 
-    def writeFigure(pdfPath):
+    def writeFigure(self, pdfPath):
         pdf = pltBack.PdfPages(pdfPath)
         fig = plt.figure(figsize=(9.0, 4.0), dpi=300, facecolor='w')
-        self.__drawData()
+        self.__drawData(fig)
         fig.savefig(pdf, format = 'pdf')
         pdf.close()
         
-    def __extractPlotTables():
+    def __extractPlotTables(self):
         keylist = self.bins.keys()
         keylist.sort()
         x = []
@@ -68,9 +69,9 @@ class BedHistogram:
         y = np.array(y)
         return x, y 
 
-    def __drawData():
+    def __drawData(self, fig):
         ax = fig.add_axes([0.1, 0.2, 0.85, 0.7])
-        x, y = self.__extractPlottables()
+        x, y = self.__extractPlotTables()
         
         colorList = ['#1f77b4', # dark blue
                      '#aec7e8', # light blue
@@ -120,18 +121,19 @@ class BedHistogram:
         plt.ylabel('Count')
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Compute distance histogram from bed file of hal mutations.')
-    parser.add_argument('inputBEDFile', 
-                        help='BED File to scan')
-    parser.add_argument('outputPDF',
-                        help='PDF File to output')
-    
+    if argv is None:
+        argv = sys.argv
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("inputBEDFile", help="echo the string you use here")
+    parser.add_argument("outputPDF", help="output pdf")
     args = parser.parse_args()
+    print args.inputBEDFile
 
     binSize = 1
     events =  BedMutations.defaultEvents
     bh = BedHistogram()
-    bh.loadFile(args.inputBedFile, binSize, events)
+    bh.loadFile(args.inputBEDFile, binSize, events)
     bh.writeFigure(args.outputPDF)
 
 if __name__ == "__main__":

@@ -35,7 +35,9 @@ class BedMutations:
         pass
 
     # read bed file line by line, storing relevant info in class members
-    def scan(bedPath, events = self.defaultEvents):
+    def scan(self, bedPath, events = None):
+        if events is None:
+            events = self.defaultEvents
         bedFile = open(bedPath, "r")
         self.sequence = None
         self.prevSequence = None
@@ -50,7 +52,7 @@ class BedMutations:
             if len(tokens) == 0 or tokens[0][0] == "#":
                 continue
             assert len(tokens) >= 4
-            if not __testIgnore(tokens[3]):
+            if not self.__testIgnore(tokens[3]):
                 self.prevSequence = self.sequence
                 self.prevRange = self.range
                 self.prevOp = self.op
@@ -64,12 +66,12 @@ class BedMutations:
                 yield
 
     # return distance from previous operation
-    def distance():
+    def distance(self):
         if self.prevRange is None or self.range is None:
             return None
         return self.range[0] - self.prevRange[1]
 
-    def __testIgnore(token):
+    def __testIgnore(self, token):
         if token.find(self.substitutionBedTag) == 0:
             return self.substitutionBedTag in self.events
         return token in self.events
