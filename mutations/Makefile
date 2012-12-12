@@ -25,6 +25,6 @@ ${binPath}/halBranchMutations : impl/halBranchMutationsMain.cpp ${libPath}/halMu
 ${binPath}/halSummarizeMutations : impl/halSummarizeMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halSummarizeMutations impl/halSummarizeMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/halTreeMutations.py :
+${binPath}/halTreeMutations.py : impl/halTreeMutations.py
 	cp impl/halTreeMutations.py ${binPath}
 	chmod u+x ${binPath}/halTreeMutations.py

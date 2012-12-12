@@ -40,7 +40,7 @@ def getHalBranchMutations(halPath, genomeName, args):
     
     refBedFile = os.path.join(args.outDir,  "%s.bed" % genomeName)
     dest = refBedFile
-    if args.doSort is True:
+    if not args.noSort:
         dest = "stdout"
         
     command += " --refFile %s" % dest
@@ -51,7 +51,7 @@ def getHalBranchMutations(halPath, genomeName, args):
         command += " --parentFile %s" % os.path.join(args.outDir, 
                                                      "%s_pd.bed" % genomeName)
 
-    if args.doSort is True:
+    if not args.noSort:
         command += " | sortBed > %s" % refBedFile
     print command
     runShellCommand(command)
@@ -76,18 +76,19 @@ def main(argv=None):
     parser.add_argument("--doParentDeletions",action="store_true",
                         default=False)
     parser.add_argument("--maxGap", default=10, type=int, help="gap threshold")
+    parser.add_argument("--noSort", action="store_true", default=False)
     args = parser.parse_args()
 
     if not os.path.exists(args.outDir):
         os.makedirs(args.outDir)
 
-    args.doSort = True
-    try:
-        runShellCommand("echo \"x\t0\t1\" | sortBed 2> /dev/null")
-    except Exception:
-        print ("Warning: output BED files not sorted because sortBed" + 
+    if not args.noSort:
+        try:
+            runShellCommand("echo \"x\t0\t1\" | sortBed 2> /dev/null")
+        except Exception:
+            print ("Warning: output BED files not sorted because sortBed" + 
                " (BedTools) not found")
-        args.doSort = False
+            args.noSort = True
         
     getHalTreeMutations(args.hal, args, args.root)
     
