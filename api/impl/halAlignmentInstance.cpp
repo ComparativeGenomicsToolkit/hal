@@ -4,6 +4,13 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
+#include <cassert>
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
+#include <deque>
+#include <sstream>
+#include "halCommon.h"
 #include "halAlignmentInstance.h"
 #include "hdf5Alignment.h"
 #include "hdf5CLParser.h"
