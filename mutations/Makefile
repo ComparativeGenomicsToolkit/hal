@@ -9,7 +9,7 @@ libHeaders = inc/*.h
 all : ${libPath}/halMutations.a ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halTreeMutations.py
 
 clean : 
-	rm -f ${libPath}/halMutations.a ${libPath}/*.h ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations
+	rm -f ${libPath}/halMutations.a ${libPath}/*.h ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halTreeMutations.py
 
 ${libPath}/halMutations.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
