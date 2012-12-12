@@ -27,35 +27,97 @@ import matplotlib.mlab as mlab
 
 
 from hal.analysis.neutralIndel.bedMutations import BedMutations
+from hal.mutations.impl.halTreeMutations import runShellCommand
 
 class BedHistogram:
 
+    colorList = ['#1f77b4', # dark blue
+                 '#aec7e8', # light blue
+                 '#ff7f0e', # bright orange
+                 '#ffbb78', # light orange
+                 '#4B4C5E', # dark slate gray
+                 '#9edae5', # light blue 
+                 '#7F80AB', # purple-ish slate blue
+                 '#c7c7c7', # light gray
+                 '#9467bd', # dark purple
+                 '#c5b0d5', # light purple
+                 '#d62728', # dark red
+                 '#ff9896', # light red
+                 ]
     def __init__(self):
         self.linearY = True
+        self.xlimit = None
+        self.genomeLength = None
+        self.rate = None
+        self.totalEvents = None
         pass
                  
     # read bed file line by line, storing relevant info in class members
     def loadFile(self, bedPath, binSize = 1,
-                 events = BedMutations.defaultEvents):
+                 events = BedMutations.defaultEvents,
+                 hal = None):
         
         self.bins = defaultdict(int)
         self.binSize = binSize
 
         bm = BedMutations()
+        self.totalEvents = 0.0
         
         for line in bm.scan(bedPath, events):
             d = bm.distance()
             if d is not None:
                 bin = d / binSize
                 self.bins[bin] += 1
+                self.totalEvents += 1.0
 
+        # load a "background rate" (number of events / length)
+        # if a hal path was given.  we need the hal path for the genome
+        # length, since its clumsy to guess the latter from the bed only
+        if hal is not None:
+            self.__getGenomeLength(hal, bm.genome)
+            self.rate = self.totalEvents / self.genomeLength
+            print "total events: %d   len: %d    rate: %f    " % (
+                self.totalEvents, self.genomeLength, self.rate)
+
+
+    # compute the genome length using halStats and summing over the
+    # sequence lengths
+    def __getGenomeLength(self, halPath, genomeName):
+        stats = runShellCommand("halStats %s --sequenceStats %s" % (halPath,
+                                                                genomeName))
+        lines = stats.split("\n")
+        self.genomeLength = 0
+        for line in lines[1:]:
+            tokens = line.split()
+            if len(tokens) >= 2:
+                self.genomeLength += int(tokens[1].strip(","))
+            else:
+                assert len(tokens) == 0
+        return self.genomeLength
+
+    # compute rate array:  need to review to make better use of numpy!
+    def __rateFn(self, x):
+        if self.rate is not None:
+            total = 0
+            y = np.zeros(len(x))
+            for xelem in xrange(len(x)):
+                s = int(max(0, x[xelem] - (self.binSize / 2.)))
+                for i in range(s, s + self.binSize):                    
+                    p = self.rate * math.pow(1. - self.rate, i)
+                    y[xelem] += int(p * self.totalEvents)
+                    total += y[xelem]
+            print "rate total %i" % total
+            return y
+
+    # draw the histogram of inter-event distances in log scale
     def writeFigure(self, pdfPath):
         pdf = pltBack.PdfPages(pdfPath)
         fig = plt.figure(figsize=(9.0, 4.0), dpi=300, facecolor='w')
         self.__drawData(fig)
         fig.savefig(pdf, format = 'pdf')
         pdf.close()
-        
+
+    # convert bed data into numpy arrays
     def __extractPlotTables(self):
         keylist = self.bins.keys()
         keylist.sort()
@@ -69,47 +131,53 @@ class BedHistogram:
         y = np.array(y)
         return x, y 
 
+    # this is mostly code from Dent 
     def __drawData(self, fig):
         ax = fig.add_axes([0.1, 0.2, 0.85, 0.7])
         x, y = self.__extractPlotTables()
 
+        # truncate along x-axis if desired
+        if self.xlimit is not None:
+            x = x[:self.xlimit / self.binSize]
+            y = y[:self.xlimit / self.binSize]
+
+        # compute linear fit and r2
         if not self.linearY:
             ylog = np.log10(y)
             xcof = np.vstack((x, np.ones(len(x)))).T
             temp = 500 / self.binSize
-            print xcof[:temp]
             model, resid = np.linalg.lstsq(xcof[:temp], ylog[:temp])[:2]
             r2 = 1 - resid / (ylog.size * ylog.var())
 
-        colorList = ['#1f77b4', # dark blue
-                     '#aec7e8', # light blue
-                     '#ff7f0e', # bright orange
-                     '#ffbb78', # light orange
-                     '#4B4C5E', # dark slate gray
-                     '#9edae5', # light blue 
-                     '#7F80AB', # purple-ish slate blue
-                     '#c7c7c7', # light gray
-                     '#9467bd', # dark purple
-                     '#c5b0d5', # light purple
-                     '#d62728', # dark red
-                     '#ff9896', # light red
-                     ]
         plotlist = []
+        legend = []
        
-        plotlist.append(plt.plot(x[:100], y[:100], color=colorList[0],
+        plotlist.append(plt.plot(x, y, color=self.colorList[1],
                                  linestyle='none', marker='.', 
-                                 markeredgecolor=colorList[0],
+                                 markeredgecolor=self.colorList[1],
                                  markeredgewidth=0, linewidth=0.5,
-                                 markersize=10.0, alpha=0.8)[0])
+                                 markersize=6.0, alpha=0.75)[0])
+        legend += ['Data']
+      
+                    
+        if self.rate is not None:
+            plotlist.append(plt.plot(x, self.__rateFn(x),
+                                     color=self.colorList[6],
+                                     linestyle='solid', marker='None', 
+                                     markeredgecolor=self.colorList[6],
+                                     markeredgewidth=0, linewidth=2.5,
+                                     markersize=6.0, alpha=0.9)[0])
+            legend += ['Background']
 
         if not self.linearY:
             temp = x[:1000/ self.binSize]
             plotlist.append(plt.plot(temp, np.power(10, model[0] * temp + model[1]),
-                                     color=colorList[2],
+                                     color=self.colorList[2],
                                      linestyle='solid', marker='None', 
-                                     markeredgecolor=colorList[0],
-                                     markeredgewidth=0, linewidth=1.5,
-                                     markersize=10.0, alpha=0.8)[0])
+                                     markeredgecolor=self.colorList[2],
+                                     markeredgewidth=0, linewidth=2.5,
+                                     markersize=10.0, alpha=0.9)[0])
+            legend += ['Linear Fit r2=%s' % r2]
         
         xmin, xmax = plt.xlim()
         ymin, ymax = plt.ylim()
@@ -137,14 +205,11 @@ class BedHistogram:
         plt.xlabel('Distance')
         plt.ylabel('Count')
 
-        if not self.linearY:
-            leg = plt.legend(plotlist, ['Data', 'Linear Fit r2=%s' % r2],
-                             loc=1, numpoints=1)
-        else:
-            leg = plt.legend(plotlist, ['Data'], loc=1, numpoints=1)
+        leg = plt.legend(plotlist, legend, loc=1, numpoints=1)
         plt.setp(leg.get_texts(), fontsize='x-small') # legend fontsize
         leg._drawFrame = False
-
+        
+    
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -153,13 +218,21 @@ def main(argv=None):
     parser.add_argument("bed", help="input bed")
     parser.add_argument("pdf", help="output pdf")
     parser.add_argument("--bin", default=10, type=int, help="bin size")
+    parser.add_argument("--events",
+                        default="\"%s\"" % " ".join(BedMutations.defaultEvents),
+                        type=str, help="event tags")
+    parser.add_argument("--xlimit", default=None, type=int,
+                        help="maximum x value to plot")
+    parser.add_argument("--hal", default=None, type=str,
+                        help="hal file database used for background rate")
     args = parser.parse_args()
 
     binSize = args.bin
-    events =  BedMutations.defaultEvents
+    events =  args.events.split()
     bh = BedHistogram()
     bh.linearY = False
-    bh.loadFile(args.bed, binSize, events)
+    bh.xlimit = args.xlimit
+    bh.loadFile(args.bed, binSize, events, args.hal)
     bh.writeFigure(args.pdf)
 
 if __name__ == "__main__":

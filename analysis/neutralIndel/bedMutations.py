@@ -46,13 +46,16 @@ class BedMutations:
         self.op = None
         self.prevOp = None
         self.events = set(events)
+        self.genome = None
         
         for line in bedFile:
             tokens = line.split()
             if len(tokens) == 0 or tokens[0][0] == "#":
                 continue
-            assert len(tokens) >= 4
+            assert len(tokens) >= 6
             if not self.__testIgnore(tokens[3]):
+                assert self.genome is None or tokens[5] == self.genome
+                self.genome = tokens[5]
                 self.prevSequence = self.sequence
                 self.prevRange = self.range
                 self.prevOp = self.op
