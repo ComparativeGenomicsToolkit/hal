@@ -72,7 +72,15 @@ class BedHistogram:
     def __drawData(self, fig):
         ax = fig.add_axes([0.1, 0.2, 0.85, 0.7])
         x, y = self.__extractPlotTables()
-        
+
+        if not self.linearY:
+            ylog = np.log10(y)
+            xcof = np.vstack((x, np.ones(len(x)))).T
+            temp = 500 / self.binSize
+            print xcof[:temp]
+            model, resid = np.linalg.lstsq(xcof[:temp], ylog[:temp])[:2]
+            r2 = 1 - resid / (ylog.size * ylog.var())
+
         colorList = ['#1f77b4', # dark blue
                      '#aec7e8', # light blue
                      '#ff7f0e', # bright orange
@@ -88,11 +96,20 @@ class BedHistogram:
                      ]
         plotlist = []
        
-        plotlist.append(plt.plot(x, y, color=colorList[0],
+        plotlist.append(plt.plot(x[:100], y[:100], color=colorList[0],
                                  linestyle='none', marker='.', 
                                  markeredgecolor=colorList[0],
                                  markeredgewidth=0, linewidth=0.5,
                                  markersize=10.0, alpha=0.8)[0])
+
+        if not self.linearY:
+            temp = x[:1000/ self.binSize]
+            plotlist.append(plt.plot(temp, np.power(10, model[0] * temp + model[1]),
+                                     color=colorList[2],
+                                     linestyle='solid', marker='None', 
+                                     markeredgecolor=colorList[0],
+                                     markeredgewidth=0, linewidth=1.5,
+                                     markersize=10.0, alpha=0.8)[0])
         
         xmin, xmax = plt.xlim()
         ymin, ymax = plt.ylim()
@@ -120,6 +137,14 @@ class BedHistogram:
         plt.xlabel('Distance')
         plt.ylabel('Count')
 
+        if not self.linearY:
+            leg = plt.legend(plotlist, ['Data', 'Linear Fit r2=%s' % r2],
+                             loc=1, numpoints=1)
+        else:
+            leg = plt.legend(plotlist, ['Data'], loc=1, numpoints=1)
+        plt.setp(leg.get_texts(), fontsize='x-small') # legend fontsize
+        leg._drawFrame = False
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -133,6 +158,7 @@ def main(argv=None):
     binSize = args.bin
     events =  BedMutations.defaultEvents
     bh = BedHistogram()
+    bh.linearY = False
     bh.loadFile(args.bed, binSize, events)
     bh.writeFigure(args.pdf)
 
