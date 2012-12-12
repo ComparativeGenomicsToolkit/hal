@@ -299,11 +299,15 @@ void BranchMutations::writeDeletionBreakPoint()
   hal_size_t length = (delRange.second - delRange.first) + 1;
   hal_index_t pos  = _rearrangement->getLeftBreakpoint()->getStartPosition();
 
-  *_delBreakStream << _sequence->getName() << '\t' 
-                   << pos - _sequence->getStartPosition() << '\t'
-                   << pos + 1 - _sequence->getStartPosition() << '\t'
-                 << (length > _maxGap ? deletionBreakBedTag : 
-                     gapDeletionBreakBedTag)
+  const Sequence* seq =  _rearrangement->getLeftBreakpoint()->getSequence();
+  assert(pos >= seq->getStartPosition() &&
+         pos < seq->getStartPosition() + seq->getSequenceLength());
+
+  *_delBreakStream << seq->getName() << '\t' 
+                   << pos - seq->getStartPosition() << '\t'
+                   << pos + 1 - seq->getStartPosition() << '\t'
+                   << (length > _maxGap ? deletionBreakBedTag : 
+                       gapDeletionBreakBedTag)
                    << '\t'
                    << _parName << '\t' << _refName << '\n'; 
 }
