@@ -159,7 +159,7 @@ TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentIterator(
 
 TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentEndIterator() const
 {
-  return getTopSegmentIterator(getTopSegmentArrayIndex() + getNumTopSegments());
+  return getTopSegmentIterator(getNumTopSegments());
 }
 
 BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
@@ -178,8 +178,7 @@ BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentIterator(
 
 BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentEndIterator() const
 {
-  return getBottomSegmentIterator(getBottomSegmentArrayIndex() +
-                                  getNumBottomSegments());
+  return getBottomSegmentIterator(getNumBottomSegments());
 }
 
 DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position)
@@ -199,7 +198,7 @@ DNAIteratorConstPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
 
 DNAIteratorConstPtr HDF5Sequence::getDNAEndIterator() const
 {
-  return getDNAIterator(getStartPosition() + getSequenceLength());
+  return getDNAIterator(getSequenceLength());
 }
 
 ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
