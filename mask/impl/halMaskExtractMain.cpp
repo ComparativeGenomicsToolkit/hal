@@ -15,15 +15,19 @@ using namespace hal;
 int main(int argc, char** argv)
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
-  optionsParser->setDescription("Rertrieve basic statics from a hal database");
+  optionsParser->setDescription("Write masked intervals of genome into bed "
+                                "file");
   optionsParser->addArgument("halFile", "path to hal file to analyze");
-  optionsParser->addArgument("maskBedFile", "path to bed file to write to");
+  optionsParser->addArgument("genome", "name of genome to process");
+  optionsParser->addOption("maskFile", "path to bed file to write to", 
+                           "stdout");
   optionsParser->addOption("extend", "extend masked regions by given num. "
                            "of bases.", 0);
   optionsParser->addOption("extendPct", "extend masked regions by percentage"
                            " of their lengths", 0);
 
   string halPath;
+  string genomeName;
   string bedPath;
   hal_size_t extend;
   double extendPct;
@@ -31,7 +35,8 @@ int main(int argc, char** argv)
   {
     optionsParser->parseOptions(argc, argv);
     halPath = optionsParser->getArgument<string>("halFile");
-    bedPath = optionsParser->getArgument<string>("maskBedFile");
+    genomeName = optionsParser->getArgument<string>("genome");
+    bedPath = optionsParser->getOption<string>("maskFile");
     extend = optionsParser->getOption<hal_size_t>("extend");
     extendPct = optionsParser->getOption<double>("extendPct");
 
@@ -51,14 +56,31 @@ int main(int argc, char** argv)
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
                                                            optionsParser);
 
-    ofstream bedStream(bedPath.c_str());
+    const Genome* genome = alignment->openGenome(genomeName);
+    if (genome == NULL)
+    {
+      throw hal_exception(string("Genome ") + genomeName + " not found.");
+    }
+
+    ostream* bedStream = &cout;
+    bool newBed = false;
+    if (bedPath != "stdout")
+    {
+      bedStream = new ofstream(bedPath.c_str());
+      newBed = true;
+    }
     if (!bedStream)
     {
       throw hal_exception(string("Error opening ") + bedPath + " for writing");
     }
 
     MaskExtractor mask;
-    mask.extract(alignment, &bedStream, extend, extendPct);
+    mask.extract(alignment, genome, bedStream, extend, extendPct);
+
+    if (newBed)
+    {
+      delete bedStream;
+    }
   }
   catch(hal_exception& e)
   {

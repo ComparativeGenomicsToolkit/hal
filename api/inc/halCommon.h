@@ -112,6 +112,11 @@ inline bool isMissingData(char c)
   return c == 'n' || c == 'N';
 }
 
+inline bool isMasked(char c)
+{
+  return c == std::tolower(c);
+}
+
 /** Count the mutations between two DNA strings */
 inline hal_size_t hammingDistance(const std::string& s1, const std::string& s2)
 {

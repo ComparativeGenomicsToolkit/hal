@@ -2,13 +2,13 @@ rootPath = ../
 include ../include.mk
 
 libSourcesAll = impl/*.cpp
-libSources=$(subst impl/halMaskMain.cpp,,${libSourcesAll})
+libSources=$(subst impl/halMaskExtractMain.cpp,,${libSourcesAll})
 libHeaders = inc/*.h 
 
-all : ${libPath}/halMask.a ${binPath}/halMask
+all : ${libPath}/halMask.a ${binPath}/halMaskExtract
 
 clean : 
-	rm -f ${libPath}/halMask.a ${libPath}/*.h ${binPath}/halMask 
+	rm -f ${libPath}/halMask.a ${libPath}/*.h ${binPath}/halMaskExtract 
 
 ${libPath}/halMask.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
@@ -18,6 +18,6 @@ ${libPath}/halMask.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLi
 	rm *.o
 	mv halMask.a ${libPath}/
 
-${binPath}/halMask : impl/halMaskMain.cpp ${libPath}/halMask.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halMask impl/halMaskMain.cpp ${libPath}/halMask.a ${libPath}/halLib.a ${basicLibs}
+${binPath}/halMaskExtract : impl/halMaskExtractMain.cpp ${libPath}/halMask.a ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halMaskExtract impl/halMaskExtractMain.cpp ${libPath}/halMask.a ${libPath}/halLib.a ${basicLibs}
 
