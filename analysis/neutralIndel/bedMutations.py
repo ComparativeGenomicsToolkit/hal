@@ -10,7 +10,7 @@
 import sys
 import os
 
-class BedMutations:
+class BedMutations(object):
 
     # the official location of these definitions is in
     # hal/mutations/src/halBranchMutations.cpp
@@ -23,13 +23,13 @@ class BedMutations:
     gapInsertionBedTag = "GI"
     gapDeletionBedTag = "GD"
     gapDeletionBreakBedTag = "GDB"
-    substitutionBedTag = "S_"
+    substitutionBedTag = "S"
 
     # keep lenient by default, everything but dupes and transpositions
-    defaultEvents = (insertionBedTag, gapInsertionBedTag,
+    defaultEvents = [insertionBedTag, gapInsertionBedTag,
                      deletionBedTag, deletionBreakBedTag,
                      gapDeletionBedTag, gapDeletionBreakBedTag,
-                     inversionBedTag, substitutionBedTag)
+                     inversionBedTag, substitutionBedTag]
     
     def __init__(self):
         pass
@@ -47,6 +47,7 @@ class BedMutations:
         self.prevOp = None
         self.events = set(events)
         self.genome = None
+        self.ancGenome = None
         
         for line in bedFile:
             tokens = line.split()
@@ -56,6 +57,7 @@ class BedMutations:
             if not self.__testIgnore(tokens[3]):
                 assert self.genome is None or tokens[5] == self.genome
                 self.genome = tokens[5]
+                self.ancGenome = tokens[4]
                 self.prevSequence = self.sequence
                 self.prevRange = self.range
                 self.prevOp = self.op

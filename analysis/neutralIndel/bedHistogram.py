@@ -29,7 +29,7 @@ import matplotlib.mlab as mlab
 from hal.analysis.neutralIndel.bedMutations import BedMutations
 from hal.mutations.impl.halTreeMutations import runShellCommand
 
-class BedHistogram:
+class BedHistogram(object):
 
     colorList = ['#1f77b4', # dark blue
                  '#aec7e8', # light blue
@@ -50,7 +50,6 @@ class BedHistogram:
         self.genomeLength = None
         self.rate = None
         self.totalEvents = None
-        pass
                  
     # read bed file line by line, storing relevant info in class members
     def loadFile(self, bedPath, binSize = 1,
@@ -76,8 +75,8 @@ class BedHistogram:
         if hal is not None:
             self.__getGenomeLength(hal, bm.genome)
             self.rate = self.totalEvents / self.genomeLength
-            print "total events: %d   len: %d    rate: %f    " % (
-                self.totalEvents, self.genomeLength, self.rate)
+            sys.stderr.write("total events: %d   len: %d    rate: %f\n" % (
+                self.totalEvents, self.genomeLength, self.rate))
 
 
     # compute the genome length using halStats and summing over the
