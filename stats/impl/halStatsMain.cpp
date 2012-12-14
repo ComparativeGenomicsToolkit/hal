@@ -16,6 +16,8 @@ static void printSequences(ostream& os, AlignmentConstPtr alignment,
                           const string& genomeName);
 static void printSequenceStats(ostream& os, AlignmentConstPtr alignment, 
                                const string& genomeName);
+static void printBedSequenceStats(ostream& os, AlignmentConstPtr alignment, 
+                                  const string& genomeName);
 static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
                             const vector<string>& genomeNames);
 static void printBranches(ostream& os, AlignmentConstPtr alignment);
@@ -37,6 +39,9 @@ int main(int argc, char** argv)
                            "genome", "\"\"");
   optionsParser->addOption("sequenceStats", "print stats for each sequence in "
                            "given genome", "\"\"");
+  optionsParser->addOption("bedSequences", "print sequences of given genome "
+                           "in bed format",
+                           "\"\"");
   optionsParser->addOptionFlag("tree", "print only the NEWICK tree", false);
   optionsParser->addOptionFlag("branches", "print list of branches. "
                                "Each branch is specified by the child genome", 
@@ -53,6 +58,7 @@ int main(int argc, char** argv)
   bool listGenomes;
   string sequencesFromGenome;
   string sequenceStatsFromGenome;
+  string bedSequencesFromGenome;
   string pathGenomes;
   bool tree;
   bool branches;
@@ -66,6 +72,7 @@ int main(int argc, char** argv)
     listGenomes = optionsParser->getFlag("genomes");
     sequencesFromGenome = optionsParser->getOption<string>("sequences");
     sequenceStatsFromGenome = optionsParser->getOption<string>("sequenceStats");
+    bedSequencesFromGenome = optionsParser->getOption<string>("bedSequences");
     tree = optionsParser->getFlag("tree");
     pathGenomes = optionsParser->getOption<string>("path");
     branches = optionsParser->getFlag("branches");
@@ -77,6 +84,7 @@ int main(int argc, char** argv)
     if (sequencesFromGenome != "\"\"") ++optCount;
     if (tree == true) ++optCount;
     if (sequenceStatsFromGenome != "\"\"") ++optCount;
+    if (bedSequencesFromGenome != "\"\"") ++optCount;
     if (pathGenomes != "\"\"") ++optCount;
     if (branches) ++ optCount;
     if (childrenFromGenome != "\"\"") ++optCount;
@@ -85,7 +93,8 @@ int main(int argc, char** argv)
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --path, --branches, "
-                          "--sequenceStats, --children, --parent and --root " 
+                          "--sequenceStats, --children, --parent, "
+                          "--bedSequences abd --root " 
                           "options are mutually exclusive");
     }        
   }
@@ -114,6 +123,10 @@ int main(int argc, char** argv)
     else if (sequenceStatsFromGenome != "\"\"")
     {
       printSequenceStats(cout, alignment, sequenceStatsFromGenome);
+    }
+    else if (bedSequencesFromGenome != "\"\"")
+    {
+      printBedSequenceStats(cout, alignment, bedSequencesFromGenome);
     }
     else if (pathGenomes !=  "\"\"")
     {
@@ -217,6 +230,29 @@ void printSequenceStats(ostream& os, AlignmentConstPtr alignment,
          << seqIt->getSequence()->getSequenceLength() << ", "
          << seqIt->getSequence()->getNumTopSegments() << ", "
          << seqIt->getSequence()->getNumBottomSegments() << "\n";
+    }
+  }
+  os << endl;
+}
+
+void printBedSequenceStats(ostream& os, AlignmentConstPtr alignment, 
+                           const string& genomeName)
+{
+  const Genome* genome = alignment->openGenome(genomeName);
+  if (genome == NULL)
+  {
+    throw hal_exception(string("Genome ") + genomeName + " not found.");
+  }
+  if (genome->getNumSequences() > 0)
+  {
+    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+
+    for (; !seqIt->equals(seqEnd); seqIt->toNext())
+    {
+      os << seqIt->getSequence()->getName() << "\t"
+         << 0 << "\t"
+         << seqIt->getSequence()->getSequenceLength() << "\n";
     }
   }
   os << endl;
