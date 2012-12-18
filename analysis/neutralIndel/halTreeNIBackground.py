@@ -21,18 +21,24 @@ from hal.mutations.impl.halTreeMutations import getHalRootName
 from hal.mutations.impl.halTreeMutations import getHalParentName
 from hal.mutations.impl.halTreeMutations import getHalChildrenNames
 
-def getHalTreeConservation(halPath, args, events, rootName=None):
+def getHalTreeBackground(halPath, args, events, rootName=None):
     root = rootName
     if root is None:
         root = getHalRootName(halPath)
     for child in getHalChildrenNames(halPath, root):
         bgFile = os.path.join(args.workDir, args.backgroundBedName % child)
-        muFile = os.path.join(args.workDir, args.mutationsBedName % child)
-        outFile = os.path.join(args.workDir, args.conservedBedName % child)
-        bc = BedConservation()
-        bc.computeBackgroundRate(args.bgFile, args.muFile, events)
-        bc.identifyConservedIntervals(args.mutationsBed, outFile, args.pval)
-        getHalTreeConservation(halPath, args, events, child)
+        if args.ar is True:
+            print (halPath, child, bgFile, args.arExtend,
+                              args.arExtendPct)
+            command = "halMaskExtract %s %s --maskFile %s --extend %d "
+            "extendPct %f" % (halPath, child, bgFile, args.arExtend,
+                              args.arExtendPct)
+        else:
+            command = "halStats %s --bedSequences %s > %s" % (halPath, child,
+                                                              bgFile)
+            
+        runShellCommand(command)
+        getHalTreeBackground(halPath, args, events, child)
 
         
 def main(argv=None):
@@ -47,28 +53,31 @@ def main(argv=None):
                         default="%%s_bg.bed", help="Name function for "
                         "background bed files where genome name is "
                         "specified as %%s.  Computed using halTreeNIBackground")
-    parser.add_argument("--mutationsBedName", type=str,
-                        default="%%s_bg.bed", help="Name function for "
-                        "background bed files where genome name is "
-                        "specified as %%s.  Computed using halTreeMutations")
-    parser.add_argument("--conservedBedName", type=str,
-                        default="%%s_cons.bed", help="Name function for output "
-                        "bed files where genome name is specifed as %%s")
+    parser.add_argument("--ar", action="store_true", default=False,
+                        help="Select only repeatmasked regions")
+    parser.add_argument("--arExtend", type=int, default=0,
+                        help="Extend selected repeats by given number of bases")
+    parser.add_argument("--arExtendPct", type=float, default=0.0,
+                        help="Extend selected repeated regions by given"
+                        " percent")
     parser.add_argument("--root", default=None, type=str, help="root")
     parser.add_argument("--events",
                         default="\"%s\"" % " ".join(BedMutations.defaultEvents),
-                        type=str, help="event tags (must be the same as was "
-                        "used for the background!!)")
-    parser.add_argument("--pval", type=float, default=0.05,
-                        help="max pval of conserved segment")
-    
+                        type=str, help="event tags")
+
     args = parser.parse_args()
+    args.backgroundBedName = args.backgroundBedName.replace("%%", "%")
     events =  args.events.split()
 
-#    if not os.path.exists(args.workDir):
-#        os.makedirs(args.workDir)
+    if args.arExtend != 0 and args.arExtendPct != 0:
+        raise RuntimeError("--arExtend and --arExtendPct are exclusive")
+    if args.arExtend != 0 or args.arExtendPct != 0:
+        args.ar = True
+
+    if not os.path.exists(args.workDir):
+        os.makedirs(args.workDir)
         
-    getHalTreeConservation(args.hal, args, events, args.root)
+    getHalTreeBackground(args.hal, args, events, args.root)
     
 if __name__ == "__main__":
     sys.exit(main())
