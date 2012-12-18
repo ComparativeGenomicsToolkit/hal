@@ -20,7 +20,6 @@ import subprocess
 
 
 from hal.analysis.neutralIndel.bedMutations import BedMutations
-from hal.analysis.neutralIndel.bedHistogram import BedHistogram
 from hal.mutations.impl.halTreeMutations import runShellCommand
 
 # pipe stdout of given command (presumably a bedtools tool) line by
@@ -33,6 +32,9 @@ def scanBedOutput(command):
     output, nothing = process.communicate()
     for line in output:
         yield line
+    if process.returncode != 0:
+        raise RuntimeError("Command: %s exited with non-zero status %i" %
+                           (command, process.returncode))
 
 # use above method for intersectBed.  
 def scanBedIntersectionMutations(bedMutations, bedSelections):
@@ -80,9 +82,7 @@ def countMutationsInOverlap(bedMutationsPath, bedSelectionPath, events):
 def getBackgroundRate(bedMutationsPath, bedSelectionPath, events):
     size = computeSelectionSize(bedSelectionPath)
     count = countMutationsInOverlap(bedMutationsPath, bedSelectionPath, events)
-    print "%d / %d" % (count, size)
-    return float(count) / float(size)
-
+    return count, size
             
 def main(argv=None):
     if argv is None:
@@ -100,7 +100,8 @@ def main(argv=None):
     args = parser.parse_args()
     
     events =  args.events.split()
-    print getBackgroundRate(args.eventsBed, args.selectBed, events)
+    count, size = getBackgroundRate(args.eventsBed, args.selectBed, events)
+    print "%d / %d = %f" % (count, size, float(count) / float(size))
     
 if __name__ == "__main__":
     sys.exit(main())

@@ -17,26 +17,27 @@ from collections import defaultdict
 import numpy as np
 
 from hal.analysis.neutralIndel.bedMutations import BedMutations
-from hal.analysis.neutralIndel.bedHistogram import BedHistogram
+from hal.analysis.neutralIndel.backgroundRate import getBackgroundRate
 from hal.mutations.impl.halTreeMutations import runShellCommand
 
-class BedConservation(BedHistogram):
+class BedConservation(object):
 
     def __init__(self):
-        super(BedConservation, self).__init__()
+        pass
 
     # use the BedHistogram code to load in a bed file and compute a
     # length distribution
-    def computeBackgroundRate(self, bedPath, events, halPath):
-        self.loadFile(bedPath, 1000000, events, halPath)
+    def computeBackgroundRate(self, mutationsBed, backgroundBed, events):
+        self.count, self.size = getBackgroundRate(mutationsBed,
+                                                  backgroundBed, events)
+        self.rate = float(self.count) / float(self.size)
         self.events = events
-        assert self.rate is not None
 
     def bfProb(self, distance):
-        assert self.totalEvents > 0
+        assert self.count > 0
         p = self.rate * math.pow(1. - self.rate, distance)
         #bonferroni
-        p *= self.totalEvents
+        p *= self.count
         return p
         
     # after the background rate has been computed, we run a test on
@@ -59,7 +60,7 @@ class BedConservation(BedHistogram):
 
     def minDistance(self, maxPVal):
         i = 1
-        while i < self.genomeLength:
+        while i < self.size:
             if self.bfProb(i) <= maxPVal:
                 return i
             i += 1
@@ -70,9 +71,8 @@ def main(argv=None):
         argv = sys.argv
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("bed", help="input bed")
-    parser.add_argument("hal", type=str,
-                        help="hal file database used for background rate")
+    parser.add_argument("mutationsBed", help="input bed")
+    parser.add_argument("backgroundBed", help="background regions")
     parser.add_argument("--outBed", type=str, default=None,help="output bed")
     parser.add_argument("--events",
                         default="\"%s\"" % " ".join(BedMutations.defaultEvents),
@@ -85,14 +85,15 @@ def main(argv=None):
     if args.outBed is not None:
         outStream = open(args.outBed, "w")
     events =  args.events.split()
-        
+    
     bc = BedConservation()
-    bc.computeBackgroundRate(args.bed, events, args.hal)
-    bc.identifyConservedIntervals(args.bed, outStream, args.pval)
+    bc.computeBackgroundRate(args.mutationsBed, args.backgroundBed,
+                             events)
+    bc.identifyConservedIntervals(args.mutationsBed, outStream, args.pval)
 
     sys.stderr.write("%d segments with %d bases (%f pct of genome) found."
                      " minDist=%d\n" % (bc.writtenCount, bc.writtenBases,
-                                      float(bc.writtenBases) / bc.genomeLength,
+                                      float(bc.writtenBases) / bc.size,
                                       bc.minDistance(args.pval)))
     
     if not outStream is sys.stdout:

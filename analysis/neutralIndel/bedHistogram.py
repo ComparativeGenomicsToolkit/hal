@@ -28,6 +28,7 @@ import matplotlib.mlab as mlab
 
 from hal.analysis.neutralIndel.bedMutations import BedMutations
 from hal.mutations.impl.halTreeMutations import runShellCommand
+from hal.analysis.neutralIndel.backgroundRate import getBackgroundRate
 
 class BedHistogram(object):
 
@@ -47,17 +48,16 @@ class BedHistogram(object):
     def __init__(self):
         self.linearY = True
         self.xlimit = None
-        self.genomeLength = None
-        self.rate = None
         self.totalEvents = None
+        self.bgRate = None
                  
     # read bed file line by line, storing relevant info in class members
-    def loadFile(self, bedPath, binSize = 1,
-                 events = BedMutations.defaultEvents,
-                 hal = None):
-        
+    def loadFile(self, bedPath, binSize = 1, bgRate = None,
+                 events = BedMutations.defaultEvents):
+
         self.bins = defaultdict(int)
         self.binSize = binSize
+        self.bgRate = bgRate
 
         bm = BedMutations()
         self.totalEvents = 0.0
@@ -69,40 +69,15 @@ class BedHistogram(object):
                 self.bins[bin] += 1
                 self.totalEvents += 1.0
 
-        # load a "background rate" (number of events / length)
-        # if a hal path was given.  we need the hal path for the genome
-        # length, since its clumsy to guess the latter from the bed only
-        if hal is not None:
-            self.__getGenomeLength(hal, bm.genome)
-            self.rate = self.totalEvents / self.genomeLength
-            sys.stderr.write("total events: %d   len: %d    rate: %f\n" % (
-                self.totalEvents, self.genomeLength, self.rate))
-
-
-    # compute the genome length using halStats and summing over the
-    # sequence lengths
-    def __getGenomeLength(self, halPath, genomeName):
-        stats = runShellCommand("halStats %s --sequenceStats %s" % (halPath,
-                                                                genomeName))
-        lines = stats.split("\n")
-        self.genomeLength = 0
-        for line in lines[1:]:
-            tokens = line.split()
-            if len(tokens) >= 2:
-                self.genomeLength += int(tokens[1].strip(","))
-            else:
-                assert len(tokens) == 0
-        return self.genomeLength
-
     # compute rate array:  need to review to make better use of numpy!
     def __rateFn(self, x):
-        if self.rate is not None:
+        if self.bgRate is not None:
             total = 0
             y = np.zeros(len(x))
             for xelem in xrange(len(x)):
                 s = int(max(0, x[xelem] - (self.binSize / 2.)))
                 for i in range(s, s + self.binSize):                    
-                    p = self.rate * math.pow(1. - self.rate, i)
+                    p = self.bgRate * math.pow(1. - self.bgRate, i)
                     y[xelem] += int(p * self.totalEvents)
                     total += y[xelem]
             print "rate total %i" % total
@@ -159,7 +134,7 @@ class BedHistogram(object):
         legend += ['Data']
       
                     
-        if self.rate is not None:
+        if self.bgRate is not None:
             plotlist.append(plt.plot(x, self.__rateFn(x),
                                      color=self.colorList[6],
                                      linestyle='solid', marker='None', 
@@ -222,8 +197,8 @@ def main(argv=None):
                         type=str, help="event tags")
     parser.add_argument("--xlimit", default=None, type=int,
                         help="maximum x value to plot")
-    parser.add_argument("--hal", default=None, type=str,
-                        help="hal file database used for background rate")
+    parser.add_argument("--backgroundBed", default=None, type=float,
+                        help="regions for computing background rate")
     args = parser.parse_args()
 
     binSize = args.bin
@@ -231,7 +206,13 @@ def main(argv=None):
     bh = BedHistogram()
     bh.linearY = False
     bh.xlimit = args.xlimit
-    bh.loadFile(args.bed, binSize, events, args.hal)
+
+    bgRate = None
+    if args.backgroundBed is not None:
+        count, size = getBackgroundRate(args.bed, args.backgroundBed, events)
+        bgRate = float(count) / float(size)
+    
+    bh.loadFile(args.bed, binSize, bgRate, events)
     bh.writeFigure(args.pdf)
 
 if __name__ == "__main__":
