@@ -68,9 +68,14 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("hal", help="input hal")
-    parser.add_argument("outDir", help="output dir")    
+    parser.add_argument("outDir", help="output dir")
+    parser.add_argument("--bedName", type=str,
+                        default="%%s.bed", help="Name function for output "
+                        "bed files where sequence name is specifed as %%s")
+
     parser.add_argument("--root", default=None, type=str, help="root")
     parser.add_argument("--doSnps",action="store_true", default=False)
     parser.add_argument("--doParentDeletions",action="store_true",

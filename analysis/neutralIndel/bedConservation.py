@@ -30,6 +30,7 @@ class BedConservation(object):
     def computeBackgroundRate(self, mutationsBed, backgroundBed, events):
         self.count, self.size = getBackgroundRate(mutationsBed,
                                                   backgroundBed, events)
+        
         self.rate = float(self.count) / float(self.size)
         self.events = events
 
@@ -56,7 +57,7 @@ class BedConservation(object):
                         bm.sequence, bm.prevRange[1], bm.range[0],
                         pval, bm.ancGenome, bm.genome))
                     self.writtenBases += d
-                    self.writtenCount += 1
+                    self.writtenCount += 1                
 
     def minDistance(self, maxPVal):
         i = 1
@@ -92,9 +93,12 @@ def main(argv=None):
     bc.identifyConservedIntervals(args.mutationsBed, outStream, args.pval)
 
     sys.stderr.write("%d segments with %d bases (%f pct of genome) found."
-                     " minDist=%d\n" % (bc.writtenCount, bc.writtenBases,
-                                      float(bc.writtenBases) / bc.size,
-                                      bc.minDistance(args.pval)))
+                     " bgrate= %f minDist=%d\n" % (
+                         bc.writtenCount,
+                         bc.writtenBases,
+                         float(bc.writtenBases) / bc.size,
+                         bc.rate,
+                         bc.minDistance(args.pval)))
     
     if not outStream is sys.stdout:
         outStream.close()
