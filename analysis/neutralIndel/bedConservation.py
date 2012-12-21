@@ -36,9 +36,10 @@ class BedConservation(object):
 
     def bfProb(self, distance):
         assert self.count > 0
-        p = self.rate * math.pow(1. - self.rate, distance)
+        assert distance >= 0
+        p = math.pow(1. - self.rate, distance)
         #bonferroni
-        p *= self.count
+        #p *= self.count
         return p
         
     # after the background rate has been computed, we run a test on

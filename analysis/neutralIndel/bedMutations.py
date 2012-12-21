@@ -74,7 +74,12 @@ class BedMutations(object):
     def distance(self):
         if self.prevRange is None or self.range is None:
             return None
-        return self.range[0] - self.prevRange[1]
+        d = self.range[0] - self.prevRange[1]
+        if d < 0:
+            raise RuntimeError("Distance between (%d,%d) and (%d,%d) is negative which probably means the mutations bed file is not sorted.  Please regenerate the mutations with halTreeMutations.py (without the --noSort option!)" % (
+                self.prevRange[0], self.prevRange[1], self.range[0],
+                self.range[1]))
+        return d
 
     def __testIgnore(self, token):
         if token.find(self.substitutionBedTag) == 0:

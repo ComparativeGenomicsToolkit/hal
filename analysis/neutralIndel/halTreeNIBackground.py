@@ -21,24 +21,20 @@ from hal.mutations.impl.halTreeMutations import getHalRootName
 from hal.mutations.impl.halTreeMutations import getHalParentName
 from hal.mutations.impl.halTreeMutations import getHalChildrenNames
 
-def getHalTreeBackground(halPath, args, events, rootName=None):
+def getHalTreeBackground(halPath, args, rootName=None):
     root = rootName
     if root is None:
         root = getHalRootName(halPath)
     for child in getHalChildrenNames(halPath, root):
         bgFile = os.path.join(args.workDir, args.backgroundBedName % child)
         if args.ar is True:
-            print (halPath, child, bgFile, args.arExtend,
-                              args.arExtendPct)
-            command = "halMaskExtract %s %s --maskFile %s --extend %d "
-            "extendPct %f" % (halPath, child, bgFile, args.arExtend,
-                              args.arExtendPct)
+            command = "halMaskExtract %s %s --maskFile %s --extend %d --extendPct %f" % (halPath, child, bgFile, args.arExtend, args.arExtendPct)
         else:
             command = "halStats %s --bedSequences %s > %s" % (halPath, child,
                                                               bgFile)
-            
+        print command
         runShellCommand(command)
-        getHalTreeBackground(halPath, args, events, child)
+        getHalTreeBackground(halPath, args, child)
 
         
 def main(argv=None):
@@ -61,13 +57,9 @@ def main(argv=None):
                         help="Extend selected repeated regions by given"
                         " percent")
     parser.add_argument("--root", default=None, type=str, help="root")
-    parser.add_argument("--events",
-                        default="\"%s\"" % " ".join(BedMutations.defaultEvents),
-                        type=str, help="event tags")
 
     args = parser.parse_args()
     args.backgroundBedName = args.backgroundBedName.replace("%%", "%")
-    events =  args.events.split()
 
     if args.arExtend != 0 and args.arExtendPct != 0:
         raise RuntimeError("--arExtend and --arExtendPct are exclusive")
@@ -77,7 +69,7 @@ def main(argv=None):
     if not os.path.exists(args.workDir):
         os.makedirs(args.workDir)
         
-    getHalTreeBackground(args.hal, args, events, args.root)
+    getHalTreeBackground(args.hal, args, args.root)
     
 if __name__ == "__main__":
     sys.exit(main())

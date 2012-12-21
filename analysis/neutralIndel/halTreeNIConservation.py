@@ -31,6 +31,16 @@ def checkFiles(background, mutations):
         raise RuntimeError("Mutations file %s not found.  Make sure that "
                            "halTreeMutations has been run amd that the "
                            "paths are correctly specified" % mutations)
+
+def genomeLength(halPath, genome):
+    command = "halStats %s --bedSequences %s" % (halPath, genome)
+    genomeBed = runShellCommand(command)
+    length = 0
+    for line in genomeBed.split("\n"):
+        tokens = line.split()
+        if len(tokens) > 2:
+            length += int(tokens[2])
+    return length
     
 def getHalTreeConservation(halPath, args, events, rootName=None):
     root = rootName
@@ -44,8 +54,15 @@ def getHalTreeConservation(halPath, args, events, rootName=None):
         outFile = open(outPath, "w")
         bc = BedConservation()
         bc.computeBackgroundRate(muFile, bgFile, events)
-        bc.identifyConservedIntervals(muFile, outFile, args.pval)
+        bc.identifyConservedIntervals(muFile, outFile, float(args.pval))
         getHalTreeConservation(halPath, args, events, child)
+        print "%s: %d segments with %d bases (%f pct of genome) found. bgrate= %f minDist=%d" % (
+            child,
+            bc.writtenCount,
+            bc.writtenBases,
+            float(bc.writtenBases) / float(genomeLength(halPath, child)),
+            bc.rate,
+            bc.minDistance(float(args.pval)))
         
 def main(argv=None):
     if argv is None:
@@ -69,8 +86,7 @@ def main(argv=None):
     parser.add_argument("--root", default=None, type=str, help="root")
     parser.add_argument("--events",
                         default="\"%s\"" % " ".join(BedMutations.defaultEvents),
-                        type=str, help="event tags (must be the same as was "
-                        "used for the background!!)")
+                        type=str, help="event tags.")
     parser.add_argument("--pval", type=float, default=0.05,
                         help="max pval of conserved segment")
     
