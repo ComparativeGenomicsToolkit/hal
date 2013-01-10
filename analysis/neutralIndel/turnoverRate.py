@@ -68,7 +68,20 @@ def getBedLength(bedPath):
                 length += lineLength
     bedFile.close()
     return length
-        
+
+def isBedEmpty(bedPath):
+    bedFile = open(bedPath)
+    for line in bedFile:
+        clnLine = line.strip()
+        if len(clnLine) > 0 and clnLine[0] != "#":
+            toks = clnLine.split()
+            if len(toks) > 2:
+                lineLength = int(toks[2]) - int(toks[1])
+                if lineLength > 0:
+                    return False
+    bedFile.close()
+    return True
+
 # do analysis along a branch.  Given conservaiton beds for the genome and
 # its parent, do a basic set breakdown to find the intersection and differences
 # which correspond respectively to conservation, and gain/loss.
@@ -76,6 +89,9 @@ def compareConservationOverBranch(halPath, genomeName, genomeBed, parentBed,
                                   outMappedGenomeBed, outConservationBed,
                                   outAlignedBed,
                                   outGainBed, outLossBed):
+    if isBedEmpty(genomeBed):
+        return (0, 0, 0, 0)
+    
     #1) map genome to parent's coordinates
     getLiftUpBedFile(halPath, genomeName, genomeBed, outMappedGenomeBed)
     
