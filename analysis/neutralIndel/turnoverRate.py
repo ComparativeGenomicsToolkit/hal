@@ -23,46 +23,47 @@ from hal.mutations.impl.halTreeMutations import runShellCommand
 
 def getParentGenomeName(halPath, genomeName):
     return runShellCommand("halStats %s --parent %s" % (halPath,
-                                                        genomeName))
+                                                        genomeName)).strip("\n")
 
 # map a bed file into the parent genome's parents coordinates
-def liftUpBedfile(halPath, genomeName, genomeBedPath, outBedPath):
+def getLiftUpBedFile(halPath, genomeName, genomeBedPath, outBedPath):
     parentName = getParentGenomeName(halPath, genomeName)
     runShellCommand("halLiftover %s %s %s %s %s" % (halPath,
                                                     genomeName,
                                                     genomeBedPath,
                                                     parentName,
-                                                    outBedPath)
+                                                    outBedPath))
                     
 # compute aligned regions of a genome as a bed
-def alignedBed(halPath, genomeName, outBedPath):
-    runShellCommand("halAlignedExtract %s --alignedFile %s" % (genomeName,
-                                                               outBedPath))
+def getAlignedBed(halPath, genomeName, outBedPath):
+    runShellCommand("halAlignedExtract %s %s --alignedFile %s" % (halPath,
+                                                                  genomeName,
+                                                                  outBedPath))
     
 # compute inbed1 AND inbed1                    
-def intersectBed(inBed1, inBed2, outBed):
+def getIntersectBed(inBed1, inBed2, outBed):
     runShellCommand("intersectBed -a %s -b %s > %s" % (inBed1, inBed2, outBed))
 
 # compute inbed1 - inbed2
-def subtractBed(inBed1, inBed2, outBed):
+def getSubtractBed(inBed1, inBed2, outBed):
     runShellCommand("subtractBed -a %s -b %s > %s" % (inBed1, inBed2, outBed))
 
 # compute inbed1 OR inbed2
-def unionBed(inBed1, inBed2, outBed):
+def getUnionBed(inBed1, inBed2, outBed):
     runShellCommand("cat %s %s | sortBed | mergeBed > %s" % (inBed1, inBed2,
                                                              outBed))
 
 # compute total length of all intervals in a bed file.  NOTE THAT
 # OVERLAPPING OR DUPLICATE INTERVALS WILL BE COUNTED AS WELL, SO MAKE SURE
 # INPUT DOES NOT CONTAIN OVERLAPS!
-def bedLength(bedPath):
+def getBedLength(bedPath):
     length = 0
     bedFile = open(bedPath)
     for line in bedFile:
         clnLine = line.strip()
-        if clnLine[0] != "#":
+        if len(clnLine) > 0 and clnLine[0] != "#":
             toks = clnLine.split()
-            if len(toks > 2):
+            if len(toks) > 2:
                 lineLength = int(toks[2]) - int(toks[1])
                 length += lineLength
     bedFile.close()
@@ -76,24 +77,24 @@ def compareConservationOverBranch(halPath, genomeName, genomeBed, parentBed,
                                   outAlignedBed,
                                   outGainBed, outLossBed):
     #1) map genome to parent's coordinates
-    liftUpBedFile(halPath, genomeName, genomeBed, outMappedGenomeBed)
+    getLiftUpBedFile(halPath, genomeName, genomeBed, outMappedGenomeBed)
     
     #2) compute intersection
-    intersectBed(parentBed, outMappedGenomeBed, outConservationBed)
+    getIntersectBed(parentBed, outMappedGenomeBed, outConservationBed)
 
     #3) compute gain
-    subtractBed(outMappedGenomeBed, parentBed, outGainBed)
+    getSubtractBed(outMappedGenomeBed, parentBed, outGainBed)
     
     #4) compute loss
-    subtractBed(parentBed, outMappedGenomeBed, outLossBed)
+    getSubtractBed(parentBed, outMappedGenomeBed, outLossBed)
 
     #5) compute aligned regions                
-    alignedBed(halPath, genomeName, outAlignedBed)
+    getAlignedBed(halPath, genomeName, outAlignedBed)
     
-    conLen = bedLength(outConservationBed)
-    gainLen = bedLength(outGainBed)
-    lossLen = bedLength(outLossBed)
-    unconLen = bedLength(alignedBed) - conLen - gainLen - lossLen
+    conLen = getBedLength(outConservationBed)
+    gainLen = getBedLength(outGainBed)
+    lossLen = getBedLength(outLossBed)
+    unconLen = getBedLength(outAlignedBed) - conLen - gainLen - lossLen
 
     return (conLen, gainLen, lossLen, unconLen)
                                                     
@@ -116,8 +117,8 @@ def main(argv=None):
                         help="bed file conserved regions in parent "
                         "[default=parentGenome_cons.bed]",
                         default=None)
-    parser.add_arguments("--workDir", type=str,
-                         help="default dir for bed files", default=None)
+    parser.add_argument("--workDir", type=str,
+                        help="default dir for bed files", default=None)
     
     args = parser.parse_args()
     workDir = args.workDir
