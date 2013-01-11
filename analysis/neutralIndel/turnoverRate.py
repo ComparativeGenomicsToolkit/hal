@@ -21,9 +21,13 @@ import tempfile
 
 from hal.mutations.impl.halTreeMutations import runShellCommand
 
+def getBranchLength(halPath, genomeName):
+    return float(runShellCommand("halStats %s --branchLength %s" % (
+        halPath, genomeName)).strip("\n"))
+
 def getParentGenomeName(halPath, genomeName):
-    return runShellCommand("halStats %s --parent %s" % (halPath,
-                                                        genomeName)).strip("\n")
+    return runShellCommand("halStats %s --parent %s" % (
+        halPath, genomeName)).strip("\n")
 
 # map a bed file into the parent genome's parents coordinates
 def getLiftUpBedFile(halPath, genomeName, genomeBedPath, outBedPath):

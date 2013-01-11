@@ -15,6 +15,7 @@ import subprocess
 
 from hal.analysis.neutralIndel.turnoverRate import compareConservationOverBranch
 from hal.analysis.neutralIndel.turnoverRate import getParentGenomeName
+from hal.analysis.neutralIndel.turnoverRate import getBranchLength
 
 from hal.mutations.impl.halTreeMutations import runShellCommand
 from hal.mutations.impl.halTreeMutations import getHalRootName
@@ -62,15 +63,18 @@ def getHalTreeTurnover(halPath, args, rootName=None):
             lossRate = 0
             if unconLen + gainLen > 0:
                 lossRate = float(lossLen) / (conLen + lossLen)
+
+            branchLength = getBranchLength(halPath, child)
                 
-            print "%s: cons %d  ucons %d  gain %d (%f) loss %d (%f)" % (
+            print "%s: cons %d  ucons %d  gain %d (%f) loss %d (%f) bl %f" % (
                 child,                                                
                 conLen,
                 unconLen,
                 gainLen,
                 gainRate,
                 lossLen,
-                lossRate)
+                lossRate,
+                branchLength)
         
         getHalTreeTurnover(halPath, args, child)
         
