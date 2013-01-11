@@ -28,8 +28,7 @@ class BedMutations(object):
     # keep lenient by default, everything but dupes and transpositions
     defaultEvents = [insertionBedTag, gapInsertionBedTag,
                      deletionBedTag, deletionBreakBedTag,
-                     gapDeletionBedTag, gapDeletionBreakBedTag,
-                     inversionBedTag, substitutionBedTag]
+                     gapDeletionBedTag, gapDeletionBreakBedTag]
     
     def __init__(self):
         pass

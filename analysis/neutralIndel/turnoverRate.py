@@ -32,17 +32,20 @@ def getParentGenomeName(halPath, genomeName):
 # map a bed file into the parent genome's parents coordinates
 def getLiftUpBedFile(halPath, genomeName, genomeBedPath, outBedPath):
     parentName = getParentGenomeName(halPath, genomeName)
-    runShellCommand("halLiftover %s %s %s %s %s" % (halPath,
-                                                    genomeName,
-                                                    genomeBedPath,
-                                                    parentName,
-                                                    outBedPath))
+    
+    runShellCommand("halLiftover %s %s %s %s %s_lotmp" % (halPath,
+                                                          genomeName,
+                                                          genomeBedPath,
+                                                          parentName,
+                                                          outBedPath))
+
+    runShellCommand("cat %s_lotmp |sortBed |mergeBed > %s && rm -f %s_lotmp" %
+                    (outBedPath, outBedPath, outBedPath))
                     
 # compute aligned regions of a genome as a bed
 def getAlignedBed(halPath, genomeName, outBedPath):
-    runShellCommand("halAlignedExtract %s %s --alignedFile %s" % (halPath,
-                                                                  genomeName,
-                                                                  outBedPath))
+    runShellCommand("halAlignedExtract %s %s | sortBed | mergeBed> %s" %
+                    (halPath, genomeName, outBedPath))
     
 # compute inbed1 AND inbed1                    
 def getIntersectBed(inBed1, inBed2, outBed):
@@ -57,18 +60,36 @@ def getUnionBed(inBed1, inBed2, outBed):
     runShellCommand("cat %s %s | sortBed | mergeBed > %s" % (inBed1, inBed2,
                                                              outBed))
 
+def getSortBed(inBed, outBed = None):
+    if outBed is None:
+        runShellCommand("sortBed -i %s > %s_temp && mv %s_temp %s" % (
+            inBed, inBed, inBed, inBed))
+    else:
+        runShellCommand("sortBed -i %s > %s" % (inBed, outBed))
+            
 # compute total length of all intervals in a bed file.  NOTE THAT
 # OVERLAPPING OR DUPLICATE INTERVALS WILL BE COUNTED AS WELL, SO MAKE SURE
 # INPUT DOES NOT CONTAIN OVERLAPS!
 def getBedLength(bedPath):
     length = 0
     bedFile = open(bedPath)
+    prevName = None
     for line in bedFile:
         clnLine = line.strip()
         if len(clnLine) > 0 and clnLine[0] != "#":
             toks = clnLine.split()
             if len(toks) > 2:
-                lineLength = int(toks[2]) - int(toks[1])
+                start = int(toks[1])
+                end = int(toks[2])
+                if prevName == toks[0]:
+                    pass
+                    #assert end > start
+                    #assert start >= prevEnd
+                else:
+                    prevName = toks[0]
+                    prevEnd = -1
+                prevEnd = end
+                lineLength = end - start
                 length += lineLength
     bedFile.close()
     return length
