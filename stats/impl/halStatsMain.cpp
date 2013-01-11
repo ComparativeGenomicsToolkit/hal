@@ -26,6 +26,8 @@ static void printChildren(ostream& os, AlignmentConstPtr alignment,
 static void printParent(ostream& os, AlignmentConstPtr alignment, 
                         const string& genomeName);
 static void printRootName(ostream& os, AlignmentConstPtr alignment);
+static void printBranchLength(ostream& os, AlignmentConstPtr alignment, 
+                              const string& genomeName);
 
 
 int main(int argc, char** argv)
@@ -53,6 +55,9 @@ int main(int argc, char** argv)
   optionsParser->addOptionFlag("root", "print root genome name", false);
   optionsParser->addOption("parent", "print name of parent of given genome",
                            "\"\"");
+  optionsParser->addOption("branchLength", "print branch length between "
+                           "given genome and its parent in the tree",
+                           "\"\"");
 
   string path;
   bool listGenomes;
@@ -65,6 +70,7 @@ int main(int argc, char** argv)
   string childrenFromGenome;
   string parentFromGenome;
   bool printRoot;
+  string nameForBL;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -79,6 +85,7 @@ int main(int argc, char** argv)
     childrenFromGenome = optionsParser->getOption<string>("children");
     parentFromGenome = optionsParser->getOption<string>("parent");
     printRoot = optionsParser->getFlag("root");
+    nameForBL = optionsParser->getOption<string>("branchLength");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -90,11 +97,12 @@ int main(int argc, char** argv)
     if (childrenFromGenome != "\"\"") ++optCount;
     if (parentFromGenome != "\"\"") ++optCount;
     if (printRoot) ++optCount;
+    if (nameForBL != "\"\"") ++optCount;
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --path, --branches, "
                           "--sequenceStats, --children, --parent, "
-                          "--bedSequences abd --root " 
+                          "--bedSequences, --root, and --branchLength " 
                           "options are mutually exclusive");
     }        
   }
@@ -147,6 +155,10 @@ int main(int argc, char** argv)
     else if (printRoot == true)
     {
       printRootName(cout, alignment);
+    }
+    else if (nameForBL != "\"\"")
+    {
+      printBranchLength(cout, alignment, nameForBL);
     }
     else
     {
@@ -340,4 +352,14 @@ void printParent(ostream& os, AlignmentConstPtr alignment,
 void printRootName(ostream& os, AlignmentConstPtr alignment)
 {
   os << alignment->getRootName() << endl;
+}
+
+void printBranchLength(ostream& os, AlignmentConstPtr alignment, 
+                       const string& genomeName)
+{
+  if (genomeName != alignment->getRootName())
+  {
+    string parentName = alignment->getParentName(genomeName);
+    os << alignment->getBranchLength(parentName, genomeName) << endl;
+  }
 }
