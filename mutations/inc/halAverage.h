@@ -89,8 +89,8 @@ inline void Average<T>::add(T val, hal_size_t count)
   assert(val > 0);
   _sum += val;
   _count += count;
-  _min = min(_min, val);
-  _max = max(_max, val);
+  _min = std::min(_min, val);
+  _max = std::max(_max, val);
 }
 
 template <typename T>
