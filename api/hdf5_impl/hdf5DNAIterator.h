@@ -81,7 +81,7 @@ inline void HDF5DNAIterator::setChar(char c)
   }
   else if (isNucleotide(c) == false)
   {
-    throw hal_exception("Trying to set invalid charachter: " + c);
+    throw hal_exception(std::string("Trying to set invalid charachter: ") + c);
   }
   if (_reversed)
   {
