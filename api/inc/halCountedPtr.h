@@ -128,16 +128,28 @@ private:
 // properly account for the const to non-const assignments.  this is
 // the only way i could figure out how to do it anyway, since the 
 // regular template just seems to understand types and not consts...
+
+// trick to remove const from type (ie template typename).
+template <typename T>
+struct hal_remove_const {
+   typedef T type;
+};
+template <typename T>
+struct hal_remove_const<const T> {
+   typedef T type;
+};
+
 template <class X> 
 class counted_ptr<const X>
 {
 public:
    template <typename XX> friend class counted_ptr;
-   typedef ptr_counter<const X> counter;
+   typedef typename hal_remove_const<const X>::type Xnc;
+   typedef ptr_counter<Xnc> counter;
 
    explicit counted_ptr(const X* p = 0) // allocate a new counter
      : itsCounter(0) {
-     if (p) itsCounter = new counter(p);
+     if (p) itsCounter = new counter(const_cast<Xnc*>(p));
    }
 
    ~counted_ptr() {
@@ -148,10 +160,10 @@ public:
    // (even if the templated version below seems to cover it) 
    // to prevent the compiler from making its own and breaking everything
    counted_ptr(const counted_ptr<const X>& r) {
-     acquire<const X>(r.itsCounter);
+     acquire<Xnc>(r.itsCounter);
    }
    counted_ptr(const counted_ptr<X>& r) {
-     acquire<const X>(reinterpret_cast<counter*>(r.itsCounter));
+     acquire<Xnc>(const_cast<counter*>(r.itsCounter));
    }
    
    // important to keep the default assignment operator overloaded
@@ -161,13 +173,13 @@ public:
      if (this != &r)
      {
        release();
-       acquire<const X>(r.itsCounter);
+       acquire<Xnc>(r.itsCounter);
      }
      return *this;
    }
    counted_ptr<const X>& operator=(
      const counted_ptr<X>& r) {
-     return this->operator=(reinterpret_cast<const counted_ptr<const X>&>(r));
+     return this->operator=(const_cast<const counted_ptr<const X>&>(r));
    }
   
    template <class Y> 
