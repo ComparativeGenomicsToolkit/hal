@@ -39,6 +39,9 @@ public:
    /** Close the alignment */
    virtual void close() = 0;
 
+   /** Close the alignment */
+   virtual void close() const = 0;
+
    /** Set options from parser 
     * @param clParser pointer to command-line parser */
    virtual void setOptionsFromParser(CLParserConstPtr parser) const = 0;
