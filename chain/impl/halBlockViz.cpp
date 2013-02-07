@@ -271,7 +271,7 @@ block* readBlocks(BottomSegmentIteratorConstPtr bottom, hal_index_t childIndex,
         readBlock(cur, bottom, top, getSequenceString, genomeName,
                   seqBuffer, dnaBuffer);        
         prev = cur;
-        bottom->toRight(absEnd);
+        bottom->toRight(absEnd - 1);
       }
     }    
     
