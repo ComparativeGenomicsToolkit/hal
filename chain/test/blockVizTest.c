@@ -58,13 +58,13 @@ int main(int argc, char** argv)
   {
     struct block* head = halGetBlocksInTargetRange(handle, tChrom, tStart,
                                                    tEnd, doSeq);
-    
-    while (head)
+    struct block* cur = head;
+    while (cur)
     {
-      printBlock(stdout, head);
-      head = head->next;
+      printBlock(stdout, cur);
+      cur = cur->next;
     }
-
+    halFreeBlocks(head);
     halClose(handle);
     return 0;
   }
