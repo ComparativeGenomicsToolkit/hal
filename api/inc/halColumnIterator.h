@@ -46,6 +46,15 @@ public:
     * genoem sequence */
    virtual void toRight() const = 0;
 
+   /** Move column iterator to arbitrary site in genome -- effectively
+    * resetting the iterator (convenience function to avoid creation of
+    * new iterators in some cases).  
+    * @param columnIndex position of column in forward genome coordinates 
+    * @param lastIndex last column position (for iteration).  must be greater
+    *  than columnIndex */
+   virtual void toSite(hal_index_t columnIndex, 
+                       hal_index_t lastIndex) const = 0;
+
    /** Use this method to bound iteration loops.  When the column iterator
     * is retrieved from the sequence or genome, the last column is specfied.
     * toRight() cna then be called until lastColumn is true.  */
