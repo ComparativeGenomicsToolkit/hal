@@ -204,8 +204,9 @@ extern "C" struct block *halGetBlocksInTargetRange(int halHandle,
       throw hal_exception(ss.str());
     }
 
+    hal_index_t myEnd = tEnd > 0 ? tEnd : sequence->getSequenceLength();
     hal_index_t absStart = sequence->getStartPosition() + tStart;
-    hal_index_t absEnd = sequence->getStartPosition() + tEnd;
+    hal_index_t absEnd = sequence->getStartPosition() + myEnd;
     hal_index_t childIndex = parent->getChildIndex(genome);
     if (absStart >= absEnd)
     {
@@ -217,7 +218,7 @@ extern "C" struct block *halGetBlocksInTargetRange(int halHandle,
     bottom->toSite(absStart, false);
     hal_offset_t startOffset = absStart - bottom->getStartPosition();
     hal_offset_t endOffset = 0;
-    if (tEnd <= bottom->getEndPosition())
+    if (absEnd <= bottom->getEndPosition())
     {
       endOffset = bottom->getEndPosition() - absEnd + 1;
     }
@@ -253,8 +254,12 @@ block* readBlocks(BottomSegmentIteratorConstPtr bottom, hal_index_t childIndex,
        bottom->getGenome()->getChild(childIndex)->getTopSegmentIterator();
     string genomeName = top->getGenome()->getName();
     string seqBuffer, dnaBuffer;
+    hal_index_t lastIndex = 
+       (hal_index_t)bottom->getGenome()->getNumBottomSegments();
+    cout << lastIndex << endl;
 
-    while (bottom->getStartPosition() < absEnd)
+    while (bottom->getArrayIndex() < lastIndex &&
+           bottom->getStartPosition() < absEnd - 1)
     {
       if (bottom->hasChild(childIndex))
       {
@@ -271,8 +276,8 @@ block* readBlocks(BottomSegmentIteratorConstPtr bottom, hal_index_t childIndex,
         readBlock(cur, bottom, top, getSequenceString, genomeName,
                   seqBuffer, dnaBuffer);        
         prev = cur;
-        bottom->toRight(absEnd - 1);
       }
+      bottom->toRight(absEnd - 1);
     }    
     
     return head;

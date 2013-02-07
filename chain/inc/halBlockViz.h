@@ -47,9 +47,11 @@ void halFreeBlocks(struct block* block);
  * @param halHandle handle for the HAL alignment obtained from halOpen
  * @param tChrom name of the chromosome in reference.
  * @param tStart start position in reference  
- * @param tEnd last + 1 position in reference  
- * @param copy DNA sequence (of query species) into output blocks
- * @retrun block structure -- must be freed by halFreeBlocks()
+ * @param tEnd last + 1 position in reference (if 0, then the size of the 
+ * chromosome is used). 
+ * @param getSequenceString copy DNA sequence (of query species) into 
+ * output blocks if not 0. 
+ * @return  block structure -- must be freed by halFreeBlocks()
  */
 struct block *halGetBlocksInTargetRange(int halHandle,
                                         char* tChrom,
