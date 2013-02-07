@@ -189,7 +189,7 @@ extern "C" struct block *halGetBlocksInTargetRange(int halHandle,
     string sequenceName;
     if (sequence == NULL)
     {
-      sequenceName = tChrom;
+      sequenceName = parent->getName();
       sequenceName += '.';
       sequenceName += tChrom;
       sequence = parent->getSequence(sequenceName);
@@ -288,19 +288,25 @@ void readBlock(block* cur, BottomSegmentIteratorConstPtr bottom,
                       const string& genomeName, string& seqBuffer, 
                       string& dnaBuffer)
 {
-  const Sequence* tSequence = top->getSequence();
+  const Sequence* qSequence = top->getSequence();
+  const Sequence* tSequence = bottom->getSequence(); 
   cur->next = NULL;
-  seqBuffer = tSequence->getName();
+
+  seqBuffer = qSequence->getName();
   size_t prefix = 
      seqBuffer.find(genomeName + '.') != 0 ? 0 : genomeName.length() + 1;
   cur->qChrom = (char*)malloc(seqBuffer.length() + 1 - prefix);
   strcpy(cur->qChrom, seqBuffer.c_str() + prefix);
-  cur->tStart = bottom->getStartPosition();
-  cur->qStart = top->getStartPosition();
+
+  cur->tStart = bottom->getStartPosition() - tSequence->getStartPosition();
+  cur->qStart = top->getStartPosition() - qSequence->getStartPosition();
+  assert(cur->tStart >= 0);
+  assert(cur->qStart >= 0);
   if (top->getReversed() == true)
   {
-    cur->qStart = tSequence->getSequenceLength() - cur->qStart;
+    cur->qStart = qSequence->getSequenceLength() - cur->qStart;
   }
+
   cur->size = bottom->getLength();
   cur->strand = top->getReversed() ? '-' : '+';
   cur->sequence = NULL;
