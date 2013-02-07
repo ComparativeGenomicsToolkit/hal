@@ -256,7 +256,6 @@ block* readBlocks(BottomSegmentIteratorConstPtr bottom, hal_index_t childIndex,
     string seqBuffer, dnaBuffer;
     hal_index_t lastIndex = 
        (hal_index_t)bottom->getGenome()->getNumBottomSegments();
-    cout << lastIndex << endl;
 
     while (bottom->getArrayIndex() < lastIndex &&
            bottom->getStartPosition() < absEnd - 1)
