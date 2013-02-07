@@ -32,7 +32,9 @@ static block* readBlocks(BottomSegmentIteratorConstPtr bottom,
                          hal_index_t childIndex, hal_index_t absEnd,
                          int getSequenceString);
 static void readBlock(block* cur, BottomSegmentIteratorConstPtr bottom,
-                      TopSegmentIteratorConstPtr top, int getSequenceString);
+                      TopSegmentIteratorConstPtr top, int getSequenceString,
+                      const string& genomeName, string& seqBuffer, 
+                      string& dnaBuffer);
 
 extern "C" int halOpen(char *halFileName, char* qSpeciesName)
 {
@@ -249,6 +251,8 @@ block* readBlocks(BottomSegmentIteratorConstPtr bottom, hal_index_t childIndex,
 
     TopSegmentIteratorConstPtr top = 
        bottom->getGenome()->getChild(childIndex)->getTopSegmentIterator();
+    string genomeName = top->getGenome()->getName();
+    string seqBuffer, dnaBuffer;
 
     while (bottom->getStartPosition() < absEnd)
     {
@@ -264,7 +268,8 @@ block* readBlocks(BottomSegmentIteratorConstPtr bottom, hal_index_t childIndex,
           prev->next = cur;
         }        
         top->toChild(bottom, childIndex);
-        readBlock(cur, bottom, top, getSequenceString);        
+        readBlock(cur, bottom, top, getSequenceString, genomeName,
+                  seqBuffer, dnaBuffer);        
         prev = cur;
         bottom->toRight(absEnd);
       }
@@ -274,13 +279,17 @@ block* readBlocks(BottomSegmentIteratorConstPtr bottom, hal_index_t childIndex,
 }
 
 void readBlock(block* cur, BottomSegmentIteratorConstPtr bottom,
-               TopSegmentIteratorConstPtr top, int getSequenceString)
+                      TopSegmentIteratorConstPtr top, int getSequenceString,
+                      const string& genomeName, string& seqBuffer, 
+                      string& dnaBuffer)
 {
   const Sequence* tSequence = top->getSequence();
   cur->next = NULL;
-  string seqName = tSequence->getName();
-  cur->qChrom = (char*)malloc(seqName.length() + 1);
-  strcpy(cur->qChrom, seqName.c_str());
+  seqBuffer = tSequence->getName();
+  size_t prefix = 
+     seqBuffer.find(genomeName + '.') != 0 ? 0 : genomeName.length() + 1;
+  cur->qChrom = (char*)malloc(seqBuffer.length() + 1 - prefix);
+  strcpy(cur->qChrom, seqBuffer.c_str() + prefix);
   cur->tStart = bottom->getStartPosition();
   cur->qStart = top->getStartPosition();
   if (top->getReversed() == true)
@@ -292,9 +301,8 @@ void readBlock(block* cur, BottomSegmentIteratorConstPtr bottom,
   cur->sequence = NULL;
   if (getSequenceString != 0)
   {
-    string seqString;
-    top->getString(seqString);
-    cur->sequence = (char*)malloc(seqString.length() + 1);
-    strcpy(cur->sequence, seqString.c_str());
+    top->getString(dnaBuffer);
+    cur->sequence = (char*)malloc(dnaBuffer.length() + 1);
+    strcpy(cur->sequence, dnaBuffer.c_str());
   }
 }
