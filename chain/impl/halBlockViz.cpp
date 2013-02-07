@@ -205,17 +205,24 @@ extern "C" struct block *halGetBlocksInTargetRange(int halHandle,
     hal_index_t absStart = sequence->getStartPosition() + tStart;
     hal_index_t absEnd = sequence->getStartPosition() + tEnd;
     hal_index_t childIndex = parent->getChildIndex(genome);
+    if (absStart >= absEnd)
+    {
+      throw hal_exception("Invalid range");
+    }
     
     BottomSegmentIteratorConstPtr bottom = 
        parent->getBottomSegmentIterator(childIndex);
     bottom->toSite(absStart, false);
-    hal_offset_t startOffset = bottom->getStartPosition() - absStart;
+    hal_offset_t startOffset = absStart - bottom->getStartPosition();
     hal_offset_t endOffset = 0;
     if (tEnd <= bottom->getEndPosition())
     {
-      endOffset = bottom->getEndPosition() - tEnd - 1;
+      endOffset = bottom->getEndPosition() - absEnd + 1;
     }
+
     bottom->slice(startOffset, endOffset);
+    assert(bottom->getStartPosition() == absStart);
+    assert(bottom->getEndPosition() <= absEnd);
 
     if (bottom->getLength() == 0)
     {
