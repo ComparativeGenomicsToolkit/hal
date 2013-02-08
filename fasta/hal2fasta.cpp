@@ -28,7 +28,7 @@ static const hal_size_t StringBufferSize = 1024;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  CLParserPtr optionsParser = hdf5CLParserInstance(false);
   optionsParser->addArgument("inHalPath", "input hal file");
   optionsParser->addArgument("genome", "genome to export");
   optionsParser->addOption("outFaPath", "output fasta file (stdout if none)",
@@ -217,7 +217,6 @@ void printGenome(ostream& outStream,
         hal_size_t readStart = seqStart >= start ? 0 : seqStart - start;
         hal_size_t readLen = std::min(seqLen - start, length - runningLength);
 
-        cerr << sequence->getName() << " (" << seqLen << ") " << readStart << " " << readLen << endl;
         printSequence(outStream, sequence, lineWidth, readStart, readLen);
         runningLength += readLen;
       }
