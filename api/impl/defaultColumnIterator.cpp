@@ -180,6 +180,8 @@ void DefaultColumnIterator::toSite(hal_index_t columnIndex,
   assert(sequence != NULL);
   _ref =sequence;    
   _stack.clear();
+  _indelStack.clear();
+  defragment();
   // note columnIndex in genome (not sequence) coordinates
   _stack.push(sequence, columnIndex, lastColumnIndex);
   toRight();
