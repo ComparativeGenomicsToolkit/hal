@@ -217,7 +217,6 @@ void printGenome(ostream& outStream,
         hal_size_t readStart = seqStart >= start ? 0 : seqStart - start;
         hal_size_t readLen = std::min(seqLen - start, length - runningLength);
 
-        cerr << sequence->getName() << " (" << seqLen << ") " << readStart << " " << readLen << endl;
         printSequence(outStream, sequence, lineWidth, readStart, readLen);
         runningLength += readLen;
       }
