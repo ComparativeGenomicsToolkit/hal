@@ -77,6 +77,9 @@ Before using HAL, add it to your path:
 
      `export PATH=<path to hal>/bin:${PATH}`
 
+The parent directory of hal/ should be in your PYTHONPATH in order to use any of the Python functionality.  This includes running `make test`
+	 
+     `export PYTHONPATH=<parent of hal>:${PYTHONPATH}`
 
 HAL Tools
 -----
