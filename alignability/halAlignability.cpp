@@ -225,8 +225,9 @@ void printSequence(ostream& outStream, const Sequence* sequence,
                                                              0, pos,
                                                              last - 1,
                                                              true);
-  outStream << "fixedStep\tchrom=" << sequenceName << "\tstart=" << start
-            << "\tstep=" << step << "\n";
+  // note wig coordinates are 1-based for some reason so we shift to right
+  outStream << "fixedStep chrom=" << sequenceName << " start=" << start + 1
+            << " step=" << step << "\n";
   
   // convert to genome coordinates
   pos += sequence->getStartPosition();
