@@ -164,7 +164,7 @@ def main(argv=None):
                         help="maximum true t")
     parser.add_argument("--maxIt", type=int, default=1000,
                         help="number of iterations for gradient descent")
-    parser.add_argument("--step", type=float, default=0.01,
+    parser.add_argument("--step", type=float, default=0.001,
                         help="gradient descent step")
     parser.add_argument("--noise", type=float, default=0,
                         help="max amount of noise to add")
@@ -183,16 +183,21 @@ def main(argv=None):
         grTrue = random.uniform(args.minRate, args.maxRate)
         genVals = generateData(args.size, (args.minT, args.maxT),
                                   lrTrue, grTrue, args.noise)
+        bestLr, bestGr, bestDiff = (0, 0, 1000000)
+        
         for retry in range(args.retries):
             lrStart = random.uniform(0.0001, 1.0)
             grStart = random.uniform(0.0001, 1.0)
             (lrEst, grEst, diff) = gradDescent(lrStart, grStart, genVals,
                                                args.maxIt, args.step)
-            print "Truth=(%f,%f), Start=(%f,%f) Est=(%f,%f), dsq=%f\n" % (
-                lrTrue, grTrue, lrStart, grStart, lrEst, grEst,
-                (lrTrue - lrEst) * (lrTrue - lrEst) +
-                (grTrue - grEst) * (grTrue - grEst)) 
-        
+            if diff < bestDiff:
+                bestLr, bestGr, bestDiff = (lrEst, grEst, diff)
+                
+        print "Truth=(%f,%f), Start=(%f,%f) Est=(%f,%f), dsq=%f" % (
+                lrTrue, grTrue, lrStart, grStart, bestLr, bestGr,
+                (lrTrue - bestLr) * (lrTrue - bestLr) +
+                (grTrue - bestGr) * (grTrue - bestGr))
+        print "--------------------------------"
     
 if __name__ == "__main__":
     sys.exit(main())
