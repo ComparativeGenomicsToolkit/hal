@@ -103,7 +103,7 @@ def halTreeTurnoverParams(halPath, obsPath, rootName, allInternals,
         next = nextQueue.popleft()
         if next == rootName or (allInternals is True and
                                 len(getHalChildrenNames(halPath, next)) > 0):
-            print observations["HUMAN"]
+
             obsVals = getValuesBelowRoot(halPath, next, observations)
             result = estimateParamsFromList(obsVals, maxIt, step, retries)
             print "%s: lr=%f gr=%f dsq=%f" % (next, result[0], result[1],
