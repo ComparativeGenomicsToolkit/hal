@@ -22,14 +22,15 @@ import subprocess
 import tempfile
 
 from hal.mutations.impl.halTreeMutations import getHalRootName
-from hal.mutations.impl.halTreeMutations import getHalParentName
+from hal.analysis.neutralIndel.turnoverRate import getParentGenomeName
+from hal.analysis.neutralIndel.turnoverRate import getBranchLength
 from hal.mutations.impl.halTreeMutations import getHalChildrenNames
 from hal.analysis.constraintTurnover.turnoverModel import gradDescent
 
 # go through the halTreENITurnover output, mapping observed values to genome
 # in convention used by turnover model, ie
 # ([pi0,pi1], [[P00, P01],[P10, P11]], t)
-def readTurnoverFile(turnoverPath):
+def readTurnoverFile(halPath, turnoverPath):
     result = dict()
     toFile = open(turnoverPath, "r")
     for line in toFile:
@@ -46,6 +47,13 @@ def readTurnoverFile(turnoverPath):
             pg = float(toks[7].strip("()"))
             pl = float(toks[10].strip("()"))
             t = float(toks[12])
+            #
+            # Incorporate parent branch since it affects turnover
+            #
+            if genome != getHalRootName(halPath):
+                parName = getParentGenomeName(halPath, genome)
+                parBranch = getBranchLength(halPath, parName)
+                t += float(parBranch)
             assert pi0 >= 0 and pi1 >=0
             assert pg >= 0 and pl >=0
             assert t >= 0
@@ -76,7 +84,6 @@ def estimateParamsFromList(obsVals, maxIt, step, retries):
     for retry in range(retries):
         lrStart = random.uniform(0.0001, 1.0)
         grStart = random.uniform(0.0001, 1.0)
-
         (lrEst, grEst, diff) = gradDescent(lrStart, grStart, obsVals,
                                            maxIt, step)
         if diff < bestDiff:
@@ -88,7 +95,7 @@ def estimateParamsFromList(obsVals, maxIt, step, retries):
 # repeat for all internal nodes below the root. 
 def halTreeTurnoverParams(halPath, obsPath, rootName, allInternals,
                           maxIt, step, retries):
-    observations = readTurnoverFile(obsPath)
+    observations = readTurnoverFile(halPath, obsPath)
     nextQueue = deque()
     nextQueue.append(rootName)
     output = []
@@ -96,6 +103,7 @@ def halTreeTurnoverParams(halPath, obsPath, rootName, allInternals,
         next = nextQueue.popleft()
         if next == rootName or (allInternals is True and
                                 len(getHalChildrenNames(halPath, next)) > 0):
+            print observations["HUMAN"]
             obsVals = getValuesBelowRoot(halPath, next, observations)
             result = estimateParamsFromList(obsVals, maxIt, step, retries)
             print "%s: lr=%f gr=%f dsq=%f" % (next, result[0], result[1],
