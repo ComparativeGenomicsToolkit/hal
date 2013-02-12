@@ -54,7 +54,8 @@ def getHalTreeConservation(halPath, args, events, rootName=None):
         outFile = open(outPath, "w")
         bc = BedConservation()
         bc.computeBackgroundRate(muFile, bgFile, events)
-        bc.identifyConservedIntervals(muFile, outFile, float(args.pval))
+        bc.identifyConservedIntervals(muFile, outFile, float(args.pval),
+                                      float(args.cutoff))
         getHalTreeConservation(halPath, args, events, child)
         print "%s: %d segments with %d bases (%f pct of genome) found. bgrate= %f minDist=%d" % (
             child,
@@ -89,6 +90,9 @@ def main(argv=None):
                         type=str, help="event tags.")
     parser.add_argument("--pval", type=float, default=0.05,
                         help="max pval of conserved segment")
+    parser.add_argument("--cutoff", type=float, default=0.5,
+                        help="cut <cutoff>*mu^-1 off each side of interval. "
+                        "For upper bounds use 0.5 and lower bounds 2.0")
     
     args = parser.parse_args()
     args.backgroundBedName = args.backgroundBedName.replace("%%", "%")

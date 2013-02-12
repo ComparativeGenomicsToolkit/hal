@@ -44,20 +44,24 @@ class BedConservation(object):
         
     # after the background rate has been computed, we run a test on
     # a bed and write out conserved intervals
-    def identifyConservedIntervals(self, bedPath, outStream, maxPVal=0.05):
+    def identifyConservedIntervals(self, bedPath, outStream, maxPVal=0.05,
+                                   cutoff=0.5):
         assert self.rate is not None
         self.writtenCount = 0
         self.writtenBases = 0
         bm = BedMutations()
+        borderLength = int((1. / self.rate) * cutoff)
         for line in bm.scan(bedPath, self.events):
             d = bm.distance()
-            if d is not None:
+            if d is not None and d > 2 * borderLength:
                 pval = self.bfProb(d)
                 if pval <= maxPVal:
-                    outStream.write("%s\t%s\t%s\t%f\t%s\t%s\n" % (
-                        bm.sequence, bm.prevRange[1], bm.range[0],
+                    startPos = int(bm.prevRange[1]) + borderLength
+                    endPos = int(bm.range[0]) - borderLength
+                    outStream.write("%s\t%d\t%d\t%f\t%s\t%s\n" % (
+                        bm.sequence, startPos, endPos,
                         pval, bm.ancGenome, bm.genome))
-                    self.writtenBases += d
+                    self.writtenBases += (d - (2 * borderLength))
                     self.writtenCount += 1                
 
     def minDistance(self, maxPVal):
@@ -81,6 +85,9 @@ def main(argv=None):
                         type=str, help="event tags")
     parser.add_argument("--pval", type=float, default=0.05,
                         help="max pval of conserved segment")
+    parser.add_argument("--cutoff", type=float, default=0.5,
+                        help="cut <cutoff>*mu^-1 off each side of interval. "
+                        "For upper bounds use 0.5 and lower bounds 2.0")
     
     args = parser.parse_args()
     outStream = sys.stdout
@@ -91,7 +98,8 @@ def main(argv=None):
     bc = BedConservation()
     bc.computeBackgroundRate(args.mutationsBed, args.backgroundBed,
                              events)
-    bc.identifyConservedIntervals(args.mutationsBed, outStream, args.pval)
+    bc.identifyConservedIntervals(args.mutationsBed, outStream, args.pval,
+                                  args.cutoff)
 
     sys.stderr.write("%d segments with %d bases (%f pct of genome) found."
                      " bgrate= %f minDist=%d\n" % (

@@ -96,25 +96,26 @@ def gradDescent(lrStart, grStart, estVals, maxIt, delta):
         lr = bestLr
         gr = bestGr
         dpl = diffSqManyPoints(lr + delta, gr, estVals)
-        if random.randint(0, 4) == 0 and dpl < bestDiff:
+        rval = random.randint(0, 3)
+        if rval == 0 and dpl < bestDiff:
             bestDiff = dpl
             bestLr = lr + delta
             bestGr = gr
             lastChangeIterator = i
         dpg = diffSqManyPoints(lr, gr + delta, estVals)
-        if random.randint(0, 4) == 0 and dpg < bestDiff:
+        if rval == 1 and dpg < bestDiff:
             bestDiff = dpg
             bestLr = lr
             bestGr = gr + delta
             lastChangeIterator = i
-        if random.randint(0, 4) == 0 and lr > delta:
+        if rval == 2 and lr > delta:
             dml = diffSqManyPoints(lr - delta, gr, estVals)
             if dml < bestDiff:
                 bestDiff = dml
                 bestLr = lr - delta
                 bestGr = gr
                 lastChangeIterator = i
-        if random.randint(0, 4) == 0 and gr > delta:
+        if rval == 3 and gr > delta:
             dmg = diffSqManyPoints(lr, gr - delta, estVals)
             if dmg < bestDiff:
                 bestDiff = dmg
@@ -125,28 +126,28 @@ def gradDescent(lrStart, grStart, estVals, maxIt, delta):
         # Hack: if nothing happened, instead of returning, try adding
         # 10x the step value and seeing what happens.  
         #
-        if i == lastChangeIterator + 10:
+        if i == lastChangeIterator + 8:
             boostDelta = delta * 10.
             dpl = diffSqManyPoints(lr + boostDelta, gr, estVals)
-            if random.randint(0, 4) == 0 and dpl < bestDiff:
+            if rval == 0 and dpl < bestDiff:
                 bestDiff = dpl
                 bestLr = lr + boostDelta
                 bestGr = gr
                 lastChangeIterator = i
             dpg = diffSqManyPoints(lr, gr + boostDelta, estVals)
-            if random.randint(0, 4) == 0 and dpg < bestDiff:
+            if rval == 1 and dpg < bestDiff:
                 bestDiff = dpg
                 bestLr = lr
                 bestGr = gr + boostDelta
                 lastChangeIterator = i
-            if random.randint(0, 4) == 0 and lr > boostDelta:
+            if rval == 2 and lr > boostDelta:
                 dml = diffSqManyPoints(lr - boostDelta, gr, estVals)
                 if dml < bestDiff:
                     bestDiff = dml
                     bestLr = lr - boostDelta
                     bestGr = gr
                     lastChangeIterator = i
-            if random.randint(0, 4) == 0 and gr > boostDelta:
+            if rval == 3 and gr > boostDelta:
                 dmg = diffSqManyPoints(lr, gr - boostDelta, estVals)
                 if dmg < bestDiff:
                     bestDiff = dmg
@@ -154,7 +155,7 @@ def gradDescent(lrStart, grStart, estVals, maxIt, delta):
                     bestGr = gr - boostDelta
                     lastChangeIterator = i
         # we tried the 10x and now give up
-        elif i > lastChangeIterator + 10:
+        elif i > lastChangeIterator + 8:
             break
     return (bestLr, bestGr, bestDiff)
 
