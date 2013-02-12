@@ -5,8 +5,7 @@
 #Released under the MIT license, see LICENSE.txt
 #!/usr/bin/env python
 
-"""Compare conserved intervals between a genome and those of its parent,
-detecting patterns of conservation (overlap), gain and loss
+"""This is a two-state continuous time markov model: 0: unconstratined.  1: constrained.  There are two transition rates to go between states.  lossRate: 1->0 and gainRate: 0->1.  Probability Matrix and Stationary Distribution are computed from the two rates and a time t. (see pdf)
 """
 import argparse
 import os
@@ -19,7 +18,6 @@ import numpy as np
 import subprocess
 import tempfile
 
-from hal.mutations.impl.halTreeMutations import runShellCommand
 
 #constrained is always 1.  unconstrained is always 0
 
@@ -122,7 +120,7 @@ def gradDescent(lrStart, grStart, estVals, maxIt, delta):
     return (bestLr, bestGr, bestDiff)
 
 # add some noise to parameters
-def fudge(P, pi, maxNoise):
+def addNoise(P, pi, maxNoise):
     d = random.uniform(-maxNoise, maxNoise)
     P[0][0] += d
     P[0][1] -= d
@@ -141,7 +139,7 @@ def generateData(n, tRange, lossRate, gainRate, maxNoise):
         t = random.uniform(tRange[0], tRange[1])
         P = computePMatrix(lossRate, gainRate, t)
         pi = computeStationaryDist(lossRate, gainRate, t)
-        fudge(P, pi, maxNoise)
+        addNoise(P, pi, maxNoise)
         genVals += (pi, P, t)
     return genVals
                                                               
