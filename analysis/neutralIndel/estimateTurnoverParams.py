@@ -79,8 +79,8 @@ def estimateParamsFromList(obsVals, maxIt, step, retries):
 
         (lrEst, grEst, diff) = gradDescent(lrStart, grStart, obsVals,
                                            maxIt, step)
-    if diff < bestDiff:
-        bestLr, bestGr, bestDiff = (lrEst, grEst, diff)
+        if diff < bestDiff:
+            bestLr, bestGr, bestDiff = (lrEst, grEst, diff)
 
     return [bestLr, bestGr, bestDiff]
 
@@ -95,7 +95,7 @@ def halTreeTurnoverParams(halPath, obsPath, rootName, allInternals,
     while len(nextQueue) > 0:
         next = nextQueue.popleft()
         if next == rootName or (allInternals is True and
-                                len(getHalChildrenNames(next)) == 0):
+                                len(getHalChildrenNames(halPath, next)) > 0):
             obsVals = getValuesBelowRoot(halPath, next, observations)
             result = estimateParamsFromList(obsVals, maxIt, step, retries)
             print "%s: lr=%f gr=%f dsq=%f" % (next, result[0], result[1],
