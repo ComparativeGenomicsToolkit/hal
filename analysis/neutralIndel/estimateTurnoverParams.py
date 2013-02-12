@@ -52,7 +52,7 @@ def readTurnoverFile(turnoverPath):
             result[genome] = ([pi0, pi1], [ [1.0 - pg, pg], [pl, 1.0 - pl] ], t)
     return result
 
-# concatenate information for all genomes below and including the given
+# concatenate information for all genomes below and not including the given
 # root (if it exists) into a list.  The observations were read from the
 # output file using readTurnoverFile()
 def getValuesBelowRoot(halPath, rootName, observations):
@@ -61,7 +61,7 @@ def getValuesBelowRoot(halPath, rootName, observations):
     output = []
     while len(nextQueue) > 0:
         next = nextQueue.popleft()
-        if next in observations:
+        if next in observations and next != rootName:
             output.append(observations[next])
         for child in getHalChildrenNames(halPath, next):
             nextQueue.append(child)
