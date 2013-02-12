@@ -72,9 +72,9 @@ def diffOnePoint(lossRate, gainRate, piEst, Pest, t):
 def diffSqManyPoints(lossRate, gainRate, estVals):
     dtot = 0
     for estVal in estVals:
-        piEst = estVals[0]
-        Pest = estVals[1]
-        t = estVals[2]
+        piEst = estVal[0]
+        Pest = estVal[1]
+        t = estVal[2]
         d = diffOnePoint(lossRate, gainRate, piEst, Pest, t)
         dtot += d * d
     return dtot
@@ -91,6 +91,7 @@ def gradDescent(lrStart, grStart, estVals, maxIt, delta):
     bestDiff = diffSqManyPoints(lrStart, grStart, estVals)
     bestLr = lrStart
     bestGr = grStart
+    lastChangeIterator = 0
     for i in range(maxIt):
         lr = bestLr
         gr = bestGr
@@ -99,24 +100,29 @@ def gradDescent(lrStart, grStart, estVals, maxIt, delta):
             bestDiff = dpl
             bestLr = lr + delta
             bestGr = gr
+            lastChangeIterator = i
         dpg = diffSqManyPoints(lr, gr + delta, estVals)
         if dpg < bestDiff:
             bestDiff = dpg
             bestLr = lr
             bestGr = gr + delta
+            lastChangeIterator = i
         if lr > delta:
             dml = diffSqManyPoints(lr - delta, gr, estVals)
             if dml < bestDiff:
                 bestDiff = dml
                 bestLr = lr - delta
                 bestGr = gr
+                lastChangeIterator = i
         if gr > delta:
             dmg = diffSqManyPoints(lr, gr - delta, estVals)
             if dmg < bestDiff:
                 bestDiff = dmg
                 bestLr = lr
                 bestGr = gr - delta
-
+                lastChangeIterator = i
+        if i - lastChangeIterator > 0:
+            break
     return (bestLr, bestGr, bestDiff)
 
 # add some noise to parameters
@@ -140,7 +146,7 @@ def generateData(n, tRange, lossRate, gainRate, maxNoise):
         P = computePMatrix(lossRate, gainRate, t)
         pi = computeStationaryDist(lossRate, gainRate, t)
         addNoise(P, pi, maxNoise)
-        genVals += (pi, P, t)
+        genVals.append((pi, P, t))
     return genVals
                                                               
 def main(argv=None):
@@ -168,6 +174,7 @@ def main(argv=None):
                         help="max amount of noise to add")
     parser.add_argument("--retries", type=int, default=5,
                         help="number of gradient descents to run")
+
     
     args = parser.parse_args()
 

@@ -25,10 +25,11 @@ def runShellCommand(command):
     return output
 
 def getHalRootName(halPath):
-    return runShellCommand("halStats %s --root" % halPath)
+    return runShellCommand("halStats %s --root" % halPath).strip()
 
 def getHalParentName(halPath, genomeName):
-    return runShellCommand("halStats %s --parent %s" % (halPath, genomeName))
+    res = runShellCommand("halStats %s --parent %s" % (halPath, genomeName))
+    return res.strip()
 
 def getHalChildrenNames(halPath, genomeName):
     return runShellCommand("halStats %s --children %s" %
