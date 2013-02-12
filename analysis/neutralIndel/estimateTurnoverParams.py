@@ -26,6 +26,8 @@ from hal.analysis.neutralIndel.turnoverRate import getParentGenomeName
 from hal.analysis.neutralIndel.turnoverRate import getBranchLength
 from hal.mutations.impl.halTreeMutations import getHalChildrenNames
 from hal.analysis.constraintTurnover.turnoverModel import gradDescent
+from hal.analysis.constraintTurnover.turnoverModel import computePMatrix
+from hal.analysis.constraintTurnover.turnoverModel import computeStationaryDist
 
 # go through the halTreENITurnover output, mapping observed values to genome
 # in convention used by turnover model, ie
@@ -38,14 +40,17 @@ def readTurnoverFile(halPath, turnoverPath):
         genome = toks[0].strip(":")
         cons = float(toks[2])
         ucons = float(toks[4])
-
-        if cons + ucons <= 0 or cons < 0 or ucons < 0:
+        gain = float(toks[6])
+        loss = float(toks[9])
+        totalAligned = cons + ucons + gain + loss
+                     
+        if totalAligned <= 0 or cons < 0 or ucons < 0:
             sys.stderr.write("Warning, skipping %s\n" % genome)
         else:
-            pi0 = ucons / (cons + ucons)
-            pi1 = cons / (cons + ucons)
-            pg = float(toks[7].strip("()"))
-            pl = float(toks[10].strip("()"))
+            pi0 = (ucons + loss) / totalAligned
+            pi1 = (cons + gain) / totalAligned
+            pg = gain / (ucons + gain)
+            pl = loss / (cons + loss)
             t = float(toks[12])
             #
             # Incorporate parent branch since it affects turnover
@@ -69,8 +74,11 @@ def getValuesBelowRoot(halPath, rootName, observations):
     output = []
     while len(nextQueue) > 0:
         next = nextQueue.popleft()
-        if next in observations and next != rootName:
-            output.append(observations[next])
+        if next != rootName:
+            if next in observations:
+                output.append(observations[next])
+            else:
+                sys.stderr.write("Warning, no observation for %s\n" % next)
         for child in getHalChildrenNames(halPath, next):
             nextQueue.append(child)
     return output
@@ -79,11 +87,16 @@ def getValuesBelowRoot(halPath, rootName, observations):
 # with random starting points between 0 and 1
 # returns (rLoss, rGain, dSq)
 def estimateParamsFromList(obsVals, maxIt, step, retries):
+    assert len(obsVals) > 0
     bestLr, bestGr, bestDiff = (0, 0, 1000000)
         
     for retry in range(retries):
-        lrStart = random.uniform(0.0001, 1.0)
-        grStart = random.uniform(0.0001, 1.0)
+        if retry == 0:
+            lrStart = step
+            grStart = step
+        else:
+            lrStart = random.uniform(0., step * maxIt)
+            grStart = random.uniform(0., step * maxIt)
         (lrEst, grEst, diff) = gradDescent(lrStart, grStart, obsVals,
                                            maxIt, step)
         if diff < bestDiff:
@@ -91,6 +104,22 @@ def estimateParamsFromList(obsVals, maxIt, step, retries):
 
     return [bestLr, bestGr, bestDiff]
 
+# output some stats on how the model fits the data for various nodes on the
+# tree.  will need to start thinking about properly putting this in a
+# spreadsheet or something
+def printComparison(halPath, obsVals, observations, result):
+    lossRate = result[0]
+    gainRate = result[1]
+    obsScope = set([str(x) for x in obsVals])
+    for (name, obs) in observations.items():
+        if str(obs) in obsScope:            
+            t = obs[2]
+            pi = computeStationaryDist(lossRate, gainRate, t)
+            P = computePMatrix(lossRate, gainRate, t)
+            print "  %s t=%f piObs=[%.2f, %.2f] piEst=[%.2f, %.2f] PObs=[%.3f, %.3f] PEst=[%.3f, %.3f]" % (
+                name, t, obs[0][0], obs[0][1], pi[0], pi[1], 
+                obs[1][0][1], obs[1][1][0], P[0][1], P[1][0])
+    
 # estimate the parameters for the root. if allInternals is true, then
 # repeat for all internal nodes below the root. 
 def halTreeTurnoverParams(halPath, obsPath, rootName, allInternals,
@@ -106,8 +135,9 @@ def halTreeTurnoverParams(halPath, obsPath, rootName, allInternals,
 
             obsVals = getValuesBelowRoot(halPath, next, observations)
             result = estimateParamsFromList(obsVals, maxIt, step, retries)
-            print "%s: lr=%f gr=%f dsq=%f" % (next, result[0], result[1],
+            print "%s: lr=%f gr=%f dsq=%f" % (next,result[0], result[1],
                                               result[2])
+            printComparison(halPath, obsVals, observations, result)
         for child in getHalChildrenNames(halPath, next):
             nextQueue.append(child)
     return output
@@ -121,9 +151,9 @@ def main(argv=None):
                         help="Path of hal file")
     parser.add_argument("NITurnoverFile", type=str,
                         help="Output of halTreeNITurnover.py")
-    parser.add_argument("--maxIt", type=int, default=1000,
+    parser.add_argument("--maxIt", type=int, default=100000,
                         help="number of iterations for gradient descent")
-    parser.add_argument("--step", type=float, default=0.001,
+    parser.add_argument("--step", type=float, default=0.0001,
                         help="gradient descent step")
     parser.add_argument("--retries", type=int, default=5,
                         help="number of gradient descents to run")
