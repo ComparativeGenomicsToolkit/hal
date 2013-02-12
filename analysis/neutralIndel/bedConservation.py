@@ -77,7 +77,7 @@ def main(argv=None):
     parser.add_argument("backgroundBed", help="background regions")
     parser.add_argument("--outBed", type=str, default=None,help="output bed")
     parser.add_argument("--events",
-                        default="\"%s\"" % " ".join(BedMutations.defaultEvents),
+                        default=" ".join(BedMutations.defaultEvents),
                         type=str, help="event tags")
     parser.add_argument("--pval", type=float, default=0.05,
                         help="max pval of conserved segment")

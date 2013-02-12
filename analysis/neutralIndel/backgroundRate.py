@@ -94,7 +94,7 @@ def main(argv=None):
     parser.add_argument("selectBed", type=str,
                         help="bed file containing regions to examine")
     parser.add_argument("--events", default=
-                        "\"%s\"" % " ".join(BedMutations.defaultEvents),
+                        " ".join(BedMutations.defaultEvents),
                         type=str, help="event tags")
     
     args = parser.parse_args()

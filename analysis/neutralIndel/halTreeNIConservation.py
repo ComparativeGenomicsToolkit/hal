@@ -85,7 +85,7 @@ def main(argv=None):
                         "bed files where genome name is specifed as %%s")
     parser.add_argument("--root", default=None, type=str, help="root")
     parser.add_argument("--events",
-                        default="\"%s\"" % " ".join(BedMutations.defaultEvents),
+                        default=" ".join(BedMutations.defaultEvents),
                         type=str, help="event tags.")
     parser.add_argument("--pval", type=float, default=0.05,
                         help="max pval of conserved segment")

@@ -193,7 +193,7 @@ def main(argv=None):
     parser.add_argument("pdf", help="output pdf")
     parser.add_argument("--bin", default=10, type=int, help="bin size")
     parser.add_argument("--events",
-                        default="\"%s\"" % " ".join(BedMutations.defaultEvents),
+                        default=" ".join(BedMutations.defaultEvents),
                         type=str, help="event tags")
     parser.add_argument("--xlimit", default=None, type=int,
                         help="maximum x value to plot")
