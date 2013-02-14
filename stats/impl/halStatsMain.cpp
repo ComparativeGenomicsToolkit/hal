@@ -189,11 +189,13 @@ void printGenomes(ostream& os, AlignmentConstPtr alignment)
   for (set<const Genome*>::iterator i = genomes.begin(); i != genomes.end();
        ++i)
   {
-    if (i != genomes.begin())
-    {
-      os << ",";
-    }
+    set<const Genome*>::iterator next = i;
+    ++next;   
     os << (*i)->getName();
+    if (next != genomes.end())
+    {
+      os << " ";
+    }
   }
   os << endl;      
 }

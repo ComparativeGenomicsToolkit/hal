@@ -50,6 +50,7 @@ class BedHistogram(object):
         self.xlimit = None
         self.totalEvents = None
         self.bgRate = None
+        self.title = "Title"
                  
     # read bed file line by line, storing relevant info in class members
     def loadFile(self, bedPath, binSize = 1, bgRate = None,
@@ -84,7 +85,8 @@ class BedHistogram(object):
             return y
 
     # draw the histogram of inter-event distances in log scale
-    def writeFigure(self, pdfPath):
+    def writeFigure(self, pdfPath, title):
+        self.title = title
         pdf = pltBack.PdfPages(pdfPath)
         fig = plt.figure(figsize=(9.0, 4.0), dpi=300, facecolor='w')
         self.__drawData(fig)
@@ -119,7 +121,7 @@ class BedHistogram(object):
         if not self.linearY:
             ylog = np.log10(y)
             xcof = np.vstack((x, np.ones(len(x)))).T
-            temp = 500 / self.binSize
+            temp = 900 / self.binSize
             model, resid = np.linalg.lstsq(xcof[:temp], ylog[:temp])[:2]
             r2 = 1 - resid / (ylog.size * ylog.var())
 
@@ -144,8 +146,9 @@ class BedHistogram(object):
             legend += ['Background']
 
         if not self.linearY:
-            temp = x[:1000/ self.binSize]
-            plotlist.append(plt.plot(temp, np.power(10, model[0] * temp + model[1]),
+            temp = x[:100000/ self.binSize]
+            plotlist.append(plt.plot(temp,
+                                     np.power(10, model[0] * temp + model[1]),
                                      color=self.colorList[2],
                                      linestyle='solid', marker='None', 
                                      markeredgecolor=self.colorList[2],
@@ -159,7 +162,7 @@ class BedHistogram(object):
             plt.xlim(0 - .02 * xmax, xmax * 1.02)
         else:
             plt.xlim(xmax - ((xmax - xmin) * 1.02), xmax * 1.02)
-        pltTitle = plt.title("Title")
+        pltTitle = plt.title(self.title)
         plt.setp(pltTitle, fontsize='x-small') # legend fontsize
         for loc, spine in ax.spines.iteritems():
             if loc in ['left','bottom']:
@@ -176,8 +179,10 @@ class BedHistogram(object):
         if not self.linearY:
             ax.set_yscale('log')
             ax.yaxis.set_minor_locator(LogLocator(base=10, subs=range(1, 10)))
+            ax.yaxis.set_data_interval(0.01, None)
         plt.xlabel('Distance')
         plt.ylabel('Count')
+        plt.ylim(ymin = 0.5)
 
         leg = plt.legend(plotlist, legend, loc=1, numpoints=1)
         plt.setp(leg.get_texts(), fontsize='x-small') # legend fontsize
@@ -199,6 +204,8 @@ def main(argv=None):
                         help="maximum x value to plot")
     parser.add_argument("--backgroundBed", default=None, type=float,
                         help="regions for computing background rate")
+    parser.add_argument("--title", default=None, type=str,
+                        help="title of plot")
     args = parser.parse_args()
 
     binSize = args.bin
@@ -213,7 +220,7 @@ def main(argv=None):
         bgRate = float(count) / float(size)
     
     bh.loadFile(args.bed, binSize, bgRate, events)
-    bh.writeFigure(args.pdf)
+    bh.writeFigure(args.pdf, args.title)
 
 if __name__ == "__main__":
     sys.exit(main())

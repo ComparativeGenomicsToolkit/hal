@@ -111,14 +111,21 @@ def printComparison(halPath, obsVals, observations, result):
     lossRate = result[0]
     gainRate = result[1]
     obsScope = set([str(x) for x in obsVals])
+    if len(observations.items()) > 0:
+        print "Genome, t, piObs0, piObs1, piEst0, piEst1, PLossObs, PGainObs, PLossEst, PGainEst, AvgDiff"
     for (name, obs) in observations.items():
         if str(obs) in obsScope:            
             t = obs[2]
             pi = computeStationaryDist(lossRate, gainRate, t)
             P = computePMatrix(lossRate, gainRate, t)
-            print "  %s t=%f piObs=[%.2f, %.2f] piEst=[%.2f, %.2f] PObs=[%.3f, %.3f] PEst=[%.3f, %.3f]" % (
+            print "  %s, %f, %.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f, %.3f, %.3f" % (
                 name, t, obs[0][0], obs[0][1], pi[0], pi[1], 
-                obs[1][0][1], obs[1][1][0], P[0][1], P[1][0])
+                obs[1][0][1], obs[1][1][0], P[0][1], P[1][0],
+                0.25 * (math.fabs(obs[0][0] - pi[0]) +
+                math.fabs(obs[0][1] - pi[1]) +
+                math.fabs(obs[1][0][1] - P[0][1]) +
+                math.fabs(obs[1][1][0] - P[1][0]))
+                )
     
 # estimate the parameters for the root. if allInternals is true, then
 # repeat for all internal nodes below the root. 
