@@ -288,15 +288,51 @@ static void printBranchPath(ostream& os, AlignmentConstPtr alignment,
   set<const Genome*> outputSet;
   getGenomesInSpanningTree(inputSet, outputSet);
   
-  for (set<const Genome*>::const_iterator j = outputSet.begin(); 
-       j != outputSet.end(); ++j)
+  vector<const Genome*> outputVec;
+  // if given two genomes, sort the output to be the actual path frmo the 
+  // first to the second. 
+  if (genomeNames.size() == 2)
+  {
+    outputVec.push_back(alignment->openGenome(genomeNames[0]));
+    outputSet.erase(alignment->openGenome(genomeNames[0]));
+    while (outputSet.empty() == false)
+    {
+      const Genome* cur = outputVec.back();
+      set<const Genome*>::iterator i = outputSet.find(cur->getParent());
+      if (i == outputSet.end())
+      {
+        for (size_t childIdx = 0; childIdx < cur->getNumChildren(); ++childIdx)
+        {
+          i = outputSet.find(cur->getChild(childIdx));
+          if (i != outputSet.end())
+          {
+            break;
+          }
+        }
+      }
+      if (i != outputSet.end())
+      {
+        outputVec.push_back(*i);
+        outputSet.erase(i);
+      }
+      else
+      {
+        throw hal_exception(string("error determining path from ") +
+                            genomeNames[0] + " to " + genomeNames[1]);
+      }
+    }
+  }
+  else
+  {
+    outputVec.resize(outputSet.size());
+    copy(outputSet.begin(), outputSet.end(), outputVec.begin());
+  }
+  
+  for (vector<const Genome*>::const_iterator j = outputVec.begin(); 
+       j != outputVec.end(); ++j)
   {
     const Genome* genome = *j;
-    if (genome->getParent() != NULL && 
-        outputSet.find(genome->getParent()) != outputSet.end())
-    {
-      os << genome->getName() << " ";
-    }
+    os << genome->getName() << " ";
   }
   os << endl;
 }
