@@ -150,6 +150,42 @@ void HDF5Alignment::close()
   }
 }
 
+// same as above but don't write anything to disk.
+void HDF5Alignment::close() const
+{
+  if (_file != NULL)
+  {
+    if (_tree != NULL)
+    {
+      stTree_destruct(const_cast<HDF5Alignment*>(this)->_tree);
+       const_cast<HDF5Alignment*>(this)->_tree = NULL;
+    }
+    // todo: make sure there's no memory leak with metadata 
+    // smart pointer should prevent
+    if (_metaData != NULL)
+    {
+      delete  const_cast<HDF5Alignment*>(this)->_metaData;
+       const_cast<HDF5Alignment*>(this)->_metaData = NULL;
+    }
+
+    map<string, HDF5Genome*>::iterator mapIt;
+    for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt)
+    {
+      HDF5Genome* genome = mapIt->second;
+      delete genome;
+    }
+    _openGenomes.clear();
+     const_cast<HDF5Alignment*>(this)->_file->close();
+     delete const_cast<HDF5Alignment*>(this)->_file;
+     const_cast<HDF5Alignment*>(this)->_file = NULL;
+  }
+  else
+  {
+    assert(_tree == NULL);
+    assert(_openGenomes.empty() == true);
+  }
+}
+
 void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
 {
   const HDF5CLParser* hdf5Parser = 
