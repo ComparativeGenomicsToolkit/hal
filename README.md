@@ -40,7 +40,7 @@ From the parent directory of where you want HAL installed:
 	  `./configure --enable-cxx`  
 	  `make && make install`  
 
-* Local install from source into DIR (do not need root)  
+* Local install from source into DIR (do not need root password)  
 
      `mkdir DIR/hdf5`  
      `wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.9.tar.gz`  
@@ -85,7 +85,7 @@ HAL Tools
 
 *Detailed command line options can be obtained by running each tool with the `--help` option.*
 
-All HAL tools compiled with HDF5 support expose some caching parameters.  Tools that create HAL files also include a chunking and compression parameters.  In most cases, the default values of these options will suffice.  
+All HAL tools compiled with HDF5 support expose some caching parameters.  Tools that create HAL files also include chunking and compression parameters.  In most cases, the default values of these options will suffice.  
 
 `--cacheBytes <value>:`    The maximum size of each array cache.  3 such caches can be allocated per genome in the alignment.  
 
@@ -102,7 +102,7 @@ All HAL tools compiled with HDF5 support expose some caching parameters.  Tools 
 
 #### MAF Import
 
-The (MAF)[http://genome.ucsc.edu/FAQ/FAQformat.html#format5] is a text format used at UCSC to store genome alignments.  MAF's are typically stored with respect to a reference genome.  MAFs can be imported into HAL as subtrees using the `maf2hal` command.  
+The (MAF)[http://genome.ucsc.edu/FAQ/FAQformat.html#format5] is a text format used at UCSC to store genome alignments.  MAFs are typically stored with respect to a reference genome.  MAFs can be imported into HAL as subtrees using the `maf2hal` command.  
 
 To import primates.maf as a star tree where the first alignment row specifies the root, and all others the leaves:  
 
@@ -158,27 +158,27 @@ By default, no gaps are written to the reference sequence.  The `--maxRefGap` ca
 
 It is a good idea to check if a hal file is valid after creating it.
 
-	halValidate mammals.maf
+	halValidate mammals.hal
 
 #### halStats
 
 Some global information from a HAL file can be quickly obtained using `halStats`.  It will return the number of genomes, their phylogenetic tree, and the size of each array in each genome.  
 
-	  halStats mammals.maf
+	  halStats mammals.hal
 
-The `--tree`, `--sequences`, and `--genomes` options can be used to print out only specific information to simply iterating over the alignment in shell or Python scripts. 
+The `--tree`, `--sequences`, and `--genomes` options can be used to print out only specific information to simplify iterating over the alignment in shell or Python scripts. 
 
 #### halSummarizeMtuations
 
 A count of each type of mutation (Insertions, Deletions, Inversions, Duplications, Transpositions, Gap Insertions, Gap Deletions) in each branch of the alignment can be printed out in a table.  
 
-     halSummarizeMutations mammals.maf
+     halSummarizeMutations mammals.hal
 
 Subtrees can be specified using the `--targetGenomes` or `--rootGenome` option.  The `--maxGap` option is used to distinguish from small, 'gap' indels and larger indels.  This distinction is somewhat arbitrary (but conventional).  HAL allows gap indels to be nested within larger rearrangements:  ex. an inversion with a gap deletion inside would be counted as a single inversion, but an inversion containing a non-gap event would be identified as multiple independent inversions. 
 
      halSummarizeMutations mammals.maf --maxNFraction 0
 
-Will prevent rearrangements with missing data as being identified as such.  More generally, if an insertion of length 50 contains c N-characters, it will be labeled as missing data (rather than an insertion) if c/N > `maxNFraction`.
+will prevent rearrangements with missing data as being identified as such.  More generally, if an insertion of length 50 contains c N-characters, it will be labeled as missing data (rather than an insertion) if c/N > `maxNFraction`.
 
 ### Analysis
 
