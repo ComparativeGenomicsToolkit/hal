@@ -56,6 +56,7 @@ inline void HDF5Sequence::refreshCache() const
   if (_index != _cacheIndex)
   {
     _nameCache = _array->get(_index) + nameOffset;
+    _fullNameCache = _genome->getName() + '.' + _nameCache;
     _startCache = _array->getValue<hal_size_t>(_index, startOffset);
     _lengthCache = _array->getValue<hal_size_t>(_index, lengthOffset);
     _cacheIndex = _index;
@@ -90,6 +91,12 @@ const string& HDF5Sequence::getName() const
 {
   refreshCache();
   return _nameCache;
+}
+
+const string& HDF5Sequence::getFullName() const
+{
+  refreshCache();
+  return _fullNameCache;
 }
 
 const Genome* HDF5Sequence::getGenome() const

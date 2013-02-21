@@ -36,6 +36,8 @@ public:
    // SEQUENCE INTERFACE
    const std::string& getName() const;
 
+   const std::string& getFullName() const;
+
    const Genome* getGenome() const;
 
    Genome* getGenome();
@@ -143,6 +145,7 @@ protected:
 
    mutable hal_index_t _cacheIndex;
    mutable std::string _nameCache;
+   mutable std::string _fullNameCache;
    mutable hal_index_t _startCache;
    mutable hal_size_t _lengthCache;
 };
