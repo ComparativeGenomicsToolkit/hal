@@ -716,7 +716,6 @@ void DefaultGappedBottomSegmentIterator::toRightNextUngapped(
     {
       break;
     }
-//    cout << "hut!" << endl;
     bs->toRight();
   }
 }
@@ -745,7 +744,7 @@ void DefaultGappedBottomSegmentIterator::toRightNextUngapped(
     if ((!ts->getReversed() && ts->getTopSegment()->isLast()) ||
          (ts->getReversed() && ts->getTopSegment()->isFirst()))
     {
-a      break;
+      break;
     }
     ts->toRight();
   }
