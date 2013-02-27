@@ -143,10 +143,19 @@ void MafScanner::updateMask()
   }
 }
 
-std::string MafScanner::genomeName(const std::string fullName)
+string MafScanner::genomeName(const string& fullName)
 {
-  assert(fullName.find('.') != string::npos);
-  return fullName.substr(0, fullName.find('.'));
+  size_t dotPos = fullName.rfind('.');
+  assert(dotPos != string::npos && dotPos > 0 && 
+         dotPos < fullName.length() - 1);
+  return fullName.substr(0, dotPos);
 }
 
+string MafScanner::sequenceName(const string& fullName)
+{
+  size_t dotPos = fullName.rfind('.');
+  assert(dotPos != string::npos && dotPos > 0 && 
+         dotPos < fullName.length() - 1);
+  return fullName.substr(dotPos + 1);
+}
 

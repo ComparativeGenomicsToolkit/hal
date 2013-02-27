@@ -134,12 +134,12 @@ void MafWriteGenomes::createGenomes()
     if (newRef == false)
     {
       updateDimensions.push_back(
-        Sequence::UpdateInfo(i->first, i->second->_numSegments));
+        Sequence::UpdateInfo(sequenceName(i->first), i->second->_numSegments));
     }
     else
     {
       genomeDimensions.push_back(
-        Sequence::Info(i->first, i->second->_length, 0, 
+        Sequence::Info(sequenceName(i->first), i->second->_length, 0, 
                        i->second->_numSegments));
     }    
   }
@@ -168,7 +168,7 @@ void MafWriteGenomes::createGenomes()
       for (DimMap::const_iterator i = curRange.first; i != curRange.second; ++i)
       {
         genomeDimensions.push_back(
-          Sequence::Info(i->first, i->second->_length, 
+          Sequence::Info(sequenceName(i->first), i->second->_length, 
                          i->second->_numSegments, 0));
       }
       Genome* childGenome = _alignment->openGenome(childName);
@@ -319,7 +319,7 @@ void MafWriteGenomes::initParaMap()
     Row& row = _block[i];
     Genome* genome = _alignment->openGenome(genomeName(row._sequenceName));
     assert(genome != NULL);
-    Sequence* sequence = genome->getSequence(row._sequenceName);
+    Sequence* sequence = genome->getSequence(sequenceName(row._sequenceName));
     assert(sequence != NULL);
     Paralogy para = {sequence->getStartPosition() + row._startPosition, i};
     pair<ParaMap::iterator, bool> res = _paraMap.insert(
@@ -338,7 +338,7 @@ void MafWriteGenomes::convertSegments(size_t col)
     RowInfo& rowInfo = _blockInfo[_refRow];
     Row& row = _block[_refRow];
     _refBottom->setArrayIndex(_refGenome, rowInfo._arrayIndex);
-    seq =  _refGenome->getSequence(row._sequenceName);
+    seq =  _refGenome->getSequence(sequenceName(row._sequenceName));
     assert(seq != NULL);
     _refBottom->setCoordinates(seq->getStartPosition() + rowInfo._start, 
                                rowInfo._length);
@@ -361,7 +361,7 @@ void MafWriteGenomes::convertSegments(size_t col)
       RowInfo& rowInfo = _blockInfo[i];
       Row& row = _block[i];
       Genome* genome = rowInfo._genome;
-      seq = genome->getSequence(row._sequenceName);
+      seq = genome->getSequence(sequenceName(row._sequenceName));
       assert(seq != NULL);
       if (genome == _refGenome)
       {
@@ -420,7 +420,8 @@ void MafWriteGenomes::updateParalogy(size_t i)
   ParaSet& paraSet = pIt->second;
   if (paraSet.size() > 1)
   {
-    Sequence* sequence = rowInfo._genome->getSequence(row._sequenceName);
+    Sequence* sequence = rowInfo._genome->getSequence(
+      sequenceName(row._sequenceName));
     assert(sequence != NULL);
     Paralogy query = {sequence->getStartPosition() + row._startPosition, 0};
     ParaSet::iterator sIt = paraSet.find(query);
@@ -452,7 +453,7 @@ void MafWriteGenomes::initEmptySegments()
   {
     Genome* genome = _alignment->openGenome(genomeName(dmIt->first));
     size_t numChildren = genome->getNumChildren();
-    Sequence* sequence = genome->getSequence(dmIt->first);
+    Sequence* sequence = genome->getSequence(sequenceName(dmIt->first));
     assert(genome != NULL && sequence != NULL);    
     const StartMap& startMap = dmIt->second->_startMap;
 
