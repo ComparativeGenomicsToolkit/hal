@@ -76,7 +76,7 @@ void MafBlock::resetEntries()
     if (deleted == false)
     {
       assert (e->_start == NULL_INDEX || e->_length > 0);
-      assert (e->_name == i->first->getName());
+      assert (e->_name == i->first->getFullName());
       // Rest block information but leave sequence information so we
       // can reuse it. 
       e->_start = NULL_INDEX;
@@ -91,10 +91,11 @@ void MafBlock::resetEntries()
 void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence, 
                          DNAIteratorConstPtr dna, bool clearSequence)
 {
-  if (entry->_name != sequence->getName())
+  string sequenceName = sequence->getFullName();
+  if (entry->_name != sequenceName)
   {
     // replace genearl sequence information
-    entry->_name = sequence->getName();
+    entry->_name = sequenceName;
     entry->_srcLength = (hal_index_t)sequence->getSequenceLength();
   }
   if (dna.get())
@@ -130,7 +131,7 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
     {
       initEntry(entry, sequence, dna, false);
     }
-    assert(entry->_name == sequence->getName());
+    assert(entry->_name == sequence->getFullName());
     assert(entry->_strand == dna->getReversed() ? '-' : '+');
     assert(entry->_srcLength == (hal_index_t)sequence->getSequenceLength());
 
@@ -176,7 +177,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
       else
       {
         assert (e->first == sequence);
-        assert (e->second->_name == sequence->getName());
+        assert (e->second->_name == sequence->getFullName());
         initEntry(e->second, sequence, DNAIteratorConstPtr());
       }
     }
@@ -207,7 +208,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
         {
           MafBlockEntry* entry = new MafBlockEntry(_stringBuffers);
           initEntry(entry, sequence, *d);
-          assert(entry->_name == sequence->getName());
+          assert(entry->_name == sequence->getFullName());
           e = _entries.insert(Entries::value_type(sequence, entry));
         }
         else
@@ -255,7 +256,7 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
       }
       assert(e != _entries.end());
       assert(e->first == sequence);
-      assert(e->second->_name == sequence->getName());
+      assert(e->second->_name == sequence->getFullName());
       updateEntry(e->second, sequence, *d);
       ++e;
     }
@@ -302,7 +303,7 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
       {
         entry = e->second;
         assert(e->first == sequence);
-        assert(entry->_name == sequence->getName());
+        assert(entry->_name == sequence->getFullName());
         if (entry->_start != NULL_INDEX)
         {
           if (entry->_length >= _maxLength ||

@@ -59,7 +59,9 @@ void MafScanDimensions::sLine()
   Row& row = _block[_rows - 1];
 
   // this is the first pass.  so we do a quick sanity check
-  if (row._sequenceName.find('.') == string::npos)
+  size_t dotPos = row._sequenceName.rfind('.');
+  if (dotPos == string::npos || dotPos == 0 || 
+      dotPos == row._sequenceName.length() - 1)
   {
     stringstream ss;
     ss << "illegal sequence name found: " << row._sequenceName << ".  Sequence "
