@@ -10,6 +10,7 @@
 #include <fstream>
 #include <deque>
 #include <sstream>
+#include <algorithm>
 #include "halCommon.h"
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
@@ -22,6 +23,25 @@ extern "C" {
 using namespace hal;
 using namespace std;
 using namespace H5;
+
+/** All functionality for registering the special udc driver
+ * for urls is up here and determined by the compiler flag */
+#include "hdf5UDCFuseDriver.h"
+static hid_t UDC_FUSER_DRIVER_ID =  H5FD_udc_fuse_init();
+static void registerFileDriver(const string& path, 
+                               FileAccPropList& aprops)
+{
+  string pathCpy(path);
+  transform(pathCpy.begin(), pathCpy.end(), pathCpy.begin(), ::tolower);
+  if (pathCpy.find("http:") == 0 || 
+      pathCpy.find("https:") == 0 ||
+      pathCpy.find("ftp:") == 0)
+  {
+//    aprops.setDriver(UDC_FUSER_DRIVER_ID, H5FD_UDC_FUSE);
+  }
+}
+
+
 
 /** default group name for MetaData attributes, will be a subgroup
  * of the top level of the file, ie /Meta */
@@ -70,6 +90,7 @@ void HDF5Alignment::createNew(const string& alignmentPath)
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
+  registerFileDriver(alignmentPath, _aprops);
   _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
@@ -92,6 +113,7 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
+  registerFileDriver(alignmentPath, _aprops);
   _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
   if (!compatibleWithVersion(getVersion()))
   {
