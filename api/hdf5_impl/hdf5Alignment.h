@@ -100,6 +100,8 @@ protected:
                         const std::vector<std::pair<std::string, double> >&
                         childNames);
 
+   void setFileDriverFromPath(const std::string& path);
+
 protected:
 
    H5::H5File* _file;

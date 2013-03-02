@@ -23,6 +23,8 @@
  * NOTE:    This driver is not as well tested as the standard SEC2 driver
  *          and is not intended for production use!
  */
+#ifdef ENABLE_UDC
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1083,3 +1085,6 @@ H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing)
 #endif
 
 }
+
+#endif
+

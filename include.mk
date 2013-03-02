@@ -13,6 +13,9 @@ dataSetsPath=/Users/hickey/Documents/Devel/genomes/datasets
 
 cflags += -I ${sonLibPath}
 cppflags += -I ${sonLibPath}
+# uncomment to enable udc cache support:
+cppflags += -DENABLE_UDC
+
 basicLibs = ${sonLibPath}/sonLib.a ${sonLibPath}/cuTest.a
 basicLibsDependencies = ${sonLibPath}/cuTest.a 
 
