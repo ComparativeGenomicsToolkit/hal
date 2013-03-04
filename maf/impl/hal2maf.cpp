@@ -205,7 +205,8 @@ int main(int argc, char** argv)
         refSequenceName.erase();
         ss >> refSequenceName >> start >> end;
         if (ss.bad() || ss.fail() ||
-            refSequenceName.empty() || start == -1 || end == (hal_size_t)-1)
+            refSequenceName.empty() || start == -1 || end == (hal_size_t)-1 ||
+            (hal_index_t)end <= start)
         {
           if (!refSequenceName.empty() && refSequenceName[0] != '#')
           {
@@ -217,9 +218,9 @@ int main(int argc, char** argv)
         {
           refSequence = refGenome->getSequence(refSequenceName);
           length = end - start;
-          if (refSequence != NULL && length <= refSequence->getSequenceLength())
+          if (refSequence != NULL && 
+              start + length <= refSequence->getSequenceLength())
           {
-            start = refSequence->getStartPosition() + start;
             mafExport.convertSegmentedSequence(mafStream, alignment, 
                                                refSequence, 
                                                start, length, targetSet);

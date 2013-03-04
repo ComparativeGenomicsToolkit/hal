@@ -59,7 +59,7 @@ void MafScanDimensions::sLine()
   Row& row = _block[_rows - 1];
 
   // this is the first pass.  so we do a quick sanity check
-  size_t dotPos = row._sequenceName.rfind('.');
+  size_t dotPos = row._sequenceName.find('.');
   if (dotPos == string::npos || dotPos == 0 || 
       dotPos == row._sequenceName.length() - 1)
   {

@@ -64,7 +64,7 @@ void MafScanner::scan(const string& mafFilePath, const set<string>& targets)
       Row& row = _block[_rows - 1];
       _mafFile >> row._sequenceName >> row._startPosition >> row._length 
                >> row._strand >> row._srcLength >> row._line;
-      if (!_mafFile.good())
+      if (_mafFile.bad() || _mafFile.fail())
       {
         throw hal_exception("error parsing sequence " + row._sequenceName);
       }
@@ -145,7 +145,7 @@ void MafScanner::updateMask()
 
 string MafScanner::genomeName(const string& fullName)
 {
-  size_t dotPos = fullName.rfind('.');
+  size_t dotPos = fullName.find('.');
   assert(dotPos != string::npos && dotPos > 0 && 
          dotPos < fullName.length() - 1);
   return fullName.substr(0, dotPos);
@@ -153,7 +153,7 @@ string MafScanner::genomeName(const string& fullName)
 
 string MafScanner::sequenceName(const string& fullName)
 {
-  size_t dotPos = fullName.rfind('.');
+  size_t dotPos = fullName.find('.');
   assert(dotPos != string::npos && dotPos > 0 && 
          dotPos < fullName.length() - 1);
   return fullName.substr(dotPos + 1);
