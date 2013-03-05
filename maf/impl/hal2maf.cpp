@@ -24,6 +24,10 @@ static CLParserPtr initParser()
                            "name of reference sequence within reference genome"
                            " (all sequences if empty)",
                            "\"\"");
+  optionsParser->addOption("refTargets", 
+                           "bed file coordinates of intervals in the reference "
+                           "genome to export",
+                           "\"\"");
   optionsParser->addOption("start",
                            "coordinate within reference genome (or sequence"
                            " if specified) to start at",
@@ -63,6 +67,7 @@ int main(int argc, char** argv)
   string rootGenomeName;
   string targetGenomes;
   string refSequenceName;
+  string refTargetsPath;
   hal_index_t start;
   hal_size_t length;
   hal_size_t maxRefGap;
@@ -76,7 +81,8 @@ int main(int argc, char** argv)
     refGenomeName = optionsParser->getOption<string>("refGenome");
     rootGenomeName = optionsParser->getOption<string>("rootGenome");
     targetGenomes = optionsParser->getOption<string>("targetGenomes");
-    refSequenceName = optionsParser->getOption<string>("refSequence");
+    refSequenceName = optionsParser->getOption<string>("refSequence");    
+    refTargetsPath = optionsParser->getOption<string>("refTargets");
     start = optionsParser->getOption<hal_index_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
     maxRefGap = optionsParser->getOption<hal_size_t>("maxRefGap");
@@ -86,7 +92,12 @@ int main(int argc, char** argv)
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
       throw hal_exception("--rootGenome and --targetGenomes options are "
-                          " mutually exclusive");
+                          "mutually exclusive");
+    }
+    if (refTargetsPath != "\"\"" && refSequenceName != "\"\"")
+    {
+      throw hal_exception("--refSequence and --refTargets options are "
+                          "mutually exclusive");
     }
   }
   catch(exception& e)
@@ -175,9 +186,59 @@ int main(int argc, char** argv)
     mafExport.setNoDupes(noDupes);
     mafExport.setNoAncestors(noAncestors);
 
-    mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
-                                       start, length, targetSet);
-
+    ifstream refTargetsStream;
+    if (refTargetsPath != "\"\"")
+    {
+      refTargetsStream.open(refTargetsPath.c_str());
+      if (!refTargetsStream)
+      {
+        throw hal_exception("Error opening " + refTargetsPath);
+      }
+      string line;
+      hal_size_t end;
+      while (!refTargetsStream.bad() && !refTargetsStream.eof())
+      {
+        getline(refTargetsStream, line);
+        istringstream ss(line);
+        start = -1;
+        end = (hal_size_t)-1;
+        refSequenceName.erase();
+        ss >> refSequenceName >> start >> end;
+        if (ss.bad() || ss.fail() ||
+            refSequenceName.empty() || start == -1 || end == (hal_size_t)-1 ||
+            (hal_index_t)end <= start)
+        {
+          if (!refSequenceName.empty() && refSequenceName[0] != '#')
+          {
+            cerr << "skipping malformed line " << line << " in " 
+                 << refTargetsPath << "\n";
+          }
+        }
+        else
+        {
+          refSequence = refGenome->getSequence(refSequenceName);
+          length = end - start;
+          if (refSequence != NULL && 
+              start + length <= refSequence->getSequenceLength())
+          {
+            mafExport.convertSegmentedSequence(mafStream, alignment, 
+                                               refSequence, 
+                                               start, length, targetSet);
+          }
+          else
+          {
+            cerr << "bed coordinate " << refSequenceName << " " 
+                 << start << " " << end << " not found in " 
+                 << refGenome->getName() << "\n";
+          }
+        }
+      }
+    }
+    else
+    {
+      mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
+                                         start, length, targetSet);
+    }
   }
   catch(hal_exception& e)
   {

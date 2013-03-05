@@ -58,6 +58,10 @@ public:
    /** Return the sequence's name */
    virtual const std::string& getName() const = 0;
 
+   /** Return the sequence's name in genomeName.sequenceName format
+    * (which is how it will appear in a MAF) */
+   virtual const std::string& getFullName() const = 0;
+
    /** Get the containing (read-only) genome */
    virtual const Genome* getGenome() const = 0;
 

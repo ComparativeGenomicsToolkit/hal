@@ -33,6 +33,7 @@ public:
              bool readOnly);
    void open(const std::string& alignmentPath) const;
    void close();
+   void close() const;
    void setOptionsFromParser(CLParserConstPtr parser) const;
    
    Genome* addLeafGenome(const std::string& name,

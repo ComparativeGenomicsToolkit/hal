@@ -283,11 +283,18 @@ int main(int argc, char** argv)
       {
         getline(refTargetsStream, line);
         istringstream ss(line);
+        start = -1;
+        end = (hal_size_t)-1;
+        refSequenceName.erase();
         ss >> refSequenceName >> start >> end;
-        if (ss.bad() && (!refSequenceName.empty() || refSequenceName[0] != '#'))
+        if (ss.bad() || ss.fail() ||
+            refSequenceName.empty() || start == -1 || end == (hal_size_t)-1)
         {
-          cerr << "skipping malformed line " << line << " in " 
-               << refTargetsPath << "\n";
+          if (!refSequenceName.empty() && refSequenceName[0] != '#')
+          {
+            cerr << "skipping malformed line " << line << " in " 
+                 << refTargetsPath << "\n";
+          }
         }
         else
         {

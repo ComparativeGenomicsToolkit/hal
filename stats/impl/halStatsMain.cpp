@@ -19,7 +19,7 @@ static void printSequenceStats(ostream& os, AlignmentConstPtr alignment,
 static void printBedSequenceStats(ostream& os, AlignmentConstPtr alignment, 
                                   const string& genomeName);
 static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
-                            const vector<string>& genomeNames);
+                            const vector<string>& genomeNames, bool keepRoot);
 static void printBranches(ostream& os, AlignmentConstPtr alignment);
 static void printChildren(ostream& os, AlignmentConstPtr alignment, 
                           const string& genomeName);
@@ -48,8 +48,14 @@ int main(int argc, char** argv)
   optionsParser->addOptionFlag("branches", "print list of branches. "
                                "Each branch is specified by the child genome", 
                                false);
-  optionsParser->addOption("path", "print branches on path between comma "
+  optionsParser->addOption("span", "print branches on path (or spanning tree) "
+                           "between comma "
                            "separated list of genomes", "\"\"");
+  optionsParser->addOption("spanRoot", "print genomes on path" 
+                           "(or spanning tree) between comma "
+                           "separated list of genomes.  Different from --path"
+                           "only in that the spanning tree root is also "
+                           "given", "\"\"");
   optionsParser->addOption("children", "print names of children of given "
                            "genome", "\"\"");
   optionsParser->addOptionFlag("root", "print root genome name", false);
@@ -64,7 +70,8 @@ int main(int argc, char** argv)
   string sequencesFromGenome;
   string sequenceStatsFromGenome;
   string bedSequencesFromGenome;
-  string pathGenomes;
+  string spanGenomes;
+  string spanRootGenomes;
   bool tree;
   bool branches;
   string childrenFromGenome;
@@ -80,7 +87,8 @@ int main(int argc, char** argv)
     sequenceStatsFromGenome = optionsParser->getOption<string>("sequenceStats");
     bedSequencesFromGenome = optionsParser->getOption<string>("bedSequences");
     tree = optionsParser->getFlag("tree");
-    pathGenomes = optionsParser->getOption<string>("path");
+    spanGenomes = optionsParser->getOption<string>("span");
+    spanRootGenomes = optionsParser->getOption<string>("spanRoot");
     branches = optionsParser->getFlag("branches");
     childrenFromGenome = optionsParser->getOption<string>("children");
     parentFromGenome = optionsParser->getOption<string>("parent");
@@ -92,7 +100,8 @@ int main(int argc, char** argv)
     if (tree == true) ++optCount;
     if (sequenceStatsFromGenome != "\"\"") ++optCount;
     if (bedSequencesFromGenome != "\"\"") ++optCount;
-    if (pathGenomes != "\"\"") ++optCount;
+    if (spanGenomes != "\"\"") ++optCount;
+    if (spanRootGenomes != "\"\"") ++optCount;
     if (branches) ++ optCount;
     if (childrenFromGenome != "\"\"") ++optCount;
     if (parentFromGenome != "\"\"") ++optCount;
@@ -100,10 +109,9 @@ int main(int argc, char** argv)
     if (nameForBL != "\"\"") ++optCount;
     if (optCount > 1)
     {
-      throw hal_exception("--genomes, --sequences, --tree, --path, --branches, "
-                          "--sequenceStats, --children, --parent, "
-                          "--bedSequences, --root, and --branchLength " 
-                          "options are mutually exclusive");
+      throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
+                          "--branches, --sequenceStats, --children, --parent, "
+                          "--bedSequences, --root, and --branchLength " );
     }        
   }
   catch(exception& e)
@@ -136,9 +144,13 @@ int main(int argc, char** argv)
     {
       printBedSequenceStats(cout, alignment, bedSequencesFromGenome);
     }
-    else if (pathGenomes !=  "\"\"")
+    else if (spanGenomes !=  "\"\"")
     {
-      printBranchPath(cout, alignment, chopString(pathGenomes, ","));
+      printBranchPath(cout, alignment, chopString(spanGenomes, ","), false);
+    }
+    else if (spanRootGenomes !=  "\"\"")
+    {
+      printBranchPath(cout, alignment, chopString(spanRootGenomes, ","), true);
     }
     else if (branches == true)
     {
@@ -273,7 +285,8 @@ void printBedSequenceStats(ostream& os, AlignmentConstPtr alignment,
 }
 
 static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
-                            const vector<string>& genomeNames)
+                            const vector<string>& genomeNames, 
+                            bool keepRoot)
 {
   set<const Genome*> inputSet;
   for (size_t i = 0; i < genomeNames.size(); ++i)
@@ -293,27 +306,28 @@ static void printBranchPath(ostream& os, AlignmentConstPtr alignment,
   // first to the second. 
   if (genomeNames.size() == 2)
   {
+    set<const Genome*> visitSet(outputSet);
     outputVec.push_back(alignment->openGenome(genomeNames[0]));
-    outputSet.erase(alignment->openGenome(genomeNames[0]));
-    while (outputSet.empty() == false)
+    visitSet.erase(alignment->openGenome(genomeNames[0]));
+    while (outputVec.back()->getName() != genomeNames[1])
     {
       const Genome* cur = outputVec.back();
-      set<const Genome*>::iterator i = outputSet.find(cur->getParent());
-      if (i == outputSet.end())
+      set<const Genome*>::iterator i = visitSet.find(cur->getParent());
+      if (i == visitSet.end())
       {
         for (size_t childIdx = 0; childIdx < cur->getNumChildren(); ++childIdx)
         {
-          i = outputSet.find(cur->getChild(childIdx));
-          if (i != outputSet.end())
+          i = visitSet.find(cur->getChild(childIdx));
+          if (i != visitSet.end())
           {
             break;
           }
         }
       }
-      if (i != outputSet.end())
+      if (i != visitSet.end())
       {
         outputVec.push_back(*i);
-        outputSet.erase(i);
+        visitSet.erase(i);
       }
       else
       {
@@ -332,7 +346,12 @@ static void printBranchPath(ostream& os, AlignmentConstPtr alignment,
        j != outputVec.end(); ++j)
   {
     const Genome* genome = *j;
-    os << genome->getName() << " ";
+    if (keepRoot == true || 
+        (genome->getParent() != NULL &&  
+         outputSet.find(genome->getParent()) != outputSet.end()))
+    {
+      os << genome->getName() << " ";
+    }
   }
   os << endl;
 }

@@ -696,8 +696,8 @@ void DefaultGappedBottomSegmentIterator::toLeftNextUngapped(
   while (bs->hasChild(_childIndex) == false && 
          bs->getLength() <= _gapThreshold)
   {
-    if ((!bs->getReversed() && bs->getBottomSegment()->isFirst() ||
-         (bs->getReversed() && bs->getBottomSegment()->isLast())))
+    if ((!bs->getReversed() && bs->getBottomSegment()->isFirst()) ||
+         (bs->getReversed() && bs->getBottomSegment()->isLast()))
     {
       break;
     }
@@ -711,12 +711,11 @@ void DefaultGappedBottomSegmentIterator::toRightNextUngapped(
   while (bs->hasChild(_childIndex) == false &&
          bs->getLength() <= _gapThreshold)
   {
-    if ((!bs->getReversed() && bs->getBottomSegment()->isLast() ||
-         (bs->getReversed() && bs->getBottomSegment()->isFirst())))
+    if ((!bs->getReversed() && bs->getBottomSegment()->isLast()) ||
+         (bs->getReversed() && bs->getBottomSegment()->isFirst()))
     {
       break;
     }
-//    cout << "hut!" << endl;
     bs->toRight();
   }
 }
@@ -727,8 +726,8 @@ void DefaultGappedBottomSegmentIterator::toLeftNextUngapped(
   while (ts->hasParent() == false && 
          ts->getLength() <= _gapThreshold)
   {
-    if ((!ts->getReversed() && ts->getTopSegment()->isFirst() ||
-         (ts->getReversed() && ts->getTopSegment()->isLast())))
+    if ((!ts->getReversed() && ts->getTopSegment()->isFirst()) ||
+         (ts->getReversed() && ts->getTopSegment()->isLast()))
     {
       break;
     }
@@ -742,8 +741,8 @@ void DefaultGappedBottomSegmentIterator::toRightNextUngapped(
   while (ts->hasParent() == false &&
          ts->getLength() <= _gapThreshold)
   {
-    if ((!ts->getReversed() && ts->getTopSegment()->isLast() ||
-         (ts->getReversed() && ts->getTopSegment()->isFirst())))
+    if ((!ts->getReversed() && ts->getTopSegment()->isLast()) ||
+         (ts->getReversed() && ts->getTopSegment()->isFirst()))
     {
       break;
     }
