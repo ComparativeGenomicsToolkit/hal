@@ -28,7 +28,8 @@ public:
    virtual void scan(const std::string& mafPath, 
                      const std::set<std::string>& targetSet);
    hal_size_t getNumBlocks() const { return _numBlocks; }
-   static std::string genomeName(const std::string fullName);
+   static std::string genomeName(const std::string& fullName);
+   static std::string sequenceName(const std::string& fullName);
 
    struct Row {
       std::string _sequenceName;

@@ -74,7 +74,7 @@ void Liftover::liftInterval()
 {  
   PositionMap posCacheMap;
   _colIt = _srcSequence->getColumnIterator(&_tgtSet, 0, _inStart, _inEnd - 1);
-  do 
+  while (true) 
   {
     const ColumnMap* cMap = _colIt->getColumnMap();
     for (ColumnMap::const_iterator i = cMap->begin(); i != cMap->end(); ++i)
@@ -98,9 +98,12 @@ void Liftover::liftInterval()
         }
       }
     }
+    if (_colIt->lastColumn() == true)
+    {
+      break;
+    }
     _colIt->toRight();
   } 
-  while (_colIt->lastColumn() == false);
 
   PositionMap::iterator pcmIt;
   for (pcmIt = posCacheMap.begin(); pcmIt != posCacheMap.end(); ++pcmIt)

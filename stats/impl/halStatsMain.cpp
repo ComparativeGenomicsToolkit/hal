@@ -17,7 +17,8 @@ static void printSequences(ostream& os, AlignmentConstPtr alignment,
 static void printSequenceStats(ostream& os, AlignmentConstPtr alignment, 
                                const string& genomeName);
 static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
-                            const vector<string>& genomeNames);
+                            const vector<string>& genomeNames,
+                            bool keepRoot);
 static void printBranches(ostream& os, AlignmentConstPtr alignment); 
 
 int main(int argc, char** argv)
@@ -35,13 +36,21 @@ int main(int argc, char** argv)
   optionsParser->addOptionFlag("branches", "print list of branches. "
                                "Each branch is specified by the child genome", 
                                false);
-  optionsParser->addOption("path", "print branches on path between comma "
+  optionsParser->addOption("span", "print branches on path (or spanning tree) "
+                           "between comma "
                            "separated list of genomes", "\"\"");
+  optionsParser->addOption("spanRoot", "print genomes on path" 
+                           "(or spanning tree) between comma "
+                           "separated list of genomes.  Different from --path"
+                           "only in that the spanning tree root is also "
+                           "given", "\"\"");
+
   string path;
   bool listGenomes;
   string sequencesFromGenome;
   string sequenceStatsFromGenome;
-  string pathGenomes;
+  string spanGenomes;
+  string spanRootGenomes;
   bool tree;
   bool branches;
   try
@@ -52,18 +61,21 @@ int main(int argc, char** argv)
     sequencesFromGenome = optionsParser->getOption<string>("sequences");
     sequenceStatsFromGenome = optionsParser->getOption<string>("sequenceStats");
     tree = optionsParser->getFlag("tree");
-    pathGenomes = optionsParser->getOption<string>("path");
+    spanGenomes = optionsParser->getOption<string>("span");
+    spanRootGenomes = optionsParser->getOption<string>("spanRoot");
     branches = optionsParser->getFlag("branches");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
     if (tree == true) ++optCount;
     if (sequenceStatsFromGenome != "\"\"") ++optCount;
-    if (pathGenomes != "\"\"") ++optCount;
-    if (branches) ++ optCount;
+    if (spanGenomes != "\"\"") ++optCount;
+    if (spanRootGenomes != "\"\"") ++optCount;
+    if (branches) ++optCount;
     if (optCount > 1)
     {
-      throw hal_exception("--genomes, --sequences, --tree, --path, --branches "
+      throw hal_exception("--genomes, --sequences, --tree, --span, "
+                          "--spanRoot, --branches "
                           "and --sequenceStats " 
                           "options are mutually exclusive");
     }        
@@ -94,9 +106,13 @@ int main(int argc, char** argv)
     {
       printSequenceStats(cout, alignment, sequenceStatsFromGenome);
     }
-    else if (pathGenomes !=  "\"\"")
+    else if (spanGenomes !=  "\"\"")
     {
-      printBranchPath(cout, alignment, chopString(pathGenomes, ","));
+      printBranchPath(cout, alignment, chopString(spanGenomes, ","), false);
+    }
+    else if (spanRootGenomes !=  "\"\"")
+    {
+      printBranchPath(cout, alignment, chopString(spanRootGenomes, ","), true);
     }
     else if (branches == true)
     {
@@ -190,7 +206,8 @@ void printSequenceStats(ostream& os, AlignmentConstPtr alignment,
 }
 
 static void printBranchPath(ostream& os, AlignmentConstPtr alignment, 
-                            const vector<string>& genomeNames)
+                            const vector<string>& genomeNames, 
+                            bool keepRoot)
 {
   set<const Genome*> inputSet;
   for (size_t i = 0; i < genomeNames.size(); ++i)
@@ -205,12 +222,54 @@ static void printBranchPath(ostream& os, AlignmentConstPtr alignment,
   set<const Genome*> outputSet;
   getGenomesInSpanningTree(inputSet, outputSet);
   
-  for (set<const Genome*>::const_iterator j = outputSet.begin(); 
-       j != outputSet.end(); ++j)
+  vector<const Genome*> outputVec;
+  // if given two genomes, sort the output to be the actual path frmo the 
+  // first to the second. 
+  if (genomeNames.size() == 2)
+  {
+    set<const Genome*> visitSet(outputSet);
+    outputVec.push_back(alignment->openGenome(genomeNames[0]));
+    visitSet.erase(alignment->openGenome(genomeNames[0]));
+    while (outputVec.back()->getName() != genomeNames[1])
+    {
+      const Genome* cur = outputVec.back();
+      set<const Genome*>::iterator i = visitSet.find(cur->getParent());
+      if (i == visitSet.end())
+      {
+        for (size_t childIdx = 0; childIdx < cur->getNumChildren(); ++childIdx)
+        {
+          i = visitSet.find(cur->getChild(childIdx));
+          if (i != visitSet.end())
+          {
+            break;
+          }
+        }
+      }
+      if (i != visitSet.end())
+      {
+        outputVec.push_back(*i);
+        visitSet.erase(i);
+      }
+      else
+      {
+        throw hal_exception(string("error determining path from ") +
+                            genomeNames[0] + " to " + genomeNames[1]);
+      }
+    }
+  }
+  else
+  {
+    outputVec.resize(outputSet.size());
+    copy(outputSet.begin(), outputSet.end(), outputVec.begin());
+  }
+  
+  for (vector<const Genome*>::const_iterator j = outputVec.begin(); 
+       j != outputVec.end(); ++j)
   {
     const Genome* genome = *j;
-    if (genome->getParent() != NULL && 
-        outputSet.find(genome->getParent()) != outputSet.end())
+    if (keepRoot == true || 
+        (genome->getParent() != NULL &&  
+         outputSet.find(genome->getParent()) != outputSet.end()))
     {
       os << genome->getName() << " ";
     }
