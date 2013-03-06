@@ -538,10 +538,12 @@ void HDF5Alignment::setFileDriverFromPath(const string& path)
 {
 #ifdef ENABLE_UDC
   string pathCpy(path);
+  // Always use udc for now -- seems that library takes care of
+  // detecting.  
   transform(pathCpy.begin(), pathCpy.end(), pathCpy.begin(), ::tolower);
-  if (pathCpy.find("http:") == 0 || 
+/*  if (pathCpy.find("http:") == 0 || 
       pathCpy.find("https:") == 0 ||
-      pathCpy.find("ftp:") == 0)
+      pathCpy.find("ftp:") == 0)*/
   {
     _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
   }

@@ -31,6 +31,10 @@
 #include <string.h>
 #include <sys/stat.h>
 
+extern "C" {
+#include "common.h"
+#include "udc.h"
+}
 #include "hdf5.h"
 #include "hdf5UDCFuseDriver.h"
 
