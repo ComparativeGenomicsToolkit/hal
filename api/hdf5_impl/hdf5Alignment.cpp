@@ -77,7 +77,7 @@ void HDF5Alignment::createNew(const string& alignmentPath)
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
-  setFileDriverFromPath(alignmentPath);
+  setFileDriverFromPath(alignmentPath, false);
   _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
@@ -100,7 +100,7 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
-  setFileDriverFromPath(alignmentPath);
+  setFileDriverFromPath(alignmentPath, readOnly);
   _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
   if (!compatibleWithVersion(getVersion()))
   {
@@ -534,7 +534,7 @@ void HDF5Alignment::loadTree()
   }
 }
 
-void HDF5Alignment::setFileDriverFromPath(const string& path)
+void HDF5Alignment::setFileDriverFromPath(const string& path, bool readOnly)
 {
 #ifdef ENABLE_UDC
   string pathCpy(path);
@@ -545,7 +545,11 @@ void HDF5Alignment::setFileDriverFromPath(const string& path)
       pathCpy.find("https:") == 0 ||
       pathCpy.find("ftp:") == 0)*/
   {
-    _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
+    // todo: maybe give error or warning when readonly is false? 
+    if (readOnly == true)
+    {
+      _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
+    }
   }
 #endif
 }
