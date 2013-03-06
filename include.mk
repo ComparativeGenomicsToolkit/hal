@@ -37,5 +37,5 @@ ifdef ENABLE_UDC
 
 	cppflags += -DENABLE_UDC -I${KENTSRC}/src/inc
 	cflags += -I${KENTSRC}/src/inc
-	basicLibs += ${KENTSRC}/src/lib/${MACHTYPE}/jkweb.a  ${SAMTABIXDIR}/libsamtabix.a
+	basicLibs += ${KENTSRC}/src/lib/${MACHTYPE}/jkweb.a  ${SAMTABIXDIR}/libsamtabix.a -lssl -lcrypto
 endif
