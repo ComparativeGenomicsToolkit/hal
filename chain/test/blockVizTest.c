@@ -4,10 +4,22 @@
 
 #include "halBlockViz.h"
 
+#ifdef ENABLE_UDC
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "common.h"
+#include "udc.h"
+#ifdef __cplusplus
+}
+#endif
+#endif
+
 static int parseArgs(int argc, char** argv, char** path, char** qSpecies, 
-                     char** tChrom, int* tStart, int* tEnd, int* doSeq)
+                     char** tChrom, int* tStart, int* tEnd, int* doSeq,
+                     char** udcPath)
 {
-  if (argc != 6 && argc != 7)
+  if (argc != 6 && argc != 7 && argc != 8)
   {
     return -1;
   }
@@ -20,12 +32,17 @@ static int parseArgs(int argc, char** argv, char** path, char** qSpecies,
     return -1;
   }
   *doSeq = 0;
-  if (argc == 7)
+  if (argc >= 7)
   {
     if (sscanf(argv[6], "%d", doSeq) != 1)
     {
       return -1;
     }
+  }
+  *udcPath = NULL;
+  if (argc >= 8)
+  {
+    *udcPath = argv[7];
   }
   return 0; 
 }
@@ -44,14 +61,21 @@ int main(int argc, char** argv)
   int tStart;
   int tEnd;
   int doSeq;
+  char* udcPath;
   
   if (parseArgs(argc, argv, &path, &qSpecies, &tChrom, &tStart, &tEnd,
-        &doSeq) != 0)
+                &doSeq, &udcPath) != 0)
   {
     fprintf(stderr, "Usage: %s <halPath> <qSpecies> <tChrom> <tStart> "
-            "<tEnd> [doSeq=0]\n\n", argv[0]);
+            "<tEnd> [doSeq=0] [udcPath=NULL]\n\n", argv[0]);
     return -1;
   }
+#ifdef ENABLE_UDC
+  if (udcPath != NULL)
+  {
+    udcSetDefaultDir(udcPath);
+  }
+#endif
 
   int handle = halOpen(path, qSpecies);
   if (handle >= 0)
