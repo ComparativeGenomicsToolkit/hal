@@ -38,6 +38,10 @@ HDF5CLParser::HDF5CLParser(bool createOptions) :
   addOption("cacheBytes", "maximum size in bytes of regular hdf5 cache",
             DefaultCacheRDCBytes);
   addOption("cacheW0", "w0 parameter fro hdf5 cache", DefaultCacheW0);
+#ifdef ENABLE_UDC
+  addOption("udcCacheDir", "udc cache path for *input* hal file(s).",
+            "\"\"");
+#endif
 }
 
 HDF5CLParser::~HDF5CLParser()

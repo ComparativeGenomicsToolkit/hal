@@ -77,7 +77,7 @@ void HDF5Alignment::createNew(const string& alignmentPath)
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
-  setFileDriverFromPath(alignmentPath, false);
+
   _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
@@ -96,11 +96,17 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   close();
   delete _file;
   int _flags = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
+#ifdef ENABLE_UDC
+  if (readOnly == true)
+  {
+    _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
+  }
+#else
   if (!ifstream(alignmentPath.c_str()))
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
-  setFileDriverFromPath(alignmentPath, readOnly);
+#endif
   _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
   if (!compatibleWithVersion(getVersion()))
   {
@@ -206,6 +212,13 @@ void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
   }
   hdf5Parser->applyToDCProps(_dcprops);
   hdf5Parser->applyToAProps(_aprops);
+#ifdef ENABLE_UDC
+  static string udcCachePath = hdf5Parser->getOption<string>("udcCacheDir");
+  if (udcCachePath != "\"\"" && !udcCachePath.empty())
+  {
+    H5FD_udc_fuse_set_cache_dir(udcCachePath.c_str());
+  }  
+#endif
 }
 
 Genome*  HDF5Alignment::addLeafGenome(const string& name,
@@ -534,22 +547,3 @@ void HDF5Alignment::loadTree()
   }
 }
 
-void HDF5Alignment::setFileDriverFromPath(const string& path, bool readOnly)
-{
-#ifdef ENABLE_UDC
-  string pathCpy(path);
-  // Always use udc for now -- seems that library takes care of
-  // detecting.  
-  transform(pathCpy.begin(), pathCpy.end(), pathCpy.begin(), ::tolower);
-/*  if (pathCpy.find("http:") == 0 || 
-      pathCpy.find("https:") == 0 ||
-      pathCpy.find("ftp:") == 0)*/
-  {
-    // todo: maybe give error or warning when readonly is false? 
-    if (readOnly == true)
-    {
-      _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
-    }
-  }
-#endif
-}

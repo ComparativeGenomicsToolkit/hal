@@ -100,7 +100,6 @@ protected:
                         const std::vector<std::pair<std::string, double> >&
                         childNames);
 
-   void setFileDriverFromPath(const std::string& path, bool readOnly);
 
 protected:
 
