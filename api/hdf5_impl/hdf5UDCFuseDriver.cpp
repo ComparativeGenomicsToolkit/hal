@@ -284,7 +284,7 @@ H5FD_udc_fuse_init(void)
 
     if (H5I_VFL!=H5Iget_type(H5FD_UDC_FUSE_g))
         H5FD_UDC_FUSE_g = H5FDregister(&H5FD_udc_fuse_g);
-    printf("INIT DONE\n");
+
     return H5FD_UDC_FUSE_g;
 } /* end H5FD_udc_fuse_init() */
 
@@ -338,7 +338,6 @@ H5Pset_fapl_udc_fuse(hid_t fapl_id)
     if(0 == H5Pisa_class(fapl_id, H5P_FILE_ACCESS))
         H5Epush_ret(func, H5E_ERR_CLS, H5E_PLIST, H5E_BADTYPE, "not a file access property list", -1)
 
-    printf("ABOUT TO SET DRIVER\n");
     return H5Pset_driver(fapl_id, H5FD_UDC_FUSE, NULL);
 } /* end H5Pset_fapl_udc_fuse() */
 
@@ -380,7 +379,6 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
 #else /* H5_HAVE_WIN32_API */
     struct stat         sb;
 #endif  /* H5_HAVE_WIN32_API */
-    printf("ABOUT TO OPEN %s\n", name);
     /* Sanity check on file offsets */
     assert(sizeof(file_offset_t) >= sizeof(size_t));
 
@@ -400,10 +398,7 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
 
     /* Attempt to open/create the file */
         
-           /* note -- do we add interface to modifiy cache dir? */
-      printf("ABOUT TO CALL MAYOPEN\n %s", "/cluser/home/hickey/temp");
       f = udcFileMayOpen((char*)name, (char*)H5FD_UDC_FUSE_CACHE_PATH);
-      printf("CALLED MAYOPEN %p\n", f);
     
     if (!f)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_CANTOPENFILE, "fopen failed", NULL)
@@ -419,7 +414,7 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
     file->pos = HADDR_UNDEF;
     file->write_access = write_access;    /* Note the write_access for later */
     /* note -- do we add interface to modify cache dir? */
-    printf("ABOUT TO SIZE %s\n, name");
+
     long long int udcSizeVal = udcSizeFromCache((char*)name, 
                                                 (char*)H5FD_UDC_FUSE_CACHE_PATH);
     file->eof = udcSizeVal;
@@ -428,7 +423,6 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
     if (udcSizeVal < 0)
     {
       FILE* tempHandle = fopen(name, "r");
-      printf("temphandle %p\n", tempHandle);
       if (tempHandle)
       {
         fseek(tempHandle, 0, SEEK_END);
@@ -436,8 +430,6 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
         fclose(tempHandle);
       }
     }
-    printf("SIZE %d\n", (int)file->eof);
-    
 
     /* Get the file descriptor (needed for truncate and some Windows information) */
     file->fd = 0;
