@@ -129,7 +129,8 @@ void convertBlocks(TopSegmentIteratorConstPtr firstIt,
   blocks.resize(0);
 
   while (topIt->getEndPosition() >= start && 
-         topIt->getStartPosition() < end)
+         topIt->getStartPosition() < end-1 && 
+         topIt->getEndPosition() < end-1)
   {
     if (topIt->getStartOffset() == 0 && topIt->getEndOffset() == 0)
     {

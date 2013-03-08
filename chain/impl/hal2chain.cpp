@@ -26,8 +26,8 @@ int main(int argc, char** argv)
   optionsParser->addOption("chainFile", "path for output file.  stdout if not"
                            " specified", "\"\"");
   optionsParser->addOption("maxGap", 
-                           "maximum indel length to be considered a gap.  Gaps "
-                           " can be nested within other rearrangements.", 
+                           "maximum indel length to be considered a gap within"
+                           " a chain.", 
                            20);
   
 
@@ -103,8 +103,9 @@ int main(int argc, char** argv)
 
     // need to review!
     Chain chain;
-    while (gtop->getLeft()->getStartPosition() < endPosition &&
-           gtop->getRightArrayIndex() < genome->getNumTopSegments())
+    chain._id = 0;
+    while (gtop->getRightArrayIndex() < genome->getNumTopSegments() &&
+           gtop->getLeft()->getStartPosition() < endPosition)
     {
       if (gtop->hasParent() == true)
       {
@@ -123,6 +124,7 @@ int main(int argc, char** argv)
         // need to do offsets for edge cases
         gtIteratorToChain(gtop, chain, leftOffset, rightOffset);
         outStream << chain;
+        ++chain._id;
       }
       gtop->toRight();
     }
