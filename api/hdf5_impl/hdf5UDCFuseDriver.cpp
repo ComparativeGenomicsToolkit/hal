@@ -31,6 +31,10 @@
 #include <string.h>
 #include <sys/stat.h>
 
+extern "C" {
+#include "common.h"
+#include "udc.h"
+}
 #include "hdf5.h"
 #include "hdf5UDCFuseDriver.h"
 
@@ -63,6 +67,10 @@ extern "C" {
 /* The driver identification number, initialized at runtime */
 static hid_t H5FD_UDC_FUSE_g = 0;
 
+/* Flexibility to not use the default path within udc library
+ * if desired */
+static const char* H5FD_UDC_FUSE_CACHE_PATH = NULL;
+
 /* The maximum number of bytes which can be written in a single I/O operation */
 static size_t H5_UDC_FUSE_MAX_IO_BYTES_g = (size_t)-1;
 
@@ -87,13 +95,14 @@ typedef enum {
  */
 typedef struct H5FD_udc_fuse_t {
     H5FD_t      pub;            /* public stuff, must be first      */
-    FILE        *fp;            /* the file handle                  */
+    udcFile    *ufp;            /* the file handle                  */
     int         fd;             /* file descriptor (for truncate)   */
     haddr_t     eoa;            /* end of allocated region          */
     haddr_t     eof;            /* end of file; current file size   */
     haddr_t     pos;            /* current file I/O position        */
     unsigned    write_access;   /* Flag to indicate the file was opened with write access */
     H5FD_udc_fuse_file_op op;  /* last operation */
+    const char*  name;           /* path of file used for id */
 #ifndef H5_HAVE_WIN32_API
     /* On most systems the combination of device and i-node number uniquely
      * identify a file.  Note that Cygwin, MinGW and other Windows POSIX
@@ -130,13 +139,29 @@ typedef struct H5FD_udc_fuse_t {
 #endif  /* H5_HAVE_WIN32_API */
 } H5FD_udc_fuse_t;
 
+/* Structs below specify seek / tell / truncate infterface for 
+ * different platforms.  We override all with udc methods */
+static int udcFseekWrapper(struct udcFile* file, long long offset, int whence)
+{
+  assert(whence == SEEK_SET);
+  udcSeek(file, offset);
+  return 0;
+}
+
+static int udcFtruncateWrapper(int, long long)
+{
+  assert(0);
+  return -1;
+}
+
+
 /* Use similar structure as in H5private.h by defining Windows stuff first. */
 #ifdef H5_HAVE_WIN32_API
 #ifndef H5_HAVE_MINGW
-    #define file_fseek      _fseeki64
+    #define file_fseek      udcFseekWrapper
     #define file_offset_t   __int64
-    #define file_ftruncate  _chsize_s   /* Supported in VS 2005 or newer */
-    #define file_ftell      _ftelli64
+    #define file_ftruncate  udcFtruncateWrapper   /* Supported in VS 2005 or newer */
+    #define file_ftell      udcTell
 #endif /* H5_HAVE_MINGW */
 #endif /* H5_HAVE_WIN32_API */
 
@@ -147,15 +172,15 @@ typedef struct H5FD_udc_fuse_t {
  */
 #ifndef file_fseek
     #ifdef H5_HAVE_FSEEKO64
-        #define file_fseek      fseeko64
+        #define file_fseek      udcFseekWrapper
         #define file_offset_t   off64_t
         #define file_ftruncate  ftruncate64
-        #define file_ftell      ftello64
+        #define file_ftell      udcTell
     #else
-        #define file_fseek      fseeko
+        #define file_fseek      udcFseekWrapper
         #define file_offset_t   off_t
-        #define file_ftruncate  ftruncate
-        #define file_ftell      ftello
+        #define file_ftruncate  udcFtruncateWrapper
+        #define file_ftell      udcTell
     #endif /* H5_HAVE_FSEEKO64 */
 #endif /* file_fseek */
 
@@ -232,7 +257,10 @@ static const H5FD_class_t H5FD_udc_fuse_g = {
     H5FD_FLMAP_SINGLE           /* fl_map       */
 };
 
-
+void H5FD_udc_fuse_set_cache_dir(const char* cacheDir)
+{
+  H5FD_UDC_FUSE_CACHE_PATH = cacheDir;
+}
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_init
  *
@@ -256,6 +284,7 @@ H5FD_udc_fuse_init(void)
 
     if (H5I_VFL!=H5Iget_type(H5FD_UDC_FUSE_g))
         H5FD_UDC_FUSE_g = H5FDregister(&H5FD_udc_fuse_g);
+
     return H5FD_UDC_FUSE_g;
 } /* end H5FD_udc_fuse_init() */
 
@@ -341,7 +370,7 @@ static H5FD_t *
 H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
     haddr_t maxaddr)
 {
-    FILE                *f = NULL;
+    udcFile                *f = NULL;
     unsigned            write_access = 0;           /* File opened with write access? */
     H5FD_udc_fuse_t        *file = NULL;
     static const char   *func = "H5FD_udc_fuse_open";  /* Function Name for error reporting */
@@ -350,7 +379,6 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
 #else /* H5_HAVE_WIN32_API */
     struct stat         sb;
 #endif  /* H5_HAVE_WIN32_API */
-
     /* Sanity check on file offsets */
     assert(sizeof(file_offset_t) >= sizeof(size_t));
 
@@ -369,72 +397,46 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
         H5Epush_ret(func, H5E_ERR_CLS, H5E_ARGS, H5E_OVERFLOW, "maxaddr too large", NULL)
 
     /* Attempt to open/create the file */
-    if (access(name, F_OK) < 0) {
-        if ((flags & H5F_ACC_CREAT) && (flags & H5F_ACC_RDWR)) {
-            f = fopen(name, "wb+");
-            write_access = 1;     /* Note the write access */
-        }
-        else
-            H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_CANTOPENFILE, "file doesn't exist and CREAT wasn't specified", NULL)
-    } else if ((flags & H5F_ACC_CREAT) && (flags & H5F_ACC_EXCL)) {
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_FILEEXISTS, "file exists but CREAT and EXCL were specified", NULL)
-    } else if (flags & H5F_ACC_RDWR) {
-        if (flags & H5F_ACC_TRUNC)
-            f = fopen(name, "wb+");
-        else
-            f = fopen(name, "rb+");
-        write_access = 1;     /* Note the write access */
-    } else {
-        f = fopen(name, "rb");
-    }
+        
+      f = udcFileMayOpen((char*)name, (char*)H5FD_UDC_FUSE_CACHE_PATH);
+    
     if (!f)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_CANTOPENFILE, "fopen failed", NULL)
 
     /* Build the return value */
     if(NULL == (file = (H5FD_udc_fuse_t *)calloc((size_t)1, sizeof(H5FD_udc_fuse_t)))) {
-        fclose(f);
+        udcFileClose(&f);
         H5Epush_ret(func, H5E_ERR_CLS, H5E_RESOURCE, H5E_NOSPACE, "memory allocation failed", NULL)
     } /* end if */
-    file->fp = f;
+    file->ufp = f;
+    file->name = name;
     file->op = H5FD_UDC_FUSE_OP_SEEK;
     file->pos = HADDR_UNDEF;
     file->write_access = write_access;    /* Note the write_access for later */
-    if(file_fseek(file->fp, (file_offset_t)0, SEEK_END) < 0) {
-        file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
-    } else {
-        file_offset_t x = file_ftell(file->fp);
-        assert (x >= 0);
-        file->eof = (haddr_t)x;
+    /* note -- do we add interface to modify cache dir? */
+
+    long long int udcSizeVal = udcSizeFromCache((char*)name, 
+                                                (char*)H5FD_UDC_FUSE_CACHE_PATH);
+    file->eof = udcSizeVal;
+    /* everything about udc cache works for files and urls but the above, 
+     * which only works for ursl.  if it fails, we try as a file*/
+    if (udcSizeVal < 0)
+    {
+      FILE* tempHandle = fopen(name, "r");
+      if (tempHandle)
+      {
+        fseek(tempHandle, 0, SEEK_END);
+        file->eof = (haddr_t) ftell(tempHandle);
+        fclose(tempHandle);
+      }
     }
 
     /* Get the file descriptor (needed for truncate and some Windows information) */
-    file->fd = fileno(file->fp);
+    file->fd = 0;
     if(file->fd < 0)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_FILE, H5E_CANTOPENFILE, "unable to get file descriptor", NULL);
 
 
-#ifdef H5_HAVE_WIN32_API
-    file->hFile = (HANDLE)_get_osfhandle(file->fd);
-    if(INVALID_HANDLE_VALUE == file->hFile)
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_FILE, H5E_CANTOPENFILE, "unable to get Windows file handle", NULL);
-
-    if(!GetFileInformationByHandle((HANDLE)file->hFile, &fileinfo))
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_FILE, H5E_CANTOPENFILE, "unable to get Windows file desinformationcriptor", NULL);
-
-    file->nFileIndexHigh = fileinfo.nFileIndexHigh;
-    file->nFileIndexLow = fileinfo.nFileIndexLow;
-    file->dwVolumeSerialNumber = fileinfo.dwVolumeSerialNumber;
-#else /* H5_HAVE_WIN32_API */
-    fstat(file->fd, &sb);
-    file->device = sb.st_dev;
-#ifdef H5_VMS
-    file->inode[0] = sb.st_ino[0];
-    file->inode[1] = sb.st_ino[1];
-    file->inode[2] = sb.st_ino[2];
-#else /* H5_VMS */
-    file->inode = sb.st_ino;
-#endif /* H5_VMS */
-#endif /* H5_HAVE_WIN32_API */
 
     return (H5FD_t*)file;
 } /* end H5FD_udc_fuse_open() */
@@ -463,12 +465,9 @@ H5FD_udc_fuse_close(H5FD_t *_file)
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
-
-    if (fclose(file->fp) < 0)
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_CLOSEERROR, "fclose failed", -1)
-
-    free(file);
-
+    
+    udcFileClose(&file->ufp);
+    
     return 0;
 } /* end H5FD_udc_fuse_close() */
 
@@ -498,40 +497,11 @@ H5FD_udc_fuse_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
 
-#ifdef H5_HAVE_WIN32_API
-    if(f1->dwVolumeSerialNumber < f2->dwVolumeSerialNumber) return -1;
-    if(f1->dwVolumeSerialNumber > f2->dwVolumeSerialNumber) return 1;
-
-    if(f1->nFileIndexHigh < f2->nFileIndexHigh) return -1;
-    if(f1->nFileIndexHigh > f2->nFileIndexHigh) return 1;
-
-    if(f1->nFileIndexLow < f2->nFileIndexLow) return -1;
-    if(f1->nFileIndexLow > f2->nFileIndexLow) return 1;
-#else /* H5_HAVE_WIN32_API */
-#ifdef H5_DEV_T_IS_SCALAR
-    if(f1->device < f2->device) return -1;
-    if(f1->device > f2->device) return 1;
-#else /* H5_DEV_T_IS_SCALAR */
-    /* If dev_t isn't a scalar value on this system, just use memcmp to
-     * determine if the values are the same or not.  The actual return value
-     * shouldn't really matter...
-     */
-    if(memcmp(&(f1->device),&(f2->device),sizeof(dev_t)) < 0) return -1;
-    if(memcmp(&(f1->device),&(f2->device),sizeof(dev_t)) > 0) return 1;
-#endif /* H5_DEV_T_IS_SCALAR */
-#ifdef H5_VMS
-    if(memcmp(&(f1->inode), &(f2->inode), 3 * sizeof(ino_t)) < 0) return -1;
-    if(memcmp(&(f1->inode), &(f2->inode), 3 * sizeof(ino_t)) > 0) return 1;
-#else /* H5_VMS */
-    if(f1->inode < f2->inode) return -1;
-    if(f1->inode > f2->inode) return 1;
-#endif /* H5_VMS */
-#endif /* H5_HAVE_WIN32_API */
-
-    return 0;
+    assert(f1->name and f2->name);
+    return strcmp(f1->name, f2->name);
 } /* H5FD_udc_fuse_cmp() */
 
-
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_query
  *
@@ -731,7 +701,7 @@ H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void** file_handle)
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
 
-    *file_handle = &(file->fp);
+    *file_handle = &(file->ufp);
     if(*file_handle == NULL)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "get handle failed", -1)
 
@@ -790,7 +760,7 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
     /* Seek to the correct file position. */
     if (!(file->op == H5FD_UDC_FUSE_OP_READ || file->op == H5FD_UDC_FUSE_OP_SEEK) ||
             file->pos != addr) {
-        if (file_fseek(file->fp, (file_offset_t)addr, SEEK_SET) < 0) {
+        if (file_fseek(file->ufp, (file_offset_t)addr, SEEK_SET) < 0) {
             file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
             file->pos = HADDR_UNDEF;
             H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_SEEKERROR, "fseek failed", -1)
@@ -820,15 +790,16 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
         else
             bytes_in = size;
 
-        bytes_read = fread(buf, item_size, bytes_in, file->fp);
+        bytes_read = udcRead(file->ufp, buf, item_size * bytes_in);
 
-        if(0 == bytes_read && ferror(file->fp)) { /* error */
+        /*
+        if(0 == bytes_read && ferror(file->ufp)) { 
             file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
             file->pos = HADDR_UNDEF;
             H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_READERROR, "fread failed", -1)
-        } /* end if */
+        }*/
         
-        if(0 == bytes_read && feof(file->fp)) {
+        if(0 == bytes_read && udcTell(file->ufp) >= file->eof) {
             /* end of file but not end of format address space */
             memset((unsigned char *)buf, 0, size);
             break;
@@ -871,72 +842,12 @@ H5FD_udc_fuse_write(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr,
     H5FD_udc_fuse_t    *file = (H5FD_udc_fuse_t*)_file;
     static const char *func = "H5FD_udc_fuse_write";  /* Function Name for error reporting */
 
-    /* Quiet the compiler */
-    dxpl_id = dxpl_id;
-    type = type;
-
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
 
-    /* Check for overflow conditions */
-    if (HADDR_UNDEF == addr)
-        H5Epush_ret (func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1)
-    if (REGION_OVERFLOW(addr, size))
-        H5Epush_ret (func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1)
-    if (addr+size > file->eoa)
-        H5Epush_ret (func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1)
-
-    /* Seek to the correct file position. */
-    if ((file->op != H5FD_UDC_FUSE_OP_WRITE && file->op != H5FD_UDC_FUSE_OP_SEEK) ||
-                file->pos != addr) {
-        if (file_fseek(file->fp, (file_offset_t)addr, SEEK_SET) < 0) {
-            file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
-            file->pos = HADDR_UNDEF;
-            H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_SEEKERROR, "fseek failed", -1)
-        }
-        file->pos = addr;
-    }
-
-    /* Write the buffer.  On successful return, the file position will be
-     * advanced by the number of bytes read.  On failure, the file position is
-     * undefined.
-     */
-    while(size > 0) {
-
-        size_t bytes_in        = 0;    /* # of bytes to write  */
-        size_t bytes_wrote     = 0;    /* # of bytes written   */
-        size_t item_size       = 1;    /* size of items in bytes */
-
-        if(size > H5_UDC_FUSE_MAX_IO_BYTES_g)
-            bytes_in = H5_UDC_FUSE_MAX_IO_BYTES_g;
-        else
-            bytes_in = size;
-
-        bytes_wrote = fwrite(buf, item_size, bytes_in, file->fp);
-
-        if(bytes_wrote != bytes_in || (0 == bytes_wrote && ferror(file->fp))) { /* error */
-            file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
-            file->pos = HADDR_UNDEF;
-            H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "fwrite failed", -1)
-        } /* end if */
-        
-        assert(bytes_wrote > 0);
-        assert((size_t)bytes_wrote <= size);
-
-        size -= bytes_wrote;
-        addr += (haddr_t)bytes_wrote;
-        buf = (const char *)buf + bytes_wrote;
-    }
-
-    /* Update seek optimizing data. */
-    file->op = H5FD_UDC_FUSE_OP_WRITE;
-    file->pos = addr;
-
-    /* Update EOF if necessary */
-    if (file->pos > file->eof)
-        file->eof = file->pos;
-
-    return 0;
+    H5Epush_ret (func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot write!", -1)
+    
+    return -1;
 }
 
 
@@ -961,26 +872,9 @@ H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, unsigned closing)
 {
     H5FD_udc_fuse_t  *file = (H5FD_udc_fuse_t*)_file;
     static const char *func = "H5FD_udc_fuse_flush";  /* Function Name for error reporting */
-
-    /* Quiet the compiler */
-    dxpl_id = dxpl_id;
-
-    /* Clear the error stack */
-    H5Eclear2(H5E_DEFAULT);
-
-    /* Only try to flush the file if we have write access */
-    if(file->write_access) {
-        if(!closing) {
-            if(fflush(file->fp) < 0)
-                H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "fflush failed", -1)
-
-            /* Reset last file I/O information */
-            file->pos = HADDR_UNDEF;
-            file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
-        } /* end if */
-    } /* end if */
-
-    return 0;
+    H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot flush", -1)
+    
+    return -1;
 } /* end H5FD_udc_fuse_flush() */
 
 
@@ -1006,71 +900,9 @@ H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing)
 {
     H5FD_udc_fuse_t  *file = (H5FD_udc_fuse_t*)_file;
     static const char *func = "H5FD_udc_fuse_truncate";  /* Function Name for error reporting */
-
-    /* Quiet the compiler */
-    dxpl_id = dxpl_id;
-    closing = closing;
-
-    /* Clear the error stack */
-    H5Eclear2(H5E_DEFAULT);
-
-    /* Only try to flush the file if we have write access */
-    if(file->write_access) {
-        /* Makes sure that the true file size is the same as the end-of-address. */
-        if(file->eoa != file->eof) {
-
-#ifdef H5_HAVE_WIN32_API
-            LARGE_INTEGER   li;         /* 64-bit (union) integer for SetFilePointer() call */
-            DWORD           dwPtrLow;   /* Low-order pointer bits from SetFilePointer()
-                                         * Only used as an error code here.
-                                         */
-            DWORD           dwError;    /* DWORD error code from GetLastError() */
-            BOOL            bError;     /* Boolean error flag */
-
-            /* Reset seek offset to beginning of file, so that file isn't re-extended later */
-            rewind(file->fp);
-
-            /* Windows uses this odd QuadPart union for 32/64-bit portability */
-            li.QuadPart = (__int64)file->eoa;
-
-            /* Extend the file to make sure it's large enough.
-             *
-             * Since INVALID_SET_FILE_POINTER can technically be a valid return value
-             * from SetFilePointer(), we also need to check GetLastError().
-             */
-            dwPtrLow = SetFilePointer(file->hFile, li.LowPart, &li.HighPart, FILE_BEGIN);
-            if(INVALID_SET_FILE_POINTER == dwPtrLow) {
-                dwError = GetLastError();
-                if(dwError != NO_ERROR )
-                    H5Epush_ret(func, H5E_ERR_CLS, H5E_FILE, H5E_FILEOPEN, "unable to set file pointer", -1)
-            }
-            
-            bError = SetEndOfFile(file->hFile);
-            if(0 == bError)
-                H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_SEEKERROR, "unable to truncate/extend file properly", -1)
-#else /* H5_HAVE_WIN32_API */
-            /* Reset seek offset to beginning of file, so that file isn't re-extended later */
-            rewind(file->fp);
-
-            /* Truncate file to proper length */
-            if(-1 == file_ftruncate(file->fd, (file_offset_t)file->eoa))
-                H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_SEEKERROR, "unable to truncate/extend file properly", -1)
-#endif /* H5_HAVE_WIN32_API */
-
-            /* Update the eof value */
-            file->eof = file->eoa;
-
-            /* Reset last file I/O information */
-            file->pos = HADDR_UNDEF;
-            file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
-        } /* end if */
-    } /* end if */
-    else {
-        /* Double-check for problems */
-        if(file->eoa > file->eof)
-            H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_TRUNCATED, "eoa > eof!", -1)
-    } /* end else */
-
+    
+    H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot truncate", -1)
+    
     return 0;
 } /* end H5FD_udc_fuse_truncate() */
 

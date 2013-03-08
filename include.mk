@@ -11,10 +11,8 @@ include  ${sonLibRootPath}/include.mk
 
 dataSetsPath=/Users/hickey/Documents/Devel/genomes/datasets
 
-cflags += -I ${sonLibPath}
-cppflags += -I ${sonLibPath}
-# uncomment to enable udc cache support:
-cppflags += -DENABLE_UDC
+cflags += -I${sonLibPath}
+cppflags += -I${sonLibPath}
 
 basicLibs = ${sonLibPath}/sonLib.a ${sonLibPath}/cuTest.a
 basicLibsDependencies = ${sonLibPath}/cuTest.a 
@@ -28,3 +26,16 @@ HDF5_CCLINKER = ${cxx}
 cpp = h5c++ ${h5prefix}
 cxx = h5cc ${h5prefix}
 
+# add compiler flag and kent paths if udc is enabled
+# relies on KENTSRC containing path to top level kent/ dir
+# and MACHTYPE being specified
+ifdef ENABLE_UDC
+#  Find samtabix as in kent/src/inc/common.mk:
+	ifeq (${SAMTABIXDIR},)
+		SAMTABIXDIR = /hive/data/outside/samtabix/${MACHTYPE}
+	endif
+
+	cppflags += -DENABLE_UDC -I${KENTSRC}/src/inc
+	cflags += -I${KENTSRC}/src/inc
+	basicLibs += ${KENTSRC}/src/lib/${MACHTYPE}/jkweb.a  ${SAMTABIXDIR}/libsamtabix.a -lssl -lcrypto
+endif
