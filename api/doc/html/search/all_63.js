@@ -1,7 +1,7 @@
 var searchData=
 [
   ['chopstring',['chopString',['../namespacehal.html#a591f58c0f35620b9ec36c452ef143213',1,'hal']]],
-  ['close',['close',['../classhal_1_1_alignment.html#a7ac045eb803c7a5686731740d5b95bf2',1,'hal::Alignment']]],
+  ['close',['close',['../classhal_1_1_alignment.html#a7ac045eb803c7a5686731740d5b95bf2',1,'hal::Alignment::close()=0'],['../classhal_1_1_alignment.html#a8949bad6757d06c9a9823dc8def3d645',1,'hal::Alignment::close() const =0']]],
   ['closegenome',['closeGenome',['../classhal_1_1_alignment.html#a1aaa55e4afffa927d4ac7a7520076340',1,'hal::Alignment']]],
   ['clparser',['CLParser',['../classhal_1_1_c_l_parser.html',1,'hal']]],
   ['columniterator',['ColumnIterator',['../classhal_1_1_column_iterator.html',1,'hal']]],
