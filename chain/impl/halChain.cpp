@@ -59,6 +59,7 @@ void hal::gtIteratorToChain(GappedTopSegmentIteratorConstPtr top,
                                              top->getGapThreshold(), 
                                              top->getAtomic());
 
+  assert(top->hasParent());
   bottom->toParent(top);
 
   // set up global information
@@ -72,29 +73,38 @@ void hal::gtIteratorToChain(GappedTopSegmentIteratorConstPtr top,
 
   // slice iterator coordinates according to given offsets
   outChain._qStart = top->getStartPosition() + startOffset;
-  outChain._qEnd = top->getStartPosition() - endOffset;
+  outChain._qEnd = top->getEndPosition() - endOffset;
   outChain._qStrand = '+';
+  // convert from sequence coordinates to genome coordinates
   outChain._qStart -= qSequence->getStartPosition();
   outChain._qEnd -= qSequence->getStartPosition();
-  assert(outChain._qEnd > outChain._qStart);
+  assert(outChain._qEnd >= outChain._qStart);
 
   outChain._tStart = bottom->getStartPosition() + startOffset;
   outChain._tEnd = bottom->getEndPosition() - endOffset;
+  //convert to seqquence coordinates from genome coordinates
   outChain._tStart -= tSequence->getStartPosition();
   outChain._tEnd -= tSequence->getStartPosition();
 
   if (top->getParentReversed() == true)
   {
-    outChain._tStart = outChain._tSize - outChain._tStart;
-    outChain._tEnd = outChain._tSize - outChain._tEnd;
+    hal_index_t revStart =  outChain._tSize - outChain._tStart - 1;
+    hal_index_t revEnd =  outChain._tSize - outChain._tEnd - 1;
+    outChain._tStart = revStart;
+    outChain._tEnd = revEnd;
     outChain._tStrand = '-';
   }
   else
   {
     outChain._tStrand = '+';
   }
-  assert(outChain._tEnd > outChain._tStart);
   
+  // change ends to +1
+  outChain._qEnd += 1;
+  outChain._tEnd += 1;
+  
+  assert(outChain._tEnd > outChain._tStart);
+
   // convert blocks
   TopSegmentIteratorConstPtr firstIt = top->getLeft();
   convertBlocks(firstIt, outChain);
@@ -105,9 +115,10 @@ void convertBlocks(TopSegmentIteratorConstPtr firstIt,
 {
   TopSegmentIteratorConstPtr topIt = firstIt->copy();
   const Sequence* sequence = topIt->getSequence();
-  hal_index_t start = (hal_index_t)outChain._tStart -
+  // back to genome coordinates
+  hal_index_t start = (hal_index_t)outChain._qStart +
      sequence->getStartPosition();
-  hal_index_t end = (hal_index_t)outChain._tEnd - sequence->getStartPosition();
+  hal_index_t end = (hal_index_t)outChain._qEnd + sequence->getStartPosition();
   BottomSegmentIteratorConstPtr botIt =
      topIt->getGenome()->getParent()->getBottomSegmentIterator();
 
