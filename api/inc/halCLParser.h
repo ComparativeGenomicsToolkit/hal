@@ -187,7 +187,7 @@ inline void CLParser::addOption(const std::string& name,
   {
     throw hal_exception(std::string("type conversion adding option ") + name);
   }
-  std::map<std::string, Option>::iterator i = _options.find(name);
+
   _options.insert(std::pair<std::string, Option>(name, opt));
   _maxOptLen = std::max(_maxOptLen, name.length());
 }
