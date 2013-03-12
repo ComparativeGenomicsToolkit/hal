@@ -107,9 +107,10 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
     entry->_start = dna->getArrayIndex() - sequence->getStartPosition();
     entry->_length = 0;
     entry->_strand = dna->getReversed() ? '-' : '+';
-    // note that reverse-strand is written to in forward order
-    // (and kept in forward coordinates).  We correct only when 
-    // streaming the entire block (see operator).
+    if (dna->getReversed())
+    {
+      entry->_start = entry->_srcLength - 1 - entry->_start;
+    } 
   }
   else
   {
@@ -140,10 +141,16 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
 
     ++entry->_length;
     
-    assert((hal_index_t)
+    assert(dna->getReversed() == true || (hal_index_t)
            (dna->getArrayIndex() - sequence->getStartPosition()) == 
            (hal_index_t)
            (entry->_start + entry->_length - 1));
+    
+    assert(dna->getReversed() == false || (hal_index_t)
+           (entry->_srcLength - 1 - 
+            (dna->getArrayIndex() - sequence->getStartPosition()))  == 
+           (hal_index_t)
+           (entry->_start + entry->_length - 1)); 
 
     entry->_sequence->append(dna->getChar());
   }
@@ -286,7 +293,6 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
   MafBlockEntry* entry;
   hal_index_t sequenceStart;
   hal_index_t pos;
-  hal_index_t delta;
  
   for (c = colMap->begin(); c != colMap->end(); ++c)
   {
@@ -318,6 +324,11 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
             return false;
           }
           pos = (*d)->getArrayIndex() - sequenceStart;
+          if ((*d)->getReversed() == true)
+          {
+            // position on reverse strand relative to end of sequence
+            pos = entry->_srcLength - 1 - pos;
+          } 
           if (pos - entry->_start != entry->_length)
           {
             return false;
@@ -332,31 +343,10 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
 
 ostream& hal::operator<<(ostream& os, const MafBlockEntry& mafBlockEntry)
 {
-  hal_index_t start = mafBlockEntry._start;
-  if (mafBlockEntry._strand == '-')
-  {
-    start = mafBlockEntry._srcLength - mafBlockEntry._start - 
-       mafBlockEntry._length; 
-  }
-
-  os << "s\t" << mafBlockEntry._name << '\t' << start << '\t'
+  os << "s\t" << mafBlockEntry._name << '\t' << mafBlockEntry._start << '\t'
      << mafBlockEntry._length << '\t' << mafBlockEntry._strand << '\t' 
-     << mafBlockEntry._srcLength << '\t';
-  
-  if (mafBlockEntry._strand == '+')
-  {
-    os << mafBlockEntry._sequence->str();
-  }
-  else
-  {
-    char* s = mafBlockEntry._sequence->str();
-    for (int i = (int)mafBlockEntry._sequence->_len - 1; i >= 0; --i)
-    {
-      // already in reverse complement, just in wrong order
-      os << s[i];
-    }
-  }
-  os << '\n';
+     << mafBlockEntry._srcLength << '\t' << mafBlockEntry._sequence->str() 
+     << '\n'; 
   return os;
 }
 

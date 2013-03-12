@@ -349,7 +349,7 @@ void DefaultBottomSegmentIterator::toReverse() const
 {
   assert (inRange() == true);
   _reversed = !_reversed;
-  swap(_startOffset, _endOffset);
+//  swap(_startOffset, _endOffset);
 }
 
 void DefaultBottomSegmentIterator::toSite(hal_index_t position, bool slice) const
@@ -426,7 +426,7 @@ void DefaultBottomSegmentIterator::toSite(hal_index_t position, bool slice) cons
         - position - 1;
      if (_reversed)
      {
-       swap(_startOffset, _endOffset);
+//       swap(_startOffset, _endOffset);
      }
   }  
 }
