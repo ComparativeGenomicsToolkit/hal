@@ -14,7 +14,8 @@ using namespace hal;
 
 const hal_index_t MafBlock::defaultMaxLength = 1000;
 
-MafBlock::MafBlock(hal_index_t maxLength) : _maxLength(maxLength)
+MafBlock::MafBlock(hal_index_t maxLength) : _maxLength(maxLength),
+                                            _fullNames(false)
 {
   if (_maxLength <= 0)
   {
@@ -76,7 +77,7 @@ void MafBlock::resetEntries()
     if (deleted == false)
     {
       assert (e->_start == NULL_INDEX || e->_length > 0);
-      assert (e->_name == i->first->getFullName());
+      assert (e->_name == getName(i->first));
       // Rest block information but leave sequence information so we
       // can reuse it. 
       e->_start = NULL_INDEX;
@@ -91,11 +92,13 @@ void MafBlock::resetEntries()
 void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence, 
                          DNAIteratorConstPtr dna, bool clearSequence)
 {
-  string sequenceName = sequence->getFullName();
-  if (entry->_name != sequenceName)
+  string sequenceName = getName(sequence);
+  if (entry->_name != sequenceName || 
+      sequence->getGenome() != entry->_genome)
   {
     // replace genearl sequence information
     entry->_name = sequenceName;
+    entry->_genome = sequence->getGenome();
     entry->_srcLength = (hal_index_t)sequence->getSequenceLength();
   }
   if (dna.get())
@@ -104,9 +107,10 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
     entry->_start = dna->getArrayIndex() - sequence->getStartPosition();
     entry->_length = 0;
     entry->_strand = dna->getReversed() ? '-' : '+';
-    // note that reverse-strand is written to in forward order
-    // (and kept in forward coordinates).  We correct only when 
-    // streaming the entire block (see operator).
+    if (dna->getReversed())
+    {
+      entry->_start = entry->_srcLength - 1 - entry->_start;
+    } 
   }
   else
   {
@@ -131,16 +135,22 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
     {
       initEntry(entry, sequence, dna, false);
     }
-    assert(entry->_name == sequence->getFullName());
+    assert(entry->_name == getName(sequence));
     assert(entry->_strand == dna->getReversed() ? '-' : '+');
     assert(entry->_srcLength == (hal_index_t)sequence->getSequenceLength());
 
     ++entry->_length;
     
-    assert((hal_index_t)
+    assert(dna->getReversed() == true || (hal_index_t)
            (dna->getArrayIndex() - sequence->getStartPosition()) == 
            (hal_index_t)
            (entry->_start + entry->_length - 1));
+    
+    assert(dna->getReversed() == false || (hal_index_t)
+           (entry->_srcLength - 1 - 
+            (dna->getArrayIndex() - sequence->getStartPosition()))  == 
+           (hal_index_t)
+           (entry->_start + entry->_length - 1)); 
 
     entry->_sequence->append(dna->getChar());
   }
@@ -150,7 +160,7 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
   }
 }
 
-void MafBlock::initBlock(ColumnIteratorConstPtr col)
+void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames)
 {
   resetEntries();
   const ColumnMap* colMap = col->getColumnMap();
@@ -177,7 +187,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
       else
       {
         assert (e->first == sequence);
-        assert (e->second->_name == sequence->getFullName());
+        assert (e->second->_name == getName(sequence));
         initEntry(e->second, sequence, DNAIteratorConstPtr());
       }
     }
@@ -208,7 +218,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col)
         {
           MafBlockEntry* entry = new MafBlockEntry(_stringBuffers);
           initEntry(entry, sequence, *d);
-          assert(entry->_name == sequence->getFullName());
+          assert(entry->_name == getName(sequence));
           e = _entries.insert(Entries::value_type(sequence, entry));
         }
         else
@@ -256,7 +266,7 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
       }
       assert(e != _entries.end());
       assert(e->first == sequence);
-      assert(e->second->_name == sequence->getFullName());
+      assert(e->second->_name == getName(sequence));
       updateEntry(e->second, sequence, *d);
       ++e;
     }
@@ -303,7 +313,8 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
       {
         entry = e->second;
         assert(e->first == sequence);
-        assert(entry->_name == sequence->getFullName());
+        assert(entry->_name == getName(sequence) &&
+               entry->_genome == sequence->getGenome());
         if (entry->_start != NULL_INDEX)
         {
           if (entry->_length >= _maxLength ||
@@ -313,6 +324,11 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
             return false;
           }
           pos = (*d)->getArrayIndex() - sequenceStart;
+          if ((*d)->getReversed() == true)
+          {
+            // position on reverse strand relative to end of sequence
+            pos = entry->_srcLength - 1 - pos;
+          } 
           if (pos - entry->_start != entry->_length)
           {
             return false;
@@ -327,31 +343,10 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
 
 ostream& hal::operator<<(ostream& os, const MafBlockEntry& mafBlockEntry)
 {
-  hal_index_t start = mafBlockEntry._start;
-  if (mafBlockEntry._strand == '-')
-  {
-    start = mafBlockEntry._srcLength - mafBlockEntry._start - 
-       mafBlockEntry._length; 
-  }
-
-  os << "s\t" << mafBlockEntry._name << '\t' << start << '\t'
+  os << "s\t" << mafBlockEntry._name << '\t' << mafBlockEntry._start << '\t'
      << mafBlockEntry._length << '\t' << mafBlockEntry._strand << '\t' 
-     << mafBlockEntry._srcLength << '\t';
-  
-  if (mafBlockEntry._strand == '+')
-  {
-    os << mafBlockEntry._sequence->str();
-  }
-  else
-  {
-    char* s = mafBlockEntry._sequence->str();
-    for (int i = (int)mafBlockEntry._sequence->_len - 1; i >= 0; --i)
-    {
-      // already in reverse complement, just in wrong order
-      os << s[i];
-    }
-  }
-  os << '\n';
+     << mafBlockEntry._srcLength << '\t' << mafBlockEntry._sequence->str() 
+     << '\n'; 
   return os;
 }
 
