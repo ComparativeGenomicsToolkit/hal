@@ -120,59 +120,8 @@ int main(int argc, char** argv)
     }
     else
     {
-      const Genome* mouse = alignment->openGenome("simMouse");
-      const Genome* rat = alignment->openGenome("simRat");
-      TopSegmentIteratorConstPtr mouseTop = mouse->getTopSegmentIterator();
-      TopSegmentIteratorConstPtr ratTop = rat->getTopSegmentIterator();
-      hal_index_t rlen = (hal_index_t)ratTop->getSequence()->getSequenceLength();
-      mouseTop->toSite(11840);
-      ratTop->toSite(413026);
-      const Genome* parent = mouse->getParent();
-      assert(parent == rat->getParent());
-      BottomSegmentIteratorConstPtr mouseBot = parent->getBottomSegmentIterator();
-      BottomSegmentIteratorConstPtr ratBot = parent->getBottomSegmentIterator();
-      mouseBot->toParent(mouseTop);
-      ratBot->toParent(ratTop);
-      ColumnIteratorConstPtr mouseCol = mouse->getColumnIterator(NULL, 0, 11840);
-
-      cout << endl << mouseCol << endl;
-      TopSegmentIteratorConstPtr mouseTop2 = mouse->getTopSegmentIterator();
-      TopSegmentIteratorConstPtr ratTop2 = rat->getTopSegmentIterator();
-
-      TopSegmentIteratorConstPtr parTop = parent->getTopSegmentIterator();
-      parTop->toParseUp(mouseBot);
-      
-
-      mouseTop2->toChild(ratBot, parent->getChildIndex(mouse));
-      ratTop2->toChild(mouseBot, parent->getChildIndex(rat));
-
-      cout << "mouse  " << mouseTop->getStartPosition() << " - anc "
-           << mouseBot->getStartPosition() << " - rat " 
-           << ratTop2->getStartPosition() << endl;
-
-      cout << "rat  " << ratTop->getStartPosition() << " - anc "
-           << ratBot->getStartPosition() << " - mouse " 
-           << mouseTop2->getStartPosition() << endl;
-      cout << endl;
-      
-
-      cout << "mousetop\n" << mouseTop << endl;
-      cout << "mousebot\n" << mouseBot << endl;
-      cout << "rattop\n" << ratTop << endl;
-      cout << "ratbot\n" << ratBot << endl;
-      cout << "partop\n" << parTop << endl << endl;
-      
-      const Genome* cow = alignment->openGenome("simCow");
-      ColumnIteratorConstPtr cowCol = cow->getColumnIterator(NULL, 0, 5057);
-      cout << cowCol << endl;
-
-      mouseCol = mouse->getColumnIterator(NULL, 0, 5181);
-      cout << mouseCol << endl;
-
-      
-
-//      HalStats halStats(alignment);
-      //     cout << endl << "hal v" << alignment->getVersion() << "\n" << halStats;
+      HalStats halStats(alignment);
+      cout << endl << "hal v" << alignment->getVersion() << "\n" << halStats;
     }
   }
   catch(hal_exception& e)
