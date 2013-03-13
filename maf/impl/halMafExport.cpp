@@ -36,6 +36,11 @@ void MafExport::setNoAncestors(bool noAncestors)
   _noAncestors = noAncestors;
 }
 
+void MafExport::setUcscNames(bool ucscNames)
+{
+  _ucscNames = ucscNames;
+}
+
 void MafExport::writeHeader()
 {
   assert(_mafStream != NULL);
@@ -79,7 +84,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                                         lastPosition,
                                                         _noDupes,
                                                         _noAncestors);
-  _mafBlock.initBlock(colIt);
+  _mafBlock.initBlock(colIt, _ucscNames);
   assert(_mafBlock.canAppendColumn(colIt) == true);
   _mafBlock.appendColumn(colIt);
   size_t numBlocks = 0;
@@ -96,7 +101,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
       }
 
       mafStream << _mafBlock << '\n';
-      _mafBlock.initBlock(colIt);
+      _mafBlock.initBlock(colIt, _ucscNames);
       assert(_mafBlock.canAppendColumn(colIt) == true);
     }
     _mafBlock.appendColumn(colIt);

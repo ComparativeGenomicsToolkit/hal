@@ -53,6 +53,11 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("noAncestors", 
                                "don't write ancestral sequences", 
                                false);
+  optionsParser->addOptionFlag("ucscNames",
+                               "use UCSC convention of Genome.Seqeunce "
+                               "for output names.  By default, only sequence "
+                               "names are used",
+                               false);
                            
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
@@ -73,6 +78,7 @@ int main(int argc, char** argv)
   hal_size_t maxRefGap;
   bool noDupes;
   bool noAncestors;
+  bool ucscNames;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -88,6 +94,7 @@ int main(int argc, char** argv)
     maxRefGap = optionsParser->getOption<hal_size_t>("maxRefGap");
     noDupes = optionsParser->getFlag("noDupes");
     noAncestors = optionsParser->getFlag("noAncestors");
+    ucscNames = optionsParser->getFlag("ucscNames");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -185,6 +192,7 @@ int main(int argc, char** argv)
     mafExport.setMaxRefGap(maxRefGap);
     mafExport.setNoDupes(noDupes);
     mafExport.setNoAncestors(noAncestors);
+    mafExport.setUcscNames(ucscNames);
 
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")

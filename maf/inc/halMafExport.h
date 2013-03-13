@@ -33,6 +33,7 @@ public:
    void setMaxRefGap(hal_size_t maxRefGap);
    void setNoDupes(bool noDupes);
    void setNoAncestors(bool noAncestors);
+   void setUcscNames(bool ucscNames);
 
 
 protected:
@@ -47,6 +48,7 @@ protected:
    hal_size_t _maxRefGap;
    bool _noDupes;
    bool _noAncestors;
+   bool _ucscNames;
 };
 
 }
