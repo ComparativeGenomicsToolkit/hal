@@ -11,5 +11,5 @@ var searchData=
   ['toprev',['toPrev',['../classhal_1_1_sequence_iterator.html#adef58c9aaf7237f401b0a00d5da9415e',1,'hal::SequenceIterator']]],
   ['toreverse',['toReverse',['../classhal_1_1_d_n_a_iterator.html#a5ded369e5253bcf29592d3ab9356e884',1,'hal::DNAIterator::toReverse()'],['../classhal_1_1_segment_iterator.html#a27181042bb713d2433828577700cf680',1,'hal::SegmentIterator::toReverse()']]],
   ['toright',['toRight',['../classhal_1_1_column_iterator.html#afc2671e626c49425ca6bf1141bb9742d',1,'hal::ColumnIterator::toRight()'],['../classhal_1_1_d_n_a_iterator.html#af3f6daaab5ec749bbcf4c409f5acf294',1,'hal::DNAIterator::toRight()'],['../classhal_1_1_segment_iterator.html#a3cc3a8ad71b6004727c6494f09228001',1,'hal::SegmentIterator::toRight()']]],
-  ['tosite',['toSite',['../classhal_1_1_segment_iterator.html#a2c3a9fc175fee37494918255cd6d2af7',1,'hal::SegmentIterator']]]
+  ['tosite',['toSite',['../classhal_1_1_column_iterator.html#ab4a6975d275690d664c87c5fca34bf4d',1,'hal::ColumnIterator::toSite()'],['../classhal_1_1_segment_iterator.html#a2c3a9fc175fee37494918255cd6d2af7',1,'hal::SegmentIterator::toSite()']]]
 ];

@@ -30,6 +30,7 @@ var searchData=
   ['getendoffset',['getEndOffset',['../classhal_1_1_segment_iterator.html#aada0eee37263569a41604dff9f08ea5d',1,'hal::SegmentIterator']]],
   ['getendposition',['getEndPosition',['../classhal_1_1_segment.html#add66d5e2d7fbb0257522542a13a2be5e',1,'hal::Segment']]],
   ['getflag',['getFlag',['../classhal_1_1_c_l_parser.html#a8756953e42ba954996d6a960c1ce790d',1,'hal::CLParser']]],
+  ['getfullname',['getFullName',['../classhal_1_1_sequence.html#a8fb7b8f7436231d7034e2079ab340d4c',1,'hal::Sequence']]],
   ['getgaplengththreshold',['getGapLengthThreshold',['../classhal_1_1_rearrangement.html#a729ae254ed3f4e37f8ebb879beb0e74f',1,'hal::Rearrangement']]],
   ['getgappedbottomsegmentiterator',['getGappedBottomSegmentIterator',['../classhal_1_1_segmented_sequence.html#af644d7297fce2f6ba2feb9302a762ba6',1,'hal::SegmentedSequence']]],
   ['getgappedtopsegmentiterator',['getGappedTopSegmentIterator',['../classhal_1_1_segmented_sequence.html#a0083de72c5b955b6a88989a50e25ca79',1,'hal::SegmentedSequence']]],

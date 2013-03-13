@@ -46,7 +46,7 @@ From the parent directory of where you want HAL installed:
      `wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.9.tar.gz`  
 	  `tar xzf  hdf5-1.8.9.tar.gz`  
      `cd hdf5-1.8.9`  
-     `./confiugre --enable-cxx --prefix DIR/hdf5`  
+     `./configure --enable-cxx --prefix DIR/hdf5`  
      `make && make install` 
     
      Before building HAL, update the following environment variables:  

@@ -12,9 +12,6 @@
 #include <deque>
 #include "halRandomData.h"
 
-extern "C" {
-#include "commonC.h"
-}
 
 using namespace std;
 using namespace hal;

@@ -47,6 +47,9 @@ struct MafBlockEntry
    short _lastUsed;
    hal_index_t _srcLength;
    MafBlockString* _sequence;
+   // add this because _sequence is no longer assumed to 
+   // be unique
+   const Genome* _genome;
 };
 
 class MafBlock
@@ -57,7 +60,7 @@ public:
    MafBlock(hal_index_t maxLength = defaultMaxLength);
    ~MafBlock();
 
-   void initBlock(ColumnIteratorConstPtr col);
+   void initBlock(ColumnIteratorConstPtr col, bool fullNames);
    void appendColumn(ColumnIteratorConstPtr col);
    bool canAppendColumn(hal::ColumnIteratorConstPtr col);
    
@@ -68,6 +71,7 @@ protected:
                   DNAIteratorConstPtr dna, bool clearSequence = true);
    void updateEntry(MafBlockEntry* entry, const Sequence* sequence,
                     DNAIteratorConstPtr dna);
+   std::string getName(const Sequence* sequence) const;
 
    typedef std::multimap<const Sequence*, MafBlockEntry*, 
                          ColumnIterator::SequenceLess> Entries;
@@ -76,6 +80,7 @@ protected:
    std::vector<MafBlockString*> _stringBuffers;
    hal_index_t _maxLength;
    hal_index_t _refIndex;
+   bool _fullNames; 
 
    typedef hal::ColumnIterator::ColumnMap ColumnMap;
    typedef hal::ColumnIterator::DNASet DNASet;
@@ -134,7 +139,7 @@ inline char* MafBlockString::str()
 }
 
 inline MafBlockEntry::MafBlockEntry(std::vector<MafBlockString*>& buffers) : 
-  _buffers(buffers), _lastUsed(0) 
+  _buffers(buffers), _lastUsed(0), _genome(NULL)
 {
   if (_buffers.empty() == false) 
   {
@@ -160,6 +165,10 @@ inline MafBlockEntry::~MafBlockEntry()
   }
 }
 
+inline std::string MafBlock::getName(const Sequence* sequence) const
+{
+  return _fullNames ? sequence->getFullName() : sequence->getName();
+}
 
 }
 
