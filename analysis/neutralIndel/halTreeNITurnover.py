@@ -43,6 +43,10 @@ def getHalTreeTurnover(halPath, args, rootName=None):
                                      args.conservedBedName % root)
             checkFile(pconsFile)
 
+            outMappedAlignedBed = os.path.join(args.workDir,
+                                               child + "_pa.bed")
+            outParentSlicedBed = os.path.join(args.workDir,
+                                              child + "_pslice.bed")
             outMappedGenomeBed = os.path.join(args.workDir,
                                               child + "_pm.bed")
             outConservationBed = os.path.join(args.workDir,
@@ -54,6 +58,7 @@ def getHalTreeTurnover(halPath, args, rootName=None):
             (conLen, gainLen,
              lossLen, unconLen) = compareConservationOverBranch(
                 halPath, child, consFile, pconsFile,
+                outMappedAlignedBed, outParentSlicedBed,
                 outMappedGenomeBed, outConservationBed, outAlignedBed,
                 outGainBed, outLossBed)
 

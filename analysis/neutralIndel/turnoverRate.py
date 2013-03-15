@@ -111,31 +111,40 @@ def isBedEmpty(bedPath):
 # its parent, do a basic set breakdown to find the intersection and differences
 # which correspond respectively to conservation, and gain/loss.
 def compareConservationOverBranch(halPath, genomeName, genomeBed, parentBed,
+                                  outMappedAlignedBed, outParentSlicedBed,
                                   outMappedGenomeBed, outConservationBed,
                                   outAlignedBed,
                                   outGainBed, outLossBed):
     if isBedEmpty(genomeBed):
         return (0, 0, 0, 0)
-    
+
+    # compute aligned regions                
+    getAlignedBed(halPath, genomeName, outAlignedBed)
+
+    # lift aligned region
+    # (note that this step can be removed if getAlignedBed were changed
+    #  to apply directly to the pareent)
+    getLiftUpBedFile(halPath, genomeName, outAlignedBed, outMappedAlignedBed)
+
+    # slice parent by aligned region
+    getIntersectBed(outMappedAlignedBed, parentBed, outParentSlicedBed)
+
     #1) map genome to parent's coordinates
     getLiftUpBedFile(halPath, genomeName, genomeBed, outMappedGenomeBed)
-    
+
     #2) compute intersection
-    getIntersectBed(parentBed, outMappedGenomeBed, outConservationBed)
+    getIntersectBed(outParentSlicedBed, outMappedGenomeBed, outConservationBed)
 
     #3) compute gain
-    getSubtractBed(outMappedGenomeBed, parentBed, outGainBed)
+    getSubtractBed(outMappedGenomeBed, outParentSlicedBed, outGainBed)
     
     #4) compute loss
-    getSubtractBed(parentBed, outMappedGenomeBed, outLossBed)
-
-    #5) compute aligned regions                
-    getAlignedBed(halPath, genomeName, outAlignedBed)
+    getSubtractBed(outParentSlicedBed, outMappedGenomeBed, outLossBed)
     
     conLen = getBedLength(outConservationBed)
     gainLen = getBedLength(outGainBed)
     lossLen = getBedLength(outLossBed)
-    unconLen = getBedLength(outAlignedBed) - conLen - gainLen - lossLen
+    unconLen = getBedLength(outMappedAlignedBed) - conLen - gainLen - lossLen
 
     return (conLen, gainLen, lossLen, unconLen)
                                                     
@@ -180,6 +189,8 @@ def main(argv=None):
         parentBed = os.path.join(workDir, getParentGenomeName(args.halPath,
                                                               args.genome) +
                                  "_cons.bed")
+    outMappedAlignedBed = os.path.join(workDir, args.genome + "_pa.bed")
+    outParentSlicedBed = os.path.join(workDir, args.genome + "_pslice.bed")
     outMappedGenomeBed = os.path.join(workDir, args.genome + "_pm.bed")
     outConservationBed = os.path.join(workDir, args.genome + "_int.bed")
     outAlignedBed = os.path.join(workDir, args.genome + "_al.bed")
@@ -188,6 +199,7 @@ def main(argv=None):
 
     (conLen, gainLen, lossLen, unconLen) = compareConservationOverBranch(
         args.halPath, args.genome, genomeBed, parentBed,
+        outMappedAlignedBed, outParentSlicedBed,
         outMappedGenomeBed, outConservationBed, outAlignedBed,
         outGainBed, outLossBed)
 
