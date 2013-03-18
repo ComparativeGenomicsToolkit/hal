@@ -45,6 +45,9 @@ struct MutationsStats
 
 std::ostream& operator<<(std::ostream& os, const MutationsStats& stats);
 
+MutationsStats& operator+=(MutationsStats& ms, const MutationsStats& other);
+MutationsStats& operator/=(MutationsStats& ms, hal_size_t N);
+
 }
 
 #endif
