@@ -35,9 +35,6 @@ struct block
  * @param calling thread ID. No two thread ID's will get a reference
  * to the same alignment instance.  If not using threads just use 0.
  * @return new handle or -1 of open failed.
- *
- * WARNING: NOT THREAD SAFE!!! CLIENT MUST USE LOCKS TO ENSURE THAT
- * THAT THIS METHOD IS NOT CALLED CONCURRENTLY BY DIFFERENT THREADS
 */
 int halOpen(char *halFileName, char* qSpeciesName, int threadID);
 
@@ -46,9 +43,6 @@ int halOpen(char *halFileName, char* qSpeciesName, int threadID);
  * @param calling thread ID. No two thread ID's will get a reference
  * to the same alignment instance.  If not using threads just use 0.
  * @return 0: success -1: failure
- *
- * WARNING: NOT THREAD SAFE!!! CLIENT MUST USE LOCKS TO ENSURE THAT
- * THAT THIS METHOD IS NOT CALLED CONCURRENTLY BY DIFFERENT THREADS
  */
   int halClose(int halHandle, int threadID);
 
