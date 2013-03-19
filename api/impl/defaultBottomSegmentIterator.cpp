@@ -461,7 +461,6 @@ bool DefaultBottomSegmentIterator::getReversed() const
 //////////////////////////////////////////////////////////////////////////////
 void DefaultBottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
 {
-  assert (inRange() == true);
   _bottomSegment->setArrayIndex(ts->getGenome()->getParent(),
                                 ts->getParentIndex());
   _startOffset = ts->getStartOffset();
@@ -471,13 +470,12 @@ void DefaultBottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
   {
     toReverse();
   }
+  assert (inRange() == true);
 }
 
 void 
 DefaultBottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
 {
-  assert (inRange() == true);
-
   const Genome* genome = ts->getGenome();
   hal_index_t index = ts->getBottomParseIndex();
   
@@ -511,6 +509,7 @@ DefaultBottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
     _endOffset = max((hal_index_t)0, botEnd - topEnd);  
   }
   assert (_startOffset + _endOffset <= _bottomSegment->getLength());
+  assert (inRange() == true);
 }
 
 BottomSegmentIteratorPtr DefaultBottomSegmentIterator::copy()
