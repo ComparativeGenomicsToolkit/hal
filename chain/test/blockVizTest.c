@@ -77,11 +77,11 @@ int main(int argc, char** argv)
   }
 #endif
 
-  int handle = halOpen(path, qSpecies);
+  int handle = halOpen(path, qSpecies, 0);
   if (handle >= 0)
   {
     struct block* head = halGetBlocksInTargetRange(handle, tChrom, tStart,
-                                                   tEnd, doSeq);
+                                                   tEnd, doSeq, 0);
     struct block* cur = head;
     while (cur)
     {
@@ -89,7 +89,7 @@ int main(int argc, char** argv)
       cur = cur->next;
     }
     halFreeBlocks(head);
-    halClose(handle);
+    halClose(handle, 0);
     return 0;
   }
   
