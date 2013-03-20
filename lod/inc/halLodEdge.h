@@ -36,11 +36,11 @@ class LodEdge
 public:
    
    LodEdge();
-   LodEdge(const Sequnce* sequence, size_t length, LodNode* node1,
+   LodEdge(const Sequence* sequence, size_t length, LodNode* node1,
            bool reversed1, LodNode* node2, bool reversed2);
    ~LodEdge();
    
-   const Sequence* getSeqeunce() const;
+   const Sequence* getSequence() const;
    hal_size_t getLength() const;
 
    /** Given one node of the edge, get the other node. 
@@ -60,13 +60,13 @@ public:
 
 protected:
 
-   const Sequencey* _sequence;
+   const Sequence* _sequence;
    hal_size_t _length;
 
-   bool _reversed1;
    LodNode* _node1;
-   bool _reversed2;
-   LodNode* _node2;   
+   bool _reversed1;
+   LodNode* _node2;
+   bool _reversed2;   
 };
 
 
@@ -79,12 +79,6 @@ inline const Sequence* LodEdge::getSequence() const
 inline hal_size_t LodEdge::getLength() const
 {
   return _length;
-}
-
-inline bool LodEdge::getOtherNode(const LodNode* node) const
-{
-  assert(node == _node1 || node == _node2);
-  return node == _node
 }
 
 }

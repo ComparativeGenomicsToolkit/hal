@@ -48,7 +48,7 @@ void LodNode::addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt,
   assert(_endPosition < tgt->_startPosition);
   hal_index_t length = tgt->_startPosition - _endPosition;
   assert(length >= 0);
-  LodEdge* edge = new LodEdge(sequence, this, srcReversed, tgt,
+  LodEdge* edge = new LodEdge(sequence, length, this, srcReversed, tgt,
                               tgtReversed);
   _edges.push_back(edge);
 }
@@ -70,15 +70,15 @@ LodNode::EdgeIterator LodNode::getMinEdge(bool reversed)
       minEdge = i;
     }
   }
-  return minEdge
+  return minEdge;
 }
 
-ostream& operator<<(ostream& os, const LodNode& node)
+ostream& hal::operator<<(ostream& os, const LodNode& node)
 {
   os << "node " << &node << ": ";
   if (node.getSequence() != NULL)
   {
-    os << node.getSeqeunce()->getFullName();
+    os << node.getSequence()->getFullName();
   }
   else
   {
@@ -88,7 +88,8 @@ ostream& operator<<(ostream& os, const LodNode& node)
   os << ")\n";
 
   hal_size_t ecount = 0;
-  for (EdgeIterator i = node._edges.begin(); i != node._edges.end(); ++i)
+  for (LodNode::EdgeList::const_iterator i = node._edges.begin(); 
+       i != node._edges.end(); ++i)
   {
     os << ecount++ << ")" << *i << "; ";
   }

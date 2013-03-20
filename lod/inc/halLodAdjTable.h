@@ -16,6 +16,9 @@
 
 namespace hal {
 
+class LodEdge;
+class LodNode;
+
 /** This is a temporary structure used to scan in all the adjacencies that
  * are used to construct the LodGraph.  The final adjacencies are then
  * written back into the nodes.  This structure could be preserved throughout
@@ -61,7 +64,8 @@ protected:
    /** An instance of a node positioned along a sequence */
    struct NodeRef 
    {
-      NodeRef(hal_index_t pos = 0, reversed = false, LodNode* _node = NULL);
+      NodeRef(hal_index_t pos = 0, bool reversed = false, 
+              LodNode* _node = NULL);
       hal_index_t _pos;
       bool _reversed;
       LodNode* _node;
@@ -81,12 +85,13 @@ protected:
    Table _table;
 };
 
-inline NodeRef::NodeRef(hal_index_t pos, bool reversed, LodNode* node) : 
+inline LodAdjTable::NodeRef::NodeRef(hal_index_t pos, bool reversed, 
+                                     LodNode* node) : 
   _pos(pos), _reversed(reversed), _node(node)
 {
 }
 
-inline bool NodeRef::operator<(const NodeRef& other) const
+inline bool LodAdjTable::NodeRef::operator<(const NodeRef& other) const
 {
   return _pos < other._pos;
 }

@@ -24,7 +24,7 @@ class LodNode;
 /** Compare Lod Node pointers based on their startPositions */
 struct LodNodePLess
 {
-   bool operator(const LodNode* n1, const LodNode* n2) const;
+   bool operator()(const LodNode* n1, const LodNode* n2) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const LodNode& node);
@@ -83,7 +83,7 @@ protected:
 
    const Sequence* _sequence;
    hal_index_t _startPosition;
-   hal_index_t _endPostition;
+   hal_index_t _endPosition;
    EdgeList _edges;
 
 private:
@@ -91,7 +91,7 @@ private:
    const LodNode& operator=(const LodNode&) const;
 };
 
-inline bool LodNodePLess::operator(const LodNode* n1, const LodNode* n2) const
+inline bool LodNodePLess::operator()(const LodNode* n1, const LodNode* n2) const
 {
   return n1->_startPosition < n2->_startPosition;
 }

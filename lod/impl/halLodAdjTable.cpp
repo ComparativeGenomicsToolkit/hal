@@ -33,16 +33,18 @@ void LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
     if (dnaSet && dnaSet->size() > 0)
     {
       const Sequence* sequence = colMapIt->first;
-      pair<Iterator, bool> res = _table.insert(sequence);
+      pair<Iterator, bool> res = _table.insert(
+        pair<const Sequence*, RefSet*>(sequence, NULL));
       if (res.second == true)
       {
-        res.first->second = new refSset();
+        res.first->second = new RefSet();
       }
       RefSet* refSet = res.first->second;
       ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
       for (; dnaIt != dnaSet->end(); ++dnaIt)
       {
-        NodeRef nodeRef(dnaIt->getArrayIndex(), dnaIt->getReversed(), node);
+        NodeRef nodeRef((*dnaIt)->getArrayIndex(), (*dnaIt)->getReversed(), 
+                        node);
         insertRef(nodeRef, refSet);
       }      
     }
@@ -51,31 +53,32 @@ void LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
 
 void LodAdjTable::insertRef(const NodeRef& nodeRef, RefSet* refSet)
 {
-  pair<RefIterator, bool> res = refSet->insert(nodeRef);
-  if (res.first == true)
+  RefIterator found = refSet->find(nodeRef);
+  RefIterator res = refSet->insert(found, nodeRef);
+  if (found != refSet->end())
   {
     bool overlaps = false;
-    RefIterator i = res.first;
+    RefIterator i = res;
     if (i != refSet->begin())
     {
       --i;
-      if (i->_pos + i->_node->getLength() >= nodeRef._pos)
+      if (i->_pos + (hal_index_t)i->_node->getLength() >= nodeRef._pos)
       {
         overlaps = true;
       }
     }
-    i = res.first;
+    i = res;
     if (!overlaps && i != refSet->end())
     {
       ++i;
-      if (i->_pos - i->_node->getLength() <= nodeRef._pos)
+      if (i->_pos - (hal_index_t)i->_node->getLength() <= nodeRef._pos)
       {
         overlaps = true;
       }
     }
     if (overlaps == true)
     {
-      refSet->erase(res.first);
+      refSet->erase(res);
     }
   }
 }

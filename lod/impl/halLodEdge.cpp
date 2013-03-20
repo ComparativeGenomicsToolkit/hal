@@ -17,9 +17,9 @@ LodEdge::LodEdge() : _sequence(NULL), _length(0), _node1(NULL),
 
 }
 
-LodEdge::LodEdge(const Sequnce* sequence, size_t length, LodNode* node1,
+LodEdge::LodEdge(const Sequence* sequence, size_t length, LodNode* node1,
                  bool reversed1, LodNode* node2, bool reversed2) : 
-  _sequence(sequence), _length(length), _node1(node1), _reversed1(reeversed1),
+  _sequence(sequence), _length(length), _node1(node1), _reversed1(reversed1),
   _node2(node2), _reversed2(reversed2)
 {
   if (_node2 < _node1)
@@ -79,12 +79,12 @@ void LodEdge::nullifyNode(const LodNode* node)
   }
 }
 
-ostream& operator<<(ostream& os, const LodEdge& edge)
+ostream& hal::operator<<(ostream& os, const LodEdge& edge)
 {
   os << "edge " << &edge << ":";
   if (edge.getSequence() != NULL)
   {
-    os << edge.getSeqeunce()->getFullName();
+    os << edge.getSequence()->getFullName();
   }
   else
   {
