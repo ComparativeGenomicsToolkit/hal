@@ -45,40 +45,12 @@ void LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
       {
         NodeRef nodeRef((*dnaIt)->getArrayIndex(), (*dnaIt)->getReversed(), 
                         node);
-        insertRef(nodeRef, refSet);
-      }      
-    }
-  }
-}
 
-void LodAdjTable::insertRef(const NodeRef& nodeRef, RefSet* refSet)
-{
-  RefIterator found = refSet->find(nodeRef);
-  RefIterator res = refSet->insert(found, nodeRef);
-  if (found != refSet->end())
-  {
-    bool overlaps = false;
-    RefIterator i = res;
-    if (i != refSet->begin())
-    {
-      --i;
-      if (i->_pos + (hal_index_t)i->_node->getLength() >= nodeRef._pos)
-      {
-        overlaps = true;
-      }
-    }
-    i = res;
-    if (!overlaps && i != refSet->end())
-    {
-      ++i;
-      if (i->_pos - (hal_index_t)i->_node->getLength() <= nodeRef._pos)
-      {
-        overlaps = true;
-      }
-    }
-    if (overlaps == true)
-    {
-      refSet->erase(res);
+        // Note: We assume nodes are length 1.  If they have been 
+        // stretched, we probably need some sort of consistency check
+        // to enforce that homologous nodes are the same size. 
+        refSet->insert(nodeRef);
+      }      
     }
   }
 }
@@ -89,13 +61,22 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
   {
     const Sequence* sequence = i->first;
     RefSet* refSet = i->second;
-    for (RefIterator j = refSet->begin(); j != refSet->end(); ++j)
+    RefIterator cur = refSet->begin();
+    RefIterator next = cur;
+    for (; cur != refSet->end(); ++cur)
     {
-      RefIterator next = j;
-      ++next;
+      for (; next->_pos == cur->_pos && next != refSet->end(); ++next);
       if (next != refSet->end())
       {
-        j->_node->addEdge(sequence, j->_reversed, next->_node, next->_reversed);
+        assert(next->_pos > cur->_pos);
+        hal_size_t distance = next->_pos - cur->_pos;
+        assert(distance > 0);
+
+        // The length we pass is the number of spaces between the 
+        // nodes.  The disatance we compute here is the difference
+        // in their coordinates. 
+        cur->_node->addEdge(sequence, cur->_reversed, next->_node, 
+                            next->_reversed, distance - 1);
       }
     }
   }

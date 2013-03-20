@@ -69,7 +69,7 @@ public:
     * Implied constraint: src is left of target (on genome forward strand)
     */
    void addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt, 
-                bool tgtReversed);
+                bool tgtReversed, hal_size_t length);
 
    /** Extend the node to by length bases.  If length is 0
     * then we extend as far as possible.  Reversed flag describes
@@ -94,6 +94,11 @@ private:
 inline bool LodNodePLess::operator()(const LodNode* n1, const LodNode* n2) const
 {
   return n1->_startPosition < n2->_startPosition;
+}
+
+inline const Sequence* LodNode::getSequence() const
+{
+  return _sequence;
 }
 
 inline hal_index_t LodNode::getStartPosition() const 

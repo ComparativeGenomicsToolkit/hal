@@ -79,8 +79,6 @@ protected:
 
 protected:
 
-   void insertRef(const NodeRef& nodeRef, RefSet* refSet);
-
    /** the adjacency table */
    Table _table;
 };
