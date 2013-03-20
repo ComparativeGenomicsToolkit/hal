@@ -19,6 +19,7 @@ namespace hal {
 class LodNode;
 class LodEdge;
 
+std::ostream& operator<<(std::ostream& os, const LodEdge& edge);
 
 /** Edge class for the Level of Detail Graph.  Edges represent
  * gaps between the nodes along a particular sequence.  The goal
@@ -30,13 +31,15 @@ class LodEdge;
  */
 class LodEdge
 {
+   friend std::ostream& operator<<(std::ostream& os, const LodEdge& edge);
+
 public:
    
    LodEdge();
    LodEdge(const Sequnce* sequence, size_t length, LodNode* node1,
            bool reversed1, LodNode* node2, bool reversed2);
    ~LodEdge();
-
+   
    const Sequence* getSeqeunce() const;
    hal_size_t getLength() const;
 
@@ -48,6 +51,12 @@ public:
     */
    LodNode* getOtherNode(const LodNode* node, bool* revThis = NULL,
                          bool* revOther = NULL);
+
+   /** Replace input node pointer with NULL in the edge.  This is used
+    * only as a hack to speed up the node destructor */
+   void nullifyNode(const LodNode* node);
+
+   
 
 protected:
 

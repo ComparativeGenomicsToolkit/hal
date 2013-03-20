@@ -66,6 +66,35 @@ LodNode* LodEdge::getOtherNode(const LodNode* node, bool* revThis,
   return NULL;
 }
 
+void LodEdge::nullifyNode(const LodNode* node)
+{
+  assert(node == _node1 || node == _node2);
+  if (node == _node1)
+  {
+    _node1 = NULL;
+  }
+  else
+  {
+    _node2 = NULL;
+  }
+}
+
+ostream& operator<<(ostream& os, const LodEdge& edge)
+{
+  os << "edge " << &edge << ":";
+  if (edge.getSequence() != NULL)
+  {
+    os << edge.getSeqeunce()->getFullName();
+  }
+  else
+  {
+    os << "NULL";
+  }
+  os << " len=" << edge.getLength() << " (" << edge._node1 << ", "
+     << edge._reversed1 << ", " << edge._node2 << ", " << edge._reversed2
+     << ")";
+  return os;
+}
 
 /*LodEdgePLess::operator(const LodEdge* e1, const LodEdge* e2) const
 {
