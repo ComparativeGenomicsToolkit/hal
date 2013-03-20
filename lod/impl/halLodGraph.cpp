@@ -67,6 +67,7 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
   }
 
   _adjTable.writeAdjacenciesIntoNodes();
+  _adjTable.clear();
 }
 
 

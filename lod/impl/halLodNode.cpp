@@ -31,7 +31,8 @@ LodNode::~LodNode()
   for (EdgeIterator i = _edges.begin(); i != _edges.end(); ++i)
   {    
     LodEdge* edge = *i;
-    if (edge->getOtherNode(this) == NULL)
+    LodNode* other = edge->getOtherNode(this);
+    if (other == NULL || other == this)
     {
       delete edge;
     }

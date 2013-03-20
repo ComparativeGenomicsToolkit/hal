@@ -63,20 +63,25 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
     RefSet* refSet = i->second;
     RefIterator cur = refSet->begin();
     RefIterator next = cur;
+    RefIterator last = next;
     for (; cur != refSet->end(); ++cur)
     {
+      // scan until we find a node with a bigger position
       for (; next->_pos == cur->_pos && next != refSet->end(); ++next);
-      if (next != refSet->end())
+   
+      // scan all nodes with this same position
+      for (last = next; last != refSet->end() && last->_pos == next->_pos;
+           ++last)
       {
-        assert(next->_pos > cur->_pos);
-        hal_size_t distance = next->_pos - cur->_pos;
+        assert(last->_pos > cur->_pos);
+        hal_size_t distance = last->_pos - cur->_pos;
         assert(distance > 0);
-
+        
         // The length we pass is the number of spaces between the 
         // nodes.  The disatance we compute here is the difference
         // in their coordinates. 
-        cur->_node->addEdge(sequence, cur->_reversed, next->_node, 
-                            next->_reversed, distance - 1);
+        cur->_node->addEdge(sequence, cur->_reversed, last->_node, 
+                            last->_reversed, distance - 1);
       }
     }
   }
@@ -88,4 +93,5 @@ void LodAdjTable::clear()
   {
     delete i->second;
   }
+  _table.clear();
 }

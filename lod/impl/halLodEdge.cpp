@@ -27,7 +27,6 @@ LodEdge::LodEdge(const Sequence* sequence, size_t length, LodNode* node1,
     swap(_node1, _node2);
     swap(_reversed1, _reversed2);
   }
-  assert(_node1 != _node2);
 }
 
 LodEdge::~LodEdge()
