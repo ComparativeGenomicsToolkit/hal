@@ -92,7 +92,7 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
       ++next;
       if (next != refSet->end())
       {
-        j->_node->addEdge(j->_reversed, next->_node, next->_reversed);
+        j->_node->addEdge(sequence, j->_reversed, next->_node, next->_reversed);
       }
     }
   }

@@ -58,10 +58,17 @@ public:
    hal_index_t getEndPosition() const;
    hal_size_t getLength() const;   
    
-   /** add a new edge between two nodes. specifically from the
-    * right side of src to the left side of target.   */
-   void addEdge(bool srcReversed, LodNode* tgt, bool tgtReversed);
+   /** Add a new edge between two nodes. Specifically from the
+    * right side of src to the left side of target.   
+    *
+    * Implied constraint: src is left of target (on genome forward strand)
+    */
+   void addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt, 
+                bool tgtReversed);
+
 protected:
+   /** Remove an edge from both nodes it's incident on.  Then delete it */
+   void deleteEdge(EdgeIterator& edgeIt, bool zl);
 
    const Sequence* _sequence;
    hal_index_t _startPosition;

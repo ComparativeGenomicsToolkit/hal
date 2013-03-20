@@ -28,6 +28,58 @@ LodNode::LodNode(const Sequence* sequence, hal_index_t start,
 
 LodNode::~LodNode()
 {
-  
+  for (EdgeIterator i = _edgeSet.begin(); i != _edgeSet.end(); ++i)
+  {
+    deleteEdge(i, false);
+  }
+  for (EdgeIterator i = _edgeSetZL.begin(); i != _edgeSetZL.end(); ++i)
+  {
+    deleteEdge(i, true);
+  }
 }
 
+void LodNode::deleteEdge(EdgeIterator& edgeIt, bool zl)
+{
+  LodEdge* edge = *edgeIt;
+  LodNode* other = edge->getOtherNode(this);
+  EdgeIterator i = other->_edgeSet.find(edge);
+  if (i != other->_edgeSet.end())
+  {
+    other->_edgeSet.erase(i);
+    assert(other->_edgeSetZL.find(edge) == other->_edgeSetZL.end());
+  }
+  else
+  {
+    other->_edgeSetZL.erase(i);
+    assert(other->_edgeSet.find(edge) == other->_edgeSet.end());
+  }
+  EdgeSet& edgeSet = zl ? _edgeSetZL : _edgeSet;
+  edgeSet.erase(edgeIt);
+  delete edge;
+}
+
+void addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt,
+             bool tgtReversed)
+{
+  assert(_endPosition < tgt->_startPosition);
+  hal_index_t length = tgt->_startPosition - _endPosition;
+  assert(length >= 0);
+  LodEdge* edge = new LodEdge(sequence, this, srcReversed, tgt,
+                              tgtReversed);
+  EdgeSet* srcSet;
+  EdgeSet* tgtSet;
+  if (length == 0)
+  {
+    srcSet = &_edgeSetZL;
+    tgtSet = &tgt->_edgeSetZL;
+  }
+  else
+  {
+    srcSet = &_edgeSet;
+    tgtSet = &tgt->_edgeSet;
+  }
+  assert(srcSet->find(edge) == srcSet->end() &&
+         tgtSet->find(edge) == tgtSet->end());
+  srcSet->insert(edge);
+  tgtSet->insert(edge);
+}

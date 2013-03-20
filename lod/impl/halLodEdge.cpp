@@ -35,6 +35,38 @@ LodEdge::~LodEdge()
   
 }
 
+LodNode* LodEdge::getOtherNode(const LodNode* node, bool* revThis,
+                               bool* revOther)
+{
+  assert(node == _node1 || node == _node2);
+  if (node == _node1)
+  {
+    if (revThis != NULL)
+    {
+      *revThis = _reversed1;
+    }
+    if (revOther != NULL)
+    {
+      *revOther = _reversed2;
+    }
+    return _node2;
+  }
+  else if (node == _node2)
+  {
+    if (revThis != NULL)
+    {
+      *revThis = _reversed2;
+    }
+    if (revOther != NULL)
+    {
+      *revOther = _reversed1;
+    }
+    return _node1;
+  }
+  return NULL;
+}
+
+
 /*LodEdgePLess::operator(const LodEdge* e1, const LodEdge* e2) const
 {
   assert(e1 && e2);

@@ -40,9 +40,14 @@ public:
    const Sequence* getSeqeunce() const;
    hal_size_t getLength() const;
 
-   /** Given one node of the edge, get the other node.  Returns true
-    * if the other node connects to head, otherwise false */
-   bool getOtherNode(const LodNode* node) const;
+   /** Given one node of the edge, get the other node. 
+    * @param node The input node (must be in the edge)
+    * @param revThis If not null, then orientation of this is stored here
+    * @param revOther If not null, then orientation of other stored here
+    * @return the other node
+    */
+   LodNode* getOtherNode(const LodNode* node, bool* revThis = NULL,
+                         bool* revOther = NULL);
 
 protected:
 
