@@ -47,7 +47,7 @@ void LodNode::addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt,
                       bool tgtReversed, hal_size_t length)
 {
   assert(length >= 0);
-  LodEdge* edge = new LodEdge(sequence, length, this, srcReversed, tgt,
+  LodEdge* edge = new LodEdge(length, this, srcReversed, tgt,
                               tgtReversed);
   _edges.insert(edge);
   assert(tgt != this);

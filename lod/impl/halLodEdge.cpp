@@ -11,15 +11,15 @@
 using namespace std;
 using namespace hal;
 
-LodEdge::LodEdge() : _sequence(NULL), _length(0), _node1(NULL),
+LodEdge::LodEdge() : _length(0), _node1(NULL),
                      _reversed1(false), _node2(NULL), _reversed2(false)
 {
 
 }
 
-LodEdge::LodEdge(const Sequence* sequence, size_t length, LodNode* node1,
+LodEdge::LodEdge(size_t length, LodNode* node1,
                  bool reversed1, LodNode* node2, bool reversed2) : 
-  _sequence(sequence), _length(length), _node1(node1), _reversed1(reversed1),
+  _length(length), _node1(node1), _reversed1(reversed1),
   _node2(node2), _reversed2(reversed2)
 {
   if (_node2 < _node1)
@@ -81,14 +81,6 @@ void LodEdge::nullifyNode(const LodNode* node)
 ostream& hal::operator<<(ostream& os, const LodEdge& edge)
 {
   os << "edge " << &edge << ":";
-  if (edge.getSequence() != NULL)
-  {
-    os << edge.getSequence()->getFullName();
-  }
-  else
-  {
-    os << "NULL";
-  }
   os << " len=" << edge.getLength() << " (" << edge._node1 << ", "
      << edge._reversed1 << ", " << edge._node2 << ", " << edge._reversed2
      << ")";
