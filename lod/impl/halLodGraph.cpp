@@ -170,8 +170,14 @@ void LodGraph::printDimensions(ostream& os) const
       edgeCount += degree;
       maxDegree = max(degree, maxDegree);
       minDegree = min(degree, minDegree);
-    }
-    
+
+      assert(degree > 0);
+
+      if (degree == 18)
+      {
+        os << **ni << endl;
+      }
+    }    
     os << "edgeCount=" << edgeCount / 2 << " minDeg=" << minDegree << " "
        << "maxDeg=" << maxDegree << endl;
   }

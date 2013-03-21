@@ -77,12 +77,13 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
     const Sequence* sequence = i->first;
     RefSet* refSet = i->second;
     RefIterator cur = refSet->begin();
-    RefIterator next = cur;
-    RefIterator last = next;
+    RefIterator next;
+    RefIterator last;
     for (; cur != refSet->end(); ++cur)
     {
       // scan until we find a node with a bigger position
-      for (; next->_pos == cur->_pos && next != refSet->end(); ++next);
+      for (next = cur; next->_pos == cur->_pos && next != refSet->end();
+           ++next);
    
       // scan all nodes with this same position
       for (last = next; last != refSet->end() && last->_pos == next->_pos;
