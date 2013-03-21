@@ -50,7 +50,6 @@ void LodNode::addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt,
   LodEdge* edge = new LodEdge(length, this, srcReversed, tgt,
                               tgtReversed);
   _edges.insert(edge);
-  assert(tgt != this);
   tgt->_edges.insert(edge);
 }
 
