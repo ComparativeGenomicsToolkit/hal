@@ -74,7 +74,6 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
 {
   for (Iterator i = _table.begin(); i != _table.end(); ++i)
   {
-    const Sequence* sequence = i->first;
     RefSet* refSet = i->second;
     RefIterator cur = refSet->begin();
     RefIterator next;
@@ -82,7 +81,7 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
     for (; cur != refSet->end(); ++cur)
     {
       // scan until we find a node with a bigger position
-      for (next = cur; next->_pos == cur->_pos && next != refSet->end();
+      for (next = cur; next != refSet->end() && next->_pos == cur->_pos;
            ++next);
    
       // scan all nodes with this same position
@@ -96,9 +95,26 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
         // The length we pass is the number of spaces between the 
         // nodes.  The disatance we compute here is the difference
         // in their coordinates. 
-        cur->_node->addEdge(sequence, cur->_reversed, last->_node, 
-                            last->_reversed, distance - 1);
+        // last->_reversed is inverted because this node is to the right
+        // and we are connecting to its "left side".  
+        cur->_node->addEdge(cur->_reversed, last->_node, 
+                            !last->_reversed, distance - 1);
       }
+    }
+    
+    // put left caps (self loop on rev/rev with len 0)
+    cur = refSet->begin();
+    for (next = cur; next != refSet->end() && next->_pos == cur->_pos; ++next)
+    {
+      next->_node->addEdge(true, next->_node, true, 0);
+    }
+    
+    // put right caps (self loop on for/for with len 0)
+    RefRevIterator rcur = refSet->rbegin();
+    for (RefRevIterator rnext = rcur; rnext != refSet->rend() && 
+            rnext->_pos == rcur->_pos; ++rnext)
+    {
+      rnext->_node->addEdge(false, rnext->_node, false, 0);
     }
   }
 }

@@ -13,7 +13,7 @@
 using namespace std;
 using namespace hal;
 
-LodGraph::LodGraph()
+LodGraph::LodGraph() : _extendFraction(1.0)
 {
 
 }
@@ -69,6 +69,15 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
 
   _adjTable.writeAdjacenciesIntoNodes();
   _adjTable.clear();
+
+  optimizeByExtension();
+  optimizeByInsertion();
+  
+  for (GenomeNodesIterator gni = _genomeNodes.begin(); 
+       gni != _genomeNodes.end(); ++gni)
+  {
+    gni->second->sort();
+  }
 }
 
 
@@ -153,6 +162,39 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList)
   }
 }
 
+void LodGraph::optimizeByExtension()
+{
+  for (GenomeNodesIterator gni = _genomeNodes.begin(); 
+       gni != _genomeNodes.end(); ++gni)
+  {
+    const Genome* genome = gni->first;
+    NodeList* nodeList = gni->second;
+
+    for (NodeIterator i = nodeList->begin(); i != nodeList->end(); ++i)
+    {
+      LodNode* node = *i;
+      node->extend(_extendFraction);
+    }
+  }
+}
+
+void LodGraph::optimizeByInsertion()
+{
+  for (GenomeNodesIterator gni = _genomeNodes.begin(); 
+       gni != _genomeNodes.end(); ++gni)
+  {
+    const Genome* genome = gni->first;
+    NodeList* nodeList = gni->second;
+
+    for (NodeIterator i = nodeList->begin(); i != nodeList->end(); ++i)
+    {
+      LodNode* node = *i;
+      
+    }
+  }
+}
+
+
 void LodGraph::printDimensions(ostream& os) const
 {
   for (GenomeNodes::const_iterator gni = _genomeNodes.begin(); 
@@ -161,24 +203,37 @@ void LodGraph::printDimensions(ostream& os) const
     const Genome* genome = gni->first;    
     NodeList* nodeList = gni->second;
     os << genome->getName() << ": " << "nodeCount=" << nodeList->size() << " ";
+
     hal_size_t edgeCount = 0;
     hal_size_t maxDegree = 0;
     hal_size_t minDegree = numeric_limits<hal_size_t>::max();
+
+    hal_size_t totalEdgeLength = 0;
+    hal_size_t maxEdgeLength = 0;
+    hal_size_t minEdgeLength = numeric_limits<hal_size_t>::max();
+
+    hal_size_t fMin;
+    hal_size_t fMax;
+    hal_size_t fTot;
+    hal_size_t rMin;
+    hal_size_t rMax;
+    hal_size_t rTot;
+    
     for (NodeIterator ni = nodeList->begin(); ni != nodeList->end(); ++ni)
     {
       hal_size_t degree = (*ni)->getDegree();
       edgeCount += degree;
       maxDegree = max(degree, maxDegree);
       minDegree = min(degree, minDegree);
-
       assert(degree > 0);
 
-      if (degree == 18)
-      {
-        os << **ni << endl;
-      }
+      (*ni)->getEdgeLengthStats(fMin, fMax, fTot, rMin, rMax, rTot);
+      totalEdgeLength += fTot + rTot;
+      maxEdgeLength = max(maxEdgeLength, max(fMax, rMax));
+      minEdgeLength = min(minEdgeLength, min(fMin, rMin));
     }    
     os << "edgeCount=" << edgeCount / 2 << " minDeg=" << minDegree << " "
-       << "maxDeg=" << maxDegree << endl;
+       << "maxDeg=" << maxDegree << " totLen=" << totalEdgeLength << " "
+       << "minLen=" << minEdgeLength << " maxLen=" << maxEdgeLength << endl;
   }
 }

@@ -45,8 +45,19 @@ protected:
    typedef GenomeNodes::iterator GenomeNodesIterator;
 
    void erase();
+
+   /** Read a HAL genome into a nodeList, updating the adjTable as well */
    void scanGenome(const Genome* genome, NodeList* nodeList);
+
+   /** Add a single column iterator */
    void createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList);
+
+   /** First optimization pass: Maximally extend all nodes */
+   void optimizeByExtension();
+
+   /** Second optimization pass: Insert new nodes until all edges have 
+    * zero length */
+   void optimizeByInsertion();
 
 protected:
 
@@ -58,6 +69,9 @@ protected:
 
    // step size for interpolation
    hal_size_t _step;
+
+   // fraction of edge to greedily extend
+   double _extendFraction;
 
    // ordered list of nodes for each sequence
    GenomeNodes _genomeNodes;

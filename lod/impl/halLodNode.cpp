@@ -3,7 +3,7 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-
+#include <cmath>
 #include <cassert>
 #include "halLodNode.h"
 #include "halLodEdge.h"
@@ -43,7 +43,7 @@ LodNode::~LodNode()
   }
 }
 
-void LodNode::addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt,
+void LodNode::addEdge(bool srcReversed, LodNode* tgt,
                       bool tgtReversed, hal_size_t length)
 {
   assert(length >= 0);
@@ -53,24 +53,92 @@ void LodNode::addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt,
   tgt->_edges.insert(edge);
 }
 
-void LodNode::extend(bool reversed, hal_size_t length)
+void LodNode::extend(double extendFraction)
 {
+  hal_size_t fMin;
+  hal_size_t rMin; 
+  getMinLengths(fMin, rMin);
+  hal_size_t fLen = (hal_size_t)std::ceil((double)fMin * extendFraction);
+  hal_size_t rLen = (hal_size_t)std::ceil((double)rMin * extendFraction);
+
+  if (fLen > 0 || rLen > 0)
+  {
+    bool thisRev;
+    LodNode* other;
+    LodEdge* edge;
+    for (EdgeIterator i = _edges.begin(); i != _edges.end(); ++i)
+    {    
+      edge = *i;
+      other = edge->getOtherNode(this, &thisRev);
+      if (thisRev == true)
+      {
+        edge->_length -= rLen;
+      }
+      else
+      {
+        edge->_length -= fLen;
+      }
+    }
+    assert(_startPosition >= (hal_index_t)rLen);
+    _startPosition -= (hal_index_t)rLen;
+    
+    assert(_endPosition + fLen < 
+           _sequence->getStartPosition() + _sequence->getSequenceLength());
+    _endPosition += (hal_index_t)fLen;
+  }
 }
 
-LodNode::EdgeIterator LodNode::getMinEdge(bool reversed)
+void LodNode::getEdgeLengthStats(hal_size_t& fMin, hal_size_t& fMax, 
+                                 hal_size_t& fTot,
+                                 hal_size_t& rMin, hal_size_t& rMax,
+                                 hal_size_t& rTot) const
 {
-  EdgeIterator minEdge = _edges.begin();
-  EdgeIterator i = minEdge;
+  fMin = numeric_limits<hal_size_t>::max();
+  fMax = 0;
+  fTot = 0;
+  rMin = numeric_limits<hal_size_t>::max();
+  rMax = 0;
+  rTot = 0;  
   bool rev;
-  for (++i; i != _edges.end(); ++i)
+
+  for (EdgeIterator i = _edges.begin(); i != _edges.end(); ++i)
   {
+    hal_size_t length = (*i)->getLength();
     (*i)->getOtherNode(this, &rev, NULL);
-    if (rev == reversed && (*i)->getLength() < (*minEdge)->getLength())
+    if (rev == true)
     {
-      minEdge = i;
+      rMin = min(length, rMin);
+      rMax = max(length, rMax);
+      rTot += length;
+    }
+    else
+    {
+      fMin = min(length, fMin);
+      fMax = max(length, fMax);
+      fTot += length;
     }
   }
-  return minEdge;
+}
+
+void LodNode::getMinLengths(hal_size_t& fMin, hal_size_t& rMin) const
+{
+  fMin = numeric_limits<hal_size_t>::max();
+  rMin = numeric_limits<hal_size_t>::max();  
+  bool rev;
+
+  for (EdgeIterator i = _edges.begin(); i != _edges.end(); ++i)
+  {
+    hal_size_t length = (*i)->getLength();
+    (*i)->getOtherNode(this, &rev, NULL);
+    if (rev == true)
+    {
+      rMin = min(length, rMin);
+    }
+    else
+    {
+      fMin = min(length, fMin);
+    }
+  }
 }
 
 ostream& hal::operator<<(ostream& os, const LodNode& node)

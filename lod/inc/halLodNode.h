@@ -68,21 +68,27 @@ public:
     *
     * Implied constraint: src is left of target (on genome forward strand)
     */
-   void addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt, 
+   void addEdge(bool srcReversed, LodNode* tgt, 
                 bool tgtReversed, hal_size_t length);
 
-   /** Extend the node to by length bases.  If length is 0
-    * then we extend as far as possible.  Reversed flag describes
-    * which direction we extend (true = left, false = right).  */
-   void extend(bool reversed, hal_size_t length = 0);
+   /** Extend the node by extendFraction of the maximum possible 
+    * number of bases in both directions, starting with forward */
+   void extend(double extendFraction = 1.);
+   
+   /** Get edge length stats.  Most useful for debugging.  If just
+    * need min lengths then getMinLengths is better.*/
+   void getEdgeLengthStats(hal_size_t& fMin, hal_size_t& fMax, 
+                           hal_size_t& fTot,
+                           hal_size_t& rMin, hal_size_t& rMax,
+                           hal_size_t& rTot) const;
    
 protected:
 
+   /* Find the minimum edge lengths in both directions */
+   void getMinLengths(hal_size_t& rMin, hal_size_t& fMin) const;
+
    typedef std::set<LodEdge*, LodEdgePLess> EdgeList;
    typedef EdgeList::iterator EdgeIterator;
-
-   /** Get the smallest edge arising from the given side side */
-   EdgeIterator getMinEdge(bool reversed);
 
    const Sequence* _sequence;
    hal_index_t _startPosition;

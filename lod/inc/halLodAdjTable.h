@@ -79,6 +79,7 @@ protected:
    
    typedef std::multiset<NodeRef> RefSet;
    typedef RefSet::iterator RefIterator;
+   typedef RefSet::reverse_iterator RefRevIterator;
    typedef std::map<const Sequence*, RefSet*> Table;
    typedef Table::iterator Iterator;
 

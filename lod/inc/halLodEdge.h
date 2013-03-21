@@ -38,6 +38,7 @@ class LodEdge
 {
    friend std::ostream& operator<<(std::ostream& os, const LodEdge& edge);
    friend struct LodEdgePLess;
+   friend class LodNode;
 public:
    
    LodEdge();
@@ -59,8 +60,6 @@ public:
    /** Replace input node pointer with NULL in the edge.  This is used
     * only as a hack to speed up the node destructor */
    void nullifyNode(const LodNode* node);
-
-   
 
 protected:
 
