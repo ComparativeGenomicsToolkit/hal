@@ -95,7 +95,7 @@ ostream& hal::operator<<(ostream& os, const LodEdge& edge)
   return os;
 }
 
-/*LodEdgePLess::operator(const LodEdge* e1, const LodEdge* e2) const
+bool LodEdgePLess::operator()(const LodEdge* e1, const LodEdge* e2) const
 {
   assert(e1 && e2);
   
@@ -122,4 +122,4 @@ ostream& hal::operator<<(ostream& os, const LodEdge& edge)
     }
   }
   return false;
-  }*/
+}

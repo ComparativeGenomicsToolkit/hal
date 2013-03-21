@@ -14,12 +14,13 @@
 #include <list>
 #include <map>
 #include "hal.h"
+#include "halLodEdge.h"
 
 namespace hal {
 
-class LodEdge;
 class LodGraph;
 class LodNode;
+
 
 /** Compare Lod Node pointers based on their startPositions */
 struct LodNodePLess
@@ -48,8 +49,6 @@ public:
 
    friend struct LodNodePLess;
    friend class LodGraph;
-   typedef std::vector<LodEdge*> EdgeList;
-   typedef EdgeList::iterator EdgeIterator;
 
 public:
 
@@ -78,6 +77,9 @@ public:
    void extend(bool reversed, hal_size_t length = 0);
    
 protected:
+
+   typedef std::set<LodEdge*, LodEdgePLess> EdgeList;
+   typedef EdgeList::iterator EdgeIterator;
 
    /** Get the smallest edge arising from the given side side */
    EdgeIterator getMinEdge(bool reversed);

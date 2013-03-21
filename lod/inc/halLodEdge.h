@@ -19,6 +19,11 @@ namespace hal {
 class LodNode;
 class LodEdge;
 
+struct LodEdgePLess 
+{
+   bool operator()(const LodEdge* e1, const LodEdge* e2) const;
+};
+
 std::ostream& operator<<(std::ostream& os, const LodEdge& edge);
 
 /** Edge class for the Level of Detail Graph.  Edges represent
@@ -32,7 +37,7 @@ std::ostream& operator<<(std::ostream& os, const LodEdge& edge);
 class LodEdge
 {
    friend std::ostream& operator<<(std::ostream& os, const LodEdge& edge);
-
+   friend struct LodEdgePLess;
 public:
    
    LodEdge();
