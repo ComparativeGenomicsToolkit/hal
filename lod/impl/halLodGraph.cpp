@@ -87,21 +87,50 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
   {
     const Sequence* sequence = seqIt->getSequence();
     hal_size_t len = sequence->getSequenceLength();
-    hal_index_t seqStart = sequence->getStartPosition();
+
     for (hal_index_t pos = 0; pos < (hal_index_t)len; pos += (hal_index_t)_step)
     {
       // clamp to last position
       if (pos > 0 && pos + (hal_index_t)_step >= (hal_index_t)len)
       {
         pos =  (hal_index_t)len - 1;
-      }
-      
+      }      
       // better to move column iterator rather than getting each time?
       ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&tgtSet, 0,
                                                                  pos);
       // convert pos to genome coordinate
-      LodNode* node = new LodNode(sequence, seqStart + pos, seqStart + pos);
-      _adjTable.addNode(node, colIt);
+      createColumn(colIt, nodeList);
+    }
+  }
+}
+
+void LodGraph::createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList)
+{
+  const Genome* refGenome = colIt->getReferenceGenome();
+  const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
+  ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
+  for (; colMapIt != colMap->end(); ++colMapIt)
+  {
+    // add a new node for every palagous base in the reference genome
+    if (colMapIt->first->getGenome() == refGenome)
+    {
+      const ColumnIterator::DNASet* dnaSet = colMapIt->second;
+      const Sequence* sequence = colMapIt->first;
+      ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
+      for (; dnaIt != dnaSet->end(); ++dnaIt)
+      {
+        LodNode* node = new LodNode(sequence, (*dnaIt)->getArrayIndex(), 
+                                    (*dnaIt)->getArrayIndex());
+        bool added = _adjTable.addNode(node, colIt);
+        if (added == true)
+        {
+          nodeList->push_back(node);
+        }
+        else
+        {
+          delete node;
+        }
+      }      
     }
   }
 }

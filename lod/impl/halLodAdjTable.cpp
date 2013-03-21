@@ -23,7 +23,8 @@ LodAdjTable::~LodAdjTable()
   clear();
 }
 
-void LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
+
+bool LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
 {
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
   ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
@@ -53,6 +54,7 @@ void LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
       }      
     }
   }
+  return true;
 }
 
 void LodAdjTable::writeAdjacenciesIntoNodes()

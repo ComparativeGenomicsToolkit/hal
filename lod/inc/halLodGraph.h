@@ -43,7 +43,10 @@ protected:
 
    void erase();
    void scanGenome(const Genome* genome, NodeList* nodeList);
+   void createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList);
+
 protected:
+
    
    // input alignment structure
    AlignmentConstPtr _alignment;

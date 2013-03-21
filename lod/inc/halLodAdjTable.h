@@ -45,10 +45,12 @@ public:
    LodAdjTable();
    ~LodAdjTable();
    
-   /** Add a new node (which has already been created) to the 
+    /** Add a new node (which has already been created) to the 
     * adjacency table, using the column iterator to resolve all
-    * its homologous positions.  */
-   void addNode(LodNode* node, ColumnIteratorConstPtr colIt);
+    * its homologous positions.  Returns true if the node was 
+    * added.  False if it was filtered out due to some to-be-determined
+    * optimization criteria. */
+   bool addNode(LodNode* node, ColumnIteratorConstPtr colIt);
 
    /** For every sequence, for every pair of adjacent node refs,
     * add an edge connecting the two nodes */
