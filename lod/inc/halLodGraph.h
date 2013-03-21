@@ -34,6 +34,9 @@ public:
               const std::vector<const Genome*> children, 
               hal_size_t step);
 
+   /** Help debuggin and tuning */
+   void printDimensions(std::ostream& os) const;
+
 protected:
 
    typedef std::list<LodNode*> NodeList;

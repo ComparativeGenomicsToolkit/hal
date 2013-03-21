@@ -5,6 +5,7 @@
  */
 
 #include <cassert>
+#include <limits>
 #include "halLodNode.h"
 #include "halLodEdge.h"
 #include "halLodGraph.h"
@@ -102,26 +103,28 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
     
       // scan up to here trying to find a column we're happy to add
       hal_index_t maxTry = min(pos + (hal_index_t)_step / 2, 
-                               (hal_index_t)len - 1);      
+                               (hal_index_t)len - 1);     
+      hal_index_t tryPos = NULL_INDEX; 
       do 
       {
+        tryPos = colIt->getReferenceSequencePosition();
         bool canAdd = _adjTable.canAddColumn(colIt, _step);
         if (canAdd)
         {
           createColumn(colIt, nodeList);
           break;
         }
-        else if (pos == 0 || pos == (hal_index_t)len - 1)
+        else if (tryPos == 0 || tryPos == (hal_index_t)len - 1)
         {
           // no choice but to add so we dump in without homology 
           // constraints
-          LodNode* node = new LodNode(sequence, seqStart + pos, seqStart + pos);
+          LodNode* node = new LodNode(sequence, seqStart + tryPos, 
+                                      seqStart + tryPos);
           nodeList->push_back(node);                    
         }
         colIt->toRight();
       } 
-      while (colIt->lastColumn() == false && 
-               colIt->getReferenceSequencePosition() < maxTry);      
+      while (colIt->lastColumn() == false && tryPos < maxTry);      
     }
   }
 }
@@ -144,7 +147,32 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList)
         LodNode* node = new LodNode(sequence, (*dnaIt)->getArrayIndex(), 
                                     (*dnaIt)->getArrayIndex());
         _adjTable.addNode(node, colIt);  
+        nodeList->push_back(node);
       }      
     }
+  }
+}
+
+void LodGraph::printDimensions(ostream& os) const
+{
+  for (GenomeNodes::const_iterator gni = _genomeNodes.begin(); 
+       gni != _genomeNodes.end(); ++gni)
+  {
+    const Genome* genome = gni->first;    
+    NodeList* nodeList = gni->second;
+    os << genome->getName() << ": " << "nodeCount=" << nodeList->size() << " ";
+    hal_size_t edgeCount = 0;
+    hal_size_t maxDegree = 0;
+    hal_size_t minDegree = numeric_limits<hal_size_t>::max();
+    for (NodeIterator ni = nodeList->begin(); ni != nodeList->end(); ++ni)
+    {
+      hal_size_t degree = (*ni)->getDegree();
+      edgeCount += degree;
+      maxDegree = max(degree, maxDegree);
+      minDegree = min(degree, minDegree);
+    }
+    
+    os << "edgeCount=" << edgeCount / 2 << " minDeg=" << minDegree << " "
+       << "maxDeg=" << maxDegree << endl;
   }
 }

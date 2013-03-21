@@ -71,6 +71,7 @@ int main(int argc, char** argv)
 
     LodGraph lodGraph;
     lodGraph.build(alignment, parent, children, step);
+    lodGraph.printDimensions(cout);
   }
   catch(hal_exception& e)
   {

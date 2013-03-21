@@ -61,7 +61,8 @@ public:
    const Sequence* getSequence() const;
    hal_index_t getStartPosition() const;
    hal_index_t getEndPosition() const;
-   hal_size_t getLength() const;   
+   hal_size_t getLength() const;
+   hal_size_t getDegree() const;
    
    /** Add a new edge between two nodes. Specifically from the
     * right side of src to the left side of target.   
@@ -116,6 +117,11 @@ inline hal_size_t LodNode::getLength() const
   hal_index_t length = 1 + _endPosition - _startPosition;
   assert (length > 0);
   return (hal_size_t)length;
+}
+
+inline hal_size_t LodNode::getDegree() const
+{
+  return _edges.size();
 }
 
 }
