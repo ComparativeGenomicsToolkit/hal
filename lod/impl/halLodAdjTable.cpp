@@ -23,8 +23,22 @@ LodAdjTable::~LodAdjTable()
   clear();
 }
 
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+// TODO  
+// 1) Test if total column size violates estimated
+//    size bound.
+// 2) Test if total similarity of added column to 
+//    existing column is too great
+// 3) Test if ref node hasn't already been added. 
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+bool LodAdjTable::canAddColumn(ColumnIteratorConstPtr colIt, hal_size_t step)
+{
+  return true;
+}
 
-bool LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
+void LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
 {
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
   ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
@@ -54,7 +68,6 @@ bool LodAdjTable::addNode(LodNode* node, ColumnIteratorConstPtr colIt)
       }      
     }
   }
-  return true;
 }
 
 void LodAdjTable::writeAdjacenciesIntoNodes()

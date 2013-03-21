@@ -44,13 +44,16 @@ class LodAdjTable
 public:
    LodAdjTable();
    ~LodAdjTable();
-   
+
+   /** Test if a column can be added without violating any of the 
+    * size constraint heuristics.  Also check for duplicate nodes */
+   bool canAddColumn(ColumnIteratorConstPtr colIt, hal_size_t step);
+
     /** Add a new node (which has already been created) to the 
     * adjacency table, using the column iterator to resolve all
     * its homologous positions.  Returns true if the node was 
-    * added.  False if it was filtered out due to some to-be-determined
-    * optimization criteria. */
-   bool addNode(LodNode* node, ColumnIteratorConstPtr colIt);
+    * added.  */
+   void addNode(LodNode* node, ColumnIteratorConstPtr colIt);
 
    /** For every sequence, for every pair of adjacent node refs,
     * add an edge connecting the two nodes */

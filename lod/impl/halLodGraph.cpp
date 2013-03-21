@@ -86,6 +86,7 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
   for (; seqIt != seqEnd; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
+    hal_index_t seqStart = sequence->getStartPosition();
     hal_size_t len = sequence->getSequenceLength();
 
     for (hal_index_t pos = 0; pos < (hal_index_t)len; pos += (hal_index_t)_step)
@@ -98,8 +99,29 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
       // better to move column iterator rather than getting each time?
       ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&tgtSet, 0,
                                                                  pos);
-      // convert pos to genome coordinate
-      createColumn(colIt, nodeList);
+    
+      // scan up to here trying to find a column we're happy to add
+      hal_index_t maxTry = min(pos + (hal_index_t)_step / 2, 
+                               (hal_index_t)len - 1);      
+      do 
+      {
+        bool canAdd = _adjTable.canAddColumn(colIt, _step);
+        if (canAdd)
+        {
+          createColumn(colIt, nodeList);
+          break;
+        }
+        else if (pos == 0 || pos == (hal_index_t)len - 1)
+        {
+          // no choice but to add so we dump in without homology 
+          // constraints
+          LodNode* node = new LodNode(sequence, seqStart + pos, seqStart + pos);
+          nodeList->push_back(node);                    
+        }
+        colIt->toRight();
+      } 
+      while (colIt->lastColumn() == false && 
+               colIt->getReferenceSequencePosition() < maxTry);      
     }
   }
 }
@@ -121,15 +143,7 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList)
       {
         LodNode* node = new LodNode(sequence, (*dnaIt)->getArrayIndex(), 
                                     (*dnaIt)->getArrayIndex());
-        bool added = _adjTable.addNode(node, colIt);
-        if (added == true)
-        {
-          nodeList->push_back(node);
-        }
-        else
-        {
-          delete node;
-        }
+        _adjTable.addNode(node, colIt);  
       }      
     }
   }
