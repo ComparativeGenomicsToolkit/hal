@@ -25,11 +25,11 @@ LodEdge::LodEdge(const Sequence* sequence, hal_index_t start1, bool node1Left,
   _node2(node2), _reversed1(reversed1), _reversed2(reversed2),
   _node1Left(node1Left)
 {
-  if (_node2 < _node1)
-  {
-    swap(_node1, _node2);
-    swap(_reversed1, _reversed2);
-  }
+  assert(sequence != NULL);
+  assert(!_node1 || getStartPosition(_node1) >= _sequence->getStartPosition());
+  assert(!_node2 || getStartPosition(_node2) >= _sequence->getStartPosition());
+  assert(!_node1 || getStartPosition(_node1) <= _sequence->getEndPosition());
+  assert(!_node2 || getStartPosition(_node2) <= _sequence->getEndPosition());
 }
 
 LodEdge::~LodEdge()
@@ -40,21 +40,22 @@ LodEdge::~LodEdge()
 hal_index_t LodEdge::getStartPosition(const LodNode* node) const
 {
   assert(node == _node1 || node == _node2);
+  hal_index_t startPos = NULL_INDEX;
   if (node == _node1)
   {
-    return _start1;
+    startPos = _start1;
   }
   else if (_node1Left == true)
   {
-    assert(_start1 + _length < _sequence->getStartPosition() + 
-           _sequence->getSequenceLength());
-    return _start1 + _length;
+    startPos = _start1 + _length + 1;
   }
   else
   {
-    assert(_start1 >= (hal_index_t)_length);
-    return _start1 - (hal_index_t)_length;
+    startPos = _start1 - _length - 1;
   }
+  assert(startPos >= _sequence->getStartPosition());
+  assert(startPos <= _sequence->getEndPosition());
+  return startPos;
 }
 
 LodNode* LodEdge::getOtherNode(const LodNode* node, bool* revThis,

@@ -22,11 +22,12 @@ LodNode::LodNode(const Sequence* sequence, hal_index_t start,
                                      _startPosition(start), 
                                      _endPosition(last)
 {
-  assert((_startPosition == NULL_INDEX && _endPosition == NULL_INDEX) ||
-         (_startPosition <= _endPosition && _sequence != NULL &&
-          _startPosition >= _sequence->getStartPosition() &&
-          _endPosition < (hal_index_t)(_sequence->getStartPosition() + 
-                                       _sequence->getSequenceLength())));
+  assert(_sequence != NULL);
+  assert(_startPosition <= _endPosition);
+  assert(_startPosition >= _sequence->getStartPosition());
+  assert(_startPosition <= _sequence->getEndPosition());
+  assert(_endPosition >= _sequence->getStartPosition());
+  assert(_endPosition <= _sequence->getEndPosition());
 }
 
 LodNode::~LodNode()
@@ -53,15 +54,15 @@ LodNode::~LodNode()
 }
 
 void LodNode::addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt,
-                      bool tgtReversed, hal_index_t start, hal_size_t length,
+                      bool tgtReversed, hal_index_t srcPos, hal_size_t length,
                       bool leftOfTgt)
 {
   assert(length >= 0);
-  LodEdge* edge = new LodEdge(sequence, start, leftOfTgt, 
+  LodEdge* edge = new LodEdge(sequence, srcPos, leftOfTgt, 
                               length, this, srcReversed, tgt,
                               tgtReversed);
   _edges.push_back(edge);
-  if (tgt != this)
+  if (tgt != NULL && tgt != this)
   {
     tgt->_edges.push_back(edge);
   }
@@ -116,8 +117,14 @@ void LodNode::fillInEdges(vector<LodNode*>& nodeBuffer)
         (sequence != NULL && (*cur)->_sequence != sequence) ||
         (start != NULL_INDEX && (*cur)->getStartPosition(this) != start))
     {
-      insertFillNode(fBatch, nodeBuffer);
-      insertFillNode(rBatch, nodeBuffer);
+      if (!fBatch.empty())
+      {
+        insertFillNode(fBatch, nodeBuffer);
+      }
+      if (!rBatch.empty())
+      {
+        insertFillNode(rBatch, nodeBuffer);
+      }
       fBatch.clear();
       rBatch.clear();
     }
@@ -175,6 +182,13 @@ void LodNode::fillInEdges(vector<LodNode*>& nodeBuffer)
 void LodNode::insertFillNode(vector<LodEdge*>& edgeBatch,
                              vector<LodNode*>& nodeBuffer)
 {
+  assert(edgeBatch.size() > 0);
+  LodEdge* edge = edgeBatch.at(0);
+  bool reverse;
+  edge->getOtherNode(this, &reverse, NULL);
+  hal_index_t newStart = edge->getStartPosition(this);
+  
+  hal_index_t newEnd = NULL_INDEX;
   
 }
 

@@ -68,7 +68,7 @@ public:
     * Implied constraint: src is left of target (on genome forward strand)
     */
    void addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt, 
-                bool tgtReversed, hal_index_t start, hal_size_t length,
+                bool tgtReversed, hal_index_t srcPos, hal_size_t length,
                 bool leftOfTgt);
 
    /** Extend the node by extendFraction of the maximum possible 

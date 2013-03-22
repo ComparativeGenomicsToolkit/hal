@@ -105,20 +105,20 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
     }
     
     // put left caps (self loop on rev/rev with len 0)
+    // caps are stored as NULL pointers to nodes
     cur = refSet->begin();
     for (next = cur; next != refSet->end() && next->_pos == cur->_pos; ++next)
     {
-      next->_node->addEdge(sequence, true, next->_node, true, cur->_pos, 0,
-                           cur->_pos < last->_pos);
+      next->_node->addEdge(sequence, true, NULL, false, cur->_pos, 0, false);
     }
     
     // put right caps (self loop on for/for with len 0)
+    // caps are stored as NULL pointers to nodes
     RefRevIterator rcur = refSet->rbegin();
     for (RefRevIterator rnext = rcur; rnext != refSet->rend() && 
             rnext->_pos == rcur->_pos; ++rnext)
     {
-      rnext->_node->addEdge(sequence, false, rnext->_node, false, cur->_pos, 0,
-                            cur->_pos < last->_pos);
+      rnext->_node->addEdge(sequence, false, NULL, false, cur->_pos, 0, true);
     }
   }
 }
