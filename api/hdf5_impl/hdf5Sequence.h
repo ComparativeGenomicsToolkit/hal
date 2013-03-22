@@ -42,7 +42,9 @@ public:
 
    Genome* getGenome();
 
-   hal_size_t getStartPosition() const;
+   hal_index_t getStartPosition() const;
+
+   hal_index_t getEndPosition() const;
 
    hal_index_t getArrayIndex() const;
 

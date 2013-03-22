@@ -117,10 +117,16 @@ Genome* HDF5Sequence::getGenome()
   return _genome;
 }
 
-hal_size_t HDF5Sequence::getStartPosition() const
+hal_index_t HDF5Sequence::getStartPosition() const
 {
   refreshCache();
   return _startCache;
+}
+
+hal_index_t HDF5Sequence::getEndPosition() const
+{
+  refreshCache();
+  return _startCache + (hal_index_t)(_lengthCache - 1);
 }
 
 hal_index_t HDF5Sequence::getArrayIndex() const
