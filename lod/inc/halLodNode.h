@@ -21,7 +21,6 @@ namespace hal {
 class LodGraph;
 class LodNode;
 
-
 /** Compare Lod Node pointers based on their startPositions */
 struct LodNodePLess
 {
@@ -68,12 +67,17 @@ public:
     *
     * Implied constraint: src is left of target (on genome forward strand)
     */
-   void addEdge(bool srcReversed, LodNode* tgt, 
-                bool tgtReversed, hal_size_t length);
+   void addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt, 
+                bool tgtReversed, hal_index_t start, hal_size_t length,
+                bool leftOfTgt);
 
    /** Extend the node by extendFraction of the maximum possible 
     * number of bases in both directions, starting with forward */
    void extend(double extendFraction = 1.);
+
+   /** Remove edge length by creating a new node for each edge
+    * and storing them in the buffer.  Should call after extend */
+   void fillInEdges(std::vector<LodNode*>& nodeBuffer);   
    
    /** Get edge length stats.  Most useful for debugging.  If just
     * need min lengths then getMinLengths is better.*/
@@ -84,11 +88,18 @@ public:
    
 protected:
 
+   typedef std::vector<LodEdge*> EdgeList;
+   typedef EdgeList::iterator EdgeIterator;
+   typedef EdgeList::const_iterator EdgeConstIterator;
+
    /* Find the minimum edge lengths in both directions */
    void getMinLengths(hal_size_t& rMin, hal_size_t& fMin) const;
 
-   typedef std::set<LodEdge*, LodEdgePLess> EdgeList;
-   typedef EdgeList::iterator EdgeIterator;
+   /** Insert a node into all edges in the batch.  These 
+    * edges must be compatible in terms of their sequence locations. 
+    * ie each edge must represent the exact same stretch of sequence */
+   void insertFillNode(std::vector<LodEdge*>& edgeBatch,
+                       std::vector<LodNode*>& nodeBuffer);
 
    const Sequence* _sequence;
    hal_index_t _startPosition;

@@ -42,11 +42,16 @@ class LodEdge
 public:
    
    LodEdge();
-   LodEdge(size_t length, LodNode* node1,
+   LodEdge(const Sequence* sequence, hal_index_t start1, bool node1Left,
+           size_t length, LodNode* node1,
            bool reversed1, LodNode* node2, bool reversed2);
    ~LodEdge();
-   
+
+   const Sequence* getSequence() const;
+   hal_index_t getStartPosition(const LodNode* node) const;
    hal_size_t getLength() const;
+   const LodNode* getNode1() const;
+   const LodNode* getNode2() const;
 
    /** Given one node of the edge, get the other node. 
     * @param node The input node (must be in the edge)
@@ -57,24 +62,45 @@ public:
    LodNode* getOtherNode(const LodNode* node, bool* revThis = NULL,
                          bool* revOther = NULL);
 
+
    /** Replace input node pointer with NULL in the edge.  This is used
     * only as a hack to speed up the node destructor */
    void nullifyNode(const LodNode* node);
 
 protected:
 
+   const Sequence* _sequence;
+
+   // genome coordinates
+   hal_index_t _start1;
+
    hal_size_t _length;
 
    LodNode* _node1;
-   bool _reversed1;
    LodNode* _node2;
-   bool _reversed2;   
+   bool _reversed1;
+   bool _reversed2;
+   bool _node1Left;
 };
 
+inline const Sequence* LodEdge::getSequence() const
+{
+  return _sequence;
+}
 
 inline hal_size_t LodEdge::getLength() const
 {
   return _length;
+}
+
+inline const LodNode* LodEdge::getNode1() const
+{
+  return _node1;
+}
+
+inline const LodNode* LodEdge::getNode2() const
+{
+  return _node2;
 }
 
 }

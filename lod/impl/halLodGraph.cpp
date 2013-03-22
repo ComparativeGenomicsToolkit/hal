@@ -109,14 +109,17 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
       // better to move column iterator rather than getting each time?
       ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&tgtSet, 0,
                                                                  pos);
-    
+      assert(colIt->getReferenceSequencePosition() - 1 == pos);
+      
       // scan up to here trying to find a column we're happy to add
       hal_index_t maxTry = min(pos + (hal_index_t)_step / 2, 
                                (hal_index_t)len - 1);     
       hal_index_t tryPos = NULL_INDEX; 
       do 
       {
-        tryPos = colIt->getReferenceSequencePosition();
+        // constructor of column iterator moves it to the right 
+        // automatically.  this is probably a bug?!
+        tryPos = colIt->getReferenceSequencePosition() - 1;
         bool canAdd = _adjTable.canAddColumn(colIt, _step);
         if (canAdd)
         {
@@ -140,26 +143,21 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
 
 void LodGraph::createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList)
 {
-  const Genome* refGenome = colIt->getReferenceGenome();
-  const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
-  ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
-  for (; colMapIt != colMap->end(); ++colMapIt)
-  {
-    // add a new node for every palagous base in the reference genome
-    if (colMapIt->first->getGenome() == refGenome)
-    {
-      const ColumnIterator::DNASet* dnaSet = colMapIt->second;
-      const Sequence* sequence = colMapIt->first;
-      ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
-      for (; dnaIt != dnaSet->end(); ++dnaIt)
-      {
-        LodNode* node = new LodNode(sequence, (*dnaIt)->getArrayIndex(), 
-                                    (*dnaIt)->getArrayIndex());
-        _adjTable.addNode(node, colIt);  
-        nodeList->push_back(node);
-      }      
-    }
-  }
+
+  // we don't add a new node for every palagous base in the reference genome
+  // because we are not caching dupes within the iterator (not using
+  // toRight() method).  So we only add a node for the current position
+
+  const Sequence* refSequence = colIt->getReferenceSequence();
+  
+  // constructor of column iterator moves it to the right 
+  // automatically.  this is probably a bug?!
+  hal_index_t pos = colIt->getReferenceSequencePosition() - 1;
+  pos += refSequence->getStartPosition();
+
+  LodNode* node = new LodNode(refSequence, pos, pos);
+  _adjTable.addNode(node, colIt); 
+  nodeList->push_back(node);  
 }
 
 void LodGraph::optimizeByExtension()
@@ -180,6 +178,7 @@ void LodGraph::optimizeByExtension()
 
 void LodGraph::optimizeByInsertion()
 {
+  vector<LodNode*> nodeBuffer;
   for (GenomeNodesIterator gni = _genomeNodes.begin(); 
        gni != _genomeNodes.end(); ++gni)
   {
@@ -189,8 +188,22 @@ void LodGraph::optimizeByInsertion()
     for (NodeIterator i = nodeList->begin(); i != nodeList->end(); ++i)
     {
       LodNode* node = *i;
-      
+      node->fillInEdges(nodeBuffer);      
     }
+  }
+
+  // these are all the nodes created by LodNode's fill-in method
+  // we have to append them into the right litsts.
+  // Note that these appends will result in the lists being unsorted.
+  for (vector<LodNode*>::iterator i = nodeBuffer.begin(); 
+       i != nodeBuffer.end(); ++i)
+  {
+    LodNode* newNode = *i;
+    const Genome* genome = newNode->getSequence()->getGenome();
+    GenomeNodesIterator gni = _genomeNodes.find(genome);
+    assert(gni != _genomeNodes.end());
+    NodeList* nodeList = gni->second;
+    nodeList->push_back(newNode);
   }
 }
 
