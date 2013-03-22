@@ -98,9 +98,9 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
         // in their coordinates. 
         // last->_reversed is inverted because this node is to the right
         // and we are connecting to its "left side".  
-        cur->_node->addEdge(sequence, cur->_reversed, last->_node, 
-                            !last->_reversed, cur->_pos, distance - 1,
-                            cur->_pos < last->_pos);
+        cur->_node->addEdge(sequence, 
+                            cur->_pos, cur->_reversed, 
+                            last->_node, last->_pos, !last->_reversed);
       }
     }
     
@@ -109,7 +109,9 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
     cur = refSet->begin();
     for (next = cur; next != refSet->end() && next->_pos == cur->_pos; ++next)
     {
-      next->_node->addEdge(sequence, true, NULL, false, cur->_pos, 0, false);
+      next->_node->addEdge(sequence, 
+                           cur->_pos, !cur->_reversed,
+                           NULL, cur->_pos - 1, false);
     }
     
     // put right caps (self loop on for/for with len 0)
@@ -118,7 +120,9 @@ void LodAdjTable::writeAdjacenciesIntoNodes()
     for (RefRevIterator rnext = rcur; rnext != refSet->rend() && 
             rnext->_pos == rcur->_pos; ++rnext)
     {
-      rnext->_node->addEdge(sequence, false, NULL, false, cur->_pos, 0, true);
+      rnext->_node->addEdge(sequence, 
+                            cur->_pos, cur->_reversed,
+                            NULL, cur->_pos + 1, true);
     }
   }
 }

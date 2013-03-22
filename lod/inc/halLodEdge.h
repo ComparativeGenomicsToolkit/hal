@@ -31,8 +31,12 @@ std::ostream& operator<<(std::ostream& os, const LodEdge& edge);
  * of the LOD graph is to reduce all edges to size 0, implying that
  * the nodes cover the original graph in its entirety 
  *
- * Nodes in the edge are not stored arbitrarily:  Node1 is has the 
- * address with the smaller value.  
+ * Edges can have different coordinates than their nodes.  These
+ * coordinates are stored separately in the edge (pos1/2).  They
+ * reflect the left and right endpoint of the edge.  The edge 
+ * covers bases between these endpoints but not including them. 
+ *
+ * We enforce that _pos1 < _pos2
  */
 class LodEdge
 {
@@ -42,13 +46,20 @@ class LodEdge
 public:
    
    LodEdge();
-   LodEdge(const Sequence* sequence, hal_index_t start1, bool node1Left,
-           size_t length, LodNode* node1,
-           bool reversed1, LodNode* node2, bool reversed2);
+   LodEdge(const Sequence* sequence, 
+           LodNode* node1, hal_index_t pos1, bool reversed1,
+           LodNode* node2, hal_index_t pos2, bool reversed2);
    ~LodEdge();
 
    const Sequence* getSequence() const;
+   /* The start point of the edge relative to the node.  The edge
+      contains bases (startPosition, endPosition) EXCLUSIVE */
    hal_index_t getStartPosition(const LodNode* node) const;
+
+   /* The end point of the edge relative to the node.  The edge
+      contains bases (startPosition, endPosition) EXCLUSIVE */
+   hal_index_t getEndPosition(const LodNode* node) const;
+
    hal_size_t getLength() const;
    const LodNode* getNode1() const;
    const LodNode* getNode2() const;
@@ -69,18 +80,17 @@ public:
 
 protected:
 
+   void shrink(hal_size_t delta, bool fromLeft);
+
    const Sequence* _sequence;
 
    // genome coordinates
-   hal_index_t _start1;
-
-   hal_size_t _length;
-
    LodNode* _node1;
+   hal_index_t _pos1;
    LodNode* _node2;
+   hal_index_t _pos2;
    bool _reversed1;
    bool _reversed2;
-   bool _node1Left;
 };
 
 inline const Sequence* LodEdge::getSequence() const
@@ -88,9 +98,20 @@ inline const Sequence* LodEdge::getSequence() const
   return _sequence;
 }
 
+inline hal_index_t LodEdge::getStartPosition(const LodNode* node) const
+{
+  assert(node == _node1 || node == _node2);
+  return node == _node1 ? _pos1 : _pos2;
+}
+inline hal_index_t LodEdge::getEndPosition(const LodNode* node) const
+{
+  assert(node == _node1 || node == _node2);
+  return node == _node1 ? _pos2 : _pos1;
+}
+
 inline hal_size_t LodEdge::getLength() const
 {
-  return _length;
+  return _pos2 - _pos1 - 1;
 }
 
 inline const LodNode* LodEdge::getNode1() const

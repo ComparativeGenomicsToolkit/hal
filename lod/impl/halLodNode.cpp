@@ -53,14 +53,13 @@ LodNode::~LodNode()
   }
 }
 
-void LodNode::addEdge(const Sequence* sequence, bool srcReversed, LodNode* tgt,
-                      bool tgtReversed, hal_index_t srcPos, hal_size_t length,
-                      bool leftOfTgt)
+void LodNode::addEdge(const Sequence* sequence,
+                      hal_index_t srcPos, bool srcReversed, 
+                      LodNode* tgt, hal_index_t tgtPos, bool tgtReversed)
 {
-  assert(length >= 0);
-  LodEdge* edge = new LodEdge(sequence, srcPos, leftOfTgt, 
-                              length, this, srcReversed, tgt,
-                              tgtReversed);
+  LodEdge* edge = new LodEdge(sequence, 
+                              this, srcPos, srcReversed,
+                              tgt, tgtPos, tgtReversed);
   _edges.push_back(edge);
   if (tgt != NULL && tgt != this)
   {
@@ -85,20 +84,16 @@ void LodNode::extend(double extendFraction)
     {    
       edge = *i;
       other = edge->getOtherNode(this, &thisRev);
-      if (thisRev == true)
-      {
-        edge->_length -= rLen;
-      }
-      else
-      {
-        edge->_length -= fLen;
-      }
+      bool left = edge->getStartPosition(this) < edge->getEndPosition(this);
+      hal_size_t delta = thisRev ? rLen : fLen;
+
+      edge->shrink(delta, left);
     }
+    
     assert(_startPosition >= (hal_index_t)rLen);
     _startPosition -= (hal_index_t)rLen;
     
-    assert(_endPosition + fLen < 
-           _sequence->getStartPosition() + _sequence->getSequenceLength());
+    assert(_endPosition + fLen <= (hal_size_t)_sequence->getEndPosition());
     _endPosition += (hal_index_t)fLen;
   }
 }
