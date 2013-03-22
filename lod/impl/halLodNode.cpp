@@ -60,10 +60,12 @@ void LodNode::addEdge(const Sequence* sequence,
   LodEdge* edge = new LodEdge(sequence, 
                               this, srcPos, srcReversed,
                               tgt, tgtPos, tgtReversed);
-  _edges.push_back(edge);
+  assert(_edges.find(edge) == _edges.end());
+  _edges.insert(edge);
   if (tgt != NULL && tgt != this)
   {
-    tgt->_edges.push_back(edge);
+    assert(tgt->_edges.find(edge) == tgt->_edges.end());
+    tgt->_edges.insert(edge);
   }
 }
 
@@ -114,11 +116,11 @@ void LodNode::fillInEdges(vector<LodNode*>& nodeBuffer)
     {
       if (!fBatch.empty())
       {
-        insertFillNode(fBatch, nodeBuffer);
+        insertFillNodeIntoEdgeBatch(fBatch, nodeBuffer);
       }
       if (!rBatch.empty())
       {
-        insertFillNode(rBatch, nodeBuffer);
+        insertFillNodeIntoEdgeBatch(rBatch, nodeBuffer);
       }
       fBatch.clear();
       rBatch.clear();
@@ -127,44 +129,19 @@ void LodNode::fillInEdges(vector<LodNode*>& nodeBuffer)
     {
       break;
     }
-    else
+    else if ((*cur)->getLength() > 0)
     {
       sequence = (*cur)->getSequence();
       start = (*cur)->getStartPosition(this);
       (*cur)->getOtherNode(this, &rev, NULL);
       if (rev)
       {
-/*        if (!rBatch.empty())
-        {
-          cout << **cur << endl
-               << (*cur)->getNode1()->getSequence()->getName() << "->"
-               << (*cur)->getNode2()->getSequence()->getName() << "\n"
-               << rBatch.back() << endl 
-               << rBatch.back()->getSequence()->getName() << "->"
-               << rBatch.back()->getSequence()->getName() << "\n"
-               << endl;
-               }*/
         assert(rBatch.empty() || 
                (*cur)->getLength() == rBatch.back()->getLength());
         rBatch.push_back(*cur);
       }
       else
       {
-/*
-        if (!fBatch.empty())
-        {
-          cout << **cur << endl
-               << (*cur)->getNode1()->getSequence()->getName() 
-               << " l=" << (*cur)->getNode1()->getLength() << "->"
-               << (*cur)->getNode2()->getSequence()->getName()
-               << " l=" << (*cur)->getNode2()->getLength() << "\n"
-               << *fBatch.back() << endl 
-               << fBatch.back()->getSequence()->getName() 
-               << " l=" << fBatch.back()->getLength() << "->"
-               << fBatch.back()->getSequence()->getName()  
-               << " l=" << fBatch.back()->getLength() << "\n"
-               << endl;
-               }*/
         assert(fBatch.empty() || 
                (*cur)->getLength()== fBatch.back()->getLength());
         fBatch.push_back(*cur);
@@ -174,17 +151,41 @@ void LodNode::fillInEdges(vector<LodNode*>& nodeBuffer)
   }
 }
 
-void LodNode::insertFillNode(vector<LodEdge*>& edgeBatch,
-                             vector<LodNode*>& nodeBuffer)
+void LodNode::insertFillNodeIntoEdgeBatch(vector<LodEdge*>& edgeBatch,
+                                          vector<LodNode*>& nodeBuffer)
 {
   assert(edgeBatch.size() > 0);
-  LodEdge* edge = edgeBatch.at(0);
-  bool reverse;
-  edge->getOtherNode(this, &reverse, NULL);
-  hal_index_t newStart = edge->getStartPosition(this);
+  LodEdge* firstEdge = edgeBatch.at(0);
+  assert(firstEdge->getLength() > 0);
+  hal_index_t start = firstEdge->getStartPosition(this);
+  hal_index_t end = firstEdge->getEndPosition(this);
+  if (start > end)
+  {
+    swap(start, end);
+  }
+  // change from exclusive edge coordinates to inclusive node coordinates
+  start += 1;
+  end -= 1;
   
-  hal_index_t newEnd = NULL_INDEX;
+  LodNode* newNode = new LodNode(firstEdge->getSequence(), start, end);
+  //nodeBuffer.push_back(newNode);
   
+  vector<LodEdge*>::iterator i;
+  for (i = edgeBatch.begin(); i != edgeBatch.end(); ++i)
+  {
+    LodEdge* edge = *i;
+
+    assert(edge->getSequence() == firstEdge->getSequence());
+    assert(edge->getStartPosition(this) == firstEdge->getStartPosition(this));
+    assert(edge->getEndPosition((this)) == firstEdge->getEndPosition((this)));
+
+    insertFillNodeIntoEdge(edge, newNode);
+  }
+}
+
+void LodNode::insertFillNodeIntoEdge(LodEdge*, LodNode* newNode)
+{
+
 }
 
 void LodNode::getEdgeLengthStats(hal_size_t& fMin, hal_size_t& fMax, 

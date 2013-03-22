@@ -165,7 +165,6 @@ void LodGraph::optimizeByExtension()
   for (GenomeNodesIterator gni = _genomeNodes.begin(); 
        gni != _genomeNodes.end(); ++gni)
   {
-    const Genome* genome = gni->first;
     NodeList* nodeList = gni->second;
 
     for (NodeIterator i = nodeList->begin(); i != nodeList->end(); ++i)
@@ -182,7 +181,6 @@ void LodGraph::optimizeByInsertion()
   for (GenomeNodesIterator gni = _genomeNodes.begin(); 
        gni != _genomeNodes.end(); ++gni)
   {
-    const Genome* genome = gni->first;
     NodeList* nodeList = gni->second;
 
     for (NodeIterator i = nodeList->begin(); i != nodeList->end(); ++i)

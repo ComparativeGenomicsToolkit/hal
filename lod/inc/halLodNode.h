@@ -88,7 +88,7 @@ public:
    
 protected:
 
-   typedef std::vector<LodEdge*> EdgeList;
+   typedef std::set<LodEdge*> EdgeList;
    typedef EdgeList::iterator EdgeIterator;
    typedef EdgeList::const_iterator EdgeConstIterator;
 
@@ -98,8 +98,12 @@ protected:
    /** Insert a node into all edges in the batch.  These 
     * edges must be compatible in terms of their sequence locations. 
     * ie each edge must represent the exact same stretch of sequence */
-   void insertFillNode(std::vector<LodEdge*>& edgeBatch,
-                       std::vector<LodNode*>& nodeBuffer);
+   void insertFillNodeIntoEdgeBatch(std::vector<LodEdge*>& edgeBatch,
+                                    std::vector<LodNode*>& nodeBuffer);
+
+   /** Insert a node into an edge. Node1 -- Node2 becomes
+    * Node1 -- NewNode -- Node2, both resulting edges are 0 */
+   void insertFillNodeIntoEdge(LodEdge* edge, LodNode* newNode);
 
    const Sequence* _sequence;
    hal_index_t _startPosition;
