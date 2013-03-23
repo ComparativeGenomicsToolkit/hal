@@ -353,7 +353,7 @@ Sequence* HDF5Genome::getSequenceBySite(hal_size_t position)
   i = _sequencePosCache.upper_bound(position);
   if (i != _sequencePosCache.end())
   {
-    if (position >= i->second->getStartPosition())
+    if (position >= (hal_size_t)i->second->getStartPosition())
     {
       return i->second;
     }
@@ -367,7 +367,7 @@ const Sequence* HDF5Genome::getSequenceBySite(hal_size_t position) const
   i = _sequencePosCache.upper_bound(position);
   if (i != _sequencePosCache.end())
   {
-    if (position >= i->second->getStartPosition())
+    if (position >= (hal_size_t)i->second->getStartPosition())
     {
       return i->second;
     }

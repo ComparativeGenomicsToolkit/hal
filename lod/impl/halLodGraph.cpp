@@ -109,7 +109,7 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
       // better to move column iterator rather than getting each time?
       ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&tgtSet, 0,
                                                                  pos);
-      assert(colIt->getReferenceSequencePosition() - 1 == pos);
+      assert(colIt->getReferenceSequencePosition() == pos);
       
       // scan up to here trying to find a column we're happy to add
       hal_index_t maxTry = min(pos + (hal_index_t)_step / 2, 
@@ -117,9 +117,7 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
       hal_index_t tryPos = NULL_INDEX; 
       do 
       {
-        // constructor of column iterator moves it to the right 
-        // automatically.  this is probably a bug?!
-        tryPos = colIt->getReferenceSequencePosition() - 1;
+        tryPos = colIt->getReferenceSequencePosition();
         bool canAdd = _adjTable.canAddColumn(colIt, _step);
         if (canAdd)
         {
@@ -150,9 +148,7 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList)
 
   const Sequence* refSequence = colIt->getReferenceSequence();
   
-  // constructor of column iterator moves it to the right 
-  // automatically.  this is probably a bug?!
-  hal_index_t pos = colIt->getReferenceSequencePosition() - 1;
+  hal_index_t pos = colIt->getReferenceSequencePosition();
   pos += refSequence->getStartPosition();
 
   LodNode* node = new LodNode(refSequence, pos, pos);

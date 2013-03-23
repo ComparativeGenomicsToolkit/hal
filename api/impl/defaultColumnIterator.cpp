@@ -91,6 +91,12 @@ DefaultColumnIterator::~DefaultColumnIterator()
 
 void DefaultColumnIterator::toRight() const
 {
+  // keep the current position so that when client calls
+  // getReferenceXXX() methods, they get the state before 
+  // toRight is called. 
+  _prevRefSequence = _ref;
+  _prevRefIndex = _stack[0]->_index - _ref->getStartPosition();
+
   // compatible with old interface which allowed toRight() to go out
   // of bounds without crashing.
   if (_stack.size() == 1 && !_stack.topInBounds())
@@ -195,19 +201,18 @@ bool DefaultColumnIterator::lastColumn() const
 
 const Genome* DefaultColumnIterator::getReferenceGenome() const 
 {
-  return _ref->getGenome();
+  return _prevRefSequence->getGenome();
 }
 
 const Sequence* DefaultColumnIterator::getReferenceSequence() const 
 {
-  return _ref;
+  return _prevRefSequence;
 }
 
 hal_index_t DefaultColumnIterator::getReferenceSequencePosition() const 
 {
-  return _stack[0]->_index - _ref->getStartPosition();
+  return _prevRefIndex;
 }
-
 
 const DefaultColumnIterator::ColumnMap* DefaultColumnIterator::getColumnMap() 
 const
