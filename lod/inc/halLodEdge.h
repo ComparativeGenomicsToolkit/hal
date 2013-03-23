@@ -29,7 +29,7 @@ std::ostream& operator<<(std::ostream& os, const LodEdge& edge);
 /** Edge class for the Level of Detail Graph.  Edges represent
  * gaps between the nodes along a particular sequence.  The goal
  * of the LOD graph is to reduce all edges to size 0, implying that
- * the nodes cover the original graph in its entirety 
+ * the nodes cover the original graph in its entirety.
  *
  * Edges can have different coordinates than their nodes.  These
  * coordinates are stored separately in the edge (pos1/2).  They
