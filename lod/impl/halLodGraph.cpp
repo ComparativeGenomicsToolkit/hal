@@ -76,8 +76,10 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
   for (GenomeNodesIterator gni = _genomeNodes.begin(); 
        gni != _genomeNodes.end(); ++gni)
   {
-    gni->second->sort();
+    gni->second->sort(LodNodePLess());
   }
+  
+  assert(checkCoverage() == true);
 }
 
 
@@ -201,6 +203,43 @@ void LodGraph::optimizeByInsertion()
   }
 }
 
+// Note we assume nodelists are sorted
+// Function should only be called in debug mode.
+bool LodGraph::checkCoverage() const
+{
+  for (GenomeNodes::const_iterator gni = _genomeNodes.begin(); 
+       gni != _genomeNodes.end(); ++gni)
+  {
+    const Genome* genome = gni->first;    
+    NodeList* nodeList = gni->second;
+    hal_index_t prevPosition = -1;
+    for (NodeIterator ni = nodeList->begin(); ni != nodeList->end(); ++ni)
+    {
+      LodNode* node = *ni;
+      if (node->getSequence()->getGenome() != genome) 
+      {
+        cerr << "Node outside of genome " << genome->getName() << ": "
+             << *node << endl;
+        return false;
+      }
+      if (node->getStartPosition() != prevPosition + 1)
+      {
+        cerr << "Coverage gap: prev=" << prevPosition << ": "
+             << *node << endl;
+        return false;
+      }      
+      prevPosition = node->getEndPosition();
+    }
+    if ((hal_size_t)prevPosition != genome->getSequenceLength() - 1)
+    {
+      cerr << "Last node not at end.  Should be " <<
+         genome->getSequenceLength() - 1 << ": "
+           << prevPosition << endl;
+      return false;
+    }
+  }
+  return true;
+}
 
 void LodGraph::printDimensions(ostream& os) const
 {

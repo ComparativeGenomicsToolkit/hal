@@ -291,7 +291,16 @@ ostream& hal::operator<<(ostream& os, const LodNode& node)
   for (LodNode::EdgeList::const_iterator i = node._edges.begin(); 
        i != node._edges.end(); ++i)
   {
-    os << "  " << ecount++ << ")" << **i << "\n";
+    LodNode* other = (*i)->getOtherNode(&node);
+    if (other != NULL && other->getSequence() == node.getSequence())
+    {
+      os << " *";
+    }
+    else
+    {
+      os << "  ";
+    }
+    os << ecount++ << ")" << **i << "\n";
   }
   return os;
 }

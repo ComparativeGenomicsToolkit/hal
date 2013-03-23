@@ -34,6 +34,10 @@ public:
               const std::vector<const Genome*> children, 
               hal_size_t step);
 
+   /** Make sure the graph covers all bases in the input sequence without
+    * overlap */
+   bool checkCoverage() const;
+
    /** Help debuggin and tuning */
    void printDimensions(std::ostream& os) const;
 
