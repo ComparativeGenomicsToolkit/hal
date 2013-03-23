@@ -103,7 +103,7 @@ protected:
 
    /** Insert a node into an edge. Node1 -- Node2 becomes
     * Node1 -- NewNode -- Node2, both resulting edges are 0 */
-   void insertFillNodeIntoEdge(LodEdge* edge, LodNode* newNode);
+   static void insertFillNodeIntoEdge(LodEdge* edge, LodNode* newNode);
 
    const Sequence* _sequence;
    hal_index_t _startPosition;

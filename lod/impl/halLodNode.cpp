@@ -155,10 +155,12 @@ void LodNode::insertFillNodeIntoEdgeBatch(vector<LodEdge*>& edgeBatch,
                                           vector<LodNode*>& nodeBuffer)
 {
   assert(edgeBatch.size() > 0);
-  LodEdge* firstEdge = edgeBatch.at(0);
-  assert(firstEdge->getLength() > 0);
-  hal_index_t start = firstEdge->getStartPosition(this);
-  hal_index_t end = firstEdge->getEndPosition(this);
+  LodEdge* edge = edgeBatch.at(0);
+  assert(edge->getLength() > 0);
+  hal_index_t firstStart = edge->getStartPosition(this);
+  hal_index_t firstEnd = edge->getEndPosition(this);
+  hal_index_t start = firstStart;
+  hal_index_t end = firstEnd;
   if (start > end)
   {
     swap(start, end);
@@ -167,25 +169,51 @@ void LodNode::insertFillNodeIntoEdgeBatch(vector<LodEdge*>& edgeBatch,
   start += 1;
   end -= 1;
   
-  LodNode* newNode = new LodNode(firstEdge->getSequence(), start, end);
-  //nodeBuffer.push_back(newNode);
+  LodNode* newNode = new LodNode(edge->getSequence(), start, end);
+  nodeBuffer.push_back(newNode);
   
   vector<LodEdge*>::iterator i;
   for (i = edgeBatch.begin(); i != edgeBatch.end(); ++i)
   {
-    LodEdge* edge = *i;
+    edge = *i;
 
-    assert(edge->getSequence() == firstEdge->getSequence());
-    assert(edge->getStartPosition(this) == firstEdge->getStartPosition(this));
-    assert(edge->getEndPosition((this)) == firstEdge->getEndPosition((this)));
+    assert(edge->getStartPosition(this) == firstStart);
+    assert(edge->getEndPosition((this)) == firstEnd);
 
     insertFillNodeIntoEdge(edge, newNode);
   }
 }
 
-void LodNode::insertFillNodeIntoEdge(LodEdge*, LodNode* newNode)
+void LodNode::insertFillNodeIntoEdge(LodEdge* edge, LodNode* newNode)
 {
-
+  // can do some of this in place and more efficiently.  start with
+  // simplest way -- creating new edges from scratch -- to get it going.
+  const Sequence* sequence = edge->getSequence();
+  LodNode* leftNode = edge->_node1;
+  LodNode* rightNode = edge->_node2;
+  bool leftReversed = edge->_reversed1;
+  bool rightReversed = edge->_reversed2;
+  hal_index_t leftStart = edge->_pos1;
+  hal_index_t rightStart  = edge->_pos2;
+  
+  // shouldn't be necessary but we do this so that future changesg 
+  // to edge layout dont screw everything up
+  if (leftStart > rightStart)
+  {
+    swap(leftNode, rightNode);
+    swap(leftReversed, rightReversed);
+    swap(leftStart, rightStart);
+  }
+  
+  leftNode->_edges.erase(edge);
+  rightNode->_edges.erase(edge);
+  delete edge;
+  
+  leftNode->addEdge(sequence, leftStart, leftReversed,
+                    newNode, leftStart + 1, !leftReversed);
+  
+  rightNode->addEdge(sequence, rightStart, rightReversed,
+                     newNode, rightStart - 1, !rightReversed);
 }
 
 void LodNode::getEdgeLengthStats(hal_size_t& fMin, hal_size_t& fMax, 
