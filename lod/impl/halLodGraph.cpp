@@ -25,80 +25,57 @@ LodGraph::~LodGraph()
 
 void LodGraph::erase()
 {
-  for (GenomeNodesIterator i = _genomeNodes.begin(); i != _genomeNodes.end();
-       ++i)
+  for (SequenceMapIterator smi = _seqMap.begin(); smi != _seqMap.end(); ++smi)
   {
-    NodeList* nodeList = i->second;
-    for (NodeIterator j = nodeList->begin(); j != nodeList->end(); ++j)
-    {
-      delete *j;
-    }
-    delete nodeList;
-    _genomeNodes.erase(i);
+    delete smi->second;
   }
-  _children.clear();
-  _parent = NULL;
-  _alignment = AlignmentConstPtr();
+  _seqMap.clear();
+  for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
+  {
+    delete *bi;
+  }
+  _blocks.clear();
+  _genomes.clear();
 }
 
 void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
-                     const vector<const Genome*> children, 
+                     const vector<const Genome*>& children, 
                      hal_size_t step)
 {
   erase();
   _alignment = alignment;
   _parent = parent;
-  _children = children;
   _step = step;
 
   assert(_parent != NULL);
   assert(_alignment->openGenome(_parent->getName()) == _parent);
   
-  _genomeNodes.insert(pair<const Genome*, NodeList*>(_parent, new NodeList()));
-  for (size_t i = 0; i < _children.size(); ++i)
+  _genomes.insert(parent);
+  for (vector<const Genome*>::const_iterator child = children.begin();
+       child != children.end(); ++child)
   {
-    _genomeNodes.insert(pair<const Genome*, NodeList*>(_children[i], 
-                                                       new NodeList()));
+    _genomes.insert(*child);
   }
+  assert(_genomes.size() == children.size() + 1);
 
-  for (GenomeNodesIterator gni = _genomeNodes.begin(); 
-       gni != _genomeNodes.end(); ++gni)
+  for (set<const Genome*>::iterator gi = _genomes.begin(); 
+       gi != _genomes.end(); ++gi)
   {
-    scanGenome(gni->first, gni->second);
+    scanGenome(*gi);
   }
-
-  _adjTable.writeAdjacenciesIntoNodes();
-  _adjTable.clear();
 
   optimizeByExtension();
   optimizeByInsertion();
-  
-  for (GenomeNodesIterator gni = _genomeNodes.begin(); 
-       gni != _genomeNodes.end(); ++gni)
-  {
-    gni->second->sort(LodNodePLess());
-  }
-  
-  assert(checkCoverage() == true);
 }
 
 
-void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
+void LodGraph::scanGenome(const Genome* genome)
 {
-  // should be done at outside scope.
-  set<const Genome*> tgtSet;
-  for (GenomeNodesIterator gni = _genomeNodes.begin(); 
-       gni != _genomeNodes.end(); ++gni)
-  {
-    tgtSet.insert(gni->first);
-  }
-
   SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
   SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
   for (; seqIt != seqEnd; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
-    hal_index_t seqStart = sequence->getStartPosition();
     hal_size_t len = sequence->getSequenceLength();
 
     for (hal_index_t pos = 0; pos < (hal_index_t)len; pos += (hal_index_t)_step)
@@ -109,8 +86,9 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
         pos =  (hal_index_t)len - 1;
       }      
       // better to move column iterator rather than getting each time?
-      ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&tgtSet, 0,
-                                                                 pos);
+      // -- probably not because we have to worry about dupe cache
+      ColumnIteratorConstPtr colIt = 
+         sequence->getColumnIterator(&_genomes, 0, pos);
       assert(colIt->getReferenceSequencePosition() == pos);
       
       // scan up to here trying to find a column we're happy to add
@@ -120,19 +98,11 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
       do 
       {
         tryPos = colIt->getReferenceSequencePosition();
-        bool canAdd = _adjTable.canAddColumn(colIt, _step);
+        bool canAdd = canAddColumn(colIt);
         if (canAdd)
         {
-          createColumn(colIt, nodeList);
+          createColumn(colIt);
           break;
-        }
-        else if (tryPos == 0 || tryPos == (hal_index_t)len - 1)
-        {
-          // no choice but to add so we dump in without homology 
-          // constraints
-          LodNode* node = new LodNode(sequence, seqStart + tryPos, 
-                                      seqStart + tryPos);
-          nodeList->push_back(node);                    
         }
         colIt->toRight();
       } 
@@ -141,145 +111,121 @@ void LodGraph::scanGenome(const Genome* genome, NodeList* nodeList)
   }
 }
 
-void LodGraph::createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList)
+bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
 {
-
-  // we don't add a new node for every palagous base in the reference genome
-  // because we are not caching dupes within the iterator (not using
-  // toRight() method).  So we only add a node for the current position
-
-  const Sequence* refSequence = colIt->getReferenceSequence();
-  
-  hal_index_t pos = colIt->getReferenceSequencePosition();
-  pos += refSequence->getStartPosition();
-
-  LodNode* node = new LodNode(refSequence, pos, pos);
-  _adjTable.addNode(node, colIt); 
-  nodeList->push_back(node);  
+  // check that block has not already been added.
+  bool alreadyThere = false;
+  const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
+  ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
+  for (; colMapIt != colMap->end(); ++colMapIt)
+  {
+    const ColumnIterator::DNASet* dnaSet = colMapIt->second;
+    if (dnaSet->size() > 0)
+    {
+      const Sequence* sequence = colMapIt->first;
+      ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
+      hal_index_t pos = (*dnaIt)->getArrayIndex();
+      LodSegment segment(sequence, pos, false);
+      SequenceMapIterator smi = _seqMap.find(sequence);
+      if (smi != _seqMap.end())
+      {
+        SegmentSet* segmentSet = smi->second;
+        SegmentIterator si = segmentSet->lower_bound(&segment);
+        SegmentSet::value_compare segPLess;
+        if (si != segmentSet->end() && !segPLess(&segment, *si))
+        {
+          alreadyThere = true;
+        }
+      }
+      break;
+    }
+  }
+  bool canAdd = !alreadyThere;
+  hal_index_t refPos = colIt->getReferenceSequencePosition();
+  if (canAdd == true && refPos != 0 && (hal_size_t)refPos != 
+      colIt->getReferenceSequence()->getSequenceLength())
+  {
+//    canAdd = testheuristics here...
+  }
+  return canAdd;
 }
+
+void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
+{
+  LodBlock* block = new LodBlock();
+  const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
+  ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
+  for (; colMapIt != colMap->end(); ++colMapIt)
+  {
+    const Sequence* sequence = colMapIt->first;
+    SequenceMapIterator smi = _seqMap.find(sequence);
+    SegmentSet* segSet = NULL;
+    if (smi == _seqMap.end())
+    {
+      segSet = new SegmentSet();
+      _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
+    }
+    else
+    {
+      segSet = smi->second;
+    }
+    const ColumnIterator::DNASet* dnaSet = colMapIt->second;
+    for (ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
+         dnaIt != dnaSet->end(); ++ dnaIt)
+    {
+      hal_index_t pos = (*dnaIt)->getArrayIndex();
+      bool reversed = (*dnaIt)->getReversed();
+      LodSegment* segment = new LodSegment(sequence, pos, reversed);
+      block->addSegment(segment);
+      assert(segSet->find(segment) == segSet->end());
+      segSet->insert(segment);
+    }
+  }
+  assert(block->getNumSegments() > 0);
+  _blocks.push_back(block);
+}
+
 
 void LodGraph::optimizeByExtension()
 {
-  for (GenomeNodesIterator gni = _genomeNodes.begin(); 
-       gni != _genomeNodes.end(); ++gni)
+  for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
-    NodeList* nodeList = gni->second;
-
-    for (NodeIterator i = nodeList->begin(); i != nodeList->end(); ++i)
-    {
-      LodNode* node = *i;
-      node->extend(_extendFraction);
-    }
+    // extend here
   }
 }
 
 void LodGraph::optimizeByInsertion()
 {
-  vector<LodNode*> nodeBuffer;
-  for (GenomeNodesIterator gni = _genomeNodes.begin(); 
-       gni != _genomeNodes.end(); ++gni)
+  for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
-    NodeList* nodeList = gni->second;
-
-    for (NodeIterator i = nodeList->begin(); i != nodeList->end(); ++i)
-    {
-      LodNode* node = *i;
-      node->fillInEdges(nodeBuffer);      
-    }
+    // insert here
   }
-
-  // these are all the nodes created by LodNode's fill-in method
-  // we have to append them into the right litsts.
-  // Note that these appends will result in the lists being unsorted.
-  for (vector<LodNode*>::iterator i = nodeBuffer.begin(); 
-       i != nodeBuffer.end(); ++i)
-  {
-    LodNode* newNode = *i;
-    const Genome* genome = newNode->getSequence()->getGenome();
-    GenomeNodesIterator gni = _genomeNodes.find(genome);
-    assert(gni != _genomeNodes.end());
-    NodeList* nodeList = gni->second;
-    nodeList->push_back(newNode);
-  }
-}
-
-// Note we assume nodelists are sorted
-// Function should only be called in debug mode.
-bool LodGraph::checkCoverage() const
-{
-  for (GenomeNodes::const_iterator gni = _genomeNodes.begin(); 
-       gni != _genomeNodes.end(); ++gni)
-  {
-    const Genome* genome = gni->first;    
-    NodeList* nodeList = gni->second;
-    hal_index_t prevPosition = -1;
-    for (NodeIterator ni = nodeList->begin(); ni != nodeList->end(); ++ni)
-    {
-      LodNode* node = *ni;
-      if (node->getSequence()->getGenome() != genome) 
-      {
-        cerr << "Node outside of genome " << genome->getName() << ": "
-             << *node << endl;
-        return false;
-      }
-      if (node->getStartPosition() != prevPosition + 1)
-      {
-        cerr << "Coverage gap: prev=" << prevPosition << ": "
-             << *node << endl;
-        return false;
-      }      
-      prevPosition = node->getEndPosition();
-    }
-    if ((hal_size_t)prevPosition != genome->getSequenceLength() - 1)
-    {
-      cerr << "Last node not at end.  Should be " <<
-         genome->getSequenceLength() - 1 << ": "
-           << prevPosition << endl;
-      return false;
-    }
-  }
-  return true;
 }
 
 void LodGraph::printDimensions(ostream& os) const
 {
-  for (GenomeNodes::const_iterator gni = _genomeNodes.begin(); 
-       gni != _genomeNodes.end(); ++gni)
+  hal_size_t totalSegments = 0;
+  hal_size_t maxSegments = 0;
+  hal_size_t minSegments = numeric_limits<hal_size_t>::max();
+
+  hal_size_t totalLength = 0;
+  hal_size_t maxLength = 0;
+  hal_size_t minLength = numeric_limits<hal_size_t>::max();
+
+  for (BlockConstIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
-    const Genome* genome = gni->first;    
-    NodeList* nodeList = gni->second;
-    os << genome->getName() << ": " << "nodeCount=" << nodeList->size() << " ";
+    totalSegments += (*bi)->getNumSegments();
+    maxSegments = max(maxSegments, (*bi)->getNumSegments());
+    minSegments = min(minSegments, (*bi)->getNumSegments());
 
-    hal_size_t edgeCount = 0;
-    hal_size_t maxDegree = 0;
-    hal_size_t minDegree = numeric_limits<hal_size_t>::max();
-
-    hal_size_t totalEdgeLength = 0;
-    hal_size_t maxEdgeLength = 0;
-    hal_size_t minEdgeLength = numeric_limits<hal_size_t>::max();
-
-    hal_size_t fMin;
-    hal_size_t fMax;
-    hal_size_t fTot;
-    hal_size_t rMin;
-    hal_size_t rMax;
-    hal_size_t rTot;
-    
-    for (NodeIterator ni = nodeList->begin(); ni != nodeList->end(); ++ni)
-    {
-      hal_size_t degree = (*ni)->getDegree();
-      edgeCount += degree;
-      maxDegree = max(degree, maxDegree);
-      minDegree = min(degree, minDegree);
-      assert(degree > 0);
-
-      (*ni)->getEdgeLengthStats(fMin, fMax, fTot, rMin, rMax, rTot);
-      totalEdgeLength += fTot + rTot;
-      maxEdgeLength = max(maxEdgeLength, max(fMax, rMax));
-      minEdgeLength = min(minEdgeLength, min(fMin, rMin));
-    }    
-    os << "edgeCount=" << edgeCount / 2 << " minDeg=" << minDegree << " "
-       << "maxDeg=" << maxDegree << " totLen=" << totalEdgeLength << " "
-       << "minLen=" << minEdgeLength << " maxLen=" << maxEdgeLength << endl;
+    totalLength += (*bi)->getLength();
+    maxLength = max(maxLength, (*bi)->getLength());
+    minLength = min(minLength, (*bi)->getLength());
   }
+
+  os << "Graph: numBlocks=" << _blocks.size()
+     << " numSegs=" << totalSegments << " minSegs=" << minSegments
+     << " maxSegs=" << maxSegments
+     << " totLen=" << totalLength << " minLen=" << minLength
+     << " maxLen=" << maxLength << endl;
 }

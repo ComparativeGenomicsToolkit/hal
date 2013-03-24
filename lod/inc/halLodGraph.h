@@ -13,11 +13,10 @@
 #include <vector>
 #include <map>
 #include "hal.h"
-#include "halLodAdjTable.h"
+#include "halLodSegment.h"
+#include "halLodBlock.h"
 
 namespace hal {
-
-class LodNode;
 
 class LodGraph
 {
@@ -31,35 +30,40 @@ public:
     * HAL).  The step parameter dictates how coarse-grained the interpolation
     * is:  every step bases are sampled.  */
    void build(AlignmentConstPtr alignment, const Genome* parent,
-              const std::vector<const Genome*> children, 
+              const std::vector<const Genome*>& children, 
               hal_size_t step);
-
-   /** Make sure the graph covers all bases in the input sequence without
-    * overlap */
-   bool checkCoverage() const;
 
    /** Help debuggin and tuning */
    void printDimensions(std::ostream& os) const;
 
 protected:
 
-   typedef std::list<LodNode*> NodeList;
-   typedef NodeList::iterator NodeIterator;
-   typedef std::map<const Genome*, NodeList*> GenomeNodes;
-   typedef GenomeNodes::iterator GenomeNodesIterator;
+   typedef std::vector<LodBlock*> BlockList;
+   typedef BlockList::iterator BlockIterator;
+   typedef BlockList::const_iterator BlockConstIterator;
+
+   typedef std::set<LodSegment*> SegmentSet;
+   typedef SegmentSet::iterator SegmentIterator;
+
+   typedef std::map<const Sequence*, SegmentSet*> SequenceMap;
+   typedef SequenceMap::iterator SequenceMapIterator;
 
    void erase();
 
-   /** Read a HAL genome into a nodeList, updating the adjTable as well */
-   void scanGenome(const Genome* genome, NodeList* nodeList);
+   /** Read a HAL genome into sequence graph */
+   void scanGenome(const Genome* genome);
 
-   /** Add a single column iterator */
-   void createColumn(ColumnIteratorConstPtr colIt, NodeList* nodeList);
+   /** Test if we can add a column.  Does it collide?  does it fail 
+    * heuristics? */
+   bool canAddColumn(ColumnIteratorConstPtr colIt);
 
-   /** First optimization pass: Maximally extend all nodes */
+   /** Add a single column iterator as  a block */
+   void createColumn(ColumnIteratorConstPtr colIt);
+
+   /** First optimization pass: Maximally extend all blocks */
    void optimizeByExtension();
 
-   /** Second optimization pass: Insert new nodes until all edges have 
+   /** Second optimization pass: Insert new blocks until all edges have 
     * zero length */
    void optimizeByInsertion();
 
@@ -69,7 +73,7 @@ protected:
    // input alignment structure
    AlignmentConstPtr _alignment;
    const Genome* _parent;
-   std::vector<const Genome*> _children;
+   std::set<const Genome*> _genomes;
 
    // step size for interpolation
    hal_size_t _step;
@@ -77,11 +81,11 @@ protected:
    // fraction of edge to greedily extend
    double _extendFraction;
 
-   // ordered list of nodes for each sequence
-   GenomeNodes _genomeNodes;
-
-   // adjacency table used to generate the graph
-   LodAdjTable _adjTable;
+   // the alignment blocks
+   BlockList _blocks;
+   
+   // nodes sorted by sequence
+   SequenceMap _seqMap;
 };
 
 }
