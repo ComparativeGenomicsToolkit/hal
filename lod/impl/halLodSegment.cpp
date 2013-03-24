@@ -85,6 +85,36 @@ void LodSegment::extendHead(hal_size_t extLen)
   assert(overlaps(*_headAdj) == false);
 }
 
+LodSegment* LodSegment::insertNewHeadAdj(hal_size_t newLen)
+{
+  assert(newLen > 0);
+  hal_index_t newTailPos = getHeadPos();
+  newTailPos += getFlipped() ? -1 : 1;
+  LodSegment* newSeg = new LodSegment(getSequence(), newTailPos, getFlipped());
+  newSeg->_headAdj = _headAdj;
+  newSeg->_tailAdj = this;
+  _headAdj = newSeg;
+  assert(getHeadAdjLen() == 0);
+  assert(newSeg->getTailAdjLen() == 0);
+  newSeg->extendHead(newLen);
+  return newSeg;
+}
+
+LodSegment* LodSegment::insertNewTailAdj(hal_size_t newLen)
+{
+  assert(newLen > 0);
+  hal_index_t newHeadPos = getTailPos();
+  newHeadPos += getFlipped() ? 1 : -1;
+  LodSegment* newSeg = new LodSegment(getSequence(), newHeadPos, getFlipped());
+  newSeg->_tailAdj = _tailAdj;
+  newSeg->_headAdj = this;
+  _tailAdj = newSeg;
+  assert(getTailAdjLen() == 0);
+  assert(newSeg->getHeadAdjLen() == 0);
+  newSeg->extendTail(newLen);
+  return newSeg;
+}
+
 ostream& hal::operator<<(ostream& os, const LodSegment& segment)
 {
   os << "seg: " << &segment << " "

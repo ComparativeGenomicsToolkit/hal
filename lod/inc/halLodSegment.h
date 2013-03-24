@@ -71,6 +71,16 @@ public:
 
    /** Extend the segment head-wards by extLen */
    void extendHead(hal_size_t extLen);
+
+   /** Insert a new segment as a head adjacency to this
+    * segment. So the head of this will be connected to the 
+    * tail of the new segment, and the new segment's head
+    * will connect to whatever this's head connected to. The
+    * new segment will have 0 distance from this segment, and
+    * it's length is given by the parameter.  The new segment
+    * is then returned */
+   LodSegment* insertNewHeadAdj(hal_size_t newLen);
+   LodSegment* insertNewTailAdj(hal_size_t newLen);
    
 protected:
 
