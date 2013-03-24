@@ -53,7 +53,7 @@ public:
    const LodSegment* getTailAdj() const;
    const LodSegment* getHeadAdj() const;
    hal_size_t getTailAdjLen() const;
-   hal_size_t getHeadAjdLen() const;
+   hal_size_t getHeadAdjLen() const;
    bool getTailToHead() const;
    bool getHeadToTail() const;
    bool overlaps(const LodSegment& other) const;
@@ -143,7 +143,7 @@ inline hal_size_t LodSegment::getTailAdjLen() const
   return (hal_size_t)std::abs(getTailPos() - otherPos);
 }
 
-inline hal_size_t LodSegment::getHeadAjdLen() const
+inline hal_size_t LodSegment::getHeadAdjLen() const
 {
   assert(_headAdj != NULL);
   hal_index_t otherPos = 
@@ -154,13 +154,15 @@ inline hal_size_t LodSegment::getHeadAjdLen() const
 
 inline bool LodSegment::getTailToHead() const
 {
+  assert(_tailAdj != NULL);
   assert(this == _tailAdj->_headAdj || this == _tailAdj->_tailAdj);
   return this == _tailAdj->_headAdj;
 }
 
 inline bool LodSegment::getHeadToTail() const
 {
-  assert(this == _tailAdj->_headAdj || this == _tailAdj->_tailAdj);
+  assert(_headAdj != NULL);
+  assert(this == _headAdj->_headAdj || this == _headAdj->_tailAdj);
   return this == _headAdj->_tailAdj;
 }
 

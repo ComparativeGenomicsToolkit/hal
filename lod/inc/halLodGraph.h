@@ -42,7 +42,7 @@ protected:
    typedef BlockList::iterator BlockIterator;
    typedef BlockList::const_iterator BlockConstIterator;
 
-   typedef std::set<LodSegment*> SegmentSet;
+   typedef std::set<LodSegment*, LodSegmentPLess> SegmentSet;
    typedef SegmentSet::iterator SegmentIterator;
 
    typedef std::map<const Sequence*, SegmentSet*> SequenceMap;

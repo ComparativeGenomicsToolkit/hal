@@ -53,13 +53,21 @@ ostream& hal::operator<<(ostream& os, const LodSegment& segment)
   os << "seg: " << &segment << " "
      << segment.getSequence()->getName()
      << " [" << segment.getLeftPos() 
-     << " (" << (segment.getFlipped() ? "H" : "T") << ")"
+     << "(" << (segment.getFlipped() ? "H" : "T") << ")"
      << ", " << segment.getRightPos()
-     << " (" << (segment.getFlipped() ? "T" : "H") << ")"
+     << "(" << (segment.getFlipped() ? "T" : "H") << ")"
      << "]"
-     << " tAdj: " << segment._tailAdj << " len=" << segment.getTailAdjLen()
-     << "(" << (segment.getTailToHead() ? "H" : "T")
-     << " hAdj: " << segment._headAdj << " len=" << segment.getHeadAjdLen()
-     << "(" << (segment.getHeadToTail() ? "T" : "H");
+     << " tAdj: " << segment._tailAdj;
+  if (segment._tailAdj != NULL)
+  {
+    os  << " len=" << segment.getTailAdjLen() 
+        << "(" << (segment.getTailToHead() ? "H)" : "T)");
+  }
+  os << " hAdj: " << segment._headAdj;
+  if (segment._headAdj != NULL)
+  {
+    os  << " len=" << segment.getHeadAdjLen()
+        << "(" << (segment.getHeadToTail() ? "T)" : "H)");
+  }
   return os;
 }

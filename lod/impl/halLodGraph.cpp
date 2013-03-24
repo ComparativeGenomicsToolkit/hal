@@ -258,6 +258,10 @@ void LodGraph::printDimensions(ostream& os) const
   hal_size_t maxLength = 0;
   hal_size_t minLength = numeric_limits<hal_size_t>::max();
 
+  hal_size_t totalAdjLength = 0;
+  hal_size_t maxAdjLength = 0;
+  hal_size_t minAdjLength = numeric_limits<hal_size_t>::max();
+
   for (BlockConstIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
     totalSegments += (*bi)->getNumSegments();
@@ -267,11 +271,18 @@ void LodGraph::printDimensions(ostream& os) const
     totalLength += (*bi)->getLength();
     maxLength = max(maxLength, (*bi)->getLength());
     minLength = min(minLength, (*bi)->getLength());
+
+    totalAdjLength += (*bi)->getTotalAdjLength();
+    maxAdjLength = max(maxAdjLength, (*bi)->getTotalAdjLength());
+    minAdjLength = min(minAdjLength, (*bi)->getTotalAdjLength());
   }
 
   os << "Graph: numBlocks=" << _blocks.size()
      << " numSegs=" << totalSegments << " minSegs=" << minSegments
      << " maxSegs=" << maxSegments
      << " totLen=" << totalLength << " minLen=" << minLength
-     << " maxLen=" << maxLength << endl;
+     << " maxLen=" << maxLength 
+     << " totAdjLen=" << totalAdjLength << " minAdjLen=" << minAdjLength
+     << " maxAdjLen=" << maxAdjLength 
+     << endl;
 }
