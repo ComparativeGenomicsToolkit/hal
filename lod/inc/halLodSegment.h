@@ -55,7 +55,9 @@ public:
    hal_size_t getTailAdjLen() const;
    hal_size_t getHeadAdjLen() const;
    bool getTailToHead() const;
+   bool getTailToTail() const;
    bool getHeadToTail() const;
+   bool getHeadToHead() const;
    bool overlaps(const LodSegment& other) const;
 
    /** Add a new edge from right endpoint of this segment to left
@@ -63,6 +65,12 @@ public:
     * heads or tails depends on the orientation of the segments)
     */
    void addEdgeFromRightToLeft(LodSegment* tgt);
+
+   /** Extend the segment tail-wards by extLen */
+   void extendTail(hal_size_t extLen);
+
+   /** Extend the segment head-wards by extLen */
+   void extendHead(hal_size_t extLen);
    
 protected:
 
@@ -105,12 +113,12 @@ inline hal_index_t LodSegment::getHeadPos() const
 
 inline hal_index_t LodSegment::getLeftPos() const
 {
-  return getFlipped() ? getHeadPos() : getHeadPos();
+  return getFlipped() ? getHeadPos() : getTailPos();
 }
 
 inline hal_index_t LodSegment::getRightPos() const
 {
-  return getFlipped() ? getHeadPos() : getHeadPos();
+  return getFlipped() ? getTailPos() : getHeadPos();
 }
 
 inline bool LodSegment::getFlipped() const
@@ -140,7 +148,7 @@ inline hal_size_t LodSegment::getTailAdjLen() const
   hal_index_t otherPos = 
      getTailToHead() ? _tailAdj->getHeadPos() : _tailAdj->getTailPos();
   assert(otherPos > getRightPos() || otherPos < getLeftPos());
-  return (hal_size_t)std::abs(getTailPos() - otherPos);
+  return (hal_size_t)std::abs(getTailPos() - otherPos) - 1;
 }
 
 inline hal_size_t LodSegment::getHeadAdjLen() const
@@ -149,7 +157,7 @@ inline hal_size_t LodSegment::getHeadAdjLen() const
   hal_index_t otherPos = 
      getHeadToTail() ? _headAdj->getTailPos() : _headAdj->getHeadPos();
   assert(otherPos > getRightPos() || otherPos < getLeftPos());
-  return (hal_size_t)std::abs(getHeadPos() - otherPos);
+  return (hal_size_t)std::abs(getHeadPos() - otherPos) - 1;
 }
 
 inline bool LodSegment::getTailToHead() const
@@ -159,11 +167,21 @@ inline bool LodSegment::getTailToHead() const
   return this == _tailAdj->_headAdj;
 }
 
+inline bool LodSegment::getTailToTail() const
+{
+  return !getTailToHead();
+}
+
 inline bool LodSegment::getHeadToTail() const
 {
   assert(_headAdj != NULL);
   assert(this == _headAdj->_headAdj || this == _headAdj->_tailAdj);
   return this == _headAdj->_tailAdj;
+}
+
+inline bool LodSegment::getHeadToHead() const
+{
+  return !getHeadToTail();
 }
 
 inline bool LodSegment::overlaps(const LodSegment& other) const

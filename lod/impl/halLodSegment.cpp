@@ -46,6 +46,43 @@ void LodSegment::addEdgeFromRightToLeft(LodSegment* tgt)
   assert(tgtCap == NULL);
   myCap = tgt;
   tgtCap = this;
+  assert(_tailAdj != _headAdj);
+}
+
+void LodSegment::extendTail(hal_size_t extLen)
+{
+  assert(getTailAdjLen() >= extLen);
+  assert(getLeftPos() >= _sequence->getStartPosition() &&
+         getRightPos() <= _sequence->getEndPosition());
+  if (getFlipped() == true)
+  {
+    _tailPos += extLen;
+  }
+  else
+  {
+    _tailPos -= extLen;
+  }
+  assert(getLeftPos() >= _sequence->getStartPosition() &&
+         getRightPos() <= _sequence->getEndPosition());
+  assert(overlaps(*_tailAdj) == false);
+}
+
+void LodSegment::extendHead(hal_size_t extLen)
+{
+  assert(getHeadAdjLen() >= extLen);
+  assert(getLeftPos() >= _sequence->getStartPosition() &&
+         getRightPos() <= _sequence->getEndPosition());
+  if (getFlipped() == true)
+  {
+    _afterHeadPos -= extLen;
+  }
+  else
+  {
+    _afterHeadPos += extLen;
+  }
+  assert(getLeftPos() >= _sequence->getStartPosition() &&
+         getRightPos() <= _sequence->getEndPosition());
+  assert(overlaps(*_headAdj) == false);
 }
 
 ostream& hal::operator<<(ostream& os, const LodSegment& segment)

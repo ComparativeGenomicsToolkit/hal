@@ -66,8 +66,9 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
   }
   
   computeAdjacencies();
-
+  printDimensions(cout);
   optimizeByExtension();
+  printDimensions(cout);
   optimizeByInsertion();
 }
 
@@ -236,7 +237,7 @@ void LodGraph::optimizeByExtension()
 {
   for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
-    // extend here
+    (*bi)->extend();
   }
 }
 
