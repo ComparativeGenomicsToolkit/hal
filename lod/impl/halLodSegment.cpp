@@ -37,8 +37,7 @@ LodSegment::~LodSegment()
 {
 }
 
-void LodSegment::addEdgeFromRightToLeft(const Sequence* sequence, 
-                                        LodSegment* tgt)
+void LodSegment::addEdgeFromRightToLeft(LodSegment* tgt)
 {
   assert(tgt != NULL);
   LodSegment*& myCap = getFlipped() ? _tailAdj : _headAdj;

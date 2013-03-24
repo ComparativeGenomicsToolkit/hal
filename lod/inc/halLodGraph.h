@@ -57,8 +57,15 @@ protected:
     * heuristics? */
    bool canAddColumn(ColumnIteratorConstPtr colIt);
 
+   /** Add segments for the telomeres of the sequence, ie at 
+    * position -1 and and endPosition + 1 */
+   void addTelomeres(const Sequence* sequence);
+
    /** Add a single column iterator as  a block */
    void createColumn(ColumnIteratorConstPtr colIt);
+
+   /** compute the adjacencies using the SegmentSets */
+   void computeAdjacencies();
 
    /** First optimization pass: Maximally extend all blocks */
    void optimizeByExtension();
@@ -83,6 +90,10 @@ protected:
 
    // the alignment blocks
    BlockList _blocks;
+
+   // the telomeres all get put in one block.  the block structure
+   // is used only to make sure they get freed.
+   LodBlock _telomeres;
    
    // nodes sorted by sequence
    SequenceMap _seqMap;

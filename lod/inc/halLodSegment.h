@@ -56,13 +56,13 @@ public:
    hal_size_t getHeadAjdLen() const;
    bool getTailToHead() const;
    bool getHeadToTail() const;
-   
+   bool overlaps(const LodSegment& other) const;
+
    /** Add a new edge from right endpoint of this segment to left
     * endpoint of tgt segment.  (whether or not these endpoints are 
     * heads or tails depends on the orientation of the segments)
     */
-   void addEdgeFromRightToLeft(const Sequence* sequence, LodSegment* tgt);
-
+   void addEdgeFromRightToLeft(LodSegment* tgt);
    
 protected:
 
@@ -163,7 +163,13 @@ inline bool LodSegment::getHeadToTail() const
   assert(this == _tailAdj->_headAdj || this == _tailAdj->_tailAdj);
   return this == _headAdj->_tailAdj;
 }
-   
+
+inline bool LodSegment::overlaps(const LodSegment& other) const
+{
+  return other.getRightPos() >= getLeftPos() && 
+     other.getLeftPos() <= getRightPos();
+}
+  
 }
 
 #endif

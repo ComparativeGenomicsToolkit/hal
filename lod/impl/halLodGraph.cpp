@@ -36,6 +36,7 @@ void LodGraph::erase()
   }
   _blocks.clear();
   _genomes.clear();
+  _telomeres.clear();
 }
 
 void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
@@ -63,6 +64,8 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
   {
     scanGenome(*gi);
   }
+  
+  computeAdjacencies();
 
   optimizeByExtension();
   optimizeByInsertion();
@@ -77,7 +80,9 @@ void LodGraph::scanGenome(const Genome* genome)
   {
     const Sequence* sequence = seqIt->getSequence();
     hal_size_t len = sequence->getSequenceLength();
-
+    
+    addTelomeres(sequence);
+    
     for (hal_index_t pos = 0; pos < (hal_index_t)len; pos += (hal_index_t)_step)
     {
       // clamp to last position
@@ -150,6 +155,28 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
   return canAdd;
 }
 
+void LodGraph::addTelomeres(const Sequence* sequence)
+{
+  SequenceMapIterator smi = _seqMap.find(sequence);
+  SegmentSet* segSet = NULL;
+  if (smi == _seqMap.end())
+  {
+    segSet = new SegmentSet();;
+    _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
+  }
+  else
+  {
+    segSet = smi->second;
+  }
+  
+  LodSegment* segment = new LodSegment(sequence, -1, false);
+  _telomeres.addSegment(segment);
+  segSet->insert(segment);
+  segment = new LodSegment(sequence, sequence->getEndPosition() + 1, false);
+  _telomeres.addSegment(segment);
+  segSet->insert(segment);
+}
+
 void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
 {
   LodBlock* block = new LodBlock();
@@ -162,13 +189,14 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
     SegmentSet* segSet = NULL;
     if (smi == _seqMap.end())
     {
-      segSet = new SegmentSet();
+      segSet = new SegmentSet();;
       _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
     }
     else
     {
       segSet = smi->second;
     }
+    
     const ColumnIterator::DNASet* dnaSet = colMapIt->second;
     for (ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
          dnaIt != dnaSet->end(); ++ dnaIt)
@@ -185,6 +213,24 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
   _blocks.push_back(block);
 }
 
+void LodGraph::computeAdjacencies()
+{
+  for (SequenceMapIterator smi = _seqMap.begin(); smi != _seqMap.end(); ++smi)
+  {
+    SegmentIterator si = smi->second->begin();
+    SegmentIterator siNext;
+    for (; si != smi->second->end(); ++si)
+    {
+      siNext = si;
+      ++siNext;
+      if (siNext != smi->second->end())
+      {
+        assert((*si)->overlaps(**siNext) == false);
+        (*si)->addEdgeFromRightToLeft(*siNext);
+      }
+    }
+  }
+}
 
 void LodGraph::optimizeByExtension()
 {
