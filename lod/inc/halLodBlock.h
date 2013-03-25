@@ -41,6 +41,7 @@ public:
 
    hal_size_t getNumSegments() const;
    hal_size_t getLength() const;
+   const LodSegment* getSegment(hal_size_t index) const;
 
    void addSegment(LodSegment* segment);
    void clear();
@@ -96,6 +97,11 @@ inline hal_size_t LodBlock::getLength() const
   return _segments.empty() ? 0 : _segments[0]->getLength();
 }
 
+inline const LodSegment* LodBlock::getSegment(hal_size_t index) const
+{
+  assert(index < getNumSegments());
+  return _segments.at(index);
+}
 
 }
 

@@ -70,6 +70,8 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
   optimizeByExtension();
   printDimensions(cout);
   optimizeByInsertion();
+  printDimensions(cout);
+  assert(checkCoverage() == true);
 }
 
 
@@ -244,11 +246,20 @@ void LodGraph::optimizeByExtension()
 void LodGraph::optimizeByInsertion()
 {
   vector<LodBlock*> newBlocks;
-  for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
+  BlockIterator startPoint = _blocks.begin();
+  // seems more convoluted than necessary but I had problems with ?iterators?
+  // doing it more simply. 
+  while (startPoint != _blocks.end())
   {
     newBlocks.clear();
-    (*bi)->insertNeighbours(newBlocks);
-    //  _blocks.insert(_blocks.end(), newBlocks.begin(), newBlocks.end());
+    for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
+    {
+      (*bi)->insertNeighbours(newBlocks);
+    }
+    startPoint = _blocks.end();
+    --startPoint;
+    _blocks.insert(_blocks.end(), newBlocks.begin(), newBlocks.end());
+    ++startPoint;
   }
 }
 
@@ -289,4 +300,69 @@ void LodGraph::printDimensions(ostream& os) const
      << " totAdjLen=" << totalAdjLength << " minAdjLen=" << minAdjLength
      << " maxAdjLen=" << maxAdjLength 
      << endl;
+}
+
+bool LodGraph::checkCoverage() const
+{
+  map<const Genome*, vector<bool>* > covMap;
+  pair<const Genome*, vector<bool>* > covPair;
+  map<const Genome*, vector<bool>* >::iterator covMapIt;
+  set<const Genome*>::const_iterator genomeIt;
+  bool success = true;
+
+  // create new bit vector for each genome, set all zero
+  for (genomeIt = _genomes.begin(); genomeIt != _genomes.end(); ++genomeIt)
+  {
+    covPair.first = *genomeIt;
+    covPair.second = new vector<bool>(covPair.first->getSequenceLength(), 
+                                      false);
+    covMap.insert(covPair);
+  }
+
+  // iterate through every segment in every block.
+  for (BlockConstIterator bi = _blocks.begin(); bi != _blocks.end() && success;
+       ++bi)
+  {
+    for (hal_size_t segIdx = 0; segIdx < (*bi)->getNumSegments() && success; 
+         ++ segIdx)
+    {
+      const LodSegment* segment = (*bi)->getSegment(segIdx);
+      const Genome* genome = segment->getSequence()->getGenome();
+      covMapIt = covMap.find(genome);
+      assert(covMapIt != covMap.end());
+      assert(segment->getLeftPos() <= segment->getRightPos());
+      for (hal_index_t pos = segment->getLeftPos();
+           pos <= segment->getRightPos(); ++pos)
+      {
+        assert(pos < (hal_index_t)genome->getSequenceLength());
+        if (covMapIt->second->at(pos) == true)
+        {
+          cerr << "dupcliate coverage found at position " << pos << " in"
+               << " genome " << genome->getName() << " offending block:\n"
+               << **bi << endl;
+          success = false;
+        }
+        covMapIt->second->at(pos) = true;
+      }
+    }
+  }
+
+  // check the coverage and clean up
+  for (covMapIt = covMap.begin(); covMapIt != covMap.end(); ++covMapIt)
+  {
+    for (hal_size_t i = 0; i < covMapIt->second->size() && success; ++i)
+    {
+      if (covMapIt->second->at(i) != true)
+      {
+        if (success == true)
+        {
+          cerr << "coverage gap found at position " << i << " in"
+               << " genome " << covMapIt->first->getName() << endl;
+        }
+        success = false;
+      }
+    }
+    delete covMapIt->second;
+  }
+  return success;
 }

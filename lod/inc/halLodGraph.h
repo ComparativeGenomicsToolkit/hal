@@ -36,6 +36,11 @@ public:
    /** Help debuggin and tuning */
    void printDimensions(std::ostream& os) const;
 
+   /** Make sure that every base in every genome appears exactly once
+    * in the sequence graph.  For debugging purpose only -- will take
+    * up a significant amount of memory and time */
+   bool checkCoverage() const;
+
 protected:
 
    typedef std::vector<LodBlock*> BlockList;
@@ -75,7 +80,6 @@ protected:
    void optimizeByInsertion();
 
 protected:
-
    
    // input alignment structure
    AlignmentConstPtr _alignment;

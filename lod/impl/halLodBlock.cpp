@@ -81,7 +81,6 @@ void LodBlock::extend(double maxFrac)
 void LodBlock::insertNeighbours(vector<LodBlock*>& outList)
 {
   LodBlock* lodBlock = NULL;
-  assert(outList.empty());
   while (true) 
   {
     lodBlock = insertNewTailNeighbour();
