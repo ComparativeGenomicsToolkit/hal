@@ -57,7 +57,7 @@ hal_size_t LodBlock::getTotalAdjLength() const
 
 void LodBlock::extend(double maxFrac)
 {
-  hal_size_t tailExtLen = getMaxHeadExtensionLen();
+  hal_size_t tailExtLen = getMaxTailExtensionLen();
   tailExtLen = (hal_size_t)std::ceil(maxFrac * (double)tailExtLen);
   
   for (LodBlock::SegmentIterator i = _segments.begin();
@@ -78,6 +78,77 @@ void LodBlock::extend(double maxFrac)
   }
 }
 
+void LodBlock::insertNeighbours(vector<LodBlock*>& outList)
+{
+  LodBlock* lodBlock = NULL;
+  assert(outList.empty());
+  while (true) 
+  {
+    lodBlock = insertNewTailNeighbour();
+    if (lodBlock != NULL)
+    {
+      outList.push_back(lodBlock);
+    }
+    else
+    {
+      break;
+    }
+  }
+  while (true) 
+  {
+    lodBlock = insertNewHeadNeighbour();
+    if (lodBlock != NULL)
+    {
+      outList.push_back(lodBlock);
+    }
+    else
+    {
+      break;
+    }
+  }
+  assert(getMaxHeadInsertionLen() == 0);
+  assert(getMaxTailInsertionLen() == 0);
+}
+
+LodBlock* LodBlock::insertNewTailNeighbour()
+{
+  LodBlock* newBlock = NULL;
+  hal_size_t maxTailInsLen = getMaxTailInsertionLen();
+  if (maxTailInsLen > 0)
+  {
+    newBlock = new LodBlock();
+    for (LodBlock::SegmentIterator i = _segments.begin();
+         i != _segments.end(); ++i)
+    {
+      if ((*i)->getTailAdjLen()  >= maxTailInsLen)
+      {
+        LodSegment* newSeg = (*i)->insertNewTailAdj(maxTailInsLen);
+        newBlock->_segments.push_back(newSeg);
+      }
+    }
+  }
+  return newBlock;
+}
+
+LodBlock* LodBlock::insertNewHeadNeighbour()
+{
+  LodBlock* newBlock = NULL;
+  hal_size_t maxHeadInsLen = getMaxHeadInsertionLen();
+  if (maxHeadInsLen > 0)
+  {
+    newBlock = new LodBlock();
+    for (LodBlock::SegmentIterator i = _segments.begin();
+         i != _segments.end(); ++i)
+    {
+      if ((*i)->getHeadAdjLen() >= maxHeadInsLen)
+      {
+        LodSegment* newSeg = (*i)->insertNewHeadAdj(maxHeadInsLen);
+        newBlock->_segments.push_back(newSeg);
+      }
+    }
+  }
+  return newBlock;
+}
 
 hal_size_t LodBlock::getMaxTailExtensionLen() const
 {
@@ -122,7 +193,38 @@ hal_size_t LodBlock::getMaxHeadExtensionLen() const
   }
   return minHead;
 }
- 
+
+hal_size_t LodBlock::getMaxTailInsertionLen() const
+{
+  hal_size_t minNZTail = numeric_limits<hal_size_t>::max();
+  hal_size_t adjLen;
+  for (LodBlock::SegmentConstIterator i = _segments.begin();
+       i != _segments.end(); ++i)
+  {
+    adjLen = (*i)->getTailAdjLen();
+    if (adjLen > 0)
+    {
+      minNZTail = min(adjLen, minNZTail);
+    }
+  }
+  return minNZTail == numeric_limits<hal_size_t>::max() ? 0 : minNZTail;
+}
+
+hal_size_t LodBlock::getMaxHeadInsertionLen() const
+{
+  hal_size_t minNZHead = numeric_limits<hal_size_t>::max();
+  hal_size_t adjLen;
+  for (LodBlock::SegmentConstIterator i = _segments.begin();
+       i != _segments.end(); ++i)
+  {
+    adjLen = (*i)->getHeadAdjLen();
+    if (adjLen > 0)
+    {
+      minNZHead = min(adjLen, minNZHead);
+    }
+  }
+  return minNZHead == numeric_limits<hal_size_t>::max() ? 0 : minNZHead;
+}
 
 ostream& hal::operator<<(ostream& os, const LodBlock& block)
 {

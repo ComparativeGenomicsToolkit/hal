@@ -51,8 +51,19 @@ public:
 
    /** Extend segments as much as possible (or maxFrac) in both directions. */
    void extend(double maxFrac = 1.0);
+   
+   /** Insert new blocks as neighbours until all adjacencies have length
+    * 0.  (if there are no self edges, at most 1 head block and 1 tail
+    * block are created.  If there are self edges, it can take multiple
+    * blocks to reduce all the edge  lengths */
+   void insertNeighbours(std::vector<LodBlock*>& outList);
       
 protected:
+
+   /** Create a new block and insert it as a neighbour.  All adjacencies
+    * of this block become 0. */
+   LodBlock* insertNewTailNeighbour();
+   LodBlock* insertNewHeadNeighbour();
   
    /** Get the maximum length to extend the block.  This is equivalent
     * to the minimum adjacency length, except that adjacencies between
@@ -61,6 +72,12 @@ protected:
     * NOTE THAT EVERY SEGMENT MUST HAVE AN EXISTING ADJACENCY */
    hal_size_t getMaxHeadExtensionLen() const;
    hal_size_t getMaxTailExtensionLen() const;
+
+   /** Get the maximum lengths for insertion.  This is the equivalent
+    * to the minimum non-zero adjacency.  If no nonzero lengths exist
+    * then 0 is returned */
+   hal_size_t getMaxHeadInsertionLen() const;
+   hal_size_t getMaxTailInsertionLen() const;
 
    SegmentList _segments;
 

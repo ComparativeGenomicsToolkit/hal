@@ -91,12 +91,25 @@ LodSegment* LodSegment::insertNewHeadAdj(hal_size_t newLen)
   hal_index_t newTailPos = getHeadPos();
   newTailPos += getFlipped() ? -1 : 1;
   LodSegment* newSeg = new LodSegment(getSequence(), newTailPos, getFlipped());
+  bool headToHead = getHeadToHead();
   newSeg->_headAdj = _headAdj;
+  if (headToHead)
+  {
+    assert(_headAdj->_headAdj == this);
+    _headAdj->_headAdj = newSeg;
+  }
+  else
+  {
+    assert(_headAdj->_tailAdj == this);
+    _headAdj->_tailAdj = newSeg;
+  }
   newSeg->_tailAdj = this;
   _headAdj = newSeg;
   assert(getHeadAdjLen() == 0);
   assert(newSeg->getTailAdjLen() == 0);
-  newSeg->extendHead(newLen);
+  // we do the minus 1 below because the segment already
+  // counts for 1
+  newSeg->extendHead(newLen - 1);
   return newSeg;
 }
 
@@ -106,12 +119,25 @@ LodSegment* LodSegment::insertNewTailAdj(hal_size_t newLen)
   hal_index_t newHeadPos = getTailPos();
   newHeadPos += getFlipped() ? 1 : -1;
   LodSegment* newSeg = new LodSegment(getSequence(), newHeadPos, getFlipped());
+  bool tailToTail = getTailToTail();
   newSeg->_tailAdj = _tailAdj;
+  if (tailToTail)
+  {
+    assert(_tailAdj->_tailAdj == this);
+    _tailAdj->_tailAdj = newSeg;
+  }
+  else
+  {
+    assert(_tailAdj->_headAdj == this);
+    _tailAdj->_headAdj = newSeg;
+  }
   newSeg->_headAdj = this;
   _tailAdj = newSeg;
   assert(getTailAdjLen() == 0);
   assert(newSeg->getHeadAdjLen() == 0);
-  newSeg->extendTail(newLen);
+  // we do the minus 1 below because the segment already
+  // counts for 1
+  newSeg->extendTail(newLen - 1);
   return newSeg;
 }
 

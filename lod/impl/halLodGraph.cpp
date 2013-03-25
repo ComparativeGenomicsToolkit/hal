@@ -243,9 +243,12 @@ void LodGraph::optimizeByExtension()
 
 void LodGraph::optimizeByInsertion()
 {
+  vector<LodBlock*> newBlocks;
   for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
-    // insert here
+    newBlocks.clear();
+    (*bi)->insertNeighbours(newBlocks);
+    //  _blocks.insert(_blocks.end(), newBlocks.begin(), newBlocks.end());
   }
 }
 
