@@ -57,29 +57,29 @@ hal_size_t LodBlock::getTotalAdjLength() const
 
 void LodBlock::extend(double maxFrac)
 {
-  hal_size_t minTail = getMinTailAdjLen();
-  minTail = (hal_size_t)std::ceil(maxFrac * (double)minTail);
+  hal_size_t tailExtLen = getMaxHeadExtensionLen();
+  tailExtLen = (hal_size_t)std::ceil(maxFrac * (double)tailExtLen);
   
   for (LodBlock::SegmentIterator i = _segments.begin();
        i != _segments.end(); ++i)
   {
-    (*i)->extendTail(minTail);
+    (*i)->extendTail(tailExtLen);
     assert((*i)->getLength() == getLength());
   }
 
-  hal_size_t minHead = getMinHeadAdjLen();
-  minHead = (hal_size_t)std::ceil(maxFrac * (double)minHead);
+  hal_size_t headExtLen = getMaxHeadExtensionLen();
+  headExtLen = (hal_size_t)std::ceil(maxFrac * (double)headExtLen);
   
   for (LodBlock::SegmentIterator i = _segments.begin();
        i != _segments.end(); ++i)
   {
-    (*i)->extendHead(minHead);
+    (*i)->extendHead(headExtLen);
     assert((*i)->getLength() == getLength());
   }
 }
 
 
-hal_size_t LodBlock::getMinTailAdjLen() const
+hal_size_t LodBlock::getMaxTailExtensionLen() const
 {
   hal_size_t minTail = numeric_limits<hal_size_t>::max();
 
@@ -101,7 +101,7 @@ hal_size_t LodBlock::getMinTailAdjLen() const
   return minTail;
 }
 
-hal_size_t LodBlock::getMinHeadAdjLen() const
+hal_size_t LodBlock::getMaxHeadExtensionLen() const
 {
   hal_size_t minHead = numeric_limits<hal_size_t>::max();
 

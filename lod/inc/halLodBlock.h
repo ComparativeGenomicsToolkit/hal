@@ -54,10 +54,13 @@ public:
       
 protected:
   
-   /** Get the minimum adjacencly lengths.  
+   /** Get the maximum length to extend the block.  This is equivalent
+    * to the minimum adjacency length, except that adjacencies between
+    * two segments within this blocks are cut in half (since extending
+    * eats them in both directions. 
     * NOTE THAT EVERY SEGMENT MUST HAVE AN EXISTING ADJACENCY */
-   hal_size_t getMinHeadAdjLen() const;
-   hal_size_t getMinTailAdjLen() const;
+   hal_size_t getMaxHeadExtensionLen() const;
+   hal_size_t getMaxTailExtensionLen() const;
 
    SegmentList _segments;
 
