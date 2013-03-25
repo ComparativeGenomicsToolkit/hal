@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cassert>
 #include "halLodSegment.h"
-#include "halLodEdge.h"
 
 using namespace std;
 using namespace hal;

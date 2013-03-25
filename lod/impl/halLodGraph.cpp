@@ -6,8 +6,6 @@
 
 #include <cassert>
 #include <limits>
-#include "halLodNode.h"
-#include "halLodEdge.h"
 #include "halLodGraph.h"
 
 using namespace std;
