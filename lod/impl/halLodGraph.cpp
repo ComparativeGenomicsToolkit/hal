@@ -170,7 +170,8 @@ void LodGraph::addTelomeres(const Sequence* sequence)
     segSet = smi->second;
   }
   
-  LodSegment* segment = new LodSegment(sequence, -1, false);
+  LodSegment* segment = new LodSegment(sequence, 
+                                       sequence->getStartPosition() - 1, false);
   _telomeres.addSegment(segment);
   segSet->insert(segment);
   segment = new LodSegment(sequence, sequence->getEndPosition() + 1, false);
