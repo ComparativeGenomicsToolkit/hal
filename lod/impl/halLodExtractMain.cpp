@@ -13,28 +13,35 @@ using namespace hal;
 static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
-  optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addArgument("step", "step size for interpolation");
-  optionsParser->addOption("refGenome", 
-                           "name of reference genome (root if empty)", 
-                           "\"\"");
-                           
-  optionsParser->setDescription("Extract LOD");
+  optionsParser->addArgument("inHalPath", "Input hal file");
+  optionsParser->addArgument("outHalPath", "output hal file");
+  optionsParser->addArgument("step", "Step size for interpolation");
+  optionsParser->addOption("root", 
+                           "Name of root genome of tree to extract (root if "
+                           "empty)", "\"\"");
+  optionsParser->addOption("outTree", 
+                           "Phylogenetic tree of output HAL file.  Must "
+                           "contain only genomes from the input HAL file. "
+                           "(input\'s tree used if empty)", "\"\"");
+  optionsParser->setDescription("Generate a new HAL file at a coarser "
+                                "Level of Detail (LOD) by interpolation.");
   return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
   CLParserPtr optionsParser = initParser();
-  string halPath;
-  string refGenomeName;
+  string inHalPath;
+  string outHalPath;
+  string rootName;
   hal_size_t step;
   try
   {
     optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
+    inHalPath = optionsParser->getArgument<string>("inHalPath");
+    outHalPath = optionsParser->getArgument<string>("outHalPath");
+    rootName = optionsParser->getOption<string>("root");
     step = optionsParser->getArgument<hal_size_t>("step");
-    refGenomeName = optionsParser->getOption<string>("refGenome");
   }
   catch(exception& e)
   {
@@ -44,20 +51,29 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
-                                                           optionsParser);
-    if (alignment->getNumGenomes() == 0)
+    AlignmentConstPtr inAlignment = openHalAlignmentReadOnly(inHalPath, 
+                                                             optionsParser);
+    if (inAlignment->getNumGenomes() == 0)
     {
-      throw hal_exception("hal alignmenet is empty");
+      throw hal_exception("Input hal alignment is empty");
     }
-    if (refGenomeName == "\"\"")
+
+    AlignmentPtr outAlignment = hdf5AlignmentInstance();
+    outAlignment->setOptionsFromParser(optionsParser);
+    outAlignment->createNew(outHalPath);
+    
+    if (outAlignment->getNumGenomes() != 0)
     {
-      refGenomeName = alignment->getRootName();
+      throw hal_exception("Output hal Alignmnent cannot be initialized");
     }
-    const Genome* parent = alignment->openGenome(refGenomeName);
+    if (rootName == "\"\"")
+    {
+      rootName = inAlignment->getRootName();
+    }
+    const Genome* parent = inAlignment->openGenome(rootName);
     if (parent == NULL)
     {
-      throw hal_exception(string("Genome ") + refGenomeName + " not found");
+      throw hal_exception(string("Genome ") + rootName + " not found");
     }
 
     vector<const Genome*> children;
@@ -67,7 +83,7 @@ int main(int argc, char** argv)
     }
 
     LodGraph lodGraph;
-    lodGraph.build(alignment, parent, children, step);
+    lodGraph.build(inAlignment, parent, children, step);
   }
   catch(hal_exception& e)
   {
