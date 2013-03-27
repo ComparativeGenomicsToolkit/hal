@@ -35,6 +35,24 @@ void LodExtract::createInterpolatedAlignment(AlignmentConstPtr inAlignment,
   
   string newTree = tree.empty() ? inAlignment->getNewickTree() : tree;
   createTree(newTree);
+  cout << "tree = " << _outAlignment->getNewickTree() << endl;
+  
+  deque<string> bfQueue;
+  bfQueue.push_front(_outAlignment->getRootName());
+  while (!bfQueue.empty())
+  {
+    string genomeName = bfQueue.back();
+    bfQueue.pop_back();
+    vector<string> childNames = _outAlignment->getChildNames(genomeName);
+    if (!childNames.empty())
+    {
+      convertInternalNode(genomeName, step);
+      for (size_t childIdx = 0; childIdx < childNames.size(); childIdx++)
+      {
+        bfQueue.push_back(childNames[childIdx]);
+      } 
+    }
+  }
 }
 
 void LodExtract::createTree(const string& tree)
@@ -91,6 +109,132 @@ void LodExtract::createTree(const string& tree)
     }
 
     bfQueue.pop_back();
-    stTree_destruct(node);
+  }
+  stTree_destruct(root);
+}
+
+void LodExtract::convertInternalNode(const string& genomeName, 
+                                      hal_size_t step)
+{
+  const Genome* parent = _inAlignment->openGenome(genomeName);
+  assert(parent != NULL);
+  vector<string> childNames = _outAlignment->getChildNames(genomeName);
+  vector<const Genome*> children;
+  for (hal_size_t i = 0; i < childNames.size(); ++i)
+  {
+    children.push_back(_inAlignment->openGenome(childNames[i]));
+  }
+  _graph.build(_inAlignment, parent, children, step);
+
+  map<const Sequence*, hal_size_t> segmentCounts;
+  countSegmentsInGraph(segmentCounts);
+
+  writeDimensions(segmentCounts, parent->getName(), childNames);
+
+  // if we're gonna print anything out, do it before this:
+  // (not necesssary but by closing genomes we erase their hdf5 caches
+  // which can make a difference on huge trees
+  _graph.erase();
+  _outAlignment->closeGenome(_outAlignment->openGenome(parent->getName()));
+  _inAlignment->closeGenome(parent);
+  for (hal_size_t i = 0; i < children.size(); ++i)
+  {
+    _outAlignment->closeGenome(
+      _outAlignment->openGenome(children[i]->getName()));
+    _inAlignment->closeGenome(children[i]);    
   }
 }
+
+void LodExtract::countSegmentsInGraph(
+  map<const Sequence*, hal_size_t>& segmentCounts)
+{
+  const LodBlock* block;
+  const LodSegment* segment;
+  pair<map<const Sequence*, hal_size_t>::iterator, bool> res;
+
+  for (hal_size_t blockIdx = 0; blockIdx < _graph.getNumBlocks(); ++blockIdx)
+  {
+    block = _graph.getBlock(blockIdx);
+    for (hal_size_t segIdx = 0; segIdx < block->getNumSegments(); ++segIdx)
+    {
+      segment = block->getSegment(segIdx);
+      res = segmentCounts.insert(pair<const Sequence*, hal_size_t>(
+                                   segment->getSequence(), 0));
+      hal_size_t& count = res.first->second;
+      ++count;
+    }
+  }
+}
+
+void LodExtract::writeDimensions(
+  const map<const Sequence*, hal_size_t>& segmentCounts, 
+  const string& parentName,
+  const vector<string>& childNames)
+{
+  // initialize a dimensions list for each (input) genome
+  map<const Genome*, vector<Sequence::Info> > dimMap;
+  map<const Genome*, vector<Sequence::Info> >::iterator dimMapIt;
+  vector<string> newGenomeNames = childNames;
+  newGenomeNames.push_back(parentName);
+  for (size_t i = 0; i < newGenomeNames.size(); ++i)
+  {
+    const Genome* inGenome = _inAlignment->openGenome(newGenomeNames[i]);
+    pair<const Genome*, vector<Sequence::Info> > newEntry;
+    newEntry.first = inGenome;
+    dimMap.insert(newEntry);
+  }
+  
+  // scan through the segment counts, adding the dimensions of each
+  // sequence to the map entry for the appropriate genome. 
+  map<const Sequence*, hal_size_t>::const_iterator segMapIt;
+  for (segMapIt = segmentCounts.begin(); segMapIt != segmentCounts.end(); 
+       ++segMapIt)
+  {
+    const Sequence* inSequence = segMapIt->first;
+    const Genome* inGenome = inSequence->getGenome();
+    dimMapIt = dimMap.find(inGenome);
+    assert(dimMapIt != dimMap.end());
+    vector<Sequence::Info>& segDims = dimMapIt->second;
+    hal_size_t nTop = inGenome->getName() == parentName ? 0 : segMapIt->second;
+    hal_size_t nBot = inGenome->getName() != parentName ? 0 : segMapIt->second;
+    segDims.push_back(Sequence::Info(inSequence->getName(),
+                                     inSequence->getSequenceLength(),
+                                     nTop,
+                                     nBot));
+  }
+  
+  // now that we have the dimensions for each genome, update them in
+  // the output alignment
+  for (dimMapIt = dimMap.begin(); dimMapIt != dimMap.end(); ++dimMapIt)
+  {
+    Genome* newGenome = _outAlignment->openGenome(dimMapIt->first->getName());
+    assert(newGenome != NULL);
+    vector<Sequence::Info>& segDims = dimMapIt->second;
+
+    // ROOT 
+    if (newGenome->getName() == _outAlignment->getRootName())
+    {
+      assert(newGenome->getName() == parentName);
+      newGenome->setDimensions(segDims);
+    }
+    // LEAF
+    else if (newGenome->getName() != parentName)
+    {
+      newGenome->setDimensions(segDims);
+    }
+    // INTERNAL NODE
+    else
+    {
+      vector<Sequence::UpdateInfo> updateInfo;
+      for (size_t i = 0; i < segDims.size(); ++i)
+      {
+        updateInfo.push_back(
+          Sequence::UpdateInfo(segDims[i]._name,
+                               segDims[i]._numBottomSegments));
+      }
+      newGenome->updateBottomDimensions(updateInfo);
+    }
+  }
+}
+
+

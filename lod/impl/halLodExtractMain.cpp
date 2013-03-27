@@ -5,7 +5,7 @@
  */
 
 #include <cassert>
-#include "halLodGraph.h"
+#include "halLodExtract.h"
 
 using namespace std;
 using namespace hal;
@@ -82,8 +82,9 @@ int main(int argc, char** argv)
       children.push_back(parent->getChild(child));
     }
 
-    LodGraph lodGraph;
-    lodGraph.build(inAlignment, parent, children, step);
+    LodExtract lodExtract;
+    lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
+                                           step, "");
   }
   catch(hal_exception& e)
   {

@@ -33,6 +33,7 @@ void LodGraph::erase()
     delete *bi;
   }
   _blocks.clear();
+  _parent = NULL;
   _genomes.clear();
   _telomeres.clear();
 }

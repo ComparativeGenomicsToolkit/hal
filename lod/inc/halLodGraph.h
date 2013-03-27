@@ -25,6 +25,11 @@ public:
    LodGraph();
    ~LodGraph();
 
+   void erase();
+
+   const LodBlock* getBlock(hal_size_t index) const;
+   hal_size_t getNumBlocks() const;
+
    /** Build the LOD graph for a given subtree of the alignment.  The
     * entire graph is stored in memory in a special structure (ie not within
     * HAL).  The step parameter dictates how coarse-grained the interpolation
@@ -52,8 +57,6 @@ protected:
 
    typedef std::map<const Sequence*, SegmentSet*> SequenceMap;
    typedef SequenceMap::iterator SequenceMapIterator;
-
-   void erase();
 
    /** Read a HAL genome into sequence graph */
    void scanGenome(const Genome* genome);
@@ -102,6 +105,16 @@ protected:
    // nodes sorted by sequence
    SequenceMap _seqMap;
 };
+
+inline const LodBlock* LodGraph::getBlock(hal_size_t index) const
+{
+  return _blocks[index];
+}
+
+inline hal_size_t LodGraph::getNumBlocks() const
+{
+  return _blocks.size();
+}
 
 }
 
