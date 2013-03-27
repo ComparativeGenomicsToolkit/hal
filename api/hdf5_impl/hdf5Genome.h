@@ -156,6 +156,7 @@ public:
    void read();
    void create();
    void resetTreeCache();
+   void resetBranchCaches();
 
 protected:
 
