@@ -773,3 +773,9 @@ void HDF5Genome::writeSequences(const vector<Sequence::Info>&
     bottomArrayIndex += i->_numBottomSegments;
   }  
 }
+
+void HDF5Genome::resetBranchCaches()
+{
+  _parentCache = NULL;
+  _childCache.clear();
+}
