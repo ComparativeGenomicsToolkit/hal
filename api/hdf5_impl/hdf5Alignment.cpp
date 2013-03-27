@@ -311,6 +311,26 @@ void HDF5Alignment::closeGenome(const Genome* genome) const
   mapIt->second->write();
   delete mapIt->second;
   _openGenomes.erase(mapIt);
+
+  // reset the parent/child genoem cachces (which store genome pointers to
+  // the genome we're closing
+  if (name != getRootName())
+  {
+    mapIt = _openGenomes.find(getParentName(name));
+    if (mapIt != _openGenomes.end())
+    {
+      mapIt->second->resetBranchCaches();
+    }
+  }
+  vector<string> childNames = getChildNames(name);
+  for (size_t i = 0; i < childNames.size(); ++i)
+  {
+    mapIt = _openGenomes.find(childNames[i]);
+    if (mapIt != _openGenomes.end())
+    {
+      mapIt->second->resetBranchCaches();
+    }
+  }
 }
 
 string HDF5Alignment::getRootName() const
