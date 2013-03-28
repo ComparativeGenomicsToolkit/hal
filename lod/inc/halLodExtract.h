@@ -50,6 +50,10 @@ protected:
      const std::map<const Sequence*, hal_size_t>& segmentCounts, 
      const std::string& parentName,
      const std::vector<std::string>& childNames);
+   void writeSegments(const Genome* inParent, 
+                      const std::vector<const Genome*>& inChildren);
+   void writeHomologies(const Genome* inParent, 
+                        const std::vector<const Genome*>& inChildren);
 
    
    AlignmentConstPtr _inAlignment;

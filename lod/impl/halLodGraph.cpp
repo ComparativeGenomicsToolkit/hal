@@ -259,6 +259,17 @@ void LodGraph::optimizeByInsertion()
     startPoint = _blocks.end();
     --startPoint;
     _blocks.insert(_blocks.end(), newBlocks.begin(), newBlocks.end());
+
+    // need to get the new segments into the sorted structure too!
+    for (BlockIterator bi = newBlocks.begin(); bi != newBlocks.end(); ++bi)
+    {
+      for (hal_size_t i = 0; i < (*bi)->getNumSegments(); ++i)
+      {
+        // blah - need to clean interface but this is harmless for now
+        LodSegment* seg = const_cast<LodSegment*>((*bi)->getSegment(i));
+        _seqMap.find(seg->getSequence())->second->insert(seg);
+      }
+    }
     ++startPoint;
   }
 }

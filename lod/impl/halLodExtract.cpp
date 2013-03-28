@@ -130,6 +130,8 @@ void LodExtract::convertInternalNode(const string& genomeName,
   countSegmentsInGraph(segmentCounts);
 
   writeDimensions(segmentCounts, parent->getName(), childNames);
+  writeSegments(parent, children);
+  writeHomologies(parent, children);
 
   // if we're gonna print anything out, do it before this:
   // (not necesssary but by closing genomes we erase their hdf5 caches
@@ -237,4 +239,64 @@ void LodExtract::writeDimensions(
   }
 }
 
+void LodExtract::writeSegments(const Genome* inParent,
+                               const vector<const Genome*>& inChildren)
+{
+  vector<const Genome*> inGenomes = inChildren;
+  inGenomes.push_back(inParent);
+  const Genome* outParent = _outAlignment->openGenome(inParent->getName());
+  assert(outParent != NULL && outParent->getNumBottomSegments() > 0);
+  BottomSegmentIteratorPtr bottom;
+  TopSegmentIteratorPtr top;
+  SegmentIteratorPtr outSegment;
 
+  // FOR EVERY GENOME
+  for (hal_size_t i = 0; i < inGenomes.size(); ++i)
+  {
+    const Genome* inGenome = inGenomes[i];
+    Genome* outGenome = _outAlignment->openGenome(inGenome->getName());
+
+    if (outGenome != outParent)
+    {
+      top = outGenome->getTopSegmentIterator();
+      outSegment = top;
+    }
+    else
+    {
+      bottom = outGenome->getBottomSegmentIterator();
+      outSegment = bottom;
+    }
+
+    SequenceIteratorPtr outSeqIt = outGenome->getSequenceIterator();
+    SequenceIteratorConstPtr outSeqEnd = outGenome->getSequenceEndIterator();
+    
+    // FOR EVERY SEQUENCE IN GENOME
+    for (; outSeqIt != outSeqEnd; outSeqIt->toNext())
+    {
+      const Sequence* outSequence = outSeqIt->getSequence();
+      const Sequence* inSequence = 
+         inGenome->getSequence(outSequence->getName());
+      const LodGraph::SegmentSet* segSet = _graph.getSegmentSet(inSequence);
+      assert(segSet != NULL);
+      LodGraph::SegmentSet::const_iterator segIt = segSet->begin();
+      //skip left telomere
+      ++segIt;
+      // use to skip right telomere:
+      LodGraph::SegmentSet::const_iterator segLast = segSet->end();
+      --segLast;
+      
+      // FOR EVERY SEGMENT IN SEQUENCE
+      for (; segIt != segLast; ++segIt)
+      {
+        outSegment->setCoordinates((*segIt)->getLeftPos(), 
+                                   (*segIt)->getLength());
+        outSegment->toRight();
+      }
+    }
+  } 
+}
+
+void LodExtract::writeHomologies(const Genome* inParent,
+                                 const vector<const Genome*>& inChildren)
+{
+}

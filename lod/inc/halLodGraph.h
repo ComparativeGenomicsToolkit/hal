@@ -21,6 +21,9 @@ namespace hal {
 class LodGraph
 {
 public:
+
+   typedef std::set<LodSegment*, LodSegmentPLess> SegmentSet;
+   typedef SegmentSet::iterator SegmentIterator;
    
    LodGraph();
    ~LodGraph();
@@ -29,6 +32,7 @@ public:
 
    const LodBlock* getBlock(hal_size_t index) const;
    hal_size_t getNumBlocks() const;
+   const SegmentSet* getSegmentSet(const Sequence* sequence) const;
 
    /** Build the LOD graph for a given subtree of the alignment.  The
     * entire graph is stored in memory in a special structure (ie not within
@@ -51,9 +55,6 @@ protected:
    typedef std::vector<LodBlock*> BlockList;
    typedef BlockList::iterator BlockIterator;
    typedef BlockList::const_iterator BlockConstIterator;
-
-   typedef std::set<LodSegment*, LodSegmentPLess> SegmentSet;
-   typedef SegmentSet::iterator SegmentIterator;
 
    typedef std::map<const Sequence*, SegmentSet*> SequenceMap;
    typedef SequenceMap::iterator SequenceMapIterator;
@@ -114,6 +115,13 @@ inline const LodBlock* LodGraph::getBlock(hal_size_t index) const
 inline hal_size_t LodGraph::getNumBlocks() const
 {
   return _blocks.size();
+}
+
+inline const LodGraph::SegmentSet* LodGraph::getSegmentSet(
+  const Sequence* sequence) const
+{
+  assert(_seqMap.find(sequence) != _seqMap.end());
+  return _seqMap.find(sequence)->second;
 }
 
 }
