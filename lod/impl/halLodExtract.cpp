@@ -288,6 +288,9 @@ void LodExtract::writeSegments(const Genome* inParent,
       // FOR EVERY SEGMENT IN SEQUENCE
       for (; segIt != segLast; ++segIt)
       {
+        // write the HAL array index back to the segment to make
+        // future passes quicker. 
+        (*segIt)->setArrayIndex(outSegment->getArrayIndex());
         outSegment->setCoordinates((*segIt)->getLeftPos(), 
                                    (*segIt)->getLength());
         outSegment->toRight();
@@ -299,4 +302,61 @@ void LodExtract::writeSegments(const Genome* inParent,
 void LodExtract::writeHomologies(const Genome* inParent,
                                  const vector<const Genome*>& inChildren)
 {
+  vector<const Genome*> inGenomes = inChildren;
+  inGenomes.push_back(inParent);
+  Genome* outParent = _outAlignment->openGenome(inParent->getName());
+  assert(outParent != NULL && outParent->getNumBottomSegments() > 0);
+  assert(inChildren.size() > 0);
+  Genome* outChild = _outAlignment->openGenome(inChildren[0]->getName());
+  BottomSegmentIteratorPtr bottom = outParent->getBottomSegmentIterator();
+  TopSegmentIteratorPtr top = outChild->getTopSegmentIterator();
+
+  // FOR EVERY BLOCK
+  for (hal_size_t blockIdx = 0; blockIdx < _graph.getNumBlocks(); ++blockIdx)
+  {
+    SegmentMap segMap;
+    const LodBlock* block = _graph.getBlock(blockIdx);
+
+    for (hal_size_t segIdx = 0; segIdx < block->getNumSegments(); ++segIdx)
+    {
+      const LodSegment* segment = block->getSegment(segIdx);
+      const Genome* genome = segment->getSequence()->getGenome();
+
+      // ADD TO MAP
+      pair<SegmentMap::iterator, bool> res = segMap.insert(
+        pair<const Genome*, SegmentSet*>(genome, NULL));
+      if (res.second == true)
+      {
+        assert(res.first->second == NULL);
+        res.first->second = new SegmentSet();
+      }
+      res.first->second->insert(segment);    
+    }      
+    updateBlockEdges(inParent, segMap, block, bottom, top);
+  }
+}
+
+void LodExtract::updateBlockEdges(const Genome* inParentGenome,
+                                  SegmentMap& segMap,
+                                  const LodBlock* block,
+                                  BottomSegmentIteratorPtr bottom,
+                                  TopSegmentIteratorPtr top)
+{
+  Genome* outParentGenome = bottom->getGenome();
+
+  
+
+  // FOR EVERY SEGMENT IN BLOCK
+  for (hal_size_t segIdx = 0; segIdx < block->getNumSegments(); ++segIdx)
+  {
+    const LodSegment* segment = block->getSegment(segIdx);
+    if (segment->getSequence()->getGenome() != inParentGenome)
+    {
+      
+    }
+    else
+    {
+
+    }
+  }
 }

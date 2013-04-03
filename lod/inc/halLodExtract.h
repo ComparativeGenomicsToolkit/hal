@@ -42,6 +42,11 @@ public:
    
 protected:
 
+   typedef std::set<const LodSegment*, LodSegmentPLess> SegmentSet;
+   typedef std::map<const Genome*, SegmentSet*> SegmentMap;
+
+protected:
+
    void createTree(const std::string& tree);
    void convertInternalNode(const std::string& genomeName, hal_size_t step);
    void countSegmentsInGraph(
@@ -54,6 +59,11 @@ protected:
                       const std::vector<const Genome*>& inChildren);
    void writeHomologies(const Genome* inParent, 
                         const std::vector<const Genome*>& inChildren);
+   void updateBlockEdges(const Genome* inParentGenome,
+                         SegmentMap& segMap,
+                         const LodBlock* block,
+                         BottomSegmentIteratorPtr bottom,
+                         TopSegmentIteratorPtr top);
 
    
    AlignmentConstPtr _inAlignment;
