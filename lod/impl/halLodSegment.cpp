@@ -12,7 +12,7 @@ using namespace hal;
 
 LodSegment::LodSegment() : _sequence(NULL), _tailPos(NULL_INDEX), 
                            _afterHeadPos(NULL_INDEX), _tailAdj(NULL),
-                           _headAdj(NULL)
+                           _headAdj(NULL), _arrayIndex(NULL_INDEX)
 {
 
 }
@@ -23,7 +23,8 @@ LodSegment::LodSegment(const Sequence* sequence, hal_index_t pos,
   _tailPos(pos),
   _afterHeadPos(pos),
   _tailAdj(NULL),
-  _headAdj(NULL)
+  _headAdj(NULL),
+  _arrayIndex(NULL_INDEX)
 {
   _afterHeadPos += flipped ? -1 : 1;
   assert(_sequence != NULL);

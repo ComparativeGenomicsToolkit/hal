@@ -59,6 +59,8 @@ public:
    bool getHeadToTail() const;
    bool getHeadToHead() const;
    bool overlaps(const LodSegment& other) const;
+   hal_index_t getArrayIndex() const;
+   void setArrayIndex(hal_index_t index);
 
    /** Add a new edge from right endpoint of this segment to left
     * endpoint of tgt segment.  (whether or not these endpoints are 
@@ -93,6 +95,7 @@ protected:
    hal_index_t _afterHeadPos;
    LodSegment* _tailAdj;
    LodSegment* _headAdj;
+   hal_index_t _arrayIndex;
 
 private:
    LodSegment(const LodSegment&);
@@ -200,6 +203,16 @@ inline bool LodSegment::overlaps(const LodSegment& other) const
      other.getLeftPos() <= getRightPos();
 }
   
+inline hal_index_t LodSegment::getArrayIndex() const
+{
+  return _arrayIndex;
+}
+
+inline void LodSegment::setArrayIndex(hal_index_t index)
+{
+  _arrayIndex = index;
+}
+
 }
 
 #endif
