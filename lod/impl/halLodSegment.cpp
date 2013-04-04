@@ -150,6 +150,7 @@ ostream& hal::operator<<(ostream& os, const LodSegment& segment)
      << ", " << segment.getRightPos()
      << "(" << (segment.getFlipped() ? "T" : "H") << ")"
      << "]"
+     << "[ai=" << segment.getArrayIndex() << "]"
      << " tAdj: " << segment._tailAdj;
   if (segment._tailAdj != NULL)
   {
