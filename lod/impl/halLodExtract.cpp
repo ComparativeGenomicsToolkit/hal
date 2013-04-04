@@ -386,21 +386,39 @@ void LodExtract::updateBlockEdges(const Genome* inParentGenome,
       for (setIt = segSet->begin(); setIt != segSet->end(); ++setIt)
       {
         top->setArrayIndex(outChildGenome, (*setIt)->getArrayIndex());
-        top->setNextParalogyIndex(NULL_INDEX);
+        top->setBottomParseIndex(NULL_INDEX);
 
         // Connect to parent
         if (rootSeg != NULL)
         {
           top->setParentIndex(bottom->getArrayIndex());
-          top->setBottomParseIndex(NULL_INDEX);
-          bottom->setChildIndex(childIndex, top->getArrayIndex());
           bool reversed = (*setIt)->getFlipped() == rootSeg->getFlipped();
           top->setParentReversed(reversed);
-          bottom->setChildReversed(childIndex, reversed);      
+          if (setIt == segSet->begin())
+          {
+            bottom->setChildIndex(childIndex, top->getArrayIndex());         
+            bottom->setChildReversed(childIndex, reversed);      
+          }
         }
         else
         {
           top->setParentIndex(NULL_INDEX);
+        }
+
+        // Connect to next paralogy
+        SegmentSet::iterator setNext = setIt;
+        ++setNext;
+        if (setNext == segSet->end())
+        {
+          setNext = segSet->begin();
+        }
+        if (setNext == setIt)
+        {
+          top->setNextParalogyIndex(NULL_INDEX);
+        }
+        else
+        {
+          top->setNextParalogyIndex((*setNext)->getArrayIndex());
         }
       }
     }
