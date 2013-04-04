@@ -106,6 +106,7 @@ private:
      if (c) {
        (void)static_cast<X*>(c->ptr);
        itsCounter = reinterpret_cast<counter*>(c);
+       itsCounter->ptr = static_cast<X*>(c->ptr);
        ++c->count;
      }
      else {
@@ -213,6 +214,7 @@ private:
      if (c) {
        (void)static_cast<const X*>(c->ptr);
        itsCounter = reinterpret_cast<counter*>(c);
+       itsCounter->ptr = const_cast<X*>(static_cast<const X*>(c->ptr));
        ++c->count;
      }
      else {
