@@ -200,7 +200,9 @@ void hal::validateTopSegment(const TopSegment* topSegment)
     {
       stringstream ss;
       ss << "Top Segment " << topSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has parse index out of range";
+         << genome->getName() << " has parse index " << parseIndex 
+         << " which is out of range since genome has " 
+         << genome->getNumBottomSegments() << " bottom segments";
       throw hal_exception(ss.str());
     }
     hal_offset_t parseOffset = topSegment->getBottomParseOffset();
