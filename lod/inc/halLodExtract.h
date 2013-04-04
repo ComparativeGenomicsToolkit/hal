@@ -64,6 +64,7 @@ protected:
                          const LodBlock* block,
                          BottomSegmentIteratorPtr bottom,
                          TopSegmentIteratorPtr top);
+   void writeParseInfo(Genome* genome);
 
    
    AlignmentConstPtr _inAlignment;

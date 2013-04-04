@@ -132,6 +132,7 @@ void LodExtract::convertInternalNode(const string& genomeName,
   writeDimensions(segmentCounts, parent->getName(), childNames);
   writeSegments(parent, children);
   writeHomologies(parent, children);
+  writeParseInfo(_outAlignment->openGenome(parent->getName()));
 
   // if we're gonna print anything out, do it before this:
   // (not necesssary but by closing genomes we erase their hdf5 caches
@@ -343,20 +344,121 @@ void LodExtract::updateBlockEdges(const Genome* inParentGenome,
                                   TopSegmentIteratorPtr top)
 {
   Genome* outParentGenome = bottom->getGenome();
+  const LodSegment* rootSeg = NULL;
+  SegmentSet* segSet;
+  SegmentSet::iterator setIt;
 
-  
-
-  // FOR EVERY SEGMENT IN BLOCK
-  for (hal_size_t segIdx = 0; segIdx < block->getNumSegments(); ++segIdx)
+  // Zap all segments in parent genome
+  SegmentMap::iterator mapIt = segMap.find(inParentGenome);
+  if (mapIt != segMap.end())
   {
-    const LodSegment* segment = block->getSegment(segIdx);
-    if (segment->getSequence()->getGenome() != inParentGenome)
+    segSet = mapIt->second;
+    assert(segSet != NULL);
+    setIt = segSet->begin();
+    for (; setIt != segSet->end(); ++setIt)
     {
-      
+      bottom->setArrayIndex(outParentGenome, (*setIt)->getArrayIndex());
+      for (hal_size_t i = 0; i < bottom->getNumChildren(); ++i)
+      {
+        bottom->setChildIndex(i, NULL_INDEX);
+        bottom->setTopParseIndex(NULL_INDEX);
+      }
     }
-    else
-    {
 
+    // Choose first segment as parent to all segments in the child genome
+    setIt = segSet->begin();
+    rootSeg = *(setIt);
+    bottom->setArrayIndex(outParentGenome, (*setIt)->getArrayIndex());
+  }
+
+  // Do the child genomes
+  SegmentSet::iterator nextIt;
+  for (mapIt = segMap.begin(); mapIt != segMap.end(); ++mapIt)
+  {
+    if (mapIt->first != inParentGenome)
+    {
+      Genome* outChildGenome = 
+         _outAlignment->openGenome(mapIt->first->getName());
+      hal_index_t childIndex = outParentGenome->getChildIndex(outChildGenome);
+      assert(childIndex >= 0);
+      segSet = mapIt->second;
+      assert(segSet != NULL);
+      for (setIt = segSet->begin(); setIt != segSet->end(); ++setIt)
+      {
+        top->setArrayIndex(outChildGenome, (*setIt)->getArrayIndex());
+        top->setNextParalogyIndex(NULL_INDEX);
+
+        // Connect to parent
+        if (rootSeg != NULL)
+        {
+          top->setParentIndex(bottom->getArrayIndex());
+          top->setBottomParseIndex(NULL_INDEX);
+          bottom->setChildIndex(childIndex, top->getArrayIndex());
+          bool reversed = (*setIt)->getFlipped() == rootSeg->getFlipped();
+          top->setParentReversed(reversed);
+          bottom->setChildReversed(childIndex, reversed);      
+        }
+        else
+        {
+          top->setParentIndex(NULL_INDEX);
+        }
+      }
+    }
+  }
+}
+
+void LodExtract::writeParseInfo(Genome* genome)
+{
+  if (genome->getParent() == NULL || genome->getNumChildren() == 0)
+  {
+    return;
+  }
+
+ // copied from CactusHalConverter::updateRootParseInfo() in
+  // cactus2hal/src/cactusHalConverter.cpp 
+  BottomSegmentIteratorPtr bottomIterator = 
+     genome->getBottomSegmentIterator();
+  TopSegmentIteratorPtr topIterator = genome->getTopSegmentIterator();
+  BottomSegmentIteratorConstPtr bend = genome->getBottomSegmentEndIterator();
+  TopSegmentIteratorConstPtr tend = genome->getTopSegmentEndIterator();
+
+  while (bottomIterator != bend && topIterator != tend)
+  {
+    bool bright = false;
+    bool tright = false;
+    BottomSegment* bseg = bottomIterator->getBottomSegment();
+    TopSegment* tseg = topIterator->getTopSegment();
+    hal_index_t bstart = bseg->getStartPosition();
+    hal_index_t bend = bstart + (hal_index_t)bseg->getLength();
+    hal_index_t tstart = tseg->getStartPosition();
+    hal_index_t tend = tstart + (hal_index_t)tseg->getLength();
+    
+    if (bstart >= tstart && bstart < tend)
+    {
+      bseg->setTopParseIndex(tseg->getArrayIndex());
+    }
+    if (bend <= tend || bstart == bend)
+    {
+      bright = true;
+    }
+        
+    if (tstart >= bstart && tstart < bend)
+    {
+      tseg->setBottomParseIndex(bseg->getArrayIndex());
+    }
+    if (tend <= bend || tstart == tend)
+    {
+      tright = true;
+    }
+
+    assert(bright || tright);
+    if (bright == true)
+    {
+      bottomIterator->toRight();
+    }
+    if (tright == true)
+    {
+      topIterator->toRight();
     }
   }
 }
