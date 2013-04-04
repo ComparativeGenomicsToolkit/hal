@@ -71,9 +71,15 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
       if (childSegment->getNextParalogyIndex() == NULL_INDEX &&
           childSegment->getParentIndex() != bottomSegment->getArrayIndex())
       {
-        throw hal_exception("parent / child index mismatch (parent=" +
-                            genome->getName() + " child=" +
-                            childGenome->getName());
+        stringstream ss;
+        ss << "Parent / child index mismatch:\n" 
+           << genome->getName() << "[" << bottomSegment->getArrayIndex() << "]"
+           << " links to " << childGenome->getName() << "[" << childIndex 
+           << "] but \n"
+           << childGenome->getName() << "[" << childSegment->getArrayIndex() 
+           << "] links to " << genome->getName() << "[" 
+           << childSegment->getParentIndex() << "]";
+        throw hal_exception(ss.str());
       }
       if (childSegment->getParentReversed() != 
           bottomSegment->getChildReversed(child))
