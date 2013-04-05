@@ -34,6 +34,7 @@ int main(int argc, char** argv)
   string inHalPath;
   string outHalPath;
   string rootName;
+  string outTree;
   hal_size_t step;
   try
   {
@@ -41,6 +42,7 @@ int main(int argc, char** argv)
     inHalPath = optionsParser->getArgument<string>("inHalPath");
     outHalPath = optionsParser->getArgument<string>("outHalPath");
     rootName = optionsParser->getOption<string>("root");
+    outTree = optionsParser->getOption<string>("outTree");
     step = optionsParser->getArgument<hal_size_t>("step");
   }
   catch(exception& e)
@@ -66,25 +68,22 @@ int main(int argc, char** argv)
     {
       throw hal_exception("Output hal Alignmnent cannot be initialized");
     }
-    if (rootName == "\"\"")
-    {
-      rootName = inAlignment->getRootName();
-    }
-    const Genome* parent = inAlignment->openGenome(rootName);
-    if (parent == NULL)
+    if (rootName != "\"\"" && inAlignment->openGenome(rootName) == NULL)
     {
       throw hal_exception(string("Genome ") + rootName + " not found");
     }
-
-    vector<const Genome*> children;
-    for (hal_size_t child = 0; child < parent->getNumChildren(); ++child)
+    if (rootName == "\"\"")
     {
-      children.push_back(parent->getChild(child));
+      rootName = "";
+    }
+    if (outTree == "\"\"")
+    {
+      outTree = "";
     }
 
     LodExtract lodExtract;
     lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
-                                           step, "");
+                                           step, outTree, rootName);
   }
   catch(hal_exception& e)
   {

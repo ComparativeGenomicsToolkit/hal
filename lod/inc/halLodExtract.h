@@ -37,7 +37,8 @@ public:
    void createInterpolatedAlignment(AlignmentConstPtr inAlignment,
                                     AlignmentPtr outAlignment,
                                     hal_size_t step,
-                                    const std::string& tree);
+                                    const std::string& tree,
+                                    const std::string& rootName);
    
    
 protected:
@@ -47,7 +48,7 @@ protected:
 
 protected:
 
-   void createTree(const std::string& tree);
+   void createTree(const std::string& tree, const std::string& rootName);
    void convertInternalNode(const std::string& genomeName, hal_size_t step);
    void countSegmentsInGraph(
      std::map<const Sequence*, hal_size_t>& segmentCounts);
@@ -55,6 +56,8 @@ protected:
      const std::map<const Sequence*, hal_size_t>& segmentCounts, 
      const std::string& parentName,
      const std::vector<std::string>& childNames);
+   void writeSequences(const Genome* inParent, 
+                      const std::vector<const Genome*>& inChildren);
    void writeSegments(const Genome* inParent, 
                       const std::vector<const Genome*>& inChildren);
    void writeHomologies(const Genome* inParent, 

@@ -28,13 +28,14 @@ LodExtract::~LodExtract()
 void LodExtract::createInterpolatedAlignment(AlignmentConstPtr inAlignment,
                                              AlignmentPtr outAlignment,
                                              hal_size_t step,
-                                             const string& tree)
+                                             const string& tree,
+                                             const string& rootName)
 {
   _inAlignment = inAlignment;
   _outAlignment = outAlignment;
   
   string newTree = tree.empty() ? inAlignment->getNewickTree() : tree;
-  createTree(newTree);
+  createTree(newTree, rootName);
   cout << "tree = " << _outAlignment->getNewickTree() << endl;
   
   deque<string> bfQueue;
@@ -55,15 +56,41 @@ void LodExtract::createInterpolatedAlignment(AlignmentConstPtr inAlignment,
   }
 }
 
-void LodExtract::createTree(const string& tree)
+void LodExtract::createTree(const string& tree, const string& rootName)
 {
   if (_outAlignment->getNumGenomes() != 0)
   {
     throw hal_exception("Output alignment not empty");
   }
-  stTree* root = stTree_parseNewickString(const_cast<char*>(tree.c_str()));
-  assert(root != NULL);
+  stTree* treeRoot = stTree_parseNewickString(const_cast<char*>(tree.c_str()));
+  stTree* root = treeRoot;
+  assert(treeRoot != NULL);
   deque<stTree*> bfQueue;
+  
+  // find rootName in tree if specified, otherwise we use the whole tree
+  if (rootName.empty() == false)
+  {
+    bfQueue.push_front(treeRoot);
+    while (!bfQueue.empty())
+    {
+      stTree* node = bfQueue.back();
+      const char* label = stTree_getLabel(node);
+      if (rootName == string(label))
+      {
+        root = node;
+        break;
+      }
+      int32_t numChildren = stTree_getChildNumber(node);
+      for (int32_t childIdx = 0; childIdx < numChildren; ++childIdx)
+      {
+        bfQueue.push_front(stTree_getChild(node, childIdx));
+      }
+
+      bfQueue.pop_back();
+    }
+    bfQueue.clear();
+  }
+
   bfQueue.push_front(root);
   while (!bfQueue.empty())
   {
@@ -130,6 +157,7 @@ void LodExtract::convertInternalNode(const string& genomeName,
   countSegmentsInGraph(segmentCounts);
 
   writeDimensions(segmentCounts, parent->getName(), childNames);
+  writeSequences(parent, children);
   writeSegments(parent, children);
   writeHomologies(parent, children);
   writeParseInfo(_outAlignment->openGenome(parent->getName()));
@@ -236,6 +264,38 @@ void LodExtract::writeDimensions(
                                segDims[i]._numBottomSegments));
       }
       newGenome->updateBottomDimensions(updateInfo);
+    }
+  }
+}
+
+void LodExtract::writeSequences(const Genome* inParent,
+                                const vector<const Genome*>& inChildren)
+{
+  vector<const Genome*> inGenomes = inChildren;
+  inGenomes.push_back(inParent);
+  const Genome* outParent = _outAlignment->openGenome(inParent->getName());
+  assert(outParent != NULL && outParent->getNumBottomSegments() > 0);
+  string buffer;
+
+  for (hal_size_t i = 0; i < inGenomes.size(); ++i)
+  {
+    const Genome* inGenome = inGenomes[i];
+    Genome* outGenome = _outAlignment->openGenome(inGenome->getName());
+    if (inGenome == inParent || outGenome->getNumChildren() == 0)
+    {   
+      SequenceIteratorConstPtr inSeqIt = inGenome->getSequenceIterator();
+      SequenceIteratorConstPtr end = inGenome->getSequenceEndIterator();
+      for (; inSeqIt != end; inSeqIt->toNext())
+      {
+        const Sequence* inSequence = inSeqIt->getSequence();
+        if (inSequence->getSequenceLength() > 0)
+        {
+          Sequence* outSequence = outGenome->getSequence(inSequence->getName());
+          assert(outSequence != NULL);
+          inSequence->getString(buffer);
+          outSequence->setString(buffer);
+        }
+      }
     }
   }
 }
@@ -392,7 +452,7 @@ void LodExtract::updateBlockEdges(const Genome* inParentGenome,
         if (rootSeg != NULL)
         {
           top->setParentIndex(bottom->getArrayIndex());
-          bool reversed = (*setIt)->getFlipped() == rootSeg->getFlipped();
+          bool reversed = (*setIt)->getFlipped() != rootSeg->getFlipped();
           top->setParentReversed(reversed);
           if (setIt == segSet->begin())
           {
