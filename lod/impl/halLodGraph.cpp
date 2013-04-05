@@ -121,7 +121,7 @@ void LodGraph::scanGenome(const Genome* genome)
 bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
 {
   // check that block has not already been added.
-  bool alreadyThere = false;
+  hal_index_t delta = numeric_limits<hal_index_t>::max(); 
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
   ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
   for (; colMapIt != colMap->end(); ++colMapIt)
@@ -141,18 +141,29 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
         SegmentSet::value_compare segPLess;
         if (si != segmentSet->end() && !segPLess(&segment, *si))
         {
-          alreadyThere = true;
+          delta = 0;
+        }
+        else
+        {
+          delta = std::abs((*si)->getLeftPos() - segment.getLeftPos());
+          if (si != segmentSet->begin())
+          {
+            --si;
+            delta = std::min(delta, std::abs((*si)->getLeftPos() - 
+                                             segment.getLeftPos()));
+          }
         }
       }
       break;
     }
   }
-  bool canAdd = !alreadyThere;
+  bool canAdd = delta > 0;
   hal_index_t refPos = colIt->getReferenceSequencePosition();
   if (canAdd == true && refPos != 0 && (hal_size_t)refPos != 
       colIt->getReferenceSequence()->getSequenceLength())
   {
-//    canAdd = testheuristics here...
+    // heuristic here
+    //canAdd = (delta > 5);
   }
   return canAdd;
 }
