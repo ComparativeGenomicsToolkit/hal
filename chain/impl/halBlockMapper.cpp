@@ -163,18 +163,19 @@ bool BlockMapper::isCanonical(TopSegmentIteratorConstPtr top)
 
 void BlockMapper::mapRef(SegmentIteratorConstPtr refSeg)
 {
+  assert(!refSeg->getReversed());
   if (_rel == RefParent)
-    { 
-      mapRefParent(refSeg);
-    }
-    else if (_rel == RefChild)
-    {
+  { 
+    mapRefParent(refSeg);
+  }
+  else if (_rel == RefChild)
+  {
       mapRefChild(refSeg);
-    }
-    else // _rel == RefSister
-    {
-      mapRefSister(refSeg);
-    }
+  }
+  else // _rel == RefSister
+  {
+    mapRefSister(refSeg);
+  }
 }
 
 void BlockMapper::mapRefParent(SegmentIteratorConstPtr refSeg)
@@ -265,18 +266,24 @@ void BlockMapper::mapAdjacencies(SegmentIteratorConstPtr querySeg)
     maxIndex = minIndex + 
        (hal_index_t)queryBottom->getSequence()->getNumBottomSegments();
   }
-  if (querySeg->getReversed())
-  {
-    querySegCpy->toReverse();
-    querySegCpy2->toReverse();
-  }
 
   hal_size_t iter = 0;
   querySegCpy->toRight();
-  while (querySegCpy->getArrayIndex() < maxIndex &&
+  while ((querySegCpy->getReversed() || 
+          querySegCpy->getArrayIndex() < maxIndex) &&
+         (!querySegCpy->getReversed() || 
+          querySegCpy->getArrayIndex() >= minIndex) && 
          iter < _maxAdjScan)
   {
     SegmentIteratorConstPtr refSeg = getAdjacencyInRef(querySegCpy);
+    // never want an inverted reference.  
+    if (refSeg->getReversed())
+    {
+      refSeg->toReverse();
+      //but we don't want to keep in forward coordinates
+      refSeg->slice(refSeg->getEndOffset(), refSeg->getStartOffset());
+    }
+
     if (refSeg.get() != NULL)
     {
       if (_segMap.find(refSeg) == _segMap.end())
@@ -293,10 +300,21 @@ void BlockMapper::mapAdjacencies(SegmentIteratorConstPtr querySeg)
 
   iter = 0;
   querySegCpy2->toLeft();
-  while (querySegCpy2->getArrayIndex() >= minIndex &&
+  while ((querySegCpy2->getReversed() || 
+          querySegCpy2->getArrayIndex() >= minIndex) &&
+         (!querySegCpy2->getReversed() || 
+          querySegCpy2->getArrayIndex() < maxIndex) && 
          iter < _maxAdjScan)
   {
     SegmentIteratorConstPtr refSeg = getAdjacencyInRef(querySegCpy2);
+    // never want an inverted reference.  
+    if (refSeg->getReversed())
+    {
+      refSeg->toReverse();
+      //but we don't want to keep in forward coordinates
+      refSeg->slice(refSeg->getEndOffset(), refSeg->getStartOffset());
+    }
+
     if (refSeg.get() != NULL)
     {
       if (_segMap.find(refSeg) == _segMap.end())
