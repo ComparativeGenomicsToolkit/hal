@@ -9,10 +9,13 @@ import sys
 import os
 from hal.api.apiTest import TestCase as apiTest
 from hal.maf.mafTest import TestCase as mafTest
+from hal.chain.chainTest import TestCase as chainTest
 
 def allSuites(): 
     allTests = unittest.TestSuite((unittest.makeSuite(apiTest, 'test'),
-                                   unittest.makeSuite(mafTest, 'test')))
+                                   unittest.makeSuite(mafTest, 'test'),
+                                   unittest.makeSuite(chainTest, 'test')))
+
     return allTests
         
 def main():    
