@@ -1,10 +1,10 @@
 rootPath = ../
 include ../include.mk
 
-libSourcesAll = impl/*.cpp
+libSourcesAll = $(wildcard impl/*.cpp)
 libSources1=$(subst impl/halBranchMutationsMain.cpp,,${libSourcesAll})
 libSources=$(subst impl/halSummarizeMutationsMain.cpp,,${libSources1})
-libHeaders = inc/*.h 
+libHeaders = $(wildcard inc/*.h)
 
 all : ${libPath}/halMutations.a ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations
 
