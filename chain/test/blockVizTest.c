@@ -119,7 +119,7 @@ int main(int argc, char** argv)
     return -1;
   }
 #ifdef ENABLE_UDC
-  if (udcPath != NULL)
+  if (args.udcPath != NULL)
   {
     udcSetDefaultDir(udcPath);
   }
