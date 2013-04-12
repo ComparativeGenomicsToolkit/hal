@@ -13,16 +13,24 @@
 #include "halBlockViz.h"
 #include "halBlockMapper.h"
 
+#ifdef ENABLE_UDC
+#include <pthread.h>
+static pthread_mutex_t HAL_MUTEX;
+#define HAL_LOCK pthread_mutex_lock(&HAL_MUTEX);
+#define HAL_UNLOCK pthread_mutex_unlock(&HAL_MUTEX);
+#else
+#define HAL_LOCK
+#define HAL_UNLOCK
+#endif
+
 using namespace std;
 using namespace hal;
 
-typedef map<int, AlignmentConstPtr> HandleMap;
-static int MAX_THREAD_ID = -1;
-static HandleMap* HANDLE_MAP_ARRAY = NULL;
+typedef map<int, pair<string, AlignmentConstPtr> > HandleMap;
+static HandleMap handleMap;
 
-static void checkThreadID(int threadID);
-static void checkHandle(int handle, int threadID);
-static AlignmentConstPtr getExistingAlignment(int handle, int threadID);
+static void checkHandle(int handle);
+static AlignmentConstPtr getExistingAlignment(int handle);
 static char* copyCString(const string& inString);
 
 static hal_block_t* readBlocks(const Sequence* tSequence,
@@ -35,81 +43,53 @@ static void readBlock(hal_block_t* cur, SegmentIteratorConstPtr refSeg,
                       const string& genomeName);
 
 
-
-extern "C" int halInit(int maxThreadID)
+extern "C" int halOpen(char* halFileName)
 {
-  try
-  {
-    halExit();
-    MAX_THREAD_ID = maxThreadID;
-    HANDLE_MAP_ARRAY = new HandleMap[MAX_THREAD_ID + 1];
-  }
-  catch(...)
-  {
-    return -1;
-  }
-  return 0;
-}
-
-extern "C" int halExit()
-{
-  try
-  {
-    for (int i = 0; i <= MAX_THREAD_ID; ++i)
-    {
-      for (HandleMap::iterator j = HANDLE_MAP_ARRAY[i].begin(); 
-           j != HANDLE_MAP_ARRAY[i].end(); ++j)
-      {
-        j->second->close();
-      }
-    }
-    delete [] HANDLE_MAP_ARRAY;
-    HANDLE_MAP_ARRAY = NULL;
-    MAX_THREAD_ID = -1;
-  }
-  catch(...)
-  {
-    return -1;
-  }
-  return 0;
-}
-
-extern "C" int halOpen(char* halFileName, int threadID)
-{
+  HAL_LOCK
   int handle = -1;
   try
   {
-    checkThreadID(threadID);
-    HandleMap& handleMap = HANDLE_MAP_ARRAY[threadID];
-    HandleMap::reverse_iterator mapIt = handleMap.rbegin();
-    if (mapIt == handleMap.rend())
+    for (HandleMap::iterator mapIt = handleMap.begin(); 
+         mapIt != handleMap.end(); ++mapIt)
     {
-      handle = 0;
+      if (mapIt->second.first == string(halFileName))
+      {
+        handle = mapIt->first;
+      }
     }
-    else
+    if (handle == -1)
     {
-      handle = mapIt->first + 1;
+      HandleMap::reverse_iterator mapIt = handleMap.rbegin();
+      if (mapIt == handleMap.rend())
+      {
+        handle = 0;
+      }
+      else
+      {
+        handle = mapIt->first + 1;
+      }    
+      AlignmentConstPtr alignment = hdf5AlignmentInstanceReadOnly();
+      alignment->open(halFileName);
+      handleMap.insert(pair<int, pair<string, AlignmentConstPtr> >(
+                         handle, pair<string, AlignmentConstPtr>(
+                           halFileName, alignment)));
     }
-    
-    AlignmentConstPtr alignment = hdf5AlignmentInstanceReadOnly();
-    alignment->open(halFileName);
-    handleMap.insert(pair<int, AlignmentConstPtr>(handle, alignment));
   }
   catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
     handle = -1;
   }
-
+  HAL_UNLOCK
   return handle;
 }
 
-extern "C" int halClose(int handle, int threadID)
+extern "C" int halClose(int handle)
 {
+  HAL_LOCK
+  int ret = 0;
   try
   {
-    checkHandle(handle, threadID);
-    HandleMap& handleMap = HANDLE_MAP_ARRAY[threadID];
     HandleMap::iterator mapIt = handleMap.find(handle);
     if (mapIt == handleMap.end())
     {
@@ -117,16 +97,16 @@ extern "C" int halClose(int handle, int threadID)
       ss << "error closing handle " << handle << ": not found";
       throw hal_exception(ss.str());
     }
-    mapIt->second->close();
+    mapIt->second.second->close();
     handleMap.erase(mapIt);
   }
    catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
-    return -1;
+    ret = -1;
   }
-
-  return 0;
+  HAL_UNLOCK
+  return ret;
 }
 
 extern "C" void halFreeBlocks(hal_block_t* head)
@@ -142,7 +122,6 @@ extern "C" void halFreeBlocks(hal_block_t* head)
 }
 
 extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
-                                                         int threadID,
                                                          char* qSpecies,
                                                          char* tSpecies,
                                                          char* tChrom,
@@ -150,15 +129,17 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
                                                          int getSequenceString,
                                                          int doDupes)
 {
+  HAL_LOCK
+  hal_block_t* head = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle, threadID);
+    AlignmentConstPtr alignment = getExistingAlignment(halHandle);
     const Genome* qGenome = alignment->openGenome(qSpecies);
     if (qGenome == NULL)
     {
       stringstream ss;
       ss << "Query species " << qSpecies << " not found in alignment with "
-         << "handle " << halHandle << " in thread " << threadID;
+         << "handle " << halHandle;
       throw hal_exception(ss.str());
     }
     const Genome* tGenome = alignment->openGenome(tSpecies);
@@ -166,7 +147,7 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
     {
       stringstream ss;
       ss << "Reference species " << tSpecies << " not found in alignment with "
-         << "handle " << halHandle << " in thread " << threadID;
+         << "handle " << halHandle;
       throw hal_exception(ss.str());
     }
 
@@ -199,25 +180,25 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
       throw hal_exception("Invalid range");
     }
 
-    hal_block_t* head = readBlocks(tSequence, absStart, absEnd, qGenome,
-                                   getSequenceString != 0, doDupes != 0);
-
-    return head;
+    head = readBlocks(tSequence, absStart, absEnd, qGenome,
+                      getSequenceString != 0, doDupes != 0);
   }
   catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
+    head = NULL;
   }
-
-  return NULL;
+  HAL_UNLOCK
+  return head;
 }
 
-extern "C" struct hal_species_t *halGetSpecies(int halHandle, int threadID)
+extern "C" struct hal_species_t *halGetSpecies(int halHandle)
 {
+  HAL_LOCK
+  hal_species_t* head = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle, threadID);
-    hal_species_t* head = NULL;
+    AlignmentConstPtr alignment = getExistingAlignment(halHandle);
     hal_species_t* prev = NULL;
     if (alignment->getNumGenomes() > 0)
     {
@@ -263,32 +244,33 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle, int threadID)
         }
       }      
     }
-    return head;
   }
   catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
+    head = NULL;
   }
-
-  return NULL;
+  HAL_UNLOCK
+  return head;
 }
 
-extern "C" struct hal_chromosome_t *halGetChroms(int halHandle, int threadID,
+extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
                                                  char* speciesName)
 {
+  HAL_LOCK
+  hal_chromosome_t* head = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle, threadID);
+    AlignmentConstPtr alignment = getExistingAlignment(halHandle);
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
     {
       stringstream ss;
       ss << "Species with name " << speciesName << " not found in alignment "
-         << "with handle " << halHandle << " and threadID " << threadID;
+         << "with handle " << halHandle;
       throw hal_exception(ss.str());
     }
 
-    hal_chromosome_t* head = NULL;
     hal_chromosome_t* prev = NULL;
     if (genome->getNumSequences() > 0)
     {
@@ -315,29 +297,31 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle, int threadID,
         prev = cur;
       }
     }
-    return head;
   }
   catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
+    head = NULL;
   }
-
-  return NULL;
+  HAL_UNLOCK
+  return head;
 }
 
-extern "C" char *halGetDna(int halHandle, int threadID,
+extern "C" char *halGetDna(int halHandle,
                            char* speciesName, char* chromName, 
                            int start, int end)
 {
+  HAL_LOCK
+  char* dna = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle, threadID);
+    AlignmentConstPtr alignment = getExistingAlignment(halHandle);
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
     {
       stringstream ss;
       ss << "Species with name " << speciesName << " not found in alignment "
-         << "with handle " << halHandle << " and threadID " << threadID;
+         << "with handle " << halHandle;
       throw hal_exception(ss.str());
     }
     const Sequence* sequence = genome->getSequence(chromName);
@@ -359,60 +343,39 @@ extern "C" char *halGetDna(int halHandle, int threadID,
     
     string buffer;
     sequence->getSubString(buffer, start, end - start);
-    return copyCString(buffer);
+    dna = copyCString(buffer);
   }
   catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
+    dna = NULL;
   }
-
-  return NULL;
+  HAL_UNLOCK
+  return dna;
 }
 
-void checkThreadID(int threadID)
+void checkHandle(int handle)
 {
-  if (HANDLE_MAP_ARRAY == NULL)
-  {
-    stringstream ss;
-    ss << "halInit() must be called before using any other methods in this API";
-    throw hal_exception(ss.str());
-  }
-  if (threadID > MAX_THREAD_ID)
-  {
-    stringstream ss;
-    ss << "Max thread ID set by halInit() is " <<MAX_THREAD_ID
-       << ":  Input threadID " << threadID << " is out of range.";
-    throw hal_exception(ss.str());
-  }
-}
-
-void checkHandle(int handle, int threadID)
-{
-  checkThreadID(threadID);
-  HandleMap& handleMap = HANDLE_MAP_ARRAY[threadID];
   HandleMap::iterator mapIt = handleMap.find(handle);
   if (mapIt == handleMap.end())
   {
     stringstream ss;
-    ss << "Handle " << handle << "not found in alignment map for thread id "
-       << threadID;
+    ss << "Handle " << handle << "not found in alignment map";
     throw hal_exception(ss.str());
   }
-  if (mapIt->second.get() == NULL)
+  if (mapIt->second.second.get() == NULL)
   {
     stringstream ss;
-    ss << "Handle " << handle << "points to NULL alignment for thread id "
-       << threadID;
+    ss << "Handle " << handle << "points to NULL alignment";
     throw hal_exception(ss.str());
   }
 }
 
-AlignmentConstPtr getExistingAlignment(int handle, int threadID)
+AlignmentConstPtr getExistingAlignment(int handle)
 {
-  checkHandle(handle, threadID);
-  HandleMap& handleMap = HANDLE_MAP_ARRAY[threadID];
+  checkHandle(handle);
   HandleMap::iterator mapIt = handleMap.find(handle);
-  return mapIt->second;
+  return mapIt->second.second;
 }
 
 char* copyCString(const string& inString)

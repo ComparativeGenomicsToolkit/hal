@@ -47,32 +47,17 @@ struct hal_chromosome_t
    unsigned length;
 };
 
-/** Initialize the static memory where C++ pointers to HAL alignments
- * are stored.  We allow 1 pointer per threadID, so maxThreadID alignemnts
- * can be kept
- * @return 0 succes -1 failure */
-int halInit(int maxThreadID);
-
-/** Wipe out all the alignment instances kept in the static contained
- * that was created by halInit
- * @return 0 succes -1 failure */
-int halExit();
-
 /** Open a HAL alignment file read-only.  
  * @param halFileName path to location of HAL file on disk 
- * @param threadID calling thread ID. No two thread ID's will get a reference
- * to the same alignment instance.  If not using threads just use 0.
  * @return new handle or -1 of open failed.
 */
-int halOpen(char *halFileName, int threadID);
+int halOpen(char *halFileName);
 
 /** Close a HAL alignment, given its handle
  * @param halHandle previously obtained from halOpen 
- * @param threadID calling thread ID. No two thread ID's will get a reference
- * to the same alignment instance.  If not using threads just use 0.
  * @return 0: success -1: failure
  */
-int halClose(int halHandle, int threadID);
+int halClose(int halHandle);
 
 /** Free linked list of blocks */
 void halFreeBlocks(struct hal_block_t* block);
@@ -84,8 +69,6 @@ void halFreeBlocks(struct hal_block_t* block);
  * along the query genome) will also be returned if they exist. 
  *
  * @param halHandle handle for the HAL alignment obtained from halOpen
- * @param threadID calling thread ID. No two thread ID's will get a reference
- * to the same alignment instance.  If not using threads just use 0.
  * @param qSpecies the name of the query species.
  * @param tSpecies the name of the reference species.
  * @param tChrom name of the chromosome in reference.
@@ -99,7 +82,6 @@ void halFreeBlocks(struct hal_block_t* block);
  * @return  block structure -- must be freed by halFreeBlocks()
  */
 struct hal_block_t *halGetBlocksInTargetRange(int halHandle, 
-                                              int threadID,
                                               char* qSpecies,
                                               char* tSpecies,
                                               char* tChrom,
@@ -110,31 +92,26 @@ struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
 
 /** Create a linked list of the species in the hal file.
  * @param halHandle handle for the HAL alignment obtained from halOpen
- * @param threadID calling thread ID. No two thread ID's will get a reference
- * to the same alignment instance.  If not using threads just use 0.
  * @return  species structure -- must be freed by client */
-struct hal_species_t *halGetSpecies(int halHandle, int threadID);
+struct hal_species_t *halGetSpecies(int halHandle);
 
 /** Create a linked list of the chromosomes in the 
  * @param halHandle handle for the HAL alignment obtained from halOpen 
- * @param threadID calling thread ID. No two thread ID's will get a reference
- * to the same alignment instance.  If not using threads just use 0.
  * @param speciesName The name of the species whose chromomsomes you want 
  * @return  chromosome structure -- must be freed by client */
-struct hal_chromosome_t *halGetChroms(int halHandle, int threadID,
+struct hal_chromosome_t *halGetChroms(int halHandle, 
                                       char* speciesName);
 
 /** Create a string of the DNA characters of the given range of a chromosome
  * @param halHandle handle for the HAL alignment obtained from halOpen 
- * @param threadID calling thread ID. No two thread ID's will get a reference
- * to the same alignment instance.  If not using threads just use 0.
  * @param speciesName The name of the species 
  * @param chromName The name of the chromosome within the species
  * @param start The first position of the chromosome
  * @param end The last + 1 position of the chromosome 
  * @return dna string -- must be freed by client */
-char *halGetDna(int halHandle, int threadID,
-                char* speciesName, char* chromName, 
+char *halGetDna(int halHandle,
+                char* speciesName,
+                char* chromName, 
                 int start, int end);
 
 #ifdef __cplusplus
