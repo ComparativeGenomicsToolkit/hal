@@ -35,7 +35,7 @@ ifdef ENABLE_UDC
 		SAMTABIXDIR = /hive/data/outside/samtabix/${MACHTYPE}
 	endif
 
-	cppflags += -DENABLE_UDC -I${KENTSRC}/src/inc
-	cflags += -I${KENTSRC}/src/inc
+	cppflags += -DENABLE_UDC -I${KENTSRC}/src/inc -pthread
+	cflags += -I${KENTSRC}/src/inc -pthread
 	basicLibs += ${KENTSRC}/src/lib/${MACHTYPE}/jkweb.a  ${SAMTABIXDIR}/libsamtabix.a -lssl -lcrypto
 endif

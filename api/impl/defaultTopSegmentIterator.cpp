@@ -262,7 +262,8 @@ void DefaultTopSegmentIterator::toLeft(hal_index_t leftCutoff) const
       _endOffset = _topSegment->getLength() - _startOffset;
       _startOffset = 0;
     }
-    if (leftCutoff != NULL_INDEX && overlaps(leftCutoff))
+    if (_topSegment->getArrayIndex() >= 0 && 
+        leftCutoff != NULL_INDEX && overlaps(leftCutoff))
     {
       assert(_topSegment->getStartPosition() <= leftCutoff);
       _startOffset = leftCutoff - _topSegment->getStartPosition();

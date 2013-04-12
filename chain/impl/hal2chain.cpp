@@ -104,14 +104,15 @@ int main(int argc, char** argv)
     // need to review!
     Chain chain;
     chain._id = 0;
-    while (gtop->getRightArrayIndex() < genome->getNumTopSegments() &&
+    while (gtop->getRightArrayIndex() < 
+           (hal_index_t)genome->getNumTopSegments() &&
            gtop->getLeft()->getStartPosition() < endPosition)
     {
       if (gtop->hasParent() == true)
       {
         hal_offset_t leftOffset = 0;
-        if (start > gtop->getStartPosition() 
-            && start < gtop->getEndPosition())
+        if ((hal_index_t)start > gtop->getStartPosition() 
+            && (hal_index_t)start < gtop->getEndPosition())
         {
           leftOffset = start - gtop->getStartPosition() ;
         }

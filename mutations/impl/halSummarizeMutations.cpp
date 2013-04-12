@@ -39,6 +39,24 @@ void SummarizeMutations::printCsv(ostream& outStream) const
     }
   }
 
+  MutationsStats summaryStats = {0};
+  hal_size_t N = 0;
+  i = _branchMap.begin();
+  for (; i != _branchMap.end(); ++i)
+  {
+    if (_justSubs || i->first.second.empty() == false)
+    {
+      summaryStats += i->second;
+      ++N;
+    }
+  }
+  outStream << "Total, ," << summaryStats << endl;
+  if (N > 0)
+  {
+    summaryStats /= N;
+  }
+  outStream << "Average, ," << summaryStats << endl;
+     
   outStream << endl;
 }
 
@@ -285,3 +303,4 @@ void SummarizeMutations::subsAndGapInserts(
     }
   }
 }
+

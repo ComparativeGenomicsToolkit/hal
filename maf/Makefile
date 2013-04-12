@@ -1,14 +1,14 @@
 rootPath = ../
 include ../include.mk
 
-libSourcesAll = impl/*.cpp
+libSourcesAll = $(wildcard impl/*.cpp)
 libSources1=$(subst impl/hal2maf.cpp,,${libSourcesAll})
 libSources=$(subst impl/maf2hal.cpp,,${libSources1})
-libHeaders = inc/*.h 
+libHeaders = $(wildcard inc/*.h )
 libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
 libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
-libTests = tests/*.cpp 
-libTestsHeaders = tests/*.h 
+libTests = $(wildcard tests/*.cpp)
+libTestsHeaders = $(wildcard tests/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 
