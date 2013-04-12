@@ -121,7 +121,7 @@ int main(int argc, char** argv)
 #ifdef ENABLE_UDC
   if (args.udcPath != NULL)
   {
-    udcSetDefaultDir(udcPath);
+    udcSetDefaultDir(args.udcPath);
   }
 #endif
      
