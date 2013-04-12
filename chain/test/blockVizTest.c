@@ -161,11 +161,14 @@ int main(int argc, char** argv)
     }
 #endif
 
-    halClose(handle);
+    
   }
   else
   {
     ret = -1;
   }
+#ifdef ENABLE_UDC
+  pthread_exit(NULL);
+#endif
   return ret;
 }
