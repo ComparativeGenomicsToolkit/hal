@@ -83,6 +83,7 @@ def printTable(table):
                 if orig > 0:
                     frac = float(elem) / float(orig)
                 line += ", %f" % frac
+            idx += 1
         print line
     
 def runSteps(inHalPath, outDir, steps, overwrite, doMaf):
