@@ -207,31 +207,40 @@ void LodExtract::writeDimensions(
   map<const Genome*, vector<Sequence::Info> >::iterator dimMapIt;
   vector<string> newGenomeNames = childNames;
   newGenomeNames.push_back(parentName);
+ 
   for (size_t i = 0; i < newGenomeNames.size(); ++i)
   {
     const Genome* inGenome = _inAlignment->openGenome(newGenomeNames[i]);
     pair<const Genome*, vector<Sequence::Info> > newEntry;
     newEntry.first = inGenome;
+    
+    // it's important we keep the sequences in the output genome
+    // in the same order as the sequences in the input genome since
+    // we always use global coordinates!
+    SequenceIteratorConstPtr seqIt = inGenome->getSequenceIterator();
+    SequenceIteratorConstPtr seqEnd = inGenome->getSequenceEndIterator();
+    for (; seqIt != seqEnd; seqIt->toNext())
+    {
+      const Sequence* inSequence = seqIt->getSequence();
+      map<const Sequence*, hal_size_t>::const_iterator segMapIt;
+      segMapIt = segmentCounts.find(inSequence);
+      // we skip empty sequences for now with below check
+      if (segMapIt != segmentCounts.end())
+      {
+        vector<Sequence::Info>& segDims = newEntry.second;
+        hal_size_t nTop = 
+           inGenome->getName() == parentName ? 0 : segMapIt->second;
+        hal_size_t nBot = 
+           inGenome->getName() != parentName ? 0 : segMapIt->second;
+        segDims.push_back(Sequence::Info(inSequence->getName(),
+                                         inSequence->getSequenceLength(),
+                                         nTop,
+                                         nBot));
+      }
+    }
+
+    // note potential bug here for genome with no data
     dimMap.insert(newEntry);
-  }
-  
-  // scan through the segment counts, adding the dimensions of each
-  // sequence to the map entry for the appropriate genome. 
-  map<const Sequence*, hal_size_t>::const_iterator segMapIt;
-  for (segMapIt = segmentCounts.begin(); segMapIt != segmentCounts.end(); 
-       ++segMapIt)
-  {
-    const Sequence* inSequence = segMapIt->first;
-    const Genome* inGenome = inSequence->getGenome();
-    dimMapIt = dimMap.find(inGenome);
-    assert(dimMapIt != dimMap.end());
-    vector<Sequence::Info>& segDims = dimMapIt->second;
-    hal_size_t nTop = inGenome->getName() == parentName ? 0 : segMapIt->second;
-    hal_size_t nBot = inGenome->getName() != parentName ? 0 : segMapIt->second;
-    segDims.push_back(Sequence::Info(inSequence->getName(),
-                                     inSequence->getSequenceLength(),
-                                     nTop,
-                                     nBot));
   }
   
   // now that we have the dimensions for each genome, update them in
@@ -241,7 +250,6 @@ void LodExtract::writeDimensions(
     Genome* newGenome = _outAlignment->openGenome(dimMapIt->first->getName());
     assert(newGenome != NULL);
     vector<Sequence::Info>& segDims = dimMapIt->second;
-
     // ROOT 
     if (newGenome->getName() == _outAlignment->getRootName())
     {
@@ -354,6 +362,7 @@ void LodExtract::writeSegments(const Genome* inParent,
         (*segIt)->setArrayIndex(outSegment->getArrayIndex());
         outSegment->setCoordinates((*segIt)->getLeftPos(), 
                                    (*segIt)->getLength());
+        assert(outSegment->getSequence()->getName() == inSequence->getName());
         outSegment->toRight();
       }
     }
