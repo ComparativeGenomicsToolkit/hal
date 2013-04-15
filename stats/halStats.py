@@ -31,5 +31,26 @@ def getHalNumSegments(halPath, genomeName):
     res = runShellCommand("halStats %s --numSegments %s" %
                           (halPath, genomeName)).split()
     return tuple([int(x) for x in res])
-    
-                        
+
+def getHalStats(halPath):
+    res = runShellCommand("halStats %s" % (halPath)).split("\n")
+    outList = []
+    foundHeader = False
+    for line in res:
+        tokens = line.strip().split(",")
+        if len(tokens) == 6 and tokens[0] == "GenomeName":
+            foundHeader = True
+        elif len(tokens) == 6 and foundHeader:
+            outList.append(tuple(tokens))
+    return outList
+
+def getHalSequenceStats(halPath, genomeName):
+    res = runShellCommand("halStats %s --sequenceStats %s" %
+                          (halPath, genomeName)).split("\n")
+    outList = []
+    for line in res[1:]:
+        tokens = line.strip().split(",")
+        if len(tokens) == 4:
+            outList.append(tuple(tokens))
+    return outList
+
