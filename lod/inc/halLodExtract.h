@@ -38,7 +38,8 @@ public:
                                     AlignmentPtr outAlignment,
                                     hal_size_t step,
                                     const std::string& tree,
-                                    const std::string& rootName);
+                                    const std::string& rootName,
+                                    bool keepSequences);
    
    
 protected:
@@ -74,6 +75,7 @@ protected:
    AlignmentPtr _outAlignment;
 
    LodGraph _graph;
+   bool _keepSequences;
 };
 
 }

@@ -49,7 +49,8 @@ public:
    const std::string& getName() const;
 
    void setDimensions(
-     const std::vector<hal::Sequence::Info>& sequenceDimensions);
+     const std::vector<hal::Sequence::Info>& sequenceDimensions,
+     bool storeDNAArrays);
 
    void updateTopDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);

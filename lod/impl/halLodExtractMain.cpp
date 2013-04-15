@@ -23,6 +23,9 @@ static CLParserPtr initParser()
                            "Phylogenetic tree of output HAL file.  Must "
                            "contain only genomes from the input HAL file. "
                            "(input\'s tree used if empty)", "\"\"");
+  optionsParser->addOptionFlag("keepSequences",
+                               "Write the sequence strings to the output "
+                               "file.", false);
   optionsParser->setDescription("Generate a new HAL file at a coarser "
                                 "Level of Detail (LOD) by interpolation.");
   return optionsParser;
@@ -36,6 +39,7 @@ int main(int argc, char** argv)
   string rootName;
   string outTree;
   hal_size_t step;
+  bool keepSequences;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -44,6 +48,7 @@ int main(int argc, char** argv)
     rootName = optionsParser->getOption<string>("root");
     outTree = optionsParser->getOption<string>("outTree");
     step = optionsParser->getArgument<hal_size_t>("step");
+    keepSequences = optionsParser->getFlag("keepSequences");
   }
   catch(exception& e)
   {
@@ -83,9 +88,10 @@ int main(int argc, char** argv)
 
     LodExtract lodExtract;
     lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
-                                           step, outTree, rootName);
+                                           step, outTree, rootName,
+                                           keepSequences);
   }
-  catch(hal_exception& e)
+/*  catch(hal_exception& e)
   {
     cerr << "hal exception caught: " << e.what() << endl;
     return 1;
@@ -95,6 +101,7 @@ int main(int argc, char** argv)
     cerr << "Exception caught: " << e.what() << endl;
     return 1;
   }
-  
+*/
+  catch(float temp) {}
   return 0;
 }

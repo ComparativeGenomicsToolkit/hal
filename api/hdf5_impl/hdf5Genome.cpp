@@ -46,6 +46,7 @@ HDF5Genome::HDF5Genome(const string& name,
   _dcprops.copy(dcProps);
   assert(!name.empty());
   assert(alignment != NULL && h5Parent != NULL);
+
   H5::Exception::dontPrint();
   try
   {
@@ -58,11 +59,6 @@ HDF5Genome::HDF5Genome(const string& name,
   }
   _metaData = new HDF5MetaData(&_group, metaGroupName);
   _rup = new HDF5MetaData(&_group, rupGroupName);
-  _totalSequenceLength = _dnaArray.getSize() * 2;
-  if (_rup->has(rupGroupName) && _rup->get(rupGroupName) == "1")
-  {
-    --_totalSequenceLength;
-  }
 
   hsize_t chunk;
   _dcprops.getChunk(1, &chunk);
@@ -79,7 +75,8 @@ HDF5Genome::~HDF5Genome()
 //GENOME INTERFACE
 
 void HDF5Genome::setDimensions(
-  const vector<Sequence::Info>& sequenceDimensions)
+  const vector<Sequence::Info>& sequenceDimensions,
+  bool storeDNAArrays)
 {
   _totalSequenceLength = 0;
   hal_size_t totalSeq = sequenceDimensions.size();
@@ -121,7 +118,7 @@ void HDF5Genome::setDimensions(
     _group.unlink(sequenceArrayName);
   }
   catch (H5::Exception){}
-  if (_totalSequenceLength > 0)
+  if (_totalSequenceLength > 0 && storeDNAArrays == true)
   {
     hal_size_t arrayLength = _totalSequenceLength / 2;
     if (_totalSequenceLength % 2)
@@ -725,6 +722,7 @@ void HDF5Genome::read()
 void HDF5Genome::readSequences()
 {
   deleteSequenceCache();
+  _totalSequenceLength = 0;
   hal_size_t numSequences = _sequenceArray.getSize();
   for (hal_size_t i = 0; i < numSequences; ++i)
   {
@@ -734,7 +732,18 @@ void HDF5Genome::readSequences()
                                       seq->getSequenceLength(), seq));
     _sequenceNameCache.insert(
       pair<string, HDF5Sequence*>(seq->getName(), seq));
-
+    _totalSequenceLength += seq->getSequenceLength();
+  }
+  hal_size_t seqLenFromArray = _dnaArray.getSize() * 2;
+  if (seqLenFromArray > 0 && (seqLenFromArray != _totalSequenceLength &&
+                              seqLenFromArray-1 != _totalSequenceLength))
+  {
+    stringstream ss;
+    ss << "Sequences for genome " << getName() << " have total length " 
+       << _totalSequenceLength << " but the (non-zero) DNA array contains "
+       << seqLenFromArray << " elements. This is an internal error or the "
+       << "file is corrupt.";
+    throw hal_exception(ss.str());
   }
 }
 

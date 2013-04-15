@@ -22,8 +22,11 @@ from hal.stats.halStats import runShellCommand
 from hal.stats.halStats import getHalGenomes
 from hal.stats.halStats import getHalNumSegments
 
-def runHalLodExtract(inHalPath, outHalPath, step):
-    runShellCommand("halLodExtract %s %s %s" % (inHalPath, outHalPath, step))
+def runHalLodExtract(inHalPath, outHalPath, step, keepSeq):
+    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
+    if keepSeq:
+        cmd += " --keepSequences"
+    runShellCommand(cmd)
 
 def getHalTotalSegments(halPath):
     total = (0, 0)
@@ -100,7 +103,6 @@ def getScanTime(inHalPath, outDir, step):
     assert len(genomes) > 1
     genName = genomes[1]
     bedPath = makePath(inHalPath, outDir, step, genName, "bed")
-    print (step, bedPath)
     t1 = time.time()
     runShellCommand("halBranchMutations %s %s --refFile %s" % (
         srcHalPath, genName, bedPath))
@@ -123,7 +125,7 @@ def printTable(table):
             idx += 1
         print line
     
-def runSteps(inHalPath, outDir, steps, overwrite, doMaf):
+def runSteps(inHalPath, outDir, steps, overwrite, doMaf, keepSeq):
     table = defaultdict(list)
     makeMaf(inHalPath, outDir, 0, overwrite, doMaf)
 
@@ -136,7 +138,7 @@ def runSteps(inHalPath, outDir, steps, overwrite, doMaf):
         outPath = makePath(inHalPath, outDir, step, "lod", "hal")
         
         if overwrite is True or not os.path.isfile(outPath):
-            runHalLodExtract(inHalPath, outPath, step)
+            runHalLodExtract(inHalPath, outPath, step, keepSeq)
 
         makeMaf(inHalPath, outDir, step, overwrite, doMaf)
         compMaf(inHalPath, outDir, step, overwrite, doMaf)
@@ -160,6 +162,7 @@ def main(argv=None):
     parser.add_argument("steps", help="comma-separated list of stepsizes")
     parser.add_argument("--overwrite",action="store_true", default=False)
     parser.add_argument("--maf",action="store_true", default=False)
+    parser.add_argument("--keepSequences",action="store_true", default=False)
         
     args = parser.parse_args()
 
@@ -167,7 +170,8 @@ def main(argv=None):
         os.makedirs(args.outDir)
 
     steps = [int(x) for x in args.steps.split(",")]
-    table = runSteps(args.hal, args.outDir, steps, args.overwrite, args.maf)
+    table = runSteps(args.hal, args.outDir, steps, args.overwrite, args.maf,
+                     args.keepSequences)
 #    print table
     printTable(table)
 if __name__ == "__main__":

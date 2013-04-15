@@ -29,10 +29,12 @@ void LodExtract::createInterpolatedAlignment(AlignmentConstPtr inAlignment,
                                              AlignmentPtr outAlignment,
                                              hal_size_t step,
                                              const string& tree,
-                                             const string& rootName)
+                                             const string& rootName,
+                                             bool keepSequences)
 {
   _inAlignment = inAlignment;
   _outAlignment = outAlignment;
+  _keepSequences = keepSequences;
   
   string newTree = tree.empty() ? inAlignment->getNewickTree() : tree;
   createTree(newTree, rootName);
@@ -157,7 +159,10 @@ void LodExtract::convertInternalNode(const string& genomeName,
   countSegmentsInGraph(segmentCounts);
 
   writeDimensions(segmentCounts, parent->getName(), childNames);
-  writeSequences(parent, children);
+  if (_keepSequences == true)
+  {
+    writeSequences(parent, children);
+  }
   writeSegments(parent, children);
   writeHomologies(parent, children);
   writeParseInfo(_outAlignment->openGenome(parent->getName()));
@@ -254,12 +259,12 @@ void LodExtract::writeDimensions(
     if (newGenome->getName() == _outAlignment->getRootName())
     {
       assert(newGenome->getName() == parentName);
-      newGenome->setDimensions(segDims);
+      newGenome->setDimensions(segDims, _keepSequences);
     }
     // LEAF
     else if (newGenome->getName() != parentName)
     {
-      newGenome->setDimensions(segDims);
+      newGenome->setDimensions(segDims, _keepSequences);
     }
     // INTERNAL NODE
     else
