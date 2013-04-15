@@ -14,7 +14,7 @@ using namespace hal;
 void MutationsStats::printHeader(std::ostream& os)
 {
   os << "BranchLength, GenomeLength," 
-     " ParentLength, Subtitutions, Transitions, Transversions, Matches"
+     " ParentLength, Subtitutions, Transitions, Transversions, Matches,"
      " GapInsertions, GapInsertedBases, GapDeletions, GapDeletedBases," 
      " Insertions, InsertionBases, Deletions, DeletionBases, Inversions,"
      " InvertedBases, Duplications, DuplicatedBases, Transpositions,"
