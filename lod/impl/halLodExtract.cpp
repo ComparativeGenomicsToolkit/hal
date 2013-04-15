@@ -408,6 +408,13 @@ void LodExtract::writeHomologies(const Genome* inParent,
       res.first->second->insert(segment);    
     }      
     updateBlockEdges(inParent, segMap, block, bottom, top);
+    
+    // free the temporary sets! 
+    for (SegmentMap::iterator mapIt = segMap.begin(); mapIt != segMap.end();
+         ++mapIt)
+    {
+      delete mapIt->second;
+    }
   }
 }
 
