@@ -35,12 +35,14 @@ const double HDF5Genome::dnaChunkScale = 10.;
 HDF5Genome::HDF5Genome(const string& name,
                        HDF5Alignment* alignment,
                        CommonFG* h5Parent,
-                       const DSetCreatPropList& dcProps) :
+                       const DSetCreatPropList& dcProps,
+                       bool inMemory) :
   _alignment(alignment),
   _h5Parent(h5Parent),
   _name(name),
   _numChildrenInBottomArray(0),
   _totalSequenceLength(0),
+  _numChunksInArrayBuffer(inMemory ? 0 : 1),
   _parentCache(NULL)
 {
   _dcprops.copy(dcProps);
@@ -140,14 +142,14 @@ void HDF5Genome::setDimensions(
     dnaDC.copy(_dcprops);
     dnaDC.setChunk(1, &chunk);
     _dnaArray.create(&_group, dnaArrayName, HDF5DNA::dataType(), 
-                     arrayLength, &dnaDC);
+                     arrayLength, &dnaDC, _numChunksInArrayBuffer);
   }
   if (totalSeq > 0)
   {
     _sequenceArray.create(&_group, sequenceArrayName, 
                           // pad names a bit to allow renaming
                           HDF5Sequence::dataType(maxName + 32), 
-                          totalSeq, NULL);
+                          totalSeq, NULL, _numChunksInArrayBuffer);
     writeSequences(sequenceDimensions);
     
   }
@@ -276,7 +278,7 @@ void HDF5Genome::setGenomeTopDimensions(
   }
   catch (H5::Exception){}
   _topArray.create(&_group, topArrayName, HDF5TopSegment::dataType(), 
-                     numTopSegments + 1, &_dcprops);
+                   numTopSegments + 1, &_dcprops, _numChunksInArrayBuffer);
   _parentCache = NULL;
 }
 
@@ -311,7 +313,7 @@ void HDF5Genome::setGenomeBottomDimensions(
 
   _bottomArray.create(&_group, bottomArrayName, 
                       HDF5BottomSegment::dataType(numChildren), 
-                      numBottomSegments + 1, &botDC);
+                      numBottomSegments + 1, &botDC, _numChunksInArrayBuffer);
   _numChildrenInBottomArray = numChildren;
   _childCache.clear();
 }
@@ -697,19 +699,19 @@ void HDF5Genome::read()
   try
   {
     _group.openDataSet(dnaArrayName);
-    _dnaArray.load(&_group, dnaArrayName);    
+    _dnaArray.load(&_group, dnaArrayName, _numChunksInArrayBuffer);    
   }
   catch (H5::Exception){}
   try
   {
     _group.openDataSet(topArrayName);
-    _topArray.load(&_group, topArrayName);
+    _topArray.load(&_group, topArrayName, _numChunksInArrayBuffer);
   }
   catch (H5::Exception){}
   try
   {
     _group.openDataSet(bottomArrayName);
-    _bottomArray.load(&_group, bottomArrayName);
+    _bottomArray.load(&_group, bottomArrayName, _numChunksInArrayBuffer);
     _numChildrenInBottomArray = 
        HDF5BottomSegment::numChildrenFromDataType(_bottomArray.getDataType());
   }
@@ -718,7 +720,7 @@ void HDF5Genome::read()
   try
   {
     _group.openDataSet(sequenceArrayName);
-    _sequenceArray.load(&_group, sequenceArrayName);
+    _sequenceArray.load(&_group, sequenceArrayName, _numChunksInArrayBuffer);
     readSequences();
   }
   catch (H5::Exception){}

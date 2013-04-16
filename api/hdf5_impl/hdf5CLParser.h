@@ -23,6 +23,7 @@ public:
 
    void applyToDCProps(H5::DSetCreatPropList& dcprops) const;
    void applyToAProps(H5::FileAccPropList& aprops) const;
+   bool getInMemory() const;
 
    static const hsize_t DefaultChunkSize;
    static const hsize_t DefaultDeflate;
@@ -30,6 +31,7 @@ public:
    static const hsize_t DefaultCacheRDCElems;
    static const hsize_t DefaultCacheRDCBytes;
    static const double DefaultCacheW0;
+   static const bool DefaultInMemory;
 
 protected:
    // Nobody creates this class except through the interface. 

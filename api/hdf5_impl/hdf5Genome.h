@@ -40,7 +40,8 @@ public:
    HDF5Genome(const std::string& name,
               HDF5Alignment* alignment,
               H5::CommonFG* h5Parent,
-              const H5::DSetCreatPropList& dcProps);
+              const H5::DSetCreatPropList& dcProps,
+              bool inMemory);
 
    virtual ~HDF5Genome();
 
@@ -190,6 +191,7 @@ protected:
    H5::DSetCreatPropList _dcprops;
    hal_size_t _numChildrenInBottomArray;
    hal_size_t _totalSequenceLength;
+   hal_size_t _numChunksInArrayBuffer;
 
    mutable Genome* _parentCache;
    mutable std::vector<Genome*> _childCache;
