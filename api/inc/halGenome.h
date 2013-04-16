@@ -33,9 +33,14 @@ public:
     * or completely rewriting a genome.  The phylogenetic information
     * (ex number of children) is read from the Aignment object
     * @param sequenceDimensions List of information for all sequences
-    * that are to be contained in the genome. */
+    * that are to be contained in the genome. 
+    * @param storeDNAArrays Allocate arrays for DNA sequences.  This is
+    * and should be true by default, but we introduce the option to allow
+    * creating of HAL alignments without DNA information (ie just blocks). 
+    * This functionality is used for halLodExtract, for example. */
    virtual void setDimensions(
-     const std::vector<hal::Sequence::Info>& sequenceDimensions) = 0;
+     const std::vector<hal::Sequence::Info>& sequenceDimensions,
+     bool storeDNAArrays = true) = 0;
 
    /** Update the number of top segments in *existing*
     * sequences of the genome, leaving the rest of the genome intact.
@@ -108,6 +113,10 @@ public:
    /** Get the numeric index of a given child Genome 
     * @child child genome */
    virtual hal_index_t getChildIndex(const Genome* child) const = 0;
+
+   /** Test if the genome stores DNA sequence.  Will be true unless
+    * storeDNAArrays was set to false in setDimensions */
+   virtual bool containsDNAArray() const = 0;
 
 protected:
 

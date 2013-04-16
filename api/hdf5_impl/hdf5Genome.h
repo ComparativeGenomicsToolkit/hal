@@ -49,7 +49,8 @@ public:
    const std::string& getName() const;
 
    void setDimensions(
-     const std::vector<hal::Sequence::Info>& sequenceDimensions);
+     const std::vector<hal::Sequence::Info>& sequenceDimensions,
+     bool storeDNAArrays);
 
    void updateTopDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
@@ -89,6 +90,8 @@ public:
    hal_size_t getNumChildren() const;
 
    hal_index_t getChildIndex(const Genome* child) const;
+
+   bool containsDNAArray() const;
 
    // SEGMENTED SEQUENCE INTERFACE
 

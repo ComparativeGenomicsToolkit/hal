@@ -10,6 +10,7 @@
 #include <fstream>
 #include <deque>
 #include <sstream>
+#include <algorithm>
 #include "halCommon.h"
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
@@ -22,6 +23,12 @@ extern "C" {
 using namespace hal;
 using namespace std;
 using namespace H5;
+
+#ifdef ENABLE_UDC
+#include "hdf5UDCFuseDriver.h"
+static const hid_t UDC_FUSE_DRIVER_ID =  H5FD_udc_fuse_init();
+#endif
+
 
 /** default group name for MetaData attributes, will be a subgroup
  * of the top level of the file, ie /Meta */
@@ -70,6 +77,7 @@ void HDF5Alignment::createNew(const string& alignmentPath)
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
+
   _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
@@ -88,10 +96,17 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   close();
   delete _file;
   int _flags = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
+#ifdef ENABLE_UDC
+  if (readOnly == true)
+  {
+    _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
+  }
+#else
   if (!ifstream(alignmentPath.c_str()))
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
+#endif
   _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
   if (!compatibleWithVersion(getVersion()))
   {
@@ -197,6 +212,13 @@ void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
   }
   hdf5Parser->applyToDCProps(_dcprops);
   hdf5Parser->applyToAProps(_aprops);
+#ifdef ENABLE_UDC
+  static string udcCachePath = hdf5Parser->getOption<string>("udcCacheDir");
+  if (udcCachePath != "\"\"" && !udcCachePath.empty())
+  {
+    H5FD_udc_fuse_set_cache_dir(udcCachePath.c_str());
+  }  
+#endif
 }
 
 Genome*  HDF5Alignment::addLeafGenome(const string& name,

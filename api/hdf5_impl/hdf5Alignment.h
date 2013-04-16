@@ -100,6 +100,7 @@ protected:
                         const std::vector<std::pair<std::string, double> >&
                         childNames);
 
+
 protected:
 
    H5::H5File* _file;

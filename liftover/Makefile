@@ -1,9 +1,9 @@
 rootPath = ../
 include ../include.mk
 
-libSourcesAll = impl/*.cpp
+libSourcesAll = $(wildcard impl/*.cpp)
 libSources=$(subst impl/halLiftoverMain.cpp,,${libSourcesAll})
-libHeaders = inc/*.h 
+libHeaders = $(wildcard inc/*.h)
 
 all : ${libPath}/halLiftover.a ${binPath}/halLiftover
 

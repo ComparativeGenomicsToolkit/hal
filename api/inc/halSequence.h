@@ -69,7 +69,10 @@ public:
    virtual Genome* getGenome() = 0;
 
    /** Get the sequence's start position in the genome */
-   virtual hal_size_t getStartPosition() const = 0;
+   virtual hal_index_t getStartPosition() const = 0;
+
+   /** Get the sequence's end position (start + len - 1) in the genome */
+   virtual hal_index_t getEndPosition() const = 0;
 
    /** Get the index of the sequence in the sequence array */
    virtual hal_index_t getArrayIndex() const = 0;
