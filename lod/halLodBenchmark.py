@@ -169,6 +169,9 @@ def main(argv=None):
     if not os.path.exists(args.outDir):
         os.makedirs(args.outDir)
 
+    if args.maf is True:
+        args.keepSequences = True
+
     steps = [int(x) for x in args.steps.split(",")]
     table = runSteps(args.hal, args.outDir, steps, args.overwrite, args.maf,
                      args.keepSequences)
