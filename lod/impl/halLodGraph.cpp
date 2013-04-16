@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <limits>
+#include <cmath>
 #include "halLodGraph.h"
 
 using namespace std;
@@ -99,7 +100,7 @@ void LodGraph::scanGenome(const Genome* genome)
       assert(colIt->getReferenceSequencePosition() == pos);
       
       // scan up to here trying to find a column we're happy to add
-      hal_index_t maxTry = min(pos + (hal_index_t)_step / 2, 
+      hal_index_t maxTry = std::min(pos + (hal_index_t)_step / 2, 
                                (hal_index_t)len - 1);     
       hal_index_t tryPos = NULL_INDEX; 
       do 
@@ -149,7 +150,7 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
           if (si != segmentSet->begin())
           {
             --si;
-            delta = std::min(delta, std::abs((*si)->getLeftPos() - 
+            delta = std::min(delta, (hal_index_t)std::abs((*si)->getLeftPos() - 
                                              segment.getLeftPos()));
           }
         }
@@ -303,16 +304,16 @@ void LodGraph::printDimensions(ostream& os) const
   for (BlockConstIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
     totalSegments += (*bi)->getNumSegments();
-    maxSegments = max(maxSegments, (*bi)->getNumSegments());
-    minSegments = min(minSegments, (*bi)->getNumSegments());
+    maxSegments = std::max(maxSegments, (*bi)->getNumSegments());
+    minSegments = std::min(minSegments, (*bi)->getNumSegments());
 
     totalLength += (*bi)->getLength();
-    maxLength = max(maxLength, (*bi)->getLength());
-    minLength = min(minLength, (*bi)->getLength());
+    maxLength = std::max(maxLength, (*bi)->getLength());
+    minLength = std::min(minLength, (*bi)->getLength());
 
     totalAdjLength += (*bi)->getTotalAdjLength();
-    maxAdjLength = max(maxAdjLength, (*bi)->getTotalAdjLength());
-    minAdjLength = min(minAdjLength, (*bi)->getTotalAdjLength());
+    maxAdjLength = std::max(maxAdjLength, (*bi)->getTotalAdjLength());
+    minAdjLength = std::min(minAdjLength, (*bi)->getTotalAdjLength());
   }
 
   os << "Graph: numBlocks=" << _blocks.size()

@@ -13,6 +13,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <cmath>
 #include "hal.h"
 
 namespace hal {

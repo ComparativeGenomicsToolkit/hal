@@ -9,6 +9,7 @@
 #include <map>
 #include <sstream>
 #include <limits>
+#include <string.h>
 #include "hal.h"
 #include "halChain.h"
 #include "halBlockViz.h"
