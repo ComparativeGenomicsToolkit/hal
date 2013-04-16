@@ -46,53 +46,39 @@ def getMinAvgBlockSize(halPath):
             minAvgBlockSize = min(minAvgBlockSize, avgBottom)
     assert minAvgBlockSize > 0 and minAvgBlockSize != sys.maxint
     return minAvgBlockSize
-
-# Try to find a factor smaller than inFactor such that the range is evenly
-# divided into exponents of the factor
-def getFactor(first, last, inFactor):
-    assert first >= 0 and last > first
-    assert inFactor > 0
-    distance = (last - first) + 1
-    tgtRes = math.ceil(math.log(distance, inFactor))
-    bestFactor = None
-    bestDelta = sys.maxint
-    for testFactor in xrange(inFactor, 2, -1):
-        res = math.log(distance, testFactor)
-        if res <= tgtRes and tgtRes - res < bestDelta:
-            bestFactor = testFactor
-            bestDelta = tgtRes -res
-    assert bestFactor > 1
-    return bestFactor
         
 # Get a lest of step-sizes required to interpolate the hal such that
 # the maximum level of detail has at most maxBlock (expected) blocks
 # per genome, and each hal file has multFac (approx maxBlock) bigger
 # blocks than the previous
-def getSteps(halPath, maxBlock):
+def getSteps(halPath, maxBlock, scaleFactor):
     maxLen = getMaxGenomeLength(halPath)
     assert maxLen > 0
-    maxStep = int(math.ceil(float(maxLen) / float(maxBlock)))
-    baseStep = int(getMinAvgBlockSize(halPath))
-    multFac = getFactor(baseStep, maxStep, maxBlock)
+    maxStep = math.ceil(float(maxLen) / float(maxBlock))
+    baseStep = getMinAvgBlockSize(halPath)
     outList = []
-    step = baseStep * multFac
-    while step * multFac < maxLen:
-        outList.append((step, step*multFac))
-        step *= multFac
+    step = baseStep
+    while True:
+        outList.append(step)
+        if step > maxStep:
+            break
+        step *= scaleFactor
     return outList
 
 # Run halLodExtract for each level of detail.
-def createLods(halPath, outLodPath, outDir, maxBlock, overwrite,
+def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
                keepSequences):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % halPath)
-    for iteration in getSteps(halPath, maxBlock):
-        step = iteration[0]
-        blen = iteration[1]
+    steps = getSteps(halPath, maxBlock, scaleFactor)
+    for stepIdx in xrange(1,len(steps)):
+        step = steps[stepIdx]
+        prevStep = steps[stepIdx - 1]
+        maxQueryLength = maxBlock * prevStep
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
         if overwrite is True or not os.path.isfile(outHalPath):
             runHalLodExtract(halPath, outHalPath, step, keepSequences)
-        lodFile.write("%d %s\n" % (blen, outHalPath))
+        lodFile.write("%d %s\n" % (maxQueryLength, outHalPath))
     lodFile.close()
     
 def main(argv=None):
@@ -113,6 +99,10 @@ def main(argv=None):
                         help="maximum desired number of blocks to ever " 
                         "display at once.", type=int,
                         default=1000)
+    parser.add_argument("--scale",
+                        help="scaling factor between two successive levels"
+                        " of detail",
+                        default=10.0)
     parser.add_argument("--outHalDir", help="path of directory where "
                         "interpolated hal files are stored.  By default "
                         "they will be stored in the same directory as the "
@@ -138,7 +128,7 @@ def main(argv=None):
         raise RuntimeError("Invalid output directory %s" % args.outHalDir)
 
     createLods(args.hal, args.outLodFile, args.outHalDir,
-               args.maxBlock, args.overwrite, args.keepSequences)
+               args.maxBlock, args.scale, args.overwrite, args.keepSequences)
     
 if __name__ == "__main__":
     sys.exit(main())
