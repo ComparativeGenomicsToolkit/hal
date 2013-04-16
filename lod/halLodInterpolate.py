@@ -101,7 +101,7 @@ def main(argv=None):
                         default=1000)
     parser.add_argument("--scale",
                         help="scaling factor between two successive levels"
-                        " of detail",
+                        " of detail", type=float,
                         default=10.0)
     parser.add_argument("--outHalDir", help="path of directory where "
                         "interpolated hal files are stored.  By default "
