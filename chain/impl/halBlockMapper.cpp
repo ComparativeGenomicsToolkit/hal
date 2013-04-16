@@ -232,7 +232,7 @@ void BlockMapper::mapRefSister(SegmentIteratorConstPtr refSeg)
       SegSet* segSet = new SegSet();
       segSet->insert(queryTop->copy());
       addParalogies(queryTop, segSet);
-      assert(_segMap.find(queryTop) == _segMap.end());
+      assert(_segMap.find(refTop) == _segMap.end());
       _segMap.insert(pair<SegmentIteratorConstPtr, SegSet*>(
                        refTop->copy(), segSet));
     }
