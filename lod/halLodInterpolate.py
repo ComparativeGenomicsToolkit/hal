@@ -63,7 +63,7 @@ def getSteps(halPath, maxBlock, scaleFactor):
         if step > maxStep:
             break
         step *= scaleFactor
-    return outList
+    return [int(x) for x in outList]
 
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
