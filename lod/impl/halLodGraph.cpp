@@ -162,8 +162,9 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
   if (canAdd == true && refPos != 0 && (hal_size_t)refPos != 
       colIt->getReferenceSequence()->getSequenceLength())
   {
-    // heuristic here
-    //canAdd = (delta > 5);
+    canAdd = delta >= (hal_index_t)_step;
+
+    // other heuristics here?
   }
   return canAdd;
 }
