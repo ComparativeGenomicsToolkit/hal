@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <string.h>
 #include "halBlockViz.h"
 
 #ifdef ENABLE_UDC
@@ -86,11 +86,20 @@ static void printStats(FILE* file, int handle)
   }
 }
 
+static int openWrapper(char* path)
+{
+  if (strcmp(path + strlen(path) - 3, "hal") == 0)
+  {
+    return halOpen(path);
+  }
+  return halOpenLOD(path);
+}
+
 #ifdef ENABLE_UDC
-void* getBlocksWrapper(void* voidArgs)
+static void* getBlocksWrapper(void* voidArgs)
 {
   bv_args_t* args = (bv_args_t*)voidArgs;
-  int handle = halOpen(args->path);
+  int handle = openWrapper(args->path);
   hal_block_t* head = NULL;
   if (handle >= 0)
   {
@@ -114,7 +123,7 @@ int main(int argc, char** argv)
   
   if (parseArgs(argc, argv, &args) != 0)
   {
-    fprintf(stderr, "Usage: %s <halPath> <qSpecies> <tSpecies> <tChrom> "
+    fprintf(stderr, "Usage: %s <halLodPath> <qSpecies> <tSpecies> <tChrom> "
             "<tStart> <tEnd> [doSeq=0] [udcPath=NULL]\n\n", argv[0]);
     return -1;
   }
@@ -125,7 +134,7 @@ int main(int argc, char** argv)
   }
 #endif
      
-  int handle = halOpen(args.path);
+  int handle = openWrapper(args.path);
   int ret = 0;
   if (handle >= 0)
   {

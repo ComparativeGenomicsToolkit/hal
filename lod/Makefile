@@ -1,7 +1,7 @@
 rootPath = ../
 include ../include.mk
 
-libSourcesAll = impl/*.cpp
+libSourcesAll = $(wildcard impl/*.cpp)
 libSources=$(subst impl/halLodExtractMain.cpp,,${libSourcesAll})
 libHeaders = inc/*.h 
 

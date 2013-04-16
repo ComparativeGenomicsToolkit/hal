@@ -481,6 +481,11 @@ hal_index_t HDF5Genome::getChildIndex(const Genome* child) const
   return NULL_INDEX;
 }
 
+bool HDF5Genome::containsDNAArray() const
+{
+  return _dnaArray.getSize() > 0;
+}
+
 // SEGMENTED SEQUENCE INTERFACE
 
 const string& HDF5Genome::getName() const

@@ -106,7 +106,9 @@ def main(argv=None):
 
     parser.add_argument("hal", help="input hal")
     parser.add_argument("outLodFile", help="output text file with links to" 
-                        " interpolated hal files.")
+                        " interpolated hal files.  with each file is"
+                        " associated a value stating its minimum "
+                        "suggested query range (in bases)")
     parser.add_argument("--maxBlock",
                         help="maximum desired number of blocks to ever " 
                         "display at once.", type=int,

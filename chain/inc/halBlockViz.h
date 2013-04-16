@@ -47,11 +47,30 @@ struct hal_chromosome_t
    unsigned length;
 };
 
-/** Open a HAL alignment file read-only.  
- * @param halFileName path to location of HAL file on disk 
+/** Open a text file created by halLodInterpolate.py for viewing. 
+ * This text file contains a list of paths to progressively coarser
+ * levels of detail of a source HAL file.  For example, it may look like
+ * 0 ecoli.hal
+ * 1000 ecoli_10.hal
+ * 10000 ecoli_100.hal
+ * This file is saying that for query lengths between 0 and 1000, use 
+ * the first (original) file.  For lengths between 1000 and 10000 use 
+ * the second file. For lengths greater than 10000 use the third file.
+ *
+ * halGetBlocksInTargetRange will automatically use the above-described
+ * logic.  Calling halOpen (below) is the equivalent of having just one
+ * entry (0)
+ *
+ * @param lodFilePath path to location of HAL LOD file on disk 
  * @return new handle or -1 of open failed.
 */
-int halOpen(char *halFileName);
+int halOpenLOD(char *lodFilePath);
+
+/** Open a HAL alignment file read-only.  
+ * @param halFilePath path to location of HAL file on disk 
+ * @return new handle or -1 of open failed.
+*/
+int halOpen(char *halFilePath);
 
 /** Close a HAL alignment, given its handle
  * @param halHandle previously obtained from halOpen 

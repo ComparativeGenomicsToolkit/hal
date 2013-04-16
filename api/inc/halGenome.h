@@ -114,6 +114,10 @@ public:
     * @child child genome */
    virtual hal_index_t getChildIndex(const Genome* child) const = 0;
 
+   /** Test if the genome stores DNA sequence.  Will be true unless
+    * storeDNAArrays was set to false in setDimensions */
+   virtual bool containsDNAArray() const = 0;
+
 protected:
 
    /** Destructor */

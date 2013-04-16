@@ -8,10 +8,12 @@
 #include <cassert>
 #include <map>
 #include <sstream>
+#include <limits>
 #include "hal.h"
 #include "halChain.h"
 #include "halBlockViz.h"
 #include "halBlockMapper.h"
+#include "halLodManager.h"
 
 #ifdef ENABLE_UDC
 #include <pthread.h>
@@ -26,11 +28,13 @@ static pthread_mutex_t HAL_MUTEX;
 using namespace std;
 using namespace hal;
 
-typedef map<int, pair<string, AlignmentConstPtr> > HandleMap;
+typedef map<int, pair<string, LodManagerPtr> > HandleMap;
 static HandleMap handleMap;
 
+static int halOpenLodOrHal(char* inputPath, bool isLod);
 static void checkHandle(int handle);
-static AlignmentConstPtr getExistingAlignment(int handle);
+static AlignmentConstPtr getExistingAlignment(int handle,
+                                              hal_size_t queryLength);
 static char* copyCString(const string& inString);
 
 static hal_block_t* readBlocks(const Sequence* tSequence,
@@ -43,7 +47,17 @@ static void readBlock(hal_block_t* cur, SegmentIteratorConstPtr refSeg,
                       const string& genomeName);
 
 
-extern "C" int halOpen(char* halFileName)
+extern "C" int halOpenLOD(char *lodFilePath)
+{
+  return halOpenLodOrHal(lodFilePath, true);
+}
+
+extern "C" int halOpen(char* halFilePath)
+{
+  return halOpenLodOrHal(halFilePath, false);
+}
+
+int halOpenLodOrHal(char* inputPath, bool isLod)
 {
   HAL_LOCK
   int handle = -1;
@@ -52,7 +66,7 @@ extern "C" int halOpen(char* halFileName)
     for (HandleMap::iterator mapIt = handleMap.begin(); 
          mapIt != handleMap.end(); ++mapIt)
     {
-      if (mapIt->second.first == string(halFileName))
+      if (mapIt->second.first == string(inputPath))
       {
         handle = mapIt->first;
       }
@@ -67,12 +81,19 @@ extern "C" int halOpen(char* halFileName)
       else
       {
         handle = mapIt->first + 1;
-      }    
-      AlignmentConstPtr alignment = hdf5AlignmentInstanceReadOnly();
-      alignment->open(halFileName);
-      handleMap.insert(pair<int, pair<string, AlignmentConstPtr> >(
-                         handle, pair<string, AlignmentConstPtr>(
-                           halFileName, alignment)));
+      }
+      LodManagerPtr lodManager(new LodManager());
+      if (isLod == true)
+      {
+        lodManager->loadLODFile(inputPath);
+      }
+      else
+      {
+        lodManager->loadSingeHALFile(inputPath);
+      }
+      handleMap.insert(pair<int, pair<string, LodManagerPtr> >(
+                         handle, pair<string, LodManagerPtr>(
+                           inputPath, lodManager)));
     }
   }
   catch(exception& e)
@@ -97,7 +118,6 @@ extern "C" int halClose(int handle)
       ss << "error closing handle " << handle << ": not found";
       throw hal_exception(ss.str());
     }
-    mapIt->second.second->close();
     handleMap.erase(mapIt);
   }
    catch(exception& e)
@@ -133,7 +153,15 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
   hal_block_t* head = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle);
+    int rangeLength = tEnd - tStart;
+    if (rangeLength < 0)
+    {
+      stringstream ss;
+      ss << "Invalid query range [" << tStart << "," << tEnd << ").";
+      throw hal_exception(ss.str());
+    }
+    AlignmentConstPtr alignment = getExistingAlignment(halHandle,
+                                                       hal_size_t(rangeLength));
     const Genome* qGenome = alignment->openGenome(qSpecies);
     if (qGenome == NULL)
     {
@@ -198,7 +226,9 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle)
   hal_species_t* head = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle);
+    // read the lowest level of detail because it's fastest
+    AlignmentConstPtr alignment = 
+       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max());
     hal_species_t* prev = NULL;
     if (alignment->getNumGenomes() > 0)
     {
@@ -261,7 +291,10 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
   hal_chromosome_t* head = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle);
+    // read the lowest level of detail because it's fastest
+    AlignmentConstPtr alignment = 
+       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max());
+
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
     {
@@ -315,7 +348,7 @@ extern "C" char *halGetDna(int halHandle,
   char* dna = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle);
+    AlignmentConstPtr alignment = getExistingAlignment(halHandle, 0);
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
     {
@@ -371,11 +404,11 @@ void checkHandle(int handle)
   }
 }
 
-AlignmentConstPtr getExistingAlignment(int handle)
+AlignmentConstPtr getExistingAlignment(int handle, hal_size_t queryLength)
 {
   checkHandle(handle);
   HandleMap::iterator mapIt = handleMap.find(handle);
-  return mapIt->second.second;
+  return mapIt->second.second->getAlignment(queryLength);
 }
 
 char* copyCString(const string& inString)

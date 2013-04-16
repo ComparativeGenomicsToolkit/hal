@@ -91,6 +91,8 @@ public:
 
    hal_index_t getChildIndex(const Genome* child) const;
 
+   bool containsDNAArray() const;
+
    // SEGMENTED SEQUENCE INTERFACE
 
    hal_size_t getSequenceLength() const;
