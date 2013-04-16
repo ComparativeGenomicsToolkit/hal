@@ -98,7 +98,7 @@ def main(argv=None):
     parser.add_argument("--maxBlock",
                         help="maximum desired number of blocks to ever " 
                         "display at once.", type=int,
-                        default=1000)
+                        default=500)
     parser.add_argument("--scale",
                         help="scaling factor between two successive levels"
                         " of detail", type=float,
