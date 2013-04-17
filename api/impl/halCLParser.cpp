@@ -242,13 +242,14 @@ string CLParser::multiLine(const string& line, size_t indent)
       bool inserted = false;
       if (!isspace(line[i]) && !isspace(line[i+1]))
       {
-        for (size_t j = 1; j < (lineWidth - indent) / 2 && !inserted; ++j)
+        for (size_t j = 1; j < output.length() && !inserted; ++j)
         {
           assert(i > j);
           if (isspace(line[i - j]))
           {
             inserted = true;
-            output.insert((i - j) + 1, string("\n") + string(indent, ' '));
+            output.insert((output.length() - j), 
+                          string("\n") + string(indent, ' '));
             width = j;
           }
         }
