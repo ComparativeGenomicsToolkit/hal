@@ -141,6 +141,10 @@ void CLParser::parseOptions(int argc, char** argv)
         ss2 << !oldValue;
         it->second._value = ss2.str();
       }
+      else
+      {
+        throw hal_exception(string("Unrecognized option: ") + string(argv[i]));
+      }
     }
     else
     {
