@@ -735,7 +735,8 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
     // Unless we don't do indels.  Here we just add reference elements
     // that are to right of the starting point
     assert (_stack.size() == 1);
-    updateCache = _stack.top()->_index < dnaIt->getArrayIndex();
+    updateCache = 
+       updateCache && _stack.top()->_firstIndex < dnaIt->getArrayIndex();
   }
   for (size_t i = 1; i < _stack.size() && !updateCache; ++i)
   {
