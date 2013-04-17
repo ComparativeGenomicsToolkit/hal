@@ -23,7 +23,7 @@ namespace hal {
 class PositionCache
 {
 public:
-   PositionCache() : _size(0) {}
+   PositionCache() : _size(0), _prev(_set.begin()) {}
 
   // sorted by last index, so each interval is (last, first)
    typedef std::map<hal_index_t, hal_index_t> IntervalSet;
@@ -41,6 +41,7 @@ protected:
 
    IntervalSet _set;
    hal_size_t _size;
+   IntervalSet::iterator _prev;
 };
 
 }
