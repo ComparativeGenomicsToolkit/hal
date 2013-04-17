@@ -1,4 +1,4 @@
-Hierarchical Alignment (HAL) Format API (v1.2)
+Hierarchical Alignment (HAL) Format API (v1.3)
 =====
 Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
 Released under the MIT license, see LICENSE.txt
@@ -9,7 +9,9 @@ This package includes the [HAL API](http://htmlpreview.github.com/?https://raw.g
 
 Citing
 -----
-Glenn Hickey, Benedict Paten, Dent Earl, Daniel Zerbino, and David Haussler.  *HAL: A Hierarchichal Format for Storing and Analyzing Multiple Genome Alignments.*  (submitted).
+Glenn Hickey, Benedict Paten, Dent Earl, Daniel Zerbino, and David
+Haussler.  HAL: A Hierarchical Format for Storing and Analyzing
+Multiple Genome Alignments. Bioinformatics. 2013. [Advance Online Access](http://bioinformatics.oxfordjournals.org/content/early/2013/03/16/bioinformatics.btt128.abstract)
 
 Installation
 -----
@@ -67,6 +69,15 @@ If sonLib and HAL are not sister directories, update hal/include and change
 
 to reflect the directory where you installed sonLib
 
+#### Optional support of reading HAL files over HTTP via UCSC's URL Data Cache (UDC)
+
+Define ENABLE_UDC before making, and specify the path of the Kent source tree using KENTSRC.  When built with this enabled, all HAL files opened read-only will be accessed using UDC which supports both local files and URLs. 
+
+     `export  ENABLE_UDC=1`
+     `export  KENTSRC=<path to top level of Kent source tree>`
+
+Those without the UCSC genome browser already installed locally will probably find it simpler to first mount URLs with [HTTPFS](http://httpfs.sourceforge.net/) before opening with HAL.  
+
 ### Building HAL
 
 From the hal/ directory:  
@@ -100,7 +111,8 @@ All HAL tools compiled with HDF5 support expose some caching parameters.  Tools 
 
 `--deflate <value>:`   Compression level.  Higher levels tend to not significantly decrease file sizes but do increase run time.  [0:none - 9:max] [default = 2]
 
-
+`--inMemory:`   Load all data in memory (and disable hdf5 cache). [default = False]
+   
 ### Importing from other formats
 
 #### MAF Import
@@ -155,6 +167,11 @@ Export a MAF consisting of the alignment of all apes referenced on gorilla
 
 By default, no gaps are written to the reference sequence.  The `--maxRefGap` can be specified to allow gaps up to a certain size in the reference.  This is achieved by recursively following indels in the graph that could correspond to reference gaps. 
 
+#### FASTA Export
+
+DNA sequences (without any alignment information) can be extracted from HAL files in FASTA format using `hal2fasta`. 
+
+
 ### Summary Information
 
 #### halValidate
@@ -182,6 +199,18 @@ Subtrees can be specified using the `--targetGenomes` or `--rootGenome` option. 
      halSummarizeMutations mammals.maf --maxNFraction 0
 
 will prevent rearrangements with missing data as being identified as such.  More generally, if an insertion of length 50 contains c N-characters, it will be labeled as missing data (rather than an insertion) if c/N > `maxNFraction`.
+
+#### Levels of Detail
+
+Some applications such as genome browsers my need to quickly access high-level information about the alignment without scanning every segment.  We provide tools to resample a HAL graph to compute a coarser-grained levels of detail to speed up subsequent analysis at different scales.  To generate an output hal file based on a sampling of every `100` bases:
+
+     halLodExtract mammals.hal mammals_100.hal 100
+
+To generate a series of levels of details, such that each level of detail is 5x coarser than the previous, and that there are at most (approx.) 100 segments at the lowest level, use the following script:
+
+     halLodInterpolate.py mammals.hal lod_summary.txt --scale 5 --maxBlock 100
+
+Note that both tools have a `--keepSequences` option to specify whether or not the DNA sequences are stored in the output files.
 
 ### Analysis
 
@@ -211,6 +240,8 @@ Two bed files must be specified because the coordinates of inserted (and by conv
 
 Point mutations can optionally be written using the `--snpFile <file>` option.  The '--maxGap' and '--maxNFraction' options can specify the gap indel threshold and missing data threshold, respectively, as described above in the *halSummarizeMtuations* section.  
 
+### Importing from other formats
+
 Example of HAL Genome Representation
 -----
 
@@ -223,7 +254,9 @@ The following is obtained by running h5ls -v -r (included with hdf5) on an ances
 
 More information can be found in the manuscript:
 
-Glenn Hickey, Benedict Paten, Dent Earl, Daniel Zerbino, and David Haussler.  *HAL: A Hierarchichal Format for Storing and Analyzing Multiple Genome Alignments.*  (submitted)
+Glenn Hickey, Benedict Paten, Dent Earl, Daniel Zerbino, and David
+Haussler.  HAL: A Hierarchical Format for Storing and Analyzing
+Multiple Genome Alignments. Bioinformatics. 2013. [Advance Online Access](http://bioinformatics.oxfordjournals.org/content/early/2013/03/16/bioinformatics.btt128.abstract)
 
 and [API manual](http://htmlpreview.github.com/?https://raw.github.com/glennhickey/hal/development/api/doc/html/index.html).
 
