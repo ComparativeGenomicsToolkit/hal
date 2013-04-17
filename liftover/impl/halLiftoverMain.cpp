@@ -24,8 +24,8 @@ static CLParserPtr initParser()
                                "with integer number of paralgous mappings in "
                                "target", false);
   optionsParser->addOptionFlag("append", "append results to tgtBed", false);
-optionsParser->setDescription("Map genome interval coordinates between "
-                              "different genomes.");
+  optionsParser->setDescription("Map genome interval coordinates between "
+                                "different genomes.");
   return optionsParser;
 }
 
