@@ -22,8 +22,19 @@ from hal.stats.halStats import getHalGenomes
 from hal.stats.halStats import getHalNumSegments
 from hal.stats.halStats import getHalStats
 
-from hal.lod.halLodBenchmark import runHalLodExtract
-from hal.lod.halLodBenchmark import makePath
+# Wrapper for halLodExtract
+def runHalLodExtract(inHalPath, outHalPath, step, keepSeq):
+    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
+    if keepSeq:
+        cmd += " --keepSequences"
+    runShellCommand(cmd)
+
+# All created paths get put in the same place using the same logic
+def makePath(inHalPath, outDir, step, name, ext):
+    inFileName = os.path.splitext(os.path.basename(inHalPath))[0]
+    outPath = os.path.join(outDir, "%s_%s_%i.%s" % (inFileName,
+                                                    name, step, ext))
+    return outPath
 
 # Return the length of the longest genome in the HAL file
 def getMaxGenomeLength(halPath):

@@ -22,11 +22,9 @@ from hal.stats.halStats import runShellCommand
 from hal.stats.halStats import getHalGenomes
 from hal.stats.halStats import getHalNumSegments
 
-def runHalLodExtract(inHalPath, outHalPath, step, keepSeq):
-    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
-    if keepSeq:
-        cmd += " --keepSequences"
-    runShellCommand(cmd)
+from hal.lod.halLodInterpolate import runHalLodExtract
+from hal.lod.halLodInterpolate import makePath
+from hal.lod.halLodInterpolate import getSteps
 
 def getHalTotalSegments(halPath):
     total = (0, 0)
@@ -34,12 +32,6 @@ def getHalTotalSegments(halPath):
         numSegs = getHalNumSegments(halPath, genome)
         total = (total[0] + numSegs[0], total[1] + numSegs[1])
     return total
-
-def makePath(inHalPath, outDir, step, name, ext):
-    inFileName = os.path.splitext(os.path.basename(inHalPath))[0]
-    outPath = os.path.join(outDir, "%s_%s_%i.%s" % (inFileName,
-                                                    name, step, ext))
-    return outPath
 
 def makeMaf(inHalPath, outDir, step, overwrite, doMaf):
     srcHalPath = inHalPath
@@ -125,7 +117,7 @@ def printTable(table):
             idx += 1
         print line
     
-def runSteps(inHalPath, outDir, steps, overwrite, doMaf, keepSeq):
+def runSteps(inHalPath, outDir, maxBlock, scale, overwrite, doMaf, keepSeq):
     table = defaultdict(list)
     makeMaf(inHalPath, outDir, 0, overwrite, doMaf)
 
@@ -134,7 +126,9 @@ def runSteps(inHalPath, outDir, steps, overwrite, doMaf, keepSeq):
     table[0] += getPrecisionRecall(inHalPath, outDir, 0, False)
     table[0] += getScanTime(inHalPath, outDir, 0)
 
-    for step in steps:    
+    steps =  getSteps(inHalPath, maxBlock, scale)
+    for stepIdx in xrange(1,len(steps)):
+        step = steps[stepIdx]
         outPath = makePath(inHalPath, outDir, step, "lod", "hal")
         
         if overwrite is True or not os.path.isfile(outPath):
@@ -159,7 +153,14 @@ def main(argv=None):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("hal", help="input hal")
     parser.add_argument("outDir", help="output dir")
-    parser.add_argument("steps", help="comma-separated list of stepsizes")
+    parser.add_argument("--maxBlock",
+                        help="maximum desired number of blocks to ever " 
+                        "display at once.", type=int,
+                        default=500)
+    parser.add_argument("--scale",
+                        help="scaling factor between two successive levels"
+                        " of detail", type=float,
+                        default=10.0)
     parser.add_argument("--overwrite",action="store_true", default=False)
     parser.add_argument("--maf",action="store_true", default=False)
     parser.add_argument("--keepSequences",action="store_true", default=False)
@@ -172,9 +173,8 @@ def main(argv=None):
     if args.maf is True:
         args.keepSequences = True
 
-    steps = [int(x) for x in args.steps.split(",")]
-    table = runSteps(args.hal, args.outDir, steps, args.overwrite, args.maf,
-                     args.keepSequences)
+    table = runSteps(args.hal, args.outDir, args.maxBlock, args.scale,
+                     args.overwrite, args.maf, args.keepSequences)
 #    print table
     printTable(table)
 if __name__ == "__main__":
