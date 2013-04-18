@@ -27,7 +27,11 @@ public:
    virtual ~LodManager();
    
    /** Load series of alignments specified in the lodPath file.  Options
-    * from the given CLParser are applied if specified */
+    * from the given CLParser are applied if specified. 
+    *
+    * If the paths of the HAL files are relative (do not begin with /) then
+    * they will be concatenated to the directory of lodPath.  If they 
+    * are absolute (beginning with /) then they will be opened directly */
    void loadLODFile(const std::string& lodPath,
                     CLParserConstPtr options = CLParserConstPtr());
 
@@ -40,6 +44,8 @@ public:
    
 protected:
 
+   std::string resolvePath(const std::string& lodPath, 
+                           const std::string& halPath);
    void checkMap(const std::string& lodPath) const;
    typedef std::map<hal_size_t, AlignmentConstPtr> AlignmentMap;
 

@@ -65,11 +65,17 @@ def getSteps(halPath, maxBlock, scaleFactor):
         step *= scaleFactor
     return [int(x) for x in outList]
 
+def formatOutHalPath(outLodPath, outHalPath, absPath):
+    if absPath:
+        return os.path.abspath(outHalPath)
+    else:
+        return os.path.relpath(outHalPath, os.path.dirname(outLodPath))
+
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
-               keepSequences):
+               keepSequences, absPath):
     lodFile = open(outLodPath, "w")
-    lodFile.write("0 %s\n" % halPath)
+    lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scaleFactor)
     for stepIdx in xrange(1,len(steps)):
         step = steps[stepIdx]
@@ -78,7 +84,9 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
         if overwrite is True or not os.path.isfile(outHalPath):
             runHalLodExtract(halPath, outHalPath, step, keepSequences)
-        lodFile.write("%d %s\n" % (maxQueryLength, outHalPath))
+        lodFile.write("%d %s\n" % (maxQueryLength,
+                                   formatOutHalPath(outLodPath, outHalPath,
+                                                    absPath)))
     lodFile.close()
     
 def main(argv=None):
@@ -114,6 +122,12 @@ def main(argv=None):
     parser.add_argument("--keepSequences",
                         help="copy DNA sequences into interpolated HAL files",
                         action="store_true", default=False)
+    parser.add_argument("--absPath",
+                        help="write absolute path of created HAL files in the"
+                        " outLodFile.  By default, the paths are relative to "
+                        "the path of the outLodFile.",
+                        action="store_true", default=False)
+
         
     args = parser.parse_args()
 
@@ -128,7 +142,8 @@ def main(argv=None):
         raise RuntimeError("Invalid output directory %s" % args.outHalDir)
 
     createLods(args.hal, args.outLodFile, args.outHalDir,
-               args.maxBlock, args.scale, args.overwrite, args.keepSequences)
+               args.maxBlock, args.scale, args.overwrite, args.keepSequences,
+               args.absPath)
     
 if __name__ == "__main__":
     sys.exit(main())

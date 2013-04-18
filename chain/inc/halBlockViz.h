@@ -51,11 +51,16 @@ struct hal_chromosome_t
  * This text file contains a list of paths to progressively coarser
  * levels of detail of a source HAL file.  For example, it may look like
  * 0 ecoli.hal
- * 1000 ecoli_10.hal
- * 10000 ecoli_100.hal
+ * 1000 lod/ecoli_10.hal
+ * 10000 lod/ecoli_100.hal
  * This file is saying that for query lengths between 0 and 1000, use 
  * the first (original) file.  For lengths between 1000 and 10000 use 
  * the second file. For lengths greater than 10000 use the third file.
+ *
+ * NOTE: If the hal file paths are relative (do not begin with /) as 
+ * they are in the above example, then they are assumed to be relative
+ * to the directory containing lodFilePath.  If they are absolute, then
+ * they will be read as-is.
  *
  * halGetBlocksInTargetRange will automatically use the above-described
  * logic.  Calling halOpen (below) is the equivalent of having just one

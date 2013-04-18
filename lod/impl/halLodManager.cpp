@@ -59,7 +59,8 @@ void LodManager::loadLODFile(const string& lodPath,
     {
       alignment->setOptionsFromParser(options);
     }
-    alignment->open(path);
+    string fullHalPath = resolvePath(lodPath, path);
+    alignment->open(fullHalPath);
     _map.insert(pair<hal_size_t, AlignmentConstPtr>(minLen, alignment));
     ++lineNum;
   }
@@ -87,6 +88,22 @@ AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength) const
   --mapIt;
   assert(mapIt->first <= queryLength);
   return mapIt->second;
+}
+
+string LodManager::resolvePath(const string& lodPath,
+                               const string& halPath)
+{
+  assert(lodPath.empty() == false && halPath.empty() == false);
+  if (halPath[0] == '/')
+  {
+    return halPath;
+  }
+  size_t sPos = lodPath.find_last_of('/');
+  if (sPos == string::npos)
+  {
+    return halPath;
+  }
+  return lodPath.substr(0, sPos + 1) + halPath;
 }
 
 void LodManager::checkMap(const string& lodPath) const
