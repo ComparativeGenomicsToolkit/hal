@@ -94,7 +94,7 @@ string LodManager::resolvePath(const string& lodPath,
                                const string& halPath)
 {
   assert(lodPath.empty() == false && halPath.empty() == false);
-  if (halPath[0] == '/')
+  if (halPath[0] == '/' || halPath.find(":/") != string::npos)
   {
     return halPath;
   }

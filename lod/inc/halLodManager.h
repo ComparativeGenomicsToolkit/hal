@@ -31,7 +31,9 @@ public:
     *
     * If the paths of the HAL files are relative (do not begin with /) then
     * they will be concatenated to the directory of lodPath.  If they 
-    * are absolute (beginning with /) then they will be opened directly */
+    * are absolute (beginning with /) then they will be opened directly.
+    * Paths that contain ":/" are assumed to be
+    * web addressed of some sort and considered absolute. */
    void loadLODFile(const std::string& lodPath,
                     CLParserConstPtr options = CLParserConstPtr());
 

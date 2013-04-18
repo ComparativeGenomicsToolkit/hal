@@ -60,7 +60,8 @@ struct hal_chromosome_t
  * NOTE: If the hal file paths are relative (do not begin with /) as 
  * they are in the above example, then they are assumed to be relative
  * to the directory containing lodFilePath.  If they are absolute, then
- * they will be read as-is.
+ * they will be read as-is. Paths that contain ":/" are assumed to be
+ * web addressed of some sort and considered absolute.
  *
  * halGetBlocksInTargetRange will automatically use the above-described
  * logic.  Calling halOpen (below) is the equivalent of having just one
