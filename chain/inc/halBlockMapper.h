@@ -80,7 +80,8 @@ inline bool
 SegmentPtrLess::operator()(const SegmentIteratorConstPtr& s1, 
                            const SegmentIteratorConstPtr& s2) const
 {
-  return s1->getStartPosition() < s2->getStartPosition();
+  assert (s1->getGenome() == s2->getGenome());
+  return s1->getArrayIndex() < s2->getArrayIndex();
 }
 
 inline const BlockMapper::SegMap& BlockMapper::getMap() const
