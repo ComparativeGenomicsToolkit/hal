@@ -79,7 +79,10 @@ protected:
    /** First optimization pass: Maximally extend all blocks */
    void optimizeByExtension();
 
-   /** Second optimization pass: Insert new blocks until all edges have 
+   /** Second optimization pass: Merge all compatible adjacent blocks */
+   void optimizeByMerging();
+
+   /** Third optimization pass: Insert new blocks until all edges have 
     * zero length */
    void optimizeByInsertion();
 

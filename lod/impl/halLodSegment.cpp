@@ -12,19 +12,21 @@ using namespace hal;
 
 LodSegment::LodSegment() : _sequence(NULL), _tailPos(NULL_INDEX), 
                            _afterHeadPos(NULL_INDEX), _tailAdj(NULL),
-                           _headAdj(NULL), _arrayIndex(NULL_INDEX)
+                           _headAdj(NULL), _arrayIndex(NULL_INDEX),
+                           _block(NULL)
 {
 
 }
 
-LodSegment::LodSegment(const Sequence* sequence, hal_index_t pos, 
-                       bool flipped) :
+LodSegment::LodSegment(LodBlock* block, const Sequence* sequence, 
+                       hal_index_t pos, bool flipped) :
   _sequence(sequence), 
   _tailPos(pos),
   _afterHeadPos(pos),
   _tailAdj(NULL),
   _headAdj(NULL),
-  _arrayIndex(NULL_INDEX)
+  _arrayIndex(NULL_INDEX),
+  _block(block)
 {
   _afterHeadPos += flipped ? -1 : 1;
   assert(_sequence != NULL);
@@ -85,12 +87,13 @@ void LodSegment::extendHead(hal_size_t extLen)
   assert(overlaps(*_headAdj) == false);
 }
 
-LodSegment* LodSegment::insertNewHeadAdj(hal_size_t newLen)
+LodSegment* LodSegment::insertNewHeadAdj(LodBlock* block, hal_size_t newLen)
 {
   assert(newLen > 0);
   hal_index_t newTailPos = getHeadPos();
   newTailPos += getFlipped() ? -1 : 1;
-  LodSegment* newSeg = new LodSegment(getSequence(), newTailPos, getFlipped());
+  LodSegment* newSeg = new LodSegment(block, getSequence(), newTailPos,
+                                      getFlipped());
   bool headToHead = getHeadToHead();
   newSeg->_headAdj = _headAdj;
   if (headToHead)
@@ -113,12 +116,13 @@ LodSegment* LodSegment::insertNewHeadAdj(hal_size_t newLen)
   return newSeg;
 }
 
-LodSegment* LodSegment::insertNewTailAdj(hal_size_t newLen)
+LodSegment* LodSegment::insertNewTailAdj(LodBlock* block, hal_size_t newLen)
 {
   assert(newLen > 0);
   hal_index_t newHeadPos = getTailPos();
   newHeadPos += getFlipped() ? 1 : -1;
-  LodSegment* newSeg = new LodSegment(getSequence(), newHeadPos, getFlipped());
+  LodSegment* newSeg = new LodSegment(block, getSequence(), newHeadPos, 
+                                      getFlipped());
   bool tailToTail = getTailToTail();
   newSeg->_tailAdj = _tailAdj;
   if (tailToTail)
@@ -139,6 +143,32 @@ LodSegment* LodSegment::insertNewTailAdj(hal_size_t newLen)
   // counts for 1
   newSeg->extendTail(newLen - 1);
   return newSeg;
+}
+
+void LodSegment::mergeHead()
+{
+  assert(getHeadAdjLen() == 0 && getHeadToTail() == true);
+  assert(getArrayIndex() == NULL_INDEX);
+  LodSegment* segToMerge = _headAdj;
+  LodSegment* newHeadAdj = segToMerge->_headAdj;
+  assert(segToMerge->getTailAdj() == this);
+  bool newHeadToTail = segToMerge->getHeadToTail();
+  hal_size_t segToMergeHeadAdjLen = segToMerge->getHeadAdjLen();
+  hal_size_t segToMergeLen = segToMerge->getLength();
+  _headAdj = newHeadAdj;
+  if (newHeadToTail)
+  {
+    newHeadAdj->_tailAdj = this;
+  }
+  else
+  {
+    newHeadAdj->_headAdj = this;
+  }
+  assert(getHeadAdjLen() == segToMergeLen + segToMergeHeadAdjLen);
+  extendHead(segToMergeLen);
+  assert(getHeadAdjLen() == segToMergeHeadAdjLen);
+  segToMerge->_headAdj = NULL;
+  segToMerge->_tailAdj = NULL;
 }
 
 ostream& hal::operator<<(ostream& os, const LodSegment& segment)

@@ -19,6 +19,7 @@
 namespace hal {
 
 class LodSegment;
+class LodBlock;
 
 std::ostream& operator<<(std::ostream& os, const LodSegment& segment);
 
@@ -40,7 +41,8 @@ class LodSegment
 public:
 
    LodSegment();
-   LodSegment(const Sequence* sequence, hal_index_t pos, bool flipped);
+   LodSegment(LodBlock* block, const Sequence* sequence, 
+              hal_index_t pos, bool flipped);
    ~LodSegment();
 
    // inline get methods
@@ -62,6 +64,7 @@ public:
    bool overlaps(const LodSegment& other) const;
    hal_index_t getArrayIndex() const;
    void setArrayIndex(hal_index_t index);
+   LodBlock* getBlock() const;
 
    /** Add a new edge from right endpoint of this segment to left
     * endpoint of tgt segment.  (whether or not these endpoints are 
@@ -82,8 +85,12 @@ public:
     * new segment will have 0 distance from this segment, and
     * it's length is given by the parameter.  The new segment
     * is then returned */
-   LodSegment* insertNewHeadAdj(hal_size_t newLen);
-   LodSegment* insertNewTailAdj(hal_size_t newLen);
+   LodSegment* insertNewHeadAdj(LodBlock* block, hal_size_t newLen);
+   LodSegment* insertNewTailAdj(LodBlock* block, hal_size_t newLen);
+
+   /** Merge the head adjacency segment to this segment.  That segment
+    * should then get taken out of consideration */
+   void mergeHead();
    
 protected:
 
@@ -97,6 +104,7 @@ protected:
    LodSegment* _tailAdj;
    LodSegment* _headAdj;
    hal_index_t _arrayIndex;
+   LodBlock* _block;
 
 private:
    LodSegment(const LodSegment&);
@@ -212,6 +220,11 @@ inline hal_index_t LodSegment::getArrayIndex() const
 inline void LodSegment::setArrayIndex(hal_index_t index)
 {
   _arrayIndex = index;
+}
+
+inline LodBlock* LodSegment::getBlock() const
+{
+  return _block;
 }
 
 }

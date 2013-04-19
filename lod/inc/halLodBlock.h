@@ -52,6 +52,17 @@ public:
 
    /** Extend segments as much as possible (or maxFrac) in both directions. */
    void extend(double maxFrac = 1.0);
+
+   /** Test if all segments in block have head to tail adjacencies
+    * to segments in the same non-telomere block, and that all these 
+    * adjacencies have length 0.  If test passes, return the candidate
+    * adjacent block.  NULL otherwise */
+   LodBlock* getHeadMergePartner();
+
+   /** Merge head of this block to tail of adjBlock (which was found with
+    * getHeadMergePartner.  Merged segments will disappear and need
+    * to be accounted for elsewhere */
+   void mergeHead(LodBlock* adjBlock);
    
    /** Insert new blocks as neighbours until all adjacencies have length
     * 0.  (if there are no self edges, at most 1 head block and 1 tail

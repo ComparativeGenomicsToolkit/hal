@@ -78,6 +78,54 @@ void LodBlock::extend(double maxFrac)
   }
 }
 
+LodBlock* LodBlock::getHeadMergePartner()
+{
+  LodBlock* adjBlock = NULL;
+  bool uniqueValidAdj = true;
+  for (LodBlock::SegmentIterator i = _segments.begin();
+       i != _segments.end() && uniqueValidAdj == true; ++i)
+  {
+    const LodSegment* headAdj = (*i)->getHeadAdj();
+
+    // Dont' want to merge from or a telomere
+    // or to a telomere
+    // or if there is a non-zero adjacency 
+    // or if there is a head to head adjacency
+    if (headAdj == NULL || 
+        headAdj->getHeadAdj() == NULL ||
+        (*i)->getHeadAdjLen() != 0 ||
+        (*i)->getHeadToTail() == false)
+    {
+      uniqueValidAdj = false;
+    }
+    else if (adjBlock == NULL && 
+             headAdj->getBlock() != this &&
+             headAdj->getBlock()->getNumSegments() == getNumSegments())
+    {
+      adjBlock = headAdj->getBlock();
+    }
+    else
+    {
+      uniqueValidAdj = adjBlock == headAdj->getBlock();
+    }
+  }
+  return uniqueValidAdj ? adjBlock : NULL;
+}
+
+void LodBlock::mergeHead(LodBlock* adjBlock)
+{
+  assert(adjBlock == getHeadMergePartner());
+  if (adjBlock != NULL)
+  {
+    for (LodBlock::SegmentIterator i = _segments.begin();
+         i != _segments.end(); ++i)
+    {
+      (*i)->mergeHead();
+    }
+    adjBlock->_segments.clear();
+  }
+}
+
 void LodBlock::insertNeighbours(vector<LodBlock*>& outList)
 {
   LodBlock* lodBlock = NULL;
@@ -121,7 +169,7 @@ LodBlock* LodBlock::insertNewTailNeighbour()
     {
       if ((*i)->getTailAdjLen()  >= maxTailInsLen)
       {
-        LodSegment* newSeg = (*i)->insertNewTailAdj(maxTailInsLen);
+        LodSegment* newSeg = (*i)->insertNewTailAdj(newBlock, maxTailInsLen);
         newBlock->_segments.push_back(newSeg);
       }
     }
@@ -141,7 +189,7 @@ LodBlock* LodBlock::insertNewHeadNeighbour()
     {
       if ((*i)->getHeadAdjLen() >= maxHeadInsLen)
       {
-        LodSegment* newSeg = (*i)->insertNewHeadAdj(maxHeadInsLen);
+        LodSegment* newSeg = (*i)->insertNewHeadAdj(newBlock, maxHeadInsLen);
         newBlock->_segments.push_back(newSeg);
       }
     }

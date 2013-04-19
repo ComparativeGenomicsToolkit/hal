@@ -69,6 +69,8 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
   printDimensions(cout);
   optimizeByExtension();
   printDimensions(cout);
+  optimizeByMerging();
+  printDimensions(cout);
   optimizeByInsertion();
   printDimensions(cout);
   assert(checkCoverage() == true);
@@ -133,7 +135,7 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
       const Sequence* sequence = colMapIt->first;
       ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
       hal_index_t pos = (*dnaIt)->getArrayIndex();
-      LodSegment segment(sequence, pos, false);
+      LodSegment segment(NULL, sequence, pos, false);
       SequenceMapIterator smi = _seqMap.find(sequence);
       if (smi != _seqMap.end())
       {
@@ -184,11 +186,13 @@ void LodGraph::addTelomeres(const Sequence* sequence)
     segSet = smi->second;
   }
   
-  LodSegment* segment = new LodSegment(sequence, 
-                                       sequence->getStartPosition() - 1, false);
+  LodSegment* segment = new LodSegment(&_telomeres, sequence, 
+                                       sequence->getStartPosition() - 1,
+                                       false);
   _telomeres.addSegment(segment);
   segSet->insert(segment);
-  segment = new LodSegment(sequence, sequence->getEndPosition() + 1, false);
+  segment = new LodSegment(&_telomeres, sequence, 
+                           sequence->getEndPosition() + 1, false);
   _telomeres.addSegment(segment);
   segSet->insert(segment);
 }
@@ -219,7 +223,7 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
     {
       hal_index_t pos = (*dnaIt)->getArrayIndex();
       bool reversed = (*dnaIt)->getReversed();
-      LodSegment* segment = new LodSegment(sequence, pos, reversed);
+      LodSegment* segment = new LodSegment(block, sequence, pos, reversed);
       block->addSegment(segment);
       assert(segSet->find(segment) == segSet->end());
       segSet->insert(segment);
@@ -253,6 +257,39 @@ void LodGraph::optimizeByExtension()
   for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
     (*bi)->extend();
+  }
+}
+
+void LodGraph::optimizeByMerging()
+{
+  BlockList mergeList(_blocks);
+  for (BlockIterator bi = mergeList.begin(); bi != mergeList.end(); ++bi)
+  {
+    LodBlock* adjBlock = (*bi)->getHeadMergePartner();
+    if (adjBlock != NULL)
+    {
+      for (hal_size_t segIdx = 0; segIdx < adjBlock->getNumSegments(); ++segIdx)
+      {
+        // blah - need to clean interface but this is harmless for now
+        LodSegment* seg = const_cast<LodSegment*>(
+          adjBlock->getSegment(segIdx));
+        SequenceMapIterator mapIt = _seqMap.find(seg->getSequence());
+        assert(mapIt != _seqMap.end());
+        SegmentIterator setIt = mapIt->second->find(seg);
+        assert(setIt != mapIt->second->end());
+        assert(*setIt == seg);
+        mapIt->second->erase(setIt);
+      }
+      (*bi)->mergeHead(adjBlock);
+    }
+  }
+  _blocks.clear();
+  for (BlockIterator bi = mergeList.begin(); bi != mergeList.end(); ++bi)
+  {
+    if ((*bi)->getNumSegments() > 0)
+    {
+      _blocks.push_back(*bi);
+    }
   }
 }
 
