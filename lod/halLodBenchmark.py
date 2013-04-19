@@ -117,7 +117,8 @@ def printTable(table):
             idx += 1
         print line
     
-def runSteps(inHalPath, outDir, maxBlock, scale, overwrite, doMaf, keepSeq):
+def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
+             keepSeq):
     table = defaultdict(list)
     makeMaf(inHalPath, outDir, 0, overwrite, doMaf)
 
@@ -126,7 +127,8 @@ def runSteps(inHalPath, outDir, maxBlock, scale, overwrite, doMaf, keepSeq):
     table[0] += getPrecisionRecall(inHalPath, outDir, 0, False)
     table[0] += getScanTime(inHalPath, outDir, 0)
 
-    steps =  getSteps(inHalPath, maxBlock, scale)
+    if steps is None:
+        steps =  getSteps(inHalPath, maxBlock, scale)
     for stepIdx in xrange(1,len(steps)):
         step = steps[stepIdx]
         outPath = makePath(inHalPath, outDir, step, "lod", "hal")
@@ -161,6 +163,11 @@ def main(argv=None):
                         help="scaling factor between two successive levels"
                         " of detail", type=float,
                         default=10.0)
+    parser.add_argument("--steps",
+                        help="comma-separated list of sampling steps to test"
+                        " for each level of "
+                        "detail.  Overrides --scale and --maxBlock options",
+                        type=str, default=None)
     parser.add_argument("--overwrite",action="store_true", default=False)
     parser.add_argument("--maf",action="store_true", default=False)
     parser.add_argument("--keepSequences",action="store_true", default=False)
@@ -173,8 +180,13 @@ def main(argv=None):
     if args.maf is True:
         args.keepSequences = True
 
+    steps = None
+    if args.steps is not None:
+        steps = [0] + [int(x) for x in args.steps.split(",")]
+        assert steps[1] > 0
+
     table = runSteps(args.hal, args.outDir, args.maxBlock, args.scale,
-                     args.overwrite, args.maf, args.keepSequences)
+                     steps, args.overwrite, args.maf, args.keepSequences)
 #    print table
     printTable(table)
 if __name__ == "__main__":
