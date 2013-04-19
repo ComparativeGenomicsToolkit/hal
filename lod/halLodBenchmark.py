@@ -118,7 +118,7 @@ def printTable(table):
         print line
     
 def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
-             keepSeq):
+             keepSeq, trans):
     table = defaultdict(list)
     makeMaf(inHalPath, outDir, 0, overwrite, doMaf)
 
@@ -133,8 +133,13 @@ def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
         step = steps[stepIdx]
         outPath = makePath(inHalPath, outDir, step, "lod", "hal")
         
+        srcPath = inHalPath
+        if trans is True and stepIdx > 1:
+            srcPath = makePath(inHalPath, outDir,  steps[stepIdx-1],
+                               "lod", "hal")        
+        
         if overwrite is True or not os.path.isfile(outPath):
-            runHalLodExtract(inHalPath, outPath, step, keepSeq)
+            runHalLodExtract(srcPath, outPath, step, keepSeq)
 
         makeMaf(inHalPath, outDir, step, overwrite, doMaf)
         compMaf(inHalPath, outDir, step, overwrite, doMaf)
@@ -171,6 +176,10 @@ def main(argv=None):
     parser.add_argument("--overwrite",action="store_true", default=False)
     parser.add_argument("--maf",action="store_true", default=False)
     parser.add_argument("--keepSequences",action="store_true", default=False)
+    parser.add_argument("--trans", help="Generate level of detail X from "
+                        "X-1.  By default, all levels of detail are generated "
+                        "from the original HAL (X=0)",
+                        action="store_true", default=False)
         
     args = parser.parse_args()
 
@@ -186,7 +195,8 @@ def main(argv=None):
         assert steps[1] > 0
 
     table = runSteps(args.hal, args.outDir, args.maxBlock, args.scale,
-                     steps, args.overwrite, args.maf, args.keepSequences)
+                     steps, args.overwrite, args.maf, args.keepSequences,
+                     args.trans)
 #    print table
     printTable(table)
 if __name__ == "__main__":

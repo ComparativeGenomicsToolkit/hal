@@ -84,7 +84,7 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
 
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
-               keepSequences, absPath):
+               keepSequences, absPath, trans):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scaleFactor)
@@ -93,8 +93,11 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
         prevStep = steps[stepIdx - 1]
         maxQueryLength = maxBlock * prevStep
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
-        if overwrite is True or not os.path.isfile(outHalPath):
-            runHalLodExtract(halPath, outHalPath, step, keepSequences)
+        srcPath = halPath
+        if trans is True and stepIdx > 1:
+            srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
+        if overwrite is True or not os.path.isfile(outHalPath):            
+            runHalLodExtract(srcPath, outHalPath, step, keepSequences)
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
@@ -138,6 +141,11 @@ def main(argv=None):
                         " outLodFile.  By default, the paths are relative to "
                         "the path of the outLodFile.",
                         action="store_true", default=False)
+    parser.add_argument("--trans", help="Generate level of detail X from "
+                        "X-1.  By default, all levels of detail are generated "
+                        "from the original HAL (X=0)",
+                        action="store_true", default=False)
+
 
         
     args = parser.parse_args()
@@ -154,7 +162,7 @@ def main(argv=None):
 
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, args.overwrite, args.keepSequences,
-               args.absPath)
+               args.absPath, args.trans)
     
 if __name__ == "__main__":
     sys.exit(main())
