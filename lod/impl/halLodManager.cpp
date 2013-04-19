@@ -9,7 +9,14 @@
 #include <sstream>
 #include <fstream>
 #include "halLodManager.h"
- 
+
+#ifdef ENABLE_UDC
+extern "C" {
+#include "common.h"
+#include "udc.h"
+}
+#endif
+
 using namespace std;
 using namespace hal;
 
@@ -31,14 +38,31 @@ void LodManager::loadLODFile(const string& lodPath,
                              CLParserConstPtr options)
 {
   _map.clear();
+
+#ifdef ENABLE_UDC
+  char* cpath = const_cast<char*>(lodPath.c_str());
+  size_t cbufSize = 0;
+  char* cbuffer = udcFileReadAll(cpath, NULL, 100000, &cbufSize);
+  if (cbuffer == NULL)
+  {
+    stringstream emes;
+    emes << "Error udc-opening " << lodPath;
+    throw hal_exception(emes.str());
+  }
+  string cbufCpy(cbuffer);
+  freeMem(cbuffer);
+  stringstream ifile(cbufCpy);
+#else
   ifstream ifile(lodPath.c_str());
+#endif
+
   if (!ifile.good())
   {
     stringstream emes;
     emes << "Error opening " << lodPath;
     throw hal_exception(emes.str());
   }
-
+  
   string lineBuffer;
   hal_size_t minLen;
   string path;
@@ -64,6 +88,7 @@ void LodManager::loadLODFile(const string& lodPath,
     _map.insert(pair<hal_size_t, AlignmentConstPtr>(minLen, alignment));
     ++lineNum;
   }
+
   checkMap(lodPath);
 }
 
