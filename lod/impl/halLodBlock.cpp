@@ -122,7 +122,7 @@ void LodBlock::mergeHead(LodBlock* adjBlock)
     {
       (*i)->mergeHead();
     }
-    adjBlock->_segments.clear();
+    adjBlock->clear();
   }
 }
 
