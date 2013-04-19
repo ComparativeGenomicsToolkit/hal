@@ -22,6 +22,11 @@ class LodBlock;
 
 std::ostream& operator<<(std::ostream& os, const LodBlock& block);
 
+struct LodBlockPBigger
+{
+   bool operator()(const LodBlock* b1, const LodBlock* b2) const;
+};
+
 /* A block is a list of homolgous segments.  All these segments must
  * be the same length.  The block's destructor will free all segments
  * it contains. 
@@ -97,6 +102,13 @@ private:
    LodBlock(const LodBlock&);
    const LodBlock& operator=(const LodBlock&) const;
 };
+
+inline bool LodBlockPBigger::operator()(const LodBlock* b1, 
+                                        const LodBlock* b2) const
+{
+  bool bigger = b1->getNumSegments() > b2->getNumSegments();
+  return bigger;
+}
 
 inline hal_size_t LodBlock::getNumSegments() const
 {

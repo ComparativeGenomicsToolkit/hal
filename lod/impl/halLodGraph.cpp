@@ -254,6 +254,11 @@ void LodGraph::computeAdjacencies()
 
 void LodGraph::optimizeByExtension()
 {
+  // Put bigger blocks first because (we hope) they tend to represent
+  // more information and we'd rather extend them than, say, a block
+  // that represents a little insertion. 
+  std::sort(_blocks.begin(), _blocks.end(), LodBlockPBigger());
+  
   for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
     (*bi)->extend();
