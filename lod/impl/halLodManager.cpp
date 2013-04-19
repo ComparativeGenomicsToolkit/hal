@@ -106,12 +106,22 @@ void LodManager::loadSingeHALFile(const string& halPath,
   checkMap(halPath);
 }
 
-AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength) const
+AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength,
+                                           bool needDNA) const
 {
   assert(_map.size() > 0);
-  AlignmentMap::const_iterator mapIt = _map.upper_bound(queryLength);
-  --mapIt;
-  assert(mapIt->first <= queryLength);
+  AlignmentMap::const_iterator mapIt;
+  if (needDNA == false || queryLength < _coarsestLevelWithSeq)
+  {
+    mapIt = _map.upper_bound(queryLength);
+    --mapIt;
+    assert(mapIt->first <= queryLength);
+  }
+  else
+  {
+    mapIt = _map.find(_coarsestLevelWithSeq);
+  }
+  assert(mapIt != _map.end());
   return mapIt->second;
 }
 
@@ -131,7 +141,7 @@ string LodManager::resolvePath(const string& lodPath,
   return lodPath.substr(0, sPos + 1) + halPath;
 }
 
-void LodManager::checkMap(const string& lodPath) const
+void LodManager::checkMap(const string& lodPath)
 {
   if (_map.size() == 0)
   {
@@ -155,27 +165,36 @@ void LodManager::checkMap(const string& lodPath) const
     throw hal_exception(ss.str());
   }
 
-  bool seqFound = false;
-  deque<string> bfQueue;
-  bfQueue.push_back(alignment->getRootName());
-  while (bfQueue.size() > 0 && !seqFound)
+  _coarsestLevelWithSeq = 0;
+  for (; mapIt != _map.end(); ++mapIt)
   {
-    string name = bfQueue.back();
-    bfQueue.pop_back();
-    const Genome* genome = alignment->openGenome(name);
-    seqFound = genome->containsDNAArray();
-    alignment->closeGenome(genome);
-    vector<string> children = alignment->getChildNames(name);
-    for (size_t i = 0; i < children.size(); ++i)
+    alignment = mapIt->second;
+    bool seqFound = false;
+    deque<string> bfQueue;
+    bfQueue.push_back(alignment->getRootName());
+    while (bfQueue.size() > 0 && !seqFound)
     {
-      bfQueue.push_front(children[i]);
+      string name = bfQueue.back();
+      bfQueue.pop_back();
+      const Genome* genome = alignment->openGenome(name);
+      seqFound = genome->containsDNAArray();
+      alignment->closeGenome(genome);
+      vector<string> children = alignment->getChildNames(name);
+      for (size_t i = 0; i < children.size(); ++i)
+      {
+        bfQueue.push_front(children[i]);
+      }
     }
-  }
-  if (seqFound == false)
-  {
-    stringstream ss;
-    ss << "HAL file for highest level of detail (0) in " << lodPath 
-       << "must contain DNA sequence information.";
-    throw hal_exception(ss.str());
+    if (seqFound == false && mapIt == _map.begin())
+    {
+      stringstream ss;
+      ss << "HAL file for highest level of detail (0) in " << lodPath 
+         << "must contain DNA sequence information.";
+      throw hal_exception(ss.str());
+    }
+    else if (seqFound == true)
+    {
+      _coarsestLevelWithSeq = std::max(_coarsestLevelWithSeq, mapIt->first);
+    }
   }
 }
