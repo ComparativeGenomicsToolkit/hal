@@ -10,6 +10,7 @@
 #include <fstream>
 #include <deque>
 #include <sstream>
+#include <algorithm>
 #include "halCommon.h"
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
@@ -23,6 +24,12 @@ using namespace hal;
 using namespace std;
 using namespace H5;
 
+#ifdef ENABLE_UDC
+#include "hdf5UDCFuseDriver.h"
+static const hid_t UDC_FUSE_DRIVER_ID =  H5FD_udc_fuse_init();
+#endif
+
+
 /** default group name for MetaData attributes, will be a subgroup
  * of the top level of the file, ie /Meta */
 const H5std_string HDF5Alignment::MetaGroupName = "Meta";
@@ -35,7 +42,8 @@ HDF5Alignment::HDF5Alignment() :
   _flags(H5F_ACC_RDONLY),
   _metaData(NULL),
   _tree(NULL),
-  _dirty(false)
+  _dirty(false),
+  _inMemory(false)
 {
   // set defaults from the command-line parser
   HDF5CLParser defaultOptions(true);  
@@ -45,16 +53,27 @@ HDF5Alignment::HDF5Alignment() :
 
 HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
                              const H5::FileAccPropList& fileAccessProps,
-                             const H5::DSetCreatPropList& datasetCreateProps) :
+                             const H5::DSetCreatPropList& datasetCreateProps,
+                             bool inMemory) :
   _file(NULL),
   _flags(H5F_ACC_RDONLY),
   _metaData(NULL),
   _tree(NULL),
-  _dirty(false)
+  _dirty(false),
+  _inMemory(inMemory)
 {
   _cprops.copy(fileCreateProps);
   _aprops.copy(fileAccessProps);
   _dcprops.copy(datasetCreateProps);
+  if (_inMemory == true)
+  {
+    int mdc;
+    size_t rdc;
+    size_t rdcb;
+    double w0;
+    _aprops.getCache(mdc, rdc, rdcb, w0);    
+    _aprops.setCache(mdc, 0, 0, 0.);
+  }
 }
 
 HDF5Alignment::~HDF5Alignment()
@@ -70,6 +89,7 @@ void HDF5Alignment::createNew(const string& alignmentPath)
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
+
   _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
@@ -88,10 +108,17 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   close();
   delete _file;
   int _flags = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
+#ifdef ENABLE_UDC
+  if (readOnly == true)
+  {
+    _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
+  }
+#else
   if (!ifstream(alignmentPath.c_str()))
   {
     throw hal_exception("Unable to open " + alignmentPath);
   }
+#endif
   _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
   if (!compatibleWithVersion(getVersion()))
   {
@@ -197,6 +224,23 @@ void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
   }
   hdf5Parser->applyToDCProps(_dcprops);
   hdf5Parser->applyToAProps(_aprops);
+  _inMemory = hdf5Parser->getInMemory();
+  if (_inMemory == true)
+  {
+    int mdc;
+    size_t rdc;
+    size_t rdcb;
+    double w0;
+    _aprops.getCache(mdc, rdc, rdcb, w0);    
+    _aprops.setCache(mdc, 0, 0, 0.);
+  }
+#ifdef ENABLE_UDC
+  static string udcCachePath = hdf5Parser->getOption<string>("udcCacheDir");
+  if (udcCachePath != "\"\"" && !udcCachePath.empty())
+  {
+    H5FD_udc_fuse_set_cache_dir(udcCachePath.c_str());
+  }  
+#endif
 }
 
 Genome*  HDF5Alignment::addLeafGenome(const string& name,
@@ -224,7 +268,7 @@ Genome*  HDF5Alignment::addLeafGenome(const string& name,
   stTree_setBranchLength(node, branchLength);
   _nodeMap.insert(pair<string, stTree*>(name, node));
 
-  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
+  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
   _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   _dirty = true;
   return genome;
@@ -252,7 +296,7 @@ Genome* HDF5Alignment::addRootGenome(const string& name,
   _tree = node;
   _nodeMap.insert(pair<string, stTree*>(name, node));
 
-  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
+  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
   _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   _dirty = true;
   return genome;
@@ -275,7 +319,7 @@ const Genome* HDF5Alignment::openGenome(const string& name) const
   if (_nodeMap.find(name) != _nodeMap.end())
   {
     genome = new HDF5Genome(name, const_cast<HDF5Alignment*>(this), 
-                                        _file, _dcprops);
+                            _file, _dcprops, _inMemory);
     genome->read();
     _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   }
@@ -292,7 +336,7 @@ Genome* HDF5Alignment::openGenome(const string& name)
   HDF5Genome* genome = NULL;
   if (_nodeMap.find(name) != _nodeMap.end())
   {
-    genome = new HDF5Genome(name, this, _file, _dcprops);
+    genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
     genome->read();
     _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   }
@@ -311,6 +355,26 @@ void HDF5Alignment::closeGenome(const Genome* genome) const
   mapIt->second->write();
   delete mapIt->second;
   _openGenomes.erase(mapIt);
+
+  // reset the parent/child genoem cachces (which store genome pointers to
+  // the genome we're closing
+  if (name != getRootName())
+  {
+    mapIt = _openGenomes.find(getParentName(name));
+    if (mapIt != _openGenomes.end())
+    {
+      mapIt->second->resetBranchCaches();
+    }
+  }
+  vector<string> childNames = getChildNames(name);
+  for (size_t i = 0; i < childNames.size(); ++i)
+  {
+    mapIt = _openGenomes.find(childNames[i]);
+    if (mapIt != _openGenomes.end())
+    {
+      mapIt->second->resetBranchCaches();
+    }
+  }
 }
 
 string HDF5Alignment::getRootName() const

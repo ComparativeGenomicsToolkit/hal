@@ -37,17 +37,22 @@ public:
     * @param dataType HDF5 Datatype describing contents of array
     * @param numElements Fixed length of the new array
     * @param cparms  HDF5 options (ie chunking and compression etc) 
-    */
+    * @param chunksInBuffer 
+     * 0: load entire array into buffer
+     * 1: use default chunking (from dataset)
+     * N: buffersize will be N chunks. 
+     */
    void create(H5::CommonFG* file, 
                const H5std_string& path, 
                const H5::DataType& dataType,
                hsize_t numElements,
-               const H5::DSetCreatPropList* inCparms = NULL);
+               const H5::DSetCreatPropList* inCparms = NULL,
+               hsize_t chunksInBuffer = 1);
  
    /** Load an existing dataset into memory
      * @param file Pointer to the HDF5 file in which to create array
      * @param path  Path within the file for the new array
-     * @param chunksInBuffer HDF5 options (ie chunking and compression etc) 
+     * @param chunksInBuffer 
      * 0: load entire array into buffer
      * 1: use default chunking (from dataset)
      * N: buffersize will be N chunks. 

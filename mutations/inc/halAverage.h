@@ -30,7 +30,9 @@ public:
    T getSum() const;
    double getMean() const;
    hal_size_t getCount() const;
-   void add(T val, hal_size_t count = 1);
+   void add(T val, hal_size_t count = 1);   
+   Average& operator+=(const Average& other);
+   Average& operator/=(hal_size_t N);
 
 protected:
    T _min;
@@ -107,6 +109,26 @@ inline std::ostream& operator<<(std::ostream& os, const Average<T>& avg)
 {
   os << avg.getMin() << ", " << avg.getMax() << ", " << avg.getMean();
   return os;
+}
+
+template <typename T>
+inline Average<T>& Average<T>::operator+=(const Average<T>& other)
+{
+  _min += other._min;
+  _max += other._max;
+  _sum += other._sum;
+  _count += other._count;
+  return *this;
+}
+
+template <typename T>
+inline Average<T>& Average<T>::operator/=(hal_size_t N)
+{
+  _min /= (T)N;
+  _max /= (T)N;
+  _sum /= (T)N;
+  _count /= (T)N;
+  return *this;
 }
 
 }

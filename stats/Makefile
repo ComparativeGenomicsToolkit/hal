@@ -1,9 +1,9 @@
 rootPath = ../
 include ../include.mk
 
-libSourcesAll = impl/*.cpp
+libSourcesAll = $(wildcard impl/*.cpp)
 libSources=$(subst impl/halStatsMain.cpp,,${libSourcesAll})
-libHeaders = inc/*.h 
+libHeaders = $(wildcard inc/*.h)
 
 all : ${libPath}/halStats.a ${binPath}/halStats
 

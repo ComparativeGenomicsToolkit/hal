@@ -28,9 +28,9 @@ static CLParserPtr initParser()
                            " can be nested within other rearrangements.", 
                            20);
   optionsParser->addOption("maxNFraction",
-                           "maximum franction of Ns in a rearranged segment "
+                           "maximum fraction of Ns in a rearranged segment "
                            "for it to not be ignored as missing data.",
-                           .10);
+                           1.0);
   optionsParser->addOptionFlag("justSubs", "just count substitutions. "
                                " Note results are total subs between genome "
                                " and all children, rather than branch results "

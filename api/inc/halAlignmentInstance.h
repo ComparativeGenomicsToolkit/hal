@@ -35,22 +35,26 @@ AlignmentConstPtr hdf5AlignmentInstanceReadOnly();
  * and should generally be set to H5::FileCreatPropList::DEFAULT
  * @param fileAccessProps File access properties. Contains cache-related stuff
  * @param datasetCreateProps Compression and chunking parameters among others
+ * @param inMemory Store all data in memory (overrides and disables hdf5 cache)
  */
 AlignmentPtr 
 hdf5AlignmentInstance(const H5::FileCreatPropList& fileCreateProps,
                       const H5::FileAccPropList& fileAccessProps,
-                      const H5::DSetCreatPropList& datasetCreateProps);
+                      const H5::DSetCreatPropList& datasetCreateProps,
+                      bool inMemory = false);
 
 /** Get a read-only instance of an HDF5-implemented Alignment while specifying 
  * @param fileCreateProps File creation properties.  fairly low-level 
  * and should generally be set to H5::FileCreatPropList::DEFAULT
  * @param fileAccessProps File access properties. Contains cache-related stuff
  * @param datasetCreateProps Compression and chunking parameters among others
+ * @param inMemory Store all data in memory (overrides and disables hdf5 cache)
  */
 AlignmentConstPtr 
 hdf5AlignmentInstanceReadOnly(const H5::FileCreatPropList& fileCreateProps,
                               const H5::FileAccPropList& fileAccessProps,
-                              const H5::DSetCreatPropList& datasetCreateProps);
+                              const H5::DSetCreatPropList& datasetCreateProps,
+                              bool inMemory = false);
 
 /** Get an alignment instance from a file by automatically detecting which 
  * implementation to use.  (will currently (and probably forever more) 
