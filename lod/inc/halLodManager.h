@@ -42,16 +42,18 @@ public:
    void loadSingeHALFile(const std::string& halPath,
                          CLParserConstPtr options = CLParserConstPtr());
 
-   AlignmentConstPtr getAlignment(hal_size_t queryLength) const;
+   AlignmentConstPtr getAlignment(hal_size_t queryLength, 
+                                  bool needDNA) const;
    
 protected:
 
    std::string resolvePath(const std::string& lodPath, 
                            const std::string& halPath);
-   void checkMap(const std::string& lodPath) const;
+   void checkMap(const std::string& lodPath);
    typedef std::map<hal_size_t, AlignmentConstPtr> AlignmentMap;
 
    AlignmentMap _map;
+   hal_size_t _coarsestLevelWithSeq;
 
 };
 

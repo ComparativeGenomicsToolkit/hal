@@ -39,7 +39,7 @@ def makeMaf(inHalPath, outDir, step, overwrite, doMaf):
         srcHalPath = makePath(inHalPath, outDir, step, "lod", "hal")
     outMafPath = makePath(inHalPath, outDir, step, "out", "maf")
     if doMaf and (overwrite or not os.path.isfile(outMafPath)):
-        runShellCommand("hal2maf %s %s --maxRefGap 100" % (srcHalPath,
+        runShellCommand("hal2maf %s %s --maxRefGap 10" % (srcHalPath,
                                                            outMafPath))
 
 def compMaf(inHalPath, outDir, step, overwrite, doMaf):
@@ -117,7 +117,8 @@ def printTable(table):
             idx += 1
         print line
     
-def runSteps(inHalPath, outDir, maxBlock, scale, overwrite, doMaf, keepSeq):
+def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
+             keepSeq, trans):
     table = defaultdict(list)
     makeMaf(inHalPath, outDir, 0, overwrite, doMaf)
 
@@ -126,13 +127,19 @@ def runSteps(inHalPath, outDir, maxBlock, scale, overwrite, doMaf, keepSeq):
     table[0] += getPrecisionRecall(inHalPath, outDir, 0, False)
     table[0] += getScanTime(inHalPath, outDir, 0)
 
-    steps =  getSteps(inHalPath, maxBlock, scale)
+    if steps is None:
+        steps =  getSteps(inHalPath, maxBlock, scale)
     for stepIdx in xrange(1,len(steps)):
         step = steps[stepIdx]
         outPath = makePath(inHalPath, outDir, step, "lod", "hal")
         
+        srcPath = inHalPath
+        if trans is True and stepIdx > 1:
+            srcPath = makePath(inHalPath, outDir,  steps[stepIdx-1],
+                               "lod", "hal")        
+        
         if overwrite is True or not os.path.isfile(outPath):
-            runHalLodExtract(inHalPath, outPath, step, keepSeq)
+            runHalLodExtract(srcPath, outPath, step, keepSeq)
 
         makeMaf(inHalPath, outDir, step, overwrite, doMaf)
         compMaf(inHalPath, outDir, step, overwrite, doMaf)
@@ -161,9 +168,18 @@ def main(argv=None):
                         help="scaling factor between two successive levels"
                         " of detail", type=float,
                         default=10.0)
+    parser.add_argument("--steps",
+                        help="comma-separated list of sampling steps to test"
+                        " for each level of "
+                        "detail.  Overrides --scale and --maxBlock options",
+                        type=str, default=None)
     parser.add_argument("--overwrite",action="store_true", default=False)
     parser.add_argument("--maf",action="store_true", default=False)
     parser.add_argument("--keepSequences",action="store_true", default=False)
+    parser.add_argument("--trans", help="Generate level of detail X from "
+                        "X-1.  By default, all levels of detail are generated "
+                        "from the original HAL (X=0)",
+                        action="store_true", default=False)
         
     args = parser.parse_args()
 
@@ -173,8 +189,14 @@ def main(argv=None):
     if args.maf is True:
         args.keepSequences = True
 
+    steps = None
+    if args.steps is not None:
+        steps = [0] + [int(x) for x in args.steps.split(",")]
+        assert steps[1] > 0
+
     table = runSteps(args.hal, args.outDir, args.maxBlock, args.scale,
-                     args.overwrite, args.maf, args.keepSequences)
+                     steps, args.overwrite, args.maf, args.keepSequences,
+                     args.trans)
 #    print table
     printTable(table)
 if __name__ == "__main__":

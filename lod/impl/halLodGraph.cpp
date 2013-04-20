@@ -259,10 +259,19 @@ void LodGraph::optimizeByExtension()
   // that represents a little insertion. 
   std::sort(_blocks.begin(), _blocks.end(), LodBlockPBigger());
   
+  // Pass 1: Extend all blocks with at least 2 sequences by half
+  for (BlockIterator bi = _blocks.begin(); bi != _blocks.end() && 
+          (*bi)->getNumSegments() > 1; ++bi)
+  {
+    (*bi)->extend(0.5);
+  }
+
+  // Pass 2: Greedily extend each block to the max
   for (BlockIterator bi = _blocks.begin(); bi != _blocks.end(); ++bi)
   {
     (*bi)->extend();
   }
+
 }
 
 void LodGraph::optimizeByMerging()

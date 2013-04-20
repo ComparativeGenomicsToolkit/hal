@@ -34,8 +34,13 @@ static HandleMap handleMap;
 
 static int halOpenLodOrHal(char* inputPath, bool isLod);
 static void checkHandle(int handle);
+static void checkGenomes(int halHandle, 
+                         AlignmentConstPtr alignment, const string& qSpecies,
+                         const string& tSpecies, const string& tChrom);
+
 static AlignmentConstPtr getExistingAlignment(int handle,
-                                              hal_size_t queryLength);
+                                              hal_size_t queryLength,
+                                              bool needSequence);
 static char* copyCString(const string& inString);
 
 static hal_block_t* readBlocks(const Sequence* tSequence,
@@ -161,25 +166,13 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
       ss << "Invalid query range [" << tStart << "," << tEnd << ").";
       throw hal_exception(ss.str());
     }
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle,
-                                                       hal_size_t(rangeLength));
-    const Genome* qGenome = alignment->openGenome(qSpecies);
-    if (qGenome == NULL)
-    {
-      stringstream ss;
-      ss << "Query species " << qSpecies << " not found in alignment with "
-         << "handle " << halHandle;
-      throw hal_exception(ss.str());
-    }
-    const Genome* tGenome = alignment->openGenome(tSpecies);
-    if (tGenome == NULL)
-    {
-      stringstream ss;
-      ss << "Reference species " << tSpecies << " not found in alignment with "
-         << "handle " << halHandle;
-      throw hal_exception(ss.str());
-    }
+    AlignmentConstPtr alignment = 
+       getExistingAlignment(halHandle, hal_size_t(rangeLength), 
+                            getSequenceString != 0);
+    checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
 
+    const Genome* qGenome = alignment->openGenome(qSpecies);
+    const Genome* tGenome = alignment->openGenome(tSpecies);
     const Sequence* tSequence = tGenome->getSequence(tChrom);
     // cactus pipeline presently adds species name as prefix of 
     // sequence name.  check if this caused confusion
@@ -191,15 +184,6 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
       sequenceName += tChrom;
       tSequence = tGenome->getSequence(sequenceName);
     }
-    if (tSequence == NULL || 
-        (hal_size_t)tStart >= tSequence->getSequenceLength() ||
-        (hal_size_t)tEnd > tSequence->getSequenceLength())
-    {
-      stringstream ss;
-      ss << "Unable to locate sequence " << tChrom << "(or " << sequenceName 
-         << ") in genome " << tSpecies;
-      throw hal_exception(ss.str());
-    }
 
     hal_index_t myEnd = tEnd > 0 ? tEnd : tSequence->getSequenceLength();
     hal_index_t absStart = tSequence->getStartPosition() + tStart;
@@ -207,6 +191,16 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
     if (absStart > absEnd)
     {
       throw hal_exception("Invalid range");
+    }
+    // We now know the query length so we can do a proper lod query
+    if (tEnd == 0)
+    {
+      alignment = getExistingAlignment(halHandle, absEnd - absStart, 
+                                       getSequenceString != 0);
+      checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
+      qGenome = alignment->openGenome(qSpecies);
+      tGenome = alignment->openGenome(tSpecies);
+      tSequence = tGenome->getSequence(tSequence->getName());
     }
 
     head = readBlocks(tSequence, absStart, absEnd, qGenome,
@@ -229,7 +223,8 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle)
   {
     // read the lowest level of detail because it's fastest
     AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max());
+       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                            false);
     hal_species_t* prev = NULL;
     if (alignment->getNumGenomes() > 0)
     {
@@ -294,7 +289,8 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
   {
     // read the lowest level of detail because it's fastest
     AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max());
+       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                            false);
 
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
@@ -349,7 +345,7 @@ extern "C" char *halGetDna(int halHandle,
   char* dna = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle, 0);
+    AlignmentConstPtr alignment = getExistingAlignment(halHandle, 0, true);
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
     {
@@ -405,11 +401,54 @@ void checkHandle(int handle)
   }
 }
 
-AlignmentConstPtr getExistingAlignment(int handle, hal_size_t queryLength)
+void checkGenomes(int halHandle, 
+                  AlignmentConstPtr alignment, const string& qSpecies,
+                  const string& tSpecies, const string& tChrom)
+{
+  const Genome* qGenome = alignment->openGenome(qSpecies);
+  if (qGenome == NULL)
+  {
+    stringstream ss;
+    ss << "Query species " << qSpecies << " not found in alignment with "
+       << "handle " << halHandle;
+    throw hal_exception(ss.str());
+  }
+  const Genome* tGenome = alignment->openGenome(tSpecies);
+  if (tGenome == NULL)
+  {
+    stringstream ss;
+    ss << "Reference species " << tSpecies << " not found in alignment with "
+       << "handle " << halHandle;
+    throw hal_exception(ss.str());
+  }
+
+  const Sequence* tSequence = tGenome->getSequence(tChrom);
+  // cactus pipeline presently adds species name as prefix of 
+  // sequence name.  check if this caused confusion
+  string sequenceName;
+  if (tSequence == NULL)
+  {
+    sequenceName = tGenome->getName();
+    sequenceName += '.';
+    sequenceName += tChrom;
+    tSequence = tGenome->getSequence(sequenceName);
+  }
+  if (tSequence == NULL)
+  {
+    stringstream ss;
+    ss << "Unable to locate sequence " << tChrom << "(or " << sequenceName 
+       << ") in genome " << tSpecies;
+    throw hal_exception(ss.str());
+  }
+}
+
+
+AlignmentConstPtr getExistingAlignment(int handle, hal_size_t queryLength,
+                                       bool needDNASequence)
 {
   checkHandle(handle);
   HandleMap::iterator mapIt = handleMap.find(handle);
-  return mapIt->second.second->getAlignment(queryLength);
+  return mapIt->second.second->getAlignment(queryLength, needDNASequence);
 }
 
 char* copyCString(const string& inString)

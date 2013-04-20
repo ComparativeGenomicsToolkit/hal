@@ -27,6 +27,7 @@ def runHalLodExtract(inHalPath, outHalPath, step, keepSeq):
     cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
     if keepSeq:
         cmd += " --keepSequences"
+    print cmd
     runShellCommand(cmd)
 
 # All created paths get put in the same place using the same logic
@@ -84,7 +85,7 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
 
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
-               keepSequences, absPath):
+               maxDNA, absPath, trans):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scaleFactor)
@@ -92,9 +93,13 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
         step = steps[stepIdx]
         prevStep = steps[stepIdx - 1]
         maxQueryLength = maxBlock * prevStep
+        keepSequences = maxQueryLength <= maxDNA
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
-        if overwrite is True or not os.path.isfile(outHalPath):
-            runHalLodExtract(halPath, outHalPath, step, keepSequences)
+        srcPath = halPath
+        if trans is True and stepIdx > 1:
+            srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
+        if overwrite is True or not os.path.isfile(outHalPath):            
+            runHalLodExtract(srcPath, outHalPath, step, keepSequences)
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
@@ -130,14 +135,25 @@ def main(argv=None):
     parser.add_argument("--overwrite",
                         help="overwrite existing hal files if they exist.",
                         action="store_true", default=False)
-    parser.add_argument("--keepSequences",
-                        help="copy DNA sequences into interpolated HAL files",
-                        action="store_true", default=False)
+    parser.add_argument("--maxDNA",
+                        help="maximum DNA sequence query.  Generated levels of"
+                        " detail with associated minimum query ranges > maxDNA"
+                        " will not contain sequence information.  -1 can be "
+                        "used to specify that all levels will get sequence",
+                        type=int,
+                        default=50000)
     parser.add_argument("--absPath",
                         help="write absolute path of created HAL files in the"
                         " outLodFile.  By default, the paths are relative to "
                         "the path of the outLodFile.",
                         action="store_true", default=False)
+    parser.add_argument("--trans", help="Generate level of detail X from "
+                        "X-1.  By default, all levels of detail are generated "
+                        "from the original HAL (X=0)",
+                        action="store_true", default=False)
+    parser.add_argument("--keepSequencesBelow",
+                        help="",
+                        type=int, default=0)
 
         
     args = parser.parse_args()
@@ -152,9 +168,12 @@ def main(argv=None):
     if not os.path.isdir(args.outHalDir):
         raise RuntimeError("Invalid output directory %s" % args.outHalDir)
 
+    if args.maxDNA < 0:
+        args.maxDNA = sys.maxint
+
     createLods(args.hal, args.outLodFile, args.outHalDir,
-               args.maxBlock, args.scale, args.overwrite, args.keepSequences,
-               args.absPath)
+               args.maxBlock, args.scale, args.overwrite, args.maxDNA,
+               args.absPath, args.trans)
     
 if __name__ == "__main__":
     sys.exit(main())
