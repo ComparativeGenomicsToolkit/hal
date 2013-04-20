@@ -39,8 +39,7 @@ def makeMaf(inHalPath, outDir, step, overwrite, doMaf):
         srcHalPath = makePath(inHalPath, outDir, step, "lod", "hal")
     outMafPath = makePath(inHalPath, outDir, step, "out", "maf")
     if doMaf and (overwrite or not os.path.isfile(outMafPath)):
-        runShellCommand("hal2maf %s %s --maxRefGap 10" % (srcHalPath,
-                                                           outMafPath))
+        runShellCommand("hal2maf %s %s" % (srcHalPath, outMafPath))
 
 def compMaf(inHalPath, outDir, step, overwrite, doMaf):
     srcMaf = makePath(inHalPath, outDir, 0, "out", "maf")
