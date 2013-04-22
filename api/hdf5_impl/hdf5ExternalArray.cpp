@@ -68,12 +68,13 @@ void HDF5ExternalArray::create(CommonFG* file,
       _chunkSize = _size;
       cparms.setChunk(1, &_chunkSize);
     }
+    _chunkSize *= chunksInBuffer;
   }
   else
   {
     _chunkSize = 0;
   }
-
+  
   // create the internal data buffer
   _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
   _bufStart = 0;
