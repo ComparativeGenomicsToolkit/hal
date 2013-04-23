@@ -117,7 +117,7 @@ def printTable(table):
         print line
     
 def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
-             keepSeq, trans):
+             keepSeq, trans, inMemory):
     table = defaultdict(list)
     makeMaf(inHalPath, outDir, 0, overwrite, doMaf)
 
@@ -138,7 +138,7 @@ def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
                                "lod", "hal")        
         
         if overwrite is True or not os.path.isfile(outPath):
-            runHalLodExtract(srcPath, outPath, step, keepSeq)
+            runHalLodExtract(srcPath, outPath, step, keepSeq, inMemory)
 
         makeMaf(inHalPath, outDir, step, overwrite, doMaf)
         compMaf(inHalPath, outDir, step, overwrite, doMaf)
@@ -179,6 +179,10 @@ def main(argv=None):
                         "X-1.  By default, all levels of detail are generated "
                         "from the original HAL (X=0)",
                         action="store_true", default=False)
+    parser.add_argument("--inMemory", help="Load entire hdf5 arrays into "
+                        "memory, overriding cache.",
+                        action="store_true", default=False)
+
         
     args = parser.parse_args()
 
@@ -195,7 +199,7 @@ def main(argv=None):
 
     table = runSteps(args.hal, args.outDir, args.maxBlock, args.scale,
                      steps, args.overwrite, args.maf, args.keepSequences,
-                     args.trans)
+                     args.trans, args.inMemory)
 #    print table
     printTable(table)
 if __name__ == "__main__":
