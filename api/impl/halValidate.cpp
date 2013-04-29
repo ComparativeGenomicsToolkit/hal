@@ -71,9 +71,15 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
       if (childSegment->getNextParalogyIndex() == NULL_INDEX &&
           childSegment->getParentIndex() != bottomSegment->getArrayIndex())
       {
-        throw hal_exception("parent / child index mismatch (parent=" +
-                            genome->getName() + " child=" +
-                            childGenome->getName());
+        stringstream ss;
+        ss << "Parent / child index mismatch:\n" 
+           << genome->getName() << "[" << bottomSegment->getArrayIndex() << "]"
+           << " links to " << childGenome->getName() << "[" << childIndex 
+           << "] but \n"
+           << childGenome->getName() << "[" << childSegment->getArrayIndex() 
+           << "] links to " << genome->getName() << "[" 
+           << childSegment->getParentIndex() << "]";
+        throw hal_exception(ss.str());
       }
       if (childSegment->getParentReversed() != 
           bottomSegment->getChildReversed(child))
@@ -194,7 +200,9 @@ void hal::validateTopSegment(const TopSegment* topSegment)
     {
       stringstream ss;
       ss << "Top Segment " << topSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has parse index out of range";
+         << genome->getName() << " has parse index " << parseIndex 
+         << " which is out of range since genome has " 
+         << genome->getNumBottomSegments() << " bottom segments";
       throw hal_exception(ss.str());
     }
     hal_offset_t parseOffset = topSegment->getBottomParseOffset();

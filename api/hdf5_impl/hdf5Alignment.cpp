@@ -42,7 +42,8 @@ HDF5Alignment::HDF5Alignment() :
   _flags(H5F_ACC_RDONLY),
   _metaData(NULL),
   _tree(NULL),
-  _dirty(false)
+  _dirty(false),
+  _inMemory(false)
 {
   // set defaults from the command-line parser
   HDF5CLParser defaultOptions(true);  
@@ -52,16 +53,27 @@ HDF5Alignment::HDF5Alignment() :
 
 HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
                              const H5::FileAccPropList& fileAccessProps,
-                             const H5::DSetCreatPropList& datasetCreateProps) :
+                             const H5::DSetCreatPropList& datasetCreateProps,
+                             bool inMemory) :
   _file(NULL),
   _flags(H5F_ACC_RDONLY),
   _metaData(NULL),
   _tree(NULL),
-  _dirty(false)
+  _dirty(false),
+  _inMemory(inMemory)
 {
   _cprops.copy(fileCreateProps);
   _aprops.copy(fileAccessProps);
   _dcprops.copy(datasetCreateProps);
+  if (_inMemory == true)
+  {
+    int mdc;
+    size_t rdc;
+    size_t rdcb;
+    double w0;
+    _aprops.getCache(mdc, rdc, rdcb, w0);    
+    _aprops.setCache(mdc, 0, 0, 0.);
+  }
 }
 
 HDF5Alignment::~HDF5Alignment()
@@ -212,6 +224,16 @@ void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
   }
   hdf5Parser->applyToDCProps(_dcprops);
   hdf5Parser->applyToAProps(_aprops);
+  _inMemory = hdf5Parser->getInMemory();
+  if (_inMemory == true)
+  {
+    int mdc;
+    size_t rdc;
+    size_t rdcb;
+    double w0;
+    _aprops.getCache(mdc, rdc, rdcb, w0);    
+    _aprops.setCache(mdc, 0, 0, 0.);
+  }
 #ifdef ENABLE_UDC
   static string udcCachePath = hdf5Parser->getOption<string>("udcCacheDir");
   if (udcCachePath != "\"\"" && !udcCachePath.empty())
@@ -246,7 +268,7 @@ Genome*  HDF5Alignment::addLeafGenome(const string& name,
   stTree_setBranchLength(node, branchLength);
   _nodeMap.insert(pair<string, stTree*>(name, node));
 
-  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
+  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
   _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   _dirty = true;
   return genome;
@@ -274,7 +296,7 @@ Genome* HDF5Alignment::addRootGenome(const string& name,
   _tree = node;
   _nodeMap.insert(pair<string, stTree*>(name, node));
 
-  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops);
+  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
   _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   _dirty = true;
   return genome;
@@ -297,7 +319,7 @@ const Genome* HDF5Alignment::openGenome(const string& name) const
   if (_nodeMap.find(name) != _nodeMap.end())
   {
     genome = new HDF5Genome(name, const_cast<HDF5Alignment*>(this), 
-                                        _file, _dcprops);
+                            _file, _dcprops, _inMemory);
     genome->read();
     _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   }
@@ -314,7 +336,7 @@ Genome* HDF5Alignment::openGenome(const string& name)
   HDF5Genome* genome = NULL;
   if (_nodeMap.find(name) != _nodeMap.end())
   {
-    genome = new HDF5Genome(name, this, _file, _dcprops);
+    genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
     genome->read();
     _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   }

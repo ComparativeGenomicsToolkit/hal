@@ -94,6 +94,8 @@ protected:
    mutable TopSegmentIteratorConstPtr _next;
    mutable VisitCache _visitCache;
    mutable bool _break;
+   mutable const Sequence* _prevRefSequence;
+   mutable hal_index_t _prevRefIndex;
 };
 
 inline bool DefaultColumnIterator::parentInScope(const Genome* genome) const

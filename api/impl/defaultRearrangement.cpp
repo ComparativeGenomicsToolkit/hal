@@ -475,12 +475,6 @@ bool DefaultRearrangement::scanInsertionCycle(
 {
   assert(topSegment.get());
   resetStatus(topSegment);
-  bool first = _cur->isFirst();
-  bool last = _cur->isLast();
-  if (first && last)
-  {
-    return false;
-  }
 
   // eat up any adjacent insertions so they don't get double counted
   while (_next->hasParent() == false && _next->isLast() == false)
@@ -498,6 +492,13 @@ bool DefaultRearrangement::scanInsertionCycle(
   }
   _right->copy(_next);
   assert(_next->equals(_cur) || _next->hasParent() == false);
+
+  bool first = _cur->isFirst();
+  bool last = _right->isLast();
+  if (first && last)
+  {
+    return false;
+  }
 
   // Case 1a) current segment is left endpoint.  we consider insertion
   // if right neighbour has parent

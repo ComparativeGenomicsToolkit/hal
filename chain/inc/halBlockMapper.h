@@ -80,7 +80,23 @@ inline bool
 SegmentPtrLess::operator()(const SegmentIteratorConstPtr& s1, 
                            const SegmentIteratorConstPtr& s2) const
 {
-  return s1->getStartPosition() < s2->getStartPosition();
+  assert (s1->getGenome() == s2->getGenome());
+  if (s1->getArrayIndex() < s2->getArrayIndex())
+  {
+    return true;
+  }
+  else if (s1->getArrayIndex() > s2->getArrayIndex())
+  {
+    return false;
+  }
+  else 
+  {
+    hal_offset_t o1 = 
+       s1->getReversed() ? s1->getEndOffset() : s1->getStartOffset();
+    hal_offset_t o2 = 
+       s2->getReversed() ? s2->getEndOffset() : s2->getStartOffset();
+    return o1 < o2;       
+  }
 }
 
 inline const BlockMapper::SegMap& BlockMapper::getMap() const

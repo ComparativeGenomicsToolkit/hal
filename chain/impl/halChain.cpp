@@ -6,6 +6,7 @@
 
 #include <deque>
 #include <cassert>
+#include <cmath>
 #include "halChain.h"
 
 using namespace std;

@@ -35,7 +35,8 @@ void HDF5ExternalArray::create(CommonFG* file,
                                const H5std_string& path, 
                                const DataType& dataType,
                                hsize_t numElements,
-                               const DSetCreatPropList* inCparms)
+                               const DSetCreatPropList* inCparms,
+                               hsize_t chunksInBuffer)
 {
   // copy in parameters
   _file = file;
@@ -67,12 +68,13 @@ void HDF5ExternalArray::create(CommonFG* file,
       _chunkSize = _size;
       cparms.setChunk(1, &_chunkSize);
     }
+    _chunkSize *= chunksInBuffer;
   }
   else
   {
     _chunkSize = 0;
   }
-
+  
   // create the internal data buffer
   _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
   _bufStart = 0;

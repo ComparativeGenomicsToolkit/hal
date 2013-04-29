@@ -163,6 +163,7 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
 void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames)
 {
   resetEntries();
+  _fullNames = fullNames;
   const ColumnMap* colMap = col->getColumnMap();
   Entries::iterator e = _entries.begin();
   ColumnMap::const_iterator c = colMap->begin();

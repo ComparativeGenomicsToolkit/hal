@@ -28,9 +28,9 @@ ${libPath}/halChain.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicL
 ${binPath}/hal2chain : impl/hal2chain.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/hal2chain impl/hal2chain.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibs}
 
-test/blockVizTest: test/blockVizTest.c ${libPath}/halChain.a ${libPath}/halLib.a ${basicLib\
+test/blockVizTest: test/blockVizTest.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLib\
 sDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizTest test/blockVizTest.c ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibs}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizTest test/blockVizTest.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLibs}
  
 test/blockInterpolateTest: test/blockInterpolateTest.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLib\
 sDependencies}
