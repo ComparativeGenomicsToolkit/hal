@@ -101,6 +101,11 @@ public:
     * to no be considered missing data */
    virtual bool isMissingData(double nThreshold) const = 0;
 
+   /** Check if underlying segment is a top segment (easier than doing a
+    * downcast.  Returns true if it's a top segment and false if it's a 
+    * bottom segment */
+   virtual bool isTop() const = 0;
+
 protected:
    friend class counted_ptr<Segment>;
    friend class counted_ptr<const Segment>;

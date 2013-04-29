@@ -178,6 +178,11 @@ bool DefaultGappedBottomSegmentIterator::isMissingData(double nThreshold) const
   return false;
 }
 
+bool DefaultGappedBottomSegmentIterator::isTop() const
+{
+  return false;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////

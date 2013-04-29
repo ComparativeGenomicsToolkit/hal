@@ -54,6 +54,7 @@ public:
    bool isFirst() const;
    bool isLast() const;
    bool isMissingData(double nThreshold) const;
+   bool isTop() const;
 
    // TOP SEGMENT INTERFACE
    hal_index_t getParentIndex() const;
@@ -235,6 +236,11 @@ inline bool HDF5TopSegment::isLast() const
   return _index == (hal_index_t)_array->getSize() - 1 || 
      _index == getSequence()->getTopSegmentArrayIndex() +
      (hal_index_t)getSequence()->getNumTopSegments() - 1;
+}
+
+inline bool HDF5TopSegment::isTop() const
+{
+  return true;
 }
 
 inline hal_index_t HDF5TopSegment::getLeftParentIndex() const

@@ -73,6 +73,7 @@
 #include "halSequenceIterator.h"
 #include "halDNAIterator.h"
 #include "halSegment.h"
+#include "halSlicedSegment.h"
 #include "halSegmentIterator.h"
 #include "halSegmentedSequence.h"
 #include "halTopSegment.h"
