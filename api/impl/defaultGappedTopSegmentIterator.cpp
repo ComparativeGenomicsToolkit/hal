@@ -174,6 +174,15 @@ bool DefaultGappedTopSegmentIterator::isTop() const
   return true;
 }
 
+hal_size_t DefaultGappedTopSegmentIterator::getMappedSegments(
+  const Genome* tgtGenome,
+  std::vector<MappedSegmentConstPtr>& outSegments,
+  bool doDupes) const
+{
+  throw hal_exception("getMappedSegments is not supported in "
+                      "DefaultGappedTopSegmentIterator");
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////

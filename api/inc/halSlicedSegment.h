@@ -12,6 +12,8 @@
 
 namespace hal {
 
+class MappedSegment;
+
 /** 
  * Interface for a sliced segement.  This extends the segment interface
  * by allowing slicing (accessing just subintervals of the segmenet), 

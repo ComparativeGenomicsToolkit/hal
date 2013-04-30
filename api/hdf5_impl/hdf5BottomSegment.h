@@ -56,6 +56,10 @@ public:
    bool isLast() const;
    bool isMissingData(double nThreshold) const;
    bool isTop() const;
+   hal_size_t getMappedSegments(
+     const Genome* tgtGenome,
+     std::vector<MappedSegmentConstPtr>& outSegments,
+     bool doDupes) const;
    
    // BOTTOM SEGMENT INTERFACE
    hal_size_t getNumChildren() const;
@@ -264,6 +268,15 @@ inline bool HDF5BottomSegment::isLast() const
 inline bool HDF5BottomSegment::isTop() const
 {
   return false;
+}
+
+inline hal_size_t HDF5BottomSegment::getMappedSegments(
+  const Genome* tgtGenome,
+  std::vector<MappedSegmentConstPtr>& outSegments,
+  bool doDupes) const
+{
+  throw hal_exception("Internal error.   HDF5 Segment interface should "
+                      "at some point go through the sliced segment");
 }
 
 inline hal_index_t HDF5BottomSegment::getLeftChildIndex(hal_size_t i) const

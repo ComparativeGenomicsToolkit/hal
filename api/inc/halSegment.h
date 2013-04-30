@@ -8,6 +8,7 @@
 #define _HALSEGMENT_H
 
 #include <string>
+#include <vector>
 #include "halDefs.h"
 
 namespace hal {
@@ -105,6 +106,16 @@ public:
     * downcast.  Returns true if it's a top segment and false if it's a 
     * bottom segment */
    virtual bool isTop() const = 0;
+
+   /** Get homologous segments in target genome.  Returns the number
+    * of mapped segments found.
+    * tgtGenome  Target genome to map to.  Can be the same as current.
+    * outSegments  Vector to which the output will be appended
+    * doDupes  Specify whether paralogy edges are followed */
+   virtual hal_size_t getMappedSegments(
+     const Genome* tgtGenome,
+     std::vector<MappedSegmentConstPtr>& outSegments,
+     bool doDupes = true) const = 0;
 
 protected:
    friend class counted_ptr<Segment>;

@@ -42,6 +42,10 @@ public:
    virtual bool isLast() const;
    virtual bool isMissingData(double nThreshold) const;
    virtual bool isTop() const;
+   virtual hal_size_t getMappedSegments(
+     const Genome* tgtGenome,
+     std::vector<MappedSegmentConstPtr>& outSegments,
+     bool doDupes) const;
 
    // SLICED SEGMENT INTERFACE 
    virtual void toReverse() const;

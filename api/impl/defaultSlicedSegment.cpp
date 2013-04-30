@@ -171,6 +171,14 @@ bool DefaultSlicedSegment::isTop() const
   return getSegment()->isTop();
 }
 
+hal_size_t DefaultSlicedSegment::getMappedSegments(
+  const Genome* tgtGenome,
+  std::vector<MappedSegmentConstPtr>& outSegments,
+  bool doDupes) const
+{
+  return 0;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SLICED SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
