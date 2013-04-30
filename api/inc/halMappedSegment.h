@@ -33,5 +33,7 @@ protected:
    virtual ~MappedSegment() = 0;
 };
 
+inline MappedSegment::~MappedSegment() {}
+
 }
 #endif

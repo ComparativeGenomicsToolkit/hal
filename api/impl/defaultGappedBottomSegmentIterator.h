@@ -50,8 +50,9 @@ public:
    virtual bool isMissingData(double nThreshold) const;
    virtual bool isTop() const;
    virtual hal_size_t getMappedSegments(
-     const Genome* tgtGenome,
      std::vector<MappedSegmentConstPtr>& outSegments,
+     const Genome* tgtGenome,
+     const std::set<const Genome*>* genomesOnPath,
      bool doDupes) const;
 
    // SEGMENT ITERATOR INTERFACE

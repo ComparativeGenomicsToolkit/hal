@@ -13,7 +13,7 @@
 namespace hal {
 
 
-class DefaultTopSegmentIterator : public DefaultSegmentIterator, 
+class DefaultTopSegmentIterator : virtual public DefaultSegmentIterator, 
                                   virtual public TopSegmentIterator
 {
 public:

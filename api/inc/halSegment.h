@@ -9,6 +9,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include "halDefs.h"
 
 namespace hal {
@@ -109,12 +110,20 @@ public:
 
    /** Get homologous segments in target genome.  Returns the number
     * of mapped segments found.
-    * tgtGenome  Target genome to map to.  Can be the same as current.
-    * outSegments  Vector to which the output will be appended
-    * doDupes  Specify whether paralogy edges are followed */
+    * @param outSegments  Vector to which the output will be appended
+    * @param tgtGenome  Target genome to map to.  Can be the same as current.
+    * @param genomesOnPath  Intermediate genomes that must be visited
+    * on the way to tgt.  If this is specified as NULL, then the path
+    * will be computed automatically 
+    * (using hal::getGenomesInSpanningTree(this->getGenome(), tgtGenome)).
+    * Specifying this can avoid recomputing the path over and over again
+    * when, say, calling getMappedSegments repeatedly for the same 
+    * source and target. 
+    * @param doDupes  Specify whether paralogy edges are followed */
    virtual hal_size_t getMappedSegments(
-     const Genome* tgtGenome,
      std::vector<MappedSegmentConstPtr>& outSegments,
+     const Genome* tgtGenome,
+     const std::set<const Genome*>* genomesOnPath = NULL,
      bool doDupes = true) const = 0;
 
 protected:

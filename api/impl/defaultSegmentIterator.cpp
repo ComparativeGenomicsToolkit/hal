@@ -16,9 +16,9 @@ using namespace hal;
 DefaultSegmentIterator::DefaultSegmentIterator(hal_offset_t startOffset, 
                                                hal_offset_t endOffset,
                                                bool reversed) :
-  DefaultSlicedSegment(startOffset,
-                       endOffset,
-                       reversed)
+  _startOffset(startOffset),
+  _endOffset(endOffset),
+  _reversed(reversed)
 {
 
 }
@@ -26,6 +26,208 @@ DefaultSegmentIterator::DefaultSegmentIterator(hal_offset_t startOffset,
 DefaultSegmentIterator::~DefaultSegmentIterator()
 {
 
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// SEGMENT INTERFACE
+//////////////////////////////////////////////////////////////////////////////
+void DefaultSegmentIterator::setArrayIndex(Genome* genome, 
+                                         hal_index_t arrayIndex)
+{
+  getSegment()->setArrayIndex(genome, arrayIndex);
+}
+
+void DefaultSegmentIterator::setArrayIndex(const Genome* genome, 
+                                         hal_index_t arrayIndex) const
+{
+  getSegment()->setArrayIndex(genome, arrayIndex);
+}
+
+const Genome* DefaultSegmentIterator::getGenome() const
+{
+  return getSegment()->getGenome();
+}
+
+Genome* DefaultSegmentIterator::getGenome()
+{
+  return getSegment()->getGenome();
+}
+
+const Sequence* DefaultSegmentIterator::getSequence() const
+{
+  return getSegment()->getSequence();
+}
+
+Sequence* DefaultSegmentIterator::getSequence()
+{
+  return getSegment()->getSequence();
+}
+
+hal_index_t DefaultSegmentIterator::getStartPosition() const
+{
+  assert (inRange() == true);
+  if (_reversed == false)
+  {
+    return getSegment()->getStartPosition() + _startOffset;
+  }
+  else
+  {
+    return getSegment()->getStartPosition() + getSegment()->getLength() - 
+       _startOffset - 1;
+  }
+}
+
+hal_index_t DefaultSegmentIterator::getEndPosition() const
+{
+  assert (inRange() == true);
+  if (_reversed == false)
+  {
+    return getStartPosition() + (hal_index_t)(getLength() - 1);
+  }
+  else
+  {
+    return getStartPosition() - (hal_index_t)(getLength() - 1);
+  }
+}
+
+hal_size_t DefaultSegmentIterator::getLength() const
+{
+  assert (inRange() == true);
+  return getSegment()->getLength() - _endOffset - _startOffset;
+}
+
+void DefaultSegmentIterator::getString(std::string& outString) const
+{
+  assert (inRange() == true);
+  getSegment()->getString(outString);
+  if (_reversed == true)
+  {
+    reverseComplement(outString);
+  }
+  outString = outString.substr(_startOffset, getLength());
+}
+
+void DefaultSegmentIterator::setCoordinates(hal_index_t startPos, 
+                                          hal_size_t length)
+{
+  getSegment()->setCoordinates(startPos, length);
+}
+
+hal_index_t DefaultSegmentIterator::getArrayIndex() const
+{
+  return getSegment()->getArrayIndex();
+}
+
+bool DefaultSegmentIterator::leftOf(hal_index_t genomePos) const
+{
+  assert(genomePos != NULL_INDEX);
+  assert(getSegment()->getStartPosition() != NULL_INDEX);
+  if (_reversed == false)
+  {
+    return (hal_index_t)(getStartPosition() + getLength()) <= genomePos;
+  }
+  else
+  {
+    return (hal_index_t)getStartPosition() < genomePos;
+  }
+}
+
+bool DefaultSegmentIterator::rightOf(hal_index_t genomePos) const
+{
+  assert(genomePos != NULL_INDEX);
+  assert(getSegment()->getStartPosition() != NULL_INDEX);
+  if (_reversed == false)
+  {
+    return getStartPosition() > genomePos;
+  }
+  else
+  {
+    return getStartPosition() - (hal_index_t)getLength() >= genomePos;
+  }
+}
+
+bool DefaultSegmentIterator::overlaps(hal_index_t genomePos) const
+{
+  return !leftOf(genomePos) && !rightOf(genomePos);
+}
+
+bool DefaultSegmentIterator::isFirst() const
+{
+  return !_reversed ? getSegment()->isFirst() : getSegment()->isLast();
+}
+
+bool DefaultSegmentIterator::isLast() const
+{
+  return !_reversed ? getSegment()->isLast() : getSegment()->isFirst();
+}
+
+bool DefaultSegmentIterator::isMissingData(double nThreshold) const
+{
+  return getSegment()->isMissingData(nThreshold);
+}
+
+bool DefaultSegmentIterator::isTop() const
+{
+  return getSegment()->isTop();
+}
+
+hal_size_t DefaultSegmentIterator::getMappedSegments(
+  vector<MappedSegmentConstPtr>& outSegments,
+  const Genome* tgtGenome,
+  const set<const Genome*>* genomesOnPath,
+  bool doDupes) const
+{
+  assert(tgtGenome != NULL);
+  set<const Genome*> pathSet;
+  if (genomesOnPath == NULL)
+  {
+    set<const Genome*> inputSet;
+    inputSet.insert(getGenome());
+    inputSet.insert(tgtGenome);
+    getGenomesInSpanningTree(inputSet, pathSet);
+    genomesOnPath = &pathSet;
+  }
+
+  /*  hal_size_t numResults = DefaultMappedSegment::map(this, outSegments, 
+                                                    tgtGenome,
+                                                    genomesOnPath, doDupes);
+  return numResults;
+  */ return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// SLICED SEGMENT INTERFACE
+//////////////////////////////////////////////////////////////////////////////
+void DefaultSegmentIterator::toReverse() const
+{
+  assert (inRange() == true);
+  _reversed = !_reversed;
+//  swap(_startOffset, _endOffset);
+}
+
+hal_offset_t DefaultSegmentIterator::getStartOffset() const
+{
+  return _startOffset;
+}
+
+hal_offset_t DefaultSegmentIterator::getEndOffset() const
+{
+  return _endOffset;
+}
+
+void DefaultSegmentIterator::slice(hal_offset_t startOffset, 
+                                   hal_offset_t endOffset) const
+{
+  assert(startOffset < getSegment()->getLength());
+  assert(endOffset < getSegment()->getLength());
+  _startOffset = startOffset;
+  _endOffset = endOffset;
+}
+
+
+bool DefaultSegmentIterator::getReversed() const
+{
+  return _reversed;
 }
    
 //////////////////////////////////////////////////////////////////////////////

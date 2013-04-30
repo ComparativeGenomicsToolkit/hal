@@ -57,8 +57,9 @@ public:
    bool isMissingData(double nThreshold) const;
    bool isTop() const;
    hal_size_t getMappedSegments(
-     const Genome* tgtGenome,
      std::vector<MappedSegmentConstPtr>& outSegments,
+     const Genome* tgtGenome,
+     const std::set<const Genome*>* genomesOnPath,
      bool doDupes) const;
    
    // BOTTOM SEGMENT INTERFACE
@@ -271,8 +272,9 @@ inline bool HDF5BottomSegment::isTop() const
 }
 
 inline hal_size_t HDF5BottomSegment::getMappedSegments(
-  const Genome* tgtGenome,
   std::vector<MappedSegmentConstPtr>& outSegments,
+  const Genome* tgtGenome,
+  const std::set<const Genome*>* genomesOnPath,
   bool doDupes) const
 {
   throw hal_exception("Internal error.   HDF5 Segment interface should "
