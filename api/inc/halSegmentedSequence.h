@@ -78,10 +78,13 @@ public:
    virtual DNAIteratorConstPtr getDNAEndIterator() const = 0;
 
    /** Get a column iterator 
-    * @param root Root genome of the column (now genomes above it 
-    * are explored).  By default will be root genome of alignment 
+    * @param targets Only genomes in this set are visited
+    * * (note that other genomes in their spanning tree will be
+    * * traversed as necessary but not reported)
     * @param maxInsertLength maximum insertion to be traversed
-    * @param position Index in genome of returned iterator */
+    * @param position Index in genome of returned iterator 
+    * @param noDupes Don't follow paralogy edges
+    * @param noAncestors Don't report any non-leaf nodes in output*/
    virtual ColumnIteratorConstPtr getColumnIterator(
      const std::set<const Genome*>* targets = NULL,
      hal_size_t maxInsertLength = 0,
