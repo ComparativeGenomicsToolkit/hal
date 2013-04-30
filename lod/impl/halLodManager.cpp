@@ -8,12 +8,17 @@
 #include <deque>
 #include <sstream>
 #include <fstream>
+#include <algorithm>
 #include "halLodManager.h"
 
 #ifdef ENABLE_UDC
 extern "C" {
 #include "common.h"
 #include "udc.h"
+// Dont want this macro ruining std::max
+#ifdef max
+#undef max
+#endif
 }
 #endif
 
