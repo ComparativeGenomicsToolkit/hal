@@ -79,17 +79,30 @@ protected:
 
    DefaultMappedSegment(DefaultSegmentIteratorConstPtr source,
                         DefaultSegmentIteratorConstPtr target);
-
-   static hal_size_t mapUp(DefaultMappedSegmentConstPtr mappedSeg, 
-                           std::vector<MappedSegmentConstPtr>& results);
-   static hal_size_t mapDown(DefaultMappedSegmentConstPtr mappedSeg, 
-                             hal_size_t childIndex,
-                             std::vector<MappedSegmentConstPtr>& results);
+   
+   static 
+   hal_size_t mapRecursive(const DefaultSegmentIterator* source,
+                           std::vector<DefaultMappedSegmentConstPtr>& input,
+                           std::vector<DefaultMappedSegmentConstPtr>& results,
+                           const Genome* tgtGenome,
+                           const std::set<const Genome*>* genomesOnPath,
+                           bool doDupes);
+   static 
+   hal_size_t mapUp(DefaultMappedSegmentConstPtr mappedSeg, 
+                    std::vector<DefaultMappedSegmentConstPtr>& results);
+   static 
+   hal_size_t mapDown(DefaultMappedSegmentConstPtr mappedSeg, 
+                      hal_size_t childIndex,
+                      std::vector<DefaultMappedSegmentConstPtr>& results);
+   static 
+   hal_size_t mapSelf(DefaultMappedSegmentConstPtr mappedSeg, 
+                      std::vector<DefaultMappedSegmentConstPtr>& results);
+   
    
 protected:
 
-   SegmentIteratorConstPtr _source;
-   SegmentIteratorConstPtr _target;
+   DefaultSegmentIteratorConstPtr _source;
+   DefaultSegmentIteratorConstPtr _target;
 };
 
 }
