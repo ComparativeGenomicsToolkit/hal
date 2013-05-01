@@ -12,8 +12,6 @@
 
 namespace hal {
 
-class DefaultMappedSegment;
-
 class DefaultSegmentIterator : virtual public SegmentIterator
 {
 public:
@@ -66,7 +64,6 @@ public:
 protected:
    friend class counted_ptr<DefaultSegmentIterator>;
    friend class counted_ptr<const DefaultSegmentIterator>;
-   friend class DefaultMappedSegment;
 
 protected:
    virtual SegmentPtr getSegment() = 0;

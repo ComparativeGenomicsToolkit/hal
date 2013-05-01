@@ -12,14 +12,55 @@
 
 namespace hal {
 
+HAL_FORWARD_DEC_CLASS(DefaultMappedSegment)
 
-class DefaultMappedSegment : virtual public DefaultSegmentIterator,
-                             virtual public MappedSegment
+// note it would be nice to extend DefaultSegmentIterator but the 
+// crappy smart pointer interface makes it impossible to use "this"
+// as a parameter to lots of api functions.  simplest for now just
+// to contain a pair of segment iterators and wrap up all the interface
+// methods. 
+class DefaultMappedSegment : virtual public MappedSegment
 {
 public:
    
    virtual ~DefaultMappedSegment();
    
+   // SEGMENT INTERFACE
+   virtual void setArrayIndex(Genome* genome, 
+                              hal_index_t arrayIndex);
+   virtual void setArrayIndex(const Genome* genome, 
+                              hal_index_t arrayIndex) const;
+   virtual const Genome* getGenome() const;
+   virtual Genome* getGenome();
+   virtual const Sequence* getSequence() const;
+   virtual Sequence* getSequence();
+   virtual hal_index_t getStartPosition() const;
+   virtual hal_index_t getEndPosition() const;
+   virtual hal_size_t getLength() const;
+   virtual void getString(std::string& outString) const;
+   virtual void setCoordinates(hal_index_t startPos, hal_size_t length);
+   virtual hal_index_t getArrayIndex() const;
+   virtual bool leftOf(hal_index_t genomePos) const;
+   virtual bool rightOf(hal_index_t genomePos) const;
+   virtual bool overlaps(hal_index_t genomePos) const;
+   virtual bool isFirst() const;
+   virtual bool isLast() const;
+   virtual bool isMissingData(double nThreshold) const;
+   virtual bool isTop() const;
+   virtual hal_size_t getMappedSegments(
+     std::vector<MappedSegmentConstPtr>& outSegments,
+     const Genome* tgtGenome,
+     const std::set<const Genome*>* genomesOnPath,
+     bool doDupes) const;
+
+   // SLICED SEGMENT INTERFACE 
+   virtual void toReverse() const;
+   virtual hal_offset_t getStartOffset() const;
+   virtual hal_offset_t getEndOffset() const;
+   virtual void slice(hal_offset_t startOffset ,
+                      hal_offset_t endOffset ) const;
+   virtual bool getReversed() const;
+
    // MAPPED SEGMENT INTERFACE 
    virtual SlicedSegmentConstPtr getSource() const;
 
@@ -31,21 +72,24 @@ public:
                          bool doDupes);
 
 protected:
+   friend class counted_ptr<DefaultMappedSegment>;
+   friend class counted_ptr<const DefaultMappedSegment>;
+
+protected:
 
    DefaultMappedSegment(DefaultSegmentIteratorConstPtr source,
                         DefaultSegmentIteratorConstPtr target);
 
-   bool mapUp(std::vector<MappedSegmentConstPtr>& results);
-   bool mapDown(std::vector<MappedSegmentConstPtr>& results);
-
-   virtual SegmentPtr getSegment();
-   virtual SegmentConstPtr getSegment() const;
-   virtual hal_size_t getNumSegmentsInGenome() const;
+   static hal_size_t mapUp(DefaultMappedSegmentConstPtr mappedSeg, 
+                           std::vector<MappedSegmentConstPtr>& results);
+   static hal_size_t mapDown(DefaultMappedSegmentConstPtr mappedSeg, 
+                             hal_size_t childIndex,
+                             std::vector<MappedSegmentConstPtr>& results);
    
 protected:
 
    SegmentIteratorConstPtr _source;
-   SegmentConstPtr _segment;
+   SegmentIteratorConstPtr _target;
 };
 
 }

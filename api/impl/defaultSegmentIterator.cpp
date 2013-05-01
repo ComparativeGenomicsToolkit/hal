@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "hal.h"
 #include "defaultSegmentIterator.h"
+#include "defaultMappedSegment.h"
 
 using namespace std;
 using namespace hal;
@@ -188,11 +189,10 @@ hal_size_t DefaultSegmentIterator::getMappedSegments(
     genomesOnPath = &pathSet;
   }
 
-  /*  hal_size_t numResults = DefaultMappedSegment::map(this, outSegments, 
+  hal_size_t numResults = DefaultMappedSegment::map(this, outSegments, 
                                                     tgtGenome,
                                                     genomesOnPath, doDupes);
   return numResults;
-  */ return 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////
