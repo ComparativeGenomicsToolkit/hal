@@ -231,16 +231,20 @@ void MappedSegmentMapDupeTest::createCallBack(AlignmentPtr alignment)
   ts.applyTo(ti);
   ti->toRight();
   ts.set(3, 3, 0, true, 0, 2);
-  ti->toRight();
-  ts.set(6, 3, 0, true, 0, 0);
-
-  ti = child2->getTopSegmentIterator();
-  ts.set(0, 3, 0, true, 0);
   ts.applyTo(ti);
   ti->toRight();
-  ts.set(3, 3, 0, true, 0);
+  ts.set(6, 3, 0, true, 0, 0);
+  ts.applyTo(ti);
+
+  ti = child2->getTopSegmentIterator();
+  ts.set(0, 3, 0, false, 0);
+  ts.applyTo(ti);
   ti->toRight();
-  ts.set(6, 3, 0, true, 0);
+  ts.set(3, 3, 0, true, NULL_INDEX);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(6, 3, 0, false, NULL_INDEX);
+  ts.applyTo(ti);
 }
 
 void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
@@ -273,6 +277,37 @@ void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
                mseg->getLength() == sister->getLength());
   CuAssertTrue(_testCase, 
                mseg->getReversed() == sister->getReversed());
+
+  top = child2->getTopSegmentIterator();
+  results.clear();
+  sister = child1->getTopSegmentIterator();
+  top->getMappedSegments(results, child1, NULL, true);
+  CuAssertTrue(_testCase, results.size() == 3);
+  bool found[3] = {false};
+  vector<MappedSegmentConstPtr>::iterator i = results.begin();
+  for (; i != results.end(); ++i)
+  {
+    MappedSegmentConstPtr mseg = *i;
+    CuAssertTrue(_testCase, mseg->getSource()->getGenome() == 
+                 top->getGenome());
+    CuAssertTrue(_testCase, mseg->getSource()->getStartPosition() == 
+                 top->getStartPosition());
+    CuAssertTrue(_testCase, 
+                 mseg->getSource()->getLength() == top->getLength());
+    CuAssertTrue(_testCase, 
+                 mseg->getSource()->getReversed() == top->getReversed());
+    BottomSegmentIteratorConstPtr bottom = parent->getBottomSegmentIterator();
+    bottom->toParent(top);
+    TopSegmentIteratorConstPtr sister = child2->getTopSegmentIterator();
+    sister->toChildG(bottom, child1);
+    CuAssertTrue(_testCase, mseg->getGenome() == sister->getGenome());
+    CuAssertTrue(_testCase, 
+                 mseg->getLength() == sister->getLength());
+    found[mseg->getArrayIndex()] = true;
+  }
+  CuAssertTrue(_testCase, found[0] == true);
+  CuAssertTrue(_testCase, found[1] == true);
+  CuAssertTrue(_testCase, found[2] == true);
 }
 
 void halMappedSegmentMapUpTest(CuTest *testCase)
