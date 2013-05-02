@@ -79,9 +79,9 @@ public:
 
    /** Get a column iterator 
     * @param targets Only genomes in this set are visited
-    * * (note that other genomes in their spanning tree will be
-    * * traversed as necessary but not reported)
-    * @param maxInsertLength maximum insertion to be traversed
+    * (note that other genomes in their spanning tree will be
+    * traversed as necessary but not reported)
+    * @param maxInsertLength Maximum insertion to be traversed
     * @param position Index in genome of returned iterator 
     * @param noDupes Don't follow paralogy edges
     * @param noAncestors Don't report any non-leaf nodes in output*/
