@@ -9,7 +9,7 @@ var searchData=
   ['setchildreversed',['setChildReversed',['../classhal_1_1_bottom_segment.html#ae0875a5ef630ea63cf278fb319cd2695',1,'hal::BottomSegment']]],
   ['setcoordinates',['setCoordinates',['../classhal_1_1_segment.html#a663be727196999cbb3d4f048f8fac3cc',1,'hal::Segment']]],
   ['setdescription',['setDescription',['../classhal_1_1_c_l_parser.html#aeffe7253b5dbc18533aa5f462f4c8e3b',1,'hal::CLParser']]],
-  ['setdimensions',['setDimensions',['../classhal_1_1_genome.html#af3c7bc7c498ab227da458ffb89ce59ed',1,'hal::Genome']]],
+  ['setdimensions',['setDimensions',['../classhal_1_1_genome.html#aab319d1e697fa309da9e9bb81f0fd576',1,'hal::Genome']]],
   ['setexample',['setExample',['../classhal_1_1_c_l_parser.html#af50be715f14b1691d34cac9e48be7571',1,'hal::CLParser']]],
   ['setgaplengththreshold',['setGapLengthThreshold',['../classhal_1_1_rearrangement.html#a6b9c1b5bf1ca93f18cf77194a7acf1a5',1,'hal::Rearrangement']]],
   ['setleft',['setLeft',['../classhal_1_1_gapped_bottom_segment_iterator.html#a91395b3ce9158a1974e8fb7c879ea2c0',1,'hal::GappedBottomSegmentIterator::setLeft()'],['../classhal_1_1_gapped_top_segment_iterator.html#ad66b62861d2848bb59b8559a971cad3b',1,'hal::GappedTopSegmentIterator::setLeft()']]],

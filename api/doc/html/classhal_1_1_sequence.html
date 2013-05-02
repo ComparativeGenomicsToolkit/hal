@@ -125,8 +125,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4addd48d88b1fd8b6df847be74097e48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05356352365aafd57e3eb3b340247a7e"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classhal_1_1_genome.html">Genome</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_sequence.html#a05356352365aafd57e3eb3b340247a7e">getGenome</a> ()=0</td></tr>
 <tr class="separator:a05356352365aafd57e3eb3b340247a7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b6fa972b9fbe4cccaa56d09974a9cc2"><td class="memItemLeft" align="right" valign="top">virtual hal_size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_sequence.html#a2b6fa972b9fbe4cccaa56d09974a9cc2">getStartPosition</a> () const =0</td></tr>
-<tr class="separator:a2b6fa972b9fbe4cccaa56d09974a9cc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a241eaad5d01b39a5c5bed9616c275437"><td class="memItemLeft" align="right" valign="top">virtual hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_sequence.html#a241eaad5d01b39a5c5bed9616c275437">getStartPosition</a> () const =0</td></tr>
+<tr class="separator:a241eaad5d01b39a5c5bed9616c275437"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5081af459c6b18fe9bdcadbc61217fc9"><td class="memItemLeft" align="right" valign="top">virtual hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_sequence.html#a5081af459c6b18fe9bdcadbc61217fc9">getEndPosition</a> () const =0</td></tr>
+<tr class="separator:a5081af459c6b18fe9bdcadbc61217fc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a10156a20b9b0bdf95842124fad899d31"><td class="memItemLeft" align="right" valign="top">virtual hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_sequence.html#a10156a20b9b0bdf95842124fad899d31">getArrayIndex</a> () const =0</td></tr>
 <tr class="separator:a10156a20b9b0bdf95842124fad899d31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a52c4727c2dece73546526994e12ba22b"><td class="memItemLeft" align="right" valign="top">virtual hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_sequence.html#a52c4727c2dece73546526994e12ba22b">getTopSegmentArrayIndex</a> () const =0</td></tr>
@@ -263,6 +265,30 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a5081af459c6b18fe9bdcadbc61217fc9"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual hal_index_t hal::Sequence::getEndPosition </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Get the sequence's end position (start + len - 1) in the genome </p>
+
+</div>
+</div>
 <a class="anchor" id="a8fb7b8f7436231d7034e2079ab340d4c"></a>
 <div class="memitem">
 <div class="memproto">
@@ -359,7 +385,7 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a2b6fa972b9fbe4cccaa56d09974a9cc2"></a>
+<a class="anchor" id="a241eaad5d01b39a5c5bed9616c275437"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -367,7 +393,7 @@ Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual hal_size_t hal::Sequence::getStartPosition </td>
+          <td class="memname">virtual hal_index_t hal::Sequence::getStartPosition </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -413,7 +439,7 @@ Protected Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 14:22:37 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu May 2 2013 14:15:19 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>
