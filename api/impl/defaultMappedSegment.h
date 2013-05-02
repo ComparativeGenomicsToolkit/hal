@@ -81,7 +81,7 @@ protected:
                         DefaultSegmentIteratorConstPtr target);
    
    static 
-   hal_size_t mapRecursive(const DefaultSegmentIterator* source,
+   hal_size_t mapRecursive(const Genome* prevGenome,
                            std::vector<DefaultMappedSegmentConstPtr>& input,
                            std::vector<DefaultMappedSegmentConstPtr>& results,
                            const Genome* tgtGenome,
@@ -101,8 +101,8 @@ protected:
    
 protected:
 
-   DefaultSegmentIteratorConstPtr _source;
-   DefaultSegmentIteratorConstPtr _target;
+   mutable DefaultSegmentIteratorConstPtr _source;
+   mutable DefaultSegmentIteratorConstPtr _target;
 };
 
 }

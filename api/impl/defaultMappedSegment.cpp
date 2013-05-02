@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <limits>
 #include <algorithm>
 #include "hal.h"
 #include "defaultMappedSegment.h"
@@ -74,14 +75,14 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
   
   vector<DefaultMappedSegmentConstPtr> input(1, newMappedSeg);
   vector<DefaultMappedSegmentConstPtr> output;
-  mapRecursive(source, input, output, tgtGenome, genomesOnPath, 
+  mapRecursive(NULL, input, output, tgtGenome, genomesOnPath, 
                doDupes);
   results.insert(results.end(), output.begin(), output.end());
   return output.size();
 }
 
 hal_size_t DefaultMappedSegment::mapRecursive(
-  const DefaultSegmentIterator* source,
+  const Genome* prevGenome,
   vector<DefaultMappedSegmentConstPtr>& input,
   vector<DefaultMappedSegmentConstPtr>& results,
   const Genome* tgtGenome,
@@ -93,68 +94,72 @@ hal_size_t DefaultMappedSegment::mapRecursive(
   
   const Genome* srcGenome = NULL;
   const Genome* genome = NULL;
+  const Genome* nextGenome = NULL;
+  hal_size_t nextChildIndex = numeric_limits<hal_size_t>::max();
 
   if (!inputPtr->empty())
   {
     srcGenome = inputPtr->at(0)->getSource()->getGenome();
     genome = inputPtr->at(0)->getGenome();
-  }
 
-  if (doDupes == true)
-  {
-    outputPtr->clear();
-    for (size_t i = 0; i < inputPtr->size(); ++i)
-    {
-      mapSelf(inputPtr->at(i), *outputPtr);
-    }
-    inputPtr->clear();
-    swap(inputPtr, outputPtr);
-  }
-
-  if (!inputPtr->empty())     
-  {
     const Genome* parentGenome = genome->getParent();
     if (parentGenome != NULL &&
-        parentGenome != srcGenome && (
+        parentGenome != prevGenome && (
           parentGenome == tgtGenome || 
           genomesOnPath->find(parentGenome) != genomesOnPath->end()))
     {
-      outputPtr->clear();
+      nextGenome = parentGenome;
+    }
+    for (hal_size_t child = 0; 
+         nextGenome == NULL && child < genome->getNumChildren(); ++child)
+    {
+      // note that this code is potentially unfriendly to the 
+      // inmemory option where entire child genomes get loaded
+      // when they may not be needed.  but since the column iterator
+      // does the same thing, we don't worry for now
+      const Genome* childGenome = genome->getChild(child);
+      if (childGenome != prevGenome && (
+            childGenome == tgtGenome ||
+            genomesOnPath->find(childGenome) != genomesOnPath->end()))
+      {
+        nextGenome = childGenome;
+        nextChildIndex = child;
+      }
+    }
+  }
+  
+  if (nextGenome != NULL)
+  {
+    outputPtr->clear();
+    if (doDupes == true)
+    {
       for (size_t i = 0; i < inputPtr->size(); ++i)
       {
-        mapUp(inputPtr->at(i), *outputPtr);
+        mapSelf(inputPtr->at(i), *outputPtr);
       }
       inputPtr->clear();
       swap(inputPtr, outputPtr);
-      mapRecursive(source, *inputPtr, *outputPtr, tgtGenome, genomesOnPath, 
-                   doDupes);
     }
-    else
+    
+    for (size_t i = 0; i < inputPtr->size(); ++i)
     {
-      for (hal_size_t child = 0; child < genome->getNumChildren(); ++child)
+      if (nextGenome == genome->getParent())
       {
-        // note that this code is potentially unfriendly to the 
-        // inmemory option where entire child genomes get loaded
-        // when they may not be needed.  but since the column iterator
-        // does the same thing, we don't worry for now
-        const Genome* childGenome = genome->getChild(child);
-        if (childGenome != srcGenome && (
-              childGenome == tgtGenome ||
-              genomesOnPath->find(childGenome) != genomesOnPath->end()))
-        {
-          outputPtr->clear();
-          for (size_t i = 0; i < inputPtr->size(); ++i)
-          {
-            mapDown(inputPtr->at(i), child, *outputPtr);
-          }
-          inputPtr->clear();
-          swap(inputPtr, outputPtr);
-          mapRecursive(source, *inputPtr, *outputPtr, tgtGenome, genomesOnPath, 
-                       doDupes);
-          break;
-        }
+        mapUp(inputPtr->at(i), *outputPtr);
+      }
+      else
+      {
+        mapDown(inputPtr->at(i), nextChildIndex, *outputPtr);
       }
     }
+    swap(inputPtr, outputPtr);
+    assert(genome != NULL);
+    mapRecursive(genome, *inputPtr, *outputPtr, tgtGenome, genomesOnPath, 
+                 doDupes);
+  }
+  else
+  {
+    swap(inputPtr, outputPtr);
   }
   
   // could potentially save this copy but dont care for now
@@ -165,8 +170,9 @@ hal_size_t DefaultMappedSegment::mapRecursive(
   return results.size();
 }
 
-hal_size_t DefaultMappedSegment::mapUp(DefaultMappedSegmentConstPtr mappedSeg, 
-                                       vector<DefaultMappedSegmentConstPtr>& results)
+hal_size_t DefaultMappedSegment::mapUp(
+  DefaultMappedSegmentConstPtr mappedSeg, 
+  vector<DefaultMappedSegmentConstPtr>& results)
 {
   hal_size_t added = 0;
   if (mappedSeg->isTop() == true)
@@ -178,6 +184,7 @@ hal_size_t DefaultMappedSegment::mapUp(DefaultMappedSegmentConstPtr mappedSeg,
     TopSegmentIteratorConstPtr top = 
        target.downCast<TopSegmentIteratorConstPtr>();
     bottom->toParent(top);
+    mappedSeg->_target = bottom.downCast<DefaultSegmentIteratorConstPtr>();
     results.push_back(mappedSeg);
     ++added;
   }
@@ -221,6 +228,7 @@ hal_size_t DefaultMappedSegment::mapDown(
     BottomSegmentIteratorConstPtr bottom = 
        target.downCast<BottomSegmentIteratorConstPtr>();
     top->toChild(bottom, childIndex);
+    mappedSeg->_target = top.downCast<DefaultSegmentIteratorConstPtr>();
     results.push_back(mappedSeg);
     ++added;
   }
@@ -302,7 +310,9 @@ hal_size_t DefaultMappedSegment::mapSelf(
   return added;
 }
 
+//////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
+//////////////////////////////////////////////////////////////////////////////
 void DefaultMappedSegment::setArrayIndex(Genome* genome, 
                                          hal_index_t arrayIndex)
 {
@@ -411,7 +421,10 @@ hal_size_t DefaultMappedSegment::getMappedSegments(
                                     doDupes);
 }
 
-// SLICED SEGMENT INTERFACE 
+//////////////////////////////////////////////////////////////////////////////
+// SLICED SEGMENT INTERFACE
+//////////////////////////////////////////////////////////////////////////////
+
 void DefaultMappedSegment::toReverse() const
 {
   _target->toReverse();
