@@ -13,10 +13,36 @@
 using namespace std;
 using namespace hal;
 
+/** This is a tool that counts the number of other genomes each base in
+ * a query region is aligned to. Duplications are considered
+ *
+ * Coordinates are always genome-relative by default (as opposed to 
+ * sequence-relative).  The one exception is all methods within the
+ * Sequence interface. 
+ *
+ * By default, all bases in the referecen genome are scanned.  And all
+ * other genomes are considered.  The --refSequence, --start, and 
+ * --length options can limit the query to a subrange.  Note that unless
+ * --refSequence is specified, --start is genome-relative (based on 
+ * all sequences being concatenated together).
+ *
+ * Other genomes to query (default all) are controlled by --rootGenome
+ * (name of highest ancestor to consider) and/or --targetGenomes
+ * (a list of genomes to consider).  
+ *
+ * So if a base in the reference genome is aligned to a base in a genome
+ * that is not under root or in the target list, it will not count to the
+ * alignability.
+ */
 
+/** Print the alignability wiggle for a subrange of a given sequence to
+ * the output stream. */
 static void printSequence(ostream& outStream, const Sequence* sequence, 
                           const set<const Genome*>& targetSet,
                           hal_size_t start, hal_size_t length, hal_size_t step);
+
+/** If given genome-relative coordinates, map them to a series of 
+ * sequence subranges */
 static void printGenome(ostream& outStream,
                         const Genome* genome, const Sequence* sequence,
                         const set<const Genome*>& targetSet,
@@ -26,6 +52,9 @@ static const hal_size_t StringBufferSize = 1024;
 
 static CLParserPtr initParser()
 {
+  /** It is convenient to use the HAL command line parser for the command
+   * line because it automatically adds some comman options.  Using the 
+   * parser is by no means required however */
   CLParserPtr optionsParser = hdf5CLParserInstance(false);
   optionsParser->addArgument("halPath", "input hal file");
   optionsParser->addArgument("refGenome", "reference genome to scan");
@@ -96,6 +125,10 @@ int main(int argc, char** argv)
 
   try
   {
+    /** Everything begins with the alignment object, which is created
+     * via a path to a .hal file.  Options don't necessarily need to
+     * come from the optionsParser -- see other interfaces in 
+     * hal/api/inc/halAlignmentInstance.h */
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
                                                            optionsParser);
     if (alignment->getNumGenomes() == 0)
@@ -103,6 +136,10 @@ int main(int argc, char** argv)
       throw hal_exception("input hal alignmenet is empty");
     }
     
+    /** Alignments are composed of sets of Genomes.  Each genome is a set
+     * of Sequences (chromosomes).  They are accessed by their names.  
+     * here we map the root and targetSet parameters (if specifeid) to 
+     * a sset of readonly Genome pointers */
     set<const Genome*> targetSet;
     const Genome* rootGenome = NULL;
     if (rootGenomeName != "\"\"")
@@ -134,6 +171,7 @@ int main(int argc, char** argv)
       }
     }
 
+    /** Open the reference genome */
     const Genome* refGenome = NULL;
     if (refGenomeName != "\"\"")
     {
@@ -150,6 +188,7 @@ int main(int argc, char** argv)
     }
     const SegmentedSequence* ref = refGenome;
     
+    /** If a sequence was spefied we look for it in the reference genome */
     const Sequence* refSequence = NULL;
     if (refSequenceName != "\"\"")
     {
@@ -193,11 +232,16 @@ int main(int argc, char** argv)
   return 0;
 }
 
+/** Given a Sequence (chromosome) and a (sequence-relative) coordinate
+ * range, print the alignmability wiggle with respect to the genomes
+ * in the target set */
 void printSequence(ostream& outStream, const Sequence* sequence, 
                    const set<const Genome*>& targetSet,
                    hal_size_t start, hal_size_t length, hal_size_t step)
 {
   hal_size_t seqLen = sequence->getSequenceLength();
+  /** If the length is 0, we do from the start position until the end
+   * of the sequence */
   if (length == 0)
   {
     length = seqLen - start;
@@ -215,11 +259,20 @@ void printSequence(ostream& outStream, const Sequence* sequence,
   const Genome* genome = sequence->getGenome();
   string sequenceName = sequence->getName();
   string genomeName = genome->getName();
+  /** A hack to take the genome name out of the chromosome name.  Should
+   * be largely unnecessary now that our naming conventions are better */
   if (sequenceName.find(genomeName + '.') == 0)
   {
     sequenceName = sequenceName.substr(genomeName.length() + 1);
   }
 
+  /** The ColumnIterator is fundamental structure used in this example to
+   * traverse the alignment.  It essientially generates the multiple alignment
+   * on the fly according to the given reference (in this case the target
+   * sequence).  Since this is the sequence interface, the positions
+   * are sequence relative.  Note that we must specify the last position
+   * in advance when we get the iterator.  This will limit it following
+   * duplications out of the desired range while we are iterating. */
   hal_size_t pos = start;
   ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&targetSet,
                                                              0, pos,
@@ -229,16 +282,26 @@ void printSequence(ostream& outStream, const Sequence* sequence,
   outStream << "fixedStep chrom=" << sequenceName << " start=" << start + 1
             << " step=" << step << "\n";
   
+  /** Since the column iterator stores coordinates in Genome coordinates
+   * internally, we have to switch back to genome coordinates.  */
   // convert to genome coordinates
   pos += sequence->getStartPosition();
   last += sequence->getStartPosition();
   while (colIt->lastColumn() == false && pos <= last)
   {
     hal_size_t count = 0;
+    /** ColumnIterator::ColumnMap maps a Sequence to a list of bases
+     * the bases in the map form the alignment column.  Some sequences
+     * in the map can have no bases (for efficiency reasons) */ 
     const ColumnIterator::ColumnMap* cmap = colIt->getColumnMap();
+
+    /** For every sequence in the map */
     for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin();
          i != cmap->end(); ++i)
     {
+      /** If the sequence belongs to the reference genome, we don't 
+       * count it.  So a homology in the same genome is not considered
+       * here.  But paralgous bases in other genomes will each be counted */
       if (i->first->getGenome() != genome && !i->second->empty())
       {
         ++count; 
@@ -250,7 +313,12 @@ void printSequence(ostream& outStream, const Sequence* sequence,
     pos += step;    
     if (step == 1)
     {
+      /** Move the iterator one position to the right */
       colIt->toRight();
+      
+      /** This is some tuning code that will probably be hidden from 
+       * the interface at some point.  It is a good idea to use for now
+       * though */
       // erase empty entries from the column.  helps when there are 
       // millions of sequences (ie from fastas with lots of scaffolds)
       if (pos % 1000 == 0)
@@ -260,11 +328,20 @@ void printSequence(ostream& outStream, const Sequence* sequence,
     }
     else
     {
+      /** Reset the iterator to a non-contiguous position */
       colIt->toSite(pos, last);
     }
   }
 }
 
+/** Map a range of genome-level coordinates to potentially multiple sequence
+ * ranges.  For example, if a genome contains two chromosomes ChrA and ChrB,
+ * both of which are of length 500, then the genome-coordinates would be
+ * [0,499] for ChrA and [500,999] for ChrB. All aspects of the HAL API
+ * use these global coordinates (chromosomes concatenated together) except
+ * for the hal::Sequence interface.  We can convert between the two by 
+ * adding or subtracting the sequence start position (in the example it woudl
+ * be 0 for ChrA and 500 for ChrB) */
 void printGenome(ostream& outStream,
                  const Genome* genome, const Sequence* sequence,
                  const set<const Genome*>& targetSet,
