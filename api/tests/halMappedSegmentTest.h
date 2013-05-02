@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
+ * Copyright (C) 2013 by Glenn Hickey (hickey@soe.ucsc.edu)
  *
  * Released under the MIT license, see LICENSE.txt
  */
@@ -36,6 +36,11 @@ struct MappedSegmentMapAcrossTest : public MappedSegmentMapUpTest
                        hal::TopSegmentIteratorConstPtr top);
 };
 
+struct MappedSegmentMapDupeTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
 
 
 #endif
