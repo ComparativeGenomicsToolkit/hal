@@ -473,8 +473,11 @@ void DefaultTopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs,
 void DefaultTopSegmentIterator::toChildG(BottomSegmentIteratorConstPtr bs, 
                                       const Genome* childGenome) const
 {
-  toChild(bs, getGenome()->getChildIndex(childGenome));
+  hal_index_t childIndex = bs->getGenome()->getChildIndex(childGenome);
+  assert(childIndex != NULL_INDEX);
+  toChild(bs, childIndex);
   assert (inRange() == true);
+  assert(getGenome() == childGenome);
 }
 
 
