@@ -42,5 +42,31 @@ struct MappedSegmentMapDupeTest : public AlignmentTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
+struct MappedSegmentColCompareTest : public AlignmentTest
+{
+   virtual void createCallBack(hal::AlignmentPtr alignment) = 0;
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createColArray(const hal::Genome* ref, const hal::Genome* tgt);
+   void createBlockArray(const hal::Genome* ref, const hal::Genome* tgt);
+   void compareArrays();
+   std::vector<std::map<hal_index_t, bool> >_colArray;
+   std::vector<std::map<hal_index_t, bool> >_blockArray;
+};
+
+struct MappedSegmentColCompareTest1 : public MappedSegmentColCompareTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+};
+
+struct MappedSegmentColCompareTest2 : public MappedSegmentColCompareTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+};
+
+struct MappedSegmentColCompareTest3 : public MappedSegmentColCompareTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+};
+
 
 #endif

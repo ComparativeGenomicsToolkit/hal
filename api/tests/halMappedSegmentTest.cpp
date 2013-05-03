@@ -310,6 +310,177 @@ void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, found[2] == true);
 }
 
+void  MappedSegmentColCompareTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  if (alignment->getNumGenomes() == 0)
+  {
+    return;
+  }
+  set<const Genome*> genomeSet;
+  hal::getGenomesInSubTree(alignment->openGenome(alignment->getRootName()), 
+                           genomeSet);
+  for (set<const Genome*>::iterator i = genomeSet.begin(); i != genomeSet.end();
+       ++i)
+  {
+    const Genome* srcGenome = *i;
+    for (set<const Genome*>::iterator j = genomeSet.begin(); 
+         j != genomeSet.end(); ++j)
+    {
+      const Genome* tgtGenome = *j;
+
+      if (srcGenome->getSequenceLength() > 0 && 
+          tgtGenome->getSequenceLength() > 0)
+      {
+        createColArray(srcGenome, tgtGenome);
+        createBlockArray(srcGenome, tgtGenome);
+        compareArrays();
+      }
+    }
+  }
+}
+
+void  MappedSegmentColCompareTest::createColArray(const Genome* ref, 
+                                                  const Genome* tgt)
+{
+  hal_size_t N = ref->getSequenceLength();
+  _colArray.clear();
+  _colArray.resize(N);
+  set<const Genome*> tgtSet;
+  tgtSet.insert(tgt);
+  ColumnIteratorConstPtr colIt = ref->getColumnIterator(&tgtSet);
+  for (; colIt->lastColumn() == false; colIt->toRight())
+  {
+    const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
+    ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
+    for (; colMapIt != colMap->end(); colMapIt++)
+    {
+      if (colMapIt->first->getGenome() == tgt)
+      {
+        ColumnIterator::DNASet* dnaSet = colMapIt->second;
+        ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
+        for (; dnaIt != dnaSet->end(); ++dnaIt)
+        {
+          DNAIteratorConstPtr dna = *dnaIt;
+          _colArray[colIt->getReferenceSequencePosition()].insert(
+            pair<hal_index_t, bool>(dna->getArrayIndex(), dna->getReversed()));
+        }
+      }
+      else
+      {
+        CuAssertTrue(_testCase, colMapIt->first->getGenome() == ref);
+      }
+    }
+  }
+}
+
+void  MappedSegmentColCompareTest::createBlockArray(const Genome* ref, 
+                                                    const Genome* tgt)
+{
+  hal_size_t N = ref->getSequenceLength();
+  _blockArray.clear();
+  _blockArray.resize(N);
+  SegmentIteratorConstPtr refSeg;
+  hal_index_t numSegs;
+  if (ref->getNumTopSegments() > 0)
+  { 
+    refSeg = ref->getTopSegmentIterator(0);
+    numSegs = ref->getNumTopSegments();
+  }
+  else
+  {
+    refSeg = ref->getBottomSegmentIterator(0);
+    numSegs = ref->getNumBottomSegments();
+  }
+
+  vector<MappedSegmentConstPtr> results;  
+  for (; refSeg->getArrayIndex() < numSegs; refSeg->toRight())
+  {
+    refSeg->getMappedSegments(results, tgt);
+  }
+  
+  for (vector<MappedSegmentConstPtr>::iterator i = results.begin();
+       i != results.end(); ++i)
+  {
+    MappedSegmentConstPtr mseg = *i;
+    SlicedSegmentConstPtr refSeg = mseg->getSource();
+    hal_index_t refDelta = refSeg->getReversed() ? -1 : 1;
+    hal_index_t mDelta = mseg->getReversed() ? -1 : 1;
+    CuAssertTrue(_testCase, refSeg->getGenome() == ref);
+
+    for (hal_index_t offset = 0; offset < mseg->getLength(); ++offset)
+    {
+      hal_index_t refPos = refSeg->getStartPosition() + offset * refDelta;
+      hal_index_t mPos = mseg->getStartPosition() + offset * mDelta;
+      _blockArray[refPos].insert(pair<hal_index_t, bool>(mPos, 
+                                                         refDelta != mDelta));
+    }
+  }
+}
+
+void  MappedSegmentColCompareTest::compareArrays()
+{
+  CuAssertTrue(_testCase, _colArray.size() == _blockArray.size());
+
+  double win = 0;
+  double tot = 0;
+  
+  for (size_t i = 0; i < _colArray.size(); ++i)
+  {
+    map<hal_index_t, bool>& colEntry = _colArray[i];
+    map<hal_index_t, bool>& blockEntry = _blockArray[i];
+    
+    if ( colEntry.size() == blockEntry.size())
+       ++win;
+    ++tot;
+    continue;
+    CuAssertTrue(_testCase, colEntry.size() == blockEntry.size());
+    for (map<hal_index_t, bool>::iterator j = colEntry.begin(); 
+         j != colEntry.end(); ++j)
+    {
+      map<hal_index_t, bool>::iterator k = blockEntry.find(j->first);
+      CuAssertTrue(_testCase, k != blockEntry.end());
+      CuAssertTrue(_testCase, k->second == j->second);
+    }
+  }
+  cout << win / tot << endl;
+}
+
+void MappedSegmentColCompareTest1::createCallBack(AlignmentPtr alignment)
+{
+  createRandomAlignment(alignment, 
+                        0.75, 
+                        0.1,
+                        5,
+                        10,
+                        1000,
+                        5,
+                        10);
+}
+
+void MappedSegmentColCompareTest2::createCallBack(AlignmentPtr alignment)
+{
+  createRandomAlignment(alignment, 
+                        1.25, 
+                        0.7,
+                        10,
+                        2,
+                        50,
+                        100,
+                        5000);
+}
+
+void MappedSegmentColCompareTest3::createCallBack(AlignmentPtr alignment)
+{
+  createRandomAlignment(alignment, 
+                        1.25, 
+                        0.7,
+                        20,
+                        2,
+                        50,
+                        1000,
+                        7000);
+}
+
 void halMappedSegmentMapUpTest(CuTest *testCase)
 {
   try 
@@ -362,6 +533,44 @@ void halMappedSegmentMapDupeTest(CuTest *testCase)
   } 
 }
 
+void halMappedSegmentColCompareTest1(CuTest *testCase)
+{
+  try 
+  {
+    MappedSegmentColCompareTest1 tester;
+    tester.check(testCase);
+  }
+  catch (double) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
+void halMappedSegmentColCompareTest2(CuTest *testCase)
+{
+  try 
+  {
+    MappedSegmentColCompareTest2 tester;
+    tester.check(testCase);
+  }
+  catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
+void halMappedSegmentColCompareTest3(CuTest *testCase)
+{
+  try 
+  {
+    MappedSegmentColCompareTest3 tester;
+    tester.check(testCase);
+  }
+  catch (double) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
 
 CuSuite* halMappedSegmentTestSuite(void) 
 {
@@ -370,6 +579,9 @@ CuSuite* halMappedSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, halMappedSegmentMapDownTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapAcrossTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapDupeTest);
+  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
+  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
+  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
   return suite;
 }
 
