@@ -54,7 +54,7 @@ int main(int argc, char** argv)
   {
     cerr << e.what() << endl;
     optionsParser->printUsage(cerr);
-    exit(1);
+    return 1;
   }
   try
   {
