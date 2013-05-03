@@ -287,7 +287,7 @@ void printSequence(ostream& outStream, const Sequence* sequence,
   // convert to genome coordinates
   pos += sequence->getStartPosition();
   last += sequence->getStartPosition();
-  while (colIt->lastColumn() == false && pos <= last)
+  while (pos <= last)
   {
     hal_size_t count = 0;
     /** ColumnIterator::ColumnMap maps a Sequence to a list of bases
@@ -309,6 +309,15 @@ void printSequence(ostream& outStream, const Sequence* sequence,
     }
 
     outStream << count << '\n';
+    
+    /** lastColumn checks if we are at the last column (inclusive)
+     * in range.  So we need to check at end of iteration instead
+     * of beginning (which would be more convenient).  Need to 
+     * merge global fix from other branch */
+    if (colIt->lastColumn() == true)
+    {
+      break;
+    }
 
     pos += step;    
     if (step == 1)
