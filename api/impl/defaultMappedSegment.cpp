@@ -232,8 +232,12 @@ hal_size_t DefaultMappedSegment::mapUp(
       {
         top->toRight(rightCutoff);
       }
+      else
+      {
+        break;
+      }
     } 
-    while (top->getEndPosition() != rightCutoff);
+    while (true);
   }
   return added;
 }
@@ -269,9 +273,13 @@ hal_size_t DefaultMappedSegment::mapDown(
     BottomSegmentIteratorConstPtr bottom = 
        mappedSeg->getGenome()->getBottomSegmentIterator();
     bottom->toParseDown(top);
+    cout << endl;
+    cout << "PARSING DOWN RC=" << rightCutoff << endl;
     do
     {
       BottomSegmentIteratorConstPtr bottomNew = bottom->copy();
+      cout << bottomNew << endl;
+      cout << "END " << bottomNew->getEndPosition() << endl;
       
       // we map the new target back to see how the offsets have 
       // changed.  these changes are then applied to the source segment
@@ -304,8 +312,12 @@ hal_size_t DefaultMappedSegment::mapDown(
       {
         bottom->toRight(rightCutoff);
       }
+      else
+      {
+        break;
+      }
     } 
-    while (bottom->getEndPosition() != rightCutoff);
+    while (true);
   }
   return added;
 }
@@ -365,8 +377,12 @@ hal_size_t DefaultMappedSegment::mapSelf(
       {
         top->toRight(rightCutoff);
       }
+      else
+      {
+        break;
+      }
     } 
-    while (top->getEndPosition() != rightCutoff);
+    while (true);
   }
   return added;
 }
