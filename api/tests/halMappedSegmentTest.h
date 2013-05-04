@@ -21,6 +21,13 @@ struct MappedSegmentMapUpTest : virtual public AlignmentTest
                        const std::string& ancName);
 };
 
+struct MappedSegmentParseTest : virtual public MappedSegmentMapUpTest
+{
+   virtual void checkCallBack(hal::AlignmentConstPtr alignment);
+   void testTopSegment(hal::AlignmentConstPtr alignment, 
+                       hal::TopSegmentIteratorConstPtr top);                   
+};
+
 struct MappedSegmentMapDownTest : public MappedSegmentMapUpTest
 {
    void checkCallBack(hal::AlignmentConstPtr alignment);
@@ -50,8 +57,8 @@ struct MappedSegmentColCompareTest : virtual public AlignmentTest
    void createColArray();
    void createBlockArray();
    void compareArrays();
-   std::vector<std::map<hal_index_t, bool> >_colArray;
-   std::vector<std::map<hal_index_t, bool> >_blockArray;
+   std::vector<std::set<std::pair<hal_index_t, bool> > >_colArray;
+   std::vector<std::set<std::pair<hal_index_t, bool> > >_blockArray;
    const hal::Genome* _ref;
    const hal::Genome* _tgt;
 };

@@ -29,41 +29,77 @@ void MappedSegmentMapUpTest::createCallBack(AlignmentPtr alignment)
   TopSegmentStruct ts;
   
   // setup simple case were there is an edge from a parent to 
-  // child and it is reversed
+  // child1 and it is reversed and nonreversed to child2
   Genome* parent = alignment->addRootGenome("parent");
   Genome* child1 = alignment->addLeafGenome("child1", "parent", 1);
   Genome* child2 = alignment->addLeafGenome("child2", "parent", 1);
-  Genome* grandChild = alignment->addLeafGenome("grandChild", "child2", 1);
-  seqVec[0] = Sequence::Info("Sequence", 10, 0, 1);
+  // add a bunch of grandchildren with no rearrangemnts to test
+  // simple parsing
+  Genome* g1 = alignment->addLeafGenome("g1", "child2", 1);
+  Genome* g2 = alignment->addLeafGenome("g2", "g1", 1);
+  Genome* g3 = alignment->addLeafGenome("g3", "g2", 1);
+  Genome* g4 = alignment->addLeafGenome("g4", "g3", 1);
+  Genome* g5 = alignment->addLeafGenome("g5", "g4", 1);
+  // add some with random inversions
+  Genome* gi1 = alignment->addLeafGenome("gi1", "child1", 1);
+  Genome* gi2 = alignment->addLeafGenome("gi2", "gi1", 1);
+  Genome* gi3 = alignment->addLeafGenome("gi3", "gi2", 1);
+  Genome* gi4 = alignment->addLeafGenome("gi4", "gi3", 1);
+  Genome* gi5 = alignment->addLeafGenome("gi5", "gi4", 1);
+  Genome* gs[] = {g1, g2, g3, g4, g5};
+  Genome* gis[] = {gi1, gi2, gi3, gi4, gi5};
+  seqVec[0] = Sequence::Info("Sequence", 12, 0, 1);
   parent->setDimensions(seqVec);
-  seqVec[0] = Sequence::Info("Sequence", 10, 1, 0);
+  seqVec[0] = Sequence::Info("Sequence", 12, 1, 6);
   child1->setDimensions(seqVec);
-  seqVec[0] = Sequence::Info("Sequence", 10, 1, 5);
+  seqVec[0] = Sequence::Info("Sequence", 12, 1, 6);
   child2->setDimensions(seqVec);
-  seqVec[0] = Sequence::Info("Sequence", 10, 5, 0);
-  grandChild->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 6, 4);
+  g1->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 4, 3);
+  g2->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 3, 2);
+  g3->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 2, 12);
+  g4->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 12, 0);
+  g5->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 6, 4);
+  gi1->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 4, 3);
+  gi2->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 3, 2);
+  gi3->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 2, 12);
+  gi4->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 12, 12, 0);
+  gi5->setDimensions(seqVec);
 
 
-  parent->setString("CCCTACGTGC");
-  child1->setString("CCCTACGTGC");
-  child2->setString("CCCTACGTGC");
-  grandChild->setString("TCCTACGTGC");
+  parent->setString("CCCTACTTGTGC");
+  child1->setString("CCCTACTTGTGC");
+  child2->setString("CCCTACTTGTGC");
+  for (size_t i = 0; i < 5; ++i)
+  {
+    gs[i]->setString("TCCTACTTGTGC");
+    gis[i]->setString("TCCTACTTGTGC");
+  }
 
   bi = parent->getBottomSegmentIterator();
-  bs.set(0, 10);
+  bs.set(0, 12);
   bs._children.push_back(pair<hal_size_t, bool>(0, true));
   bs._children.push_back(pair<hal_size_t, bool>(0, false));
   bs.applyTo(bi);
      
   ti = child1->getTopSegmentIterator();
-  ts.set(0, 10, 0, true);
+  ts.set(0, 12, 0, true, 0);
   ts.applyTo(ti);
 
   ti = child2->getTopSegmentIterator();
-  ts.set(0, 10, 0, false, 0);
+  ts.set(0, 12, 0, false, 0);
   ts.applyTo(ti);
   
-  for (size_t i = 0; i < 5; ++i)
+  for (size_t i = 0; i < 6; ++i)
   {
     bi = child2->getBottomSegmentIterator(i);
     bs.set(i * 2, 2, 0);
@@ -71,10 +107,92 @@ void MappedSegmentMapUpTest::createCallBack(AlignmentPtr alignment)
     bs._children.push_back(pair<hal_size_t, bool>(i, false));
     bs.applyTo(bi);
 
-    ti = grandChild->getTopSegmentIterator(i);
+    ti = g1->getTopSegmentIterator(i);
     ts.set(i * 2, 2, i, false);
     ts.applyTo(ti);
   }
+
+  for (size_t i = 0; i < 6; ++i)
+  {
+    bi = child1->getBottomSegmentIterator(i);
+    bs.set(i * 2, 2, 0);
+    bs._children.clear();
+    bs._children.push_back(pair<hal_size_t, bool>(i, false));
+    bs.applyTo(bi);
+
+    ti = gi1->getTopSegmentIterator(i);
+    ts.set(i * 2, 2, i, false);
+    ts.applyTo(ti);
+  }
+
+  for (size_t i = 0; i < 5; ++i)
+  {
+    const Genome* g = gs[i];
+    const Genome* parent = g->getParent();
+    const Genome* child = i == 4 ? NULL : g->getChild(0);
+    hal_size_t segLen = g->getSequenceLength() / g->getNumTopSegments();
+    hal_size_t psegLen = parent->getSequenceLength() / 
+       parent->getNumTopSegments();
+    hal_size_t csegLen = 0;
+    if (child)
+    {
+      csegLen =  child->getSequenceLength() / child->getNumTopSegments();
+    }
+    
+    for (size_t j = 0; j < g->getNumTopSegments(); ++j)
+    {
+      bool inv = false;
+      bi = parent->getBottomSegmentIterator(j);
+      bs.set(j * segLen, segLen, (j * segLen) / psegLen);
+      bs._children.clear();
+      bs._children.push_back(pair<hal_size_t, bool>(j, inv));
+      bs.applyTo(bi);
+
+      hal_index_t bparse = NULL_INDEX;
+      if (child != NULL)
+      {
+        bparse = (j * segLen) / csegLen;
+      }
+      ti = g->getTopSegmentIterator(j);
+      ts.set(j * segLen, segLen, j, inv, bparse);
+      ts.applyTo(ti);      
+    }
+  }
+  
+  for (size_t i = 0; i < 5; ++i)
+  {
+    const Genome* g = gis[i];
+    const Genome* parent = g->getParent();
+    const Genome* child = i == 4 ? NULL : g->getChild(0);
+    hal_size_t segLen = g->getSequenceLength() / g->getNumTopSegments();
+    hal_size_t psegLen = parent->getSequenceLength() / 
+       parent->getNumTopSegments();
+    hal_size_t csegLen = 0;
+    if (child)
+    {
+      csegLen =  child->getSequenceLength() / child->getNumTopSegments();
+    }
+    
+    for (size_t j = 0; j < g->getNumTopSegments(); ++j)
+    {
+      bool inv = rand() % 4 == 0;
+      bi = parent->getBottomSegmentIterator(j);
+      bs.set(j * segLen, segLen, (j * segLen) / psegLen);
+      bs._children.clear();
+      bs._children.push_back(pair<hal_size_t, bool>(j, inv));
+      bs.applyTo(bi);
+
+      hal_index_t bparse = NULL_INDEX;
+      if (child != NULL)
+      {
+        bparse = (j * segLen) / csegLen;
+      }
+      ti = g->getTopSegmentIterator(j);
+      ts.set(j * segLen, segLen, j, inv, bparse);
+      ts.applyTo(ti);      
+    }
+  }
+
 }
 
 void MappedSegmentMapUpTest::testTopSegment(AlignmentConstPtr alignment,
@@ -130,10 +248,10 @@ void MappedSegmentMapUpTest::checkCallBack(AlignmentConstPtr alignment)
   top->toReverse();
   testTopSegment(alignment, top, "parent");
   
-  const Genome* grandChild = alignment->openGenome("grandChild");
-  for (hal_size_t i = 0; i < grandChild->getNumTopSegments(); ++i)
+  const Genome* g1 = alignment->openGenome("g1");
+  for (hal_size_t i = 0; i < g1->getNumTopSegments(); ++i)
   {
-    top = grandChild->getTopSegmentIterator(i);
+    top = g1->getTopSegmentIterator(i);
     testTopSegment(alignment, top, "parent");
     top->slice(1,0);
     testTopSegment(alignment, top, "parent");
@@ -143,6 +261,71 @@ void MappedSegmentMapUpTest::checkCallBack(AlignmentConstPtr alignment)
     testTopSegment(alignment, top, "parent");
     top->toReverse();
     testTopSegment(alignment, top, "parent");
+  }
+}
+
+void MappedSegmentParseTest::testTopSegment(AlignmentConstPtr alignment,
+                                            TopSegmentIteratorConstPtr top)
+{
+  const Genome* parent = alignment->openGenome("parent");
+  vector<MappedSegmentConstPtr> results;
+  top->getMappedSegments(results, parent, NULL, false);
+
+  vector<bool> covered(top->getLength(), false);
+  
+  CuAssertTrue(_testCase, results.size() >= 1);
+
+  for (size_t i = 0; i < results.size(); ++i)
+  {
+    MappedSegmentConstPtr mseg = results[i];
+    CuAssertTrue(_testCase, mseg->getSource()->getGenome() == top->getGenome());
+    CuAssertTrue(_testCase, mseg->getGenome() == parent);
+    for (hal_index_t j = mseg->getStartPosition(); j <= mseg->getEndPosition(); 
+         ++j)
+    {
+      CuAssertTrue(_testCase, covered[j] == false);
+      covered[j] = true;
+    }
+    CuAssertTrue(_testCase, mseg->getStartPosition() == 
+                 mseg->getSource()->getStartPosition());
+    CuAssertTrue(_testCase, mseg->getEndPosition() == 
+                 mseg->getSource()->getEndPosition());
+
+    vector<MappedSegmentConstPtr> tResults;
+    mseg->getMappedSegments(tResults, top->getGenome(), NULL, false);
+    CuAssertTrue(_testCase, tResults.size() == 1);
+    CuAssertTrue(_testCase, tResults[0]->getGenome() == top->getGenome());
+    CuAssertTrue(_testCase, tResults[0]->getSource()->getGenome() == 
+                 mseg->getGenome());
+    CuAssertTrue(_testCase, tResults[0]->getStartPosition() == 
+                 mseg->getStartPosition());
+    CuAssertTrue(_testCase, tResults[0]->getEndPosition() == 
+                 mseg->getEndPosition());
+    CuAssertTrue(_testCase, tResults[0]->getSource()->getStartPosition() == 
+                 mseg->getStartPosition());
+    CuAssertTrue(_testCase, tResults[0]->getSource()->getEndPosition() == 
+                 mseg->getEndPosition());
+  }
+}
+
+void MappedSegmentParseTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  validateAlignment(alignment);
+  const Genome* g1 = alignment->openGenome("g1");
+  const Genome* g2 = alignment->openGenome("g2");
+  const Genome* g3 = alignment->openGenome("g3");
+  const Genome* g4 = alignment->openGenome("g4");
+  const Genome* g5 = alignment->openGenome("g5");
+  const Genome* gs[] = {g1, g2, g3, g4, g5};
+  
+  for (size_t i = 0; i < 5; ++i)
+  {
+    const Genome* g = gs[i];
+    for (size_t j = 0; j < g->getNumTopSegments(); ++j)
+    {
+      TopSegmentIteratorConstPtr top = g->getTopSegmentIterator(j);
+      testTopSegment(alignment, top);
+    }
   }
 }
 
@@ -302,7 +485,7 @@ void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
   TopSegmentIteratorConstPtr top = child1->getTopSegmentIterator();
   vector<MappedSegmentConstPtr> results;
   top->getMappedSegments(results, child2, NULL, true);
-  CuAssertTrue(_testCase, results.size() == 1);
+  CuAssertTrue(_testCase, results.size() == 3);
   
   MappedSegmentConstPtr mseg = results[0];
   CuAssertTrue(_testCase, mseg->getSource()->getGenome() == top->getGenome());
@@ -362,6 +545,7 @@ void  MappedSegmentColCompareTest::checkCallBack(AlignmentConstPtr alignment)
   {
     return;
   }
+
   validateAlignment(alignment);
   set<const Genome*> genomeSet;
   hal::getGenomesInSubTree(alignment->openGenome(alignment->getRootName()), 
@@ -380,8 +564,6 @@ void  MappedSegmentColCompareTest::checkCallBack(AlignmentConstPtr alignment)
       {
         _ref = srcGenome;
         _tgt = tgtGenome;
-        cout << "compare " << srcGenome->getName() << " " 
-             << tgtGenome->getName() << endl;
         createColArray();
         createBlockArray();
         compareArrays();
@@ -479,6 +661,7 @@ void  MappedSegmentColCompareTest::createBlockArray()
     MappedSegmentConstPtr mseg = *i;
     SlicedSegmentConstPtr refSeg = mseg->getSource();
     hal_index_t refDelta = refSeg->getReversed() ? -1 : 1;
+    CuAssertTrue(_testCase, refDelta == 1);
     hal_index_t mDelta = mseg->getReversed() ? -1 : 1;
     if (refSeg->getGenome() != _ref)
        cout << "ref " << refSeg->getGenome()->getName() << " != " 
@@ -501,43 +684,32 @@ void MappedSegmentColCompareTest::compareArrays()
 {
   CuAssertTrue(_testCase, _colArray.size() == _blockArray.size());
 
-  double win = 0;
-  double tot = 0;
-  
   for (size_t i = 0; i < _colArray.size(); ++i)
   {
-    map<hal_index_t, bool>& colEntry = _colArray[i];
-    map<hal_index_t, bool>& blockEntry = _blockArray[i];
+    set<pair<hal_index_t, bool> >& colEntry = _colArray[i];
+    set<pair<hal_index_t, bool> >& blockEntry = _blockArray[i];
     
-    if (colEntry.size() == blockEntry.size())
-       ++win;
-    else
-       cout << i << ": col=" << colEntry.size() << " blo=" 
-            << blockEntry.size() << endl;
-    ++tot;
-
-    if (_ref != _tgt)
-    {
-      CuAssertTrue(_testCase, colEntry.size() == blockEntry.size());
-      for (map<hal_index_t, bool>::iterator j = colEntry.begin(); 
+    CuAssertTrue(_testCase, colEntry.size() == blockEntry.size());
+    for (set<pair<hal_index_t, bool> >::iterator j = colEntry.begin(); 
          j != colEntry.end(); ++j)
-      {
-        map<hal_index_t, bool>::iterator k = blockEntry.find(j->first);
-        CuAssertTrue(_testCase, k != blockEntry.end());
-        CuAssertTrue(_testCase, k->second == j->second);
-      }
-    }
-    else
     {
-      // create column array and create block array don't count self
-      // mappings (when tgt == ref) the same way.  don't want to deal 
-      // with this right now but will probably come back to bite me.  
-      bool colHas = !colEntry.empty();
-      bool blockHas = !blockEntry.empty();
-      CuAssertTrue(_testCase, colHas == blockHas);
+      set<pair<hal_index_t, bool> >::iterator k = blockEntry.find(*j);
+
+      // because of global dupe-skipping built into the column iterator
+      // and not presently in (or wanted?) in blockmapper the orientation of 
+      // paralogies can be flipped wrt the reference.  This means that
+      // any homolgoy can be flipped if it went through a dupe cycle so
+      // we can't compare inversion flags
+      set<pair<hal_index_t, bool> >::iterator kk = blockEntry.end();
+      kk = blockEntry.find(pair<hal_index_t, bool>(j->first, !j->second));
+      if (k == blockEntry.end() && kk == blockEntry.end())
+      {
+        cout << j->first << ", " << j->second << " not found for ref " << i 
+             << endl;
+      }
+      CuAssertTrue(_testCase, k != blockEntry.end() || kk != blockEntry.end());
     }
   }
-  cout << win / tot << endl;
 }
 
 void MappedSegmentColCompareTestCheck1::createCallBack(AlignmentPtr alignment)
@@ -573,7 +745,6 @@ void MappedSegmentColCompareTest1::createCallBack(AlignmentPtr alignment)
                         5, // minSegments
                         10, // maxSegments
                         1101); // seed
-  cout << "al size " << alignment->getNumGenomes() << endl;
 }
 
 void MappedSegmentColCompareTest2::createCallBack(AlignmentPtr alignment)
@@ -581,10 +752,10 @@ void MappedSegmentColCompareTest2::createCallBack(AlignmentPtr alignment)
   createRandomAlignment(alignment, 
                         1.25, 
                         0.7,
-                        10,
+                        8,
                         2,
                         50,
-                        100,
+                        10,
                         500,
                         23);
 }
@@ -594,11 +765,11 @@ void MappedSegmentColCompareTest3::createCallBack(AlignmentPtr alignment)
   createRandomAlignment(alignment, 
                         1.5, 
                         0.7,
-                        20,
-                        2,
+                        12,
+                        1,
+                        100,
                         50,
-                        1000,
-                        7000);
+                        1000);
 }
 
 void halMappedSegmentMapUpTest(CuTest *testCase)
@@ -606,6 +777,19 @@ void halMappedSegmentMapUpTest(CuTest *testCase)
   try 
   {
     MappedSegmentMapUpTest tester;
+    tester.check(testCase);
+  }
+  catch (double) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
+void halMappedSegmentParseTest(CuTest *testCase)
+{
+  try 
+  {
+    MappedSegmentParseTest tester;
     tester.check(testCase);
   }
   catch (...) 
@@ -723,13 +907,14 @@ CuSuite* halMappedSegmentTestSuite(void)
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halMappedSegmentMapUpTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapDownTest);
+  SUITE_ADD_TEST(suite, halMappedSegmentParseTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapAcrossTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapDupeTest); 
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck1);
-//  SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck2);
-//  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
-//  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
-//  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
+  SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck2);
+  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
+  // SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
+  // SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
   return suite;
 }
 
