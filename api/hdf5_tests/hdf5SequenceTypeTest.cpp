@@ -100,7 +100,7 @@ void hdf5SequenceTypeTest(CuTest *testCase)
           CuAssertTrue(testCase,
                        sequence.getName() == genName(i, length));
           CuAssertTrue(testCase, 
-                       sequence.getStartPosition() == i);
+                       sequence.getStartPosition() == (hal_index_t)i);
           CuAssertTrue(testCase,
                        sequence.getSequenceLength() == i * 2);
           CuAssertTrue(testCase,
