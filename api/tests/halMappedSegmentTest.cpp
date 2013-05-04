@@ -102,7 +102,6 @@ void MappedSegmentMapUpTest::testTopSegment(AlignmentConstPtr alignment,
        bottom->getGenome()->getTopSegmentIterator();
     temp->toParseUp(bottom);
     bottom->toParent(temp);
-    cout << bottom << endl;
   }
   CuAssertTrue(_testCase, mseg->getGenome() == bottom->getGenome());
   CuAssertTrue(_testCase, 
