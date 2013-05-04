@@ -17,11 +17,11 @@ using namespace std;
 using namespace hal;
 
 DefaultMappedSegment::DefaultMappedSegment(
-  DefaultSegmentIteratorConstPtr source,
-  DefaultSegmentIteratorConstPtr target)
+  SegmentIteratorConstPtr source,
+  SegmentIteratorConstPtr target)
   :
-  _source(source),
-  _target(target)
+  _source(source.downCast<DefaultSegmentIteratorConstPtr>()),
+  _target(target.downCast<DefaultSegmentIteratorConstPtr>())
 {
   assert(_source->getLength() == _target->getLength());
 }
@@ -69,14 +69,11 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
   }
   
   DefaultMappedSegmentConstPtr newMappedSeg(
-    new DefaultMappedSegment(
-      startSource.downCast<DefaultSegmentIteratorConstPtr>(), 
-      startTarget.downCast<DefaultSegmentIteratorConstPtr>()));
+    new DefaultMappedSegment(startSource, startTarget)); 
   
   vector<DefaultMappedSegmentConstPtr> input(1, newMappedSeg);
   vector<DefaultMappedSegmentConstPtr> output;
-  mapRecursive(NULL, input, output, tgtGenome, genomesOnPath, 
-               doDupes);
+  mapRecursive(NULL, input, output, tgtGenome, genomesOnPath, doDupes);
   results.insert(results.end(), output.begin(), output.end());
   return output.size();
 }
@@ -146,8 +143,9 @@ hal_size_t DefaultMappedSegment::mapRecursive(
         mapDown(inputPtr->at(i), nextChildIndex, *outputPtr);
       }
       if (doDupes == true)
-      {
-        for (size_t i = 0; i < inputPtr->size(); ++i)
+      {   
+        size_t outputSize = outputPtr->size();
+        for (size_t i = 0; i <outputSize; ++i)
         {
           mapSelf(outputPtr->at(i), *outputPtr);
         }
@@ -182,36 +180,60 @@ hal_size_t DefaultMappedSegment::mapUp(
   if (mappedSeg->isTop() == true)
   {
     BottomSegmentIteratorConstPtr bottom = parent->getBottomSegmentIterator();
-    SegmentIteratorConstPtr target = mappedSeg->_target;
-    TopSegmentIteratorConstPtr top = 
-       target.downCast<TopSegmentIteratorConstPtr>();
-    bottom->toParent(top);
-    mappedSeg->_target = bottom.downCast<DefaultSegmentIteratorConstPtr>();
-    results.push_back(mappedSeg);
-    ++added;
+    TopSegmentIteratorConstPtr top = mappedSeg->targetAsTop();
+    if (top->hasParent() == true)
+    {
+      bottom->toParent(top);
+      mappedSeg->_target = bottom.downCast<DefaultSegmentIteratorConstPtr>();
+      results.push_back(mappedSeg);
+      ++added;
+    }
   }
   else
   {
-    assert(false);
     hal_index_t rightCutoff = mappedSeg->getEndPosition();
+    BottomSegmentIteratorConstPtr bottom = mappedSeg->targetAsBottom();
+    hal_index_t startOffset = (hal_index_t)bottom->getStartOffset();
+    hal_index_t endOffset = (hal_index_t)bottom->getEndOffset();
     TopSegmentIteratorConstPtr top = 
        mappedSeg->getGenome()->getTopSegmentIterator();
-    SegmentIteratorConstPtr target = mappedSeg->_target;
-    BottomSegmentIteratorConstPtr bottom = 
-       target.downCast<BottomSegmentIteratorConstPtr>();
     top->toParseUp(bottom);
     do
     {
       TopSegmentIteratorConstPtr topNew = top->copy();
-      BottomSegmentIteratorConstPtr bottomNew = bottom->copy();
-      bottomNew->toParseDown(top);
+      
+      // we map the new target back to see how the offsets have 
+      // changed.  these changes are then applied to the source segment
+      // as deltas
+      BottomSegmentIteratorConstPtr bottomBack = bottom->copy();
+      bottomBack->toParseDown(topNew);
+      hal_index_t startBack = (hal_index_t)bottomBack->getStartOffset();
+      hal_index_t endBack = (hal_index_t)bottomBack->getEndOffset();
+      assert(startBack >= startOffset);
+      assert(endBack >= endOffset);
+      SegmentIteratorConstPtr newSource = mappedSeg->sourceCopy();
+      hal_index_t startDelta = startBack - startOffset;
+      hal_index_t endDelta = endBack - endOffset;
+      assert(newSource->getLength() > startDelta + endDelta);
+      newSource->slice(newSource->getStartOffset() + startDelta, 
+                       newSource->getEndOffset() + endDelta);
+
       DefaultMappedSegmentConstPtr newMappedSeg(
-        new DefaultMappedSegment(
-          topNew.downCast<DefaultSegmentIteratorConstPtr>(), 
-          bottomNew.downCast<DefaultSegmentIteratorConstPtr>()));
+        new DefaultMappedSegment(newSource, topNew));
+
+      assert(newMappedSeg->isTop() == true);
+      assert(newMappedSeg->getSource()->getGenome() == 
+             mappedSeg->getSource()->getGenome());
+
       added += mapUp(newMappedSeg, results);
-      top->toRight(rightCutoff);
-    } while (top->getEndPosition() != rightCutoff);
+      // stupid that we have to make this check but odn't want to 
+      // make fundamental api change now
+      if (top->getEndPosition() != rightCutoff)
+      {
+        top->toRight(rightCutoff);
+      }
+    } 
+    while (top->getEndPosition() != rightCutoff);
   }
   return added;
 }
@@ -230,33 +252,60 @@ hal_size_t DefaultMappedSegment::mapDown(
     SegmentIteratorConstPtr target = mappedSeg->_target;
     BottomSegmentIteratorConstPtr bottom = 
        target.downCast<BottomSegmentIteratorConstPtr>();
-    top->toChild(bottom, childIndex);
-    mappedSeg->_target = top.downCast<DefaultSegmentIteratorConstPtr>();
-    results.push_back(mappedSeg);
-    ++added;
+    if (bottom->hasChild(childIndex) == true)
+    {
+      top->toChild(bottom, childIndex);
+      mappedSeg->_target = top.downCast<DefaultSegmentIteratorConstPtr>();
+      results.push_back(mappedSeg);
+      ++added;
+    }
   }
   else
   {
-    assert(false);
     hal_index_t rightCutoff = mappedSeg->getEndPosition();
+    TopSegmentIteratorConstPtr top = mappedSeg->targetAsTop();
+    hal_index_t startOffset = (hal_index_t)top->getStartOffset();
+    hal_index_t endOffset = (hal_index_t)top->getEndOffset();
     BottomSegmentIteratorConstPtr bottom = 
        mappedSeg->getGenome()->getBottomSegmentIterator();
-    SegmentIteratorConstPtr target = mappedSeg->_target;
-    TopSegmentIteratorConstPtr top = 
-       target.downCast<TopSegmentIteratorConstPtr>();
     bottom->toParseDown(top);
     do
     {
       BottomSegmentIteratorConstPtr bottomNew = bottom->copy();
-      TopSegmentIteratorConstPtr topNew = top->copy();
-      topNew->toParseUp(bottom);
+      
+      // we map the new target back to see how the offsets have 
+      // changed.  these changes are then applied to the source segment
+      // as deltas
+      TopSegmentIteratorConstPtr topBack = top->copy();
+      topBack->toParseUp(bottomNew);
+      hal_index_t startBack = (hal_index_t)topBack->getStartOffset();
+      hal_index_t endBack = (hal_index_t)topBack->getEndOffset();
+      assert(startBack >= startOffset);
+      assert(endBack >= endOffset);
+      SegmentIteratorConstPtr newSource = mappedSeg->sourceCopy();
+      hal_index_t startDelta = startBack - startOffset;
+      hal_index_t endDelta = endBack - endOffset;
+      assert((hal_index_t)newSource->getLength() > startDelta + endDelta);
+      newSource->slice(newSource->getStartOffset() + startDelta, 
+                       newSource->getEndOffset() + endDelta);
+      
       DefaultMappedSegmentConstPtr newMappedSeg(
-        new DefaultMappedSegment(
-          bottomNew.downCast<DefaultSegmentIteratorConstPtr>(), 
-          topNew.downCast<DefaultSegmentIteratorConstPtr>()));
+        new DefaultMappedSegment(newSource, bottomNew));
+
+      assert(newMappedSeg->isTop() == false);
+      assert(newMappedSeg->getSource()->getGenome() == 
+             mappedSeg->getSource()->getGenome());
+
       added += mapDown(newMappedSeg, childIndex, results);
-      bottom->toRight(rightCutoff);
-    } while (bottom->getEndPosition() != rightCutoff);
+
+      // stupid that we have to make this check but odn't want to 
+      // make fundamental api change now
+      if (bottom->getEndPosition() != rightCutoff)
+      {
+        bottom->toRight(rightCutoff);
+      }
+    } 
+    while (bottom->getEndPosition() != rightCutoff);
   }
   return added;
 }
@@ -291,7 +340,6 @@ hal_size_t DefaultMappedSegment::mapSelf(
   }
   else
   {
-    assert(false);
     hal_index_t rightCutoff = mappedSeg->getEndPosition();
     TopSegmentIteratorConstPtr top = 
        mappedSeg->getGenome()->getTopSegmentIterator();
@@ -305,12 +353,20 @@ hal_size_t DefaultMappedSegment::mapSelf(
       BottomSegmentIteratorConstPtr bottomNew = bottom->copy();
       bottomNew->toParseDown(top);
       DefaultMappedSegmentConstPtr newMappedSeg(
-        new DefaultMappedSegment(
-          topNew.downCast<DefaultSegmentIteratorConstPtr>(), 
-          bottomNew.downCast<DefaultSegmentIteratorConstPtr>()));
+        new DefaultMappedSegment(bottomNew, topNew));
+      assert(newMappedSeg->isTop() == true);
+      assert(newMappedSeg->getSource()->getGenome() == 
+             mappedSeg->getSource()->getGenome());
       added += mapUp(newMappedSeg, results);
-      top->toRight(rightCutoff);
-    } while (top->getEndPosition() != rightCutoff);
+      
+      // stupid that we have to make this check but odn't want to 
+      // make fundamental api change now
+      if (top->getEndPosition() != rightCutoff)
+      {
+        top->toRight(rightCutoff);
+      }
+    } 
+    while (top->getEndPosition() != rightCutoff);
   }
   return added;
 }

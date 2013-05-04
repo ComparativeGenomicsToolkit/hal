@@ -12,12 +12,13 @@
 #include "hal.h"
 #include "allTests.h"
 
-struct MappedSegmentMapUpTest : public AlignmentTest
+struct MappedSegmentMapUpTest : virtual public AlignmentTest
 {
    void createCallBack(hal::AlignmentPtr alignment);
    virtual void checkCallBack(hal::AlignmentConstPtr alignment);
    void testTopSegment(hal::AlignmentConstPtr alignment,
-                       hal::TopSegmentIteratorConstPtr top);
+                       hal::TopSegmentIteratorConstPtr top,
+                       const std::string& ancName);
 };
 
 struct MappedSegmentMapDownTest : public MappedSegmentMapUpTest
@@ -36,21 +37,39 @@ struct MappedSegmentMapAcrossTest : public MappedSegmentMapUpTest
                        hal::TopSegmentIteratorConstPtr top);
 };
 
-struct MappedSegmentMapDupeTest : public AlignmentTest
+struct MappedSegmentMapDupeTest : virtual public AlignmentTest
+{
+   virtual void createCallBack(hal::AlignmentPtr alignment);
+   virtual void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
+struct MappedSegmentColCompareTest : virtual public AlignmentTest
+{
+   virtual void createCallBack(hal::AlignmentPtr alignment) = 0;
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createColArray();
+   void createBlockArray();
+   void compareArrays();
+   std::vector<std::map<hal_index_t, bool> >_colArray;
+   std::vector<std::map<hal_index_t, bool> >_blockArray;
+   const hal::Genome* _ref;
+   const hal::Genome* _tgt;
+};
+
+struct 
+MappedSegmentColCompareTestCheck1 : virtual public MappedSegmentMapUpTest,
+                                    virtual public MappedSegmentColCompareTest
 {
    void createCallBack(hal::AlignmentPtr alignment);
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
-struct MappedSegmentColCompareTest : public AlignmentTest
+struct 
+MappedSegmentColCompareTestCheck2 : virtual public MappedSegmentMapDupeTest,
+                                    virtual public MappedSegmentColCompareTest
 {
-   virtual void createCallBack(hal::AlignmentPtr alignment) = 0;
+   void createCallBack(hal::AlignmentPtr alignment);
    void checkCallBack(hal::AlignmentConstPtr alignment);
-   void createColArray(const hal::Genome* ref, const hal::Genome* tgt);
-   void createBlockArray(const hal::Genome* ref, const hal::Genome* tgt);
-   void compareArrays();
-   std::vector<std::map<hal_index_t, bool> >_colArray;
-   std::vector<std::map<hal_index_t, bool> >_blockArray;
 };
 
 struct MappedSegmentColCompareTest1 : public MappedSegmentColCompareTest

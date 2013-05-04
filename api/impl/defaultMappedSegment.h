@@ -77,8 +77,9 @@ protected:
 
 protected:
 
-   DefaultMappedSegment(DefaultSegmentIteratorConstPtr source,
-                        DefaultSegmentIteratorConstPtr target);
+   DefaultMappedSegment(SegmentIteratorConstPtr source,
+                        SegmentIteratorConstPtr target);
+
    
    static 
    hal_size_t mapRecursive(const Genome* prevGenome,
@@ -98,12 +99,48 @@ protected:
    hal_size_t mapSelf(DefaultMappedSegmentConstPtr mappedSeg, 
                       std::vector<DefaultMappedSegmentConstPtr>& results);
    
+   TopSegmentIteratorConstPtr targetAsTop() const;
+   BottomSegmentIteratorConstPtr targetAsBottom() const;
+   TopSegmentIteratorConstPtr sourceAsTop() const;
+   BottomSegmentIteratorConstPtr sourceAsBottom() const;
+   SegmentIteratorConstPtr sourceCopy() const;
    
 protected:
 
    mutable DefaultSegmentIteratorConstPtr _source;
    mutable DefaultSegmentIteratorConstPtr _target;
 };
+
+inline TopSegmentIteratorConstPtr DefaultMappedSegment::targetAsTop() const
+{
+  return _target.downCast<TopSegmentIteratorConstPtr>();
+}
+
+inline 
+BottomSegmentIteratorConstPtr DefaultMappedSegment::targetAsBottom() const
+{
+  return _target.downCast<BottomSegmentIteratorConstPtr>();
+}
+
+inline TopSegmentIteratorConstPtr DefaultMappedSegment::sourceAsTop() const
+{
+  return _source.downCast<TopSegmentIteratorConstPtr>();
+}
+
+inline 
+BottomSegmentIteratorConstPtr DefaultMappedSegment::sourceAsBottom() const
+{
+  return _source.downCast<BottomSegmentIteratorConstPtr>();
+}
+
+inline SegmentIteratorConstPtr DefaultMappedSegment::sourceCopy() const
+{
+  if (_source->isTop())
+  {
+    return sourceAsTop()->copy();
+  }
+  return sourceAsBottom()->copy();
+}
 
 }
 #endif
