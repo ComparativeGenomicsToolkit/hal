@@ -121,7 +121,7 @@ public:
     * source and target. 
     * @param doDupes  Specify whether paralogy edges are followed */
    virtual hal_size_t getMappedSegments(
-     std::vector<MappedSegmentConstPtr>& outSegments,
+     std::set<MappedSegmentConstPtr>& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath = NULL,
      bool doDupes = true) const = 0;

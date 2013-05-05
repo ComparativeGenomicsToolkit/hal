@@ -27,6 +27,11 @@ public:
    /** Get the original segment from which this segment was mapped */
    virtual SlicedSegmentConstPtr getSource() const = 0;
 
+   /** Comparison used to store in stl sets and maps.  We sort based
+    * on the coordinate of the *Source* genome interval as the primary
+    * index and the target genome as the secondary index.  */
+   virtual bool lessThan(const MappedSegmentConstPtr& other) const = 0;
+
 protected:
    friend class counted_ptr<MappedSegment>;
    friend class counted_ptr<const MappedSegment>;
@@ -36,4 +41,19 @@ protected:
 inline MappedSegment::~MappedSegment() {}
 
 }
+
+namespace std {
+/** Want sets of mapped segments to be sorted by <source,target> and not 
+ * contain any dupes! */
+template<>
+struct less<hal::MappedSegmentConstPtr>
+{
+   bool operator()(const hal::MappedSegmentConstPtr& m1,
+                   const hal::MappedSegmentConstPtr& m2) const 
+      {
+        return m1->lessThan(m2); 
+      }
+};
+}
+
 #endif

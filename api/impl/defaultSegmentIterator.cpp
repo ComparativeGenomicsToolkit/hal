@@ -173,7 +173,7 @@ bool DefaultSegmentIterator::isTop() const
 }
 
 hal_size_t DefaultSegmentIterator::getMappedSegments(
-  vector<MappedSegmentConstPtr>& outSegments,
+  set<MappedSegmentConstPtr>& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes) const

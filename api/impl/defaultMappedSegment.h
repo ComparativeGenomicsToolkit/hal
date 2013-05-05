@@ -48,7 +48,7 @@ public:
    virtual bool isMissingData(double nThreshold) const;
    virtual bool isTop() const;
    virtual hal_size_t getMappedSegments(
-     std::vector<MappedSegmentConstPtr>& outSegments,
+     std::set<MappedSegmentConstPtr>& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes) const;
@@ -63,10 +63,12 @@ public:
 
    // MAPPED SEGMENT INTERFACE 
    virtual SlicedSegmentConstPtr getSource() const;
+   virtual bool lessThan(const MappedSegmentConstPtr& other) const;
+
 
    // INTERNAL METHODS
    static hal_size_t map(const DefaultSegmentIterator* source,
-                         std::vector<MappedSegmentConstPtr>& results,
+                         std::set<MappedSegmentConstPtr>& results,
                          const Genome* tgtGenome,
                          const std::set<const Genome*>* genomesOnPath,
                          bool doDupes);
@@ -80,24 +82,32 @@ protected:
    DefaultMappedSegment(SegmentIteratorConstPtr source,
                         SegmentIteratorConstPtr target);
 
+   static 
+   int fastComp(const DefaultSegmentIteratorConstPtr& s1, 
+                const DefaultSegmentIteratorConstPtr& s2);
+
+   static 
+   void cutAgainstSet(DefaultMappedSegmentConstPtr inSeg,
+                      const std::set<MappedSegmentConstPtr>& results,
+                      std::set<DefaultMappedSegmentConstPtr>& output);
    
    static 
    hal_size_t mapRecursive(const Genome* prevGenome,
-                           std::vector<DefaultMappedSegmentConstPtr>& input,
-                           std::vector<DefaultMappedSegmentConstPtr>& results,
+                           std::set<DefaultMappedSegmentConstPtr>& input,
+                           std::set<DefaultMappedSegmentConstPtr>& results,
                            const Genome* tgtGenome,
                            const std::set<const Genome*>* genomesOnPath,
                            bool doDupes);
    static 
    hal_size_t mapUp(DefaultMappedSegmentConstPtr mappedSeg, 
-                    std::vector<DefaultMappedSegmentConstPtr>& results);
+                    std::set<DefaultMappedSegmentConstPtr>& results);
    static 
    hal_size_t mapDown(DefaultMappedSegmentConstPtr mappedSeg, 
                       hal_size_t childIndex,
-                      std::vector<DefaultMappedSegmentConstPtr>& results);
+                      std::set<DefaultMappedSegmentConstPtr>& results);
    static 
    hal_size_t mapSelf(DefaultMappedSegmentConstPtr mappedSeg, 
-                      std::vector<DefaultMappedSegmentConstPtr>& results);
+                      std::set<DefaultMappedSegmentConstPtr>& results);
    
    TopSegmentIteratorConstPtr targetAsTop() const;
    BottomSegmentIteratorConstPtr targetAsBottom() const;
@@ -142,5 +152,19 @@ inline SegmentIteratorConstPtr DefaultMappedSegment::sourceCopy() const
   return sourceAsBottom()->copy();
 }
 
+}
+
+namespace std {
+/** Want sets of mapped segments to be sorted by <source,target> and not 
+ * contain any dupes! */
+template<>
+struct less<hal::DefaultMappedSegmentConstPtr>
+{
+   bool operator()(const hal::DefaultMappedSegmentConstPtr& m1,
+                   const hal::DefaultMappedSegmentConstPtr& m2) const 
+      {
+        return m1->lessThan(m2); 
+      }
+};
 }
 #endif

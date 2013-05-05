@@ -31,6 +31,7 @@ DefaultMappedSegment::~DefaultMappedSegment()
 
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 // MAPPED SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
@@ -39,12 +40,75 @@ SlicedSegmentConstPtr DefaultMappedSegment::getSource() const
   return _source;
 }
 
+bool DefaultMappedSegment::lessThan(const MappedSegmentConstPtr& other) const
+{
+  DefaultMappedSegmentConstPtr od = const_cast<MappedSegmentConstPtr&>(
+    other).downCast<DefaultMappedSegmentConstPtr>();
+  assert(od.get() != NULL);
+  int res = fastComp(_source, od->_source);
+  if (res == 0)
+  {
+    res = fastComp(_target, od->_target);
+  }
+   return res == -1;
+  //return this < other.get();
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 // INTERNAL FUNCTIONS
 //////////////////////////////////////////////////////////////////////////////
 
+int DefaultMappedSegment::fastComp(const DefaultSegmentIteratorConstPtr& s1, 
+                                   const DefaultSegmentIteratorConstPtr& s2)
+{
+  // compare without accessing anything from disk (ie using only index
+  // and offset)
+  assert(s1->getGenome() == s2->getGenome());
+  if (s1->getArrayIndex() < s2->getArrayIndex())
+  {
+    return -1;
+  }
+  else if (s1->getArrayIndex() > s2->getArrayIndex())
+  {
+    return 1;
+  }
+  else 
+  {
+    hal_offset_t so1 = s1->getStartOffset();
+    hal_offset_t eo1 = s1->getEndOffset();
+    if (s1->getReversed())
+    {
+      swap(so1, eo1);
+    }
+    hal_offset_t so2 = s2->getStartOffset();
+    hal_offset_t eo2 = s2->getEndOffset();
+    if (s2->getReversed())
+    {
+      swap(so2, eo2);
+    }
+    if (so1 < so2)
+    {
+      return -1;
+    }
+    else if (so1 > so2)
+    {
+      return 1;
+    }
+    else if (eo1 > eo2)
+    {
+      return -1;
+    }
+    else if (eo1 < eo2)
+    {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
-                                     vector<MappedSegmentConstPtr>& results,
+                                     set<MappedSegmentConstPtr>& results,
                                      const Genome* tgtGenome,
                                      const set<const Genome*>* genomesOnPath,
                                      bool doDupes)
@@ -71,23 +135,36 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
   DefaultMappedSegmentConstPtr newMappedSeg(
     new DefaultMappedSegment(startSource, startTarget)); 
   
-  vector<DefaultMappedSegmentConstPtr> input(1, newMappedSeg);
-  vector<DefaultMappedSegmentConstPtr> output;
+  set<DefaultMappedSegmentConstPtr> asdf;
+  set<DefaultMappedSegmentConstPtr> zin;
+
+  set<DefaultMappedSegmentConstPtr> input;
+  cutAgainstSet(newMappedSeg, results, input);
+  set<DefaultMappedSegmentConstPtr> output;
   mapRecursive(NULL, input, output, tgtGenome, genomesOnPath, doDupes);
-  results.insert(results.end(), output.begin(), output.end());
+  results.insert(output.begin(), output.end());
   return output.size();
+}
+
+// avoid doing mappings that are already in results. 
+void DefaultMappedSegment::cutAgainstSet(
+  DefaultMappedSegmentConstPtr inSeg,
+  const set<MappedSegmentConstPtr>& results,
+  std::set<DefaultMappedSegmentConstPtr>& output)
+{
+  output.insert(inSeg);
 }
 
 hal_size_t DefaultMappedSegment::mapRecursive(
   const Genome* prevGenome,
-  vector<DefaultMappedSegmentConstPtr>& input,
-  vector<DefaultMappedSegmentConstPtr>& results,
+  set<DefaultMappedSegmentConstPtr>& input,
+  set<DefaultMappedSegmentConstPtr>& results,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes)
 {
-  vector<DefaultMappedSegmentConstPtr>* inputPtr = &input;
-  vector<DefaultMappedSegmentConstPtr>* outputPtr = &results;
+  set<DefaultMappedSegmentConstPtr>* inputPtr = &input;
+  set<DefaultMappedSegmentConstPtr>* outputPtr = &results;
   
   const Genome* srcGenome = NULL;
   const Genome* genome = NULL;
@@ -96,8 +173,8 @@ hal_size_t DefaultMappedSegment::mapRecursive(
 
   if (!inputPtr->empty())
   {
-    srcGenome = inputPtr->at(0)->getSource()->getGenome();
-    genome = inputPtr->at(0)->getGenome();
+    srcGenome = (*inputPtr->begin())->getSource()->getGenome();
+    genome = (*inputPtr->begin())->getGenome();
 
     const Genome* parentGenome = genome->getParent();
     if (parentGenome != NULL &&
@@ -125,16 +202,26 @@ hal_size_t DefaultMappedSegment::mapRecursive(
     }
   }
 
+  if (srcGenome)
+  {
+    cout << "SRC " << srcGenome->getName() << " gEN " << genome->getName();
+    if (nextGenome) cout << " NEXT " << nextGenome->getName();
+    cout << " isize " << inputPtr->size();
+  }
+
   if (doDupes == true)
   {   
     outputPtr->clear();
-    for (size_t i = 0; i < inputPtr->size(); ++i)
+    set<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
+    for (; i != inputPtr->end(); ++i)
     {
-      assert(inputPtr->at(i)->getGenome() == genome);
-      mapSelf(inputPtr->at(i), *outputPtr);
+      assert((*i)->getGenome() == genome);
+      mapSelf((*i), *outputPtr);
     }
-    inputPtr->insert(inputPtr->end(), outputPtr->begin(), outputPtr->end());
+    inputPtr->insert(outputPtr->begin(), outputPtr->end());
   }
+  if (srcGenome)
+     cout << " iad " << inputPtr->size() << endl;
   
   if (nextGenome != NULL)
   {
@@ -142,19 +229,21 @@ hal_size_t DefaultMappedSegment::mapRecursive(
 
     if (nextGenome == genome->getParent())
     {
-      for (size_t i = 0; i < inputPtr->size(); ++i)
+      set<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
+      for (; i != inputPtr->end(); ++i)
       {
-        assert(inputPtr->at(i)->getGenome() == genome);
-        mapUp(inputPtr->at(i), *outputPtr);
+        assert((*i)->getGenome() == genome);
+        mapUp((*i), *outputPtr);
       }
     }
     else
     {
       assert(nextGenome->getParent() == genome);
-      for (size_t i = 0; i < inputPtr->size(); ++i)
+      set<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
+      for (; i != inputPtr->end(); ++i)
       {
-        assert(inputPtr->at(i)->getGenome() == genome);
-        mapDown(inputPtr->at(i), nextChildIndex, *outputPtr);
+        assert((*i)->getGenome() == genome);
+        mapDown((*i), nextChildIndex, *outputPtr);
       }
     }
     swap(inputPtr, outputPtr);
@@ -178,7 +267,7 @@ hal_size_t DefaultMappedSegment::mapRecursive(
 
 hal_size_t DefaultMappedSegment::mapUp(
   DefaultMappedSegmentConstPtr mappedSeg, 
-  vector<DefaultMappedSegmentConstPtr>& results)
+  set<DefaultMappedSegmentConstPtr>& results)
 {
   const Genome* parent = mappedSeg->getGenome()->getParent();
   assert(parent != NULL);
@@ -191,7 +280,7 @@ hal_size_t DefaultMappedSegment::mapUp(
     {
       bottom->toParent(top);
       mappedSeg->_target = bottom.downCast<DefaultSegmentIteratorConstPtr>();
-      results.push_back(mappedSeg);
+      results.insert(mappedSeg);
       ++added;
     }
   }
@@ -251,7 +340,7 @@ hal_size_t DefaultMappedSegment::mapUp(
 hal_size_t DefaultMappedSegment::mapDown(
   DefaultMappedSegmentConstPtr mappedSeg, 
   hal_size_t childIndex,
-  vector<DefaultMappedSegmentConstPtr>& results)
+  set<DefaultMappedSegmentConstPtr>& results)
 {
   const Genome* child = mappedSeg->getGenome()->getChild(childIndex);
   assert(child != NULL);
@@ -267,7 +356,7 @@ hal_size_t DefaultMappedSegment::mapDown(
     {
       top->toChild(bottom, childIndex);
       mappedSeg->_target = top.downCast<DefaultSegmentIteratorConstPtr>();
-      results.push_back(mappedSeg);
+      results.insert(mappedSeg);
       ++added;
     }
   }
@@ -327,7 +416,7 @@ hal_size_t DefaultMappedSegment::mapDown(
 
 hal_size_t DefaultMappedSegment::mapSelf(
   DefaultMappedSegmentConstPtr mappedSeg, 
-  vector<DefaultMappedSegmentConstPtr>& results)
+  set<DefaultMappedSegmentConstPtr>& results)
 {
   hal_size_t added = 0;
   if (mappedSeg->isTop() == true)
@@ -350,7 +439,7 @@ hal_size_t DefaultMappedSegment::mapSelf(
       assert(newMappedSeg->getGenome() == mappedSeg->getGenome());
       assert(newMappedSeg->getSource()->getGenome() == 
              mappedSeg->getSource()->getGenome());
-      results.push_back(newMappedSeg);
+      results.insert(newMappedSeg);
       ++added;
     }
   }
@@ -509,7 +598,7 @@ bool DefaultMappedSegment::isTop() const
 }
 
 hal_size_t DefaultMappedSegment::getMappedSegments(
-  vector<MappedSegmentConstPtr>& outSegments,
+  set<MappedSegmentConstPtr>& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes) const
