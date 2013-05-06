@@ -79,7 +79,7 @@ public:
     * will be traversed when disabling duplication edges when mapping via 
     * the column iterator or mappedSegment interface.  It is also the segment
     * that is connected from its parent's down edge.*/
-   virtual hal_index_t isCanonicalParalog() const = 0;
+   virtual bool isCanonicalParalog() const = 0;
 
 protected:
    friend class counted_ptr<TopSegment>;

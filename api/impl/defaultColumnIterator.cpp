@@ -455,7 +455,8 @@ bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
 void DefaultColumnIterator::updateParent(LinkedTopIterator* topIt) const
 {
   const Genome* genome = topIt->_it->getTopSegment()->getGenome();
-  if (!_break && topIt->_it->hasParent() && parentInScope(genome))
+  if (!_break && topIt->_it->hasParent() && parentInScope(genome) &&
+      (!_noDupes || topIt->_it->isCanonicalParalog()))
   {
     const Genome* parentGenome = genome->getParent();
 

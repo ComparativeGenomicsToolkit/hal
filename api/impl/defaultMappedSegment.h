@@ -108,6 +108,7 @@ protected:
    static 
    hal_size_t mapUp(DefaultMappedSegmentConstPtr mappedSeg, 
                     std::list<DefaultMappedSegmentConstPtr>& results,
+                    bool doDupes,
                     hal_size_t minLength);
    static 
    hal_size_t mapDown(DefaultMappedSegmentConstPtr mappedSeg, 

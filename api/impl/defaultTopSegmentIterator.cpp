@@ -122,6 +122,11 @@ hal_index_t DefaultTopSegmentIterator::getRightParentIndex() const
   return _topSegment->getRightParentIndex();
 }
 
+bool DefaultTopSegmentIterator::isCanonicalParalog() const
+{
+  return _topSegment->isCanonicalParalog();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // TOP SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////

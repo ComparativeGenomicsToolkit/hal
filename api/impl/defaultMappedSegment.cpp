@@ -258,7 +258,7 @@ hal_size_t DefaultMappedSegment::mapRecursive(
       for (; i != inputPtr->end(); ++i)
       {
         assert((*i)->getGenome() == genome);
-        mapUp((*i), *outputPtr, minLength);
+        mapUp((*i), *outputPtr, doDupes, minLength);
       }
     }
     else
@@ -295,6 +295,7 @@ hal_size_t DefaultMappedSegment::mapRecursive(
 hal_size_t DefaultMappedSegment::mapUp(
   DefaultMappedSegmentConstPtr mappedSeg, 
   list<DefaultMappedSegmentConstPtr>& results,
+  bool doDupes,
   hal_size_t minLength)
 {
   const Genome* parent = mappedSeg->getGenome()->getParent();
@@ -304,7 +305,8 @@ hal_size_t DefaultMappedSegment::mapUp(
   {
     BottomSegmentIteratorConstPtr bottom = parent->getBottomSegmentIterator();
     TopSegmentIteratorConstPtr top = mappedSeg->targetAsTop();
-    if (top->hasParent() == true && top->getLength() >= minLength)
+    if (top->hasParent() == true && top->getLength() >= minLength &&
+        (doDupes == true || top->isCanonicalParalog() == true))
     {
       bottom->toParent(top);
       mappedSeg->_target = bottom.downCast<DefaultSegmentIteratorConstPtr>();
@@ -348,7 +350,7 @@ hal_size_t DefaultMappedSegment::mapUp(
       assert(newMappedSeg->getSource()->getGenome() == 
              mappedSeg->getSource()->getGenome());
 
-      added += mapUp(newMappedSeg, results, minLength);
+      added += mapUp(newMappedSeg, results, doDupes, minLength);
       // stupid that we have to make this check but odn't want to 
       // make fundamental api change now
       if (top->getEndPosition() != rightCutoff)

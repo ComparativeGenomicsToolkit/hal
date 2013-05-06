@@ -77,7 +77,8 @@ public:
    void setNextParalogyIndex(hal_index_t parIdx);
    hal_index_t getLeftParentIndex() const;
    hal_index_t getRightParentIndex() const;
-  
+   bool isCanonicalParalog() const;
+
    // HDF5 SPECIFIC
    static H5::CompType dataType();
    
@@ -273,6 +274,7 @@ inline hal_index_t HDF5TopSegment::getRightParentIndex() const
   HDF5TopSegment rightSeg(_genome, _array, _index + 1);
   return rightSeg.getParentIndex();
 }
+
 
 }
 

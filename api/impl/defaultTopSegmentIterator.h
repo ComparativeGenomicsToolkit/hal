@@ -38,6 +38,8 @@ public:
    virtual void setNextParalogyIndex(hal_index_t parIdx);
    virtual hal_index_t getLeftParentIndex() const;
    virtual hal_index_t getRightParentIndex() const;
+   virtual bool isCanonicalParalog() const;
+
 
    // TOP SEGMENT ITERATOR INTERFACE 
    virtual TopSegmentIteratorPtr copy();
