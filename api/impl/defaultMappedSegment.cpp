@@ -209,7 +209,7 @@ hal_size_t DefaultMappedSegment::mapRecursive(
     cout << " isize " << inputPtr->size();
   }
 
-  if (doDupes == true)
+  if (doDupes == true && (!nextGenome || nextGenome != genome->getParent()))
   {   
     outputPtr->clear();
     set<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
