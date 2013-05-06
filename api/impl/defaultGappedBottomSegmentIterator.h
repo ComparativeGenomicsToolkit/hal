@@ -53,7 +53,8 @@ public:
      std::set<MappedSegmentConstPtr>& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
-     bool doDupes) const;
+     bool doDupes,
+     hal_size_t minLength) const;
 
    // SEGMENT ITERATOR IrNTERFACE
    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const;

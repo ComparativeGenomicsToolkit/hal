@@ -42,6 +42,10 @@ public:
     * whether or not we use the source segment as our primary index. */
    virtual bool equals(const MappedSegmentConstPtr& other) const = 0;
 
+   /** Flip the mapping direction.  This segment becomes the source, and
+    * the source becomes this.*/
+   virtual void flip() const = 0;
+
    /** Functor for sorted STL containers, sorting by origin as primary 
     * index */
    struct LessSource { bool operator()(const MappedSegmentConstPtr& ms1,

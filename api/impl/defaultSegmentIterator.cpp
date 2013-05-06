@@ -176,7 +176,8 @@ hal_size_t DefaultSegmentIterator::getMappedSegments(
   set<MappedSegmentConstPtr>& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
-  bool doDupes) const
+  bool doDupes,
+  hal_size_t minLength) const
 {
   assert(tgtGenome != NULL);
   set<const Genome*> pathSet;
@@ -191,7 +192,8 @@ hal_size_t DefaultSegmentIterator::getMappedSegments(
 
   hal_size_t numResults = DefaultMappedSegment::map(this, outSegments, 
                                                     tgtGenome,
-                                                    genomesOnPath, doDupes);
+                                                    genomesOnPath, doDupes,
+                                                    minLength);
   return numResults;
 }
 

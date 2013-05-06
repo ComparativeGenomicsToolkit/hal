@@ -59,7 +59,8 @@ public:
      std::set<MappedSegmentConstPtr>& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
-     bool doDupes) const;
+     bool doDupes,
+     hal_size_t minLength) const;
 
    // TOP SEGMENT INTERFACE
    hal_index_t getParentIndex() const;
@@ -252,7 +253,8 @@ inline hal_size_t HDF5TopSegment::getMappedSegments(
   std::set<MappedSegmentConstPtr>& outSegments,
   const Genome* tgtGenome,
   const std::set<const Genome*>* genomesOnPath,
-  bool doDupes) const
+  bool doDupes,
+  hal_size_t minLength) const
 {
   throw hal_exception("Internal error.   HDF5 Segment interface should "
                       "at some point go through the sliced segment");

@@ -120,12 +120,17 @@ public:
     * Specifying this can avoid recomputing the path over and over again
     * when, say, calling getMappedSegments repeatedly for the same 
     * source and target. 
-    * @param doDupes  Specify whether paralogy edges are followed */
+    * @param doDupes  Specify whether paralogy edges are followed 
+    * @param minLength Minimum length of segments to consider.  It is 
+    * potentially much faster to filter using this parameter than
+    * doing a second pass on the output.  If minLength is 0, then no
+    * segments are filtered based on length */
    virtual hal_size_t getMappedSegments(
      std::set<MappedSegmentConstPtr>& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath = NULL,
-     bool doDupes = true) const = 0;
+     bool doDupes = true,
+     hal_size_t minLength = 0) const = 0;
 
 protected:
    friend class counted_ptr<Segment>;

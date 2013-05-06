@@ -187,7 +187,8 @@ hal_size_t DefaultGappedBottomSegmentIterator::getMappedSegments(
   set<MappedSegmentConstPtr>& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
-  bool doDupes) const
+  bool doDupes,
+  hal_size_t minLength) const
 {
   throw hal_exception("getMappedSegments is not supported in "
                       "DefaultGappedTopSegmentIterator");

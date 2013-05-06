@@ -52,7 +52,8 @@ public:
      std::set<MappedSegmentConstPtr>& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
-     bool doDupes) const;
+     bool doDupes,
+     hal_size_t minLength) const;
 
    // SLICED SEGMENT INTERFACE 
    virtual void toReverse() const;
@@ -67,13 +68,16 @@ public:
    virtual bool lessThan(const MappedSegmentConstPtr& other) const;
    virtual bool lessThanBySource(const MappedSegmentConstPtr& other) const;
    virtual bool equals(const MappedSegmentConstPtr& other) const;
+   virtual void flip() const;
+
 
    // INTERNAL METHODS
    static hal_size_t map(const DefaultSegmentIterator* source,
                          std::set<MappedSegmentConstPtr>& results,
                          const Genome* tgtGenome,
                          const std::set<const Genome*>* genomesOnPath,
-                         bool doDupes);
+                         bool doDupes,
+                         hal_size_t minLength);
 
 protected:
    friend class counted_ptr<DefaultMappedSegment>;
@@ -99,17 +103,21 @@ protected:
                            std::list<DefaultMappedSegmentConstPtr>& results,
                            const Genome* tgtGenome,
                            const std::set<const Genome*>* genomesOnPath,
-                           bool doDupes);
+                           bool doDupes,
+                           hal_size_t minLength);
    static 
    hal_size_t mapUp(DefaultMappedSegmentConstPtr mappedSeg, 
-                    std::list<DefaultMappedSegmentConstPtr>& results);
+                    std::list<DefaultMappedSegmentConstPtr>& results,
+                    hal_size_t minLength);
    static 
    hal_size_t mapDown(DefaultMappedSegmentConstPtr mappedSeg, 
                       hal_size_t childIndex,
-                      std::list<DefaultMappedSegmentConstPtr>& results);
+                      std::list<DefaultMappedSegmentConstPtr>& results,
+                      hal_size_t minLength);
    static 
    hal_size_t mapSelf(DefaultMappedSegmentConstPtr mappedSeg, 
-                      std::list<DefaultMappedSegmentConstPtr>& results);
+                      std::list<DefaultMappedSegmentConstPtr>& results,
+                    hal_size_t minLength);
    
    TopSegmentIteratorConstPtr targetAsTop() const;
    BottomSegmentIteratorConstPtr targetAsBottom() const;
@@ -189,6 +197,7 @@ inline bool DefaultMappedSegment::EqualTo::operator()(
 {
   return ms1->equals(ms2); 
 };
+
 
 
 }
