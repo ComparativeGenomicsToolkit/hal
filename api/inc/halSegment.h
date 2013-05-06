@@ -110,7 +110,8 @@ public:
 
    /** Get homologous segments in target genome.  Returns the number
     * of mapped segments found.
-    * @param outSegments  Vector to which the output will be appended
+    * @param outSegments  Output.  Note that std::less is overloaded to 
+    * sort this set based on origin coordinates (see halMappedSegment.h).
     * @param tgtGenome  Target genome to map to.  Can be the same as current.
     * @param genomesOnPath  Intermediate genomes that must be visited
     * on the way to tgt.  If this is specified as NULL, then the path

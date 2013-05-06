@@ -28,9 +28,39 @@ public:
    virtual SlicedSegmentConstPtr getSource() const = 0;
 
    /** Comparison used to store in stl sets and maps.  We sort based
-    * on the coordinate of the *Source* genome interval as the primary
+    * on the coordinate of the mapped segemnt's (target) interval as the primary
     * index and the target genome as the secondary index.  */
    virtual bool lessThan(const MappedSegmentConstPtr& other) const = 0;
+
+   /** Comparison used to store in STL containers.  We sort based
+    * on the coordinate of the *Source* genome interval as the primary
+    * index and the target genome as the secondary index.  */
+   virtual bool lessThanBySource(const MappedSegmentConstPtr& other) const = 0;
+
+   /** Comparison used to determine uniqueness in lists.  Tests lessThan
+    * in both directions.  Note that equality is the same regardless of 
+    * whether or not we use the source segment as our primary index. */
+   virtual bool equals(const MappedSegmentConstPtr& other) const = 0;
+
+   /** Functor for sorted STL containers, sorting by origin as primary 
+    * index */
+   struct LessSource { bool operator()(const MappedSegmentConstPtr& ms1,
+                                       const MappedSegmentConstPtr& ms2) {
+     return ms1->lessThanBySource(ms2); }
+   };
+
+   /** Functor for sorted STL containers, sorting  by target as primary 
+    * index */
+   struct Less { bool operator()(const MappedSegmentConstPtr& ms1,
+                                 const MappedSegmentConstPtr& ms2) {
+     return ms1->lessThan(ms2); }
+   };
+ 
+   /** Functor for STL sorted lists to test for uniqueness */
+   struct EqualTo { bool operator()(const MappedSegmentConstPtr& ms1,
+                                    const MappedSegmentConstPtr& ms2) {
+     return ms1->equals(ms2); }
+   };
 
 protected:
    friend class counted_ptr<MappedSegment>;
@@ -43,17 +73,18 @@ inline MappedSegment::~MappedSegment() {}
 }
 
 namespace std {
-/** Want sets of mapped segments to be sorted by <source,target> and not 
+/** Want sets of mapped segments to be sorted by <source,target> and not
  * contain any dupes! */
 template<>
 struct less<hal::MappedSegmentConstPtr>
 {
    bool operator()(const hal::MappedSegmentConstPtr& m1,
-                   const hal::MappedSegmentConstPtr& m2) const 
+                   const hal::MappedSegmentConstPtr& m2) const
       {
-        return m1->lessThan(m2); 
+        return m1->lessThan(m2);
       }
 };
+
 }
 
 #endif
