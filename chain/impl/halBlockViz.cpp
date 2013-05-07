@@ -469,7 +469,7 @@ hal_block_t* readBlocks(const Sequence* tSequence,
   hal_block_t* head = NULL;
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  blockMapper.init(tGenome, qGenome, absStart, absEnd, false);
+  blockMapper.init(tGenome, qGenome, absStart, absEnd, doDupes);
   blockMapper.map();
   const BlockMapper::SegMap& segMap = blockMapper.getMap();
   for (BlockMapper::SegMap::const_iterator segMapIt = segMap.begin();
