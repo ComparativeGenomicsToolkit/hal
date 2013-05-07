@@ -85,7 +85,7 @@ struct less<hal::MappedSegmentConstPtr>
    bool operator()(const hal::MappedSegmentConstPtr& m1,
                    const hal::MappedSegmentConstPtr& m2) const
       {
-        return m1->lessThan(m2);
+        return m1->lessThanBySource(m2);
       }
 };
 
