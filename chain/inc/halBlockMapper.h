@@ -16,12 +16,6 @@
 
 namespace hal{
 
-struct SegmentPtrLess
-{
-   bool operator()(const SegmentIteratorConstPtr& s1, 
-                   const SegmentIteratorConstPtr& s2) const;
-};
-
 // helper class to make blocks for snake display
 // keeps a map of segments in reference genome to sets of segments
 // in query genome that map to it.  
@@ -30,76 +24,55 @@ class BlockMapper
 {
 public:
 
-   typedef std::set<SegmentIteratorConstPtr, SegmentPtrLess> SegSet;
-   typedef std::map<SegmentIteratorConstPtr, SegSet*, SegmentPtrLess> SegMap;
+   typedef std::set<MappedSegmentConstPtr> MSSet;
+   typedef std::set<MappedSegmentConstPtr, MappedSegment::Less> MSFlipSet;
 
    BlockMapper();
    virtual ~BlockMapper();
 
    void init(const Genome* refGenome, const Genome* queryGenome, 
              hal_index_t absRefFirst, hal_index_t absRefLast,
-             bool doDupes);
+             bool doDupes, hal_size_t minLength,
+             bool mapTargetAdjacencies);
    void map();
 
-   const SegMap& getMap() const;
+   const MSSet& getMap() const;
 
 protected:
    
-   enum Relation {RefParent, RefChild, RefSister};
-
    void erase();
-   void addParalogies(TopSegmentIteratorConstPtr top, SegSet* segSet);
-   bool isCanonical(TopSegmentIteratorConstPtr top);
+   void mapAdjacencies(const MSFlipSet& flipSet,
+                       MSFlipSet::const_iterator flipIt);
 
-   void mapRef(SegmentIteratorConstPtr refSeg);
-   void mapRefParent(SegmentIteratorConstPtr refSeg);
-   void mapRefChild(SegmentIteratorConstPtr refSeg);
-   void mapRefSister(SegmentIteratorConstPtr refSeg);
+   static SegmentIteratorConstPtr makeIterator(
+     MappedSegmentConstPtr mappedSegment, 
+     hal_index_t& minIndex,
+     hal_index_t& maxIndex);
 
-   void mapAdjacencies(SegmentIteratorConstPtr querySeg);
-   SegmentIteratorConstPtr getAdjacencyInRef(
-     SegmentIteratorConstPtr querySeg);
+   static void cutByNext(SegmentIteratorConstPtr queryIt, 
+                         SlicedSegmentConstPtr nextSeg,
+                         bool right);
+
    
 protected:
 
-   SegMap _segMap;
-   Relation _rel;
+   MSSet _segMap;
+   std::set<const Genome*> _spanningTree;
    const Genome* _refGenome;
    const Sequence* _refSequence;
    const Genome* _queryGenome;
    hal_index_t _refChildIndex;
    hal_index_t _queryChildIndex;
    bool _doDupes;
+   hal_size_t _minLength;
    hal_index_t _absRefFirst;
    hal_index_t _absRefLast;
+   bool _mapAdj;
 
    static hal_size_t _maxAdjScan;
 };
 
-inline bool
-SegmentPtrLess::operator()(const SegmentIteratorConstPtr& s1, 
-                           const SegmentIteratorConstPtr& s2) const
-{
-  assert (s1->getGenome() == s2->getGenome());
-  if (s1->getArrayIndex() < s2->getArrayIndex())
-  {
-    return true;
-  }
-  else if (s1->getArrayIndex() > s2->getArrayIndex())
-  {
-    return false;
-  }
-  else 
-  {
-    hal_offset_t o1 = 
-       s1->getReversed() ? s1->getEndOffset() : s1->getStartOffset();
-    hal_offset_t o2 = 
-       s2->getReversed() ? s2->getEndOffset() : s2->getStartOffset();
-    return o1 < o2;       
-  }
-}
-
-inline const BlockMapper::SegMap& BlockMapper::getMap() const
+inline const BlockMapper::MSSet& BlockMapper::getMap() const
 {
   return _segMap;
 }

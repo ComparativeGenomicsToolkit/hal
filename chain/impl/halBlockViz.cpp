@@ -48,9 +48,8 @@ static hal_block_t* readBlocks(const Sequence* tSequence,
                                const Genome* qGenome, bool getSequenceString,
                                bool doDupes);
 
-static void readBlock(hal_block_t* cur, SegmentIteratorConstPtr refSeg,
-                      SegmentIteratorConstPtr querySeg, bool getSequenceString,
-                      const string& genomeName);
+static void readBlock(hal_block_t* cur, MappedSegmentConstPtr querySeg, 
+                      bool getSequenceString, const string& genomeName);
 
 
 extern "C" int halOpenLOD(char *lodFilePath)
@@ -468,18 +467,12 @@ hal_block_t* readBlocks(const Sequence* tSequence,
   hal_block_t* head = NULL;
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  blockMapper.init(tGenome, qGenome, absStart, absEnd, false);
+  blockMapper.init(tGenome, qGenome, absStart, absEnd, doDupes, 0, true);
   blockMapper.map();
-  const BlockMapper::SegMap& segMap = blockMapper.getMap();
-  for (BlockMapper::SegMap::const_iterator segMapIt = segMap.begin();
+  const BlockMapper::MSSet& segMap = blockMapper.getMap();
+  for (BlockMapper::MSSet::const_iterator segMapIt = segMap.begin();
        segMapIt != segMap.end(); ++segMapIt)
   {
-    SegmentIteratorConstPtr refSeg = segMapIt->first;
-    BlockMapper::SegSet* segSet = segMapIt->second;
-    assert(doDupes || segSet->size() == 1);
-    for (BlockMapper::SegSet::const_iterator segIt = segSet->begin();
-         segIt != segSet->end(); ++segIt)
-    {
       hal_block_t* cur = (hal_block_t*)calloc(1, sizeof(hal_block_t));
       if (head == NULL)
       {
@@ -489,17 +482,16 @@ hal_block_t* readBlocks(const Sequence* tSequence,
       {
         prev->next = cur;
       }
-      readBlock(cur, refSeg, *segIt, getSequenceString, qGenomeName);
+      readBlock(cur, *segMapIt, getSequenceString, qGenomeName);
       prev = cur;
-    }    
-  }
+  }    
   return head;
 }
 
-void readBlock(hal_block_t* cur, SegmentIteratorConstPtr refSeg,
-               SegmentIteratorConstPtr querySeg, bool getSequenceString,
-               const string& genomeName)
+void readBlock(hal_block_t* cur, MappedSegmentConstPtr querySeg, 
+               bool getSequenceString, const string& genomeName)
 {
+  SegmentConstPtr refSeg = querySeg->getSource();
   const Sequence* qSequence = querySeg->getSequence();
   const Sequence* tSequence = refSeg->getSequence(); 
   cur->next = NULL;
