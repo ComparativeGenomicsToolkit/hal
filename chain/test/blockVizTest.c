@@ -25,12 +25,13 @@ struct bv_args_t
    int tStart; 
    int tEnd;
    int doSeq;
+   int doDupes;
    char* udcPath;
 };
 
 static int parseArgs(int argc, char** argv, bv_args_t* args)
 {
-  if (argc != 7 && argc != 8 && argc != 9)
+  if (argc != 7 && argc != 8 && argc != 9 && argc != 10)
   {
     return -1;
   }
@@ -51,10 +52,18 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
       return -1;
     }
   }
-  args->udcPath = NULL;
+  args->doDupes = 0;
   if (argc >= 9)
   {
-    args->udcPath = argv[8];
+    if (sscanf(argv[8], "%d", &args->doDupes) != 1)
+    {
+      return -1;
+    }
+  }
+  args->udcPath = NULL;
+  if (argc >= 10)
+  {
+    args->udcPath = argv[9];
   }
   return 0; 
 }
@@ -124,7 +133,7 @@ int main(int argc, char** argv)
   if (parseArgs(argc, argv, &args) != 0)
   {
     fprintf(stderr, "Usage: %s <halLodPath> <qSpecies> <tSpecies> <tChrom> "
-            "<tStart> <tEnd> [doSeq=0] [udcPath=NULL]\n\n", argv[0]);
+            "<tStart> <tEnd> [doSeq=0] [doDupes=0] [udcPath=NULL]\n\n", argv[0]);
     return -1;
   }
 #ifdef ENABLE_UDC
@@ -147,7 +156,7 @@ int main(int argc, char** argv)
                                                          args.tStart,
                                                          args.tEnd, 
                                                          args.doSeq, 
-                                                         0);
+                                                         args.doDupes);
     if (head == NULL)
     {
       ret = -1;
