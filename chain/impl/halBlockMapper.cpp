@@ -188,9 +188,20 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
   for (MSSet::iterator i = backResults.begin(); i != backResults.end(); ++i)
   {
     MappedSegmentConstPtr mseg = *i;
-    mseg->flip();
-    assert(_segMap.find(mseg) == _segMap.end());
-    _segMap.insert(mseg);
+    if (mseg->getSequence() == _refSequence)
+    {
+      mseg->flip();
+      SlicedSegmentConstPtr refSeg = mseg->getSource();
+      if (refSeg->getReversed())
+      {
+        refSeg->slice(refSeg->getEndOffset(), refSeg->getEndOffset());
+        refSeg->toReverse();
+        mseg->slice(mseg->getEndOffset(), mseg->getEndOffset());
+        mseg->toReverse();
+      }
+      assert(_segMap.find(mseg) == _segMap.end());
+      _segMap.insert(mseg);
+    }
   }
 }
 
