@@ -15,7 +15,7 @@
 using namespace hal;
 using namespace std;
 
-hal_size_t BlockMapper::_maxAdjScan = 5000;
+hal_size_t BlockMapper::_maxAdjScan = 3;
 
 BlockMapper::BlockMapper()
 {
