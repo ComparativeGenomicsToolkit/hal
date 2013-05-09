@@ -48,8 +48,14 @@ static hal_block_t* readBlocks(const Sequence* tSequence,
                                const Genome* qGenome, bool getSequenceString,
                                bool doDupes);
 
-static void readBlock(hal_block_t* cur, MappedSegmentConstPtr querySeg, 
+static void readBlock(hal_block_t* cur, 
+                      BlockMapper::MSSet::const_iterator firstIt,
+                      BlockMapper::MSSet::const_iterator lastIt,
                       bool getSequenceString, const string& genomeName);
+static bool canMergeBlock(MappedSegmentConstPtr cur, MappedSegmentConstPtr next);
+static void copyRangeString(char** sequence, string& buffer,
+                            BlockMapper::MSSet::const_iterator firstIt,
+                            BlockMapper::MSSet::const_iterator lastIt);
 
 
 extern "C" int halOpenLOD(char *lodFilePath)
@@ -473,27 +479,46 @@ hal_block_t* readBlocks(const Sequence* tSequence,
   for (BlockMapper::MSSet::const_iterator segMapIt = segMap.begin();
        segMapIt != segMap.end(); ++segMapIt)
   {
-      hal_block_t* cur = (hal_block_t*)calloc(1, sizeof(hal_block_t));
-      if (head == NULL)
-      {
-        head = cur;
-      }
-      else
-      {
-        prev->next = cur;
-      }
-      readBlock(cur, *segMapIt, getSequenceString, qGenomeName);
-      prev = cur;
+    assert((*segMapIt)->getSource()->getReversed() == false);
+    BlockMapper::MSSet::const_iterator segMapEnd = segMapIt;
+    BlockMapper::MSSet::const_iterator segMapNext = segMapIt;
+    ++segMapNext;
+    for (; segMapNext != segMap.end() && canMergeBlock(*segMapEnd, *segMapNext);
+      ++segMapNext)
+    {
+      segMapEnd = segMapNext;
+    }
+    hal_block_t* cur = (hal_block_t*)calloc(1, sizeof(hal_block_t));
+    if (head == NULL)
+    {
+      head = cur;
+    }
+    else
+    {
+      prev->next = cur;
+    }
+    readBlock(cur, segMapIt, segMapEnd, getSequenceString, qGenomeName);
+    prev = cur;
+    segMapIt = segMapEnd;
   }    
   return head;
 }
 
-void readBlock(hal_block_t* cur, MappedSegmentConstPtr querySeg, 
+void readBlock(hal_block_t* cur,  BlockMapper::MSSet::const_iterator firstIt,
+               BlockMapper::MSSet::const_iterator lastIt, 
                bool getSequenceString, const string& genomeName)
 {
-  SegmentConstPtr refSeg = querySeg->getSource();
-  const Sequence* qSequence = querySeg->getSequence();
-  const Sequence* tSequence = refSeg->getSequence(); 
+  MappedSegmentConstPtr firstQuerySeg = *firstIt;
+  MappedSegmentConstPtr lastQuerySeg = *lastIt;
+  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
+  SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
+  const Sequence* qSequence = firstQuerySeg->getSequence();
+  const Sequence* tSequence = firstRefSeg->getSequence(); 
+  assert(qSequence == lastQuerySeg->getSequence());
+  assert(tSequence == lastRefSeg->getSequence());
+  assert(firstRefSeg->getReversed() == false);
+  assert(lastRefSeg->getReversed() == false);
+  
   cur->next = NULL;
 
   string seqBuffer = qSequence->getName();
@@ -503,20 +528,83 @@ void readBlock(hal_block_t* cur, MappedSegmentConstPtr querySeg,
   cur->qChrom = (char*)malloc(seqBuffer.length() + 1 - prefix);
   strcpy(cur->qChrom, seqBuffer.c_str() + prefix);
 
-  cur->tStart = refSeg->getStartPosition() - tSequence->getStartPosition();
-  cur->qStart = querySeg->getStartPosition() - qSequence->getStartPosition();
+  cur->tStart = firstRefSeg->getStartPosition() - tSequence->getStartPosition();
+  if (firstQuerySeg->getReversed() == false)
+  {
+    cur->qStart = firstQuerySeg->getStartPosition() - 
+       qSequence->getStartPosition();
+  }
+  else
+  {
+    cur->qStart = lastQuerySeg->getEndPosition() - qSequence->getStartPosition();
+  }
   assert(cur->tStart >= 0);
   assert(cur->qStart >= 0);
 
-  assert(refSeg->getLength() == querySeg->getLength());
-  cur->size = refSeg->getLength();
-  cur->strand = querySeg->getReversed() ? '-' : '+';
+  assert(firstRefSeg->getLength() == firstQuerySeg->getLength());
+  cur->size = lastRefSeg->getEndPosition() - firstRefSeg->getStartPosition() + 1;
+  cur->strand = firstQuerySeg->getReversed() ? '-' : '+';
   cur->sequence = NULL;
   if (getSequenceString != 0)
   {
-    querySeg->getString(dnaBuffer);
-    cur->sequence = (char*)malloc(dnaBuffer.length() + 1);
-    strcpy(cur->sequence, dnaBuffer.c_str());
+    copyRangeString(&cur->sequence, dnaBuffer, firstIt, lastIt);
   }
 }
 
+bool canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
+                   MappedSegmentConstPtr lastQuerySeg)
+{
+  // DISABLE FOR NOW
+  return false;
+  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
+  SlicedSegmentConstPtr lastRefSeg = firstQuerySeg->getSource();
+  assert(firstRefSeg->getReversed() == false);
+  assert(lastRefSeg->getReversed() == false);
+  assert(firstRefSeg->getSequence() == lastRefSeg->getSequence());
+  assert(firstQuerySeg->getGenome() == lastQuerySeg->getGenome());
+
+  if (firstQuerySeg->getReversed() == lastQuerySeg->getReversed() &&
+      lastRefSeg->getStartPosition() == firstRefSeg->getEndPosition() + 1 &&
+      firstQuerySeg->getSequence() == lastQuerySeg->getSequence())
+  {
+    if (firstQuerySeg->getReversed() == false &&
+        lastQuerySeg->getStartPosition() == 
+        firstQuerySeg->getEndPosition() + 1)
+    {
+      return true;
+    }
+    else if (firstQuerySeg->getReversed() == true &&
+             lastQuerySeg->getStartPosition() == 
+             firstQuerySeg->getEndPosition() - 1)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+void copyRangeString(char** sequence, string& buffer,
+                     BlockMapper::MSSet::const_iterator firstIt,
+                     BlockMapper::MSSet::const_iterator lastIt)
+{
+  BlockMapper::MSSet::const_iterator i;
+  BlockMapper::MSSet::const_iterator end = lastIt;
+  ++end;
+  size_t length = 0;
+  for (i = firstIt; i != end; ++i)
+  {
+    length += (*i)->getLength();
+  }
+
+  *sequence = (char*)malloc(length + 1);
+
+  size_t written = 0;
+  size_t pos;
+  for (i = firstIt; i != end; ++i)
+  {
+    (*i)->getString(buffer);
+    pos = (*i)->getReversed() ? length - written - (*i)->getLength() : written;
+    strcpy(*sequence + pos, buffer.c_str());
+    written += (*i)->getLength();
+  }
+}
