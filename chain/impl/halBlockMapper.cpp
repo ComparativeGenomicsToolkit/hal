@@ -15,7 +15,7 @@
 using namespace hal;
 using namespace std;
 
-hal_size_t BlockMapper::_maxAdjScan = 5;
+hal_size_t BlockMapper::_maxAdjScan = 5000;
 
 BlockMapper::BlockMapper()
 {
@@ -59,7 +59,10 @@ void BlockMapper::map()
 {
   SegmentIteratorConstPtr refSeg;
   hal_index_t lastIndex;
-  if (_refGenome->getNumBottomSegments() > 0)
+  set<const Genome*>  inputSet;
+  inputSet.insert(_refGenome);
+  inputSet.insert(_queryGenome);
+  if (getLowestCommonAncestor(inputSet) == _refGenome)
   {
     refSeg = _refGenome->getBottomSegmentIterator();
     lastIndex = _refGenome->getNumBottomSegments();
@@ -107,6 +110,7 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
                                  MSFlipSet::const_iterator flipIt)
 {
   assert(flipSet.empty() == false && flipIt != flipSet.end());
+  assert(_segMap.find(*flipIt) != _segMap.end());
   MappedSegmentConstPtr mappedQuerySeg = *flipIt;
   hal_index_t maxIndex;
   hal_index_t minIndex;
@@ -156,17 +160,24 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
                          maxIndex);
 
   MSFlipSet::const_iterator flipPrev = flipIt;
-  queryIt->getReversed() ? ++flipPrev : --flipPrev;
+  if (queryIt->getReversed())
+  {
+    ++flipPrev;
+  }
+  else
+  {
+    flipPrev = flipPrev == flipSet.begin() ? flipSet.end() : --flipPrev;
+  }
   iter = 0;
   queryIt->toLeft();
   while (queryIt->getArrayIndex() >= minIndex &&
          queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
   {
-    if (flipNext != flipSet.end())
+    if (flipPrev != flipSet.end())
     {
       // if cut returns nothing, then the region in question is covered
-      // by flipNext (ie already mapped).
-      cutByNext(queryIt, *flipNext, queryIt->getReversed());
+      // by flipPrev (ie already mapped).
+      cutByNext(queryIt, *flipPrev, queryIt->getReversed());
     }
     if (queryIt.get() == NULL)
     {
@@ -194,12 +205,8 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
       SlicedSegmentConstPtr refSeg = mseg->getSource();
       if (refSeg->getReversed())
       {
-        refSeg->slice(refSeg->getEndOffset(), refSeg->getEndOffset());
-        refSeg->toReverse();
-        mseg->slice(mseg->getEndOffset(), mseg->getEndOffset());
-        mseg->toReverse();
+        mseg->fullReverse();
       }
-      assert(_segMap.find(mseg) == _segMap.end());
       _segMap.insert(mseg);
     }
   }
@@ -243,7 +250,7 @@ SegmentIteratorConstPtr BlockMapper::makeIterator(
   return segIt;
 }
 
-void BlockMapper::cutByNext(SegmentIteratorConstPtr queryIt, 
+void BlockMapper::cutByNext(SegmentIteratorConstPtr& queryIt, 
                             SlicedSegmentConstPtr nextSeg,
                             bool right)
 {
@@ -251,7 +258,7 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr queryIt,
   assert(queryIt->isTop() == nextSeg->isTop());
 
   if (queryIt->getArrayIndex() == nextSeg->getArrayIndex())
-  {    
+  {
     hal_offset_t so1 = queryIt->getStartOffset();
     hal_offset_t eo1 = queryIt->getEndOffset();
     if (queryIt->getReversed())
@@ -263,9 +270,6 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr queryIt,
 
     if (right)
     {
-      assert(max(nextSeg->getStartPosition(), nextSeg->getEndPosition()) >=
-             max(queryIt->getStartPosition(), queryIt->getEndPosition()));
-
       // overlap on start position.  we zap
       if (so1 >= so2)
       {
@@ -273,9 +277,6 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr queryIt,
       }
       else
       {
-        assert(max(nextSeg->getStartPosition(), nextSeg->getEndPosition()) >
-               max(queryIt->getStartPosition(), queryIt->getEndPosition()));
-
         hal_index_t e1 = max(queryIt->getEndPosition(), 
                              queryIt->getStartPosition());
         hal_index_t s2 = min(nextSeg->getEndPosition(), 
@@ -294,15 +295,9 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr queryIt,
           queryIt->slice(newStartOffset, newEndOffset);
         }
       }
-      assert(!queryIt.get() ||
-             max(queryIt->getStartPosition(), queryIt->getEndPosition()) <
-             min(nextSeg->getStartPosition(), nextSeg->getEndPosition()));
     }
     else
     {
-      assert(min(nextSeg->getStartPosition(), nextSeg->getEndPosition()) <=
-             min(queryIt->getStartPosition(), queryIt->getEndPosition()));
-
       hal_index_t s1 = min(queryIt->getEndPosition(), 
                            queryIt->getStartPosition());
       hal_index_t e1 = max(queryIt->getEndPosition(), 
@@ -317,9 +312,6 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr queryIt,
       }
       else
       {
-        assert(min(nextSeg->getStartPosition(), nextSeg->getEndPosition()) <
-               min(queryIt->getStartPosition(), queryIt->getEndPosition()));
-
         // end position of queryIt overlaps next seg.  so we cut it.
         if (s1 <= e2)
         {
@@ -334,9 +326,6 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr queryIt,
           queryIt->slice(newStartOffset, newEndOffset);
         }
       }
-      assert(!queryIt.get() ||
-             min(queryIt->getStartPosition(), queryIt->getEndPosition()) >
-             max(nextSeg->getStartPosition(), nextSeg->getEndPosition()));
     }
   }
 }
