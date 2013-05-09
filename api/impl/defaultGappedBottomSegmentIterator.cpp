@@ -178,6 +178,22 @@ bool DefaultGappedBottomSegmentIterator::isMissingData(double nThreshold) const
   return false;
 }
 
+bool DefaultGappedBottomSegmentIterator::isTop() const
+{
+  return false;
+}
+
+hal_size_t DefaultGappedBottomSegmentIterator::getMappedSegments(
+  set<MappedSegmentConstPtr>& outSegments,
+  const Genome* tgtGenome,
+  const set<const Genome*>* genomesOnPath,
+  bool doDupes,
+  hal_size_t minLength) const
+{
+  throw hal_exception("getMappedSegments is not supported in "
+                      "DefaultGappedTopSegmentIterator");
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////

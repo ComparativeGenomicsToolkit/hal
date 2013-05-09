@@ -68,31 +68,13 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
   return 0; 
 }
 
-static void printBlock(FILE* file, struct hal_block_t* b)
+static void printBlock(FILE* tFile, FILE* qFile, struct hal_block_t* b, 
+                       const char* tChrom, size_t idx)
 {
-  fprintf(file, "chr:%s, tSt:%d, qSt:%d, size:%d, strand:%c: %s\n", 
-          b->qChrom, b->tStart, b->qStart, b->size, b->strand, b->sequence);
-}
-
-static void printStats(FILE* file, int handle)
-{
-  hal_species_t* species = halGetSpecies(handle);
-  for (; species != NULL; species = species->next)
-  {
-    fprintf(file, "species:%s, len=%u, nc=%u, par=%s, bl=%lf\n",
-            species->name, species->length, species->numChroms,
-            species->parentName, species->parentBranchLength);
-    hal_chromosome_t* chrom = halGetChroms(handle, species->name);
-    for (; chrom != NULL; chrom = chrom->next)
-    {
-      int len = chrom->length > 10 ? 10 : chrom->length;
-      char* dna = halGetDna(handle, species->name, chrom->name,
-                            0, len);
-      fprintf(file, "  chrom:%s, len=%u seq=%s...\n",
-              chrom->name, chrom->length, dna);
-      free(dna);              
-    }
-  }
+  fprintf(tFile, "%s\t%d\t%d\t%zu\t0\t+\n", tChrom, b->tStart,
+          b->tStart + b->size, idx);
+  fprintf(qFile, "%s\t%d\t%d\t%zu\t0\t%c\n", b->qChrom, b->qStart,
+          b->qStart + b->size, idx, b->strand);
 }
 
 static int openWrapper(char* path)
@@ -103,28 +85,6 @@ static int openWrapper(char* path)
   }
   return halOpenLOD(path);
 }
-
-#ifdef ENABLE_UDC
-static void* getBlocksWrapper(void* voidArgs)
-{
-  bv_args_t* args = (bv_args_t*)voidArgs;
-  int handle = openWrapper(args->path);
-  hal_block_t* head = NULL;
-  if (handle >= 0)
-  {
-    head = halGetBlocksInTargetRange(handle,
-                                     args->qSpecies,
-                                     args->tSpecies,
-                                     args->tChrom, 
-                                     args->tStart,
-                                     args->tEnd, 
-                                     args->doSeq, 
-                                     0);
-    halFreeBlocks(head);
-  }
-  pthread_exit(NULL);
-}
-#endif
 
 int main(int argc, char** argv)
 {
@@ -142,13 +102,22 @@ int main(int argc, char** argv)
     udcSetDefaultDir(args.udcPath);
   }
 #endif
-     
+  
+  char tFilePath[1000];
+  char qFilePath[1000];
+  sprintf(tFilePath, "%s.bed", args.tSpecies);
+  sprintf(qFilePath, "%s.bed", args.qSpecies);
+  
+  FILE* tFile = fopen(tFilePath, "w");
+  FILE* qFile = fopen(qFilePath, "w");
+  if (!tFile || !qFile)
+  {
+    fprintf(stderr, "Error opening %s or %s\n", tFilePath, qFilePath);
+  }
   int handle = openWrapper(args.path);
   int ret = 0;
   if (handle >= 0)
   {
-    printStats(stdout, handle);
-
     struct hal_block_t* head = halGetBlocksInTargetRange(handle, 
                                                          args.qSpecies,
                                                          args.tSpecies,
@@ -162,24 +131,17 @@ int main(int argc, char** argv)
       ret = -1;
     }
     struct hal_block_t* cur = head;
+    size_t index = 0;
+    printf("Writing target blocks to %s and query blocks to %s...\n",
+           tFilePath, qFilePath);
     while (cur)
     {
-      printBlock(stdout, cur);
+      printBlock(tFile, qFile, cur, args.tChrom, index++);
       cur = cur->next;
     }
     halFreeBlocks(head);
-
-#ifdef ENABLE_UDC
-    #define NUM_THREADS 10
-    pthread_t threads[NUM_THREADS];
-    printf("\nTesting %d threads\n", NUM_THREADS);
-    for (size_t t = 0; t < NUM_THREADS; ++t)
-    {
-      pthread_create(&threads[t], NULL, getBlocksWrapper, (void *)&args);
-    }
-#endif
-
-    
+    fclose(tFile);
+    fclose(qFile);
   }
   else
   {

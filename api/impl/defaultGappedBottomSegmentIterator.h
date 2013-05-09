@@ -48,8 +48,15 @@ public:
    virtual bool isFirst() const;
    virtual bool isLast() const;
    virtual bool isMissingData(double nThreshold) const;
+   virtual bool isTop() const;
+   virtual hal_size_t getMappedSegments(
+     std::set<MappedSegmentConstPtr>& outSegments,
+     const Genome* tgtGenome,
+     const std::set<const Genome*>* genomesOnPath,
+     bool doDupes,
+     hal_size_t minLength) const;
 
-   // SEGMENT ITERATOR INTERFACE
+   // SEGMENT ITERATOR IrNTERFACE
    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const;
    virtual void toRight(hal_index_t rightCutoff = NULL_INDEX) const;
    virtual void toReverse() const;

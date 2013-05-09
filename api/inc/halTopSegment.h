@@ -74,6 +74,13 @@ public:
     * current segment is the last segment in a sequence) */
    virtual hal_index_t getRightParentIndex() const = 0;
 
+   /** For every set of paralogous top segments in a given genome, we identify a
+    * unique segment as the canonical reference.  This is the segment that 
+    * will be traversed when disabling duplication edges when mapping via 
+    * the column iterator or mappedSegment interface.  It is also the segment
+    * that is connected from its parent's down edge.*/
+   virtual bool isCanonicalParalog() const = 0;
+
 protected:
    friend class counted_ptr<TopSegment>;
    friend class counted_ptr<const TopSegment>;

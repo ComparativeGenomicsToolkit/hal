@@ -15,7 +15,7 @@
 using namespace hal;
 using namespace std;
 
-hal_size_t BlockMapper::_maxAdjScan = 5;
+hal_size_t BlockMapper::_maxAdjScan = 3;
 
 BlockMapper::BlockMapper()
 {
@@ -29,60 +29,40 @@ BlockMapper::~BlockMapper()
 
 void BlockMapper::erase()
 {
-  for (SegMap::iterator i = _segMap.begin(); i != _segMap.end(); ++i)
-  {
-    delete i->second;
-  }
   _segMap.clear();
+  _spanningTree.clear();
 }
 
 void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
                        hal_index_t absRefFirst, hal_index_t absRefLast,
-                       bool doDupes)
+                       bool doDupes, hal_size_t minLength,
+                       bool mapTargetAdjacencies)
 {
   erase();
   _absRefFirst = absRefFirst;
   _absRefLast = absRefLast;
   _doDupes = doDupes;
+  _minLength = minLength;
+  _mapAdj = mapTargetAdjacencies;
   _refGenome = refGenome;
   _refSequence = refGenome->getSequenceBySite(_absRefFirst);
   assert(_refSequence == refGenome->getSequenceBySite(_absRefLast));
   _queryGenome = queryGenome;
 
-  if (queryGenome->getParent() == refGenome)
-  {
-    _rel = RefParent;
-    _queryChildIndex = refGenome->getChildIndex(queryGenome);
-    _refChildIndex = NULL_INDEX;
-  }
-  else if (refGenome->getParent() == queryGenome)
-  {
-    _rel = RefChild;
-    _queryChildIndex = NULL_INDEX;
-    _refChildIndex = queryGenome->getChildIndex(refGenome);
-  }
-  else if (queryGenome->getParent() == refGenome->getParent())
-  {
-    _rel = RefSister;
-    const Genome* parentGenome = queryGenome->getParent();
-    _queryChildIndex = parentGenome->getChildIndex(queryGenome);
-    _refChildIndex = parentGenome->getChildIndex(refGenome);
-  }
-  else
-  {
-    stringstream ss;
-    ss << "Query species " << queryGenome->getName() << " is neither the "
-       << "parent, child, nor sibling of the Reference species " 
-       << refGenome->getName();
-    throw hal_exception(ss.str());
-  }
+  set<const Genome*> inputSet;
+  inputSet.insert(_refGenome);
+  inputSet.insert(_queryGenome);
+  getGenomesInSpanningTree(inputSet, _spanningTree);
 }
 
 void BlockMapper::map()
 {
   SegmentIteratorConstPtr refSeg;
   hal_index_t lastIndex;
-  if (_rel == RefParent)
+  set<const Genome*>  inputSet;
+  inputSet.insert(_refGenome);
+  inputSet.insert(_queryGenome);
+  if (getLowestCommonAncestor(inputSet) == _refGenome)
   {
     refSeg = _refGenome->getBottomSegmentIterator();
     lastIndex = _refGenome->getNumBottomSegments();
@@ -108,281 +88,244 @@ void BlockMapper::map()
   while (refSeg->getArrayIndex() < lastIndex &&
          refSeg->getStartPosition() <= _absRefLast)  
   {
-    if (_segMap.find(refSeg) == _segMap.end())
-    {
-      mapRef(refSeg);
-    }
+    refSeg->getMappedSegments(_segMap, _queryGenome, &_spanningTree,
+                              _doDupes, _minLength);
     refSeg->toRight(_absRefLast);
   }
 
-  // Copy all the reference segments we found because 
-  // adding adjacencies will modify the structure
-  vector<SegMap::iterator> firstRoundResults(_segMap.size());
-  hal_size_t i = 0;
-  for (SegMap::iterator mapIt = _segMap.begin(); mapIt != _segMap.end(); 
-       ++mapIt)
+  if (_mapAdj)
   {
-    firstRoundResults[i++] = mapIt;
-  }
-  // For every query for every referencec, update the map with adjacent
-  // blocks when found
-  for (i = 0; i < firstRoundResults.size(); ++i)
-  {
-    SegMap::iterator mapIt = firstRoundResults[i];
-    for (SegSet::iterator setIt = mapIt->second->begin(); 
-         setIt != mapIt->second->end(); ++setIt)
+    // construct a set sorted on query instead of ref. 
+    MSFlipSet flipSet(_segMap.begin(), _segMap.end());
+
+    MSFlipSet::const_iterator i;
+    for (i = flipSet.begin(); i != flipSet.end(); ++i)
     {
-      mapAdjacencies(*setIt);
-    }
-  }
-}
-
-void BlockMapper::addParalogies(TopSegmentIteratorConstPtr top, 
-                                SegSet* segSet)
-{
-  if (_doDupes)
-  {
-    while (top->hasNextParalogy() == true &&
-           top->getNextParalogyIndex() != (*segSet->begin())->getArrayIndex())
-    {
-      top->toNextParalogy();
-      segSet->insert(top->copy());
-    }
-  }
-}
-
-bool BlockMapper::isCanonical(TopSegmentIteratorConstPtr top)
-{
-  BottomSegmentIteratorConstPtr bottom = 
-     top->getGenome()->getParent()->getBottomSegmentIterator(
-       top->getParentIndex());
-  hal_index_t childIndex = top->getGenome() == _refGenome ? _refChildIndex :
-     _queryChildIndex;
-  return bottom->getChildIndex(childIndex) == top->getArrayIndex();
-}
-
-void BlockMapper::mapRef(SegmentIteratorConstPtr refSeg)
-{
-  assert(!refSeg->getReversed());
-  if (_rel == RefParent)
-  { 
-    mapRefParent(refSeg);
-  }
-  else if (_rel == RefChild)
-  {
-      mapRefChild(refSeg);
-  }
-  else // _rel == RefSister
-  {
-    mapRefSister(refSeg);
-  }
-}
-
-void BlockMapper::mapRefParent(SegmentIteratorConstPtr refSeg)
-{
-  BottomSegmentIteratorConstPtr refBottom = 
-     refSeg.downCast<BottomSegmentIteratorConstPtr>();
-
-  if (refBottom->hasChild(_queryChildIndex))
-  {
-    TopSegmentIteratorConstPtr queryTop = _queryGenome->getTopSegmentIterator();
-    queryTop->toChild(refBottom, _queryChildIndex);
-    SegSet* segSet = new SegSet();
-    segSet->insert(queryTop->copy());
-    addParalogies(queryTop, segSet);
-    assert(_segMap.find(refBottom) == _segMap.end());
-    _segMap.insert(pair<SegmentIteratorConstPtr, SegSet*>(
-                     refBottom->copy(), segSet));
-  }
-}
-
-void BlockMapper::mapRefChild(SegmentIteratorConstPtr refSeg)
-{
-  TopSegmentIteratorConstPtr refTop = 
-     refSeg.downCast<TopSegmentIteratorConstPtr>();
-
-  if (refTop->hasParent() && (_doDupes || isCanonical(refTop)))
-  {
-    BottomSegmentIteratorConstPtr queryBottom = 
-       _queryGenome->getBottomSegmentIterator();
-    queryBottom->toParent(refTop);
-    SegSet* segSet = new SegSet();
-    segSet->insert(queryBottom->copy());
-    assert(_segMap.find(refTop) == _segMap.end());
-    _segMap.insert(pair<SegmentIteratorConstPtr, SegSet*>(
-                     refTop->copy(), segSet));
-  }
-}
-
-void BlockMapper::mapRefSister(SegmentIteratorConstPtr refSeg)
-{
-  TopSegmentIteratorConstPtr refTop = 
-     refSeg.downCast<TopSegmentIteratorConstPtr>();
-
-  if (refTop->hasParent() && (_doDupes || isCanonical(refTop)))
-  {
-    BottomSegmentIteratorConstPtr parBottom = 
-       _refGenome->getParent()->getBottomSegmentIterator();
-    parBottom->toParent(refTop);
-    if (parBottom->hasChild(_queryChildIndex))
-    {
-      TopSegmentIteratorConstPtr queryTop = 
-         _queryGenome->getTopSegmentIterator();
-      queryTop->toChild(parBottom, _queryChildIndex);
-      SegSet* segSet = new SegSet();
-      segSet->insert(queryTop->copy());
-      addParalogies(queryTop, segSet);
-      assert(_segMap.find(refTop) == _segMap.end());
-      _segMap.insert(pair<SegmentIteratorConstPtr, SegSet*>(
-                       refTop->copy(), segSet));
+      mapAdjacencies(flipSet, i);
     }
   }
 }
   
-void BlockMapper::mapAdjacencies(SegmentIteratorConstPtr querySeg)
+void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
+                                 MSFlipSet::const_iterator flipIt)
 {
-  SegmentIteratorConstPtr querySegCpy;
-  SegmentIteratorConstPtr querySegCpy2;
-
+  assert(flipSet.empty() == false && flipIt != flipSet.end());
+  assert(_segMap.find(*flipIt) != _segMap.end());
+  MappedSegmentConstPtr mappedQuerySeg = *flipIt;
   hal_index_t maxIndex;
   hal_index_t minIndex;
-  if (_rel == RefParent || _rel == RefSister)
+  SegmentIteratorConstPtr queryIt = makeIterator(mappedQuerySeg, 
+                                                 minIndex,
+                                                 maxIndex);
+  MSSet backResults;
+  MSFlipSet::const_iterator flipNext = flipIt;
+  if (queryIt->getReversed())
   {
-    TopSegmentIteratorConstPtr queryTop =
-       querySeg.downCast<TopSegmentIteratorConstPtr>();
-    querySegCpy = queryTop->copy();
-    querySegCpy2 = queryTop->copy();
-    minIndex = queryTop->getSequence()->getTopSegmentArrayIndex();
-    maxIndex = minIndex + 
-       (hal_index_t)queryTop->getSequence()->getNumTopSegments();
+    flipNext = flipNext == flipSet.begin() ? flipSet.end() : --flipNext;
   }
   else
   {
-    BottomSegmentIteratorConstPtr queryBottom =
-       querySeg.downCast<BottomSegmentIteratorConstPtr>();
-    querySegCpy = queryBottom->copy();
-    querySegCpy2 = queryBottom->copy();
-    minIndex = queryBottom->getSequence()->getBottomSegmentArrayIndex();
-    maxIndex = minIndex + 
-       (hal_index_t)queryBottom->getSequence()->getNumBottomSegments();
+    ++flipNext;
   }
-
   hal_size_t iter = 0;
-  querySegCpy->toRight();
-  while ((querySegCpy->getReversed() || 
-          querySegCpy->getArrayIndex() < maxIndex) &&
-         (!querySegCpy->getReversed() || 
-          querySegCpy->getArrayIndex() >= minIndex) && 
-         iter < _maxAdjScan)
+  queryIt->toRight();
+  while (queryIt->getArrayIndex() >= minIndex &&
+         queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
   {
-    SegmentIteratorConstPtr refSeg = getAdjacencyInRef(querySegCpy);
-
-    if (refSeg.get() != NULL)
+    if (flipNext != flipSet.end())
     {
-      // never want an inverted reference.  
-      if (refSeg->getReversed())
-      {
-        refSeg->toReverse();
-        //but we don't want to keep in forward coordinates
-        refSeg->slice(refSeg->getEndOffset(), refSeg->getStartOffset());
-      }
-
-      if (_segMap.find(refSeg) == _segMap.end())
-      {
-        mapRef(refSeg);
-      }
+      // if cut returns nothing, then the region in question is covered
+      // by flipNext (ie already mapped).
+      cutByNext(queryIt, *flipNext, !queryIt->getReversed());
+    }
+    if (queryIt.get() == NULL)
+    {
       break;
     }
-    querySegCpy->toRight();
+    size_t backSize = backResults.size();
+    assert(queryIt->getArrayIndex() >= 0);
+    queryIt->getMappedSegments(backResults, _refGenome, &_spanningTree,
+                               _doDupes, _minLength);
+    // something was found, that's good enough.
+    if (backResults.size() > backSize)
+    {
+      break;
+    }
+    queryIt->toRight();
     ++iter;
   }
-  // typo prevention
-  querySegCpy = SegmentIteratorConstPtr();
 
-  iter = 0;
-  querySegCpy2->toLeft();
-  while ((querySegCpy2->getReversed() || 
-          querySegCpy2->getArrayIndex() >= minIndex) &&
-         (!querySegCpy2->getReversed() || 
-          querySegCpy2->getArrayIndex() < maxIndex) && 
-         iter < _maxAdjScan)
+  queryIt = makeIterator(mappedQuerySeg, 
+                         minIndex,
+                         maxIndex);
+
+  MSFlipSet::const_iterator flipPrev = flipIt;
+  if (queryIt->getReversed())
   {
-    SegmentIteratorConstPtr refSeg = getAdjacencyInRef(querySegCpy2);
-
-    if (refSeg.get() != NULL)
+    ++flipPrev;
+  }
+  else
+  {
+    flipPrev = flipPrev == flipSet.begin() ? flipSet.end() : --flipPrev;
+  }
+  iter = 0;
+  queryIt->toLeft();
+  while (queryIt->getArrayIndex() >= minIndex &&
+         queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
+  {
+    if (flipPrev != flipSet.end())
     {
-      // never want an inverted reference.  
-      if (refSeg->getReversed())
-      {
-        refSeg->toReverse();
-        //but we don't want to keep in forward coordinates
-        refSeg->slice(refSeg->getEndOffset(), refSeg->getStartOffset());
-      }
-
-      if (_segMap.find(refSeg) == _segMap.end())
-      {
-        mapRef(refSeg);
-      }
+      // if cut returns nothing, then the region in question is covered
+      // by flipPrev (ie already mapped).
+      cutByNext(queryIt, *flipPrev, queryIt->getReversed());
+    }
+    if (queryIt.get() == NULL)
+    {
       break;
     }
-    querySegCpy2->toLeft();
+    size_t backSize = backResults.size();
+    queryIt->getMappedSegments(backResults, _refGenome, &_spanningTree,
+                               _doDupes, _minLength);
+    // something was found, that's good enough.
+    if (backResults.size() > backSize)
+    {
+      break;
+    }
+    queryIt->toLeft();
     ++iter;
+  }
+
+  // flip the results and copy back to our main set.
+  for (MSSet::iterator i = backResults.begin(); i != backResults.end(); ++i)
+  {
+    MappedSegmentConstPtr mseg = *i;
+    if (mseg->getSequence() == _refSequence)
+    {
+      mseg->flip();
+      SlicedSegmentConstPtr refSeg = mseg->getSource();
+      if (refSeg->getReversed())
+      {
+        mseg->fullReverse();
+      }
+      _segMap.insert(mseg);
+    }
   }
 }
 
-SegmentIteratorConstPtr BlockMapper::getAdjacencyInRef(
-  SegmentIteratorConstPtr querySeg)
+SegmentIteratorConstPtr BlockMapper::makeIterator(
+  MappedSegmentConstPtr mappedSegment, hal_index_t& minIndex,
+  hal_index_t& maxIndex)
 {
-  SegmentIteratorConstPtr refSeg;
-  if (_rel == RefParent)
-  { 
-    TopSegmentIteratorConstPtr queryTop = 
-       querySeg.downCast<TopSegmentIteratorConstPtr>();
-    if (queryTop->hasParent())
-    {
-      BottomSegmentIteratorConstPtr refBottom = 
-         _refGenome->getBottomSegmentIterator();
-      refBottom->toParent(queryTop);
-      refSeg = refBottom;
-    }
-  }
-  else if (_rel == RefChild)
+  SegmentIteratorConstPtr segIt;
+  if (mappedSegment->isTop())
   {
-    BottomSegmentIteratorConstPtr queryBottom = 
-       querySeg.downCast<BottomSegmentIteratorConstPtr>();
-    if (queryBottom->hasChild(_refChildIndex))
-    {
-      TopSegmentIteratorConstPtr refTop = 
-         _refGenome->getTopSegmentIterator();
-      refTop->toChild(queryBottom, _refChildIndex);
-      refSeg = refTop;
-    }
+    segIt = mappedSegment->getGenome()->getTopSegmentIterator(
+      mappedSegment->getArrayIndex());
+    minIndex = segIt->getSequence()->getTopSegmentArrayIndex();
+    maxIndex = minIndex + 
+       (hal_index_t)segIt->getSequence()->getNumTopSegments();
   }
-  else // _rel == QuerySister
+  else
   {
-    TopSegmentIteratorConstPtr queryTop = 
-       querySeg.downCast<TopSegmentIteratorConstPtr>();
-    if (queryTop->hasParent())
+    segIt = mappedSegment->getGenome()->getBottomSegmentIterator(
+      mappedSegment->getArrayIndex());
+    minIndex = segIt->getSequence()->getBottomSegmentArrayIndex();
+    maxIndex = minIndex + 
+       (hal_index_t)segIt->getSequence()->getNumBottomSegments();
+  }
+  
+  if (mappedSegment->getReversed())
+  {
+    segIt->toReverse();
+  }
+  segIt->slice(mappedSegment->getStartOffset(), 
+               mappedSegment->getEndOffset());
+  
+  assert(segIt->getGenome() == mappedSegment->getGenome());
+  assert(segIt->getArrayIndex() == mappedSegment->getArrayIndex());
+  assert(segIt->getStartOffset() == mappedSegment->getStartOffset());
+  assert(segIt->getEndOffset() == mappedSegment->getEndOffset());
+  assert(segIt->getReversed() == mappedSegment->getReversed());
+
+  return segIt;
+}
+
+void BlockMapper::cutByNext(SegmentIteratorConstPtr& queryIt, 
+                            SlicedSegmentConstPtr nextSeg,
+                            bool right)
+{
+  assert(queryIt->getGenome() == nextSeg->getGenome());
+  assert(queryIt->isTop() == nextSeg->isTop());
+
+  if (queryIt->getArrayIndex() == nextSeg->getArrayIndex())
+  {
+    hal_offset_t so1 = queryIt->getStartOffset();
+    hal_offset_t eo1 = queryIt->getEndOffset();
+    if (queryIt->getReversed())
     {
-      BottomSegmentIteratorConstPtr parBot = 
-         queryTop->getGenome()->getParent()->getBottomSegmentIterator();
-      parBot->toParent(queryTop);
-      if (parBot->hasChild(_refChildIndex))
+      swap(so1, eo1);
+    }
+    hal_offset_t so2 = nextSeg->getReversed() ? nextSeg->getEndOffset() :
+       nextSeg->getStartOffset();
+
+    if (right)
+    {
+      // overlap on start position.  we zap
+      if (so1 >= so2)
       {
-        TopSegmentIteratorConstPtr refTop = 
-         _refGenome->getTopSegmentIterator();
-        refTop->toChild(parBot, _refChildIndex);
-        refSeg = refTop;
+        queryIt = SegmentIteratorConstPtr();
+      }
+      else
+      {
+        hal_index_t e1 = max(queryIt->getEndPosition(), 
+                             queryIt->getStartPosition());
+        hal_index_t s2 = min(nextSeg->getEndPosition(), 
+                             nextSeg->getStartPosition());
+        // end position of queryIt overlaps next seg.  so we cut it.
+        if (e1 >= s2)
+        {
+          hal_index_t delta = 1 + e1 - s2;
+          assert(delta < (hal_index_t)queryIt->getLength());
+          hal_offset_t newEndOffset = eo1 + delta;
+          hal_offset_t newStartOffset = so1;
+          if (queryIt->getReversed() == true)
+          {
+            swap(newEndOffset, newStartOffset);
+          }
+          queryIt->slice(newStartOffset, newEndOffset);
+        }
+      }
+    }
+    else
+    {
+      hal_index_t s1 = min(queryIt->getEndPosition(), 
+                           queryIt->getStartPosition());
+      hal_index_t e1 = max(queryIt->getEndPosition(), 
+                           queryIt->getStartPosition());
+      hal_index_t e2 = max(nextSeg->getEndPosition(), 
+                           nextSeg->getStartPosition());
+
+      // overlap on end position.  we zap
+      if (e1 <= e2)
+      {
+        queryIt = SegmentIteratorConstPtr();
+      }
+      else
+      {
+        // end position of queryIt overlaps next seg.  so we cut it.
+        if (s1 <= e2)
+        {
+          hal_index_t delta = 1 + e2 - s1;
+          assert(delta < (hal_index_t)queryIt->getLength());
+          hal_offset_t newStartOffset = so1 + delta;
+          hal_offset_t newEndOffset = eo1;
+          if (queryIt->getReversed() == true)
+          {
+            swap(newEndOffset, newStartOffset);
+          }
+          queryIt->slice(newStartOffset, newEndOffset);
+        }
       }
     }
   }
-  if (refSeg.get() != NULL)
-  {
-    assert(refSeg->getGenome() == _refGenome);
-    if (refSeg->getSequence() != _refSequence)
-    {
-      refSeg = SegmentIteratorConstPtr();
-    }
-  }
-  return refSeg;
 }
