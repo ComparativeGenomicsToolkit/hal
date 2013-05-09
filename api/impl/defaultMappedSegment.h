@@ -69,6 +69,7 @@ public:
    virtual bool lessThanBySource(const MappedSegmentConstPtr& other) const;
    virtual bool equals(const MappedSegmentConstPtr& other) const;
    virtual void flip() const;
+   virtual void fullReverse() const;
 
 
    // INTERNAL METHODS

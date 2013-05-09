@@ -86,6 +86,15 @@ void DefaultMappedSegment::flip() const
   swap(_source, _target);
 }
 
+void DefaultMappedSegment::fullReverse() const
+{
+  _source->slice(_source->getEndOffset(), _source->getStartOffset());
+  _source->toReverse();
+  _target->slice(_target->getEndOffset(), _target->getStartOffset());
+  _target->toReverse();
+  assert(_source->getLength() == _target->getLength());
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 // INTERNAL FUNCTIONS
@@ -96,14 +105,16 @@ int DefaultMappedSegment::fastComp(const DefaultSegmentIteratorConstPtr& s1,
 {
   // compare without accessing anything from disk (ie using only index
   // and offset)
+  int res = 0;
   assert(s1->getGenome() == s2->getGenome());
+  assert(s1->isTop() == s2->isTop());
   if (s1->getArrayIndex() < s2->getArrayIndex())
   {
-    return -1;
+    res = -1;
   }
   else if (s1->getArrayIndex() > s2->getArrayIndex())
   {
-    return 1;
+    res = 1;
   }
   else 
   {
@@ -121,22 +132,47 @@ int DefaultMappedSegment::fastComp(const DefaultSegmentIteratorConstPtr& s1,
     }
     if (so1 < so2)
     {
-      return -1;
+      res = -1;
     }
     else if (so1 > so2)
     {
-      return 1;
+      res = 1;
     }
     else if (eo1 > eo2)
     {
-      return -1;
+      res = -1;
     }
     else if (eo1 < eo2)
     {
-      return 1;
+      res = 1;
     }
   }
-  return 0;
+  if (res == 0)
+  {
+    assert(std::min(s1->getStartPosition(), s1->getEndPosition()) ==
+           std::min(s2->getStartPosition(), s2->getEndPosition()));
+    assert(std::max(s1->getStartPosition(), s1->getEndPosition()) ==
+           std::max(s2->getStartPosition(), s2->getEndPosition()));
+  }
+  else if (res == -1)
+  {    
+    assert(std::min(s1->getStartPosition(), s1->getEndPosition()) <
+           std::min(s2->getStartPosition(), s2->getEndPosition()) ||
+           ((std::min(s1->getStartPosition(), s1->getEndPosition()) ==
+              std::min(s2->getStartPosition(), s2->getEndPosition())) &&
+             (std::max(s1->getStartPosition(), s1->getEndPosition()) < 
+              std::max(s2->getStartPosition(), s2->getEndPosition()))));
+  }
+  else
+  {
+    assert(std::min(s1->getStartPosition(), s1->getEndPosition()) >
+           std::min(s2->getStartPosition(), s2->getEndPosition()) ||
+           ((std::min(s1->getStartPosition(), s1->getEndPosition()) ==
+              std::min(s2->getStartPosition(), s2->getEndPosition())) &&
+            (std::max(s1->getStartPosition(), s1->getEndPosition()) > 
+             std::max(s2->getStartPosition(), s2->getEndPosition()))));
+  }
+  return res;
 }
 
 hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,

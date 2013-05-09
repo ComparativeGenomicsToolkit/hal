@@ -46,6 +46,11 @@ public:
     * the source becomes this.*/
    virtual void flip() const = 0;
 
+   /** Reverse both segments.  Also swap their start and end offsets. 
+    * Note that toReverse() does not reverse the source segment.*/
+   virtual void fullReverse() const = 0;
+
+
    /** Functor for sorted STL containers, sorting by origin as primary 
     * index */
    struct LessSource { bool operator()(const MappedSegmentConstPtr& ms1,
