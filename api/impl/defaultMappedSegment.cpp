@@ -270,20 +270,20 @@ hal_size_t DefaultMappedSegment::mapRecursive(
         nextChildIndex = child;
       }
     }
-  }
-
-  if (doDupes == true && (!nextGenome || nextGenome != genome->getParent()))
-  {   
-    outputPtr->clear();
-    list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
-    for (; i != inputPtr->end(); ++i)
-    {
-      assert((*i)->getGenome() == genome);
-      mapSelf((*i), *outputPtr, minLength);
+    
+    if (doDupes == true && genome->getParent() != NULL &&
+        (!nextGenome || nextGenome != genome->getParent()))
+    {   
+      outputPtr->clear();
+      list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
+      for (; i != inputPtr->end(); ++i)
+      {
+        assert((*i)->getGenome() == genome);
+        mapSelf((*i), *outputPtr, minLength);
+      }
+      swap(inputPtr, outputPtr);
     }
-    inputPtr->insert(inputPtr->end(), outputPtr->begin(), outputPtr->end());
   }
-  
   if (nextGenome != NULL)
   {
     outputPtr->clear();
@@ -493,14 +493,8 @@ hal_size_t DefaultMappedSegment::mapSelf(
     TopSegmentIteratorConstPtr top = 
        target.downCast<TopSegmentIteratorConstPtr>();
     TopSegmentIteratorConstPtr topCopy = top->copy();
-    while (topCopy->hasNextParalogy() == true && 
-           topCopy->getLength() >= minLength)
+    do
     {
-      topCopy->toNextParalogy();
-      if (topCopy->getArrayIndex() == top->getArrayIndex())
-      {
-        break;
-      }
       SegmentIteratorConstPtr source = mappedSeg->_source;
       TopSegmentIteratorConstPtr newTop = topCopy->copy();
       DefaultMappedSegmentConstPtr newMappedSeg(
@@ -510,7 +504,14 @@ hal_size_t DefaultMappedSegment::mapSelf(
              mappedSeg->getSource()->getGenome());
       results.push_back(newMappedSeg);
       ++added;
-    }
+      if (topCopy->hasNextParalogy())
+      {
+        topCopy->toNextParalogy();
+      }
+    } 
+    while (topCopy->hasNextParalogy() == true && 
+           topCopy->getLength() >= minLength &&
+           topCopy->getArrayIndex() != top->getArrayIndex());
   }
   else if (mappedSeg->getGenome()->getParent() != NULL)
   {
