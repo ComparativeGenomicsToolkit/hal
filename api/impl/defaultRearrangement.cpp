@@ -198,10 +198,9 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
 {
   pair<hal_index_t, hal_index_t> range;
   range.first = _leftParent->getLeft()->getStartPosition();
-  range.second = _leftParent->getRight()->getStartPosition() + 
-     (hal_index_t)(_leftParent->getRight()->getLength() - 1);
+  range.second = _leftParent->getEndPosition();
   assert(range.first <= range.second);
-  assert(range.second - range.first == (hal_index_t)(getLength() - 1));
+//  assert(range.second - range.first == (hal_index_t)(getLength() - 1));
   return range;
 }
 
