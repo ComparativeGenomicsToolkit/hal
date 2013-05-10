@@ -197,10 +197,18 @@ bool DefaultRearrangement::identifyDeletionFromLeftBreakpoint(
 pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
 {
   pair<hal_index_t, hal_index_t> range;
-  range.first = _leftParent->getLeft()->getStartPosition();
-  range.second = _leftParent->getEndPosition();
+  if (_leftParent->getReversed() == false)
+  {
+    range.first = _leftParent->getLeft()->getStartPosition();
+    range.second = _leftParent->getRight()->getEndPosition();
+  }
+  else
+  {
+    range.first = _leftParent->getRight()->getEndPosition();
+    range.second = _leftParent->getLeft()->getStartPosition();
+  }
   assert(range.first <= range.second);
-//  assert(range.second - range.first == (hal_index_t)(getLength() - 1));
+  assert(range.second - range.first == (hal_index_t)(getLength() - 1));
   return range;
 }
 
@@ -239,13 +247,19 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getDuplicatedRange() const
   pair<hal_index_t, hal_index_t> range;
   assert(_cur->hasParent() == true);
   _curParent->toParent(_cur);  
-  range.first = _curParent->getLeft()->getStartPosition();
-  range.second = _curParent->getRight()->getStartPosition() + 
-     (hal_index_t)(_cur->getRight()->getLength() - 1);
-  if (range.first >= range.second)
+  if (_curParent->getReversed() == false)
   {
-    swap(range.first, range.second);
+    range.first = _curParent->getLeft()->getStartPosition();
+    range.second = _curParent->getRight()->getEndPosition();
   }
+  else
+  {
+    range.first = _curParent->getRight()->getEndPosition();
+    range.second = _curParent->getLeft()->getStartPosition();
+  }
+  assert(range.first <= range.second);
+  assert(range.second - range.first == 
+         (hal_index_t)(_curParent->getLength() - 1));
   return range;
 }
 
