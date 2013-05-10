@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+#Copyright (C) 2013 by Ngan Nguyen (nknguyen@soe.ucsc.edu)
+#
+#Released under the MIT license, see LICENSE.txtimport unittest
+
 #Wed Apr 10 15:30:53 PDT 2013
 #
 #Generates necessary files to make assembly hub
