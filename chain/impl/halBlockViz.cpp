@@ -113,6 +113,11 @@ int halOpenLodOrHal(char* inputPath, bool isLod)
     cerr << "Exception caught: " << e.what() << endl;
     handle = -1;
   }
+  catch(...)
+  {
+    cerr << "Error opening " << inputPath << endl;
+    handle = -1;
+  }
   HAL_UNLOCK
   return handle;
 }
@@ -132,9 +137,14 @@ extern "C" int halClose(int handle)
     }
     handleMap.erase(mapIt);
   }
-   catch(exception& e)
+  catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
+    ret = -1;
+  }
+  catch(...)
+  {
+    cerr << "Error closing " << handle << endl;
     ret = -1;
   }
   HAL_UNLOCK
@@ -217,6 +227,11 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
     cerr << "Exception caught: " << e.what() << endl;
     head = NULL;
   }
+  catch(...)
+  {
+    cerr << "Error in hal block query";
+    head = NULL;
+  }
   HAL_UNLOCK
   return head;
 }
@@ -282,6 +297,11 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle)
     cerr << "Exception caught: " << e.what() << endl;
     head = NULL;
   }
+  catch(...)
+  {
+    cerr << "Error in hal get species";
+    head = NULL;
+  }
   HAL_UNLOCK
   return head;
 }
@@ -339,6 +359,11 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
     cerr << "Exception caught: " << e.what() << endl;
     head = NULL;
   }
+  catch(...)
+  {
+    cerr << "Error in hal get chroms";
+    head = NULL;
+  }
   HAL_UNLOCK
   return head;
 }
@@ -384,6 +409,11 @@ extern "C" char *halGetDna(int halHandle,
   catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
+    dna = NULL;
+  }
+  catch(...)
+  {
+    cerr << "Error in hal get dna";
     dna = NULL;
   }
   HAL_UNLOCK
