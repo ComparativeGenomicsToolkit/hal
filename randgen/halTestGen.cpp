@@ -76,15 +76,15 @@ int main(int argc, char** argv)
     addLeaf(alignment, "2inv_1200_1400", genomeLength / segSize);
     invertLeaf(alignment, 1200 / segSize, (1400 - segSize) / segSize);
 
-    segSize = 50;
-    addLeaf(alignment, "3dup_200_1000_1600_1800r", genomeLength / segSize);
+    segSize = 100;
+    addLeaf(alignment, "3dup_200_500_600_800r", genomeLength / segSize);
     vector<hal_index_t> tgtIdx(3);
     vector<bool> tgtRev(3, false);
-    tgtIdx[0] = 1000 / segSize;
-    tgtIdx[1] = 1600 / segSize;
-    tgtIdx[2] = 1800 /segSize;
+    tgtIdx[0] = 500 / segSize;
+    tgtIdx[1] = 600 / segSize;
+    tgtIdx[2] = 800 /segSize;
     tgtRev[2] = true;
-    dupLeaf(alignment, 4, 200 / segSize, tgtIdx, tgtRev);
+    dupLeaf(alignment, 1, 200 / segSize, tgtIdx, tgtRev);
 
     segSize = 5;
     addLeaf(alignment, "4swap_20_920to3000_3900", genomeLength / segSize);
@@ -215,25 +215,22 @@ void dupLeaf(AlignmentPtr alignment,
 
   for (size_t i = 0; i < tgtIdx.size(); ++i)
   {
-    for (size_t j = 0; j < dupLen; ++j)
-    {
-      assert(tgtIdx[i+j] != sourceIdx+j);
-      TopSegmentIteratorPtr top = leaf->getTopSegmentIterator(tgtIdx[i]+j);
-      hal_index_t prevIdx = i == 0 ? sourceIdx+j : tgtIdx[i-1]+j;
-      TopSegmentIteratorPtr prev = leaf->getTopSegmentIterator(prevIdx);
-      BottomSegmentIteratorPtr bot =
-         parent->getBottomSegmentIterator(top->getParentIndex());
+    assert(tgtIdx[i] != sourceIdx);
+    TopSegmentIteratorPtr top = leaf->getTopSegmentIterator(tgtIdx[i]);
+    hal_index_t prevIdx = i == 0 ? sourceIdx : tgtIdx[i-1];
+    TopSegmentIteratorPtr prev = leaf->getTopSegmentIterator(prevIdx);
+    BottomSegmentIteratorPtr bot =
+       parent->getBottomSegmentIterator(top->getParentIndex());
     
-      top->setParentIndex(prev->getParentIndex());
-      top->setParentReversed(tgtRev[i]);
-      bot->setChildIndex(0, NULL_INDEX);
+    top->setParentIndex(prev->getParentIndex());
+    top->setParentReversed(tgtRev[i]);
+    bot->setChildIndex(0, NULL_INDEX);
 
-      prev->setNextParalogyIndex(top->getArrayIndex());
-      top->setNextParalogyIndex(NULL_INDEX);
-      if (i == tgtIdx.size() - 1)
-      {
-        top->setNextParalogyIndex(sourceIdx+j);
-      }
+    prev->setNextParalogyIndex(top->getArrayIndex());
+    top->setNextParalogyIndex(NULL_INDEX);
+    if (i == tgtIdx.size() - 1)
+    {
+      top->setNextParalogyIndex(sourceIdx);
     }
   }
 }
