@@ -94,6 +94,14 @@ protected:
                 const DefaultSegmentIteratorConstPtr& s2);
 
    static 
+   int boundComp(const DefaultSegmentIteratorConstPtr& s1, 
+                const DefaultSegmentIteratorConstPtr& s2);
+
+   static 
+   int slowComp(const DefaultSegmentIteratorConstPtr& s1, 
+                const DefaultSegmentIteratorConstPtr& s2);
+
+   static 
    void cutAgainstSet(DefaultMappedSegmentConstPtr inSeg,
                       const std::set<MappedSegmentConstPtr>& results,
                       std::list<DefaultMappedSegmentConstPtr>& output);
