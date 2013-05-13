@@ -54,20 +54,20 @@ public:
    /** Functor for sorted STL containers, sorting by origin as primary 
     * index */
    struct LessSource { bool operator()(const MappedSegmentConstPtr& ms1,
-                                       const MappedSegmentConstPtr& ms2) {
+                                       const MappedSegmentConstPtr& ms2) const {
      return ms1->lessThanBySource(ms2); }
    };
 
    /** Functor for sorted STL containers, sorting  by target as primary 
     * index */
    struct Less { bool operator()(const MappedSegmentConstPtr& ms1,
-                                 const MappedSegmentConstPtr& ms2) {
+                                 const MappedSegmentConstPtr& ms2) const {
      return ms1->lessThan(ms2); }
    };
  
    /** Functor for STL sorted lists to test for uniqueness */
    struct EqualTo { bool operator()(const MappedSegmentConstPtr& ms1,
-                                    const MappedSegmentConstPtr& ms2) {
+                                    const MappedSegmentConstPtr& ms2) const {
      return ms1->equals(ms2); }
    };
 

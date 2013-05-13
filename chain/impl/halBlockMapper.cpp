@@ -127,18 +127,20 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
   {
     ++flipNext;
   }
+
   hal_size_t iter = 0;
   queryIt->toRight();
   while (queryIt->getArrayIndex() >= minIndex &&
          queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
   {
+    bool wasCut = false;
     if (flipNext != flipSet.end())
     {
       // if cut returns nothing, then the region in question is covered
       // by flipNext (ie already mapped).
-      cutByNext(queryIt, *flipNext, !queryIt->getReversed());
+      wasCut = cutByNext(queryIt, *flipNext, !queryIt->getReversed());
     }
-    if (queryIt.get() == NULL)
+    if (wasCut == true)
     {
       break;
     }
@@ -173,13 +175,14 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
   while (queryIt->getArrayIndex() >= minIndex &&
          queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
   {
+    bool wasCut = false;
     if (flipPrev != flipSet.end())
     {
       // if cut returns nothing, then the region in question is covered
       // by flipPrev (ie already mapped).
-      cutByNext(queryIt, *flipPrev, queryIt->getReversed());
+      wasCut = cutByNext(queryIt, *flipPrev, queryIt->getReversed());
     }
-    if (queryIt.get() == NULL)
+    if (wasCut == true)
     {
       break;
     }
@@ -207,7 +210,25 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
       {
         mseg->fullReverse();
       }
-      _segMap.insert(mseg);
+
+      MSSet::const_iterator j = flipSet.lower_bound(*i);
+      bool overlaps = false;
+      if (j != flipSet.begin())
+      {
+        --j;
+      }
+      for (size_t count = 0; count < 3 && j != flipSet.end() && !overlaps; 
+           ++count, ++j)
+      {
+        overlaps = mseg->overlaps((*j)->getStartPosition()) ||
+           mseg->overlaps((*j)->getEndPosition()) || 
+           (*j)->overlaps(mseg->getStartPosition()) ||
+           (*j)->overlaps(mseg->getEndPosition());
+      }
+      if (overlaps == false)
+      {
+        _segMap.insert(mseg);
+      }
     }
   }
 }
@@ -250,12 +271,13 @@ SegmentIteratorConstPtr BlockMapper::makeIterator(
   return segIt;
 }
 
-void BlockMapper::cutByNext(SegmentIteratorConstPtr& queryIt, 
+bool BlockMapper::cutByNext(SlicedSegmentConstPtr queryIt, 
                             SlicedSegmentConstPtr nextSeg,
                             bool right)
 {
   assert(queryIt->getGenome() == nextSeg->getGenome());
   assert(queryIt->isTop() == nextSeg->isTop());
+  bool wasCut = false;
 
   if (queryIt->getArrayIndex() == nextSeg->getArrayIndex())
   {
@@ -273,7 +295,7 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr& queryIt,
       // overlap on start position.  we zap
       if (so1 >= so2)
       {
-        queryIt = SegmentIteratorConstPtr();
+        wasCut = true;
       }
       else
       {
@@ -308,7 +330,7 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr& queryIt,
       // overlap on end position.  we zap
       if (e1 <= e2)
       {
-        queryIt = SegmentIteratorConstPtr();
+        wasCut = true;
       }
       else
       {
@@ -328,4 +350,81 @@ void BlockMapper::cutByNext(SegmentIteratorConstPtr& queryIt,
       }
     }
   }
+  return wasCut;
+}
+
+void BlockMapper::extractSegment(MSSet::iterator start, 
+                                 vector<MappedSegmentConstPtr>& fragments)
+{
+  fragments.clear();
+  fragments.push_back(*start);
+  MSSet::iterator next = start;
+  MSSet::iterator temp;
+  MappedSegmentConstPtr prev = *start;
+  ++next;
+  MSSet::key_compare comp = _segMap.key_comp();
+  bool keepOn = true;
+  while (keepOn)
+  {
+    keepOn = false;
+    SlicedSegmentConstPtr pseg = prev->getSource();
+    assert(pseg->getReversed() == false);
+    assert(next == _segMap.end() || 
+           (*next)->getSource()->getReversed() == false);
+
+    while (next != _segMap.end() && (*next)->getSource()->getStartPosition() <=
+           pseg->getEndPosition() + 1)
+    {
+      assert((*next)->getSource()->getReversed() == false);
+      if ((*next)->getSource()->getStartPosition() == 
+          pseg->getEndPosition() + 1 && canMergeBlock(prev, *next) == true)
+      {
+        fragments.push_back(*next);
+        prev = *next;
+        temp = next;
+        ++next;
+        _segMap.erase(temp);
+        keepOn = true;
+        break;
+      }
+      prev = *next;
+      ++next;
+    }
+  }
+}
+
+bool BlockMapper::canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
+                                MappedSegmentConstPtr lastQuerySeg)
+{
+  //return false;
+  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
+  SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
+  assert(firstRefSeg->getReversed() == false);
+  assert(lastRefSeg->getReversed() == false);
+  assert(firstRefSeg->getSequence() == lastRefSeg->getSequence());
+  assert(firstQuerySeg->getGenome() == lastQuerySeg->getGenome());
+
+  if (lastQuerySeg->getStartPosition() == _absRefFirst ||
+      firstQuerySeg->getEndPosition() == _absRefLast)
+  {
+    return false;
+  }
+  if (firstQuerySeg->getReversed() == lastQuerySeg->getReversed() &&
+      lastRefSeg->getStartPosition() == firstRefSeg->getEndPosition() + 1 &&
+      firstQuerySeg->getSequence() == lastQuerySeg->getSequence())
+  {
+    if (firstQuerySeg->getReversed() == false &&
+        lastQuerySeg->getStartPosition() == 
+        firstQuerySeg->getEndPosition() + 1)
+    {
+      return true;
+    }
+    else if (firstQuerySeg->getReversed() == true &&
+             lastQuerySeg->getStartPosition() == 
+             firstQuerySeg->getEndPosition() - 1)
+    {
+      return true;
+    }
+  }
+  return false;
 }

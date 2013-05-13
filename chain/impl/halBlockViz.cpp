@@ -50,13 +50,7 @@ static hal_block_t* readBlocks(const Sequence* tSequence,
                                bool doDupes);
 
 static void readBlock(hal_block_t* cur, 
-                      BlockMapper::MSSet::const_iterator firstIt,
-                      BlockMapper::MSSet::const_iterator lastIt,
-                      bool getSequenceString, const string& genomeName);
-static bool canMergeBlock(MappedSegmentConstPtr cur, MappedSegmentConstPtr next);
-static void copyRangeString(char** sequence, string& buffer,
-                            BlockMapper::MSSet::const_iterator firstIt,
-                            BlockMapper::MSSet::const_iterator lastIt);
+                      vector<MappedSegmentConstPtr>& fragments,                                        bool getSequenceString, const string& genomeName);
 
 
 extern "C" int halOpenLOD(char *lodFilePath)
@@ -506,19 +500,13 @@ hal_block_t* readBlocks(const Sequence* tSequence,
   BlockMapper blockMapper;
   blockMapper.init(tGenome, qGenome, absStart, absEnd, doDupes, 0, true);
   blockMapper.map();
-  const BlockMapper::MSSet& segMap = blockMapper.getMap();
-  for (BlockMapper::MSSet::const_iterator segMapIt = segMap.begin();
+  BlockMapper::MSSet& segMap = blockMapper.getMap();
+  vector<MappedSegmentConstPtr> fragments;
+
+  for (BlockMapper::MSSet::iterator segMapIt = segMap.begin();
        segMapIt != segMap.end(); ++segMapIt)
   {
     assert((*segMapIt)->getSource()->getReversed() == false);
-    BlockMapper::MSSet::const_iterator segMapEnd = segMapIt;
-    BlockMapper::MSSet::const_iterator segMapNext = segMapIt;
-    ++segMapNext;
-    for (; segMapNext != segMap.end() && canMergeBlock(*segMapEnd, *segMapNext);
-      ++segMapNext)
-    {
-      segMapEnd = segMapNext;
-    }
     hal_block_t* cur = (hal_block_t*)calloc(1, sizeof(hal_block_t));
     if (head == NULL)
     {
@@ -528,19 +516,19 @@ hal_block_t* readBlocks(const Sequence* tSequence,
     {
       prev->next = cur;
     }
-    readBlock(cur, segMapIt, segMapEnd, getSequenceString, qGenomeName);
+    blockMapper.extractSegment(segMapIt, fragments);
+    readBlock(cur, fragments, getSequenceString, qGenomeName);
     prev = cur;
-    segMapIt = segMapEnd;
   }    
   return head;
 }
 
-void readBlock(hal_block_t* cur,  BlockMapper::MSSet::const_iterator firstIt,
-               BlockMapper::MSSet::const_iterator lastIt, 
+void readBlock(hal_block_t* cur,  
+               vector<MappedSegmentConstPtr>& fragments, 
                bool getSequenceString, const string& genomeName)
 {
-  MappedSegmentConstPtr firstQuerySeg = *firstIt;
-  MappedSegmentConstPtr lastQuerySeg = *lastIt;
+  MappedSegmentConstPtr firstQuerySeg = fragments.front();
+  MappedSegmentConstPtr lastQuerySeg = fragments.back();
   SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
   SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
   const Sequence* qSequence = firstQuerySeg->getSequence();
@@ -578,64 +566,14 @@ void readBlock(hal_block_t* cur,  BlockMapper::MSSet::const_iterator firstIt,
   cur->sequence = NULL;
   if (getSequenceString != 0)
   {
-    copyRangeString(&cur->sequence, dnaBuffer, firstIt, lastIt);
-  }
-}
-
-bool canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
-                   MappedSegmentConstPtr lastQuerySeg)
-{
-  // DISABLE FOR NOW
-  return false;
-  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
-  SlicedSegmentConstPtr lastRefSeg = firstQuerySeg->getSource();
-  assert(firstRefSeg->getReversed() == false);
-  assert(lastRefSeg->getReversed() == false);
-  assert(firstRefSeg->getSequence() == lastRefSeg->getSequence());
-  assert(firstQuerySeg->getGenome() == lastQuerySeg->getGenome());
-
-  if (firstQuerySeg->getReversed() == lastQuerySeg->getReversed() &&
-      lastRefSeg->getStartPosition() == firstRefSeg->getEndPosition() + 1 &&
-      firstQuerySeg->getSequence() == lastQuerySeg->getSequence())
-  {
-    if (firstQuerySeg->getReversed() == false &&
-        lastQuerySeg->getStartPosition() == 
-        firstQuerySeg->getEndPosition() + 1)
+    qSequence->getSubString(dnaBuffer, cur->qStart, cur->size);
+    if (cur->strand == '-')
     {
-      return true;
+      reverseComplement(dnaBuffer);
     }
-    else if (firstQuerySeg->getReversed() == true &&
-             lastQuerySeg->getStartPosition() == 
-             firstQuerySeg->getEndPosition() - 1)
-    {
-      return true;
-    }
+    cur->sequence = (char*)malloc(dnaBuffer.length() * sizeof(char));
+    strcpy(cur->sequence, dnaBuffer.c_str());
   }
-  return false;
 }
 
-void copyRangeString(char** sequence, string& buffer,
-                     BlockMapper::MSSet::const_iterator firstIt,
-                     BlockMapper::MSSet::const_iterator lastIt)
-{
-  BlockMapper::MSSet::const_iterator i;
-  BlockMapper::MSSet::const_iterator end = lastIt;
-  ++end;
-  size_t length = 0;
-  for (i = firstIt; i != end; ++i)
-  {
-    length += (*i)->getLength();
-  }
 
-  *sequence = (char*)malloc(length + 1);
-
-  size_t written = 0;
-  size_t pos;
-  for (i = firstIt; i != end; ++i)
-  {
-    (*i)->getString(buffer);
-    pos = (*i)->getReversed() ? length - written - (*i)->getLength() : written;
-    strcpy(*sequence + pos, buffer.c_str());
-    written += (*i)->getLength();
-  }
-}

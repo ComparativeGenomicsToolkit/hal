@@ -37,6 +37,10 @@ public:
    void map();
 
    const MSSet& getMap() const;
+   MSSet& getMap();
+
+   void extractSegment(MSSet::iterator start, 
+                       std::vector<MappedSegmentConstPtr>& fragments);
 
 protected:
    
@@ -51,10 +55,12 @@ protected:
 
    // note queryIt passed by reference.  the pointer can be modified. 
    // ick.
-   static void cutByNext(SegmentIteratorConstPtr& queryIt, 
+   static bool cutByNext(SlicedSegmentConstPtr queryIt, 
                          SlicedSegmentConstPtr nextSeg,
                          bool right);
-
+   
+   bool canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
+                      MappedSegmentConstPtr lastQuerySeg);
    
 protected:
 
@@ -75,6 +81,11 @@ protected:
 };
 
 inline const BlockMapper::MSSet& BlockMapper::getMap() const
+{
+  return _segMap;
+}
+
+inline BlockMapper::MSSet& BlockMapper::getMap()
 {
   return _segMap;
 }
