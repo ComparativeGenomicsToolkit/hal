@@ -43,11 +43,20 @@ def getGenomeSequencesFromHal(halfile, genome):
 
     return seq2len
 
-def getChromSizes(halfile, genomes, outdir):
-    #Get chrom.sizes for all genomes
-    #Output to outdir/genomeChr.sizes for each genome
+def getGenomeSequences(halfile, genomes):
+    genome2seq2len = {}
     for genome in genomes:
         seq2len = getGenomeSequencesFromHal(halfile, genome)
+        if len(seq2len) == 0:
+            sys.stderr.write("Warning: genome %s contains 0 sequence - no browser was made.\n" %genome)
+        else:
+            genome2seq2len[genome] = seq2len
+    return genome2seq2len
+
+def getChromSizes(halfile, genome2seq2len, outdir):
+    #Get chrom.sizes for all genomes
+    #Output to outdir/genomeChr.sizes for each genome
+    for genome, seq2len in genome2seq2len.iteritems():
         outfile = os.path.join(outdir, genome)
         f = open(outfile, 'w')
         for s, l in seq2len.iteritems():
@@ -69,16 +78,17 @@ def getGenomesFromHal(halfile):
     
     return genomes
 
-def liftoverBedFiles(indir, halfile, genomes, outdir):
+def liftoverBedFiles(indir, halfile, genome2seq2len, outdir):
     #beddir has the hierachy: indir/genome/chr1.bed, chr2.bed...
     #for each genome in beddir, lifeover the bed records of that genome to the coordinate of all other genomes
 
     #Get chr.sizes for all genomes:
     chrsizedir = os.path.join(outdir, "chrsizes")
     system("mkdir -p %s" %chrsizedir)
-    getChromSizes(halfile, genomes, chrsizedir)
+    getChromSizes(halfile, genome2seq2len, chrsizedir)
 
     #liftover bed file of each genome with availabel beds to all genomes
+    genomes = genome2seq2len.keys()
     for genome in os.listdir(indir):
         if genome not in genomes:
             continue
@@ -113,10 +123,10 @@ def liftoverBedFiles(indir, halfile, genomes, outdir):
             chrsizefile = os.path.join(chrsizedir, othergenome)
             system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
             #Cleanup:
-            #system("rm %s" % liftovertempbed)
-        #system("rm %s" %tempbed) #cleanup
+            system("rm %s" % liftovertempbed)
+        system("rm %s" %tempbed) #cleanup
     #Cleanup
-    #system("rm -Rf %s" %chrsizedir)
+    system("rm -Rf %s" %chrsizedir)
 
 def makeTwoBitSeqFile(genome, halfile, outdir):
     fafile = os.path.join(outdir, "%s.fa" %genome)
@@ -205,7 +215,7 @@ def getLodFiles(halfile, options, outdir):
         system("halLodInterpolate.py %s %s --outHalDir %s" %(halfile, lodtxtfile, loddir))
     return lodtxtfile, loddir
 
-def writeGenomesFile(genomes, halfile, options, outdir):
+def writeGenomesFile(genome2seq2len, halfile, options, outdir):
     '''Write genome for all samples in hal file
     '''
     #Create lod files if useLod is specified
@@ -222,6 +232,7 @@ def writeGenomesFile(genomes, halfile, options, outdir):
 
     filename = os.path.join(outdir, "genomes.txt")
     f = open(filename, 'w')
+    genomes = genome2seq2len.keys()
     for genome in genomes:
         genomedir = os.path.join(outdir, genome)
         system("mkdir -p %s" % genomedir)
@@ -247,9 +258,9 @@ def writeGenomesFile(genomes, halfile, options, outdir):
         f.write("orderKey 4800\n")
         f.write("scientificName %s\n" %genome)
         
-        seq2len = getGenomeSequencesFromHal(halfile, genome)
+        seq2len = genome2seq2len[genome]
         (seq, l) = getLongestSeq(seq2len)
-        f.write("defaultPos %s:1-%d\n" %(seq, l))
+        f.write("defaultPos %s:1-%d\n" %(seq, min(l, 1000)))
         f.write("\n")
     f.close()
 
@@ -295,7 +306,6 @@ def addOptions(parser):
     parser.add_option('--shortLabel', dest='shortLabel', default='my hub', help='the short name for the track hub. Suggested maximum length is 17 characters. Displayed as the hub name on the Track Hubs page and the track group name on the browser tracks page. Default=%default')
     parser.add_option('--longLabel', dest='longLabel', default='my hub', help='a longer descriptive label for the track hub. Suggested maximum length is 80 characters. Displayed in the description field on the Track Hubs page. Default=%default')
     parser.add_option('--email', dest='email', default='NoEmail', help='the contact to whom questions regarding the track hub should be directed. Default=%default')
-    #parser.add_option('')
 
 def checkOptions(parser, args, options):
     if len(args) < 2:
@@ -320,15 +330,16 @@ def main():
     writeHubFile(outdir, options)
     writeGroupFile(outdir)
     genomes = getGenomesFromHal(halfile)
+    genome2seq2len = getGenomeSequences(halfile, genomes)
    
     options.bigbeddir = None
     if options.beddir:
         bigbeddir = os.path.join(outdir, "liftoverbeds")
         system("mkdir -p %s" % bigbeddir)
-        liftoverBedFiles(options.beddir, halfile, genomes, bigbeddir)
+        liftoverBedFiles(options.beddir, halfile, genome2seq2len, bigbeddir)
         options.bigbeddir = bigbeddir
 
-    writeGenomesFile(genomes, halfile, options, outdir)
+    writeGenomesFile(genome2seq2len, halfile, options, outdir)
 
 if __name__ == '__main__':
     main()
