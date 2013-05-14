@@ -35,18 +35,22 @@ public:
              bool doDupes, hal_size_t minLength,
              bool mapTargetAdjacencies);
    void map();
+   void extractReferenceParalogies(MSSet& outParalogies);
 
    const MSSet& getMap() const;
    MSSet& getMap();
+   
+   MSFlipSet& getFlipSet();
 
    void extractSegment(MSSet::iterator start, 
-                       std::vector<MappedSegmentConstPtr>& fragments);
+                       const MSSet& paraSet,                       
+                       std::vector<MappedSegmentConstPtr>& fragments,
+                       MSSet* startSet);
 
 protected:
    
    void erase();
-   void mapAdjacencies(const MSFlipSet& flipSet,
-                       MSFlipSet::const_iterator flipIt);
+   void mapAdjacencies(MSFlipSet::const_iterator flipIt);
 
    static SegmentIteratorConstPtr makeIterator(
      MappedSegmentConstPtr mappedSegment, 
@@ -65,6 +69,7 @@ protected:
 protected:
 
    MSSet _segMap;
+   MSFlipSet _flipSet;
    std::set<const Genome*> _spanningTree;
    const Genome* _refGenome;
    const Sequence* _refSequence;
@@ -88,6 +93,11 @@ inline const BlockMapper::MSSet& BlockMapper::getMap() const
 inline BlockMapper::MSSet& BlockMapper::getMap()
 {
   return _segMap;
+}
+
+inline BlockMapper::MSFlipSet& BlockMapper::getFlipSet()
+{
+  return _flipSet;
 }
 
 }

@@ -14,6 +14,37 @@ extern "C" {
 /** This is all prototype code to evaluate how to get blocks streamed 
  * from HAL to the browser. Interface is speficied by Brian */
 
+/* keep integer type definition in one place */
+typedef long hal_int_t;
+
+/** range of coordinates in target */
+struct hal_target_range_t
+{
+   struct hal_target_range_t* next;
+   hal_int_t tStart;
+   hal_int_t size;
+};
+
+/** paralgous ranges in the *target* genome, which can't be displayed
+ * as snakes so they get filtered out into a separate API */
+struct hal_target_dupe_list_t
+{
+   struct hal_target_dupe_list_t* next;
+   int id;  
+   struct hal_target_range_t* tRange;
+};
+
+/** Contains mapped blocks along with target paralgous "blue line" blocks
+ * in a separate list.  No overlapping query blocks will be present in
+ * mappedBlocks.  If there are three paralgous reference segemnts, then
+ * there will be three instances in targetDupeBlocks, but only one
+ * "cannonical" instance in mappedBlocks */
+struct hal_block_results_t
+{
+   struct hal_block_t* mappedBlocks;
+   struct hal_target_dupe_list_t* targetDupeBlocks;
+};
+  
 /** Blockc struct. 
  * NOTE: ALL COORDINATES ARE FORWARD-STRAND RELATIVE 
  */
@@ -21,9 +52,9 @@ struct hal_block_t
 {
    struct hal_block_t* next;
    char *qChrom;
-   int tStart;
-   int qStart;
-   int size;
+   hal_int_t tStart;
+   hal_int_t qStart;
+   hal_int_t size;
    char strand;
    char *sequence;
 };
@@ -33,8 +64,8 @@ struct hal_species_t
 {
    struct hal_species_t* next;
    char* name;
-   unsigned length;
-   unsigned numChroms;
+   hal_int_t length;
+   hal_int_t numChroms;
    char* parentName;
    double parentBranchLength;
 };
@@ -44,7 +75,7 @@ struct hal_chromosome_t
 {
    struct hal_chromosome_t* next;
    char* name;
-   unsigned length;
+   hal_int_t length;
 };
 
 /** Open a text file created by halLodInterpolate.py for viewing. 
@@ -84,8 +115,14 @@ int halOpen(char *halFilePath);
  */
 int halClose(int halHandle);
 
+/** Free block results structure */
+void halFreeBlockResults(struct hal_block_results_t* results);
+
 /** Free linked list of blocks */
 void halFreeBlocks(struct hal_block_t* block);
+
+/** Free linked list of dupe lists*/
+void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
 
 /** Create linked list of block structures.  Blocks returned will be all
  * aligned blocks in the query sequence that align to the given range
@@ -104,15 +141,16 @@ void halFreeBlocks(struct hal_block_t* block);
  * output blocks if not 0. 
  * @param doDupes create blocks for duplications if not 0.  When this 
  * option is enabled, the same region can appear in more than one block.
- * @return  block structure -- must be freed by halFreeBlocks()
+ * @return  block structure -- must be freed by halFreeBlockResults()
  */
-struct hal_block_t *halGetBlocksInTargetRange(int halHandle, 
-                                              char* qSpecies,
-                                              char* tSpecies,
-                                              char* tChrom,
-                                              int tStart, int tEnd,
-                                              int getSequenceString,
-                                              int doDupes);
+struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle, 
+                                                      char* qSpecies,
+                                                      char* tSpecies,
+                                                      char* tChrom,
+                                                      hal_int_t tStart, 
+                                                      hal_int_t tEnd,
+                                                      int getSequenceString,
+                                                      int doDupes);
  
 
 /** Create a linked list of the species in the hal file.
@@ -137,7 +175,7 @@ struct hal_chromosome_t *halGetChroms(int halHandle,
 char *halGetDna(int halHandle,
                 char* speciesName,
                 char* chromName, 
-                int start, int end);
+                hal_int_t start, hal_int_t end);
 
 #ifdef __cplusplus
 }

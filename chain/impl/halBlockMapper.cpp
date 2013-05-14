@@ -30,6 +30,7 @@ BlockMapper::~BlockMapper()
 void BlockMapper::erase()
 {
   _segMap.clear();
+  _flipSet.clear();
   _spanningTree.clear();
 }
 
@@ -96,20 +97,88 @@ void BlockMapper::map()
   if (_mapAdj)
   {
     // construct a set sorted on query instead of ref. 
-    MSFlipSet flipSet(_segMap.begin(), _segMap.end());
+    _flipSet.clear();
+    _flipSet.insert(_segMap.begin(), _segMap.end());
 
     MSFlipSet::const_iterator i;
-    for (i = flipSet.begin(); i != flipSet.end(); ++i)
+    for (i = _flipSet.begin(); i != _flipSet.end(); ++i)
     {
-      mapAdjacencies(flipSet, i);
+      mapAdjacencies(i);
     }
   }
 }
-  
-void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
-                                 MSFlipSet::const_iterator flipIt)
+
+void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
 {
-  assert(flipSet.empty() == false && flipIt != flipSet.end());
+  MSFlipSet::iterator i = _flipSet.begin();
+  MSFlipSet::iterator j = _flipSet.end();
+  MSFlipSet::iterator k;
+  hal_index_t iStart = NULL_INDEX;
+  hal_index_t iEnd = NULL_INDEX;
+  bool iIns = false;
+  hal_index_t jStart;
+  hal_index_t jEnd;
+  while (i != _flipSet.end())
+  {
+    // we divide list sorted on query segments into equivalence
+    // classes based on their query coordinates.  these classes
+    // are orderdered by their reference coordinates.  we keep
+    // the lowest entry in each class (by ref coordinates) and 
+    // extract all the others into outParalgoies
+    if (iStart == NULL_INDEX)
+    {
+      iIns = false;
+      iStart = (*i)->getStartPosition();
+      iEnd = (*i)->getEndPosition();
+      if ((*i)->getReversed())
+      {
+        swap(iStart, iEnd);
+      }
+    }
+    j = i;
+    ++j;
+    while (j != _flipSet.end())
+    {
+      jStart = (*j)->getStartPosition();
+      jEnd = (*j)->getEndPosition();
+      if ((*j)->getReversed())
+      {
+        swap(jStart, jEnd);
+      }
+      if (iStart == jStart)
+      {
+        // really dont know if this holds.  if it doesnt need 
+        // to clip all mapped segments to not partially overlap
+        // will be a pain (and should be done maybe at deeper level).
+        assert(iEnd == jEnd);
+        if (!iIns)
+        {
+          iIns = true;
+          outParalogies.insert(*i);
+        }
+        outParalogies.insert(*j);
+        k = j;
+        ++k;
+        cout << "erasing " << jStart << ", " << jEnd << endl;
+        _segMap.erase(*j);
+        _flipSet.erase(j);
+        j = k;
+      }
+      else
+      {
+        iStart = NULL_INDEX;
+        iIns = false;
+        break;
+      }
+    }
+    i = j;
+  }
+}
+
+  
+void BlockMapper::mapAdjacencies(MSFlipSet::const_iterator flipIt)
+{
+  assert(_flipSet.empty() == false && flipIt != _flipSet.end());
   assert(_segMap.find(*flipIt) != _segMap.end());
   MappedSegmentConstPtr mappedQuerySeg = *flipIt;
   hal_index_t maxIndex;
@@ -121,7 +190,7 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
   MSFlipSet::const_iterator flipNext = flipIt;
   if (queryIt->getReversed())
   {
-    flipNext = flipNext == flipSet.begin() ? flipSet.end() : --flipNext;
+    flipNext = flipNext == _flipSet.begin() ? _flipSet.end() : --flipNext;
   }
   else
   {
@@ -134,7 +203,7 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
          queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
   {
     bool wasCut = false;
-    if (flipNext != flipSet.end())
+    if (flipNext != _flipSet.end())
     {
       // if cut returns nothing, then the region in question is covered
       // by flipNext (ie already mapped).
@@ -168,7 +237,7 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
   }
   else
   {
-    flipPrev = flipPrev == flipSet.begin() ? flipSet.end() : --flipPrev;
+    flipPrev = flipPrev == _flipSet.begin() ? _flipSet.end() : --flipPrev;
   }
   iter = 0;
   queryIt->toLeft();
@@ -176,7 +245,7 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
          queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
   {
     bool wasCut = false;
-    if (flipPrev != flipSet.end())
+    if (flipPrev != _flipSet.end())
     {
       // if cut returns nothing, then the region in question is covered
       // by flipPrev (ie already mapped).
@@ -211,13 +280,13 @@ void BlockMapper::mapAdjacencies(const MSFlipSet& flipSet,
         mseg->fullReverse();
       }
 
-      MSSet::const_iterator j = flipSet.lower_bound(*i);
+      MSSet::const_iterator j = _flipSet.lower_bound(*i);
       bool overlaps = false;
-      if (j != flipSet.begin())
+      if (j != _flipSet.begin())
       {
         --j;
       }
-      for (size_t count = 0; count < 3 && j != flipSet.end() && !overlaps; 
+      for (size_t count = 0; count < 3 && j != _flipSet.end() && !overlaps; 
            ++count, ++j)
       {
         overlaps = mseg->overlaps((*j)->getStartPosition()) ||
@@ -354,7 +423,9 @@ bool BlockMapper::cutByNext(SlicedSegmentConstPtr queryIt,
 }
 
 void BlockMapper::extractSegment(MSSet::iterator start, 
-                                 vector<MappedSegmentConstPtr>& fragments)
+                                 const MSSet& paraSet,
+                                 vector<MappedSegmentConstPtr>& fragments,
+                                 MSSet* startSet)
 {
   fragments.clear();
   fragments.push_back(*start);
@@ -362,28 +433,32 @@ void BlockMapper::extractSegment(MSSet::iterator start,
   MSSet::iterator temp;
   MappedSegmentConstPtr prev = *start;
   ++next;
-  MSSet::key_compare comp = _segMap.key_comp();
+  MSSet::key_compare comp = startSet->key_comp();
   bool keepOn = true;
   while (keepOn)
   {
     keepOn = false;
     SlicedSegmentConstPtr pseg = prev->getSource();
     assert(pseg->getReversed() == false);
-    assert(next == _segMap.end() || 
+    assert(next == startSet->end() || 
            (*next)->getSource()->getReversed() == false);
 
-    while (next != _segMap.end() && (*next)->getSource()->getStartPosition() <=
+    while (next != startSet->end() && 
+           (*next)->getSource()->getStartPosition() <=
            pseg->getEndPosition() + 1)
     {
       assert((*next)->getSource()->getReversed() == false);
-      if ((*next)->getSource()->getStartPosition() == 
+      bool para1 = paraSet.find(prev) != paraSet.end();
+      bool para2 = paraSet.find(*next) != paraSet.end();
+      if (para1 == para2 &&
+          (*next)->getSource()->getStartPosition() == 
           pseg->getEndPosition() + 1 && canMergeBlock(prev, *next) == true)
       {
         fragments.push_back(*next);
         prev = *next;
         temp = next;
         ++next;
-        _segMap.erase(temp);
+        startSet->erase(temp);
         keepOn = true;
         break;
       }
