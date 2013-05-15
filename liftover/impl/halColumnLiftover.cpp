@@ -37,8 +37,7 @@ void ColumnLiftover::liftInterval()
         const DNASet* dSet = i->second;
         const Sequence* seq = i->first;
         // if we're not adding the column, don't bother keeping track
-        hal_size_t paralogyFactor = _addDupeColumn ? dSet->size() : 0;
-        SeqIndex seqIdx(seq, paralogyFactor);
+        SeqIndex seqIdx(seq, 0);
         for (DNASet::const_iterator j = dSet->begin(); j != dSet->end(); ++j)
         {
           pair<PositionMap::iterator, bool> res =

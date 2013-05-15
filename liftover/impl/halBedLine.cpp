@@ -29,8 +29,6 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
 {
   _version = version;
   std::getline(is, lineBuffer);
-  cout << "eof " << is.eof() <<  " good " << is.good() << endl;
-  cout << "line " << lineBuffer << endl;
   stringstream ss(lineBuffer);
   ss >> _chrName;
   if (ss.bad() || ss.fail()) 

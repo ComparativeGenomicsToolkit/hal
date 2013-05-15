@@ -28,12 +28,12 @@ void Liftover::convert(AlignmentConstPtr alignment,
                        istream* inBedStream,
                        const Genome* tgtGenome,
                        ostream* outBedStream,
-                       bool addDupeColumn)
+                       bool addExtraColumns)
 {
   _srcGenome = srcGenome;
   _tgtGenome = tgtGenome;
   _outBedStream = outBedStream;
-  _addDupeColumn = addDupeColumn;
+  _addExtraColumns = addExtraColumns;
   _missedSet.clear();
   _tgtSet.clear();
   assert(_srcGenome && inBedStream && tgtGenome && outBedStream);
@@ -88,6 +88,10 @@ void Liftover::writeLineResults()
   
   for (size_t i = 0; i < _outBedLines.size(); ++i)
   {
+    if (_addExtraColumns == false)
+    {
+      _outBedLines[0]._extra.clear();
+    }
     _outBedLines[0].write(*_outBedStream, _outBedVersion);
   }
 }
