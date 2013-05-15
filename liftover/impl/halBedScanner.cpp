@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <algorithm>
+#include <cctype>
 
 #include "halBedScanner.h"
 
@@ -58,10 +59,23 @@ void BedScanner::scan(istream* is, int bedVersion)
     throw hal_exception("Error reading bed input stream");
   }
   string lineBuffer;
-  while (_bedStream->good())
+  _lineNumber = 0;
+  try
   {
-    _bedLine.read(*_bedStream, bedVersion, lineBuffer);
-    visitLine();
+    skipWhiteSpaces(_bedStream);
+    while (_bedStream->good())
+    {
+      ++_lineNumber;
+      _bedLine.read(*_bedStream, bedVersion, lineBuffer);
+      visitLine();
+      skipWhiteSpaces(_bedStream);
+    }
+  }
+  catch(hal_exception e)
+  {
+    stringstream ss;
+    ss << e.what() << " -- input bed line " << _lineNumber;
+    throw hal_exception(ss.str());
   }
   visitEOF();
   _bedStream = NULL;
@@ -82,6 +96,8 @@ int BedScanner::getBedVersion(istream* bedStream)
     try
     {
       bedStream->seekg(pos);
+      skipWhiteSpaces(bedStream);
+      *bedStream >> std::skipws;
       bedLine.read(*bedStream, version, lineBuffer);
       break;
     }
@@ -103,4 +119,12 @@ void BedScanner::visitLine()
 
 void BedScanner::visitEOF()
 {
+}
+
+void BedScanner::skipWhiteSpaces(istream* bedStream)
+{
+  while (bedStream->good() && std::isspace(bedStream->peek()))
+  {
+    bedStream->get();
+  }
 }

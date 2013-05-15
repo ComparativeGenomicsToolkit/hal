@@ -29,43 +29,72 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
 {
   _version = version;
   std::getline(is, lineBuffer);
+  cout << "eof " << is.eof() <<  " good " << is.good() << endl;
+  cout << "line " << lineBuffer << endl;
   stringstream ss(lineBuffer);
   ss >> _chrName;
-  if (ss.bad()) throw hal_exception("Error scanning BED chrom");
+  if (ss.bad() || ss.fail()) 
+  {
+    throw hal_exception("Error scanning BED chrom");
+  }
   ss >> _start;
-  if (ss.bad()) throw hal_exception("Error scanning BED chromStart");
+  if (ss.bad() || ss.fail()) 
+  {
+    throw hal_exception("Error scanning BED chromStart");
+  }
   ss >> _end;
-  if (ss.bad()) throw hal_exception("Error scanning BED chromEnd");
+  if (ss.bad() || ss.fail())
+  {
+    throw hal_exception("Error scanning BED chromEnd");
+  }
   if (_version > 3)
   {
     ss >> _name;
-    if (ss.bad()) throw hal_exception("Error scanning BED name");
+    if (ss.bad() || ss.fail())
+    {
+      throw hal_exception("Error scanning BED name");
+    }
   }
   if (_version > 4)
   {
     ss >> _score;
-    if (ss.bad()) throw hal_exception("Error scanning BED score");
+    if (ss.bad() || ss.fail())
+    {
+      throw hal_exception("Error scanning BED score");
+    }
   }
   if (_version > 5)
   {
     ss >> _strand;
-    if (ss.bad()) throw hal_exception("Error scanning BED strand");
+    if (ss.bad() || ss.fail())
+    {
+      throw hal_exception("Error scanning BED strand");
+    }
   }
   if (_version > 6)
   {
     ss >> _thickStart;
-    if (ss.bad()) throw hal_exception("Error scanning BED thickStart");
+    if (ss.bad() || ss.fail())
+    {
+      throw hal_exception("Error scanning BED thickStart");
+    }
   }
   if (_version > 7)
   {
     ss >> _thickEnd;
-    if (ss.bad()) throw hal_exception("Error scanning BED thickEnd");
+    if (ss.bad() || ss.fail()) 
+    {
+      throw hal_exception("Error scanning BED thickEnd");
+    }
   }
   if (_version > 8)
   {
     string rgb;
     ss >> rgb;    
-    if (ss.bad()) throw hal_exception("Error scanning BED itemRGB");
+    if (ss.bad() || ss.fail())
+    {
+      throw hal_exception("Error scanning BED itemRGB");
+    }
     vector<string> rgbTokens = chopString(rgb, ",");
     if (rgbTokens.size() != 3)
     {
@@ -94,29 +123,48 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
   {
     size_t numBlocks;
     ss >> numBlocks;
-    if (ss.bad()) throw hal_exception("Error scanning BED blockCount");
+    if (ss.bad() || ss.fail()) 
+    {
+      throw hal_exception("Error scanning BED blockCount");
+    }
     string blockSizes;
     ss >> blockSizes;
-    if (ss.bad()) throw hal_exception("Error scanning BED blockSizes");
+    if (ss.bad() || ss.fail())
+    {
+      throw hal_exception("Error scanning BED blockSizes");
+    }
     string blockStarts;
     ss >> blockStarts;
-    if (ss.bad()) throw hal_exception("Error scanning BED blockStarts");
+    if (ss.bad() || ss.fail())
+    {
+      throw hal_exception("Error scanning BED blockStarts");
+    }
     _blocks.resize(numBlocks);
     vector<string> sizeBuf = chopString(blockSizes, ",");
     if (sizeBuf.size() != numBlocks)
+    {
        throw hal_exception("Error scanning BED blockSizes");
+    }
     vector<string> startBuf = chopString(blockStarts, ",");
     if (startBuf.size() != numBlocks)
+    {
        throw hal_exception("Error scanning BED blockStarts");
+    }
     for (size_t i = 0; i < numBlocks; ++i)
     {
       BedBlock& block = _blocks[i];
       stringstream ss1(sizeBuf[i]);
       ss1 >> block._length;
-      if (ss1.bad()) throw hal_exception("Error scanning BED blockSizes");
+      if (ss1.bad())
+      {
+        throw hal_exception("Error scanning BED blockSizes");
+      }
       stringstream ss2(startBuf[i]);
       ss2 >> block._start;
-      if (ss2.bad()) throw hal_exception("Error scanning BED blockStarts");
+      if (ss2.bad())
+      {
+        throw hal_exception("Error scanning BED blockStarts");
+      }
     }
   }
   _extra.clear();

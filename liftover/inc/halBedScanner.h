@@ -36,11 +36,14 @@ protected:
 
    virtual void visitLine();
    virtual void visitEOF();
+   
+   static void skipWhiteSpaces(std::istream* bedStream);
 
 protected:
 
    std::istream* _bedStream;
    BedLine _bedLine;
+   hal_size_t _lineNumber;
 };
 
 }
