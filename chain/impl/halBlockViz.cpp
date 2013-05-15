@@ -618,7 +618,7 @@ void readBlock(hal_block_t* cur,
     {
       reverseComplement(dnaBuffer);
     }
-    cur->sequence = (char*)malloc(dnaBuffer.length() * sizeof(char));
+    cur->sequence = (char*)malloc(dnaBuffer.length() * sizeof(char) + 1);
     strcpy(cur->sequence, dnaBuffer.c_str());
   }
 }
