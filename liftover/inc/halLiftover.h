@@ -27,7 +27,8 @@ public:
                 std::istream* inputFile,
                 const Genome* tgtGenome,
                 std::ostream* outputFile,
-                bool addExtraColumns = false);
+                bool addExtraColumns = false,
+                bool traverseDupes = true);
                    
 protected:
    
@@ -41,6 +42,7 @@ protected:
    AlignmentConstPtr _alignment;
    std::ostream* _outBedStream;
    bool _addExtraColumns;
+   bool _traverseDupes;
    std::vector<BedLine> _outBedLines;
    int _inBedVersion;
    int _outBedVersion;

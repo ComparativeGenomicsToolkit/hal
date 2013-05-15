@@ -26,7 +26,8 @@ void ColumnLiftover::liftInterval()
 {  
   PositionMap posCacheMap;
   _colIt = _srcSequence->getColumnIterator(&_tgtSet, 0, _bedLine._start, 
-                                           _bedLine._end - 1);
+                                           _bedLine._end - 1,
+                                           !_traverseDupes);
   while (true) 
   {
     const ColumnMap* cMap = _colIt->getColumnMap();

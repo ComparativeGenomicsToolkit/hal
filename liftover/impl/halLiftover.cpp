@@ -28,12 +28,14 @@ void Liftover::convert(AlignmentConstPtr alignment,
                        istream* inBedStream,
                        const Genome* tgtGenome,
                        ostream* outBedStream,
-                       bool addExtraColumns)
+                       bool addExtraColumns,
+                       bool traverseDupes)
 {
   _srcGenome = srcGenome;
   _tgtGenome = tgtGenome;
   _outBedStream = outBedStream;
   _addExtraColumns = addExtraColumns;
+  _traverseDupes = traverseDupes;
   _missedSet.clear();
   _tgtSet.clear();
   assert(_srcGenome && inBedStream && tgtGenome && outBedStream);
@@ -80,12 +82,13 @@ void Liftover::visitLine()
 
 void Liftover::writeLineResults()
 {
+
   if (_outBedVersion > 9)
   {
     std::sort(_outBedLines.begin(), _outBedLines.end());
     collapseExtendedBedLines();
   }
-  
+  cout << "line " << _lineNumber << endl;  
   for (size_t i = 0; i < _outBedLines.size(); ++i)
   {
     if (_addExtraColumns == false)
@@ -93,6 +96,7 @@ void Liftover::writeLineResults()
       _outBedLines[0]._extra.clear();
     }
     _outBedLines[0].write(*_outBedStream, _outBedVersion);
+    _outBedLines[0].write(cout, _outBedVersion);
   }
 }
 
