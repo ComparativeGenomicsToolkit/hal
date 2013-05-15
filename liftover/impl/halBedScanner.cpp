@@ -14,7 +14,7 @@
 using namespace std;
 using namespace hal;
 
-BedScanner::BedScanner() 
+BedScanner::BedScanner() : _bedStream(NULL)
 {
 
 }
@@ -26,46 +26,63 @@ BedScanner::~BedScanner()
 
 void BedScanner::scan(const string& bedPath, int bedVersion)
 {
+  assert(_bedStream == NULL);
+  _bedStream = new ifstream(bedPath.c_str());
+  
+  try {
+    scan(_bedStream, bedVersion);
+  }
+  catch(hal_exception e)
+  {
+    delete _bedStream;
+    _bedStream = NULL;
+    stringstream ss;
+    ss << e.what() << " in file " << bedPath;
+    throw hal_exception(ss.str());
+  }  
+
+  delete _bedStream;
+  _bedStream = NULL;
+}
+
+void BedScanner::scan(istream* is, int bedVersion)
+{
+  _bedStream = is;
   if (bedVersion == -1)
   {
-    bedVersion = getBedVersion(bedPath);
+    bedVersion = getBedVersion(is);
   }
 
-  _bedFile.open(bedPath.c_str());
-  if (_bedFile.bad())
+  if (_bedStream->bad())
   {
-    stringstream ss;
-    ss << "Error opening bed file: " << bedPath;
-    throw hal_exception(ss.str());
+    throw hal_exception("Error reading bed input stream");
   }
-
   string lineBuffer;
-  while (_bedFile.good())
+  while (_bedStream->good())
   {
-    _bedLine.read(_bedFile, bedVersion, lineBuffer);
+    _bedLine.read(*_bedStream, bedVersion, lineBuffer);
     visitLine();
   }
   visitEOF();
-  _bedFile.close();
+  _bedStream = NULL;
 }
 
-int BedScanner::getBedVersion(const string& bedPath)
+int BedScanner::getBedVersion(istream* bedStream)
 {
-  ifstream bedFile(bedPath.c_str());
-  if (bedFile.bad())
+  if (bedStream->bad())
   {
-    stringstream ss;
-    ss << "Error opening bed file: " << bedPath;
-    throw hal_exception(ss.str());
+    throw hal_exception("Error reading bed input stream");
   }
   string lineBuffer;
   BedLine bedLine;
   int version = 12;
+  streampos pos = bedStream->tellg();
   for (; version > 3; --version)
   {
     try
     {
-      bedLine.read(bedFile, version, lineBuffer);
+      bedStream->seekg(pos);
+      bedLine.read(*bedStream, version, lineBuffer);
       break;
     }
     catch(...)
@@ -76,8 +93,7 @@ int BedScanner::getBedVersion(const string& bedPath)
       }
     }
   }
-  
-  bedFile.close();
+  bedStream->seekg(pos);
   return version;
 }
 

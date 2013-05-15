@@ -35,7 +35,7 @@ struct BedLine
    hal_index_t _start;
    hal_index_t _end;
    std::string _name;
-   std::string _score;
+   hal_index_t _score;
    char _strand;
    hal_index_t _thickStart;
    hal_index_t _thickEnd;

@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
-#include "halLiftover.h"
+#include "halColumnLiftover.h"
 
 using namespace std;
 using namespace hal;
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
       throw hal_exception("Error opening tgtBed, " + tgtBedPath);
     }
     
-    Liftover liftover;
+    ColumnLiftover liftover;
     liftover.convert(alignment, srcGenome, &srcBed, tgtGenome, &tgtBed, 
                      dupeCol);
 

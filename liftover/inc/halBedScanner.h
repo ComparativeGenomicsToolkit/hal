@@ -28,8 +28,9 @@ public:
    BedScanner();
    virtual ~BedScanner();
    virtual void scan(const std::string& bedPath, int bedVersion = -1);
+   virtual void scan(std::istream* bedStream, int bedVersion = -1);
    
-   static int getBedVersion(const std::string& bedPath);
+   static int getBedVersion(std::istream* bedStream);
 
 protected:
 
@@ -38,7 +39,7 @@ protected:
 
 protected:
 
-   std::ifstream _bedFile;
+   std::istream* _bedStream;
    BedLine _bedLine;
 };
 
