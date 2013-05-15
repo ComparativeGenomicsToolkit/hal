@@ -54,6 +54,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
 
 void Liftover::visitLine()
 {
+  _outBedLines.clear();
   _srcSequence = _srcGenome->getSequence(_bedLine._chrName);
   if (_srcSequence == NULL)
   {
@@ -74,5 +75,24 @@ void Liftover::visitLine()
   }
 
   liftInterval();
+  writeLineResults();
 }
 
+void Liftover::writeLineResults()
+{
+  if (_outBedVersion > 9)
+  {
+    std::sort(_outBedLines.begin(), _outBedLines.end());
+    collapseExtendedBedLines();
+  }
+  
+  for (size_t i = 0; i < _outBedLines.size(); ++i)
+  {
+    _outBedLines[0].write(*_outBedStream, _outBedVersion);
+  }
+}
+
+void Liftover::collapseExtendedBedLines()
+{
+
+}

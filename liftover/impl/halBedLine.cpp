@@ -202,5 +202,23 @@ ostream& BedLine::write(ostream& os, int version)
   return os;
 }
 
-
+bool BedLine::operator<(const BedLine& other) const 
+{
+  if (_chrName < other._chrName)
+  {
+    return true;
+  }
+  else if (_chrName == other._chrName)
+  {
+    if (_start < other._start)
+    {
+      return true;
+    }
+    else if (_start == other._start)
+    {
+      return _end < other._end;
+    }
+  }
+  return false;
+}
 

@@ -32,6 +32,8 @@ public:
 protected:
    
    virtual void visitLine();
+   virtual void writeLineResults();
+   virtual void collapseExtendedBedLines();
    virtual void liftInterval() = 0;
    
 protected: 
@@ -39,7 +41,7 @@ protected:
    AlignmentConstPtr _alignment;
    std::ostream* _outBedStream;
    bool _addDupeColumn;
-   BedLine _outBedLine;
+   std::vector<BedLine> _outBedLines;
    int _inBedVersion;
    int _outBedVersion;
    

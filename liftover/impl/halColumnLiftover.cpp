@@ -66,13 +66,13 @@ void ColumnLiftover::liftInterval()
     hal_size_t seqStart = seq->getStartPosition();
     PositionCache* posCache = pcmIt->second;
     const IntervalSet* iSet = posCache->getIntervalSet();
-    _outBedLine = _bedLine;
-    _outBedLine._chrName = seq->getName();
     for (IntervalSet::const_iterator k = iSet->begin(); k != iSet->end(); ++k)
     {
-      _outBedLine._start = k->second - seqStart;
-      _outBedLine._end = k->first + 1 - seqStart;
-      _outBedLine.write(*_outBedStream, _outBedVersion);
+      _outBedLines.push_back(_bedLine);
+      BedLine& outBedLine = _outBedLines.back();
+      outBedLine._chrName = seq->getName();
+      outBedLine._start = k->second - seqStart;
+      outBedLine._end = k->first + 1 - seqStart;
     }
     delete posCache;
   }
