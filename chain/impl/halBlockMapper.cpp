@@ -145,12 +145,10 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
       {
         swap(jStart, jEnd);
       }
-      if (iStart == jStart)
+      // note we have overlaps here (possibly) that will need to 
+      // be clipped down the line
+      if (iStart <= jStart && iEnd >= jStart)
       {
-        // really dont know if this holds.  if it doesnt need 
-        // to clip all mapped segments to not partially overlap
-        // will be a pain (and should be done maybe at deeper level).
-        assert(iEnd == jEnd);
         if (!iIns)
         {
           iIns = true;
@@ -159,7 +157,6 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
         outParalogies.insert(*j);
         k = j;
         ++k;
-        cout << "erasing " << jStart << ", " << jEnd << endl;
         _segMap.erase(*j);
         _flipSet.erase(j);
         j = k;
@@ -430,11 +427,13 @@ void BlockMapper::extractSegment(MSSet::iterator start,
   fragments.clear();
   fragments.push_back(*start);
   MSSet::iterator next = start;
+  const Sequence* startSeq = (*start)->getSequence();
   MSSet::iterator temp;
   MappedSegmentConstPtr prev = *start;
   ++next;
   MSSet::key_compare comp = startSet->key_comp();
   bool keepOn = true;
+
   while (keepOn)
   {
     keepOn = false;
@@ -452,7 +451,9 @@ void BlockMapper::extractSegment(MSSet::iterator start,
       bool para2 = paraSet.find(*next) != paraSet.end();
       if (para1 == para2 &&
           (*next)->getSource()->getStartPosition() == 
-          pseg->getEndPosition() + 1 && canMergeBlock(prev, *next) == true)
+          pseg->getEndPosition() + 1 && 
+          (*next)->getSequence() == startSeq &&
+          canMergeBlock(prev, *next) == true)
       {
         fragments.push_back(*next);
         prev = *next;
@@ -466,6 +467,7 @@ void BlockMapper::extractSegment(MSSet::iterator start,
       ++next;
     }
   }
+  assert(fragments.front()->getSequence() == fragments.back()->getSequence());
 }
 
 bool BlockMapper::canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 

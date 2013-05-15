@@ -639,7 +639,6 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
     assert((*segMapIt)->getSource()->getReversed() == false);
     hal_target_dupe_list_t* cur = (hal_target_dupe_list_t*)calloc(
       1, sizeof(hal_target_dupe_list_t));
-    cout << (*segMapIt).get() << endl;
     blockMapper.extractSegment(segMapIt, emptySet, fragments, &paraSet);
     readTargetRange(cur, fragments);
     tempList.push_back(cur);
@@ -658,9 +657,11 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
   {
     j = i;
     ++j;
-    // merge dupe lists with identical ids by prepending j's
+    // merge dupe lists with overlapping ids by prepending j's
     // target range to i
-    while (j != tempList.end() && (*j)->id == (*i)->id)
+    // (recall we've stuck query start coordinates into the id)
+    while (j != tempList.end() && 
+           ((*i)->id <= (*j)->id && (*i)->id + (*i)->tRange->size >= (*j)->id))
     {
       assert((*i)->next == NULL);
       assert((*j)->next == NULL);
