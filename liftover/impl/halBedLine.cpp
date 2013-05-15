@@ -63,8 +63,32 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
   }
   if (_version > 8)
   {
-    ss >> _itemRGB;
+    string rgb;
+    ss >> rgb;    
     if (ss.bad()) throw hal_exception("Error scanning BED itemRGB");
+    vector<string> rgbTokens = chopString(rgb, ",");
+    if (rgbTokens.size() != 3)
+    {
+      throw hal_exception("Error parsing BED itemRGB");
+    }
+    stringstream rgbssr(rgbTokens[0]);
+    rgbssr >> _itemR;
+    if (rgbssr.bad())
+    {
+      throw hal_exception("Error parsing BED itemRGB");
+    }
+    stringstream rgbssg(rgbTokens[1]);
+    rgbssg >> _itemG;
+    if (rgbssg.bad())
+    {
+      throw hal_exception("Error parsing BED itemRGB");
+    }
+    stringstream rgbssb(rgbTokens[2]);
+    rgbssb >> _itemB;
+    if (rgbssb.bad())
+    {
+      throw hal_exception("Error parsing BED itemRGB");
+    }    
   }
   if (_version > 9)
   {
@@ -138,7 +162,7 @@ ostream& BedLine::write(ostream& os, int version)
   }
   if (version > 8)
   {
-    os << '\t' << _itemRGB;
+    os << '\t' << _itemR << ',' << _itemG << ',' << _itemB;
   }
   if (version > 9)
   {

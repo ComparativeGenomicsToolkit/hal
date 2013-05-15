@@ -28,12 +28,13 @@ public:
    BedScanner();
    virtual ~BedScanner();
    virtual void scan(const std::string& bedPath, int bedVersion = -1);
+   
+   static int getBedVersion(const std::string& bedPath);
 
 protected:
 
-   int getBedVersion() const;
-
-   virtual void visitLine() = 0;
+   virtual void visitLine();
+   virtual void visitEOF();
 
 protected:
 

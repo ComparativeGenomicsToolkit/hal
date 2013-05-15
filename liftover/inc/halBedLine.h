@@ -37,9 +37,11 @@ struct BedLine
    std::string _name;
    std::string _score;
    char _strand;
-   std::string _thickStart;
-   std::string _thickEnd;
-   std::string _itemRGB;
+   hal_index_t _thickStart;
+   hal_index_t _thickEnd;
+   hal_index_t _itemR;
+   hal_index_t _itemG;
+   hal_index_t _itemB;
    std::vector<BedBlock> _blocks;
    std::vector<std::string> _extra;
    int _version;
