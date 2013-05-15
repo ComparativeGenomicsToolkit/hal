@@ -32,6 +32,7 @@ struct hal_target_dupe_list_t
    struct hal_target_dupe_list_t* next;
    int id;  
    struct hal_target_range_t* tRange;
+   char* qChrom;
 };
 
 /** Contains mapped blocks along with target paralgous "blue line" blocks

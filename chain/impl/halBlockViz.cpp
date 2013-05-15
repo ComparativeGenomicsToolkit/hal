@@ -188,6 +188,7 @@ extern "C" void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes)
       free(dupes->tRange);
       dupes->tRange = nextRange;
     }
+    free(dupes->qChrom);
     free(dupes);
     dupes = next;
   }
@@ -725,4 +726,7 @@ void readTargetRange(hal_target_dupe_list_t* cur,
   {
     cur->id = lastQuerySeg->getEndPosition() - qSequence->getStartPosition();
   }
+  string qSeqName = qSequence->getName();
+  cur->qChrom = (char*)malloc(qSeqName.length() * sizeof(char) + 1);
+  strcpy(cur->qChrom, qSeqName.c_str());
 }
