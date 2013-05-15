@@ -28,8 +28,8 @@ struct BedLine
 {
    BedLine();
    virtual ~BedLine();
-   void read(std::istream& is, int version, std::string& lineBuffer);
-   void write(std::ostream& os, int version);
+   std::istream& read(std::istream& is, int version, std::string& lineBuffer);
+   std::ostream& write(std::ostream& os, int version=-1);
 
    std::string _chrName;
    hal_index_t _start;

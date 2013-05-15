@@ -25,7 +25,7 @@ BedLine::~BedLine()
 
 }
 
-void BedLine::read(istream& is, int version, string& lineBuffer)
+istream& BedLine::read(istream& is, int version, string& lineBuffer)
 {
   _version = version;
   std::getline(is, lineBuffer);
@@ -102,9 +102,80 @@ void BedLine::read(istream& is, int version, string& lineBuffer)
     ss >> extraBuf;
     if (extraBuf.length() > 0)
     {
-      
+      _extra.push_back(extraBuf);
     }
   }
+  return is;
+}
+
+ostream& BedLine::write(ostream& os, int version)
+{
+  if (version == -1)
+  {
+    version = _version;
+  }
+  os << _chrName << '\t' << _start << '\t' << _end;
+  
+  if (version > 3)
+  {
+    os << '\t' << _name;
+  }
+  if (version > 4)
+  {
+    os << '\t' << _score;
+  }
+  if (version > 5)
+  {
+    os << '\t' << _strand;
+  }
+  if (version > 6)
+  {
+    os << '\t' << _thickStart;
+  }
+  if (version > 7)
+  {
+    os << '\t' << _thickEnd;
+  }
+  if (version > 8)
+  {
+    os << '\t' << _itemRGB;
+  }
+  if (version > 9)
+  {
+    os << '\t' << _blocks.size();
+    for (size_t i = 0; i < _blocks.size(); ++i)
+    {
+      if (i == 0)
+      {
+        os << '\t';
+      }
+      else
+      {
+        os << ',';
+      }
+      os << _blocks[i]._length;
+    }
+    for (size_t i = 0; i < _blocks.size(); ++i)
+    {
+      if (i == 0)
+      {
+        os << '\t';
+      }
+      else
+      {
+        os << ',';
+      }
+      os << _blocks[i]._start;
+    }
+  }
+
+  for (size_t i = 0; i < _extra.size(); ++i)
+  {
+    os << '\t' << _extra[i];
+  }
+  
+  os << '\n';
+  return os;
 }
 
 
