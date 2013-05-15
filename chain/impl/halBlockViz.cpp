@@ -62,7 +62,10 @@ static void readTargetRange(hal_target_dupe_list_t* cur,
 
 extern "C" int halOpenLOD(char *lodFilePath)
 {
-  return halOpenLodOrHal(lodFilePath, true);
+  bool isHal = lodFilePath && strlen(lodFilePath) > 4 &&
+     strcmp(lodFilePath + strlen(lodFilePath) - 4, ".hal") == 0;
+
+  return halOpenLodOrHal(lodFilePath, !isHal);
 }
 
 extern "C" int halOpen(char* halFilePath)
