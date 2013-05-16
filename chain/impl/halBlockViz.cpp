@@ -9,6 +9,7 @@
 #include <map>
 #include <sstream>
 #include <limits>
+#include <algorithm>
 #include <stdlib.h>
 #include <string.h>
 #include "hal.h"
