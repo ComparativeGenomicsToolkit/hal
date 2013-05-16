@@ -248,6 +248,11 @@ ostream& BedLine::write(ostream& os, int version)
   return os;
 }
 
+bool BedBlock::operator<(const BedBlock& other) const
+{
+  bool isLess = _start < other._start;
+  return isLess;
+}
 bool BedLine::operator<(const BedLine& other) const 
 {
   if (_chrName < other._chrName)
@@ -256,13 +261,20 @@ bool BedLine::operator<(const BedLine& other) const
   }
   else if (_chrName == other._chrName)
   {
-    if (_start < other._start)
+    if (_strand == '+' && other._strand == '-')
     {
       return true;
     }
-    else if (_start == other._start)
+    else if (_strand == other._strand)
     {
-      return _end < other._end;
+      if (_start < other._start)
+      {
+        return true;
+      }
+      else if (_start == other._start)
+      {
+        return _end < other._end;
+      }
     }
   }
   return false;

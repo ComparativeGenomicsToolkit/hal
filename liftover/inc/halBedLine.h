@@ -19,6 +19,7 @@ struct BedBlock
 {
    hal_index_t _start;
    hal_index_t _length;
+   bool operator<(const BedBlock& other) const;
 };
 
 /** store a line of a BED file 

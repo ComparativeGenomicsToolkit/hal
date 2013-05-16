@@ -35,15 +35,21 @@ protected:
    virtual void visitLine();
    virtual void writeLineResults();
    virtual void collapseExtendedBedLines();
+   virtual void liftBlockIntervals();
+   virtual bool canMerge(const BedLine& bedLine1, const BedLine& bedLine2);
+   virtual void mergeAsBlockInterval(BedLine& bedTarget, 
+                                     const BedLine& bedSource);
    virtual void liftInterval() = 0;
    
 protected: 
+
+   typedef std::list<BedLine> BedList;
 
    AlignmentConstPtr _alignment;
    std::ostream* _outBedStream;
    bool _addExtraColumns;
    bool _traverseDupes;
-   std::vector<BedLine> _outBedLines;
+   BedList _outBedLines;
    int _inBedVersion;
    int _outBedVersion;
    

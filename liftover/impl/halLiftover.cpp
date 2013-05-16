@@ -75,30 +75,106 @@ void Liftover::visitLine()
               << "because sequence " << _bedLine._chrName << " has length " 
               << _srcSequence->getSequenceLength() << endl;
   }
-
-  liftInterval();
+  
+  if (_inBedVersion > 9 && !_bedLine._blocks.empty())
+  {
+    liftBlockIntervals();
+  }
+  else
+  {
+    liftInterval();
+  }
   writeLineResults();
 }
 
 void Liftover::writeLineResults()
 {
-
   if (_outBedVersion > 9)
   {
-    std::sort(_outBedLines.begin(), _outBedLines.end());
     collapseExtendedBedLines();
   }
-  for (size_t i = 0; i < _outBedLines.size(); ++i)
+  BedList::iterator i = _outBedLines.begin();
+  for (; i != _outBedLines.end(); ++i)
   {
     if (_addExtraColumns == false)
     {
-      _outBedLines[i]._extra.clear();
+      i->_extra.clear();
     }
-    _outBedLines[i].write(*_outBedStream, _outBedVersion);
+    i->write(*_outBedStream, _outBedVersion);
   }
 }
 
 void Liftover::collapseExtendedBedLines()
+{
+  _outBedLines.sort();
+  
+   // want to greedily merge up colinear intervals
+  BedList::iterator i = _outBedLines.begin();
+  BedList::iterator j;
+  BedList::iterator k;
+  
+  for (; i != _outBedLines.end(); ++i)
+  {
+    j = i;
+    ++j;
+    for (; j != _outBedLines.end() && 
+            i->_chrName == j->_chrName &&
+            i->_strand == j->_strand; j = k)
+    {
+      k = j;
+      k++;
+      if (canMerge(*i, *j) == true)
+      {
+        mergeAsBlockInterval(*i, *j);
+        _outBedLines.erase(j);
+      }
+    }
+  }   
+}
+
+void Liftover::liftBlockIntervals()
+{
+  BedLine blockBed = _bedLine;
+  std::sort(blockBed._blocks.begin(), blockBed._blocks.end());
+  _bedLine._blocks.clear();
+  hal_index_t prev = _bedLine._start;
+  vector<BedBlock>::iterator blockIt = blockBed._blocks.begin();
+  for (; blockIt != blockBed._blocks.end(); ++blockIt)
+  {
+    // region before this block
+    _bedLine._start = prev;
+    _bedLine._end = blockIt->_start;
+    assert(_bedLine._end >= _bedLine._start);
+    if (_bedLine._end > _bedLine._start)
+    {
+      liftInterval();
+    }
+    // the block
+    _bedLine._start = blockIt->_start;
+    _bedLine._end = blockIt->_start + blockIt->_length;
+    if (_bedLine._end > _bedLine._start)
+    {
+      liftInterval();
+    }
+    prev = _bedLine._end;
+  }
+  
+  // bit between last block and end
+  _bedLine._start = prev;
+  _bedLine._end = blockBed._end;
+  if (_bedLine._start > _bedLine._end)
+  {
+    liftInterval();
+  }
+}
+
+bool Liftover::canMerge(const BedLine& bedLine1, const BedLine& bedLine2)
+{
+  return false;
+}
+
+void Liftover::mergeAsBlockInterval(BedLine& bedTarget, 
+                                    const BedLine& bedSource)
 {
 
 }
