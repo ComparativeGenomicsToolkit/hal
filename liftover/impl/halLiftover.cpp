@@ -95,8 +95,8 @@ void Liftover::writeLineResults()
     {
       _outBedLines[0]._extra.clear();
     }
-    _outBedLines[0].write(*_outBedStream, _outBedVersion);
-    _outBedLines[0].write(cout, _outBedVersion);
+    _outBedLines[i].write(*_outBedStream, _outBedVersion);
+    _outBedLines[i].write(cout, _outBedVersion);
   }
 }
 
