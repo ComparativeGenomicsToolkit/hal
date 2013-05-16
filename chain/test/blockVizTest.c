@@ -70,8 +70,17 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
 
 static void printBlock(FILE* file, struct hal_block_t* b)
 {
-  fprintf(file, "chr:%s, tSt:%d, qSt:%d, size:%d, strand:%c: %s\n", 
+  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: %s\n", 
           b->qChrom, b->tStart, b->qStart, b->size, b->strand, b->sequence);
+}
+
+static void printDupeList(FILE* file, struct hal_target_dupe_list_t* d)
+{
+  fprintf(file, "tDupe id:%d qCrhom:%s\n", d->id, d->qChrom);
+  for (hal_target_range_t* tr = d->tRange; tr; tr = tr->next)
+  {
+    fprintf(file, " tSt:%ld size:%ld\n", tr->tStart, tr->size);
+  }
 }
 
 static void printStats(FILE* file, int handle)
@@ -79,7 +88,7 @@ static void printStats(FILE* file, int handle)
   hal_species_t* species = halGetSpecies(handle);
   for (; species != NULL; species = species->next)
   {
-    fprintf(file, "species:%s, len=%u, nc=%u, par=%s, bl=%lf\n",
+    fprintf(file, "species:%s, len=%ld, nc=%ld, par=%s, bl=%lf\n",
             species->name, species->length, species->numChroms,
             species->parentName, species->parentBranchLength);
     hal_chromosome_t* chrom = halGetChroms(handle, species->name);
@@ -88,7 +97,7 @@ static void printStats(FILE* file, int handle)
       int len = chrom->length > 10 ? 10 : chrom->length;
       char* dna = halGetDna(handle, species->name, chrom->name,
                             0, len);
-      fprintf(file, "  chrom:%s, len=%u seq=%s...\n",
+      fprintf(file, "  chrom:%s, len=%ld seq=%s...\n",
               chrom->name, chrom->length, dna);
       free(dna);              
     }
@@ -109,10 +118,10 @@ static void* getBlocksWrapper(void* voidArgs)
 {
   bv_args_t* args = (bv_args_t*)voidArgs;
   int handle = openWrapper(args->path);
-  hal_block_t* head = NULL;
+  hal_block_results_t* results = NULL;
   if (handle >= 0)
   {
-    head = halGetBlocksInTargetRange(handle,
+    results = halGetBlocksInTargetRange(handle,
                                      args->qSpecies,
                                      args->tSpecies,
                                      args->tChrom, 
@@ -120,7 +129,7 @@ static void* getBlocksWrapper(void* voidArgs)
                                      args->tEnd, 
                                      args->doSeq, 
                                      0);
-    halFreeBlocks(head);
+    halFreeBlockResults(results);
   }
   pthread_exit(NULL);
 }
@@ -149,25 +158,32 @@ int main(int argc, char** argv)
   {
     printStats(stdout, handle);
 
-    struct hal_block_t* head = halGetBlocksInTargetRange(handle, 
-                                                         args.qSpecies,
-                                                         args.tSpecies,
-                                                         args.tChrom, 
-                                                         args.tStart,
-                                                         args.tEnd, 
-                                                         args.doSeq, 
-                                                         args.doDupes);
-    if (head == NULL)
+    struct hal_block_results_t* results = 
+       halGetBlocksInTargetRange(handle, 
+                                 args.qSpecies,
+                                 args.tSpecies,
+                                 args.tChrom, 
+                                 args.tStart,
+                                 args.tEnd, 
+                                 args.doSeq, 
+                                 args.doDupes);
+    if (results == NULL)
     {
       ret = -1;
     }
-    struct hal_block_t* cur = head;
+    struct hal_block_t* cur = results->mappedBlocks;
     while (cur)
     {
       printBlock(stdout, cur);
       cur = cur->next;
     }
-    halFreeBlocks(head);
+    struct hal_target_dupe_list_t* dupeList = results->targetDupeBlocks;
+    while (dupeList)
+    {
+      printDupeList(stdout, dupeList);
+      dupeList = dupeList->next;
+    }
+    halFreeBlockResults(results);
 
 #ifdef ENABLE_UDC
     #define NUM_THREADS 10

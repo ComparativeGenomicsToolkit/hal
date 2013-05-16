@@ -35,14 +35,22 @@ public:
              bool doDupes, hal_size_t minLength,
              bool mapTargetAdjacencies);
    void map();
+   void extractReferenceParalogies(MSSet& outParalogies);
 
    const MSSet& getMap() const;
+   MSSet& getMap();
+   
+   MSFlipSet& getFlipSet();
+
+   void extractSegment(MSSet::iterator start, 
+                       const MSSet& paraSet,                       
+                       std::vector<MappedSegmentConstPtr>& fragments,
+                       MSSet* startSet);
 
 protected:
    
    void erase();
-   void mapAdjacencies(const MSFlipSet& flipSet,
-                       MSFlipSet::const_iterator flipIt);
+   void mapAdjacencies(MSFlipSet::const_iterator flipIt);
 
    static SegmentIteratorConstPtr makeIterator(
      MappedSegmentConstPtr mappedSegment, 
@@ -51,14 +59,17 @@ protected:
 
    // note queryIt passed by reference.  the pointer can be modified. 
    // ick.
-   static void cutByNext(SegmentIteratorConstPtr& queryIt, 
+   static bool cutByNext(SlicedSegmentConstPtr queryIt, 
                          SlicedSegmentConstPtr nextSeg,
                          bool right);
-
+   
+   bool canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
+                      MappedSegmentConstPtr lastQuerySeg);
    
 protected:
 
    MSSet _segMap;
+   MSFlipSet _flipSet;
    std::set<const Genome*> _spanningTree;
    const Genome* _refGenome;
    const Sequence* _refSequence;
@@ -77,6 +88,16 @@ protected:
 inline const BlockMapper::MSSet& BlockMapper::getMap() const
 {
   return _segMap;
+}
+
+inline BlockMapper::MSSet& BlockMapper::getMap()
+{
+  return _segMap;
+}
+
+inline BlockMapper::MSFlipSet& BlockMapper::getFlipSet()
+{
+  return _flipSet;
 }
 
 }
