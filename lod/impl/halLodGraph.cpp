@@ -7,6 +7,7 @@
 #include <cassert>
 #include <limits>
 #include <cmath>
+#include <cstdlib>
 #include <algorithm>
 #include "halLodGraph.h"
 
