@@ -88,15 +88,13 @@ void Liftover::writeLineResults()
     std::sort(_outBedLines.begin(), _outBedLines.end());
     collapseExtendedBedLines();
   }
-  cout << "line " << _lineNumber << endl;  
   for (size_t i = 0; i < _outBedLines.size(); ++i)
   {
     if (_addExtraColumns == false)
     {
-      _outBedLines[0]._extra.clear();
+      _outBedLines[i]._extra.clear();
     }
     _outBedLines[i].write(*_outBedStream, _outBedVersion);
-    _outBedLines[i].write(cout, _outBedVersion);
   }
 }
 

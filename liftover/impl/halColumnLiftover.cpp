@@ -25,6 +25,7 @@ ColumnLiftover::~ColumnLiftover()
 void ColumnLiftover::liftInterval()
 {  
   PositionMap posCacheMap;
+  PositionMap revCacheMap;
   _colIt = _srcSequence->getColumnIterator(&_tgtSet, 0, _bedLine._start, 
                                            _bedLine._end - 1,
                                            !_traverseDupes);
@@ -41,8 +42,17 @@ void ColumnLiftover::liftInterval()
         SeqIndex seqIdx(seq, 0);
         for (DNASet::const_iterator j = dSet->begin(); j != dSet->end(); ++j)
         {
-          pair<PositionMap::iterator, bool> res =
-             posCacheMap.insert(pair<SeqIndex, PositionCache*>(seqIdx, NULL));
+          pair<PositionMap::iterator, bool> res;
+          if ((*j)->getReversed() == false)
+          {
+            res =
+               posCacheMap.insert(pair<SeqIndex, PositionCache*>(seqIdx, NULL));
+          }
+          else
+          {
+            res =
+               revCacheMap.insert(pair<SeqIndex, PositionCache*>(seqIdx, NULL));
+          }
           if (res.second == true)
           {
             res.first->second = new PositionCache();
@@ -73,8 +83,29 @@ void ColumnLiftover::liftInterval()
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
+      outBedLine._strand = '+';
     }
     delete posCache;
   }
+  
+  for (pcmIt = revCacheMap.begin(); pcmIt != revCacheMap.end(); ++pcmIt)
+  {
+    const Sequence* seq = pcmIt->first.first;
+    _outParalogy = pcmIt->first.second;
+    hal_size_t seqStart = seq->getStartPosition();
+    PositionCache* posCache = pcmIt->second;
+    const IntervalSet* iSet = posCache->getIntervalSet();
+    for (IntervalSet::const_iterator k = iSet->begin(); k != iSet->end(); ++k)
+    {
+      _outBedLines.push_back(_bedLine);
+      BedLine& outBedLine = _outBedLines.back();
+      outBedLine._chrName = seq->getName();
+      outBedLine._start = k->second - seqStart;
+      outBedLine._end = k->first + 1 - seqStart;
+      outBedLine._strand = '-';
+    }
+    delete posCache;
+  }
+
 }
 
