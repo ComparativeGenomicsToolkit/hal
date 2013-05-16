@@ -170,11 +170,27 @@ void Liftover::liftBlockIntervals()
 
 bool Liftover::canMerge(const BedLine& bedLine1, const BedLine& bedLine2)
 {
-  return false;
+  assert(bedLine2._blocks.empty());
+  assert(bedLine1._chrName == bedLine2._chrName);
+  assert(bedLine1._strand == bedLine2._strand);
+
+  return (bedLine1._blocks.empty() ||
+          bedLine2._start >= bedLine1._blocks.back()._start +
+          bedLine1._blocks.back()._length);
 }
 
 void Liftover::mergeAsBlockInterval(BedLine& bedTarget, 
                                     const BedLine& bedSource)
 {
+  assert(canMerge(bedTarget, bedSource) == true);
+  if (bedTarget._blocks.empty())
+  {
+    BedBlock block = {bedTarget._start, bedTarget._end - bedTarget._start};
+    bedTarget._blocks.push_back(block);
+  }
 
+  BedBlock block = {bedSource._start, bedSource._end - bedSource._start};
+  bedTarget._start = std::min(bedTarget._start, bedSource._start);
+  bedTarget._end = std::max(bedTarget._end, bedSource._end);
+  bedTarget._blocks.push_back(block);
 }
