@@ -107,70 +107,159 @@ int DefaultMappedSegment::fastComp(const DefaultSegmentIteratorConstPtr& s1,
   // and offset)
   int res = 0;
   assert(s1->getGenome() == s2->getGenome());
-  assert(s1->isTop() == s2->isTop());
-  if (s1->getArrayIndex() < s2->getArrayIndex())
+  if (s1->isTop() != s2->isTop())
   {
-    res = -1;
-  }
-  else if (s1->getArrayIndex() > s2->getArrayIndex())
-  {
-    res = 1;
-  }
-  else 
-  {
-    hal_offset_t so1 = s1->getStartOffset();
-    hal_offset_t eo1 = s1->getEndOffset();
-    if (s1->getReversed())
+    res = boundComp(s1, s2);
+    if (res == 0)
     {
-      swap(so1, eo1);
+      res = slowComp(s1, s2);
     }
-    hal_offset_t so2 = s2->getStartOffset();
-    hal_offset_t eo2 = s2->getEndOffset();
-    if (s2->getReversed())
-    {
-      swap(so2, eo2);
-    }
-    if (so1 < so2)
-    {
-      res = -1;
-    }
-    else if (so1 > so2)
-    {
-      res = 1;
-    }
-    else if (eo1 > eo2)
-    {
-      res = -1;
-    }
-    else if (eo1 < eo2)
-    {
-      res = 1;
-    }
-  }
-  if (res == 0)
-  {
-    assert(std::min(s1->getStartPosition(), s1->getEndPosition()) ==
-           std::min(s2->getStartPosition(), s2->getEndPosition()));
-    assert(std::max(s1->getStartPosition(), s1->getEndPosition()) ==
-           std::max(s2->getStartPosition(), s2->getEndPosition()));
-  }
-  else if (res == -1)
-  {    
-    assert(std::min(s1->getStartPosition(), s1->getEndPosition()) <
-           std::min(s2->getStartPosition(), s2->getEndPosition()) ||
-           ((std::min(s1->getStartPosition(), s1->getEndPosition()) ==
-              std::min(s2->getStartPosition(), s2->getEndPosition())) &&
-             (std::max(s1->getStartPosition(), s1->getEndPosition()) < 
-              std::max(s2->getStartPosition(), s2->getEndPosition()))));
   }
   else
   {
-    assert(std::min(s1->getStartPosition(), s1->getEndPosition()) >
-           std::min(s2->getStartPosition(), s2->getEndPosition()) ||
-           ((std::min(s1->getStartPosition(), s1->getEndPosition()) ==
-              std::min(s2->getStartPosition(), s2->getEndPosition())) &&
-            (std::max(s1->getStartPosition(), s1->getEndPosition()) > 
-             std::max(s2->getStartPosition(), s2->getEndPosition()))));
+    if (s1->getArrayIndex() < s2->getArrayIndex())
+    {
+      res = -1;
+    }
+    else if (s1->getArrayIndex() > s2->getArrayIndex())
+    {
+      res = 1;
+    }
+    else
+    { 
+      hal_offset_t so1 = s1->getStartOffset();
+      hal_offset_t eo1 = s1->getEndOffset();
+      if (s1->getReversed())
+      {
+        swap(so1, eo1);
+      }
+      hal_offset_t so2 = s2->getStartOffset();
+      hal_offset_t eo2 = s2->getEndOffset();
+      if (s2->getReversed())
+      {
+        swap(so2, eo2);
+      }
+      if (so1 < so2)
+      {
+        res = -1;
+      }
+      else if (so1 > so2)
+      {
+        res = 1;
+      }
+      else if (eo1 > eo2)
+      {
+        res = -1;
+      }
+      else if (eo1 < eo2)
+      {
+        res = 1;
+      }
+    }
+  }
+  assert (res == slowComp(s1, s2));
+  return res;
+}
+
+int DefaultMappedSegment::boundComp(const DefaultSegmentIteratorConstPtr& s1, 
+                                    const DefaultSegmentIteratorConstPtr& s2)
+{
+  int res = 0;
+  bool flip = s2->getReversed();
+  if (flip)
+  {
+    s2->toReverse();
+  }
+  
+  if (s1->isTop() && !s2->isTop())
+  {
+    BottomSegmentIteratorConstPtr bot = 
+       const_cast<DefaultSegmentIteratorConstPtr&>(
+         s2).downCast<BottomSegmentIteratorConstPtr>();
+    hal_index_t lb = bot->getTopParseIndex();
+    hal_index_t ub = lb;
+    if ((hal_size_t)bot->getArrayIndex() <
+        bot->getGenome()->getNumBottomSegments()-1)
+    {
+      bot = bot->copy();
+      bot->slice(0,0);
+      bot->toRight();
+      ub = bot->getTopParseIndex();
+    }
+    if (s1->getArrayIndex() < lb)
+    {
+      res = -1;
+    }
+    else if (s1->getArrayIndex() > ub)
+    {
+      res = 1;
+    }
+  }
+  else if (!s1->isTop() && s2->isTop())
+  {
+    TopSegmentIteratorConstPtr top = 
+       const_cast<DefaultSegmentIteratorConstPtr&>(
+         s2).downCast<TopSegmentIteratorConstPtr>();
+    hal_index_t lb = top->getBottomParseIndex();
+    hal_index_t ub = lb;
+    if ((hal_size_t)top->getArrayIndex() < 
+        top->getGenome()->getNumTopSegments()-1)
+    {
+      top = top->copy();
+      top->slice(0,0);
+      top->toRight();
+      ub = top->getBottomParseIndex();
+    }
+    if (s1->getArrayIndex() < lb)
+    {
+      res = -1;
+    }
+    else if (s1->getArrayIndex() > ub)
+    {
+      res = 1;
+    }
+  }
+
+  if (flip)
+  {
+    s2->toReverse();
+  }
+
+  return res;
+}
+
+int DefaultMappedSegment::slowComp(const DefaultSegmentIteratorConstPtr& s1, 
+                                   const DefaultSegmentIteratorConstPtr& s2)
+{
+  assert(s1->getGenome() == s2->getGenome());
+  int res = 0;
+  hal_index_t sp1 = s1->getStartPosition();
+  hal_index_t ep1 = s1->getEndPosition();
+  hal_index_t sp2 = s2->getStartPosition();
+  hal_index_t ep2 = s2->getEndPosition();
+  if (s1->getReversed())
+  {
+    swap(sp1, ep1);
+  }
+  if (s2->getReversed())
+  {
+    swap(sp2, ep2);
+  }
+  if (sp1 < sp2)
+  {
+    res = -1;
+  }
+  else if (sp1 > sp2)
+  {
+    res = 1;
+  }
+  else if (ep1 < ep2)
+  {
+    res = -1;
+  }
+  else if (ep1 > ep2)
+  {
+    res = 1;
   }
   return res;
 }

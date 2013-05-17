@@ -71,9 +71,9 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
 static void printBlock(FILE* tFile, FILE* qFile, struct hal_block_t* b, 
                        const char* tChrom, size_t idx)
 {
-  fprintf(tFile, "%s\t%d\t%d\t%zu\t0\t+\n", tChrom, b->tStart,
+  fprintf(tFile, "%s\t%ld\t%ld\t%ld\t0\t+\n", tChrom, b->tStart,
           b->tStart + b->size, idx);
-  fprintf(qFile, "%s\t%d\t%d\t%zu\t0\t%c\n", b->qChrom, b->qStart,
+  fprintf(qFile, "%s\t%ld\t%ld\t%ld\t0\t%c\n", b->qChrom, b->qStart,
           b->qStart + b->size, idx, b->strand);
 }
 
@@ -118,19 +118,20 @@ int main(int argc, char** argv)
   int ret = 0;
   if (handle >= 0)
   {
-    struct hal_block_t* head = halGetBlocksInTargetRange(handle, 
-                                                         args.qSpecies,
-                                                         args.tSpecies,
-                                                         args.tChrom, 
-                                                         args.tStart,
-                                                         args.tEnd, 
-                                                         args.doSeq, 
-                                                         args.doDupes);
-    if (head == NULL)
+    struct hal_block_results_t* results = 
+       halGetBlocksInTargetRange(handle, 
+                                 args.qSpecies,
+                                 args.tSpecies,
+                                 args.tChrom, 
+                                 args.tStart,
+                                 args.tEnd, 
+                                 args.doSeq, 
+                                 args.doDupes);
+    if (results == NULL)
     {
       ret = -1;
     }
-    struct hal_block_t* cur = head;
+    struct hal_block_t* cur = results->mappedBlocks;
     size_t index = 0;
     printf("Writing target blocks to %s and query blocks to %s...\n",
            tFilePath, qFilePath);
@@ -139,7 +140,7 @@ int main(int argc, char** argv)
       printBlock(tFile, qFile, cur, args.tChrom, index++);
       cur = cur->next;
     }
-    halFreeBlocks(head);
+    halFreeBlockResults(results);
     fclose(tFile);
     fclose(qFile);
   }

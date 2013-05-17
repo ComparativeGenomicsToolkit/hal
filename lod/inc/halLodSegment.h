@@ -13,6 +13,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <cstdlib>
 #include <cmath>
 #include "hal.h"
 

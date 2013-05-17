@@ -7,6 +7,7 @@
 #include <cassert>
 #include <limits>
 #include <cmath>
+#include <cstdlib>
 #include <algorithm>
 #include "halLodGraph.h"
 
@@ -125,16 +126,17 @@ void LodGraph::scanGenome(const Genome* genome)
 bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
 {
   // check that block has not already been added.
-  hal_index_t delta = numeric_limits<hal_index_t>::max(); 
+  hal_size_t deltaMax = 0;
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
   ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
-  for (; colMapIt != colMap->end(); ++colMapIt)
+  bool breakOut = false;
+  for (; colMapIt != colMap->end() && !breakOut; ++colMapIt)
   {
     const ColumnIterator::DNASet* dnaSet = colMapIt->second;
-    if (dnaSet->size() > 0)
+    const Sequence* sequence = colMapIt->first;
+    ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
+    for (; dnaIt != dnaSet->end() && !breakOut; ++dnaIt)
     {
-      const Sequence* sequence = colMapIt->first;
-      ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
       hal_index_t pos = (*dnaIt)->getArrayIndex();
       LodSegment segment(NULL, sequence, pos, false);
       SequenceMapIterator smi = _seqMap.find(sequence);
@@ -142,34 +144,43 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
       {
         SegmentSet* segmentSet = smi->second;
         SegmentIterator si = segmentSet->lower_bound(&segment);
-        SegmentSet::value_compare segPLess;
-        if (si != segmentSet->end() && !segPLess(&segment, *si))
+        SegmentSet::value_compare segPLess = segmentSet->key_comp();
+        if (si == segmentSet->end())
         {
-          delta = 0;
+          deltaMax = numeric_limits<hal_size_t>::max();
+          breakOut = true;
+        }
+        else if (!segPLess(&segment, *si))
+        {
+          assert(deltaMax == 0);
+          breakOut = true;
         }
         else
         {
-          delta = std::abs((*si)->getLeftPos() - segment.getLeftPos());
+          deltaMax = std::max(deltaMax, 
+                              (hal_size_t)std::abs((*si)->getLeftPos() - 
+                                                   segment.getLeftPos()));
           if (si != segmentSet->begin())
           {
             --si;
-            delta = std::min(delta, (hal_index_t)std::abs((*si)->getLeftPos() - 
-                                             segment.getLeftPos()));
+            deltaMax = std::max(deltaMax, 
+                                (hal_size_t)std::abs((*si)->getLeftPos() - 
+                                                     segment.getLeftPos()));
           }
         }
       }
-      break;
     }
   }
-  bool canAdd = delta > 0;
+  bool canAdd = deltaMax > 0;
   hal_index_t refPos = colIt->getReferenceSequencePosition();
   if (canAdd == true && refPos != 0 && (hal_size_t)refPos != 
       colIt->getReferenceSequence()->getSequenceLength())
   {
-    canAdd = delta >= (hal_index_t)_step;
+    canAdd = deltaMax  >= _step / 2;
 
     // other heuristics here?
   }
+  if (!canAdd) cout << deltaMax << "\n";
   return canAdd;
 }
 
