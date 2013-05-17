@@ -183,7 +183,7 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
 
 ostream& BedLine::write(ostream& os, int version)
 {
-  if (version == -1)
+  if (version <= 0)
   {
     version = _version;
   }

@@ -17,10 +17,10 @@ static CLParserPtr initParser()
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->addArgument("halFile", "input hal file");
   optionsParser->addArgument("srcGenome", "source genome name");
-  optionsParser->addArgument("srcBed", "path of input bed file.  write stdin "
+  optionsParser->addArgument("srcBed", "path of input bed file.  set as stdin "
                              "to stream from standard input");
   optionsParser->addArgument("tgtGenome", "target genome name");
-  optionsParser->addArgument("tgtBed", "path of output bed file.  write stdout"
+  optionsParser->addArgument("tgtBed", "path of output bed file.  set as stdout"
                              " to stream to standard output.");
   optionsParser->addOptionFlag("noDupes", "do not map between duplications in"
                                " graph.", false);

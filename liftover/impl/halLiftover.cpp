@@ -46,15 +46,29 @@ void Liftover::convert(AlignmentConstPtr alignment,
 
   _tgtSet.insert(tgtGenome);
   
+  // we copy into a stringstream because we never want to
+  // run getBedVersion (which does random access) on cin (which is a
+  // possible value for inBedStream)
+  string firstLineBuffer;
+  stringstream* firstLineStream = NULL;
   if (_inBedVersion <= 0)
   {
-    _inBedVersion = BedScanner::getBedVersion(inBedStream);
+    skipWhiteSpaces(inBedStream);
+    std::getline(*inBedStream, firstLineBuffer);
+    firstLineStream = new stringstream(firstLineBuffer);
+    _inBedVersion = BedScanner::getBedVersion(firstLineStream);
+    assert(inBedStream->eof() || _inBedVersion >= 3);
   }
   if (_outBedVersion <= 0)
   {
     _outBedVersion = _inBedVersion;
   }
 
+  if (firstLineStream != NULL)
+  {
+    scan(firstLineStream, _inBedVersion);
+    delete firstLineStream;
+  }
   scan(inBedStream, _inBedVersion);
 }
 
@@ -71,6 +85,7 @@ void Liftover::visitLine()
       std::cerr << "Unable to find sequence " << _bedLine._chrName 
                 << " in genome " << _srcGenome->getName() << endl;
     }
+    return;
   }
       
   else if (_bedLine._end > (hal_index_t)_srcSequence->getSequenceLength())
@@ -78,6 +93,7 @@ void Liftover::visitLine()
     std::cerr << "Skipping interval with endpoint " << _bedLine._end 
               << "because sequence " << _bedLine._chrName << " has length " 
               << _srcSequence->getSequenceLength() << endl;
+    return;
   }
   
   if (_inBedVersion > 9 && !_bedLine._blocks.empty())

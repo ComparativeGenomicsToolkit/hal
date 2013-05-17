@@ -83,6 +83,7 @@ void BedScanner::scan(istream* is, int bedVersion)
 
 int BedScanner::getBedVersion(istream* bedStream)
 {
+  assert(bedStream != &cin);
   if (bedStream->bad())
   {
     throw hal_exception("Error reading bed input stream");
@@ -95,6 +96,7 @@ int BedScanner::getBedVersion(istream* bedStream)
   {
     try
     {
+      bedStream->clear();
       bedStream->seekg(pos);
       skipWhiteSpaces(bedStream);
       *bedStream >> std::skipws;
@@ -109,7 +111,9 @@ int BedScanner::getBedVersion(istream* bedStream)
       }
     }
   }
+  bedStream->clear();
   bedStream->seekg(pos);
+  assert(!bedStream->bad());
   return version;
 }
 
