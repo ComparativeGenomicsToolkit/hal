@@ -125,43 +125,46 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
     {
       throw hal_exception("Error scanning BED blockCount");
     }
-    string blockSizes;
-    ss >> blockSizes;
-    if (ss.bad() || ss.fail())
+    if (numBlocks > 0)
     {
-      throw hal_exception("Error scanning BED blockSizes");
-    }
-    string blockStarts;
-    ss >> blockStarts;
-    if (ss.bad() || ss.fail())
-    {
-      throw hal_exception("Error scanning BED blockStarts");
-    }
-    _blocks.resize(numBlocks);
-    vector<string> sizeBuf = chopString(blockSizes, ",");
-    if (sizeBuf.size() != numBlocks)
-    {
-       throw hal_exception("Error scanning BED blockSizes");
-    }
-    vector<string> startBuf = chopString(blockStarts, ",");
-    if (startBuf.size() != numBlocks)
-    {
-       throw hal_exception("Error scanning BED blockStarts");
-    }
-    for (size_t i = 0; i < numBlocks; ++i)
-    {
-      BedBlock& block = _blocks[i];
-      stringstream ss1(sizeBuf[i]);
-      ss1 >> block._length;
-      if (ss1.bad())
+      string blockSizes;
+      ss >> blockSizes;
+      if (ss.bad() || ss.fail())
       {
         throw hal_exception("Error scanning BED blockSizes");
       }
-      stringstream ss2(startBuf[i]);
-      ss2 >> block._start;
-      if (ss2.bad())
+      string blockStarts;
+      ss >> blockStarts;
+      if (ss.bad() || ss.fail())
       {
         throw hal_exception("Error scanning BED blockStarts");
+      }
+      _blocks.resize(numBlocks);
+      vector<string> sizeBuf = chopString(blockSizes, ",");
+      if (sizeBuf.size() != numBlocks)
+      {
+        throw hal_exception("Error scanning BED blockSizes");
+      }
+      vector<string> startBuf = chopString(blockStarts, ",");
+      if (startBuf.size() != numBlocks)
+      {
+        throw hal_exception("Error scanning BED blockStarts");
+      }
+      for (size_t i = 0; i < numBlocks; ++i)
+      {
+        BedBlock& block = _blocks[i];
+        stringstream ss1(sizeBuf[i]);
+        ss1 >> block._length;
+        if (ss1.bad())
+        {
+          throw hal_exception("Error scanning BED blockSizes");
+        }
+        stringstream ss2(startBuf[i]);
+        ss2 >> block._start;
+        if (ss2.bad())
+        {
+          throw hal_exception("Error scanning BED blockStarts");
+        }
       }
     }
   }

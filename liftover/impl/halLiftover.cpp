@@ -28,6 +28,8 @@ void Liftover::convert(AlignmentConstPtr alignment,
                        istream* inBedStream,
                        const Genome* tgtGenome,
                        ostream* outBedStream,
+                       int inBedVersion,
+                       int outBedVersion,
                        bool addExtraColumns,
                        bool traverseDupes)
 {
@@ -35,6 +37,8 @@ void Liftover::convert(AlignmentConstPtr alignment,
   _tgtGenome = tgtGenome;
   _outBedStream = outBedStream;
   _addExtraColumns = addExtraColumns;
+  _inBedVersion = inBedVersion;
+  _outBedVersion = outBedVersion;
   _traverseDupes = traverseDupes;
   _missedSet.clear();
   _tgtSet.clear();
@@ -42,11 +46,11 @@ void Liftover::convert(AlignmentConstPtr alignment,
 
   _tgtSet.insert(tgtGenome);
   
-  if (_inBedVersion == -1)
+  if (_inBedVersion <= 0)
   {
     _inBedVersion = BedScanner::getBedVersion(inBedStream);
   }
-  if (_outBedVersion == -1)
+  if (_outBedVersion <= 0)
   {
     _outBedVersion = _inBedVersion;
   }

@@ -27,6 +27,8 @@ public:
                 std::istream* inputFile,
                 const Genome* tgtGenome,
                 std::ostream* outputFile,
+                int inBedVersion = -1,
+                int outBedVersion = -1,
                 bool addExtraColumns = false,
                 bool traverseDupes = true);
                    

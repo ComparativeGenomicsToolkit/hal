@@ -4,11 +4,15 @@ include ../include.mk
 libSourcesAll = $(wildcard impl/*.cpp)
 libSources=$(subst impl/halLiftoverMain.cpp,,${libSourcesAll})
 libHeaders = $(wildcard inc/*.h)
+libTestSources = $(wildcard tests/*.cpp)
+libTestHeaders = $(wildcard tests/*.h)
+libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
+libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
 
-all : ${libPath}/halLiftover.a ${binPath}/halLiftover
+all : ${libPath}/halLiftover.a ${binPath}/halLiftover ${binPath}/halLiftoverTests
 
 clean : 
-	rm -f ${libPath}/halLiftover.a ${libPath}/*.h ${binPath}/halLiftover 
+	rm -f ${libPath}/halLiftover.a ${libPath}/*.h ${binPath}/halLiftover ${binPath}/halLiftoverTests
 
 ${libPath}/halLiftover.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
@@ -21,3 +25,5 @@ ${libPath}/halLiftover.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${bas
 ${binPath}/halLiftover : impl/halLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halLiftover impl/halLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
 
+${binPath}/halLiftoverTests : ${libTestSources} ${libTestHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halLiftoverTests  ${libTestSources} ${libTestsCommon} ${libPath}/halLib.a ${libPath}/halLiftover.a ${basicLibs}
