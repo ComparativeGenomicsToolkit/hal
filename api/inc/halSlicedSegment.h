@@ -26,6 +26,16 @@ public:
    /** switch to segment's reverse complement */
    virtual void toReverse() const = 0;
 
+   /** switch to segment's reverse complement without affecting the
+    * coordinates in the forward strand.  Unless the segment is sliced
+    * this will have an identical effect to toReverse(). Both methods
+    * can be useful in different situations but the distinction is 
+    * confusing.  For example, if the segment represents range [0, 10] 
+    * on the forward strand but is sliced to to the subregion [3,8], 
+    * then toReverse() will result in the the region [7,2], but to
+    * toReverseInPlace() would yield [8,3].  */
+   virtual void toReverseInPlace() const = 0;
+
    /** Get the iterator's start offset.  This is used when moving
     * vertically and following the parse index.  Any part of the
     * segment before the start offset is ignored by the iterator */  

@@ -204,7 +204,13 @@ void DefaultSegmentIterator::toReverse() const
 {
   assert (inRange() == true);
   _reversed = !_reversed;
-//  swap(_startOffset, _endOffset);
+}
+
+void DefaultSegmentIterator::toReverseInPlace() const
+{
+  assert (inRange() == true);
+  _reversed = !_reversed;
+  swap(_startOffset, _endOffset);
 }
 
 hal_offset_t DefaultSegmentIterator::getStartOffset() const

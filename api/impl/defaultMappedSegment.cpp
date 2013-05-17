@@ -687,6 +687,11 @@ void DefaultMappedSegment::toReverse() const
   _target->toReverse();
 }
 
+void DefaultMappedSegment::toReverseInPlace() const
+{
+  _target->toReverseInPlace();
+}
+
 hal_offset_t DefaultMappedSegment::getStartOffset() const
 {
   return _target->getStartOffset();

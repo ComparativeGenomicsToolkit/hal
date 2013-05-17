@@ -28,7 +28,8 @@ public:
                          hal_index_t lastIndex,
                          hal_size_t maxInsertionLength,
                          bool noDupes,
-                         bool noAncestors);
+                         bool noAncestors,
+                         bool reverseStrand);
    
    virtual ~DefaultColumnIterator();
 
@@ -88,6 +89,7 @@ protected:
    mutable hal_size_t _maxInsertionLength;
    mutable bool _noDupes;
    mutable bool _noAncestors;
+   mutable bool _reversed;
 
    mutable ColumnMap _colMap;
    mutable TopSegmentIteratorConstPtr _top;

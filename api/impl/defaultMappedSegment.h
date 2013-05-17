@@ -57,6 +57,7 @@ public:
 
    // SLICED SEGMENT INTERFACE 
    virtual void toReverse() const;
+   virtual void toReverseInPlace() const;
    virtual hal_offset_t getStartOffset() const;
    virtual hal_offset_t getEndOffset() const;
    virtual void slice(hal_offset_t startOffset ,

@@ -254,6 +254,19 @@ void DefaultGappedBottomSegmentIterator::toReverse() const
   swap(_left, _right);
 }
 
+void DefaultGappedBottomSegmentIterator::toReverseInPlace() const
+{
+  assert(_right->getReversed() == _left->getReversed());
+  assert(_left->equals(_right) || _left->getReversed() || 
+         _left->leftOf(_right->getStartPosition()));
+  assert(_left->equals(_right) || !_left->getReversed() || 
+         _left->rightOf(_right->getStartPosition()));
+
+  _left->toReverseInPlace();
+  _right->toReverseInPlace();
+  swap(_left, _right);
+}
+
 void DefaultGappedBottomSegmentIterator::toSite(hal_index_t position, 
                                              bool slice) const
 {

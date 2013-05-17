@@ -28,7 +28,9 @@ void ColumnLiftover::liftInterval()
   PositionMap revCacheMap;
   _colIt = _srcSequence->getColumnIterator(&_tgtSet, 0, _bedLine._start, 
                                            _bedLine._end - 1,
-                                           !_traverseDupes);
+                                           !_traverseDupes,
+                                           false,
+                                           _bedLine._strand == '-');
   while (true) 
   {
     const ColumnMap* cMap = _colIt->getColumnMap();
@@ -83,7 +85,7 @@ void ColumnLiftover::liftInterval()
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
-      outBedLine._strand = _bedLine._strand == '+' ? '+' : '-';
+      outBedLine._strand = '+';
     }
     delete posCache;
   }
@@ -102,7 +104,7 @@ void ColumnLiftover::liftInterval()
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
-      outBedLine._strand = _bedLine._strand == '+' ? '-' : '+';
+      outBedLine._strand = '-';
     }
     delete posCache;
   }
