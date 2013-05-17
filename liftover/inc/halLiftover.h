@@ -33,8 +33,10 @@ public:
                 bool traverseDupes = true);
                    
 protected:
-   
+
+   virtual void visitBegin();
    virtual void visitLine();
+   virtual void visitEOF();
    virtual void writeLineResults();
    virtual void collapseExtendedBedLines();
    virtual void liftBlockIntervals();

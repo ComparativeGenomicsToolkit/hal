@@ -72,6 +72,10 @@ void Liftover::convert(AlignmentConstPtr alignment,
   scan(inBedStream, _inBedVersion);
 }
 
+void Liftover::visitBegin()
+{
+}
+
 void Liftover::visitLine()
 {
   _outBedLines.clear();
@@ -106,6 +110,10 @@ void Liftover::visitLine()
   }
 
   writeLineResults();
+}
+
+void Liftover::visitEOF()
+{
 }
 
 void Liftover::writeLineResults()

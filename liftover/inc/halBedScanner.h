@@ -33,7 +33,8 @@ public:
    static int getBedVersion(std::istream* bedStream);
 
 protected:
-
+   
+   virtual void visitBegin();
    virtual void visitLine();
    virtual void visitEOF();
    

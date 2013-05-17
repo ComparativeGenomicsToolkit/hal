@@ -48,6 +48,7 @@ void BedScanner::scan(const string& bedPath, int bedVersion)
 
 void BedScanner::scan(istream* is, int bedVersion)
 {
+  visitBegin();
   _bedStream = is;
   if (bedVersion == -1)
   {
@@ -115,6 +116,10 @@ int BedScanner::getBedVersion(istream* bedStream)
   bedStream->seekg(pos);
   assert(!bedStream->bad());
   return version;
+}
+
+void BedScanner::visitBegin()
+{
 }
 
 void BedScanner::visitLine()
