@@ -88,6 +88,7 @@ void Liftover::visitLine()
   {
     liftInterval();
   }
+
   writeLineResults();
 }
 

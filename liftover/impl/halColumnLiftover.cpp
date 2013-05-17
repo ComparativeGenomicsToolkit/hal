@@ -83,11 +83,11 @@ void ColumnLiftover::liftInterval()
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
-      outBedLine._strand = '+';
+      outBedLine._strand = _bedLine._strand == '+' ? '+' : '-';
     }
     delete posCache;
   }
-  
+
   for (pcmIt = revCacheMap.begin(); pcmIt != revCacheMap.end(); ++pcmIt)
   {
     const Sequence* seq = pcmIt->first.first;
@@ -102,7 +102,7 @@ void ColumnLiftover::liftInterval()
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
-      outBedLine._strand = '-';
+      outBedLine._strand = _bedLine._strand == '+' ? '-' : '+';
     }
     delete posCache;
   }
