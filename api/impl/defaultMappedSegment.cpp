@@ -362,21 +362,6 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
     insertAndBreakOverlaps(*outIt, results);
   }
 
-  if (source->getStartPosition() - source->getSequence()->getStartPosition() > 2999000)
-  {
-  for (set<MappedSegmentConstPtr>::iterator x = results.begin(); 
-       x != results.end(); ++x)
-  {break;
-    for (set<MappedSegmentConstPtr>::iterator y = results.begin(); 
-         y != results.end(); ++y)
-    {
-//      cout << (int)slowOverlap(*x, *y) << endl;
-//      cout << (*x)->getStartPosition() << ", " << (*x)->getEndPosition() << "   "
-//           << (*y)->getStartPosition() << ", " << (*y)->getEndPosition() << endl;
-      assert(slowOverlap(*x, *y) == Same || slowOverlap(*x, *y) == Disjoint);
-    }
-  }
-  }
   return output.size();
 }
 
