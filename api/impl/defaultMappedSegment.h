@@ -71,6 +71,8 @@ public:
    virtual bool equals(const MappedSegmentConstPtr& other) const;
    virtual void flip() const;
    virtual void fullReverse() const;
+   virtual MappedSegmentConstPtr copy() const;
+   virtual void print(std::ostream& os) const;
 
 
    // INTERNAL METHODS
@@ -80,6 +82,7 @@ public:
                          const std::set<const Genome*>* genomesOnPath,
                          bool doDupes,
                          hal_size_t minLength);
+
 
 protected:
    friend class counted_ptr<DefaultMappedSegment>;
@@ -101,11 +104,28 @@ protected:
    static 
    int slowComp(const DefaultSegmentIteratorConstPtr& s1, 
                 const DefaultSegmentIteratorConstPtr& s2);
+   
+   enum OverlapCat { Same, Disjoint, AContainsB, BContainsA,
+                     AOverlapsLeftOfB, BOverlapsLeftOfA };
+ 
+   static
+   OverlapCat slowOverlap(const SlicedSegmentConstPtr& s1, 
+                          const SlicedSegmentConstPtr& s2);
+
+   static
+   void getOverlapBounds(const DefaultMappedSegmentConstPtr& seg, 
+                         std::set<MappedSegmentConstPtr>& results, 
+                         std::set<MappedSegmentConstPtr>::iterator& leftBound, 
+                         std::set<MappedSegmentConstPtr>::iterator& rightBound);
 
    static 
-   void cutAgainstSet(DefaultMappedSegmentConstPtr inSeg,
-                      const std::set<MappedSegmentConstPtr>& results,
-                      std::list<DefaultMappedSegmentConstPtr>& output);
+   void clipAagainstB(MappedSegmentConstPtr segA,
+                      MappedSegmentConstPtr segB,
+                      OverlapCat overlapCat,
+                      std::vector<MappedSegmentConstPtr>& clippedSegs);
+   static 
+   void insertAndBreakOverlaps(DefaultMappedSegmentConstPtr seg,
+                               std::set<MappedSegmentConstPtr>& results);
    
    static 
    hal_size_t mapRecursive(const Genome* prevGenome,

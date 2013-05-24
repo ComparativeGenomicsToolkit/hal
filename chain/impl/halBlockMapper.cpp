@@ -29,8 +29,8 @@ BlockMapper::~BlockMapper()
 
 void BlockMapper::erase()
 {
-  _segMap.clear();
-  _flipSet.clear();
+  _segSet.clear();
+  _adjSet.clear();
   _spanningTree.clear();
 }
 
@@ -89,36 +89,35 @@ void BlockMapper::map()
   while (refSeg->getArrayIndex() < lastIndex &&
          refSeg->getStartPosition() <= _absRefLast)  
   {
-    refSeg->getMappedSegments(_segMap, _queryGenome, &_spanningTree,
+    refSeg->getMappedSegments(_segSet, _queryGenome, &_spanningTree,
                               _doDupes, _minLength);
     refSeg->toRight(_absRefLast);
   }
 
   if (_mapAdj)
   {
-    // construct a set sorted on query instead of ref. 
-    _flipSet.clear();
-    _flipSet.insert(_segMap.begin(), _segMap.end());
-
-    MSFlipSet::const_iterator i;
-    for (i = _flipSet.begin(); i != _flipSet.end(); ++i)
+    MSSet::const_iterator i;
+    for (i = _segSet.begin(); i != _segSet.end(); ++i)
     {
-      mapAdjacencies(i);
+      if (_adjSet.find(*i) == _adjSet.end())
+      {
+        mapAdjacencies(i);
+      }
     }
   }
 }
 
 void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
 {
-  MSFlipSet::iterator i = _flipSet.begin();
-  MSFlipSet::iterator j = _flipSet.end();
-  MSFlipSet::iterator k;
+  MSSet::iterator i = _segSet.begin();
+  MSSet::iterator j = _segSet.end();
+  MSSet::iterator k;
   hal_index_t iStart = NULL_INDEX;
   hal_index_t iEnd = NULL_INDEX;
   bool iIns = false;
   hal_index_t jStart;
   hal_index_t jEnd;
-  while (i != _flipSet.end())
+  while (i != _segSet.end())
   {
     // we divide list sorted on query segments into equivalence
     // classes based on their query coordinates.  these classes
@@ -137,35 +136,39 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
     }
     j = i;
     ++j;
-    while (j != _flipSet.end())
+    if (_adjSet.find(*i) == _adjSet.end())
     {
-      jStart = (*j)->getStartPosition();
-      jEnd = (*j)->getEndPosition();
-      if ((*j)->getReversed())
+      while (j != _segSet.end())
       {
-        swap(jStart, jEnd);
-      }
-      // note we have overlaps here (possibly) that will need to 
-      // be clipped down the line
-      if (iStart <= jStart && iEnd >= jStart)
-      {
-        if (!iIns)
+        jStart = (*j)->getStartPosition();
+        jEnd = (*j)->getEndPosition();
+        if ((*j)->getReversed())
         {
-          iIns = true;
-          outParalogies.insert(*i);
+          swap(jStart, jEnd);
         }
-        outParalogies.insert(*j);
-        k = j;
-        ++k;
-        _segMap.erase(*j);
-        _flipSet.erase(j);
-        j = k;
-      }
-      else
-      {
-        iStart = NULL_INDEX;
-        iIns = false;
-        break;
+        // note we should not have overlaps here because the mappedSegment
+        // results cuts everything to be same or disjoint
+        if (iStart == jStart)
+        {
+          assert(iEnd == jEnd);
+          if (!iIns)
+          {
+            iIns = true;
+            outParalogies.insert(*i);
+          }
+          outParalogies.insert(*j);
+          k = j;
+          ++k;
+          _segSet.erase(*j);
+          j = k;
+        }
+        else
+        {
+          assert(iStart > jEnd || iEnd < jStart);
+          iStart = NULL_INDEX;
+          iIns = false;
+          break;
+        }
       }
     }
     i = j;
@@ -173,25 +176,24 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
 }
 
   
-void BlockMapper::mapAdjacencies(MSFlipSet::const_iterator flipIt)
+void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
 {
-  assert(_flipSet.empty() == false && flipIt != _flipSet.end());
-  assert(_segMap.find(*flipIt) != _segMap.end());
-  MappedSegmentConstPtr mappedQuerySeg = *flipIt;
+  assert(_segSet.empty() == false && segIt != _segSet.end());
+  MappedSegmentConstPtr mappedQuerySeg = *segIt;
   hal_index_t maxIndex;
   hal_index_t minIndex;
   SegmentIteratorConstPtr queryIt = makeIterator(mappedQuerySeg, 
                                                  minIndex,
                                                  maxIndex);
   MSSet backResults;
-  MSFlipSet::const_iterator flipNext = flipIt;
+  MSSet::const_iterator segNext = segIt;
   if (queryIt->getReversed())
   {
-    flipNext = flipNext == _flipSet.begin() ? _flipSet.end() : --flipNext;
+    segNext = segNext == _segSet.begin() ? _segSet.end() : --segNext;
   }
   else
   {
-    ++flipNext;
+    ++segNext;
   }
 
   hal_size_t iter = 0;
@@ -200,11 +202,11 @@ void BlockMapper::mapAdjacencies(MSFlipSet::const_iterator flipIt)
          queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
   {
     bool wasCut = false;
-    if (flipNext != _flipSet.end())
+    if (segNext != _segSet.end())
     {
       // if cut returns nothing, then the region in question is covered
-      // by flipNext (ie already mapped).
-      wasCut = cutByNext(queryIt, *flipNext, !queryIt->getReversed());
+      // by segNext (ie already mapped).
+      wasCut = cutByNext(queryIt, *segNext, !queryIt->getReversed());
     }
     if (wasCut == true)
     {
@@ -227,14 +229,14 @@ void BlockMapper::mapAdjacencies(MSFlipSet::const_iterator flipIt)
                          minIndex,
                          maxIndex);
 
-  MSFlipSet::const_iterator flipPrev = flipIt;
+  MSSet::const_iterator segPrev = segIt;
   if (queryIt->getReversed())
   {
-    ++flipPrev;
+    ++segPrev;
   }
   else
   {
-    flipPrev = flipPrev == _flipSet.begin() ? _flipSet.end() : --flipPrev;
+    segPrev = segPrev == _segSet.begin() ? _segSet.end() : --segPrev;
   }
   iter = 0;
   queryIt->toLeft();
@@ -242,11 +244,11 @@ void BlockMapper::mapAdjacencies(MSFlipSet::const_iterator flipIt)
          queryIt->getArrayIndex() < maxIndex && iter < _maxAdjScan)
   {
     bool wasCut = false;
-    if (flipPrev != _flipSet.end())
+    if (segPrev != _segSet.end())
     {
       // if cut returns nothing, then the region in question is covered
-      // by flipPrev (ie already mapped).
-      wasCut = cutByNext(queryIt, *flipPrev, queryIt->getReversed());
+      // by segPrev (ie already mapped).
+      wasCut = cutByNext(queryIt, *segPrev, queryIt->getReversed());
     }
     if (wasCut == true)
     {
@@ -277,13 +279,13 @@ void BlockMapper::mapAdjacencies(MSFlipSet::const_iterator flipIt)
         mseg->fullReverse();
       }
 
-      MSSet::const_iterator j = _flipSet.lower_bound(*i);
+      MSSet::const_iterator j = _segSet.lower_bound(*i);
       bool overlaps = false;
-      if (j != _flipSet.begin())
+      if (j != _segSet.begin())
       {
         --j;
       }
-      for (size_t count = 0; count < 3 && j != _flipSet.end() && !overlaps; 
+      for (size_t count = 0; count < 3 && j != _segSet.end() && !overlaps; 
            ++count, ++j)
       {
         overlaps = mseg->overlaps((*j)->getStartPosition()) ||
@@ -293,7 +295,8 @@ void BlockMapper::mapAdjacencies(MSFlipSet::const_iterator flipIt)
       }
       if (overlaps == false)
       {
-        _segMap.insert(mseg);
+        _segSet.insert(mseg);
+        _adjSet.insert(mseg);
       }
     }
   }
@@ -426,82 +429,116 @@ void BlockMapper::extractSegment(MSSet::iterator start,
 {
   fragments.clear();
   fragments.push_back(*start);
-  MSSet::iterator next = start;
   const Sequence* startSeq = (*start)->getSequence();
-  MSSet::iterator temp;
-  MappedSegmentConstPtr prev = *start;
+
+  vector<MSSet::iterator> vector1;
+  vector<MSSet::iterator>* v1 = &vector1;
+  vector<MSSet::iterator> vector2;
+  vector<MSSet::iterator>* v2 = &vector2;
+  vector<MSSet::iterator> toErase;
+
+  v1->push_back(start);
+  MSSet::iterator next = start;
   ++next;
-  MSSet::key_compare comp = startSet->key_comp();
-  bool keepOn = true;
-
-  while (keepOn)
+/*
+  cout << "start " << (*start)->getStartPosition() << " " 
+       << (*start)->getEndPosition() << endl;
+  cout << "      " << (*start)->getSource()->getStartPosition() << " " 
+       << (*start)->getSource()->getEndPosition() << endl;
+  if (next != startSet->end()) {
+  cout << "next " << (*next)->getStartPosition() << " " 
+       << (*next)->getEndPosition() << endl;
+  cout << "     " << (*next)->getSource()->getStartPosition() << " " 
+       << (*next)->getSource()->getEndPosition() << endl;
+  }
+*/
+  // equivalence class based on start set
+  while (next != startSet->end() && equalTargetStart(*v1->back(), *next))
   {
-    keepOn = false;
-    SlicedSegmentConstPtr pseg = prev->getSource();
-    assert(pseg->getReversed() == false);
-    assert(next == startSet->end() || 
-           (*next)->getSource()->getReversed() == false);
-
+    v1->push_back(next);
+    ++next;
+  }
+  
+  while (next != startSet->end())
+  {
+    // equivalence class based on next element
     while (next != startSet->end() && 
-           (*next)->getSource()->getStartPosition() <=
-           pseg->getEndPosition() + 1)
+           (v2->empty() || equalTargetStart(*v2->back(), *next)) &&
+           v2->size() < v1->size())
     {
-      assert((*next)->getSource()->getReversed() == false);
-      bool para1 = paraSet.find(prev) != paraSet.end();
-      bool para2 = paraSet.find(*next) != paraSet.end();
-      if (para1 == para2 &&
-          (*next)->getSource()->getStartPosition() == 
-          pseg->getEndPosition() + 1 && 
-          (*next)->getSequence() == startSeq &&
-          canMergeBlock(prev, *next) == true)
-      {
-        fragments.push_back(*next);
-        prev = *next;
-        temp = next;
-        ++next;
-        startSet->erase(temp);
-        keepOn = true;
-        break;
-      }
-      prev = *next;
+      v2->push_back(next);
       ++next;
     }
+    
+    // check if first elements of each class are compatible for a merge
+    assert(v1->size() > 0 && v2->size() > 0);
+    if (v1->size() == v2->size() && (*v2->at(0))->getSequence() == startSeq &&
+        canMergeBlock(*v1->at(0), *v2->at(0)) && 
+        (paraSet.find(*v1->at(0)) == paraSet.end()) == 
+        (paraSet.find(*v2->at(0)) == paraSet.end()))
+    {
+      // add the next element and flag for deletion from start set
+      fragments.push_back(*v2->at(0));
+      toErase.push_back(v2->at(0));
+    }
+    else
+    {
+      break;
+    }
+    v1->clear();
+    swap(v1, v2);
+  }
+
+  for (size_t i = 0; i < toErase.size(); ++i)
+  {
+    startSet->erase(toErase[i]);
   }
   assert(fragments.front()->getSequence() == fragments.back()->getSequence());
 }
 
-bool BlockMapper::canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
-                                MappedSegmentConstPtr lastQuerySeg)
+bool BlockMapper::canMergeBlock(MappedSegmentConstPtr query, 
+                                MappedSegmentConstPtr nextQuery)
 {
   //return false;
-  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
-  SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
-  assert(firstRefSeg->getReversed() == false);
-  assert(lastRefSeg->getReversed() == false);
-  assert(firstRefSeg->getSequence() == lastRefSeg->getSequence());
-  assert(firstQuerySeg->getGenome() == lastQuerySeg->getGenome());
+  SlicedSegmentConstPtr ref = query->getSource();
+  SlicedSegmentConstPtr nextRef = nextQuery->getSource();
+  assert(ref->getReversed() == false);
+  assert(nextRef->getReversed() == false);
+  assert(ref->getSequence() == nextRef->getSequence());
+  assert(query->getGenome() == nextQuery->getGenome());
 
-  if (lastQuerySeg->getStartPosition() == _absRefFirst ||
-      firstQuerySeg->getEndPosition() == _absRefLast)
+  if (nextQuery->getStartPosition() == _absRefFirst ||
+      query->getEndPosition() == _absRefLast)
   {
     return false;
   }
-  if (firstQuerySeg->getReversed() == lastQuerySeg->getReversed() &&
-      lastRefSeg->getStartPosition() == firstRefSeg->getEndPosition() + 1 &&
-      firstQuerySeg->getSequence() == lastQuerySeg->getSequence())
+  if (query->getReversed() == nextQuery->getReversed() &&
+      ref->getReversed() == nextRef->getReversed())
   {
-    if (firstQuerySeg->getReversed() == false &&
-        lastQuerySeg->getStartPosition() == 
-        firstQuerySeg->getEndPosition() + 1)
+    hal_index_t qdelta = NULL_INDEX;
+    hal_index_t rdelta = NULL_INDEX;
+    if (query->getReversed() == false && ref->getReversed() == false)
     {
-      return true;
+      qdelta = nextQuery->getStartPosition() - query->getEndPosition();
+      rdelta = nextRef->getStartPosition() - ref->getEndPosition();
     }
-    else if (firstQuerySeg->getReversed() == true &&
-             lastQuerySeg->getStartPosition() == 
-             firstQuerySeg->getEndPosition() - 1)
+    else if (query->getReversed() == true && ref->getReversed() == true)
     {
-      return true;
+      qdelta = nextQuery->getEndPosition() - query->getStartPosition();
+      rdelta = nextRef->getStartPosition() - ref->getEndPosition();
     }
+    else if (query->getReversed() == false && ref->getReversed() == true)
+    {
+      qdelta = nextQuery->getStartPosition() - query->getEndPosition();
+      rdelta = ref->getEndPosition() - nextRef->getStartPosition();
+    }
+    else // (query->getReversed() == true && ref->getReversed() == false)
+    {
+      qdelta = nextQuery->getEndPosition() - query->getStartPosition();
+      rdelta = ref->getStartPosition() - nextRef->getEndPosition();
+    }
+    assert(qdelta >= 0);
+    return qdelta == 1 && rdelta == 1;
   }
   return false;
 }

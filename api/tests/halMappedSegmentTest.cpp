@@ -661,6 +661,7 @@ void  MappedSegmentColCompareTest::createBlockArray()
        i != results.end(); ++i)
   {
     MappedSegmentConstPtr mseg = *i;
+    CuAssertTrue(_testCase, mseg->getLength() == mseg->getSource()->getLength());
     SlicedSegmentConstPtr refSeg = mseg->getSource();
     hal_index_t refDelta = refSeg->getReversed() ? -1 : 1;
     CuAssertTrue(_testCase, refDelta == 1);
@@ -691,6 +692,12 @@ void MappedSegmentColCompareTest::compareArrays()
     set<pair<hal_index_t, bool> >& colEntry = _colArray[i];
     set<pair<hal_index_t, bool> >& blockEntry = _blockArray[i];
     
+    if (colEntry.size() != blockEntry.size())
+    {
+      cout << "col " << i << " cs=" << colEntry.size() << " bs="
+           << blockEntry.size() << endl;
+      continue;
+    }
     CuAssertTrue(_testCase, colEntry.size() == blockEntry.size());
     for (set<pair<hal_index_t, bool> >::iterator j = colEntry.begin(); 
          j != colEntry.end(); ++j)

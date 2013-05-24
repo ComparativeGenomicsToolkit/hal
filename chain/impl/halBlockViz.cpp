@@ -8,6 +8,7 @@
 #include <cassert>
 #include <map>
 #include <sstream>
+#include <cmath>
 #include <limits>
 #include <stdlib.h>
 #include <string.h>
@@ -595,21 +596,29 @@ void readBlock(hal_block_t* cur,
   cur->qChrom = (char*)malloc(seqBuffer.length() + 1 - prefix);
   strcpy(cur->qChrom, seqBuffer.c_str() + prefix);
 
-  cur->tStart = firstRefSeg->getStartPosition() - tSequence->getStartPosition();
-  if (firstQuerySeg->getReversed() == false)
-  {
-    cur->qStart = firstQuerySeg->getStartPosition() - 
-       qSequence->getStartPosition();
-  }
-  else
-  {
-    cur->qStart = lastQuerySeg->getEndPosition() - qSequence->getStartPosition();
-  }
+  cur->tStart = std::min(std::min(firstRefSeg->getStartPosition(), 
+                                  firstRefSeg->getEndPosition()),
+                         std::min(lastRefSeg->getStartPosition(),
+                                  lastRefSeg->getEndPosition()));
+  cur->tStart -= tSequence->getStartPosition();
+
+  cur->qStart = std::min(std::min(firstQuerySeg->getStartPosition(), 
+                                  firstQuerySeg->getEndPosition()),
+                         std::min(lastQuerySeg->getStartPosition(),
+                                  lastQuerySeg->getEndPosition()));
+  cur->qStart -= qSequence->getStartPosition();
+
+  hal_index_t tEnd = std::max(std::max(firstRefSeg->getStartPosition(), 
+                                       firstRefSeg->getEndPosition()),
+                              std::max(lastRefSeg->getStartPosition(),
+                                       lastRefSeg->getEndPosition()));
+  tEnd -= tSequence->getStartPosition();
+
   assert(cur->tStart >= 0);
   assert(cur->qStart >= 0);
 
   assert(firstRefSeg->getLength() == firstQuerySeg->getLength());
-  cur->size = lastRefSeg->getEndPosition() - firstRefSeg->getStartPosition() + 1;
+  cur->size = 1 + tEnd - cur->tStart;
   cur->strand = firstQuerySeg->getReversed() ? '-' : '+';
   cur->sequence = NULL;
   if (getSequenceString != 0)
@@ -664,14 +673,14 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
     // merge dupe lists with overlapping ids by prepending j's
     // target range to i
     // (recall we've stuck query start coordinates into the id)
-    while (j != tempList.end() && 
-           ((*i)->id <= (*j)->id && (*i)->id + (*i)->tRange->size >= (*j)->id))
+    while (j != tempList.end() && (*i)->id == (*j)->id)
     {
       assert((*i)->next == NULL);
       assert((*j)->next == NULL);
       assert(j != i);
       k = j;
       ++k;
+      //assert((*j)->tRange->size == (*i)->tRange->size);
       (*j)->tRange->next = (*i)->tRange;
       (*i)->tRange = (*j)->tRange;
       (*j)->tRange = NULL;
@@ -710,22 +719,30 @@ void readTargetRange(hal_target_dupe_list_t* cur,
   assert(lastRefSeg->getReversed() == false);
 
   cur->tRange = (hal_target_range_t*)calloc(1, sizeof(hal_target_range_t));
-   
-  cur->tRange->tStart = firstRefSeg->getStartPosition() - 
-     tSequence->getStartPosition();
-  cur->tRange->size = lastRefSeg->getEndPosition() - 
-     firstRefSeg->getStartPosition() + 1;
+ 
+  cur->tRange->tStart = std::min(std::min(firstRefSeg->getStartPosition(), 
+                                          firstRefSeg->getEndPosition()),
+                                 std::min(lastRefSeg->getStartPosition(),
+                                          lastRefSeg->getEndPosition()));
+  cur->tRange->tStart -= tSequence->getStartPosition();
+
+  hal_index_t qStart = std::min(std::min(firstQuerySeg->getStartPosition(), 
+                                         firstQuerySeg->getEndPosition()),
+                                std::min(lastQuerySeg->getStartPosition(),
+                                         lastQuerySeg->getEndPosition()));
+  qStart -= qSequence->getStartPosition();
+
+  hal_index_t tEnd = std::max(std::max(firstRefSeg->getStartPosition(), 
+                                       firstRefSeg->getEndPosition()),
+                              std::max(lastRefSeg->getStartPosition(),
+                                       lastRefSeg->getEndPosition()));
+  tEnd -= tSequence->getStartPosition();
+  
+  cur->tRange->size = 1 + tEnd - cur->tRange->tStart;
 
   // use query start as proxy for unique id right now
-  if (firstQuerySeg->getReversed() == false)
-  {
-    cur->id = firstQuerySeg->getStartPosition() - 
-       qSequence->getStartPosition();
-  }
-  else
-  {
-    cur->id = lastQuerySeg->getEndPosition() - qSequence->getStartPosition();
-  }
+  cur->id = qStart;
+
   string qSeqName = qSequence->getName();
   cur->qChrom = (char*)malloc(qSeqName.length() * sizeof(char) + 1);
   strcpy(cur->qChrom, qSeqName.c_str());

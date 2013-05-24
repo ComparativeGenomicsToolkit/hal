@@ -25,7 +25,6 @@ class BlockMapper
 public:
 
    typedef std::set<MappedSegmentConstPtr> MSSet;
-   typedef std::set<MappedSegmentConstPtr, MappedSegment::Less> MSFlipSet;
 
    BlockMapper();
    virtual ~BlockMapper();
@@ -39,8 +38,6 @@ public:
 
    const MSSet& getMap() const;
    MSSet& getMap();
-   
-   MSFlipSet& getFlipSet();
 
    void extractSegment(MSSet::iterator start, 
                        const MSSet& paraSet,                       
@@ -50,7 +47,7 @@ public:
 protected:
    
    void erase();
-   void mapAdjacencies(MSFlipSet::const_iterator flipIt);
+   void mapAdjacencies(MSSet::const_iterator setIt);
 
    static SegmentIteratorConstPtr makeIterator(
      MappedSegmentConstPtr mappedSegment, 
@@ -66,10 +63,12 @@ protected:
    bool canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
                       MappedSegmentConstPtr lastQuerySeg);
    
+   static bool equalTargetStart(const MappedSegmentConstPtr& s1,
+                                const MappedSegmentConstPtr& s2);
 protected:
 
-   MSSet _segMap;
-   MSFlipSet _flipSet;
+   MSSet _segSet;
+   MSSet _adjSet;
    std::set<const Genome*> _spanningTree;
    const Genome* _refGenome;
    const Sequence* _refSequence;
@@ -87,17 +86,20 @@ protected:
 
 inline const BlockMapper::MSSet& BlockMapper::getMap() const
 {
-  return _segMap;
+  return _segSet;
 }
 
 inline BlockMapper::MSSet& BlockMapper::getMap()
 {
-  return _segMap;
+  return _segSet;
 }
 
-inline BlockMapper::MSFlipSet& BlockMapper::getFlipSet()
+inline bool BlockMapper::equalTargetStart(const MappedSegmentConstPtr& s1,
+                                          const MappedSegmentConstPtr& s2)
 {
-  return _flipSet;
+  hal_index_t p1 = std::min(s1->getStartPosition(), s1->getEndPosition());
+  hal_index_t p2 = std::min(s2->getStartPosition(), s2->getEndPosition());
+  return p1 == p2;
 }
 
 }

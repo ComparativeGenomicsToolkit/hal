@@ -95,6 +95,63 @@ void DefaultMappedSegment::fullReverse() const
   assert(_source->getLength() == _target->getLength());
 }
 
+MappedSegmentConstPtr DefaultMappedSegment::copy() const
+{
+  SegmentIteratorConstPtr srcCpy;
+  if (_source->isTop())
+  {
+    srcCpy = _source.downCast<TopSegmentIteratorConstPtr>()->copy();
+  }
+  else
+  {
+    srcCpy = _source.downCast<BottomSegmentIteratorConstPtr>()->copy();
+  }
+  DefaultSegmentIteratorConstPtr srcIt = 
+     srcCpy.downCast<DefaultSegmentIteratorConstPtr>();
+
+  SegmentIteratorConstPtr tgtCpy;
+  if (_target->isTop())
+  {
+    tgtCpy = _target.downCast<TopSegmentIteratorConstPtr>()->copy();
+  }
+  else
+  {
+    tgtCpy = _target.downCast<BottomSegmentIteratorConstPtr>()->copy();
+  }
+  DefaultSegmentIteratorConstPtr tgtIt = 
+     tgtCpy.downCast<DefaultSegmentIteratorConstPtr>();
+
+  assert(srcIt->getStartPosition() == _source->getStartPosition() &&
+         srcIt->getEndPosition() == _source->getEndPosition());
+  assert(tgtIt->getStartPosition() == _target->getStartPosition() &&
+         tgtIt->getEndPosition() == _target->getEndPosition());
+  assert(_source->getLength() == _target->getLength());
+  assert(srcIt->getLength() == tgtIt->getLength());
+
+  DefaultMappedSegment* newSeg = new DefaultMappedSegment(srcIt, tgtIt);
+  
+  assert(newSeg->getStartPosition() == getStartPosition() &&
+         newSeg->getEndPosition() == getEndPosition() &&
+         newSeg->_source->getStartPosition() == _source->getStartPosition() &&
+         newSeg->_source->getEndPosition() == _source->getEndPosition());
+  assert(newSeg->_source.get() != _source.get() &&
+         newSeg->_target.get() != _target.get());
+  return MappedSegmentConstPtr(newSeg);
+}
+
+void DefaultMappedSegment::print(ostream& os) const
+{
+  os << "src: " << _source->getGenome()->getName() << "." 
+     << _source->getSequence()->getName() << " ai=" 
+     << _source->getArrayIndex() << "[" << _source->getStartPosition()
+     << "," << _source->getEndPosition() << "] rev=" 
+     << _source->getReversed() << "\n"
+     << "tgt: " << _target->getGenome()->getName() << "." 
+     << _target->getSequence()->getName() << " ai=" 
+     << _target->getArrayIndex() << "[" << _target->getStartPosition()
+     << "," << _target->getEndPosition() << "] rev=" 
+     << _target->getReversed() << "\n";
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // INTERNAL FUNCTIONS
@@ -294,23 +351,33 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
     new DefaultMappedSegment(startSource, startTarget)); 
   
   list<DefaultMappedSegmentConstPtr> input;
-  cutAgainstSet(newMappedSeg, results, input);
+  input.push_back(newMappedSeg);
   list<DefaultMappedSegmentConstPtr> output;
   mapRecursive(NULL, input, output, tgtGenome, genomesOnPath, doDupes, 
                minLength);
 
-  results.insert(output.begin(), output.end());
+  list<DefaultMappedSegmentConstPtr>::iterator outIt = output.begin();
+  for (; outIt != output.end(); ++outIt)
+  {
+    insertAndBreakOverlaps(*outIt, results);
+  }
 
+  if (source->getStartPosition() - source->getSequence()->getStartPosition() > 2999000)
+  {
+  for (set<MappedSegmentConstPtr>::iterator x = results.begin(); 
+       x != results.end(); ++x)
+  {break;
+    for (set<MappedSegmentConstPtr>::iterator y = results.begin(); 
+         y != results.end(); ++y)
+    {
+//      cout << (int)slowOverlap(*x, *y) << endl;
+//      cout << (*x)->getStartPosition() << ", " << (*x)->getEndPosition() << "   "
+//           << (*y)->getStartPosition() << ", " << (*y)->getEndPosition() << endl;
+      assert(slowOverlap(*x, *y) == Same || slowOverlap(*x, *y) == Disjoint);
+    }
+  }
+  }
   return output.size();
-}
-
-// avoid doing mappings that are already in results. 
-void DefaultMappedSegment::cutAgainstSet(
-  DefaultMappedSegmentConstPtr inSeg,
-  const set<MappedSegmentConstPtr>& results,
-  list<DefaultMappedSegmentConstPtr>& output)
-{
-  output.push_back(inSeg);
 }
 
 hal_size_t DefaultMappedSegment::mapRecursive(
@@ -579,15 +646,20 @@ hal_size_t DefaultMappedSegment::mapSelf(
   if (mappedSeg->isTop() == true)
   {
     SegmentIteratorConstPtr target = mappedSeg->_target;
+    SegmentIteratorConstPtr source = mappedSeg->_source;
     TopSegmentIteratorConstPtr top = 
        target.downCast<TopSegmentIteratorConstPtr>();
     TopSegmentIteratorConstPtr topCopy = top->copy();
     do
     {
-      SegmentIteratorConstPtr source = mappedSeg->_source;
+      SegmentIteratorConstPtr newSource = source->isTop() ? 
+         (SegmentIteratorConstPtr)source.downCast<
+           TopSegmentIteratorConstPtr>()->copy() :
+         (SegmentIteratorConstPtr)source.downCast<
+           BottomSegmentIteratorConstPtr>()->copy();
       TopSegmentIteratorConstPtr newTop = topCopy->copy();
       DefaultMappedSegmentConstPtr newMappedSeg(
-        new DefaultMappedSegment(mappedSeg->_source, newTop));
+        new DefaultMappedSegment(newSource, newTop));
       assert(newMappedSeg->getGenome() == mappedSeg->getGenome());
       assert(newMappedSeg->getSource()->getGenome() == 
              mappedSeg->getSource()->getGenome());
@@ -655,6 +727,259 @@ hal_size_t DefaultMappedSegment::mapSelf(
   return added;
 }
 
+DefaultMappedSegment::OverlapCat DefaultMappedSegment::slowOverlap(
+  const SlicedSegmentConstPtr& sA, 
+  const SlicedSegmentConstPtr& sB)
+{
+  hal_index_t startA = sA->getStartPosition();
+  hal_index_t endA = sA->getEndPosition();
+  hal_index_t startB = sB->getStartPosition();
+  hal_index_t endB = sB->getEndPosition();
+  if (startA > endA)
+  {
+    swap(startA, endA);
+  }
+  if (startB > endB)
+  {
+    swap(startB, endB);
+  }
+
+  if (endA < startB || startA > endB)
+  {
+    return Disjoint;
+  }
+  else if (startA == startB && endA == endB)
+  {
+    return Same;
+  }
+  else if (startA >= startB && endA <= endB)
+  {
+    return BContainsA;
+  }
+  else if (startB >= startA && endB <= endA)
+  {
+    return AContainsB;
+  }
+  else if (startA <= startB && endA < endB)
+  {
+    return AOverlapsLeftOfB;
+  }
+  assert (startB <= startA && endB < endA);
+  return BOverlapsLeftOfA;
+}
+
+void DefaultMappedSegment::getOverlapBounds(
+  const DefaultMappedSegmentConstPtr& seg, 
+  set<MappedSegmentConstPtr>& results, 
+  set<MappedSegmentConstPtr>::iterator& leftBound, 
+  set<MappedSegmentConstPtr>::iterator& rightBound)
+{
+  if (results.size() <= 2)
+  {
+    leftBound = results.begin();
+    rightBound = results.end();
+  }
+  else
+  {
+    set<MappedSegmentConstPtr>::iterator i = results.lower_bound(seg);
+    leftBound = i;
+    if (leftBound != results.begin())
+    {
+      --leftBound;
+    }
+    set<MappedSegmentConstPtr>::iterator iprev;
+    set<MappedSegmentConstPtr>::key_compare resLess = results.key_comp();
+    while (leftBound != results.begin())
+    {
+      iprev = leftBound;
+      --iprev;
+      if (leftBound == results.end() || !resLess(*iprev, *leftBound))
+      {
+        leftBound = iprev;
+      }
+      else
+      {
+        break;
+      }
+    }
+    for (; leftBound != results.begin(); --leftBound)
+    {
+      if (leftBound != results.end() && 
+          slowOverlap(seg, *leftBound) == Disjoint)
+      {
+        break;
+      }
+    }
+    rightBound = i;
+    if (rightBound != results.end())
+    {
+      for (++rightBound; rightBound != results.end(); ++rightBound)
+      {
+        if (slowOverlap(seg, *rightBound) == Disjoint)
+        {
+          break;
+        }
+      }
+    }
+  }
+}
+
+void 
+DefaultMappedSegment::clipAagainstB(MappedSegmentConstPtr segA,
+                                    MappedSegmentConstPtr segB,
+                                    OverlapCat overlapCat,
+                                    vector<MappedSegmentConstPtr>& clippedSegs)
+{
+  assert(overlapCat != Same && overlapCat != Disjoint && 
+         overlapCat != BContainsA);
+
+  hal_index_t startA = segA->getStartPosition();
+  hal_index_t endA = segA->getEndPosition();
+  hal_index_t startB = segB->getStartPosition();
+  hal_index_t endB = segB->getEndPosition();
+  if (startA > endA)
+  {
+    swap(startA, endA);
+  }
+  if (startB > endB)
+  {
+    swap(startB, endB);
+  }
+  MappedSegmentPtr left = segA;
+  MappedSegmentPtr middle = segA->copy();
+  MappedSegmentPtr right;
+
+  hal_index_t startO = segA->getStartOffset();
+  hal_index_t endO = segA->getEndOffset();
+  hal_index_t length = segA->getLength();
+  hal_index_t leftSize = startB - startA;
+  hal_index_t rightSize = endA - endB;
+  hal_index_t middleSize = length - leftSize - rightSize;
+  if (rightSize > 0)
+  {
+    right = segA->copy();
+  }
+
+  assert (overlapCat == AOverlapsLeftOfB || overlapCat == BOverlapsLeftOfA ||
+          overlapCat == AContainsB);
+ 
+  assert(leftSize >= 0 && rightSize >=0 && middleSize >= 0);
+  hal_index_t leftSlice = 0;
+  hal_index_t rightSlice = 0;
+  if (leftSize > 0)
+  {
+    leftSlice = 0;
+    rightSlice = (length - leftSize);
+    if (left->getReversed())
+    {
+      swap(leftSlice, rightSlice);
+    }
+    left->slice(startO + leftSlice, endO + rightSlice);
+    assert(left->getLength() == (hal_size_t)leftSize);
+    assert(min(left->getStartPosition(), left->getEndPosition()) == startA);
+    assert(max(left->getStartPosition(), left->getEndPosition()) == startB - 1);
+  }
+  else
+  {
+    middle = segA;
+  }
+    
+  leftSlice = leftSize;
+  rightSlice = rightSize;
+  if (middle->getReversed())
+  {
+    swap(leftSlice, rightSlice);
+  }
+  middle->slice(startO + leftSlice, endO + rightSlice);
+  assert(middle->getLength() == (hal_size_t)middleSize);
+  assert(min(middle->getStartPosition(), middle->getEndPosition()) == startB);
+  assert(max(middle->getStartPosition(), middle->getEndPosition()) == endB);  
+  if (middle.get() != segA.get())
+  {
+    assert(leftSize > 0);
+    assert(middle->getLength() == middle->getSource()->getLength());
+    clippedSegs.push_back(middle);
+  }
+  
+  if (rightSize > 0)
+  {
+    leftSlice = leftSize + middleSize;
+    rightSlice = 0;
+    if (right->getReversed())
+    {
+      swap(leftSlice, rightSlice);
+    }
+    right->slice(startO + leftSlice, endO + rightSlice);
+    assert(right->getLength() == (hal_size_t)rightSize);
+    assert(min(right->getStartPosition(), right->getEndPosition()) == endB + 1);
+    assert(max(right->getStartPosition(), right->getEndPosition()) == endA);  
+    assert(right->getLength() == right->getSource()->getLength());
+    clippedSegs.push_back(right);
+  }
+  assert(segA->getLength() == segA->getSource()->getLength());
+}
+
+void DefaultMappedSegment::insertAndBreakOverlaps(
+  DefaultMappedSegmentConstPtr seg,
+  set<MappedSegmentConstPtr>& results)
+{
+  // MappedSegmentConstPtr blin = seg->copy();
+  // blin->slice(seg->getStartOffset(), 
+  //             seg->getEndOffset());
+  // results.insert(blin); return;
+  assert(seg->getLength() == seg->getSource()->getLength());
+  list<MappedSegmentConstPtr> inputSegs;
+  vector<MappedSegmentConstPtr> clippedSegs;
+  
+  // 1) compute invariant range in set of candidate overalaps
+  set<MappedSegmentConstPtr>::iterator leftBound;
+  set<MappedSegmentConstPtr>::iterator rightBound;
+  getOverlapBounds(seg, results, leftBound, rightBound);
+  bool leftBegin = leftBound == results.begin();
+
+  // 2) cut seg by each segment in range
+  list<MappedSegmentConstPtr>::iterator inputIt;
+  OverlapCat oc;  
+  inputSegs.push_back(seg);
+  set<MappedSegmentConstPtr>::iterator resIt;
+  for (resIt = leftBound; resIt != rightBound; ++resIt)
+  {
+    for (inputIt = inputSegs.begin(); inputIt != inputSegs.end(); ++inputIt)
+    {
+      oc = slowOverlap(*inputIt, *resIt);
+      if (oc == AContainsB || oc == AOverlapsLeftOfB || oc == BOverlapsLeftOfA)
+      {
+        clippedSegs.clear();
+        clipAagainstB(*inputIt, *resIt, oc, clippedSegs);
+        inputSegs.insert(inputSegs.end(), clippedSegs.begin(), 
+                         clippedSegs.end());
+      }
+    }
+  }
+  
+  // 3) cut results by input list
+  for (inputIt = inputSegs.begin(); inputIt != inputSegs.end(); ++inputIt)
+  {
+    assert((*inputIt)->getLength() == (*inputIt)->getSource()->getLength());
+    resIt = leftBegin ? results.begin() : leftBound;
+    for (; resIt != rightBound; ++resIt)
+    {
+      assert((*resIt)->getLength() == (*resIt)->getSource()->getLength());
+      oc = slowOverlap(*resIt, *inputIt);
+      //assert(oc == Same || oc == Disjoint || oc == AContainsB);
+      if (oc == AContainsB)
+      {
+        clippedSegs.clear();
+        clipAagainstB(*resIt, *inputIt, oc, clippedSegs);
+        results.insert(clippedSegs.begin(), clippedSegs.end());
+      }
+    }
+  } 
+  
+  // 4) insert the input list
+  results.insert(inputSegs.begin(), inputSegs.end());
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
@@ -692,16 +1017,19 @@ Sequence* DefaultMappedSegment::getSequence()
 
 hal_index_t DefaultMappedSegment::getStartPosition() const
 {
+  assert(_target->getLength() == _source->getLength());
   return _target->getStartPosition();
 }
 
 hal_index_t DefaultMappedSegment::getEndPosition() const
 {
+  assert(_target->getLength() == _source->getLength());
   return _target->getEndPosition();
 }
 
 hal_size_t DefaultMappedSegment::getLength() const
 {
+  assert(_target->getLength() == _source->getLength());
   return _target->getLength();
 }
 
@@ -718,6 +1046,7 @@ void DefaultMappedSegment::setCoordinates(hal_index_t startPos,
 
 hal_index_t DefaultMappedSegment::getArrayIndex() const
 {
+  assert(_target->getLength() == _source->getLength());
   return _target->getArrayIndex();
 }
 
@@ -773,31 +1102,42 @@ hal_size_t DefaultMappedSegment::getMappedSegments(
 
 void DefaultMappedSegment::toReverse() const
 {
+  assert(_target->getLength() == _source->getLength());
   _target->toReverse();
 }
 
 void DefaultMappedSegment::toReverseInPlace() const
 {
+  assert(_target->getLength() == _source->getLength());
   _target->toReverseInPlace();
 }
 
 hal_offset_t DefaultMappedSegment::getStartOffset() const
 {
+  assert(_target->getLength() == _source->getLength());
   return _target->getStartOffset();
 }
 
 hal_offset_t DefaultMappedSegment::getEndOffset() const
 {
+  assert(_target->getLength() == _source->getLength());
   return _target->getEndOffset();
 }
 
 void DefaultMappedSegment::slice(hal_offset_t startOffset ,
                                  hal_offset_t endOffset ) const
 {
-  throw hal_exception("DefaultMappedSegment::slice not implemented");
+  assert(_source->getLength() == _target->getLength());
+  hal_index_t startDelta = startOffset - _target->getStartOffset();
+  hal_index_t endDelta = endOffset - _target->getEndOffset();
+  _target->slice(startOffset, endOffset);
+  _source->slice(_source->getStartOffset() + startDelta,
+                 _source->getEndOffset() + endDelta);
+  assert(_source->getLength() == _target->getLength());
 }
 
 bool DefaultMappedSegment::getReversed() const
 {
+  assert(_target->getLength() == _source->getLength());
   return _target->getReversed();
 }

@@ -49,7 +49,9 @@ public:
    /** Reverse both segments.  Also swap their start and end offsets. 
     * Note that toReverse() does not reverse the source segment.*/
    virtual void fullReverse() const = 0;
-
+   
+   /** Return of a copy of the mapped segment */
+   virtual MappedSegmentConstPtr copy() const = 0;
 
    /** Functor for sorted STL containers, sorting by origin as primary 
     * index */
@@ -71,6 +73,9 @@ public:
      return ms1->equals(ms2); }
    };
 
+   // NEEDS TO BE ADDED TO SEGMENT INTERFACE
+   virtual void print(std::ostream& os) const = 0;
+
 protected:
    friend class counted_ptr<MappedSegment>;
    friend class counted_ptr<const MappedSegment>;
@@ -82,15 +87,13 @@ inline MappedSegment::~MappedSegment() {}
 }
 
 namespace std {
-/** Want sets of mapped segments to be sorted by <source,target> and not
- * contain any dupes! */
 template<>
 struct less<hal::MappedSegmentConstPtr>
 {
    bool operator()(const hal::MappedSegmentConstPtr& m1,
                    const hal::MappedSegmentConstPtr& m2) const
       {
-        return m1->lessThanBySource(m2);
+        return m1->lessThan(m2);
       }
 };
 

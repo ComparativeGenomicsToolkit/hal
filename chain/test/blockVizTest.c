@@ -156,7 +156,7 @@ int main(int argc, char** argv)
   int ret = 0;
   if (handle >= 0)
   {
-    printStats(stdout, handle);
+    // printStats(stdout, handle);
 
     struct hal_block_results_t* results = 
        halGetBlocksInTargetRange(handle, 
