@@ -10,6 +10,7 @@
 #include <sstream>
 #include <cmath>
 #include <limits>
+#include <algorithm>
 #include <stdlib.h>
 #include <string.h>
 #include "hal.h"

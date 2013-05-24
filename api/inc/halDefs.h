@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdexcept>
+#include <cstdlib>
 #include "halCountedPtr.h"
 
 /** 
