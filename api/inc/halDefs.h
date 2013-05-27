@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <stdexcept>
 #include <cstdlib>
+#include <cmath>
+#include <algorithm>
 #include "halCountedPtr.h"
 
 /** 
