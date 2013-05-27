@@ -837,8 +837,8 @@ DefaultMappedSegment::clipAagainstB(MappedSegmentConstPtr segA,
   hal_index_t startO = segA->getStartOffset();
   hal_index_t endO = segA->getEndOffset();
   hal_index_t length = segA->getLength();
-  hal_index_t leftSize = startB - startA;
-  hal_index_t rightSize = endA - endB;
+  hal_index_t leftSize = std::max((hal_index_t)0, startB - startA);
+  hal_index_t rightSize = std::max((hal_index_t)0, endA - endB);
   hal_index_t middleSize = length - leftSize - rightSize;
   if (rightSize > 0)
   {
@@ -877,8 +877,10 @@ DefaultMappedSegment::clipAagainstB(MappedSegmentConstPtr segA,
   }
   middle->slice(startO + leftSlice, endO + rightSlice);
   assert(middle->getLength() == (hal_size_t)middleSize);
-  assert(min(middle->getStartPosition(), middle->getEndPosition()) == startB);
-  assert(max(middle->getStartPosition(), middle->getEndPosition()) == endB);  
+  assert(min(middle->getStartPosition(), middle->getEndPosition()) == 
+         max(startB, startA));
+  assert(max(middle->getStartPosition(), middle->getEndPosition()) == 
+         min(endB, endA));  
   if (middle.get() != segA.get())
   {
     assert(leftSize > 0);
