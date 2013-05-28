@@ -251,8 +251,9 @@ def writeGenomesFile(genome2seq2len, halfile, options, outdir):
     if options.lodMaxDNA is not None:
         options.lodOpts += '--maxDNA %d ' % options.lodMaxDNA
     if options.lodInMemory is True:
-        options.lodOpts += '--inMemory'
+        options.lodOpts += '--inMemory '
     if len(options.lodOpts) > 0:
+        options.lodOpts += '--trans '
         options.lod = True
     if options.lod:
         lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
