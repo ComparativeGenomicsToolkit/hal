@@ -39,7 +39,8 @@ public:
                                     hal_size_t step,
                                     const std::string& tree,
                                     const std::string& rootName,
-                                    bool keepSequences);
+                                    bool keepSequences,
+                                    bool allSequences);
    
    
 protected:
@@ -76,6 +77,7 @@ protected:
 
    LodGraph _graph;
    bool _keepSequences;
+   bool _allSequences;
 };
 
 }

@@ -43,12 +43,13 @@ void LodGraph::erase()
 
 void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
                      const vector<const Genome*>& children, 
-                     hal_size_t step)
+                     hal_size_t step, bool allSequences)
 {
   erase();
   _alignment = alignment;
   _parent = parent;
   _step = step;
+  _allSequences = allSequences;
 
   assert(_parent != NULL);
   assert(_alignment->openGenome(_parent->getName()) == _parent);
@@ -83,42 +84,53 @@ void LodGraph::scanGenome(const Genome* genome)
 {
   SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
   SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+  hal_index_t lastSampledPos = numeric_limits<hal_index_t>::min();
   for (; seqIt != seqEnd; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     hal_size_t len = sequence->getSequenceLength();
-    
+    hal_index_t seqEnd = sequence->getStartPosition() + (hal_index_t)len;
+
     addTelomeres(sequence);
-    
-    for (hal_index_t pos = 0; pos < (hal_index_t)len; pos += (hal_index_t)_step)
+
+    if (_allSequences == true ||
+        sequence->getStartPosition() == 0 ||
+        seqEnd == (hal_index_t)genome->getSequenceLength() ||
+        seqEnd - lastSampledPos > (hal_index_t)_step / 2)
     {
-      // clamp to last position
-      if (pos > 0 && pos + (hal_index_t)_step >= (hal_index_t)len)
+      lastSampledPos = sequence->getStartPosition() + len;
+    
+      for (hal_index_t pos = 0; pos < (hal_index_t)len; 
+           pos += (hal_index_t)_step)
       {
-        pos =  (hal_index_t)len - 1;
-      }      
-      // better to move column iterator rather than getting each time?
-      // -- probably not because we have to worry about dupe cache
-      ColumnIteratorConstPtr colIt = 
-         sequence->getColumnIterator(&_genomes, 0, pos);
-      assert(colIt->getReferenceSequencePosition() == pos);
-      
-      // scan up to here trying to find a column we're happy to add
-      hal_index_t maxTry = std::min(pos + (hal_index_t)_step / 2, 
-                               (hal_index_t)len - 1);     
-      hal_index_t tryPos = NULL_INDEX; 
-      do 
-      {
-        tryPos = colIt->getReferenceSequencePosition();
-        bool canAdd = canAddColumn(colIt);
-        if (canAdd)
+        // clamp to last position
+        if (pos > 0 && pos + (hal_index_t)_step >= (hal_index_t)len)
         {
-          createColumn(colIt);
-          break;
-        }
-        colIt->toRight();
-      } 
-      while (colIt->lastColumn() == false && tryPos < maxTry);      
+          pos =  (hal_index_t)len - 1;
+        }      
+        // better to move column iterator rather than getting each time?
+        // -- probably not because we have to worry about dupe cache
+        ColumnIteratorConstPtr colIt = 
+           sequence->getColumnIterator(&_genomes, 0, pos);
+        assert(colIt->getReferenceSequencePosition() == pos);
+      
+        // scan up to here trying to find a column we're happy to add
+        hal_index_t maxTry = std::min(pos + (hal_index_t)_step / 2, 
+                                      (hal_index_t)len - 1);     
+        hal_index_t tryPos = NULL_INDEX; 
+        do 
+        {
+          tryPos = colIt->getReferenceSequencePosition();
+          bool canAdd = canAddColumn(colIt);
+          if (canAdd)
+          {
+            createColumn(colIt);
+            break;
+          }
+          colIt->toRight();
+        } 
+        while (colIt->lastColumn() == false && tryPos < maxTry);      
+      }
     }
   }
 }
@@ -180,7 +192,6 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
 
     // other heuristics here?
   }
-  if (!canAdd) cout << deltaMax << "\n";
   return canAdd;
 }
 
