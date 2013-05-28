@@ -26,6 +26,11 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("keepSequences",
                                "Write the sequence strings to the output "
                                "file.", false);
+  optionsParser->addOptionFlag("allSequences", 
+                               "Sample all sequences (chromsomes / contigs /"
+                               " etc.) no matter how small they are.  "
+                               "By default, small sequences may be skipped if "
+                               "they fall within the step size.", false);
   optionsParser->setDescription("Generate a new HAL file at a coarser "
                                 "Level of Detail (LOD) by interpolation.");
   return optionsParser;
@@ -40,6 +45,7 @@ int main(int argc, char** argv)
   string outTree;
   hal_size_t step;
   bool keepSequences;
+  bool allSequences;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -49,6 +55,7 @@ int main(int argc, char** argv)
     outTree = optionsParser->getOption<string>("outTree");
     step = optionsParser->getArgument<hal_size_t>("step");
     keepSequences = optionsParser->getFlag("keepSequences");
+    allSequences = optionsParser->getFlag("allSequences");
   }
   catch(exception& e)
   {
@@ -89,7 +96,7 @@ int main(int argc, char** argv)
     LodExtract lodExtract;
     lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
                                            step, outTree, rootName,
-                                           keepSequences);
+                                           keepSequences, allSequences);
   }
 /*  catch(hal_exception& e)
   {

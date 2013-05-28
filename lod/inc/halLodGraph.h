@@ -40,7 +40,7 @@ public:
     * is:  every step bases are sampled.  */
    void build(AlignmentConstPtr alignment, const Genome* parent,
               const std::vector<const Genome*>& children, 
-              hal_size_t step);
+              hal_size_t step, bool allSequences);
 
    /** Help debuggin and tuning */
    void printDimensions(std::ostream& os) const;
@@ -72,6 +72,9 @@ protected:
 
    /** Add a single column iterator as  a block */
    void createColumn(ColumnIteratorConstPtr colIt);
+
+   /** Add an entire sequence as unaliged segment */
+   void createUnaligedSegment(const Sequence* sequence);
 
    /** compute the adjacencies using the SegmentSets */
    void computeAdjacencies();
@@ -108,6 +111,9 @@ protected:
    
    // nodes sorted by sequence
    SequenceMap _seqMap;
+
+   // sample all sequences no matter how small they are
+   bool _allSequences;
 };
 
 inline const LodBlock* LodGraph::getBlock(hal_size_t index) const

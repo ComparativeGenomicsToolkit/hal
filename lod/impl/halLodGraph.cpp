@@ -43,12 +43,13 @@ void LodGraph::erase()
 
 void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
                      const vector<const Genome*>& children, 
-                     hal_size_t step)
+                     hal_size_t step, bool allSequences)
 {
   erase();
   _alignment = alignment;
   _parent = parent;
   _step = step;
+  _allSequences = allSequences;
 
   assert(_parent != NULL);
   assert(_alignment->openGenome(_parent->getName()) == _parent);
@@ -83,42 +84,55 @@ void LodGraph::scanGenome(const Genome* genome)
 {
   SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
   SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+  hal_index_t lastSampledPos = 0;
   for (; seqIt != seqEnd; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     hal_size_t len = sequence->getSequenceLength();
-    
+    hal_index_t seqEnd = sequence->getStartPosition() + (hal_index_t)len;
+
     addTelomeres(sequence);
-    
-    for (hal_index_t pos = 0; pos < (hal_index_t)len; pos += (hal_index_t)_step)
+    if (_allSequences == false &&
+        sequence->getSequenceLength() > 0 &&
+        seqEnd - lastSampledPos < (hal_index_t)_step / 2)
     {
-      // clamp to last position
-      if (pos > 0 && pos + (hal_index_t)_step >= (hal_index_t)len)
+      createUnaligedSegment(sequence);
+    }
+    else
+    {
+      lastSampledPos = sequence->getStartPosition() + len;
+    
+      for (hal_index_t pos = 0; pos < (hal_index_t)len; 
+           pos += (hal_index_t)_step)
       {
-        pos =  (hal_index_t)len - 1;
-      }      
-      // better to move column iterator rather than getting each time?
-      // -- probably not because we have to worry about dupe cache
-      ColumnIteratorConstPtr colIt = 
-         sequence->getColumnIterator(&_genomes, 0, pos);
-      assert(colIt->getReferenceSequencePosition() == pos);
-      
-      // scan up to here trying to find a column we're happy to add
-      hal_index_t maxTry = std::min(pos + (hal_index_t)_step / 2, 
-                               (hal_index_t)len - 1);     
-      hal_index_t tryPos = NULL_INDEX; 
-      do 
-      {
-        tryPos = colIt->getReferenceSequencePosition();
-        bool canAdd = canAddColumn(colIt);
-        if (canAdd)
+        // clamp to last position
+        if (pos > 0 && pos + (hal_index_t)_step >= (hal_index_t)len)
         {
-          createColumn(colIt);
-          break;
-        }
-        colIt->toRight();
-      } 
-      while (colIt->lastColumn() == false && tryPos < maxTry);      
+          pos =  (hal_index_t)len - 1;
+        }      
+        // better to move column iterator rather than getting each time?
+        // -- probably not because we have to worry about dupe cache
+        ColumnIteratorConstPtr colIt = 
+           sequence->getColumnIterator(&_genomes, 0, pos);
+        assert(colIt->getReferenceSequencePosition() == pos);
+      
+        // scan up to here trying to find a column we're happy to add
+        hal_index_t maxTry = std::min(pos + (hal_index_t)_step / 2, 
+                                      (hal_index_t)len - 1);     
+        hal_index_t tryPos = NULL_INDEX; 
+        do 
+        {
+          tryPos = colIt->getReferenceSequencePosition();
+          bool canAdd = canAddColumn(colIt);
+          if (canAdd)
+          {
+            createColumn(colIt);
+            break;
+          }
+          colIt->toRight();
+        } 
+        while (colIt->lastColumn() == false && tryPos < maxTry);      
+      }
     }
   }
 }
@@ -180,7 +194,6 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
 
     // other heuristics here?
   }
-  if (!canAdd) cout << deltaMax << "\n";
   return canAdd;
 }
 
@@ -190,19 +203,19 @@ void LodGraph::addTelomeres(const Sequence* sequence)
   SegmentSet* segSet = NULL;
   if (smi == _seqMap.end())
   {
-    segSet = new SegmentSet();;
+    segSet = new SegmentSet();
     _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
   }
   else
   {
     segSet = smi->second;
   }
-  
+
   LodSegment* segment = new LodSegment(&_telomeres, sequence, 
                                        sequence->getStartPosition() - 1,
                                        false);
   _telomeres.addSegment(segment);
-  segSet->insert(segment);
+  segSet->insert(segment);  
   segment = new LodSegment(&_telomeres, sequence, 
                            sequence->getEndPosition() + 1, false);
   _telomeres.addSegment(segment);
@@ -242,6 +255,28 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
     }
   }
   assert(block->getNumSegments() > 0);
+  _blocks.push_back(block);
+}
+
+void LodGraph::createUnaligedSegment(const Sequence* sequence)
+{
+  LodBlock* block = new LodBlock();
+  SequenceMapIterator smi = _seqMap.find(sequence);
+  SegmentSet* segSet = NULL;
+  if (smi == _seqMap.end())
+  {
+    segSet = new SegmentSet();;
+    _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
+  }
+  else
+  {
+    segSet = smi->second;
+  }
+  LodSegment* segment = new LodSegment(block, sequence, 
+                                       sequence->getStartPosition(), false);
+  block->addSegment(segment);
+  assert(segSet->find(segment) == segSet->end());
+  segSet->insert(segment);
   _blocks.push_back(block);
 }
 

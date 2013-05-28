@@ -188,9 +188,23 @@ def writeDescriptionFile(genome, outdir):
     f = open(filename, 'w')
     f.write("%s\n" %genome)
     f.close()
-    return 
+    return
 
-def getLodFiles(halfile, options, outdir):
+def fixLodFilePath(lodtxtfile, localHalfile, outdir):
+    #fix the path of the original hal file to point to the created
+    #link relative to the output directory
+    relPath = os.path.relpath(localHalfile, start=outdir)
+    lodTxtBuf = ''
+    for line in open(lodtxtfile):
+        tokens = line.split()
+        if len(tokens) == 2 and tokens[0] == '0':
+            lodTxtBuf += '0 %s\n' % relPath
+        else:
+            lodTxtBuf += line
+    with open(lodtxtfile, 'w') as lodFile:
+        lodFile.write(lodTxtBuf)
+    
+def getLodFiles(localHalfile, options, outdir):
     lodtxtfile = os.path.join(outdir, "lod.txt") #outdir/lod.txt
     loddir = os.path.join(outdir, "lod") #outdir/lod
     if options.lodtxtfile and options.loddir: #if lod files were given, then just make soft links to them
@@ -212,24 +226,35 @@ def getLodFiles(halfile, options, outdir):
         else:
             system("ln -s %s %s" %(os.path.abspath(options.loddir), loddir))
     else: #if lod files were not given, create them using halLodInterpolate.py
-        system("halLodInterpolate.py %s %s --outHalDir %s" %(halfile, lodtxtfile, loddir))
+        system("halLodInterpolate.py %s %s --outHalDir %s %s" %(localHalfile, lodtxtfile, loddir, options.lodOpts))
+        fixLodFilePath(lodtxtfile, localHalfile, outdir)
     return lodtxtfile, loddir
 
 def writeGenomesFile(genome2seq2len, halfile, options, outdir):
     '''Write genome for all samples in hal file
     '''
-    #Create lod files if useLod is specified
-    lodtxtfile = ''
-    loddir = ''
-    if options.lod:
-        lodtxtfile, loddir = getLodFiles(halfile, options, outdir)
-    
+
     localHalfile = os.path.join(outdir, os.path.basename(halfile))
     if os.path.abspath(localHalfile) != os.path.abspath(halfile):
         if os.path.exists(localHalfile):
             system("rm %s" %localHalfile)
         system("ln -s %s %s" %(os.path.abspath(halfile), localHalfile))
 
+    #Create lod files if useLod is specified
+    lodtxtfile = ''
+    loddir = ''
+    options.lodOpts = ''
+    if options.lodMaxBlock is not None:
+        options.lodOpts += '--maxBlock %d ' % options.lodMaxBlock
+    if options.lodScale is not None:
+        options.lodOpts += '--scale %f ' % options.lodScale
+    if options.lodMaxDNA is not None:
+        options.lodOpts += '--maxDNA %d ' % options.lodMaxDNA
+    if len(options.lodOpts) > 0:
+        options.lod = True
+    if options.lod:
+        lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
+    
     filename = os.path.join(outdir, "genomes.txt")
     f = open(filename, 'w')
     genomes = genome2seq2len.keys()
@@ -300,6 +325,9 @@ def addOptions(parser):
     parser.add_option('--lod', dest='lod', action="store_true", default=False, help='If specified, create "level of detail" (lod) hal files and will put the lod.txt at the bigUrl instead of the original hal file. Default=%default')
     parser.add_option('--lodTxtFile', dest='lodtxtfile', help='"hal Level of detail" lod text file. If specified, will put this at the bigUrl instead of the hal file. Default=%default')
     parser.add_option('--lodDir', dest='loddir', help='"hal Level of detail" lod dir. If specified, will put this at the bigUrl instead of the hal file. Default=%default')
+    parser.add_option('--lodMaxBlock', dest='lodMaxBlock', type='int', help='Maximum number of blocks to display in a hal level of detail. Default=%default', default=None)
+    parser.add_option('--lodScale', dest='lodScale', type='float', help='Scaling factor between two successive levels of detail. Default=%default.', default=None)
+    parser.add_option('--lodMaxDNA', dest='lodMaxDNA', type='int', help='Maximum query length that will such that its hal level of detail will contain nucleotide information. Default=%default.', default=None)
     
     parser.add_option('--bedDir', dest='beddir', help='Directory containing bed files of the input genomes. Format: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
     parser.add_option('--hub', dest='hubLabel', default='myHub', help='a single-word name of the directory containing the track hub files. Not displayed to hub users. Default=%default')
