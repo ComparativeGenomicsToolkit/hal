@@ -203,7 +203,7 @@ void LodGraph::addTelomeres(const Sequence* sequence)
   SegmentSet* segSet = NULL;
   if (smi == _seqMap.end())
   {
-    segSet = new SegmentSet();;
+    segSet = new SegmentSet();
     _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
   }
   else
