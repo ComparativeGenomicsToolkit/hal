@@ -84,7 +84,7 @@ void LodGraph::scanGenome(const Genome* genome)
 {
   SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
   SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
-  hal_index_t lastSampledPos = numeric_limits<hal_index_t>::min();
+  hal_index_t lastSampledPos = 0;
   for (; seqIt != seqEnd; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
@@ -92,11 +92,13 @@ void LodGraph::scanGenome(const Genome* genome)
     hal_index_t seqEnd = sequence->getStartPosition() + (hal_index_t)len;
 
     addTelomeres(sequence);
-
-    if (_allSequences == true ||
-        sequence->getStartPosition() == 0 ||
-        seqEnd == (hal_index_t)genome->getSequenceLength() ||
-        seqEnd - lastSampledPos > (hal_index_t)_step / 2)
+    if (_allSequences == false &&
+        sequence->getSequenceLength() > 0 &&
+        seqEnd - lastSampledPos < (hal_index_t)_step / 2)
+    {
+      createUnaligedSegment(sequence);
+    }
+    else
     {
       lastSampledPos = sequence->getStartPosition() + len;
     
@@ -208,12 +210,12 @@ void LodGraph::addTelomeres(const Sequence* sequence)
   {
     segSet = smi->second;
   }
-  
+
   LodSegment* segment = new LodSegment(&_telomeres, sequence, 
                                        sequence->getStartPosition() - 1,
                                        false);
   _telomeres.addSegment(segment);
-  segSet->insert(segment);
+  segSet->insert(segment);  
   segment = new LodSegment(&_telomeres, sequence, 
                            sequence->getEndPosition() + 1, false);
   _telomeres.addSegment(segment);
@@ -253,6 +255,28 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
     }
   }
   assert(block->getNumSegments() > 0);
+  _blocks.push_back(block);
+}
+
+void LodGraph::createUnaligedSegment(const Sequence* sequence)
+{
+  LodBlock* block = new LodBlock();
+  SequenceMapIterator smi = _seqMap.find(sequence);
+  SegmentSet* segSet = NULL;
+  if (smi == _seqMap.end())
+  {
+    segSet = new SegmentSet();;
+    _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
+  }
+  else
+  {
+    segSet = smi->second;
+  }
+  LodSegment* segment = new LodSegment(block, sequence, 
+                                       sequence->getStartPosition(), false);
+  block->addSegment(segment);
+  assert(segSet->find(segment) == segSet->end());
+  segSet->insert(segment);
   _blocks.push_back(block);
 }
 

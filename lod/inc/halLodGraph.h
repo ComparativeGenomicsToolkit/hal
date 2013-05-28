@@ -73,6 +73,9 @@ protected:
    /** Add a single column iterator as  a block */
    void createColumn(ColumnIteratorConstPtr colIt);
 
+   /** Add an entire sequence as unaliged segment */
+   void createUnaligedSegment(const Sequence* sequence);
+
    /** compute the adjacencies using the SegmentSets */
    void computeAdjacencies();
 
