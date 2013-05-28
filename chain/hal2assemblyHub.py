@@ -188,9 +188,23 @@ def writeDescriptionFile(genome, outdir):
     f = open(filename, 'w')
     f.write("%s\n" %genome)
     f.close()
-    return 
+    return
 
-def getLodFiles(halfile, options, outdir):
+def fixLodFilePath(lodtxtfile, localHalfile, outdir):
+    #fix the path of the original hal file to point to the created
+    #link relative to the output directory
+    relPath = os.path.relpath(localHalfile, start=outdir)
+    lodTxtBuf = ''
+    for line in open(lodtxtfile):
+        tokens = line.split()
+        if len(tokens) == 2 and tokens[0] == '0':
+            lodTxtBuf += '0 %s\n' % relPath
+        else:
+            lodTxtBuf += line
+    with open(lodtxtfile, 'w') as lodFile:
+        lodFile.write(lodTxtBuf)
+    
+def getLodFiles(localHalfile, options, outdir):
     lodtxtfile = os.path.join(outdir, "lod.txt") #outdir/lod.txt
     loddir = os.path.join(outdir, "lod") #outdir/lod
     if options.lodtxtfile and options.loddir: #if lod files were given, then just make soft links to them
@@ -212,24 +226,26 @@ def getLodFiles(halfile, options, outdir):
         else:
             system("ln -s %s %s" %(os.path.abspath(options.loddir), loddir))
     else: #if lod files were not given, create them using halLodInterpolate.py
-        system("halLodInterpolate.py %s %s --outHalDir %s" %(halfile, lodtxtfile, loddir))
+        system("halLodInterpolate.py %s %s --outHalDir %s" %(localHalfile, lodtxtfile, loddir))
+        fixLodFilePath(lodtxtfile, localHalfile, outdir)
     return lodtxtfile, loddir
 
 def writeGenomesFile(genome2seq2len, halfile, options, outdir):
     '''Write genome for all samples in hal file
     '''
-    #Create lod files if useLod is specified
-    lodtxtfile = ''
-    loddir = ''
-    if options.lod:
-        lodtxtfile, loddir = getLodFiles(halfile, options, outdir)
-    
+
     localHalfile = os.path.join(outdir, os.path.basename(halfile))
     if os.path.abspath(localHalfile) != os.path.abspath(halfile):
         if os.path.exists(localHalfile):
             system("rm %s" %localHalfile)
         system("ln -s %s %s" %(os.path.abspath(halfile), localHalfile))
 
+    #Create lod files if useLod is specified
+    lodtxtfile = ''
+    loddir = ''
+    if options.lod:
+        lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
+    
     filename = os.path.join(outdir, "genomes.txt")
     f = open(filename, 'w')
     genomes = genome2seq2len.keys()
