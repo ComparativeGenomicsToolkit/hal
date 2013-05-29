@@ -123,11 +123,11 @@ def main(argv=None):
     parser.add_argument("--maxBlock",
                         help="maximum desired number of blocks to ever " 
                         "display at once.", type=int,
-                        default=500)
+                        default=400)
     parser.add_argument("--scale",
                         help="scaling factor between two successive levels"
                         " of detail", type=float,
-                        default=10.0)
+                        default=5.0)
     parser.add_argument("--outHalDir", help="path of directory where "
                         "interpolated hal files are stored.  By default "
                         "they will be stored in the same directory as the "

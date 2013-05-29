@@ -250,7 +250,10 @@ def writeGenomesFile(genome2seq2len, halfile, options, outdir):
         options.lodOpts += '--scale %f ' % options.lodScale
     if options.lodMaxDNA is not None:
         options.lodOpts += '--maxDNA %d ' % options.lodMaxDNA
+    if options.lodInMemory is True:
+        options.lodOpts += '--inMemory '
     if len(options.lodOpts) > 0:
+        options.lodOpts += '--trans '
         options.lod = True
     if options.lod:
         lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
@@ -328,6 +331,7 @@ def addOptions(parser):
     parser.add_option('--lodMaxBlock', dest='lodMaxBlock', type='int', help='Maximum number of blocks to display in a hal level of detail. Default=%default', default=None)
     parser.add_option('--lodScale', dest='lodScale', type='float', help='Scaling factor between two successive levels of detail. Default=%default.', default=None)
     parser.add_option('--lodMaxDNA', dest='lodMaxDNA', type='int', help='Maximum query length that will such that its hal level of detail will contain nucleotide information. Default=%default.', default=None)
+    parser.add_option('--lodInMemory', dest='lodInMemory', action='store_true', help='Load entire hal file into memory when generating levels of detail instead of using hdf5 cache. Default=%default.', default=False)
     
     parser.add_option('--bedDir', dest='beddir', help='Directory containing bed files of the input genomes. Format: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
     parser.add_option('--hub', dest='hubLabel', default='myHub', help='a single-word name of the directory containing the track hub files. Not displayed to hub users. Default=%default')

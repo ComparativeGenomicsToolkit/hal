@@ -202,6 +202,25 @@ void LodExtract::countSegmentsInGraph(
       ++count;
     }
   }
+  
+  // add unsampled non-zero sequences to dimensions, by looking for
+  // sequences who have telomeres but no segments. 
+  const LodBlock* telomeres = _graph.getTelomeres();
+  for (hal_size_t telIdx = 0; telIdx < telomeres->getNumSegments(); ++telIdx)
+  {
+    segment = telomeres->getSegment(telIdx);
+    if (segment->getSequence()->getSequenceLength() > 0)
+    {
+      res = segmentCounts.insert(pair<const Sequence*, hal_size_t>(
+                                   segment->getSequence(), 0));
+      hal_size_t& count = res.first->second;
+      if (res.second == true)
+      {
+        ++count;
+        assert(count == 1);
+      }
+    }
+  }
 }
 
 void LodExtract::writeDimensions(
@@ -332,17 +351,6 @@ void LodExtract::writeSegments(const Genome* inParent,
     const Genome* inGenome = inGenomes[i];
     Genome* outGenome = _outAlignment->openGenome(inGenome->getName());
 
-    if (outGenome != outParent)
-    {
-      top = outGenome->getTopSegmentIterator();
-      outSegment = top;
-    }
-    else
-    {
-      bottom = outGenome->getBottomSegmentIterator();
-      outSegment = bottom;
-    }
-
     SequenceIteratorPtr outSeqIt = outGenome->getSequenceIterator();
     SequenceIteratorConstPtr outSeqEnd = outGenome->getSequenceEndIterator();
     
@@ -352,28 +360,73 @@ void LodExtract::writeSegments(const Genome* inParent,
       const Sequence* outSequence = outSeqIt->getSequence();
       const Sequence* inSequence = 
          inGenome->getSequence(outSequence->getName());
+      if (outGenome != outParent && outSequence->getNumTopSegments() > 0)
+      {
+        top = outSequence->getTopSegmentIterator();
+        outSegment = top;
+      }
+      else if (outSequence->getNumBottomSegments() > 0)
+      {
+        bottom = outSequence->getBottomSegmentIterator();
+        outSegment = bottom;
+      }
       const LodGraph::SegmentSet* segSet = _graph.getSegmentSet(inSequence);
       assert(segSet != NULL);
       LodGraph::SegmentSet::const_iterator segIt = segSet->begin();
-      //skip left telomere
-      ++segIt;
-      // use to skip right telomere:
-      LodGraph::SegmentSet::const_iterator segLast = segSet->end();
-      --segLast;
-      
-      // FOR EVERY SEGMENT IN SEQUENCE
-      for (; segIt != segLast; ++segIt)
+      if (segSet->size() > 2)
       {
-        // write the HAL array index back to the segment to make
-        // future passes quicker. 
-        (*segIt)->setArrayIndex(outSegment->getArrayIndex());
-        outSegment->setCoordinates((*segIt)->getLeftPos(), 
-                                   (*segIt)->getLength());
-        assert(outSegment->getSequence()->getName() == inSequence->getName());
-        outSegment->toRight();
+        //skip left telomere
+        ++segIt;
+        // use to skip right telomere:
+        LodGraph::SegmentSet::const_iterator segLast = segSet->end();
+        --segLast;
+      
+        // FOR EVERY SEGMENT IN SEQUENCE
+        for (; segIt != segLast; ++segIt)
+        {
+          // write the HAL array index back to the segment to make
+          // future passes quicker. 
+          (*segIt)->setArrayIndex(outSegment->getArrayIndex());
+          outSegment->setCoordinates((*segIt)->getLeftPos(), 
+                                     (*segIt)->getLength());
+          assert(outSegment->getSequence()->getName() == inSequence->getName());
+          outSegment->toRight();
+        }
+      }
+      else if (outSequence->getSequenceLength() > 0)
+      {
+        assert(segSet->size() == 2);
+        writeUnsampledSequence(outSequence, outSegment);
       }
     }
   } 
+}
+
+void LodExtract::writeUnsampledSequence(const Sequence* outSequence,
+                                        SegmentIteratorPtr outSegment)
+{
+  outSegment->setCoordinates(outSequence->getStartPosition(),
+                             outSequence->getSequenceLength());
+  if (outSegment->isTop())
+  {
+    assert(outSequence->getNumTopSegments() == 1);
+    TopSegmentIteratorPtr top = outSegment.downCast<TopSegmentIteratorPtr>();
+    top->setParentIndex(NULL_INDEX);
+    top->setParentReversed(false);
+    top->setNextParalogyIndex(NULL_INDEX);
+  }
+  else
+  {
+    assert(outSequence->getNumBottomSegments() == 1);
+    BottomSegmentIteratorPtr bottom = 
+       outSegment.downCast<BottomSegmentIteratorPtr>();
+    hal_size_t numChildren = bottom->getNumChildren();
+    for (hal_size_t childNum = 0; childNum < numChildren; ++childNum)
+    {
+      bottom->setChildIndex(childNum, NULL_INDEX);
+      bottom->setChildReversed(childNum, false);
+    }
+  }
 }
 
 void LodExtract::writeHomologies(const Genome* inParent,

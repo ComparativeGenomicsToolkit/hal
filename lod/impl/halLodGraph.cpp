@@ -92,13 +92,9 @@ void LodGraph::scanGenome(const Genome* genome)
     hal_index_t seqEnd = sequence->getStartPosition() + (hal_index_t)len;
 
     addTelomeres(sequence);
-    if (_allSequences == false &&
-        sequence->getSequenceLength() > 0 &&
-        seqEnd - lastSampledPos < (hal_index_t)_step / 2)
-    {
-      createUnaligedSegment(sequence);
-    }
-    else
+    if (_allSequences == true ||
+        (sequence->getSequenceLength() > 0 &&
+         seqEnd - lastSampledPos > (hal_index_t)_step / 2))
     {
       lastSampledPos = sequence->getStartPosition() + len;
     
@@ -255,28 +251,6 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
     }
   }
   assert(block->getNumSegments() > 0);
-  _blocks.push_back(block);
-}
-
-void LodGraph::createUnaligedSegment(const Sequence* sequence)
-{
-  LodBlock* block = new LodBlock();
-  SequenceMapIterator smi = _seqMap.find(sequence);
-  SegmentSet* segSet = NULL;
-  if (smi == _seqMap.end())
-  {
-    segSet = new SegmentSet();;
-    _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
-  }
-  else
-  {
-    segSet = smi->second;
-  }
-  LodSegment* segment = new LodSegment(block, sequence, 
-                                       sequence->getStartPosition(), false);
-  block->addSegment(segment);
-  assert(segSet->find(segment) == segSet->end());
-  segSet->insert(segment);
   _blocks.push_back(block);
 }
 
@@ -472,16 +446,35 @@ bool LodGraph::checkCoverage() const
   // check the coverage and clean up
   for (covMapIt = covMap.begin(); covMapIt != covMap.end(); ++covMapIt)
   {
-    for (hal_size_t i = 0; i < covMapIt->second->size() && success; ++i)
+    SequenceIteratorConstPtr seqIt = covMapIt->first->getSequenceIterator();
+    SequenceIteratorConstPtr seqEnd = covMapIt->first->getSequenceEndIterator();
+    for (; seqIt != seqEnd && success; seqIt->toNext())
     {
-      if (covMapIt->second->at(i) != true)
+      const Sequence* sequence = seqIt->getSequence();
+      if (sequence->getSequenceLength() > 0)
       {
-        if (success == true)
+        hal_size_t numCovered = 0;
+        for (hal_index_t i = sequence->getStartPosition(); 
+             i <= sequence->getEndPosition(); ++i)
         {
-          cerr << "coverage gap found at position " << i << " in"
-               << " genome " << covMapIt->first->getName() << endl;
+          if (covMapIt->second->at(i) != true)
+          {
+            ++numCovered;
+          }
         }
-        success = false;
+        if (numCovered != 0 && numCovered != sequence->getSequenceLength())
+        {
+          cerr << numCovered << " out of " << sequence->getSequenceLength()
+               << " bases covered for sequence " << sequence->getFullName()
+               << endl;
+          success = false;
+        }
+        else if (numCovered == 0 && _allSequences == true)
+        {
+          cerr << sequence->getFullName() << " uncovered even though "
+               << "allSequences set to true" << endl;
+          success = false;
+        }
       }
     }
     delete covMapIt->second;

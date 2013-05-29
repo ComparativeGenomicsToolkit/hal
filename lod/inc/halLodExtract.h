@@ -62,6 +62,8 @@ protected:
                       const std::vector<const Genome*>& inChildren);
    void writeSegments(const Genome* inParent, 
                       const std::vector<const Genome*>& inChildren);
+   void writeUnsampledSequence(const Sequence* outSequence,
+                               SegmentIteratorPtr outSegment);
    void writeHomologies(const Genome* inParent, 
                         const std::vector<const Genome*>& inChildren);
    void updateBlockEdges(const Genome* inParentGenome,
