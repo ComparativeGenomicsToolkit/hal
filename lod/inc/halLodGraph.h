@@ -33,6 +33,7 @@ public:
    const LodBlock* getBlock(hal_size_t index) const;
    hal_size_t getNumBlocks() const;
    const SegmentSet* getSegmentSet(const Sequence* sequence) const;
+   const LodBlock* getTelomeres() const;
 
    /** Build the LOD graph for a given subtree of the alignment.  The
     * entire graph is stored in memory in a special structure (ie not within
@@ -131,6 +132,11 @@ inline const LodGraph::SegmentSet* LodGraph::getSegmentSet(
 {
   assert(_seqMap.find(sequence) != _seqMap.end());
   return _seqMap.find(sequence)->second;
+}
+
+inline const LodBlock* LodGraph::getTelomeres() const
+{
+  return &_telomeres;
 }
 
 }
