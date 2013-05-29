@@ -53,6 +53,10 @@ public:
    /** Return of a copy of the mapped segment */
    virtual MappedSegmentConstPtr copy() const = 0;
 
+   /** Test if mapped segment can be merged to the right with input 
+    * segment */
+   virtual bool canMergeRightWith(const MappedSegmentConstPtr& next) const = 0;
+
    /** Functor for sorted STL containers, sorting by origin as primary 
     * index */
    struct LessSource { bool operator()(const MappedSegmentConstPtr& ms1,

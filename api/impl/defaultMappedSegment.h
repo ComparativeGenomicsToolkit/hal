@@ -72,6 +72,7 @@ public:
    virtual void flip() const;
    virtual void fullReverse() const;
    virtual MappedSegmentConstPtr copy() const;
+   virtual bool canMergeRightWith(const MappedSegmentConstPtr& next) const;
    virtual void print(std::ostream& os) const;
 
 

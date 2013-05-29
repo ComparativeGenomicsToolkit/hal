@@ -427,6 +427,17 @@ void BlockMapper::extractSegment(MSSet::iterator start,
                                  vector<MappedSegmentConstPtr>& fragments,
                                  MSSet* startSet)
 {
+  extractSegment(start, paraSet, fragments, startSet, _absRefFirst,
+                 _absRefLast);
+}
+
+void BlockMapper::extractSegment(MSSet::iterator start, 
+                                 const MSSet& paraSet,
+                                 vector<MappedSegmentConstPtr>& fragments,
+                                 MSSet* startSet,
+                                 hal_index_t absRefFirst,
+                                 hal_index_t absRefLast)
+{
   fragments.clear();
   fragments.push_back(*start);
   const Sequence* startSeq = (*start)->getSequence();
@@ -473,7 +484,7 @@ void BlockMapper::extractSegment(MSSet::iterator start,
     // check if first elements of each class are compatible for a merge
     assert(v1->size() > 0 && v2->size() > 0);
     if (v1->size() == v2->size() && (*v2->at(0))->getSequence() == startSeq &&
-        canMergeBlock(*v1->at(0), *v2->at(0)) && 
+        canMergeBlock(*v1->at(0), *v2->at(0), absRefFirst, absRefLast) && 
         (paraSet.find(*v1->at(0)) == paraSet.end()) == 
         (paraSet.find(*v2->at(0)) == paraSet.end()))
     {
@@ -497,48 +508,14 @@ void BlockMapper::extractSegment(MSSet::iterator start,
 }
 
 bool BlockMapper::canMergeBlock(MappedSegmentConstPtr query, 
-                                MappedSegmentConstPtr nextQuery)
+                                MappedSegmentConstPtr nextQuery,
+                                hal_index_t absRefFirst,
+                                hal_index_t absRefLast)
 {
-  //return false;
-  SlicedSegmentConstPtr ref = query->getSource();
-  SlicedSegmentConstPtr nextRef = nextQuery->getSource();
-  assert(ref->getReversed() == false);
-  assert(nextRef->getReversed() == false);
-  assert(ref->getSequence() == nextRef->getSequence());
-  assert(query->getGenome() == nextQuery->getGenome());
-
-  if (nextQuery->getStartPosition() == _absRefFirst ||
-      query->getEndPosition() == _absRefLast)
+  if (nextQuery->getStartPosition() == absRefFirst ||
+      query->getEndPosition() == absRefLast)
   {
     return false;
   }
-  if (query->getReversed() == nextQuery->getReversed() &&
-      ref->getReversed() == nextRef->getReversed())
-  {
-    hal_index_t qdelta = NULL_INDEX;
-    hal_index_t rdelta = NULL_INDEX;
-    if (query->getReversed() == false && ref->getReversed() == false)
-    {
-      qdelta = nextQuery->getStartPosition() - query->getEndPosition();
-      rdelta = nextRef->getStartPosition() - ref->getEndPosition();
-    }
-    else if (query->getReversed() == true && ref->getReversed() == true)
-    {
-      qdelta = nextQuery->getEndPosition() - query->getStartPosition();
-      rdelta = nextRef->getStartPosition() - ref->getEndPosition();
-    }
-    else if (query->getReversed() == false && ref->getReversed() == true)
-    {
-      qdelta = nextQuery->getStartPosition() - query->getEndPosition();
-      rdelta = ref->getEndPosition() - nextRef->getStartPosition();
-    }
-    else // (query->getReversed() == true && ref->getReversed() == false)
-    {
-      qdelta = nextQuery->getEndPosition() - query->getStartPosition();
-      rdelta = ref->getStartPosition() - nextRef->getEndPosition();
-    }
-    assert(qdelta >= 0);
-    return qdelta == 1 && rdelta == 1;
-  }
-  return false;
+  return query->canMergeRightWith(nextQuery);
 }

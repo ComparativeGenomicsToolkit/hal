@@ -139,6 +139,48 @@ MappedSegmentConstPtr DefaultMappedSegment::copy() const
   return MappedSegmentConstPtr(newSeg);
 }
 
+bool DefaultMappedSegment::canMergeRightWith(
+  const MappedSegmentConstPtr& next) const
+{
+ //return false;
+  SlicedSegmentConstPtr ref = this->getSource();
+  SlicedSegmentConstPtr nextRef = next->getSource();
+  assert(ref->getReversed() == false);
+  assert(nextRef->getReversed() == false);
+  assert(ref->getSequence() == nextRef->getSequence());
+  assert(this->getGenome() == next->getGenome());
+
+  if (this->getReversed() == next->getReversed() &&
+      ref->getReversed() == nextRef->getReversed())
+  {
+    hal_index_t qdelta = NULL_INDEX;
+    hal_index_t rdelta = NULL_INDEX;
+    if (this->getReversed() == false && ref->getReversed() == false)
+    {
+      qdelta = next->getStartPosition() - this->getEndPosition();
+      rdelta = nextRef->getStartPosition() - ref->getEndPosition();
+    }
+    else if (this->getReversed() == true && ref->getReversed() == true)
+    {
+      qdelta = next->getEndPosition() - this->getStartPosition();
+      rdelta = nextRef->getStartPosition() - ref->getEndPosition();
+    }
+    else if (this->getReversed() == false && ref->getReversed() == true)
+    {
+      qdelta = next->getStartPosition() - this->getEndPosition();
+      rdelta = ref->getEndPosition() - nextRef->getStartPosition();
+    }
+    else // (this->getReversed() == true && ref->getReversed() == false)
+    {
+      qdelta = next->getEndPosition() - this->getStartPosition();
+      rdelta = ref->getStartPosition() - nextRef->getEndPosition();
+    }
+    assert(qdelta >= 0);
+    return qdelta == 1 && rdelta == 1;
+  }
+  return false;
+}
+
 void DefaultMappedSegment::print(ostream& os) const
 {
   os << "src: " << _source->getGenome()->getName() << "." 

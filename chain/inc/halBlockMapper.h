@@ -39,6 +39,13 @@ public:
    const MSSet& getMap() const;
    MSSet& getMap();
 
+   static void extractSegment(MSSet::iterator start, 
+                              const MSSet& paraSet,                       
+                              std::vector<MappedSegmentConstPtr>& fragments,
+                              MSSet* startSet,
+                              hal_index_t absRefFirst,
+                              hal_index_t absRefLsat);
+
    void extractSegment(MSSet::iterator start, 
                        const MSSet& paraSet,                       
                        std::vector<MappedSegmentConstPtr>& fragments,
@@ -60,8 +67,11 @@ protected:
                          SlicedSegmentConstPtr nextSeg,
                          bool right);
    
-   bool canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
-                      MappedSegmentConstPtr lastQuerySeg);
+   static bool canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
+                             MappedSegmentConstPtr lastQuerySeg,
+                             hal_index_t absRefFirst,
+                             hal_index_t absRefLsat);
+
    
    static bool equalTargetStart(const MappedSegmentConstPtr& s1,
                                 const MappedSegmentConstPtr& s2);

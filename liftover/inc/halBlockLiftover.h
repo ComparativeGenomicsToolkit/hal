@@ -26,6 +26,8 @@ protected:
 
    void liftInterval();
    void visitBegin();
+
+   void cleanTargetParalogies();
    
 protected: 
    

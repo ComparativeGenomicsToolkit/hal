@@ -7,6 +7,7 @@
 #include <deque>
 #include <cassert>
 #include "halBlockLiftover.h"
+#include "halBlockMapper.h"
 
 using namespace std;
 using namespace hal;
@@ -60,41 +61,58 @@ void BlockLiftover::liftInterval()
   while (_refSeg->getArrayIndex() < _lastIndex &&
          _refSeg->getStartPosition() <= globalEnd)  
   {
-    if (_bedLine._strand == '-')
-    {
-      _refSeg->toReverseInPlace();
-    }
     _refSeg->getMappedSegments(_mappedSegments, _tgtGenome, &_spanningTree,
                               _traverseDupes);
-    if (_bedLine._strand == '-')
-    {
-      _refSeg->toReverseInPlace();
-    }
     _refSeg->toRight(globalEnd);
   }
 
-  // need to clean up set here
-
+  cleanTargetParalogies();
+  vector<MappedSegmentConstPtr> fragments;
+  BlockMapper::MSSet emptySet;
+  
   for (std::set<MappedSegmentConstPtr>::iterator i = _mappedSegments.begin();
        i != _mappedSegments.end(); ++i)
   {
+    BlockMapper::extractSegment(i, emptySet, fragments, &_mappedSegments, 
+                                NULL_INDEX, NULL_INDEX);
+
     const Sequence* seq = (*i)->getSequence();
     hal_size_t seqStart = seq->getStartPosition();
     _outBedLines.push_back(_bedLine);
     BedLine& outBedLine = _outBedLines.back();
     outBedLine._chrName = seq->getName();
-    outBedLine._start = (*i)->getStartPosition();
-    outBedLine._end = (*i)->getEndPosition() + 1 - seqStart;
-    if ((*i)->getReversed() == true)
-    {
-      outBedLine._strand = '-';
-      swap(outBedLine._start, outBedLine._end);
-    }
-    else
-    {
-      outBedLine._strand = '+';
-    }
+    outBedLine._start = min(min(fragments.front()->getStartPosition(), 
+                                fragments.front()->getEndPosition()),
+                            min(fragments.back()->getStartPosition(),
+                                fragments.back()->getEndPosition()));
+    outBedLine._start -= seqStart;
+    outBedLine._end = max(max(fragments.front()->getStartPosition(), 
+                                fragments.front()->getEndPosition()),
+                            max(fragments.back()->getStartPosition(),
+                                fragments.back()->getEndPosition()));
+    outBedLine._end -= seqStart;
+    outBedLine._strand = (*i)->getReversed() ? '-' : '+';
     assert(outBedLine._start < outBedLine._end);
+  }
+}
+
+void BlockLiftover::cleanTargetParalogies()
+{
+  set<MappedSegmentConstPtr>::iterator i;
+  set<MappedSegmentConstPtr>::iterator j;
+  for (i = _mappedSegments.begin(); i != _mappedSegments.end(); i = j)
+  {
+    j = i;
+    ++j;
+    if (j != _mappedSegments.end())
+    {
+      if ((*i)->getStartPosition() == (*j)->getStartPosition() &&
+          (*i)->getEndPosition() == (*j)->getEndPosition())
+      {
+        assert((*i)->getSequence() == (*j)->getSequence());
+        _mappedSegments.erase(i);
+      }
+    }
   }
 }
 
