@@ -806,9 +806,6 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
       idMapIt = idMap.find((*i)->id);
       if (idMapIt != idMap.end())
       {
-        cout << "map " <<  (*i)->tRange->tStart << " "
-             << (*i)->tRange->size << " " << (*i)->id << " --> "
-             << idMapIt->second << endl;
         (*i)->id = idMapIt->second;
       }
     }
