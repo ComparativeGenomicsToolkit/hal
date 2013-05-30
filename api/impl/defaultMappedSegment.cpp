@@ -176,7 +176,7 @@ bool DefaultMappedSegment::canMergeRightWith(
       qdelta = next->getEndPosition() - this->getStartPosition();
       rdelta = ref->getStartPosition() - nextRef->getEndPosition();
     }
-    assert(qdelta >= 0);
+    //assert(qdelta >= 0);
     return qdelta == 1 && rdelta == 1;
   }
   return false;
