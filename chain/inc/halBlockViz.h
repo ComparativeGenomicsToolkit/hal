@@ -30,7 +30,7 @@ struct hal_target_range_t
 struct hal_target_dupe_list_t
 {
    struct hal_target_dupe_list_t* next;
-   int id;  
+   hal_int_t id;  
    struct hal_target_range_t* tRange;
    char* qChrom;
 };

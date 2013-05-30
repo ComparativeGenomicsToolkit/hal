@@ -660,7 +660,7 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
   
   // sort based on query coordinate
   std::sort(tempList.begin(), tempList.end(), DupeIdLess());
-  
+
   hal_target_dupe_list_t* head = NULL;
   hal_target_dupe_list_t* prev = NULL;
   int id = 0;
