@@ -76,7 +76,7 @@ static void printBlock(FILE* file, struct hal_block_t* b)
 
 static void printDupeList(FILE* file, struct hal_target_dupe_list_t* d)
 {
-  fprintf(file, "tDupe id:%d qCrhom:%s\n", d->id, d->qChrom);
+  fprintf(file, "tDupe id:%ld qCrhom:%s\n", d->id, d->qChrom);
   for (hal_target_range_t* tr = d->tRange; tr; tr = tr->next)
   {
     fprintf(file, " tSt:%ld size:%ld\n", tr->tStart, tr->size);
