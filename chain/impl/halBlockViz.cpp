@@ -61,6 +61,8 @@ static hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
 static void readTargetRange(hal_target_dupe_list_t* cur,
                             vector<MappedSegmentConstPtr>& fragments);
 
+static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
+
 
 extern "C" int halOpenLOD(char *lodFilePath)
 {
@@ -568,8 +570,10 @@ hal_block_results_t* readBlocks(const Sequence* tSequence,
     readBlock(cur, fragments, getSequenceString, qGenomeName);
     prev = cur;
   }
-
-  results->targetDupeBlocks = processTargetDupes(blockMapper, paraSet);
+  if (!paraSet.empty())
+  {
+    results->targetDupeBlocks = processTargetDupes(blockMapper, paraSet);
+  }
   return results;
 }
 
@@ -634,11 +638,6 @@ void readBlock(hal_block_t* cur,
   }
 }
 
-struct DupeIdLess { bool operator()(const hal_target_dupe_list_t* d1,
-                                    const hal_target_dupe_list_t* d2) const {
-  return d1->id < d2->id;
-}};
-
 hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
                                            BlockMapper::MSSet& paraSet)
 {
@@ -658,8 +657,7 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
     tempList.push_back(cur);
   }
   
-  // sort based on query coordinate
-  std::sort(tempList.begin(), tempList.end(), DupeIdLess());
+  cleanTargetDupesList(tempList);
 
   hal_target_dupe_list_t* head = NULL;
   hal_target_dupe_list_t* prev = NULL;
@@ -747,4 +745,78 @@ void readTargetRange(hal_target_dupe_list_t* cur,
   string qSeqName = qSequence->getName();
   cur->qChrom = (char*)malloc(qSeqName.length() * sizeof(char) + 1);
   strcpy(cur->qChrom, qSeqName.c_str());
+}
+
+struct DupeIdLess { bool operator()(const hal_target_dupe_list_t* d1,
+                                    const hal_target_dupe_list_t* d2) const {
+  if (d1 != NULL && d2 != NULL)
+  {
+    return d1->id < d2->id;
+  }
+  return d1 != NULL && d2 == NULL;
+}};
+
+struct DupeStartLess { bool operator()(const hal_target_dupe_list_t* d1,
+                                       const hal_target_dupe_list_t* d2) const {
+  return d1->tRange->tStart < d2->tRange->tStart;
+}};
+
+
+void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
+{
+  // sort based on target start coordinate
+  std::sort(dupeList.begin(), dupeList.end(), DupeStartLess());
+  
+  map<hal_int_t, hal_int_t> idMap;
+  map<hal_int_t, hal_int_t>::iterator idMapIt;
+
+  size_t deadCount = 0;
+
+  vector<hal_target_dupe_list_t*>::iterator i;
+  vector<hal_target_dupe_list_t*>::iterator j;
+  vector<hal_target_dupe_list_t*>::iterator k;
+  for (j = dupeList.begin(); j != dupeList.end(); j = k)
+  {
+    k = j;
+    ++k;
+    if (j == dupeList.begin() || 
+        // note that we should eventually clean up overlapping
+        // segments but don't have the energy to do right now, and
+        // have yet to see it actually happen in an example
+        (*j)->tRange->tStart != (*i)->tRange->tStart ||
+        (*j)->tRange->size != (*i)->tRange->size)
+    {
+      i = j;
+    }
+    else
+    {
+      idMap.insert(pair<hal_int_t, hal_int_t>((*j)->id, (*i)->id));
+      // insert this one to make sure we dont remap it down the road
+      idMap.insert(pair<hal_int_t, hal_int_t>((*i)->id, (*i)->id));
+      halFreeTargetDupeLists(*j);
+      *j = NULL;
+      ++deadCount;
+    }
+  }
+
+  for (i = dupeList.begin(); i != dupeList.end(); ++i)
+  {
+    if (*i != NULL)
+    {
+      idMapIt = idMap.find((*i)->id);
+      if (idMapIt != idMap.end())
+      {
+        cout << "map " <<  (*i)->tRange->tStart << " "
+             << (*i)->tRange->size << " " << (*i)->id << " --> "
+             << idMapIt->second << endl;
+        (*i)->id = idMapIt->second;
+      }
+    }
+  }
+
+  // sort based on query coordinate
+  std::sort(dupeList.begin(), dupeList.end(), DupeIdLess());
+
+  // sort puts NULL items at end. we resize them out.
+  dupeList.resize(dupeList.size() - deadCount);
 }
