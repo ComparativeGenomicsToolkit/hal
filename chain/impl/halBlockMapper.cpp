@@ -481,12 +481,18 @@ void BlockMapper::extractSegment(MSSet::iterator start,
       ++next;
     }
     
-    // check if first elements of each class are compatible for a merge
+    // check if all elements of each class are compatible for a merge
     assert(v1->size() > 0 && v2->size() > 0);
-    if (v1->size() == v2->size() && (*v2->at(0))->getSequence() == startSeq &&
-        canMergeBlock(*v1->at(0), *v2->at(0), absRefFirst, absRefLast) && 
-        (paraSet.find(*v1->at(0)) == paraSet.end()) == 
-        (paraSet.find(*v2->at(0)) == paraSet.end()))
+    bool canMerge = v1->size() == v2->size();
+    for (size_t i = 0; i < v1->size() && canMerge; ++i)
+    {    
+      canMerge = 
+         (v1->size() == v2->size() && (*v2->at(i))->getSequence() == startSeq &&
+          canMergeBlock(*v1->at(i), *v2->at(i), absRefFirst, absRefLast) && 
+          (paraSet.find(*v1->at(i)) == paraSet.end()) == 
+          (paraSet.find(*v2->at(i)) == paraSet.end()));
+    }
+    if (canMerge == true)
     {
       // add the next element and flag for deletion from start set
       fragments.push_back(*v2->at(0));

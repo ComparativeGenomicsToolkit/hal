@@ -142,7 +142,7 @@ MappedSegmentConstPtr DefaultMappedSegment::copy() const
 bool DefaultMappedSegment::canMergeRightWith(
   const MappedSegmentConstPtr& next) const
 {
- //return false;
+  //return false;
   SlicedSegmentConstPtr ref = this->getSource();
   SlicedSegmentConstPtr nextRef = next->getSource();
   assert(ref->getReversed() == false);
@@ -170,8 +170,9 @@ bool DefaultMappedSegment::canMergeRightWith(
       qdelta = next->getStartPosition() - this->getEndPosition();
       rdelta = ref->getEndPosition() - nextRef->getStartPosition();
     }
-    else // (this->getReversed() == true && ref->getReversed() == false)
+    else  
     {
+      assert(this->getReversed() == true && ref->getReversed() == false);
       qdelta = next->getEndPosition() - this->getStartPosition();
       rdelta = ref->getStartPosition() - nextRef->getEndPosition();
     }
