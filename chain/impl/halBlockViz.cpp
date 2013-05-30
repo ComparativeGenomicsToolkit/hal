@@ -227,16 +227,6 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     const Genome* qGenome = alignment->openGenome(qSpecies);
     const Genome* tGenome = alignment->openGenome(tSpecies);
     const Sequence* tSequence = tGenome->getSequence(tChrom);
-    // cactus pipeline presently adds species name as prefix of 
-    // sequence name.  check if this caused confusion
-    string sequenceName;
-    if (tSequence == NULL)
-    {
-      sequenceName = tGenome->getName();
-      sequenceName += '.';
-      sequenceName += tChrom;
-      tSequence = tGenome->getSequence(sequenceName);
-    }
 
     hal_index_t myEnd = tEnd > 0 ? tEnd : tSequence->getSequenceLength();
     hal_index_t absStart = tSequence->getStartPosition() + tStart;
@@ -496,21 +486,10 @@ void checkGenomes(int halHandle,
   }
 
   const Sequence* tSequence = tGenome->getSequence(tChrom);
-  // cactus pipeline presently adds species name as prefix of 
-  // sequence name.  check if this caused confusion
-  string sequenceName;
-  if (tSequence == NULL)
-  {
-    sequenceName = tGenome->getName();
-    sequenceName += '.';
-    sequenceName += tChrom;
-    tSequence = tGenome->getSequence(sequenceName);
-  }
   if (tSequence == NULL)
   {
     stringstream ss;
-    ss << "Unable to locate sequence " << tChrom << "(or " << sequenceName 
-       << ") in genome " << tSpecies;
+    ss << "Unable to locate sequence " << tChrom << " in genome " << tSpecies;
     throw hal_exception(ss.str());
   }
 }
