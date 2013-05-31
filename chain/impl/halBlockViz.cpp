@@ -622,6 +622,10 @@ void readBlock(hal_block_t* cur,
   }
 }
 
+struct CStringLess { bool operator()(const char* s1, const char* s2) const {
+  return strcmp(s1, s2) < 0;}
+};
+
 hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
                                            BlockMapper::MSSet& paraSet)
 {
@@ -651,7 +655,8 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
 
   hal_target_dupe_list_t* head = NULL;
   hal_target_dupe_list_t* prev = NULL;
-  int id = 0;
+  map<const char*, hal_int_t, CStringLess> idMap;
+  pair<map<const char*, hal_int_t, CStringLess>::iterator, bool> idRes;
   vector<hal_target_dupe_list_t*>::iterator i;
   vector<hal_target_dupe_list_t*>::iterator j;
   vector<hal_target_dupe_list_t*>::iterator k;
@@ -678,7 +683,8 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
       j = k;
     }
 
-    (*i)->id = id++;
+    idRes = idMap.insert(pair<const char*, hal_int_t>((*i)->qChrom, 0));
+    (*i)->id = idRes.first->second++;
     if (head == NULL)
     {
       head = *i;
