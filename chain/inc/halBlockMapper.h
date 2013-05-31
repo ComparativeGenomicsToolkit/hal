@@ -43,13 +43,11 @@ public:
                               const MSSet& paraSet,                       
                               std::vector<MappedSegmentConstPtr>& fragments,
                               MSSet* startSet,
-                              hal_index_t absRefFirst,
-                              hal_index_t absRefLsat);
+                              const std::set<hal_index_t>& targetCutPoints,
+                              std::set<hal_index_t>& queryCutPoints);
 
-   void extractSegment(MSSet::iterator start, 
-                       const MSSet& paraSet,                       
-                       std::vector<MappedSegmentConstPtr>& fragments,
-                       MSSet* startSet);
+   hal_index_t getAbsRefFirst() const;
+   hal_index_t getAbsRefLast() const;
 
 protected:
    
@@ -66,13 +64,7 @@ protected:
    static bool cutByNext(SlicedSegmentConstPtr queryIt, 
                          SlicedSegmentConstPtr nextSeg,
                          bool right);
-   
-   static bool canMergeBlock(MappedSegmentConstPtr firstQuerySeg, 
-                             MappedSegmentConstPtr lastQuerySeg,
-                             hal_index_t absRefFirst,
-                             hal_index_t absRefLsat);
-
-   
+      
    static bool equalTargetStart(const MappedSegmentConstPtr& s1,
                                 const MappedSegmentConstPtr& s2);
 protected:
@@ -109,7 +101,20 @@ inline bool BlockMapper::equalTargetStart(const MappedSegmentConstPtr& s1,
 {
   hal_index_t p1 = std::min(s1->getStartPosition(), s1->getEndPosition());
   hal_index_t p2 = std::min(s2->getStartPosition(), s2->getEndPosition());
+  assert(p1 != p2 ||
+         std::max(s1->getStartPosition(), s1->getEndPosition()) ==
+         std::max(s2->getStartPosition(), s2->getEndPosition()));
   return p1 == p2;
+}
+
+inline hal_index_t BlockMapper::getAbsRefFirst() const
+{
+  return _absRefFirst;
+}
+
+inline hal_index_t BlockMapper::getAbsRefLast() const
+{
+  return _absRefLast;
 }
 
 }

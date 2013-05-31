@@ -72,7 +72,10 @@ public:
    virtual void flip() const;
    virtual void fullReverse() const;
    virtual MappedSegmentConstPtr copy() const;
-   virtual bool canMergeRightWith(const MappedSegmentConstPtr& next) const;
+   virtual bool canMergeRightWith(
+     const MappedSegmentConstPtr& next,
+     const std::set<hal_index_t>* cutSet,
+     const std::set<hal_index_t>* sourceCutSet) const;
    virtual void print(std::ostream& os) const;
 
 

@@ -528,6 +528,10 @@ hal_block_results_t* readBlocks(const Sequence* tSequence,
   }
   BlockMapper::MSSet& segMap = blockMapper.getMap();
   vector<MappedSegmentConstPtr> fragments;
+  set<hal_index_t> queryCutSet;
+  set<hal_index_t> targetCutSet;
+  targetCutSet.insert(blockMapper.getAbsRefFirst());
+  targetCutSet.insert(blockMapper.getAbsRefLast());
 
   hal_block_results_t* results = 
      (hal_block_results_t*)calloc(1, sizeof(hal_block_results_t));
@@ -545,7 +549,8 @@ hal_block_results_t* readBlocks(const Sequence* tSequence,
     {
       prev->next = cur;
     }
-    blockMapper.extractSegment(segMapIt, paraSet, fragments, &segMap);
+    BlockMapper::extractSegment(segMapIt, paraSet, fragments, &segMap,
+                                targetCutSet, queryCutSet);
     readBlock(cur, fragments, getSequenceString, qGenomeName);
     prev = cur;
   }
@@ -623,6 +628,10 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
   vector<hal_target_dupe_list_t*> tempList;
   vector<MappedSegmentConstPtr> fragments;
   BlockMapper::MSSet emptySet;
+  set<hal_index_t> queryCutSet;
+  set<hal_index_t> targetCutSet;
+  targetCutSet.insert(blockMapper.getAbsRefFirst());
+  targetCutSet.insert(blockMapper.getAbsRefLast());
 
   // make a dupe list for each merged segment
   for (BlockMapper::MSSet::iterator segMapIt = paraSet.begin();
@@ -631,7 +640,9 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
     assert((*segMapIt)->getSource()->getReversed() == false);
     hal_target_dupe_list_t* cur = (hal_target_dupe_list_t*)calloc(
       1, sizeof(hal_target_dupe_list_t));
-    blockMapper.extractSegment(segMapIt, emptySet, fragments, &paraSet);
+    BlockMapper::extractSegment(segMapIt, emptySet, fragments, &paraSet,
+                                targetCutSet, queryCutSet);
+    //fragments.clear(); fragments.push_back(*segMapIt);
     readTargetRange(cur, fragments);
     tempList.push_back(cur);
   }
@@ -658,7 +669,7 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
       assert(j != i);
       k = j;
       ++k;
-      //assert((*j)->tRange->size == (*i)->tRange->size);
+      assert((*j)->tRange->size == (*i)->tRange->size);
       (*j)->tRange->next = (*i)->tRange;
       (*i)->tRange = (*j)->tRange;
       (*j)->tRange = NULL;
@@ -762,6 +773,7 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
         // note that we should eventually clean up overlapping
         // segments but don't have the energy to do right now, and
         // have yet to see it actually happen in an example
+        strcmp((*j)->qChrom, (*i)->qChrom) != 0 ||
         (*j)->tRange->tStart != (*i)->tRange->tStart ||
         (*j)->tRange->size != (*i)->tRange->size)
     {

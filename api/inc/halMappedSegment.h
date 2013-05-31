@@ -54,8 +54,12 @@ public:
    virtual MappedSegmentConstPtr copy() const = 0;
 
    /** Test if mapped segment can be merged to the right with input 
-    * segment */
-   virtual bool canMergeRightWith(const MappedSegmentConstPtr& next) const = 0;
+    * segment.  will return false if the right coordinate of this is in
+    * either (optional) cutSet.*/
+   virtual bool canMergeRightWith(
+     const MappedSegmentConstPtr& next,
+     const std::set<hal_index_t>* cutSet = NULL,
+     const std::set<hal_index_t>* sourceCutSet = NULL) const = 0;
 
    /** Functor for sorted STL containers, sorting by origin as primary 
     * index */

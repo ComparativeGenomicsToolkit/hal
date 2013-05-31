@@ -69,12 +69,14 @@ void BlockLiftover::liftInterval()
   cleanTargetParalogies();
   vector<MappedSegmentConstPtr> fragments;
   BlockMapper::MSSet emptySet;
+  set<hal_index_t> queryCutSet;
+  set<hal_index_t> targetCutSet;
   
   for (std::set<MappedSegmentConstPtr>::iterator i = _mappedSegments.begin();
        i != _mappedSegments.end(); ++i)
   {
     BlockMapper::extractSegment(i, emptySet, fragments, &_mappedSegments, 
-                                NULL_INDEX, NULL_INDEX);
+                                targetCutSet, queryCutSet);
 
     const Sequence* seq = (*i)->getSequence();
     hal_size_t seqStart = seq->getStartPosition();

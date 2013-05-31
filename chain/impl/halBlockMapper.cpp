@@ -136,7 +136,7 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
     }
     j = i;
     ++j;
-    if (_adjSet.find(*i) == _adjSet.end())
+    // if (_adjSet.find(*i) == _adjSet.end())
     {
       while (j != _segSet.end())
       {
@@ -173,6 +173,20 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
     }
     i = j;
   }
+
+#ifndef _NDEBUG
+  for (i = _segSet.begin(); i != _segSet.end(); ++i)
+  {
+    j = i;
+    ++j;
+    if (j!= _segSet.end())
+    {
+      iEnd = max((*i)->getEndPosition(), (*i)->getStartPosition());
+      jStart = min((*j)->getStartPosition(), (*j)->getEndPosition());
+      assert(jStart > iEnd);
+    }
+  }
+#endif
 }
 
   
@@ -425,18 +439,9 @@ bool BlockMapper::cutByNext(SlicedSegmentConstPtr queryIt,
 void BlockMapper::extractSegment(MSSet::iterator start, 
                                  const MSSet& paraSet,
                                  vector<MappedSegmentConstPtr>& fragments,
-                                 MSSet* startSet)
-{
-  extractSegment(start, paraSet, fragments, startSet, _absRefFirst,
-                 _absRefLast);
-}
-
-void BlockMapper::extractSegment(MSSet::iterator start, 
-                                 const MSSet& paraSet,
-                                 vector<MappedSegmentConstPtr>& fragments,
                                  MSSet* startSet,
-                                 hal_index_t absRefFirst,
-                                 hal_index_t absRefLast)
+                                 const set<hal_index_t>& targetCutPoints,
+                                 set<hal_index_t>& queryCutPoints)
 {
   fragments.clear();
   fragments.push_back(*start);
@@ -451,21 +456,11 @@ void BlockMapper::extractSegment(MSSet::iterator start,
   v1->push_back(start);
   MSSet::iterator next = start;
   ++next;
-/*
-  cout << "start " << (*start)->getStartPosition() << " " 
-       << (*start)->getEndPosition() << endl;
-  cout << "      " << (*start)->getSource()->getStartPosition() << " " 
-       << (*start)->getSource()->getEndPosition() << endl;
-  if (next != startSet->end()) {
-  cout << "next " << (*next)->getStartPosition() << " " 
-       << (*next)->getEndPosition() << endl;
-  cout << "     " << (*next)->getSource()->getStartPosition() << " " 
-       << (*next)->getSource()->getEndPosition() << endl;
-  }
-*/
+
   // equivalence class based on start set
   while (next != startSet->end() && equalTargetStart(*v1->back(), *next))
   {
+    assert((*next)->getLength() == (*v1->back())->getLength());
     v1->push_back(next);
     ++next;
   }
@@ -477,6 +472,7 @@ void BlockMapper::extractSegment(MSSet::iterator start,
            (v2->empty() || equalTargetStart(*v2->back(), *next)) &&
            v2->size() < v1->size())
     {
+      assert(v2->empty() || (*next)->getLength() == (*v2->back())->getLength());
       v2->push_back(next);
       ++next;
     }
@@ -488,7 +484,8 @@ void BlockMapper::extractSegment(MSSet::iterator start,
     {    
       canMerge = 
          (v1->size() == v2->size() && (*v2->at(i))->getSequence() == startSeq &&
-          canMergeBlock(*v1->at(i), *v2->at(i), absRefFirst, absRefLast) && 
+          (*v1->at(i))->canMergeRightWith(*v2->at(i), &queryCutPoints,
+                                          &targetCutPoints) && 
           (paraSet.find(*v1->at(i)) == paraSet.end()) == 
           (paraSet.find(*v2->at(i)) == paraSet.end()));
     }
@@ -505,23 +502,21 @@ void BlockMapper::extractSegment(MSSet::iterator start,
     v1->clear();
     swap(v1, v2);
   }
-
+  
+  // we extracted a paralgous region along query coordinates.  we 
+  // add its right query coordinate to the cutset to make sure none
+  // of the other paralogs ever get merged beyond it.
+  if (v1->size() > 1)
+  {
+    queryCutPoints.insert(max(fragments.back()->getStartPosition(),
+                              fragments.back()->getEndPosition()));
+  }
+   
   for (size_t i = 0; i < toErase.size(); ++i)
   {
     startSet->erase(toErase[i]);
   }
+
   assert(fragments.front()->getSequence() == fragments.back()->getSequence());
 }
 
-bool BlockMapper::canMergeBlock(MappedSegmentConstPtr query, 
-                                MappedSegmentConstPtr nextQuery,
-                                hal_index_t absRefFirst,
-                                hal_index_t absRefLast)
-{
-  if (nextQuery->getStartPosition() == absRefFirst ||
-      query->getEndPosition() == absRefLast)
-  {
-    return false;
-  }
-  return query->canMergeRightWith(nextQuery);
-}

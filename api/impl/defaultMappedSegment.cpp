@@ -140,15 +140,20 @@ MappedSegmentConstPtr DefaultMappedSegment::copy() const
 }
 
 bool DefaultMappedSegment::canMergeRightWith(
-  const MappedSegmentConstPtr& next) const
+  const MappedSegmentConstPtr& next,
+  const set<hal_index_t>* cutSet,
+  const set<hal_index_t>* sourceCutSet) const
 {
   //return false;
+  bool ret = false;
   SlicedSegmentConstPtr ref = this->getSource();
   SlicedSegmentConstPtr nextRef = next->getSource();
   assert(ref->getReversed() == false);
   assert(nextRef->getReversed() == false);
   assert(ref->getSequence() == nextRef->getSequence());
   assert(this->getGenome() == next->getGenome());
+  hal_index_t sourceCut;
+  hal_index_t cut;
 
   if (this->getReversed() == next->getReversed() &&
       ref->getReversed() == nextRef->getReversed())
@@ -159,27 +164,49 @@ bool DefaultMappedSegment::canMergeRightWith(
     {
       qdelta = next->getStartPosition() - this->getEndPosition();
       rdelta = nextRef->getStartPosition() - ref->getEndPosition();
+      cut = this->getEndPosition();
+      sourceCut = ref->getEndPosition();
     }
     else if (this->getReversed() == true && ref->getReversed() == true)
     {
       qdelta = next->getEndPosition() - this->getStartPosition();
       rdelta = nextRef->getStartPosition() - ref->getEndPosition();
+      cut = this->getStartPosition();
+      sourceCut = ref->getEndPosition();
     }
     else if (this->getReversed() == false && ref->getReversed() == true)
     {
       qdelta = next->getStartPosition() - this->getEndPosition();
       rdelta = ref->getEndPosition() - nextRef->getStartPosition();
+      cut = this->getEndPosition();
+      sourceCut = nextRef->getStartPosition();
     }
     else  
     {
       assert(this->getReversed() == true && ref->getReversed() == false);
       qdelta = next->getEndPosition() - this->getStartPosition();
       rdelta = ref->getStartPosition() - nextRef->getEndPosition();
+      cut = this->getStartPosition();
+      sourceCut = nextRef->getEndPosition();
     }
     //assert(qdelta >= 0);
-    return qdelta == 1 && rdelta == 1;
+    ret = qdelta == 1 && rdelta == 1;
   }
-  return false;
+  
+  if (ret == true)
+  {
+    if (sourceCutSet != NULL && 
+        sourceCutSet->find(sourceCut) != sourceCutSet->end())
+    {
+      ret = false;
+    }
+    else if (cutSet != NULL && 
+             cutSet->find(cut) != cutSet->end())
+    {
+      ret = false;
+    }
+  }
+  return ret;
 }
 
 void DefaultMappedSegment::print(ostream& os) const
