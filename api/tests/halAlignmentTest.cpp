@@ -147,6 +147,8 @@ void AlignmentTestBadPathError::createCallBack(hal::AlignmentPtr alignment)
 
 void AlignmentTestBadPathError::checkCallBack(hal::AlignmentConstPtr alignment)
 {
+#ifndef ENABLE_UDC
+  // note: udc just exits here so test wont work
   string badPath(_checkPath);
   badPath += "blarg";
   try {
@@ -157,6 +159,7 @@ void AlignmentTestBadPathError::checkCallBack(hal::AlignmentConstPtr alignment)
     return;
   }
   CuAssertTrue(_testCase, false);
+#endif
 }
 
 void halAlignmentTestTrees(CuTest *testCase)
