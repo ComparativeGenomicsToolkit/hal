@@ -253,9 +253,9 @@ def writeGenomesFile(genome2seq2len, halfile, options, outdir):
     if options.lodInMemory is True:
         options.lodOpts += '--inMemory '
     if len(options.lodOpts) > 0:
-        options.lodOpts += '--trans '
         options.lod = True
     if options.lod:
+        options.lodOpts += '--trans '
         lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
     
     filename = os.path.join(outdir, "genomes.txt")
