@@ -135,8 +135,8 @@ void LodGraph::scanGenome(const Genome* genome)
 
 bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
 {
+  _deltas.resize(0);
   // check that block has not already been added.
-  hal_size_t deltaMax = 0;
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
   ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
   bool breakOut = false;
@@ -157,38 +157,44 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
         SegmentSet::value_compare segPLess = segmentSet->key_comp();
         if (si == segmentSet->end())
         {
-          deltaMax = numeric_limits<hal_size_t>::max();
           breakOut = true;
         }
         else if (!segPLess(&segment, *si))
         {
-          assert(deltaMax == 0);
+          assert(_deltas.empty() || _deltas.back() == 0);
           breakOut = true;
         }
         else
         {
-          deltaMax = std::max(deltaMax, 
-                              (hal_size_t)std::abs((*si)->getLeftPos() - 
-                                                   segment.getLeftPos()));
+          _deltas.push_back((hal_size_t)std::abs((*si)->getLeftPos() - 
+                                                 segment.getLeftPos()));
           if (si != segmentSet->begin())
           {
             --si;
-            deltaMax = std::max(deltaMax, 
-                                (hal_size_t)std::abs((*si)->getLeftPos() - 
-                                                     segment.getLeftPos()));
+            _deltas.push_back((hal_size_t)std::abs((*si)->getLeftPos() - 
+                                                   segment.getLeftPos()));
           }
         }
       }
     }
   }
-  bool canAdd = deltaMax > 0;
-  hal_index_t refPos = colIt->getReferenceSequencePosition();
-  if (canAdd == true && refPos != 0 && (hal_size_t)refPos != 
-      colIt->getReferenceSequence()->getSequenceLength())
+  if (_deltas.empty())
   {
-    canAdd = deltaMax  >= _step / 2;
-
-    // other heuristics here?
+    _deltas.push_back(0);
+  }
+  std::sort(_deltas.begin(), _deltas.end());
+  assert(_deltas.front() > 0 || _deltas.back() == 0);
+  // compare against median delta value.  using the minumum delta
+  // seems to be too conservative especially for nodes with many children,
+  // and using the maximum delta is too agressive resulting in lots of
+  // gaps.  hoping the median falls somewhere in between. 
+  hal_size_t delta = _deltas[_deltas.size() / 2];
+  hal_index_t refPos = colIt->getReferenceSequencePosition();
+  bool canAdd = _deltas.back() > 0;
+  if (canAdd == true && refPos != 0 && (hal_size_t)refPos !=
+      colIt->getReferenceSequence()->getSequenceLength() - 1)
+  {
+    canAdd = delta >= _step / 2;
   }
   return canAdd;
 }
