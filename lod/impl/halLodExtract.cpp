@@ -308,6 +308,7 @@ void LodExtract::writeSequences(const Genome* inParent,
   vector<const Genome*> inGenomes = inChildren;
   inGenomes.push_back(inParent);
   const Genome* outParent = _outAlignment->openGenome(inParent->getName());
+  (void)outParent;
   assert(outParent != NULL && outParent->getNumBottomSegments() > 0);
   string buffer;
 
@@ -414,6 +415,7 @@ void LodExtract::writeUnsampledSequence(const Sequence* outSequence,
     top->setParentIndex(NULL_INDEX);
     top->setParentReversed(false);
     top->setNextParalogyIndex(NULL_INDEX);
+    top->setBottomParseIndex(NULL_INDEX);
   }
   else
   {
@@ -426,6 +428,7 @@ void LodExtract::writeUnsampledSequence(const Sequence* outSequence,
       bottom->setChildIndex(childNum, NULL_INDEX);
       bottom->setChildReversed(childNum, false);
     }
+    bottom->setTopParseIndex(NULL_INDEX);
   }
 }
 
