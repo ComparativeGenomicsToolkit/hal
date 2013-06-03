@@ -579,7 +579,8 @@ DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position)
 
 DNAIteratorConstPtr HDF5Genome::getDNAIterator(hal_index_t position) const
 {
-  assert(position / 2 <= (hal_index_t)_dnaArray.getSize());
+  assert(_dnaArray.getSize() == 0 || 
+         position / 2 <= (hal_index_t)_dnaArray.getSize());
   HDF5Genome* genome = const_cast<HDF5Genome*>(this);
   const HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, position);
   return DNAIteratorConstPtr(newIt);
