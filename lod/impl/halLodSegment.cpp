@@ -154,6 +154,7 @@ void LodSegment::mergeHead()
   assert(segToMerge->getTailAdj() == this);
   bool newHeadToTail = segToMerge->getHeadToTail();
   hal_size_t segToMergeHeadAdjLen = segToMerge->getHeadAdjLen();
+  (void)segToMergeHeadAdjLen;
   hal_size_t segToMergeLen = segToMerge->getLength();
   _headAdj = newHeadAdj;
   if (newHeadToTail)
