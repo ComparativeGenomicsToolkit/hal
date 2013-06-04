@@ -88,13 +88,15 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
         return os.path.relpath(outHalPath, os.path.dirname(outLodPath))
 
 # Run halLodExtract for each level of detail.
-def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
-               maxDNA, absPath, trans, inMemory, probeFrac):
+def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
+               maxDNA, absPath, trans, inMemory, probeFrac, scaleCorFac):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
-    steps = getSteps(halPath, maxBlock, scaleFactor)
+    steps = getSteps(halPath, maxBlock, scale)
+    curStepFactor = scaleCorFac
     for stepIdx in xrange(1,len(steps)):
-        step = steps[stepIdx]
+        step = max(1, steps[stepIdx] * curStepFactor)
+        curStepFactor *= curStepFactor
         prevStep = steps[stepIdx - 1]
         maxQueryLength = maxBlock * prevStep
         keepSequences = maxQueryLength <= maxDNA
@@ -166,6 +168,11 @@ def main(argv=None):
                         " to sample while looking for most aligned column. "
                         "Use default from halLodExtract if not set.",                
                         type=float, default=None)
+    parser.add_argument("--scaleCorFac", help="Correction factor for scaling. "
+                        " Assume that scaling by (X * scaleCorFactor) is "
+                        " required to reduce the number of blocks by X.",
+                        type=float, default=1.3)
+
         
     args = parser.parse_args()
 
@@ -178,13 +185,15 @@ def main(argv=None):
         args.outHalDir = os.path.dirname(args.hal)
     if not os.path.isdir(args.outHalDir):
         raise RuntimeError("Invalid output directory %s" % args.outHalDir)
+    assert args.scaleCorFac > 0
 
     if args.maxDNA < 0:
         args.maxDNA = sys.maxint
 
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, args.overwrite, args.maxDNA,
-               args.absPath, args.trans, args.inMemory, args.probeFrac)
+               args.absPath, args.trans, args.inMemory, args.probeFrac,
+               args.scaleCorFac)
     
 if __name__ == "__main__":
     sys.exit(main())
