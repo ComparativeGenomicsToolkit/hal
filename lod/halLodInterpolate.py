@@ -94,11 +94,10 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scale)
     curStepFactor = scaleCorFac
+    prevStep = None
     for stepIdx in xrange(1,len(steps)):
         step = int(max(1, steps[stepIdx] * curStepFactor))
-        curStepFactor *= curStepFactor
-        prevStep = steps[stepIdx - 1]
-        maxQueryLength = maxBlock * prevStep
+        maxQueryLength = maxBlock * steps[stepIdx - 1]
         keepSequences = maxQueryLength <= maxDNA
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
         srcPath = halPath
@@ -110,6 +109,8 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
+        prevStep = step
+        curStepFactor *= curStepFactor
     lodFile.close()
     
 def main(argv=None):
