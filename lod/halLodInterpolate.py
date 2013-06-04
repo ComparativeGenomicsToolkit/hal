@@ -95,7 +95,7 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
     steps = getSteps(halPath, maxBlock, scale)
     curStepFactor = scaleCorFac
     for stepIdx in xrange(1,len(steps)):
-        step = max(1, steps[stepIdx] * curStepFactor)
+        step = int(max(1, steps[stepIdx] * curStepFactor))
         curStepFactor *= curStepFactor
         prevStep = steps[stepIdx - 1]
         maxQueryLength = maxBlock * prevStep
