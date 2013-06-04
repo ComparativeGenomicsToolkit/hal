@@ -149,7 +149,7 @@ def main(argv=None):
                         " will not contain sequence information.  -1 can be "
                         "used to specify that all levels will get sequence",
                         type=int,
-                        default=50000)
+                        default=0)
     parser.add_argument("--absPath",
                         help="write absolute path of created HAL files in the"
                         " outLodFile.  By default, the paths are relative to "
@@ -159,9 +159,6 @@ def main(argv=None):
                         "X-1.  By default, all levels of detail are generated "
                         "from the original HAL (X=0)",
                         action="store_true", default=False)
-    parser.add_argument("--keepSequencesBelow",
-                        help="",
-                        type=int, default=0)
     parser.add_argument("--inMemory", help="Load entire hdf5 arrays into "
                         "memory, overriding cache.",
                         action="store_true", default=False)
