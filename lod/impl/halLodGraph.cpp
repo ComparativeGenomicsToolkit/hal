@@ -14,7 +14,7 @@
 using namespace std;
 using namespace hal;
 
-LodGraph::LodGraph() : _extendFraction(1.0)
+LodGraph::LodGraph() : _extendFraction(1.0), _numProbe(5)
 {
 
 }
@@ -85,6 +85,7 @@ void LodGraph::scanGenome(const Genome* genome)
   SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
   SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
   hal_index_t lastSampledPos = 0;
+  hal_index_t fracStep = std::max((hal_index_t)1, (hal_index_t)_step / 2);
   for (; seqIt != seqEnd; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
@@ -105,37 +106,54 @@ void LodGraph::scanGenome(const Genome* genome)
         if (pos > 0 && pos + (hal_index_t)_step >= (hal_index_t)len)
         {
           pos =  (hal_index_t)len - 1;
-        }      
-        // better to move column iterator rather than getting each time?
-        // -- probably not because we have to worry about dupe cache
-        ColumnIteratorConstPtr colIt = 
-           sequence->getColumnIterator(&_genomes, 0, pos);
-        assert(colIt->getReferenceSequencePosition() == pos);
-      
-        // scan up to here trying to find a column we're happy to add
-        hal_index_t maxTry = std::min(pos + (hal_index_t)_step / 2, 
-                                      (hal_index_t)len - 1);     
-        hal_index_t tryPos = NULL_INDEX; 
+        }   
+
+        // scan range trying to find genome to add
+        hal_index_t minTry = std::max((hal_index_t)0, pos - fracStep);
+        hal_index_t maxTry = std::min(pos + fracStep, (hal_index_t)len - 1);
+        hal_index_t probeStep = std::max((hal_size_t)1, 
+                                         (maxTry - minTry) / (_numProbe + 1));
+        hal_index_t bestPos = NULL_INDEX;
+        hal_size_t maxNumGenomes = 0;
+        hal_size_t maxDelta = 0;      
+        hal_index_t tryPos = minTry;
+        ColumnIteratorConstPtr colIt; 
         do 
         {
-          tryPos = colIt->getReferenceSequencePosition();
-          bool canAdd = canAddColumn(colIt);
-          if (canAdd)
+          colIt = sequence->getColumnIterator(&_genomes, 0, tryPos);
+          assert(colIt->getReferenceSequencePosition() == tryPos);
+          hal_size_t delta;
+          hal_size_t numGenomes;
+          evaluateColumn(colIt, delta, numGenomes);
+          if (delta > _step)
           {
-            createColumn(colIt);
-            break;
+            if (numGenomes > maxNumGenomes || (numGenomes == maxNumGenomes &&
+                                               delta > maxDelta))
+            {
+              bestPos = tryPos;
+              maxDelta = delta;
+              maxNumGenomes = numGenomes;
+            }
           }
-          colIt->toRight();
+          tryPos += probeStep;
         } 
-        while (colIt->lastColumn() == false && tryPos < maxTry);      
+        while (colIt->lastColumn() == false && tryPos < maxTry );
+        if (bestPos != NULL_INDEX)
+        {
+          colIt = sequence->getColumnIterator(&_genomes, 0, bestPos);
+          createColumn(colIt);
+        }
       }
     }
   }
 }
 
-bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
+void LodGraph::evaluateColumn(ColumnIteratorConstPtr colIt,
+                              hal_size_t& outDeltaMax,
+                              hal_size_t& outNumGenomes)
 {
-  hal_size_t deltaMax = 0;
+  outDeltaMax = 0;
+  set<const Genome*> genomeSet;
   // check that block has not already been added.
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
   ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
@@ -145,6 +163,10 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
     const ColumnIterator::DNASet* dnaSet = colMapIt->second;
     const Sequence* sequence = colMapIt->first;
     ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
+    if (!dnaSet->empty())
+    {
+      genomeSet.insert(sequence->getGenome());
+    }
     for (; dnaIt != dnaSet->end() && !breakOut; ++dnaIt)
     {
       hal_index_t pos = (*dnaIt)->getArrayIndex();
@@ -157,11 +179,12 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
         SegmentSet::value_compare segPLess = segmentSet->key_comp();
         if (si == segmentSet->end())
         {
+          outDeltaMax = numeric_limits<hal_size_t>::max();
           breakOut = true;
         }
         else if (!segPLess(&segment, *si))
         {
-          assert(deltaMax == 0);
+          assert(outDeltaMax == 0);
           breakOut = true;
         }
         else
@@ -179,20 +202,12 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
           {
             delta *= 2;
           }
-          deltaMax = std::max(deltaMax, delta);
+          outDeltaMax = std::max(outDeltaMax, delta);
         }
       }
     }
   }
-  hal_index_t refPos = colIt->getReferenceSequencePosition();
-  bool canAdd = deltaMax > 0;
-  if (canAdd == true && refPos != 0 && (hal_size_t)refPos !=
-      colIt->getReferenceSequence()->getSequenceLength() - 1)
-  {
-    // .75 to bias a little against gaps
-    canAdd = deltaMax > _step *.75;
-  }
-  return canAdd;
+  outNumGenomes = genomeSet.size();
 }
 
 void LodGraph::addTelomeres(const Sequence* sequence)

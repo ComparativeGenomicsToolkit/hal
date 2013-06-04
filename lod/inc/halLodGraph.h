@@ -63,9 +63,11 @@ protected:
    /** Read a HAL genome into sequence graph */
    void scanGenome(const Genome* genome);
 
-   /** Test if we can add a column.  Does it collide?  does it fail 
-    * heuristics? */
-   bool canAddColumn(ColumnIteratorConstPtr colIt);
+   /** Check maxium distance of this column to any other sampled position.
+    * Also count the number of genomes it aligns to.  This information
+    * will be used to prioritize probed columns*/
+   void evaluateColumn(ColumnIteratorConstPtr colIt, hal_size_t& outDeltaMax,
+                       hal_size_t& outNumGenomes);
 
    /** Add segments for the telomeres of the sequence, ie at 
     * position -1 and and endPosition + 1 */
@@ -115,6 +117,10 @@ protected:
 
    // sample all sequences no matter how small they are
    bool _allSequences;
+
+   // number of probe positions to try in range
+   // [pos - step / 2, pos + step / 2] before accepting column
+   hal_size_t _numProbe;
 };
 
 inline const LodBlock* LodGraph::getBlock(hal_size_t index) const
