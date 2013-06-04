@@ -46,13 +46,15 @@ static AlignmentConstPtr getExistingAlignment(int handle,
                                               bool needSequence);
 static char* copyCString(const string& inString);
 
-static hal_block_results_t* readBlocks(const Sequence* tSequence,
+static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
+                                       const Sequence* tSequence,
                                        hal_index_t absStart, hal_index_t absEnd,
                                        const Genome* qGenome, 
                                        bool getSequenceString,
                                        bool doDupes);
 
-static void readBlock(hal_block_t* cur, 
+static void readBlock(AlignmentConstPtr seqAlignment,
+                      hal_block_t* cur, 
                       vector<MappedSegmentConstPtr>& fragments,                                        bool getSequenceString, const string& genomeName);
 
 static hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
@@ -220,8 +222,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
       throw hal_exception(ss.str());
     }
     AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, hal_size_t(rangeLength), 
-                            getSequenceString != 0);
+       getExistingAlignment(halHandle, hal_size_t(rangeLength), false);
     checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
 
     const Genome* qGenome = alignment->openGenome(qSpecies);
@@ -235,18 +236,29 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     {
       throw hal_exception("Invalid range");
     }
+    if (absEnd > tSequence->getEndPosition())
+    {
+      throw hal_exception("Target end position outside of target sequence");
+    }
     // We now know the query length so we can do a proper lod query
     if (tEnd == 0)
     {
       alignment = getExistingAlignment(halHandle, absEnd - absStart, 
-                                       getSequenceString != 0);
+                                       false);
       checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
       qGenome = alignment->openGenome(qSpecies);
       tGenome = alignment->openGenome(tSpecies);
       tSequence = tGenome->getSequence(tSequence->getName());
     }
 
-    results = readBlocks(tSequence, absStart, absEnd, qGenome,
+    AlignmentConstPtr seqAlignment;
+    if (getSequenceString != 0)
+    {
+      seqAlignment = getExistingAlignment(halHandle, absEnd - absStart, 
+                                          true);
+    }
+
+    results = readBlocks(seqAlignment, tSequence, absStart, absEnd, qGenome,
                          getSequenceString != 0, doDupes != 0);
   }
   catch(exception& e)
@@ -510,7 +522,8 @@ char* copyCString(const string& inString)
   return outString;
 }
 
-hal_block_results_t* readBlocks(const Sequence* tSequence,
+hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
+                                const Sequence* tSequence,
                                 hal_index_t absStart, hal_index_t absEnd,
                                 const Genome* qGenome, bool getSequenceString,
                                 bool doDupes)
@@ -551,7 +564,7 @@ hal_block_results_t* readBlocks(const Sequence* tSequence,
     }
     BlockMapper::extractSegment(segMapIt, paraSet, fragments, &segMap,
                                 targetCutSet, queryCutSet);
-    readBlock(cur, fragments, getSequenceString, qGenomeName);
+    readBlock(seqAlignment, cur, fragments, getSequenceString, qGenomeName);
     prev = cur;
   }
   if (!paraSet.empty())
@@ -561,7 +574,8 @@ hal_block_results_t* readBlocks(const Sequence* tSequence,
   return results;
 }
 
-void readBlock(hal_block_t* cur,  
+void readBlock(AlignmentConstPtr seqAlignment,
+               hal_block_t* cur,  
                vector<MappedSegmentConstPtr>& fragments, 
                bool getSequenceString, const string& genomeName)
 {
@@ -612,7 +626,25 @@ void readBlock(hal_block_t* cur,
   cur->sequence = NULL;
   if (getSequenceString != 0)
   {
-    qSequence->getSubString(dnaBuffer, cur->qStart, cur->size);
+    const Genome* qSeqGenome = 
+       seqAlignment->openGenome(qSequence->getGenome()->getName());
+    if (qSeqGenome == NULL)
+    {
+      stringstream ss;
+      ss << "Unable to open genome " << qSequence->getGenome()->getName() 
+         << " for DNA sequence extraction";
+      throw hal_exception(ss.str());
+    }
+    const Sequence* qSeqSequence = qSeqGenome->getSequence(qSequence->getName());
+    if (qSeqSequence == NULL)
+    {
+      stringstream ss;
+      ss << "Unable to open sequence " << qSequence->getName() 
+         << " for DNA sequence extraction";
+      throw hal_exception(ss.str());
+    }
+    
+    qSeqSequence->getSubString(dnaBuffer, cur->qStart, cur->size);
     if (cur->strand == '-')
     {
       reverseComplement(dnaBuffer);

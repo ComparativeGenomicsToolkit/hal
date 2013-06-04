@@ -43,18 +43,22 @@ public:
                          CLParserConstPtr options = CLParserConstPtr());
 
    AlignmentConstPtr getAlignment(hal_size_t queryLength, 
-                                  bool needDNA) const;
+                                  bool needDNA);
    
 protected:
 
    std::string resolvePath(const std::string& lodPath, 
                            const std::string& halPath);
    void checkMap(const std::string& lodPath);
-   typedef std::map<hal_size_t, AlignmentConstPtr> AlignmentMap;
+   void checkAlignment(hal_size_t minQuery, const std::string& path,
+                       AlignmentConstPtr alignment);
 
+   typedef std::pair<std::string, AlignmentConstPtr> PathAlign;
+   typedef std::map<hal_size_t, PathAlign> AlignmentMap;
+
+   CLParserConstPtr _options;
    AlignmentMap _map;
    hal_size_t _coarsestLevelWithSeq;
-
 };
 
 HAL_FORWARD_DEC_CLASS(LodManager)
