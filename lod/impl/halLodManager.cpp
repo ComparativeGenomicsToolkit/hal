@@ -88,16 +88,8 @@ void LodManager::loadLODFile(const string& lodPath,
       throw hal_exception(emes.str());
     }
     string fullHalPath = resolvePath(lodPath, path);
-    ifstream alignmentFile(fullHalPath.c_str());
-    if (!alignmentFile.good())
-    {
-      stringstream ss;
-      ss << "Error opening LOD " << fullHalPath;
-      throw hal_exception(ss.str());
-    }
     _map.insert(pair<hal_size_t, PathAlign>(
                   minLen, PathAlign(fullHalPath, AlignmentConstPtr())));
-    alignmentFile.close();
     ++lineNum;
   }
 
@@ -109,16 +101,8 @@ void LodManager::loadSingeHALFile(const string& halPath,
 {
   _map.clear();
   _coarsestLevelWithSeq = 0;
-  ifstream alignmentFile(halPath.c_str());
-  if (!alignmentFile.good())
-  {
-    stringstream ss;
-    ss << "Error opening HAL file " << halPath;
-    throw hal_exception(ss.str());
-  }
   _map.insert(pair<hal_size_t, PathAlign>(
                 0, PathAlign(halPath, AlignmentConstPtr())));
-  alignmentFile.close();
   checkMap(halPath);
 }
 
