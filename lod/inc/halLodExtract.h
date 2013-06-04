@@ -40,7 +40,8 @@ public:
                                     const std::string& tree,
                                     const std::string& rootName,
                                     bool keepSequences,
-                                    bool allSequences);
+                                    bool allSequences,
+                                    double probeFrac);
    
    
 protected:
@@ -80,6 +81,7 @@ protected:
    LodGraph _graph;
    bool _keepSequences;
    bool _allSequences;
+   double _probeFrac;
 };
 
 }

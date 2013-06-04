@@ -23,12 +23,15 @@ from hal.stats.halStats import getHalNumSegments
 from hal.stats.halStats import getHalStats
 
 # Wrapper for halLodExtract
-def runHalLodExtract(inHalPath, outHalPath, step, keepSeq, inMemory):
+def runHalLodExtract(inHalPath, outHalPath, step, keepSeq, inMemory,
+                     probeFrac):
     cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
     if keepSeq:
         cmd += " --keepSequences"
     if inMemory:
         cmd += " --inMemory"
+    if probeFrac:
+        cmd += " --probeFrac %f" % probeFrac
     runShellCommand(cmd)
 
 # All created paths get put in the same place using the same logic
@@ -86,7 +89,7 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
 
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
-               maxDNA, absPath, trans, inMemory):
+               maxDNA, absPath, trans, inMemory, probeFrac):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scaleFactor)
@@ -100,7 +103,8 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
         if trans is True and stepIdx > 1:
             srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
         if overwrite is True or not os.path.isfile(outHalPath):            
-            runHalLodExtract(srcPath, outHalPath, step, keepSequences, inMemory)
+            runHalLodExtract(srcPath, outHalPath, step, keepSequences, inMemory,
+                             probeFrac)
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
@@ -158,7 +162,10 @@ def main(argv=None):
     parser.add_argument("--inMemory", help="Load entire hdf5 arrays into "
                         "memory, overriding cache.",
                         action="store_true", default=False)
-
+    parser.add_argument("--probeFrac", help="Fraction of bases in step-interval"
+                        " to sample while looking for most aligned column. "
+                        "Use default from halLodExtract if not set.",                
+                        type=float, default=None)
         
     args = parser.parse_args()
 
@@ -177,7 +184,7 @@ def main(argv=None):
 
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, args.overwrite, args.maxDNA,
-               args.absPath, args.trans, args.inMemory)
+               args.absPath, args.trans, args.inMemory, args.probeFrac)
     
 if __name__ == "__main__":
     sys.exit(main())

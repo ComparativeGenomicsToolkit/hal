@@ -23,6 +23,10 @@ static CLParserPtr initParser()
                            "Phylogenetic tree of output HAL file.  Must "
                            "contain only genomes from the input HAL file. "
                            "(input\'s tree used if empty)", "\"\"");
+  optionsParser->addOption("probeFrac", 
+                           "Fraction of bases in step-interval to sample while "
+                           "looking for most aligned column.",
+                           0.01);
   optionsParser->addOptionFlag("keepSequences",
                                "Write the sequence strings to the output "
                                "file.", false);
@@ -46,6 +50,7 @@ int main(int argc, char** argv)
   hal_size_t step;
   bool keepSequences;
   bool allSequences;
+  double probeFrac;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -56,6 +61,7 @@ int main(int argc, char** argv)
     step = optionsParser->getArgument<hal_size_t>("step");
     keepSequences = optionsParser->getFlag("keepSequences");
     allSequences = optionsParser->getFlag("allSequences");
+    probeFrac = optionsParser->getOption<double>("probeFrac");
   }
   catch(exception& e)
   {
@@ -96,7 +102,8 @@ int main(int argc, char** argv)
     LodExtract lodExtract;
     lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
                                            step, outTree, rootName,
-                                           keepSequences, allSequences);
+                                           keepSequences, allSequences,
+                                           probeFrac);
   }
 /*  catch(hal_exception& e)
   {

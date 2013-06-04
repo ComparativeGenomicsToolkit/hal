@@ -41,7 +41,7 @@ public:
     * is:  every step bases are sampled.  */
    void build(AlignmentConstPtr alignment, const Genome* parent,
               const std::vector<const Genome*>& children, 
-              hal_size_t step, bool allSequences);
+              hal_size_t step, bool allSequences, double probeFrac);
 
    /** Help debuggin and tuning */
    void printDimensions(std::ostream& os) const;
@@ -118,9 +118,10 @@ protected:
    // sample all sequences no matter how small they are
    bool _allSequences;
 
-   // number of probe positions to try in range
+   // number of probe positions to try in range as fraction of the
+   // step size
    // [pos - step / 2, pos + step / 2] before accepting column
-   hal_size_t _numProbe;
+   double _probeFrac;
 };
 
 inline const LodBlock* LodGraph::getBlock(hal_size_t index) const

@@ -14,7 +14,7 @@
 using namespace std;
 using namespace hal;
 
-LodGraph::LodGraph() : _extendFraction(1.0), _numProbe(5)
+LodGraph::LodGraph() : _extendFraction(1.0)
 {
 
 }
@@ -43,13 +43,14 @@ void LodGraph::erase()
 
 void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
                      const vector<const Genome*>& children, 
-                     hal_size_t step, bool allSequences)
+                     hal_size_t step, bool allSequences, double probeFrac)
 {
   erase();
   _alignment = alignment;
   _parent = parent;
   _step = step;
   _allSequences = allSequences;
+  _probeFrac = probeFrac;
 
   assert(_parent != NULL);
   assert(_alignment->openGenome(_parent->getName()) == _parent);
@@ -85,7 +86,7 @@ void LodGraph::scanGenome(const Genome* genome)
   SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
   SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
   hal_index_t lastSampledPos = 0;
-  hal_index_t fracStep = std::max((hal_index_t)1, (hal_index_t)_step / 2);
+  hal_index_t halfStep = std::max((hal_index_t)1, (hal_index_t)_step / 2);
   for (; seqIt != seqEnd; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
@@ -109,14 +110,17 @@ void LodGraph::scanGenome(const Genome* genome)
         }   
 
         // scan range trying to find genome to add
-        hal_index_t minTry = std::max((hal_index_t)0, pos - fracStep);
-        hal_index_t maxTry = std::min(pos + fracStep, (hal_index_t)len - 1);
-        hal_index_t probeStep = std::max((hal_size_t)1, 
-                                         (maxTry - minTry) / (_numProbe + 1));
+        hal_index_t minTry = std::max((hal_index_t)0, pos - halfStep);
+        hal_index_t maxTry = std::min(pos + halfStep, (hal_index_t)len - 1);
+        hal_index_t numProbe =  
+           (hal_index_t)std::max(1., (double)(maxTry - minTry) * _probeFrac);
+        hal_index_t npMinus1 = numProbe < 2 ? numProbe : numProbe - 1;
+        hal_index_t probeStep = std::max((hal_index_t)1,
+                                         (maxTry - minTry) / (npMinus1));
         hal_index_t bestPos = NULL_INDEX;
         hal_size_t maxNumGenomes = 0;
         hal_size_t maxDelta = 0;      
-        hal_index_t tryPos = minTry;
+        hal_index_t tryPos = numProbe == 1 ? pos : minTry;
         ColumnIteratorConstPtr colIt; 
         do 
         {
