@@ -110,7 +110,7 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
         prevStep = step
-        curStepFactor *= curStepFactor
+        curStepFactor *= scaleCorFac
     lodFile.close()
     
 def main(argv=None):
