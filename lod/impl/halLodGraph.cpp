@@ -135,7 +135,7 @@ void LodGraph::scanGenome(const Genome* genome)
 
 bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
 {
-  _deltas.resize(0);
+  hal_size_t deltaMax = 0;
   // check that block has not already been added.
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
   ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
@@ -161,40 +161,35 @@ bool LodGraph::canAddColumn(ColumnIteratorConstPtr colIt)
         }
         else if (!segPLess(&segment, *si))
         {
-          assert(_deltas.empty() || _deltas.back() == 0);
+          assert(deltaMax == 0);
           breakOut = true;
         }
         else
         {
-          _deltas.push_back((hal_size_t)std::abs((*si)->getLeftPos() - 
-                                                 segment.getLeftPos()));
+          hal_size_t delta = 
+             std::min(_step, (hal_size_t)std::abs((*si)->getLeftPos() - 
+                                                  segment.getLeftPos()));
           if (si != segmentSet->begin())
           {
             --si;
-            _deltas.push_back((hal_size_t)std::abs((*si)->getLeftPos() - 
-                                                   segment.getLeftPos()));
+            delta += (hal_size_t)std::abs((*si)->getLeftPos() - 
+                                          segment.getLeftPos());
           }
+          else
+          {
+            delta *= 2;
+          }
+          deltaMax = std::max(deltaMax, delta);
         }
       }
     }
   }
-  if (_deltas.empty())
-  {
-    _deltas.push_back(0);
-  }
-  std::sort(_deltas.begin(), _deltas.end());
-  assert(_deltas.front() > 0 || _deltas.back() == 0);
-  // compare against median delta value.  using the minumum delta
-  // seems to be too conservative especially for nodes with many children,
-  // and using the maximum delta is too agressive resulting in lots of
-  // gaps.  hoping the median falls somewhere in between. 
-  hal_size_t delta = _deltas[_deltas.size() / 2];
   hal_index_t refPos = colIt->getReferenceSequencePosition();
-  bool canAdd = _deltas.back() > 0;
+  bool canAdd = deltaMax > 0;
   if (canAdd == true && refPos != 0 && (hal_size_t)refPos !=
       colIt->getReferenceSequence()->getSequenceLength() - 1)
   {
-    canAdd = delta >= _step / 2;
+    canAdd = deltaMax > _step;
   }
   return canAdd;
 }

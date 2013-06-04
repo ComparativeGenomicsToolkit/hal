@@ -115,9 +115,6 @@ protected:
 
    // sample all sequences no matter how small they are
    bool _allSequences;
-   
-   // buffer used for computing deltas in canAddColumn()
-   std::vector<hal_size_t> _deltas;
 };
 
 inline const LodBlock* LodGraph::getBlock(hal_size_t index) const
