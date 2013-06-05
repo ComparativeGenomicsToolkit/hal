@@ -26,7 +26,7 @@ static CLParserPtr initParser()
   optionsParser->addOption("probeFrac", 
                            "Fraction of bases in step-interval to sample while "
                            "looking for most aligned column.",
-                           0.02);
+                           0.05);
   optionsParser->addOptionFlag("keepSequences",
                                "Write the sequence strings to the output "
                                "file.", false);
