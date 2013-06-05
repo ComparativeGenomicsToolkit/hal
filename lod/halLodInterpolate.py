@@ -111,6 +111,8 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
                                                     absPath)))
         prevStep = step
         curStepFactor *= scaleCorFac
+        if step > steps[-1]:
+            break
     lodFile.close()
     
 def main(argv=None):
@@ -130,7 +132,7 @@ def main(argv=None):
     parser.add_argument("--maxBlock",
                         help="maximum desired number of blocks to ever " 
                         "display at once.", type=int,
-                        default=100)
+                        default=123)
     parser.add_argument("--scale",
                         help="scaling factor between two successive levels"
                         " of detail", type=float,
@@ -169,7 +171,7 @@ def main(argv=None):
     parser.add_argument("--scaleCorFac", help="Correction factor for scaling. "
                         " Assume that scaling by (X * scaleCorFactor) is "
                         " required to reduce the number of blocks by X.",
-                        type=float, default=1.5)
+                        type=float, default=1.8)
 
         
     args = parser.parse_args()
