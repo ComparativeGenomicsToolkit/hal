@@ -96,10 +96,8 @@ void LodGraph::scanGenome(const Genome* genome)
     addTelomeres(sequence);
     if (_allSequences == true ||
         (sequence->getSequenceLength() > 0 &&
-         seqEnd - lastSampledPos > (hal_index_t)_step / 2))
+         seqEnd - lastSampledPos > (hal_index_t)_step))
     {
-      lastSampledPos = sequence->getStartPosition() + len;
-    
       for (hal_index_t pos = 0; pos < (hal_index_t)len; 
            pos += (hal_index_t)_step)
       {
@@ -112,13 +110,13 @@ void LodGraph::scanGenome(const Genome* genome)
         // scan range trying to find genome to add
         hal_index_t minTry = std::max((hal_index_t)0, pos - halfStep);
         hal_index_t maxTry = std::min(pos + halfStep, (hal_index_t)len - 1);
-        hal_index_t numProbe =  
+        hal_index_t numProbe = 
            (hal_index_t)std::max(1., (double)(maxTry - minTry) * _probeFrac);
         hal_index_t npMinus1 = numProbe < 2 ? numProbe : numProbe - 1;
         hal_index_t probeStep = std::max((hal_index_t)1,
                                          (maxTry - minTry) / (npMinus1));
         hal_index_t bestPos = NULL_INDEX;
-        hal_size_t maxNumGenomes = 0;
+        hal_size_t maxNumGenomes = 1;
         hal_size_t maxDelta = 0;      
         hal_index_t tryPos = numProbe == 1 ? pos : minTry;
         ColumnIteratorConstPtr colIt; 
@@ -129,15 +127,14 @@ void LodGraph::scanGenome(const Genome* genome)
           hal_size_t delta;
           hal_size_t numGenomes;
           evaluateColumn(colIt, delta, numGenomes);
-          if (delta > _step)
+          if (delta > (hal_size_t)probeStep && 
+              (numGenomes > maxNumGenomes || 
+               (numGenomes == maxNumGenomes && 
+                numGenomes > 1 && delta > maxDelta)))
           {
-            if (numGenomes > maxNumGenomes || (numGenomes == maxNumGenomes &&
-                                               delta > maxDelta))
-            {
-              bestPos = tryPos;
-              maxDelta = delta;
-              maxNumGenomes = numGenomes;
-            }
+            bestPos = tryPos;
+            maxDelta = delta;
+            maxNumGenomes = numGenomes;
           }
           tryPos += probeStep;
         } 
@@ -146,6 +143,7 @@ void LodGraph::scanGenome(const Genome* genome)
         {
           colIt = sequence->getColumnIterator(&_genomes, 0, bestPos);
           createColumn(colIt);
+          lastSampledPos = sequence->getStartPosition() + bestPos;
         }
       }
     }
