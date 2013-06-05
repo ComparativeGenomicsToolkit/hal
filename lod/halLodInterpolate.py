@@ -109,10 +109,10 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
+        if prevStep > steps[-1]:
+            break
         prevStep = step
         curStepFactor *= scaleCorFac
-        if step > steps[-1]:
-            break
     lodFile.close()
     
 def main(argv=None):
@@ -171,7 +171,7 @@ def main(argv=None):
     parser.add_argument("--scaleCorFac", help="Correction factor for scaling. "
                         " Assume that scaling by (X * scaleCorFactor) is "
                         " required to reduce the number of blocks by X.",
-                        type=float, default=1.8)
+                        type=float, default=1.3)
 
         
     args = parser.parse_args()
