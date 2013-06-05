@@ -16,6 +16,7 @@ import subprocess
 import time
 import math
 from collections import defaultdict
+from multiprocessing import Pool
 
 from hal.stats.halStats import runShellCommand
 from hal.stats.halStats import getHalGenomes
@@ -25,17 +26,21 @@ from hal.stats.halStats import getHalStats
 # Wrapper for halLodExtract
 def runHalLodExtract(inHalPath, outHalPath, step, keepSeq, inMemory,
                      probeFrac, minSeqFrac):
-    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
-    if keepSeq is True:
-        cmd += " --keepSequences"
-    if inMemory is True:
-        cmd += " --inMemory"
-    if probeFrac is not None:
-        cmd += " --probeFrac %f" % probeFrac
-    if minSeqFrac is not None:
-        cmd += " --minSeqFrac %f" % minSeqFrac
+    try:
+        cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
+        if keepSeq is True:
+            cmd += " --keepSequences"
+        if inMemory is True:
+            cmd += " --inMemory"
+        if probeFrac is not None:
+            cmd += " --probeFrac %f" % probeFrac
+        if minSeqFrac is not None:
+            cmd += " --minSeqFrac %f" % minSeqFrac
 
-    runShellCommand(cmd)
+        runShellCommand(cmd)
+
+    except KeyboardInterrupt:
+        raise RuntimeError("Aborting %s" % cmd)
 
 # All created paths get put in the same place using the same logic
 def makePath(inHalPath, outDir, step, name, ext):
@@ -90,15 +95,29 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
     else:
         return os.path.relpath(outHalPath, os.path.dirname(outLodPath))
 
+def waitPool(mpPool, pathResultPairs):
+    try:
+        mpPool.close()
+        mpPool.join()
+    except KeyboardInterrupt:
+        mpPool.terminate()
+    for (outPath, res) in pathResultPairs:
+        if not res.successful():
+            raise RuntimeError("Error generating %s with halLodExtract" % (
+                outPath))
+    
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
                maxDNA, absPath, trans, inMemory, probeFrac, minSeqFrac,
-               scaleCorFac):
+               scaleCorFac, numProc):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scale)
     curStepFactor = scaleCorFac
     prevStep = None
+    if numProc > 1:
+        mpPool = Pool(processes=min(numProc, len(steps)))
+        mpResults = []
     for stepIdx in xrange(1,len(steps)):
         step = int(max(1, steps[stepIdx] * curStepFactor))
         maxQueryLength = maxBlock * steps[stepIdx - 1]
@@ -107,9 +126,17 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         srcPath = halPath
         if trans is True and stepIdx > 1:
             srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
-        if overwrite is True or not os.path.isfile(outHalPath):            
-            runHalLodExtract(srcPath, outHalPath, step, keepSequences, inMemory,
-                             probeFrac, minSeqFrac)
+        if overwrite is True or not os.path.isfile(outHalPath):
+            if numProc == 1:
+                runHalLodExtract(srcPath, outHalPath, step, keepSequences,
+                                 inMemory, probeFrac, minSeqFrac)
+            else:
+                mpResults.append((outHalPath,
+                                  mpPool.apply_async(runHalLodExtract,
+                                                    (srcPath, outHalPath, step,
+                                                     keepSequences, inMemory,
+                                                    probeFrac, minSeqFrac,))))
+
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
@@ -118,6 +145,9 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         prevStep = step
         curStepFactor *= scaleCorFac
     lodFile.close()
+    
+    if numProc > 1:
+        waitPool(mpPool, mpResults)
     
 def main(argv=None):
     if argv is None:
@@ -181,6 +211,8 @@ def main(argv=None):
                         " Assume that scaling by (X * scaleCorFactor) is "
                         " required to reduce the number of blocks by X.",
                         type=float, default=1.3)
+    parser.add_argument("--numProc", help="Number of concurrent processes",
+                        type=int, default=1)
 
     args = parser.parse_args()
 
@@ -194,6 +226,9 @@ def main(argv=None):
     if not os.path.isdir(args.outHalDir):
         raise RuntimeError("Invalid output directory %s" % args.outHalDir)
     assert args.scaleCorFac > 0
+    if args.trans is True and args.numProc > 1:
+        raise RuntimeError("--numProc > 1 not supported when --trans option is "
+                           "set")
 
     if args.maxDNA < 0:
         args.maxDNA = sys.maxint
@@ -201,7 +236,7 @@ def main(argv=None):
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, args.overwrite, args.maxDNA,
                args.absPath, args.trans, args.inMemory, args.probeFrac,
-               args.minSeqFrac, args.scaleCorFac)
+               args.minSeqFrac, args.scaleCorFac, args.numProc)
     
 if __name__ == "__main__":
     sys.exit(main())
