@@ -255,7 +255,7 @@ def writeGenomesFile(genome2seq2len, halfile, options, outdir):
     if options.lodNumProc is not None:
         options.lodOpts += '--numProc %d ' % options.lodNumProc
     if options.lodMinSeqFrac is not None:
-        options.lodOpts += '--minSeqFrac %d ' % options.lodMinSeqFrac
+        options.lodOpts += '--minSeqFrac %f ' % options.lodMinSeqFrac
     if len(options.lodOpts) > 0:
         options.lod = True
     if options.lod:
