@@ -32,13 +32,15 @@ void LodExtract::createInterpolatedAlignment(AlignmentConstPtr inAlignment,
                                              const string& rootName,
                                              bool keepSequences,
                                              bool allSequences,
-                                             double probeFrac)
+                                             double probeFrac,
+                                             double minSeqFrac)
 {
   _inAlignment = inAlignment;
   _outAlignment = outAlignment;
   _keepSequences = keepSequences;
   _allSequences = allSequences;
   _probeFrac = probeFrac;
+  _minSeqFrac = minSeqFrac;
   
   string newTree = tree.empty() ? inAlignment->getNewickTree() : tree;
   createTree(newTree, rootName);
@@ -157,7 +159,8 @@ void LodExtract::convertInternalNode(const string& genomeName,
   {
     children.push_back(_inAlignment->openGenome(childNames[i]));
   }
-  _graph.build(_inAlignment, parent, children, step, _allSequences, _probeFrac);
+  _graph.build(_inAlignment, parent, children, step, _allSequences, _probeFrac,
+               _minSeqFrac);
 
   map<const Sequence*, hal_size_t> segmentCounts;
   countSegmentsInGraph(segmentCounts);

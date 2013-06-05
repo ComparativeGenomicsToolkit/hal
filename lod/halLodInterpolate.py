@@ -24,14 +24,17 @@ from hal.stats.halStats import getHalStats
 
 # Wrapper for halLodExtract
 def runHalLodExtract(inHalPath, outHalPath, step, keepSeq, inMemory,
-                     probeFrac):
+                     probeFrac, minSeqFrac):
     cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
-    if keepSeq:
+    if keepSeq is True:
         cmd += " --keepSequences"
-    if inMemory:
+    if inMemory is True:
         cmd += " --inMemory"
-    if probeFrac:
+    if probeFrac is not None:
         cmd += " --probeFrac %f" % probeFrac
+    if minSeqFrac is not None:
+        cmd += " --minSeqFrac %f" % minSeqFrac
+
     runShellCommand(cmd)
 
 # All created paths get put in the same place using the same logic
@@ -89,7 +92,8 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
 
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
-               maxDNA, absPath, trans, inMemory, probeFrac, scaleCorFac):
+               maxDNA, absPath, trans, inMemory, probeFrac, minSeqFrac,
+               scaleCorFac):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scale)
@@ -105,7 +109,7 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
             srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
         if overwrite is True or not os.path.isfile(outHalPath):            
             runHalLodExtract(srcPath, outHalPath, step, keepSequences, inMemory,
-                             probeFrac)
+                             probeFrac, minSeqFrac)
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
@@ -168,12 +172,16 @@ def main(argv=None):
                         " to sample while looking for most aligned column. "
                         "Use default from halLodExtract if not set.",                
                         type=float, default=None)
+    parser.add_argument("--minSeqFrac", help="Minumum sequence length to sample "
+                        "as fraction of step size: ie sequences with "
+                        "length <= floor(minSeqFrac * step) are ignored."
+                        "Use default from halLodExtract if not set.",                
+                        type=float, default=None)
     parser.add_argument("--scaleCorFac", help="Correction factor for scaling. "
                         " Assume that scaling by (X * scaleCorFactor) is "
                         " required to reduce the number of blocks by X.",
                         type=float, default=1.3)
 
-        
     args = parser.parse_args()
 
     if args.outHalDir is not None and not os.path.exists(args.outHalDir):
@@ -193,7 +201,7 @@ def main(argv=None):
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, args.overwrite, args.maxDNA,
                args.absPath, args.trans, args.inMemory, args.probeFrac,
-               args.scaleCorFac)
+               args.minSeqFrac, args.scaleCorFac)
     
 if __name__ == "__main__":
     sys.exit(main())

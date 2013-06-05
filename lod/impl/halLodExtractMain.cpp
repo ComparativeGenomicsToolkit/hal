@@ -27,6 +27,11 @@ static CLParserPtr initParser()
                            "Fraction of bases in step-interval to sample while "
                            "looking for most aligned column.",
                            0.05);
+  optionsParser->addOption("minSeqFrac", 
+                           "Minumum sequence length to sample as fraction of "
+                           "step size: ie sequences with length <= floor("
+                           "minSeqFrac * step) are ignored.",
+                           0.25);
   optionsParser->addOptionFlag("keepSequences",
                                "Write the sequence strings to the output "
                                "file.", false);
@@ -51,6 +56,7 @@ int main(int argc, char** argv)
   bool keepSequences;
   bool allSequences;
   double probeFrac;
+  double minSeqFrac;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -62,6 +68,11 @@ int main(int argc, char** argv)
     keepSequences = optionsParser->getFlag("keepSequences");
     allSequences = optionsParser->getFlag("allSequences");
     probeFrac = optionsParser->getOption<double>("probeFrac");
+    minSeqFrac = optionsParser->getOption<double>("minSeqFrac");
+    if (allSequences == true)
+    {
+      minSeqFrac = 0.;
+    }
   }
   catch(exception& e)
   {
@@ -103,7 +114,7 @@ int main(int argc, char** argv)
     lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
                                            step, outTree, rootName,
                                            keepSequences, allSequences,
-                                           probeFrac);
+                                           probeFrac, minSeqFrac);
   }
 /*  catch(hal_exception& e)
   {

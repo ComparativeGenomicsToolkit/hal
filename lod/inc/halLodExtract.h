@@ -41,7 +41,8 @@ public:
                                     const std::string& rootName,
                                     bool keepSequences,
                                     bool allSequences,
-                                    double probeFrac);
+                                    double probeFrac,
+                                    double minSeqFrac);
    
    
 protected:
@@ -82,6 +83,7 @@ protected:
    bool _keepSequences;
    bool _allSequences;
    double _probeFrac;
+   double _minSeqFrac;
 };
 
 }

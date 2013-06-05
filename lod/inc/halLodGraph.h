@@ -41,7 +41,8 @@ public:
     * is:  every step bases are sampled.  */
    void build(AlignmentConstPtr alignment, const Genome* parent,
               const std::vector<const Genome*>& children, 
-              hal_size_t step, bool allSequences, double probeFrac);
+              hal_size_t step, bool allSequences, double probeFrac,
+              double minSeqFrac);
 
    /** Help debuggin and tuning */
    void printDimensions(std::ostream& os) const;
@@ -67,7 +68,13 @@ protected:
     * Also count the number of genomes it aligns to.  This information
     * will be used to prioritize probed columns*/
    void evaluateColumn(ColumnIteratorConstPtr colIt, hal_size_t& outDeltaMax,
-                       hal_size_t& outNumGenomes);
+                       hal_size_t& outNumGenomes, hal_size_t& outMinSeqLen);
+
+   /* Test if this is the best column based on stats collected above */
+   bool bestColumn(hal_size_t probeStep, hal_size_t delta, 
+                   hal_size_t numGenomes, hal_size_t minSeqLen,
+                   hal_size_t maxDelta, hal_size_t maxNumGenomes,
+                   hal_size_t maxMinSeqLen);
 
    /** Add segments for the telomeres of the sequence, ie at 
     * position -1 and and endPosition + 1 */
@@ -122,6 +129,10 @@ protected:
    // step size
    // [pos - step / 2, pos + step / 2] before accepting column
    double _probeFrac;
+   
+   // min size of sequence to not be ignored (computed from the
+   // minSeqFrac paramater)
+   hal_size_t _minSeqLen;
 };
 
 inline const LodBlock* LodGraph::getBlock(hal_size_t index) const

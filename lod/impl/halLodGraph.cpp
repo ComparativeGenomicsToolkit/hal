@@ -43,7 +43,8 @@ void LodGraph::erase()
 
 void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
                      const vector<const Genome*>& children, 
-                     hal_size_t step, bool allSequences, double probeFrac)
+                     hal_size_t step, bool allSequences, double probeFrac,
+                     double minSeqFrac)
 {
   erase();
   _alignment = alignment;
@@ -51,6 +52,7 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
   _step = step;
   _allSequences = allSequences;
   _probeFrac = probeFrac;
+  _minSeqLen = minSeqFrac * _step;
 
   assert(_parent != NULL);
   assert(_alignment->openGenome(_parent->getName()) == _parent);
@@ -95,7 +97,7 @@ void LodGraph::scanGenome(const Genome* genome)
 
     addTelomeres(sequence);
     if (_allSequences == true ||
-        (sequence->getSequenceLength() > 0 &&
+        (sequence->getSequenceLength() > _minSeqLen &&
          seqEnd - lastSampledPos > (hal_index_t)_step))
     {
       for (hal_index_t pos = 0; pos < (hal_index_t)len; 
@@ -117,7 +119,8 @@ void LodGraph::scanGenome(const Genome* genome)
                                          (maxTry - minTry) / (npMinus1));
         hal_index_t bestPos = NULL_INDEX;
         hal_size_t maxNumGenomes = 1;
-        hal_size_t maxDelta = 0;      
+        hal_size_t maxDelta = 0;     
+        hal_size_t maxMinSeqLen = 0;
         hal_index_t tryPos = numProbe == 1 ? pos : minTry;
         ColumnIteratorConstPtr colIt; 
         do 
@@ -126,19 +129,20 @@ void LodGraph::scanGenome(const Genome* genome)
           assert(colIt->getReferenceSequencePosition() == tryPos);
           hal_size_t delta;
           hal_size_t numGenomes;
-          evaluateColumn(colIt, delta, numGenomes);
-          if (delta > (hal_size_t)probeStep && 
-              (numGenomes > maxNumGenomes || 
-               (numGenomes == maxNumGenomes && 
-                numGenomes > 1 && delta > maxDelta)))
+          hal_size_t minSeqLen;
+          evaluateColumn(colIt, delta, numGenomes, minSeqLen);
+          if (bestColumn(probeStep, delta, numGenomes, minSeqLen,
+                         maxDelta, maxNumGenomes, maxMinSeqLen))
           {
             bestPos = tryPos;
             maxDelta = delta;
             maxNumGenomes = numGenomes;
+            maxMinSeqLen = minSeqLen;
           }
           tryPos += probeStep;
         } 
-        while (colIt->lastColumn() == false && tryPos < maxTry );
+        while (colIt->lastColumn() == false && tryPos < maxTry);
+
         if (bestPos != NULL_INDEX)
         {
           colIt = sequence->getColumnIterator(&_genomes, 0, bestPos);
@@ -152,9 +156,11 @@ void LodGraph::scanGenome(const Genome* genome)
 
 void LodGraph::evaluateColumn(ColumnIteratorConstPtr colIt,
                               hal_size_t& outDeltaMax,
-                              hal_size_t& outNumGenomes)
+                              hal_size_t& outNumGenomes,
+                              hal_size_t& outMinSeqLen)
 {
   outDeltaMax = 0;
+  outMinSeqLen = numeric_limits<hal_size_t>::max();
   set<const Genome*> genomeSet;
   // check that block has not already been added.
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
@@ -164,52 +170,95 @@ void LodGraph::evaluateColumn(ColumnIteratorConstPtr colIt,
   {
     const ColumnIterator::DNASet* dnaSet = colMapIt->second;
     const Sequence* sequence = colMapIt->first;
-    ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
-    if (!dnaSet->empty())
+    if (sequence->getSequenceLength() <= _minSeqLen)
     {
-      genomeSet.insert(sequence->getGenome());
-    }
-    for (; dnaIt != dnaSet->end() && !breakOut; ++dnaIt)
-    {
-      hal_index_t pos = (*dnaIt)->getArrayIndex();
-      LodSegment segment(NULL, sequence, pos, false);
-      SequenceMapIterator smi = _seqMap.find(sequence);
-      if (smi != _seqMap.end())
+      // we never want to align two leaves through a disappeared
+      // contig in parent
+      if (sequence->getGenome() == _parent)
       {
-        SegmentSet* segmentSet = smi->second;
-        SegmentIterator si = segmentSet->lower_bound(&segment);
-        SegmentSet::value_compare segPLess = segmentSet->key_comp();
-        if (si == segmentSet->end())
+        outDeltaMax = 0;
+        outNumGenomes = 0;
+        outMinSeqLen = 0;
+        break;
+      }
+    }
+    else
+    {
+      outMinSeqLen = std::min(outMinSeqLen, sequence->getSequenceLength());
+      ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
+      if (!dnaSet->empty())
+      {
+        genomeSet.insert(sequence->getGenome());
+      }
+      for (; dnaIt != dnaSet->end() && !breakOut; ++dnaIt)
+      {
+        hal_index_t pos = (*dnaIt)->getArrayIndex();
+        LodSegment segment(NULL, sequence, pos, false);
+        SequenceMapIterator smi = _seqMap.find(sequence);
+        if (smi != _seqMap.end())
         {
-          outDeltaMax = numeric_limits<hal_size_t>::max();
-          breakOut = true;
-        }
-        else if (!segPLess(&segment, *si))
-        {
-          assert(outDeltaMax == 0);
-          breakOut = true;
-        }
-        else
-        {
-          hal_size_t delta = 
-             std::min(_step, (hal_size_t)std::abs((*si)->getLeftPos() - 
-                                                  segment.getLeftPos()));
-          if (si != segmentSet->begin())
+          SegmentSet* segmentSet = smi->second;
+          SegmentIterator si = segmentSet->lower_bound(&segment);
+          SegmentSet::value_compare segPLess = segmentSet->key_comp();
+          if (si == segmentSet->end())
           {
-            --si;
-            delta += (hal_size_t)std::abs((*si)->getLeftPos() - 
-                                          segment.getLeftPos());
+            outDeltaMax = numeric_limits<hal_size_t>::max();
+            breakOut = true;
+          }
+          else if (!segPLess(&segment, *si))
+          {
+            assert(outDeltaMax == 0);
+            breakOut = true;
           }
           else
           {
-            delta *= 2;
+            hal_size_t delta = 
+               std::min(_step, (hal_size_t)std::abs((*si)->getLeftPos() - 
+                                                    segment.getLeftPos()));
+            if (si != segmentSet->begin())
+            {
+              --si;
+              delta += (hal_size_t)std::abs((*si)->getLeftPos() - 
+                                            segment.getLeftPos());
+            }
+            else
+            {
+              delta *= 2;
+            }
+            outDeltaMax = std::max(outDeltaMax, delta);
           }
-          outDeltaMax = std::max(outDeltaMax, delta);
         }
       }
     }
   }
   outNumGenomes = genomeSet.size();
+}
+
+bool LodGraph::bestColumn(hal_size_t probeStep, hal_size_t delta, 
+                          hal_size_t numGenomes, hal_size_t minSeqLen,
+                          hal_size_t maxDelta, hal_size_t maxNumGenomes,
+                          hal_size_t maxMinSeqLen)
+{
+  if (delta <= (hal_size_t)probeStep)
+  {
+    return false;
+  }
+  if (numGenomes > maxNumGenomes)
+  {
+    return true;
+  }
+  else if (numGenomes == maxNumGenomes)
+  {
+    if (minSeqLen > maxMinSeqLen)
+    {
+      return true;
+    }
+    else if (minSeqLen == maxMinSeqLen)
+    {
+      return numGenomes > 1 && delta > maxDelta;
+    }
+  }
+  return false;
 }
 
 void LodGraph::addTelomeres(const Sequence* sequence)
@@ -245,28 +294,31 @@ void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
   for (; colMapIt != colMap->end(); ++colMapIt)
   {
     const Sequence* sequence = colMapIt->first;
-    SequenceMapIterator smi = _seqMap.find(sequence);
-    SegmentSet* segSet = NULL;
-    if (smi == _seqMap.end())
+    if (sequence->getSequenceLength() > _minSeqLen)
     {
-      segSet = new SegmentSet();;
-      _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
-    }
-    else
-    {
-      segSet = smi->second;
-    }
+      SequenceMapIterator smi = _seqMap.find(sequence);
+      SegmentSet* segSet = NULL;
+      if (smi == _seqMap.end())
+      {
+        segSet = new SegmentSet();;
+        _seqMap.insert(pair<const Sequence*, SegmentSet*>(sequence, segSet));
+      }
+      else
+      {
+        segSet = smi->second;
+      }
     
-    const ColumnIterator::DNASet* dnaSet = colMapIt->second;
-    for (ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
-         dnaIt != dnaSet->end(); ++ dnaIt)
-    {
-      hal_index_t pos = (*dnaIt)->getArrayIndex();
-      bool reversed = (*dnaIt)->getReversed();
-      LodSegment* segment = new LodSegment(block, sequence, pos, reversed);
-      block->addSegment(segment);
-      assert(segSet->find(segment) == segSet->end());
-      segSet->insert(segment);
+      const ColumnIterator::DNASet* dnaSet = colMapIt->second;
+      for (ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
+           dnaIt != dnaSet->end(); ++ dnaIt)
+      {
+        hal_index_t pos = (*dnaIt)->getArrayIndex();
+        bool reversed = (*dnaIt)->getReversed();
+        LodSegment* segment = new LodSegment(block, sequence, pos, reversed);
+        block->addSegment(segment);
+        assert(segSet->find(segment) == segSet->end());
+        segSet->insert(segment);
+      }
     }
   }
   assert(block->getNumSegments() > 0);
