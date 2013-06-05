@@ -15,14 +15,17 @@ import subprocess
 
 
 def runShellCommand(command):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                               stderr=sys.stderr, bufsize=-1)
-    output, nothing = process.communicate()
-    sts = process.wait()
-    if sts != 0:
-        raise RuntimeError("Command: %s exited with non-zero status %i" %
-                           (command, sts))
-    return output
+    try:
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                   stderr=sys.stderr, bufsize=-1)
+        output, nothing = process.communicate()
+        sts = process.wait()
+        if sts != 0:
+            raise RuntimeError("Command: %s exited with non-zero status %i" %
+                               (command, sts))
+        return output
+    except KeyboardInterrupt:
+        raise RuntimeError("Aborting %s" % cmd)
 
 def getHalGenomes(halPath):
     return runShellCommand("halStats %s --genomes" % halPath).split(",")

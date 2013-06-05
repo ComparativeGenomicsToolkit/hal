@@ -24,23 +24,19 @@ from hal.stats.halStats import getHalNumSegments
 from hal.stats.halStats import getHalStats
 
 # Wrapper for halLodExtract
-def runHalLodExtract(inHalPath, outHalPath, step, keepSeq, inMemory,
+def getHalLodExtractCmd(inHalPath, outHalPath, step, keepSeq, inMemory,
                      probeFrac, minSeqFrac):
-    try:
-        cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
-        if keepSeq is True:
-            cmd += " --keepSequences"
-        if inMemory is True:
-            cmd += " --inMemory"
-        if probeFrac is not None:
-            cmd += " --probeFrac %f" % probeFrac
-        if minSeqFrac is not None:
-            cmd += " --minSeqFrac %f" % minSeqFrac
+    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
+    if keepSeq is True:
+        cmd += " --keepSequences"
+    if inMemory is True:
+        cmd += " --inMemory"
+    if probeFrac is not None:
+        cmd += " --probeFrac %f" % probeFrac
+    if minSeqFrac is not None:
+        cmd += " --minSeqFrac %f" % minSeqFrac
 
-        runShellCommand(cmd)
-
-    except KeyboardInterrupt:
-        raise RuntimeError("Aborting %s" % cmd)
+    return cmd
 
 # All created paths get put in the same place using the same logic
 def makePath(inHalPath, outDir, step, name, ext):
@@ -95,17 +91,22 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
     else:
         return os.path.relpath(outHalPath, os.path.dirname(outLodPath))
 
-def waitPool(mpPool, pathResultPairs):
-    try:
-        mpPool.close()
-        mpPool.join()
-    except KeyboardInterrupt:
-        mpPool.terminate()
-    for (outPath, res) in pathResultPairs:
-        if not res.successful():
-            raise RuntimeError("Error generating %s with halLodExtract" % (
-                outPath))
-    
+def runHalLodExtract(cmdList, numProc):
+    if numProc == 1 or len(cmdList) == 1:
+        map(runShellCommand, cmdList)
+    else:
+        mpPool = Pool(processes=min(numProc, len(cmdList)))
+        result = mpPool.map_async(runShellCommand, cmdList)
+        # specifying a timeout allows keyboard interrupts to work?!
+        # http://stackoverflow.com/questions/1408356/keyboard-interrupts-with-pythons-multiprocessing-pool
+        try:
+            result.get(sys.maxint)
+        except KeyboardInterrupt:
+            mpPool.terminate()
+            raise RuntimeError("Keyboard interrupt")
+        if not result.successful():
+            raise "One or more of commands %s failed" % str(cmdList)
+                         
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
                maxDNA, absPath, trans, inMemory, probeFrac, minSeqFrac,
@@ -114,10 +115,8 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scale)
     curStepFactor = scaleCorFac
+    lodExtractCmds = []
     prevStep = None
-    if numProc > 1:
-        mpPool = Pool(processes=min(numProc, len(steps)))
-        mpResults = []
     for stepIdx in xrange(1,len(steps)):
         step = int(max(1, steps[stepIdx] * curStepFactor))
         maxQueryLength = maxBlock * steps[stepIdx - 1]
@@ -127,16 +126,10 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         if trans is True and stepIdx > 1:
             srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
         if overwrite is True or not os.path.isfile(outHalPath):
-            if numProc == 1:
-                runHalLodExtract(srcPath, outHalPath, step, keepSequences,
-                                 inMemory, probeFrac, minSeqFrac)
-            else:
-                mpResults.append((outHalPath,
-                                  mpPool.apply_async(runHalLodExtract,
-                                                    (srcPath, outHalPath, step,
-                                                     keepSequences, inMemory,
-                                                    probeFrac, minSeqFrac,))))
-
+            lodExtractCmds.append(
+                getHalLodExtractCmd(srcPath, outHalPath, step, keepSequences,
+                                    inMemory, probeFrac, minSeqFrac))
+  
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
@@ -145,9 +138,7 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         prevStep = step
         curStepFactor *= scaleCorFac
     lodFile.close()
-    
-    if numProc > 1:
-        waitPool(mpPool, mpResults)
+    runHalLodExtract(lodExtractCmds, numProc)
     
 def main(argv=None):
     if argv is None:
