@@ -26,12 +26,12 @@ static CLParserPtr initParser()
   optionsParser->addOption("probeFrac", 
                            "Fraction of bases in step-interval to sample while "
                            "looking for most aligned column.",
-                           0.05);
+                           0.025);
   optionsParser->addOption("minSeqFrac", 
                            "Minumum sequence length to sample as fraction of "
                            "step size: ie sequences with length <= floor("
                            "minSeqFrac * step) are ignored.",
-                           0.25);
+                           0.5);
   optionsParser->addOptionFlag("keepSequences",
                                "Write the sequence strings to the output "
                                "file.", false);
