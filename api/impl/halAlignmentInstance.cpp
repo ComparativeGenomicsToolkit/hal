@@ -32,22 +32,26 @@ AlignmentConstPtr hal::hdf5AlignmentInstanceReadOnly()
 AlignmentPtr 
 hal::hdf5AlignmentInstance(const FileCreatPropList& fileCreateProps,
                            const FileAccPropList& fileAccessProps,
-                           const DSetCreatPropList& datasetCreateProps)
+                           const DSetCreatPropList& datasetCreateProps,
+                           bool inMemory)
 {
   HDF5Alignment* al = new HDF5Alignment(fileCreateProps,
                                         fileAccessProps,
-                                        datasetCreateProps);
+                                        datasetCreateProps,
+                                        inMemory);
   return AlignmentPtr(al);
 }
 
 AlignmentConstPtr 
 hal::hdf5AlignmentInstanceReadOnly(const FileCreatPropList& fileCreateProps,
                                    const FileAccPropList& fileAccessProps,
-                                   const DSetCreatPropList& datasetCreateProps)
+                                   const DSetCreatPropList& datasetCreateProps,
+                                   bool inMemory)
 {
   HDF5Alignment* al = new HDF5Alignment(fileCreateProps,
                                         fileAccessProps,
-                                        datasetCreateProps);
+                                        datasetCreateProps,
+                                        inMemory);
   return AlignmentConstPtr(al);
 }
 

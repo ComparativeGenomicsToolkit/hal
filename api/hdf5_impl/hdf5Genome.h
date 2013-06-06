@@ -40,7 +40,8 @@ public:
    HDF5Genome(const std::string& name,
               HDF5Alignment* alignment,
               H5::CommonFG* h5Parent,
-              const H5::DSetCreatPropList& dcProps);
+              const H5::DSetCreatPropList& dcProps,
+              bool inMemory);
 
    virtual ~HDF5Genome();
 
@@ -49,7 +50,8 @@ public:
    const std::string& getName() const;
 
    void setDimensions(
-     const std::vector<hal::Sequence::Info>& sequenceDimensions);
+     const std::vector<hal::Sequence::Info>& sequenceDimensions,
+     bool storeDNAArrays);
 
    void updateTopDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
@@ -90,6 +92,8 @@ public:
 
    hal_index_t getChildIndex(const Genome* child) const;
 
+   bool containsDNAArray() const;
+
    // SEGMENTED SEQUENCE INTERFACE
 
    hal_size_t getSequenceLength() const;
@@ -125,7 +129,8 @@ public:
                                             hal_index_t position,
                                             hal_index_t lastPosition,
                                             bool noDupes,
-                                            bool noAncestors) const;
+                                            bool noAncestors,
+                                            bool reverseStrand) const;
 
    void getString(std::string& outString) const;
 
@@ -156,6 +161,7 @@ public:
    void read();
    void create();
    void resetTreeCache();
+   void resetBranchCaches();
 
 protected:
 
@@ -186,6 +192,7 @@ protected:
    H5::DSetCreatPropList _dcprops;
    hal_size_t _numChildrenInBottomArray;
    hal_size_t _totalSequenceLength;
+   hal_size_t _numChunksInArrayBuffer;
 
    mutable Genome* _parentCache;
    mutable std::vector<Genome*> _childCache;

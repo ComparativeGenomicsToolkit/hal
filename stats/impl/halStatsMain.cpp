@@ -28,6 +28,9 @@ static void printParent(ostream& os, AlignmentConstPtr alignment,
 static void printRootName(ostream& os, AlignmentConstPtr alignment);
 static void printBranchLength(ostream& os, AlignmentConstPtr alignment, 
                               const string& genomeName);
+static void printBranches(ostream& os, AlignmentConstPtr alignment); 
+static void printNumSegments(ostream& os, AlignmentConstPtr alignment,
+                             const string& genomeName); 
 
 
 int main(int argc, char** argv)
@@ -53,7 +56,7 @@ int main(int argc, char** argv)
                            "separated list of genomes", "\"\"");
   optionsParser->addOption("spanRoot", "print genomes on path" 
                            "(or spanning tree) between comma "
-                           "separated list of genomes.  Different from --path"
+                           "separated list of genomes.  Different from --span"
                            "only in that the spanning tree root is also "
                            "given", "\"\"");
   optionsParser->addOption("children", "print names of children of given "
@@ -63,6 +66,9 @@ int main(int argc, char** argv)
                            "\"\"");
   optionsParser->addOption("branchLength", "print branch length between "
                            "given genome and its parent in the tree",
+                           "\"\"");
+  optionsParser->addOption("numSegments", "print numTopSegments "
+                           "numBottomSegments for given genome.",
                            "\"\"");
 
   string path;
@@ -78,6 +84,7 @@ int main(int argc, char** argv)
   string parentFromGenome;
   bool printRoot;
   string nameForBL;
+  string numSegmentsGenome;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -94,6 +101,7 @@ int main(int argc, char** argv)
     parentFromGenome = optionsParser->getOption<string>("parent");
     printRoot = optionsParser->getFlag("root");
     nameForBL = optionsParser->getOption<string>("branchLength");
+    numSegmentsGenome = optionsParser->getOption<string>("numSegments");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -107,12 +115,14 @@ int main(int argc, char** argv)
     if (parentFromGenome != "\"\"") ++optCount;
     if (printRoot) ++optCount;
     if (nameForBL != "\"\"") ++optCount;
+    if (numSegmentsGenome != "\"\"") ++optCount;
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                           "--branches, --sequenceStats, --children, --parent, "
-                          "--bedSequences, --root, and --branchLength " );
-    }        
+                          "--bedSequences, --root, --numSegments and "
+                          "--branchLength " );
+    }
   }
   catch(exception& e)
   {
@@ -171,6 +181,10 @@ int main(int argc, char** argv)
     else if (nameForBL != "\"\"")
     {
       printBranchLength(cout, alignment, nameForBL);
+    }
+    else if (numSegmentsGenome != "\"\"")
+    {
+      printNumSegments(cout, alignment, numSegmentsGenome);
     }
     else
     {
@@ -419,4 +433,16 @@ void printBranchLength(ostream& os, AlignmentConstPtr alignment,
     string parentName = alignment->getParentName(genomeName);
     os << alignment->getBranchLength(parentName, genomeName) << endl;
   }
+}
+
+void printNumSegments(ostream& os, AlignmentConstPtr alignment, 
+                      const string& genomeName)
+{
+  const Genome* genome = alignment->openGenome(genomeName);
+  if (genome == NULL)
+  {
+    throw hal_exception(string("Genome ") + genomeName + " not found.");
+  }
+  os << genome->getNumTopSegments() << " " << genome->getNumBottomSegments()
+     << endl;
 }

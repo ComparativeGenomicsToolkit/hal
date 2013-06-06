@@ -41,6 +41,11 @@ void MafExport::setUcscNames(bool ucscNames)
   _ucscNames = ucscNames;
 }
 
+void MafExport::setUnique(bool unique)
+{
+  _unique = unique;
+}
+
 void MafExport::writeHeader()
 {
   assert(_mafStream != NULL);
@@ -86,25 +91,31 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                                         _noAncestors);
   _mafBlock.initBlock(colIt, _ucscNames);
   assert(_mafBlock.canAppendColumn(colIt) == true);
-  _mafBlock.appendColumn(colIt);
+  if (_unique == false || colIt->isCanonicalOnRef() == true)
+  {
+    _mafBlock.appendColumn(colIt);
+  }
   size_t numBlocks = 0;
   while (colIt->lastColumn() == false)
   {
     colIt->toRight();
-    if (_mafBlock.canAppendColumn(colIt) == false)
+    if (_unique == false || colIt->isCanonicalOnRef() == true)
     {
-      // erase empty entries from the column.  helps when there are 
-      // millions of sequences (ie from fastas with lots of scaffolds)
-      if (numBlocks++ % 1000 == 0)
+      if (_mafBlock.canAppendColumn(colIt) == false)
       {
-        colIt->defragment();
-      }
+        // erase empty entries from the column.  helps when there are 
+        // millions of sequences (ie from fastas with lots of scaffolds)
+        if (numBlocks++ % 1000 == 0)
+        {
+          colIt->defragment();
+        }
 
-      mafStream << _mafBlock << '\n';
-      _mafBlock.initBlock(colIt, _ucscNames);
-      assert(_mafBlock.canAppendColumn(colIt) == true);
+        mafStream << _mafBlock << '\n';
+        _mafBlock.initBlock(colIt, _ucscNames);
+        assert(_mafBlock.canAppendColumn(colIt) == true);
+      }
+      _mafBlock.appendColumn(colIt);
     }
-    _mafBlock.appendColumn(colIt);
   }
   mafStream << _mafBlock << endl;
 }

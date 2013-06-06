@@ -53,14 +53,18 @@ Sequence* HDF5SequenceIterator::getSequence()
 {
   assert(_sequence._index >= 0 && _sequence._index < 
          (hal_index_t)_sequence._genome->_sequenceArray.getSize()); 
-  return &_sequence;
+  // don't return local sequence pointer.  give cached pointer from
+  // genome instead (so it will not expire when iterator moves!)
+  return _sequence._genome->getSequence(_sequence.getName());
 }
 
 const Sequence* HDF5SequenceIterator::getSequence() const
 {
   assert(_sequence._index >= 0 && _sequence._index < 
          (hal_index_t)_sequence._genome->_sequenceArray.getSize());
-  return &_sequence;
+  // don't return local sequence pointer.  give cached pointer from
+  // genome instead (so it will not expire when iterator moves!)
+  return _sequence._genome->getSequence(_sequence.getName());
 }
 
 bool HDF5SequenceIterator::equals(SequenceIteratorConstPtr other) const

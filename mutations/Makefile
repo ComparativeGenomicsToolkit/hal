@@ -1,15 +1,16 @@
 rootPath = ../
 include ../include.mk
 
-libSourcesAll = impl/*.cpp
-libSources1=$(subst impl/halBranchMutationsMain.cpp,,${libSourcesAll})
-libSources=$(subst impl/halSummarizeMutationsMain.cpp,,${libSources1})
-libHeaders = inc/*.h 
+libSourcesAll = $(wildcard impl/*.cpp)
+libSources2=$(subst impl/halBranchMutationsMain.cpp,,${libSourcesAll})
+libSources1=$(subst impl/halSummarizeMutationsMain.cpp,,${libSources2})
+libSources=$(subst impl/halSnps.cpp,,${libSources1})
+libHeaders = $(wildcard inc/*.h)
 
-all : ${libPath}/halMutations.a ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halTreeMutations.py
+all : ${libPath}/halMutations.a ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halTreeMutations.py ${binPath}/halSnps
 
 clean : 
-	rm -f ${libPath}/halMutations.a ${libPath}/*.h ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halTreeMutations.py
+	rm -f ${libPath}/halMutations.a ${libPath}/*.h ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halTreeMutations.py ${binPath}/halSnps
 
 ${libPath}/halMutations.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
@@ -28,3 +29,7 @@ ${binPath}/halSummarizeMutations : impl/halSummarizeMutationsMain.cpp ${libPath}
 ${binPath}/halTreeMutations.py : impl/halTreeMutations.py
 	cp impl/halTreeMutations.py ${binPath}
 	chmod u+x ${binPath}/halTreeMutations.py
+
+${binPath}/halSnps : impl/halSnps.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halSnps impl/halSnps.cpp ${libPath}/halLib.a ${basicLibs}
+

@@ -13,7 +13,19 @@ using namespace hal;
 
 bool PositionCache::insert(hal_index_t pos)
 {
-  IntervalSet::iterator i = _set.lower_bound(pos);
+  IntervalSet::iterator i;
+  if (_prev != _set.end() && _prev->first == pos - 1)
+  {
+    ++_prev;
+    i = _prev;
+    assert (i == _set.lower_bound(pos));
+  }
+  else
+  {
+    i = _set.lower_bound(pos);
+  }
+  _prev = i;
+
   IntervalSet::iterator j;
   if (i != _set.end() && i->second <= pos)
   {
@@ -28,8 +40,19 @@ bool PositionCache::insert(hal_index_t pos)
   }
   else
   {
+    // set hint to position before pos in set.  according to the docs, the
+    // hint works differently in C++11 where it wants the position *after*
+    // so we try to detect the compiler below...
+    j = i;
+#if __cplusplus < 201103L
+    if (j != _set.begin())
+    {
+      --j;
+    }
+#endif
     // create new unit interval
-    i = _set.insert(pair<hal_index_t, hal_index_t>(pos, pos)).first;
+    i = _set.insert(j, pair<hal_index_t, hal_index_t>(pos, pos));
+    _prev = i;
   }
   assert(i->second <= i->first);
   // merge abutting left interval
@@ -74,6 +97,7 @@ void PositionCache::clear()
 {
   _set.clear();
   _size = 0;
+  _prev = _set.begin();
 }
 
 // for debugging

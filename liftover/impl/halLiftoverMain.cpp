@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
-#include "halLiftover.h"
+#include "halColumnLiftover.h"
 
 using namespace std;
 using namespace hal;
@@ -17,13 +17,31 @@ static CLParserPtr initParser()
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->addArgument("halFile", "input hal file");
   optionsParser->addArgument("srcGenome", "source genome name");
-  optionsParser->addArgument("srcBed", "path of input bed file");
+  optionsParser->addArgument("srcBed", "path of input bed file.  set as stdin "
+                             "to stream from standard input");
   optionsParser->addArgument("tgtGenome", "target genome name");
-  optionsParser->addArgument("tgtBed", "path of output bed file");
-  optionsParser->addOptionFlag("addDupeColumn", "add column to output bed "
-                               "with integer number of paralgous mappings in "
-                               "target", false);
+  optionsParser->addArgument("tgtBed", "path of output bed file.  set as stdout"
+                             " to stream to standard output.");
+  optionsParser->addOptionFlag("noDupes", "do not map between duplications in"
+                               " graph.", false);
   optionsParser->addOptionFlag("append", "append results to tgtBed", false);
+  optionsParser->addOption("inBedVersion", "bed version of input file "
+                           "as integer between 3 and 9 or 12 reflecting "
+                           "the number of columns (see bed "
+                           "format specification for more details). Will "
+                           "be autodetected by default.", 0);
+  optionsParser->addOption("outBedVersion", "bed version of output file "
+                           "as integer between 3 and 9 or 12 reflecting "
+                           "the number of columns (see bed "
+                           "format specification for more details). Will "
+                           "be same as input by default.", 0);
+  optionsParser->addOptionFlag("keepExtra", "keep extra columns. these are "
+                               "columns in the input beyond the specified or "
+                               "detected bed version, and which are cut by "
+                               "default.", false);
+
+  optionsParser->setDescription("Map BED genome interval coordinates between "
+                                "two genomes.");
   return optionsParser;
 }
 
@@ -36,8 +54,11 @@ int main(int argc, char** argv)
   string srcBedPath;
   string tgtGenomeName;
   string tgtBedPath;
-  bool dupeCol;
+  bool noDupes;
   bool append;
+  int inBedVersion;
+  int outBedVersion;
+  bool keepExtra;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -46,8 +67,11 @@ int main(int argc, char** argv)
     srcBedPath =  optionsParser->getArgument<string>("srcBed");
     tgtGenomeName = optionsParser->getArgument<string>("tgtGenome");
     tgtBedPath =  optionsParser->getArgument<string>("tgtBed");
-    dupeCol = optionsParser->getFlag("addDupeColumn");
+    noDupes = optionsParser->getFlag("noDupes");
     append = optionsParser->getFlag("append");
+    inBedVersion = optionsParser->getOption<int>("inBedVersion");
+    outBedVersion = optionsParser->getOption<int>("outBedVersion");
+    keepExtra = optionsParser->getFlag("keepExtra");
   }
   catch(exception& e)
   {
@@ -78,22 +102,42 @@ int main(int argc, char** argv)
                           ", not found in alignment");
     }
     
-    ifstream srcBed(srcBedPath.c_str());
-    if (!srcBed)
+    ifstream srcBed;
+    istream* srcBedPtr;
+    if (srcBedPath == "stdin")
     {
-      throw hal_exception("Error opening srcBed, " + srcBedPath);
+      srcBedPtr = &cin;
+    }
+    else
+    {
+      srcBed.open(srcBedPath.c_str());
+      srcBedPtr = &srcBed;
+      if (!srcBed)
+      {
+        throw hal_exception("Error opening srcBed, " + srcBedPath);
+      }
     }
     
     ios_base::openmode mode = append ? ios::out | ios::app : ios_base::out;
-    ofstream tgtBed(tgtBedPath.c_str(), mode);
-    if (!tgtBed)
+    ofstream tgtBed;
+    ostream* tgtBedPtr;
+    if (tgtBedPath == "stdout")
     {
-      throw hal_exception("Error opening tgtBed, " + tgtBedPath);
+      tgtBedPtr = &cout;
+    }
+    else
+    {      
+      tgtBed.open(tgtBedPath.c_str(), mode);
+      tgtBedPtr = &tgtBed;
+      if (!tgtBed)
+      {
+        throw hal_exception("Error opening tgtBed, " + tgtBedPath);
+      }
     }
     
-    Liftover liftover;
-    liftover.convert(alignment, srcGenome, &srcBed, tgtGenome, &tgtBed, 
-                     dupeCol);
+    ColumnLiftover liftover;
+    liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
+                     inBedVersion, outBedVersion, keepExtra, !noDupes);
 
   }
   catch(hal_exception& e)

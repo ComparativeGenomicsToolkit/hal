@@ -66,7 +66,10 @@ public:
    /** Get a pointer to the reference sequence for the column iterator */
    virtual const hal::Sequence* getReferenceSequence() const = 0;
 
-   /** Get the position in the reference sequence */
+   /** Get the position in the reference sequence 
+    * NOTE
+    * Seems to be returning the next position, rather than the current.
+    * Must go back and review but it is concerning. */
    virtual hal_index_t getReferenceSequencePosition() const = 0;
 
    /** Get a pointer to the column map */
@@ -84,6 +87,13 @@ public:
     * reduce memory as well as speed up queries on the column map. Perhaps
     * this should eventually be built in and made transparent? */
    virtual void defragment() const = 0;
+
+   /** Check whether the column iterator's left-most reference coordinate
+    * is within the iterator's range, ie is "canonical".  This can be used
+    * to ensure that the same reference position does not get sampled by
+    * different iterators covering distinct ranges.  If there are no 
+    * duplications, then this function will always return true. */
+   virtual bool isCanonicalOnRef() const = 0;
    
 protected:
    friend class counted_ptr<ColumnIterator>;

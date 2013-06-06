@@ -11,7 +11,8 @@
 using namespace std;
 using namespace hal;
 
-Liftover::Liftover() : _inputFile(NULL), _outputFile(NULL),
+Liftover::Liftover() : _outBedStream(NULL),                       
+                       _inBedVersion(-1), _outBedVersion(-1),
                        _srcGenome(NULL), _tgtGenome(NULL)
 {
 
@@ -24,138 +25,201 @@ Liftover::~Liftover()
 
 void Liftover::convert(AlignmentConstPtr alignment,
                        const Genome* srcGenome,
-                       ifstream* inputFile,
+                       istream* inBedStream,
                        const Genome* tgtGenome,
-                       ofstream* outputFile,
-                       bool addDupeColumn)
+                       ostream* outBedStream,
+                       int inBedVersion,
+                       int outBedVersion,
+                       bool addExtraColumns,
+                       bool traverseDupes)
 {
   _srcGenome = srcGenome;
-  _inputFile = inputFile;
   _tgtGenome = tgtGenome;
-  _outputFile = outputFile;
-  _addDupeColumn = addDupeColumn;
+  _outBedStream = outBedStream;
+  _addExtraColumns = addExtraColumns;
+  _inBedVersion = inBedVersion;
+  _outBedVersion = outBedVersion;
+  _traverseDupes = traverseDupes;
   _missedSet.clear();
   _tgtSet.clear();
-  assert(_srcGenome && _inputFile && tgtGenome && outputFile);
+  assert(_srcGenome && inBedStream && tgtGenome && outBedStream);
 
   _tgtSet.insert(tgtGenome);
-
-  while (!inputFile->bad() && !inputFile->eof())
+  
+  // we copy into a stringstream because we never want to
+  // run getBedVersion (which does random access) on cin (which is a
+  // possible value for inBedStream)
+  string firstLineBuffer;
+  stringstream* firstLineStream = NULL;
+  if (_inBedVersion <= 0)
   {
-    bool lineRead  = readBedLine();
-    if (lineRead == true)
+    skipWhiteSpaces(inBedStream);
+    std::getline(*inBedStream, firstLineBuffer);
+    firstLineStream = new stringstream(firstLineBuffer);
+    _inBedVersion = BedScanner::getBedVersion(firstLineStream);
+    assert(inBedStream->eof() || _inBedVersion >= 3);
+  }
+  if (_outBedVersion <= 0)
+  {
+    _outBedVersion = _inBedVersion;
+  }
+
+  if (firstLineStream != NULL)
+  {
+    scan(firstLineStream, _inBedVersion);
+    delete firstLineStream;
+  }
+  scan(inBedStream, _inBedVersion);
+}
+
+void Liftover::visitBegin()
+{
+}
+
+void Liftover::visitLine()
+{
+  _outBedLines.clear();
+  _srcSequence = _srcGenome->getSequence(_bedLine._chrName);
+  if (_srcSequence == NULL)
+  {
+    pair<set<string>::iterator, bool> result = _missedSet.insert(
+      _bedLine._chrName);
+    if (result.second == true)
     {
-      _srcSequence = _srcGenome->getSequence(_inName);
-      if (_srcSequence == NULL)
-      {
-        pair<set<string>::iterator, bool> result = _missedSet.insert(_inName);
-        if (result.second == true)
-        {
-          std::cerr << "Unable to find sequence " << _inName << " in genome "
-                    << srcGenome->getName() << endl;
-        }
-      }
+      std::cerr << "Unable to find sequence " << _bedLine._chrName 
+                << " in genome " << _srcGenome->getName() << endl;
+    }
+    return;
+  }
       
-      else if (_inEnd > _srcSequence->getSequenceLength())
-      {
-        std::cerr << "Skipping interval with endpoint " << _inEnd 
-                  << "because sequence " << _inName << " has length " 
-                  << _srcSequence->getSequenceLength() << endl;
-      }
-      else
-      {
-        liftInterval();
-      }
-    }
+  else if (_bedLine._end > (hal_index_t)_srcSequence->getSequenceLength())
+  {
+    std::cerr << "Skipping interval with endpoint " << _bedLine._end 
+              << "because sequence " << _bedLine._chrName << " has length " 
+              << _srcSequence->getSequenceLength() << endl;
+    return;
   }
+  
+  if (_inBedVersion > 9 && !_bedLine._blocks.empty())
+  {
+    liftBlockIntervals();
+  }
+  else
+  {
+    liftInterval();
+  }
+
+  writeLineResults();
 }
 
-void Liftover::liftInterval()
-{  
-  PositionMap posCacheMap;
-  _colIt = _srcSequence->getColumnIterator(&_tgtSet, 0, _inStart, _inEnd - 1);
-  while (true) 
-  {
-    const ColumnMap* cMap = _colIt->getColumnMap();
-    for (ColumnMap::const_iterator i = cMap->begin(); i != cMap->end(); ++i)
-    {
-      if (i->first->getGenome() == _tgtGenome)
-      {
-        const DNASet* dSet = i->second;
-        const Sequence* seq = i->first;
-        // if we're not adding the column, don't bother keeping track
-        hal_size_t paralogyFactor = _addDupeColumn ? dSet->size() : 0;
-        SeqIndex seqIdx(seq, paralogyFactor);
-        for (DNASet::const_iterator j = dSet->begin(); j != dSet->end(); ++j)
-        {
-          pair<PositionMap::iterator, bool> res =
-             posCacheMap.insert(pair<SeqIndex, PositionCache*>(seqIdx, NULL));
-          if (res.second == true)
-          {
-            res.first->second = new PositionCache();
-          }
-          res.first->second->insert((*j)->getArrayIndex());
-        }
-      }
-    }
-    if (_colIt->lastColumn() == true)
-    {
-      break;
-    }
-    _colIt->toRight();
-  } 
-
-  PositionMap::iterator pcmIt;
-  for (pcmIt = posCacheMap.begin(); pcmIt != posCacheMap.end(); ++pcmIt)
-  {
-    const Sequence* seq = pcmIt->first.first;
-    _outParalogy = pcmIt->first.second;
-    hal_size_t seqStart = seq->getStartPosition();
-    PositionCache* posCache = pcmIt->second;
-    const IntervalSet* iSet = posCache->getIntervalSet();
-    _outName = seq->getName();
-    for (IntervalSet::const_iterator k = iSet->begin(); k != iSet->end(); ++k)
-    {
-      _outStart = k->second - seqStart;
-      _outEnd = k->first + 1 - seqStart;
-      writeBedLine();
-    }
-    delete posCache;
-  }
-}
-
-bool Liftover::readBedLine()
+void Liftover::visitEOF()
 {
-  _buffer.clear();
-  _data.clear();
-  getline(*_inputFile, _buffer);
-  istringstream ss(_buffer);
-  ss >> _inName;
-  if (ss.bad() || ss.eof() || _inName[0] == '#')
-  {
-    return false;
-  }
-  ss >> _inStart >> _inEnd;
-  string token;
-  while (!ss.bad() && !ss.eof())
-  {
-    ss >> token;
-    _data.push_back(token);
-  }
-  return !ss.bad();
 }
 
-void Liftover::writeBedLine()
+void Liftover::writeLineResults()
 {
-  *_outputFile << _outName << '\t' << _outStart << '\t' << _outEnd;
-  for (size_t i = 0; i < _data.size(); ++i)
+  if (_outBedVersion > 9)
   {
-    *_outputFile << '\t' << _data[i];
+    collapseExtendedBedLines();
   }
-  if (_addDupeColumn)
+  BedList::iterator i = _outBedLines.begin();
+  for (; i != _outBedLines.end(); ++i)
   {
-    assert(_outParalogy > 0);
-    *_outputFile << '\t' << _outParalogy;
+    if (_addExtraColumns == false)
+    {
+      i->_extra.clear();
+    }
+    i->write(*_outBedStream, _outBedVersion);
   }
-  *_outputFile << '\n';
+}
+
+void Liftover::collapseExtendedBedLines()
+{
+  _outBedLines.sort();
+  
+   // want to greedily merge up colinear intervals
+  BedList::iterator i = _outBedLines.begin();
+  BedList::iterator j;
+  BedList::iterator k;
+  
+  for (; i != _outBedLines.end(); ++i)
+  {
+    j = i;
+    ++j;
+    for (; j != _outBedLines.end() && 
+            i->_chrName == j->_chrName &&
+            i->_strand == j->_strand; j = k)
+    {
+      k = j;
+      k++;
+      if (canMerge(*i, *j) == true)
+      {
+        mergeAsBlockInterval(*i, *j);
+        _outBedLines.erase(j);
+      }
+    }
+  }   
+}
+
+void Liftover::liftBlockIntervals()
+{
+  BedLine blockBed = _bedLine;
+  std::sort(blockBed._blocks.begin(), blockBed._blocks.end());
+  _bedLine._blocks.clear();
+  hal_index_t prev = _bedLine._start;
+  vector<BedBlock>::iterator blockIt = blockBed._blocks.begin();
+  for (; blockIt != blockBed._blocks.end(); ++blockIt)
+  {
+    // region before this block
+    _bedLine._start = prev;
+    _bedLine._end = blockIt->_start;
+    assert(_bedLine._end >= _bedLine._start);
+    if (_bedLine._end > _bedLine._start)
+    {
+      liftInterval();
+    }
+    // the block
+    _bedLine._start = blockIt->_start;
+    _bedLine._end = blockIt->_start + blockIt->_length;
+    if (_bedLine._end > _bedLine._start)
+    {
+      liftInterval();
+    }
+    prev = _bedLine._end;
+  }
+  
+  // bit between last block and end
+  _bedLine._start = prev;
+  _bedLine._end = blockBed._end;
+  if (_bedLine._start > _bedLine._end)
+  {
+    liftInterval();
+  }
+}
+
+bool Liftover::canMerge(const BedLine& bedLine1, const BedLine& bedLine2)
+{
+  assert(bedLine2._blocks.empty());
+  assert(bedLine1._chrName == bedLine2._chrName);
+  assert(bedLine1._strand == bedLine2._strand);
+
+  return (bedLine1._blocks.empty() ||
+          bedLine2._start >= bedLine1._blocks.back()._start +
+          bedLine1._blocks.back()._length);
+}
+
+void Liftover::mergeAsBlockInterval(BedLine& bedTarget, 
+                                    const BedLine& bedSource)
+{
+  assert(canMerge(bedTarget, bedSource) == true);
+  if (bedTarget._blocks.empty())
+  {
+    BedBlock block = {bedTarget._start, bedTarget._end - bedTarget._start};
+    bedTarget._blocks.push_back(block);
+  }
+
+  BedBlock block = {bedSource._start, bedSource._end - bedSource._start};
+  bedTarget._start = std::min(bedTarget._start, bedSource._start);
+  bedTarget._end = std::max(bedTarget._end, bedSource._end);
+  bedTarget._blocks.push_back(block);
 }

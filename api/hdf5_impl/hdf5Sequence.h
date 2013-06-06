@@ -42,7 +42,9 @@ public:
 
    Genome* getGenome();
 
-   hal_size_t getStartPosition() const;
+   hal_index_t getStartPosition() const;
+
+   hal_index_t getEndPosition() const;
 
    hal_index_t getArrayIndex() const;
 
@@ -85,7 +87,8 @@ public:
                                             hal_index_t position,
                                             hal_index_t lastPosition,
                                             bool noDupes,
-                                            bool noAncestors) const;
+                                            bool noAncestors,
+                                            bool reverseStrand) const;
 
    void getString(std::string& outString) const;
 

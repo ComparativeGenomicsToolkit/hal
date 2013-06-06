@@ -166,7 +166,7 @@ inline bool HDF5DNAIterator::leftOf(DNAIteratorConstPtr& other) const
 inline void HDF5DNAIterator::readString(std::string& outString,
                                         hal_size_t length) const
 {
-  assert(inRange() == true);
+  assert(length == 0 || inRange() == true);
   outString.resize(length);
 
   for (hal_size_t i = 0; i < length; ++i)
@@ -179,7 +179,7 @@ inline void HDF5DNAIterator::readString(std::string& outString,
 inline void HDF5DNAIterator::writeString(const std::string& inString,
                                          hal_size_t length)
 {
-  assert(inRange() == true);
+  assert(length == 0 || inRange() == true);
   for (hal_size_t i = 0; i < length; ++i)
   {
     setChar(inString[i]);

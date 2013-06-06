@@ -81,16 +81,19 @@ protected:
    friend AlignmentPtr 
    hdf5AlignmentInstance(const H5::FileCreatPropList& fileCreateProps,
                          const H5::FileAccPropList& fileAccessProps,
-                         const H5::DSetCreatPropList& datasetCreateProps);
+                         const H5::DSetCreatPropList& datasetCreateProps,
+                         bool inMemory);
    friend AlignmentConstPtr 
    hdf5AlignmentInstanceReadOnly(const H5::FileCreatPropList& fileCreateProps,
                                  const H5::FileAccPropList& fileAccessProps,
-                                 const H5::DSetCreatPropList& datasetCreateProps);
+                                 const H5::DSetCreatPropList& datasetCreateProps,
+                                 bool inMemory);
 
    HDF5Alignment();
    HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
                  const H5::FileAccPropList& fileAccessProps,
-                 const H5::DSetCreatPropList& datasetCreateProps);
+                 const H5::DSetCreatPropList& datasetCreateProps,
+                 bool inMemory = false);
    
    void loadTree();
    void writeTree();
@@ -99,6 +102,7 @@ protected:
                         const std::pair<std::string, double>& parentName,
                         const std::vector<std::pair<std::string, double> >&
                         childNames);
+
 
 protected:
 
@@ -116,6 +120,7 @@ protected:
    mutable std::map<std::string, stTree*> _nodeMap;
    bool _dirty;
    mutable std::map<std::string, HDF5Genome*> _openGenomes;
+   mutable bool _inMemory;
 };
 
 }

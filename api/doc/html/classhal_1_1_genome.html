@@ -111,8 +111,8 @@ Inheritance diagram for hal::Genome:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a79f578787808c6e2ae637b76cc3c50ab"><td class="memItemLeft" align="right" valign="top">virtual const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_genome.html#a79f578787808c6e2ae637b76cc3c50ab">getName</a> () const =0</td></tr>
 <tr class="separator:a79f578787808c6e2ae637b76cc3c50ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3c7bc7c498ab227da458ffb89ce59ed"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_genome.html#af3c7bc7c498ab227da458ffb89ce59ed">setDimensions</a> (const std::vector&lt; <a class="el" href="structhal_1_1_sequence_1_1_info.html">hal::Sequence::Info</a> &gt; &amp;sequenceDimensions)=0</td></tr>
-<tr class="separator:af3c7bc7c498ab227da458ffb89ce59ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab319d1e697fa309da9e9bb81f0fd576"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_genome.html#aab319d1e697fa309da9e9bb81f0fd576">setDimensions</a> (const std::vector&lt; <a class="el" href="structhal_1_1_sequence_1_1_info.html">hal::Sequence::Info</a> &gt; &amp;sequenceDimensions, bool storeDNAArrays=true)=0</td></tr>
+<tr class="separator:aab319d1e697fa309da9e9bb81f0fd576"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95e370d10e25f30d6a297f97369fc201"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_genome.html#a95e370d10e25f30d6a297f97369fc201">updateTopDimensions</a> (const std::vector&lt; <a class="el" href="structhal_1_1_sequence_1_1_update_info.html">hal::Sequence::UpdateInfo</a> &gt; &amp;sequenceDimensions)=0</td></tr>
 <tr class="separator:a95e370d10e25f30d6a297f97369fc201"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c4395718211987eb656f2ca5c1a7198"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_genome.html#a2c4395718211987eb656f2ca5c1a7198">updateBottomDimensions</a> (const std::vector&lt; <a class="el" href="structhal_1_1_sequence_1_1_update_info.html">hal::Sequence::UpdateInfo</a> &gt; &amp;sequenceDimensions)=0</td></tr>
@@ -149,6 +149,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aeed9be6d1e60d19ef083e8dcf2997e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5e496a6bae9f169bfb6e93382e046eda"><td class="memItemLeft" align="right" valign="top">virtual hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_genome.html#a5e496a6bae9f169bfb6e93382e046eda">getChildIndex</a> (const <a class="el" href="classhal_1_1_genome.html">Genome</a> *child) const =0</td></tr>
 <tr class="separator:a5e496a6bae9f169bfb6e93382e046eda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aedf233c40b373c1ddd97b40e485243a7"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_genome.html#aedf233c40b373c1ddd97b40e485243a7">containsDNAArray</a> () const =0</td></tr>
+<tr class="separator:aedf233c40b373c1ddd97b40e485243a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classhal_1_1_segmented_sequence"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classhal_1_1_segmented_sequence')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classhal_1_1_segmented_sequence.html">hal::SegmentedSequence</a></td></tr>
 <tr class="memitem:a09e58062e72ff29aeb75177d58982434 inherit pub_methods_classhal_1_1_segmented_sequence"><td class="memItemLeft" align="right" valign="top">virtual hal_size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classhal_1_1_segmented_sequence.html#a09e58062e72ff29aeb75177d58982434">getSequenceLength</a> () const =0</td></tr>
 <tr class="separator:a09e58062e72ff29aeb75177d58982434 inherit pub_methods_classhal_1_1_segmented_sequence"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -231,6 +233,30 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="aedf233c40b373c1ddd97b40e485243a7"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual bool hal::Genome::containsDNAArray </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Test if the genome stores DNA sequence. Will be true unless storeDNAArrays was set to false in setDimensions </p>
+
+</div>
+</div>
 <a class="anchor" id="a117d434a84663aba31e52a6610a25816"></a>
 <div class="memitem">
 <div class="memproto">
@@ -672,7 +698,7 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="af3c7bc7c498ab227da458ffb89ce59ed"></a>
+<a class="anchor" id="aab319d1e697fa309da9e9bb81f0fd576"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -683,8 +709,18 @@ Protected Member Functions</h2></td></tr>
           <td class="memname">virtual void hal::Genome::setDimensions </td>
           <td>(</td>
           <td class="paramtype">const std::vector&lt; <a class="el" href="structhal_1_1_sequence_1_1_info.html">hal::Sequence::Info</a> &gt; &amp;&#160;</td>
-          <td class="paramname"><em>sequenceDimensions</em></td><td>)</td>
+          <td class="paramname"><em>sequenceDimensions</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>storeDNAArrays</em> = <code>true</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -697,6 +733,7 @@ Protected Member Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">sequenceDimensions</td><td>List of information for all sequences that are to be contained in the genome. </td></tr>
+    <tr><td class="paramname">storeDNAArrays</td><td>Allocate arrays for DNA sequences. This is and should be true by default, but we introduce the option to allow creating of HAL alignments without DNA information (ie just blocks). This functionality is used for halLodExtract, for example. </td></tr>
   </table>
   </dd>
 </dl>
@@ -771,7 +808,7 @@ Protected Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 14:22:36 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu May 2 2013 14:18:42 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

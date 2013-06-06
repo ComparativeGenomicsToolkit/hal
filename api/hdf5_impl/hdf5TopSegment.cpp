@@ -101,6 +101,24 @@ bool HDF5TopSegment::isMissingData(double nThreshold) const
   return false;
 }
 
+bool HDF5TopSegment::isCanonicalParalog() const
+{
+  bool isCanon = false;
+  if (hasParent())
+  {
+    HDF5Genome* parGenome = 
+       const_cast <HDF5Genome*>(
+         dynamic_cast<const HDF5Genome*>(_genome->getParent()));
+
+    HDF5BottomSegment parent(parGenome, 
+                             &parGenome->_bottomArray,
+                             getParentIndex());
+    hal_index_t childGenomeIndex = parGenome->getChildIndex(_genome);
+    isCanon = parent.getChildIndex(childGenomeIndex) == _index;
+  }
+  return isCanon;
+}
+
 // HDF5 SPECIFIC
 H5::CompType HDF5TopSegment::dataType()
 {

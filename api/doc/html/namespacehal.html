@@ -139,10 +139,10 @@ Functions</h2></td></tr>
 <tr class="separator:ae057c2d94524a61930bad99276831bf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af35b4a5ad59e706d3e8acd6bc0c06aae"><td class="memItemLeft" align="right" valign="top">AlignmentConstPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#af35b4a5ad59e706d3e8acd6bc0c06aae">hdf5AlignmentInstanceReadOnly</a> ()</td></tr>
 <tr class="separator:af35b4a5ad59e706d3e8acd6bc0c06aae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae94a3dce7f93a1536630c06a6bcc9159"><td class="memItemLeft" align="right" valign="top">AlignmentPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#ae94a3dce7f93a1536630c06a6bcc9159">hdf5AlignmentInstance</a> (const H5::FileCreatPropList &amp;fileCreateProps, const H5::FileAccPropList &amp;fileAccessProps, const H5::DSetCreatPropList &amp;datasetCreateProps)</td></tr>
-<tr class="separator:ae94a3dce7f93a1536630c06a6bcc9159"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2195981fc4b509e5e0b65ffa971a7fe0"><td class="memItemLeft" align="right" valign="top">AlignmentConstPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#a2195981fc4b509e5e0b65ffa971a7fe0">hdf5AlignmentInstanceReadOnly</a> (const H5::FileCreatPropList &amp;fileCreateProps, const H5::FileAccPropList &amp;fileAccessProps, const H5::DSetCreatPropList &amp;datasetCreateProps)</td></tr>
-<tr class="separator:a2195981fc4b509e5e0b65ffa971a7fe0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad008b0a0de486b14a3cb9036c7f16cc9"><td class="memItemLeft" align="right" valign="top">AlignmentPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#ad008b0a0de486b14a3cb9036c7f16cc9">hdf5AlignmentInstance</a> (const H5::FileCreatPropList &amp;fileCreateProps, const H5::FileAccPropList &amp;fileAccessProps, const H5::DSetCreatPropList &amp;datasetCreateProps, bool inMemory=false)</td></tr>
+<tr class="separator:ad008b0a0de486b14a3cb9036c7f16cc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03b3f62d21267fdec3035738249e03e8"><td class="memItemLeft" align="right" valign="top">AlignmentConstPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#a03b3f62d21267fdec3035738249e03e8">hdf5AlignmentInstanceReadOnly</a> (const H5::FileCreatPropList &amp;fileCreateProps, const H5::FileAccPropList &amp;fileAccessProps, const H5::DSetCreatPropList &amp;datasetCreateProps, bool inMemory=false)</td></tr>
+<tr class="separator:a03b3f62d21267fdec3035738249e03e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8cec382b66b75fe3c25cf994619435f5"><td class="memItemLeft" align="right" valign="top">AlignmentPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#a8cec382b66b75fe3c25cf994619435f5">openHalAlignment</a> (const std::string &amp;path, CLParserConstPtr options)</td></tr>
 <tr class="separator:a8cec382b66b75fe3c25cf994619435f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af7fa18d1488baff3f5eb786f36ec586c"><td class="memItemLeft" align="right" valign="top">AlignmentConstPtr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacehal.html#af7fa18d1488baff3f5eb786f36ec586c">openHalAlignmentReadOnly</a> (const std::string &amp;path, CLParserConstPtr options)</td></tr>
@@ -341,7 +341,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
 
 </div>
 </div>
-<a class="anchor" id="ae94a3dce7f93a1536630c06a6bcc9159"></a>
+<a class="anchor" id="ad008b0a0de486b14a3cb9036c7f16cc9"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -361,7 +361,13 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const H5::DSetCreatPropList &amp;&#160;</td>
-          <td class="paramname"><em>datasetCreateProps</em>&#160;</td>
+          <td class="paramname"><em>datasetCreateProps</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>inMemory</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -376,6 +382,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
     <tr><td class="paramname">fileCreateProps</td><td>File creation properties. fairly low-level and should generally be set to H5::FileCreatPropList::DEFAULT </td></tr>
     <tr><td class="paramname">fileAccessProps</td><td>File access properties. Contains cache-related stuff </td></tr>
     <tr><td class="paramname">datasetCreateProps</td><td>Compression and chunking parameters among others </td></tr>
+    <tr><td class="paramname">inMemory</td><td>Store all data in memory (overrides and disables hdf5 cache) </td></tr>
   </table>
   </dd>
 </dl>
@@ -398,7 +405,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
 
 </div>
 </div>
-<a class="anchor" id="a2195981fc4b509e5e0b65ffa971a7fe0"></a>
+<a class="anchor" id="a03b3f62d21267fdec3035738249e03e8"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -418,7 +425,13 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const H5::DSetCreatPropList &amp;&#160;</td>
-          <td class="paramname"><em>datasetCreateProps</em>&#160;</td>
+          <td class="paramname"><em>datasetCreateProps</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>inMemory</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -433,6 +446,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
     <tr><td class="paramname">fileCreateProps</td><td>File creation properties. fairly low-level and should generally be set to H5::FileCreatPropList::DEFAULT </td></tr>
     <tr><td class="paramname">fileAccessProps</td><td>File access properties. Contains cache-related stuff </td></tr>
     <tr><td class="paramname">datasetCreateProps</td><td>Compression and chunking parameters among others </td></tr>
+    <tr><td class="paramname">inMemory</td><td>Store all data in memory (overrides and disables hdf5 cache) </td></tr>
   </table>
   </dd>
 </dl>
@@ -702,7 +716,7 @@ const hal_index_t&#160;</td><td class="memItemRight" valign="bottom"><b>NULL_IND
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 14:22:36 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu May 2 2013 14:18:41 for halapi by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

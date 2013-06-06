@@ -28,7 +28,8 @@ public:
                          hal_index_t lastIndex,
                          hal_size_t maxInsertionLength,
                          bool noDupes,
-                         bool noAncestors);
+                         bool noAncestors,
+                         bool reverseStrand);
    
    virtual ~DefaultColumnIterator();
 
@@ -42,6 +43,7 @@ public:
    virtual const ColumnMap* getColumnMap() const;
    virtual hal_index_t getArrayIndex() const;
    virtual void defragment() const;
+   virtual bool isCanonicalOnRef() const;
 
 protected:
 
@@ -88,12 +90,16 @@ protected:
    mutable hal_size_t _maxInsertionLength;
    mutable bool _noDupes;
    mutable bool _noAncestors;
+   mutable bool _reversed;
 
    mutable ColumnMap _colMap;
    mutable TopSegmentIteratorConstPtr _top;
    mutable TopSegmentIteratorConstPtr _next;
    mutable VisitCache _visitCache;
    mutable bool _break;
+   mutable const Sequence* _prevRefSequence;
+   mutable hal_index_t _prevRefIndex;
+   mutable hal_index_t _leftmostRefPos;
 };
 
 inline bool DefaultColumnIterator::parentInScope(const Genome* genome) const

@@ -117,10 +117,16 @@ Genome* HDF5Sequence::getGenome()
   return _genome;
 }
 
-hal_size_t HDF5Sequence::getStartPosition() const
+hal_index_t HDF5Sequence::getStartPosition() const
 {
   refreshCache();
   return _startCache;
+}
+
+hal_index_t HDF5Sequence::getEndPosition() const
+{
+  refreshCache();
+  return _startCache + (hal_index_t)(_lengthCache - 1);
 }
 
 hal_index_t HDF5Sequence::getArrayIndex() const
@@ -219,7 +225,7 @@ DNAIteratorConstPtr HDF5Sequence::getDNAEndIterator() const
 ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
   const std::set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,
-  bool noAncestors) const
+  bool noAncestors, bool reverseStrand) const
 {
   hal_index_t idx = (hal_index_t)(position + getStartPosition());
   hal_index_t lastIdx;
@@ -241,7 +247,8 @@ ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
   }
   const DefaultColumnIterator* newIt = 
      new DefaultColumnIterator(getGenome(), targets, idx, lastIdx, 
-                               maxInsertLength, noDupes, noAncestors);
+                               maxInsertLength, noDupes, noAncestors,
+                               reverseStrand);
   return ColumnIteratorConstPtr(newIt);
 }
 
