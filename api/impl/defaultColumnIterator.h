@@ -43,6 +43,7 @@ public:
    virtual const ColumnMap* getColumnMap() const;
    virtual hal_index_t getArrayIndex() const;
    virtual void defragment() const;
+   virtual bool isCanonicalOnRef() const;
 
 protected:
 
@@ -98,6 +99,7 @@ protected:
    mutable bool _break;
    mutable const Sequence* _prevRefSequence;
    mutable hal_index_t _prevRefIndex;
+   mutable hal_index_t _leftmostRefPos;
 };
 
 inline bool DefaultColumnIterator::parentInScope(const Genome* genome) const

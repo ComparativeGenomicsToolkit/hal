@@ -58,7 +58,14 @@ static CLParserPtr initParser()
                                "for output names.  By default, only sequence "
                                "names are used",
                                false);
-                           
+  optionsParser->addOptionFlag("unique",
+                               "only write column whose left-most reference "
+                               "coordinate is in the specified range.  this "
+                               "is used to insure that the same column isnt "
+                               "sampled twice (due to ducplications) by mafs "
+                               "generated on distinct ranges.",
+                               false);
+  
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
 }
@@ -79,6 +86,7 @@ int main(int argc, char** argv)
   bool noDupes;
   bool noAncestors;
   bool ucscNames;
+  bool unique;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -95,6 +103,7 @@ int main(int argc, char** argv)
     noDupes = optionsParser->getFlag("noDupes");
     noAncestors = optionsParser->getFlag("noAncestors");
     ucscNames = optionsParser->getFlag("ucscNames");
+    unique = optionsParser->getFlag("unique");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -193,6 +202,7 @@ int main(int argc, char** argv)
     mafExport.setNoDupes(noDupes);
     mafExport.setNoAncestors(noAncestors);
     mafExport.setUcscNames(ucscNames);
+    mafExport.setUnique(unique);
 
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")

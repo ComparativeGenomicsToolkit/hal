@@ -247,6 +247,15 @@ void DefaultColumnIterator::defragment() const
   _stack.resetLinks();
 }
 
+bool DefaultColumnIterator::isCanonicalOnRef() const
+{
+  assert(_stack.size() > 0);
+  assert(_leftmostRefPos >= 0 && (hal_size_t)_leftmostRefPos < 
+         _stack[0]->_sequence->getGenome()->getSequenceLength());
+  return _leftmostRefPos >= _stack[0]->_firstIndex &&
+     _leftmostRefPos <= _stack[0]->_lastIndex;
+}
+
 // Starting from the reference sequence which is determined 
 // from the stack, we start recursing over the entire column. 
 // if init is specified, all the initial iterators are created
@@ -262,6 +271,7 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
 
   resetColMap();
   _break = false;
+  _leftmostRefPos = _stack[0]->_index;
 
   const Sequence* refSequence = _stack.top()->_sequence;
   const Genome* refGenome = refSequence->getGenome();
@@ -816,6 +826,11 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
     }
   }
 
+  // update leftmost ref pos which is used by isCanonicalOnRef() 
+  if (genome == _stack[0]->_sequence->getGenome())
+  {
+    _leftmostRefPos = min(_leftmostRefPos, dnaIt->getArrayIndex());
+  }
   return !found;
 }
 
