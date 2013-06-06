@@ -39,3 +39,15 @@ ifdef ENABLE_UDC
 	cflags += -I${KENTSRC}/src/inc -pthread
 	basicLibs += ${KENTSRC}/src/lib/${MACHTYPE}/jkweb.a  ${SAMTABIXDIR}/libsamtabix.a -lssl -lcrypto
 endif
+
+# phyloP support
+phyloPcppflags = ""
+phyloPlibs = ""
+ifdef ENABLE_PHYLOP
+# hardcode lapack and phast temporarily
+	PHAST=../../phast
+	CLAPACKPATH=../../CLAPACK
+	F2CPATH=${CLAPACKPATH}/F2CLIBS
+	phyloPcppflags += -I${PHAST}/include -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+	phyloPlibs += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
+endif
