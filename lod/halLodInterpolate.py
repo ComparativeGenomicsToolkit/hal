@@ -18,7 +18,7 @@ import math
 from collections import defaultdict
 from multiprocessing import Pool
 
-from hal.stats.halStats import runShellCommand
+from hal.stats.halStats import runParallelShellCommands
 from hal.stats.halStats import getHalGenomes
 from hal.stats.halStats import getHalNumSegments
 from hal.stats.halStats import getHalStats
@@ -90,22 +90,6 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
         return os.path.abspath(outHalPath)
     else:
         return os.path.relpath(outHalPath, os.path.dirname(outLodPath))
-
-def runHalLodExtract(cmdList, numProc):
-    if numProc == 1 or len(cmdList) == 1:
-        map(runShellCommand, cmdList)
-    else:
-        mpPool = Pool(processes=min(numProc, len(cmdList)))
-        result = mpPool.map_async(runShellCommand, cmdList)
-        # specifying a timeout allows keyboard interrupts to work?!
-        # http://stackoverflow.com/questions/1408356/keyboard-interrupts-with-pythons-multiprocessing-pool
-        try:
-            result.get(sys.maxint)
-        except KeyboardInterrupt:
-            mpPool.terminate()
-            raise RuntimeError("Keyboard interrupt")
-        if not result.successful():
-            raise "One or more of commands %s failed" % str(cmdList)
                          
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
@@ -138,7 +122,7 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         prevStep = step
         curStepFactor *= scaleCorFac
     lodFile.close()
-    runHalLodExtract(lodExtractCmds, numProc)
+    runParallelShellCommands(lodExtractCmds, numProc)
     
 def main(argv=None):
     if argv is None:
