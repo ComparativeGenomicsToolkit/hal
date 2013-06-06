@@ -252,10 +252,13 @@ def writeGenomesFile(genome2seq2len, halfile, options, outdir):
         options.lodOpts += '--maxDNA %d ' % options.lodMaxDNA
     if options.lodInMemory is True:
         options.lodOpts += '--inMemory '
+    if options.lodNumProc is not None:
+        options.lodOpts += '--numProc %d ' % options.lodNumProc
+    if options.lodMinSeqFrac is not None:
+        options.lodOpts += '--minSeqFrac %f ' % options.lodMinSeqFrac
     if len(options.lodOpts) > 0:
         options.lod = True
     if options.lod:
-        options.lodOpts += '--trans '
         lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
     
     filename = os.path.join(outdir, "genomes.txt")
@@ -332,6 +335,8 @@ def addOptions(parser):
     parser.add_option('--lodScale', dest='lodScale', type='float', help='Scaling factor between two successive levels of detail. Default=%default.', default=None)
     parser.add_option('--lodMaxDNA', dest='lodMaxDNA', type='int', help='Maximum query length that will such that its hal level of detail will contain nucleotide information. Default=%default.', default=None)
     parser.add_option('--lodInMemory', dest='lodInMemory', action='store_true', help='Load entire hal file into memory when generating levels of detail instead of using hdf5 cache. Default=%default.', default=False)
+    parser.add_option('--lodNumProc', dest='lodNumProc', type='int', help='Number of levels of detail to generate concurrently in parallel processes', default=None)
+    parser.add_option('--lodMinSeqFrac', dest='lodMinSeqFrac', type='float', help='Minumum sequence length to sample as fraction of step size for level of detail generation: ie sequences with length <= floor(minSeqFrac * step) are ignored. Use default from halLodExtract if not set.', default=None)
     
     parser.add_option('--bedDir', dest='beddir', help='Directory containing bed files of the input genomes. Format: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
     parser.add_option('--hub', dest='hubLabel', default='myHub', help='a single-word name of the directory containing the track hub files. Not displayed to hub users. Default=%default')
