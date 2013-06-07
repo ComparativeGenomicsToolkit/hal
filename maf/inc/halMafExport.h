@@ -35,6 +35,7 @@ public:
    void setNoAncestors(bool noAncestors);
    void setUcscNames(bool ucscNames);
    void setUnique(bool unique);
+   void setAppend(bool append);
 
 
 protected:
@@ -51,6 +52,7 @@ protected:
    bool _noAncestors;
    bool _ucscNames;
    bool _unique;
+   bool _append;
 };
 
 }

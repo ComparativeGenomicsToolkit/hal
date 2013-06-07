@@ -213,6 +213,7 @@ int main(int argc, char** argv)
     mafExport.setNoAncestors(noAncestors);
     mafExport.setUcscNames(ucscNames);
     mafExport.setUnique(unique);
+    mafExport.setAppend(append);
 
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")
