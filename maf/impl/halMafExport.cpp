@@ -97,11 +97,12 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                                         lastPosition,
                                                         _noDupes,
                                                         _noAncestors);
-  _mafBlock.initBlock(colIt, _ucscNames);
-  assert(_mafBlock.canAppendColumn(colIt) == true);
+
   hal_size_t appendCount = 0;
   if (_unique == false || colIt->isCanonicalOnRef() == true)
   {
+    _mafBlock.initBlock(colIt, _ucscNames);
+    assert(_mafBlock.canAppendColumn(colIt) == true);
     _mafBlock.appendColumn(colIt);
     ++appendCount;
   }
@@ -111,6 +112,11 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
     colIt->toRight();
     if (_unique == false || colIt->isCanonicalOnRef() == true)
     {
+      if (appendCount == 0)
+      {
+        _mafBlock.initBlock(colIt, _ucscNames);
+        assert(_mafBlock.canAppendColumn(colIt) == true);
+      }
       if (_mafBlock.canAppendColumn(colIt) == false)
       {
         // erase empty entries from the column.  helps when there are 
