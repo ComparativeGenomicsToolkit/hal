@@ -65,7 +65,10 @@ static CLParserPtr initParser()
                                "sampled twice (due to ducplications) by mafs "
                                "generated on distinct ranges.",
                                false);
-  
+  optionsParser->addOptionFlag("append",
+                               "append to instead of overwrite output file.",
+                               false);
+
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
 }
@@ -87,6 +90,7 @@ int main(int argc, char** argv)
   bool noAncestors;
   bool ucscNames;
   bool unique;
+  bool append;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -104,6 +108,7 @@ int main(int argc, char** argv)
     noAncestors = optionsParser->getFlag("noAncestors");
     ucscNames = optionsParser->getFlag("ucscNames");
     unique = optionsParser->getFlag("unique");
+    append = optionsParser->getFlag("append");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -191,7 +196,12 @@ int main(int argc, char** argv)
       }
     }
 
-    ofstream mafStream(mafPath.c_str());
+    ios_base::openmode openFlags = ios_base::out;
+    if (append == true)
+    {
+      openFlags |= ios_base::app;
+    }
+    ofstream mafStream(mafPath.c_str(), openFlags);
     if (!mafStream)
     {
       throw hal_exception("Error opening " + mafPath);
