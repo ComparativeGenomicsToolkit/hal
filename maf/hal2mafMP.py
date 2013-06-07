@@ -81,7 +81,23 @@ def computeSlices(options, seqLen):
             if r > 0:
                 i = seqLen / options.sliceSize
                 yield (i * options.sliceSize, r, i)
-    
+
+def concatenateSlices(options, sliceCmds):
+    if options.mafFile is not None:
+        first = True
+        for cmd in sliceCmds:
+            sliceMafPath = cmd.split()[2] #oops
+            assert os.path.isfile(sliceMafPath)
+            if first:
+                os.rename(sliceMafPath, options.mafFile)
+            else:
+                with open(option.mafFile, "wa") as tgt:
+                    with open(sliceMafPath, "r") as src:
+                        for line in src:
+                            tgt.writeline(line)
+                os.remove(sliceMafPath)
+                first = False
+            
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes. 
 def runParallelSlices(options):
@@ -124,6 +140,12 @@ def runParallelSlices(options):
     # run in parallel
     runParallelShellCommands(sliceCmds, options.numProc)
 
+    # concatenate into output if desired
+    concatenateSlices(options, sliceCmds)
+
+
+    
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -152,6 +174,12 @@ def main(argv=None):
                         "with length less than smallSize will be lumped into "
                         "a single output MAF called \"small\"",
                         type=int, default=0)
+    parser.add_argument("--mafFile",
+                        help="Concentate all output MAFs in the mafDir into "
+                        "combined MAF file in this path.  The split MAFs are"
+                        " deleted in the process.",
+                        default=None)
+
 
     ##################################################################
     #HDF5 OPTIONS (as copied from hal/api/hdf5_impl/hdf5CLParser.cpp)
@@ -243,6 +271,11 @@ def main(argv=None):
                                "incompatible with --length option")
     if args.sliceSize is not None and args.smallSize >= args.sliceSize:
         raise RuntimeError("--smallSize must be less than --sliceSize")
+    if args.mafFile is not None:
+        assert args.mafFile != args.halFile
+        test = open(args.mafFile, "w")
+        test.write("\n")
+        test.close()
 
     runParallelSlices(args)
     
