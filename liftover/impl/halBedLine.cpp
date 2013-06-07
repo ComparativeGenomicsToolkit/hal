@@ -68,6 +68,10 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
     {
       throw hal_exception("Error scanning BED strand");
     }
+    if (_strand != '.' && _strand != '+' && _strand != '-')
+    {
+      throw hal_exception("Strand character must be + or - or .");
+    }
   }
   if (_version > 6)
   {
@@ -164,6 +168,10 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
         if (ss2.bad())
         {
           throw hal_exception("Error scanning BED blockStarts");
+        }
+        if (block._start + block._length > _end)
+        {
+          throw hal_exception("Error BED block out of range");
         }
       }
     }
@@ -264,7 +272,7 @@ bool BedLine::operator<(const BedLine& other) const
   }
   else if (_chrName == other._chrName)
   {
-    if (_strand == '+' && other._strand == '-')
+    if (_strand == '+' && other._strand != '+')
     {
       return true;
     }

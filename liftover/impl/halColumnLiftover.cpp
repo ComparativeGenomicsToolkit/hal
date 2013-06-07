@@ -85,7 +85,7 @@ void ColumnLiftover::liftInterval()
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
-      outBedLine._strand = '+';
+      outBedLine._strand = _bedLine._strand == '.' ? '.' : '+';
     }
     delete posCache;
   }
@@ -104,7 +104,7 @@ void ColumnLiftover::liftInterval()
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
-      outBedLine._strand = '-';
+      outBedLine._strand = _bedLine._strand == '.' ? '.' : '-';
     }
     delete posCache;
   }

@@ -172,15 +172,15 @@ void Liftover::liftBlockIntervals()
   {
     // region before this block
     _bedLine._start = prev;
-    _bedLine._end = blockIt->_start;
+    _bedLine._end = blockIt->_start + _bedLine._start;
     assert(_bedLine._end >= _bedLine._start);
     if (_bedLine._end > _bedLine._start)
     {
       liftInterval();
     }
     // the block
-    _bedLine._start = blockIt->_start;
-    _bedLine._end = blockIt->_start + blockIt->_length;
+    _bedLine._start = blockIt->_start + _bedLine._start;
+    _bedLine._end = blockIt->_start + blockIt->_length + _bedLine._start;
     if (_bedLine._end > _bedLine._start)
     {
       liftInterval();
@@ -221,5 +221,6 @@ void Liftover::mergeAsBlockInterval(BedLine& bedTarget,
   BedBlock block = {bedSource._start, bedSource._end - bedSource._start};
   bedTarget._start = std::min(bedTarget._start, bedSource._start);
   bedTarget._end = std::max(bedTarget._end, bedSource._end);
+  block._start -= bedTarget._start;
   bedTarget._blocks.push_back(block);
 }
