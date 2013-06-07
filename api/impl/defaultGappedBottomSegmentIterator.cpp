@@ -178,6 +178,22 @@ bool DefaultGappedBottomSegmentIterator::isMissingData(double nThreshold) const
   return false;
 }
 
+bool DefaultGappedBottomSegmentIterator::isTop() const
+{
+  return false;
+}
+
+hal_size_t DefaultGappedBottomSegmentIterator::getMappedSegments(
+  set<MappedSegmentConstPtr>& outSegments,
+  const Genome* tgtGenome,
+  const set<const Genome*>* genomesOnPath,
+  bool doDupes,
+  hal_size_t minLength) const
+{
+  throw hal_exception("getMappedSegments is not supported in "
+                      "DefaultGappedTopSegmentIterator");
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
@@ -235,6 +251,19 @@ void DefaultGappedBottomSegmentIterator::toReverse() const
 
   _left->toReverse();
   _right->toReverse();
+  swap(_left, _right);
+}
+
+void DefaultGappedBottomSegmentIterator::toReverseInPlace() const
+{
+  assert(_right->getReversed() == _left->getReversed());
+  assert(_left->equals(_right) || _left->getReversed() || 
+         _left->leftOf(_right->getStartPosition()));
+  assert(_left->equals(_right) || !_left->getReversed() || 
+         _left->rightOf(_right->getStartPosition()));
+
+  _left->toReverseInPlace();
+  _right->toReverseInPlace();
   swap(_left, _right);
 }
 

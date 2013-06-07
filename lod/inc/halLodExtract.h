@@ -39,7 +39,10 @@ public:
                                     hal_size_t step,
                                     const std::string& tree,
                                     const std::string& rootName,
-                                    bool keepSequences);
+                                    bool keepSequences,
+                                    bool allSequences,
+                                    double probeFrac,
+                                    double minSeqFrac);
    
    
 protected:
@@ -61,6 +64,8 @@ protected:
                       const std::vector<const Genome*>& inChildren);
    void writeSegments(const Genome* inParent, 
                       const std::vector<const Genome*>& inChildren);
+   void writeUnsampledSequence(const Sequence* outSequence,
+                               SegmentIteratorPtr outSegment);
    void writeHomologies(const Genome* inParent, 
                         const std::vector<const Genome*>& inChildren);
    void updateBlockEdges(const Genome* inParentGenome,
@@ -76,6 +81,9 @@ protected:
 
    LodGraph _graph;
    bool _keepSequences;
+   bool _allSequences;
+   double _probeFrac;
+   double _minSeqFrac;
 };
 
 }

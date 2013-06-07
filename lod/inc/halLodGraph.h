@@ -33,6 +33,7 @@ public:
    const LodBlock* getBlock(hal_size_t index) const;
    hal_size_t getNumBlocks() const;
    const SegmentSet* getSegmentSet(const Sequence* sequence) const;
+   const LodBlock* getTelomeres() const;
 
    /** Build the LOD graph for a given subtree of the alignment.  The
     * entire graph is stored in memory in a special structure (ie not within
@@ -40,7 +41,8 @@ public:
     * is:  every step bases are sampled.  */
    void build(AlignmentConstPtr alignment, const Genome* parent,
               const std::vector<const Genome*>& children, 
-              hal_size_t step);
+              hal_size_t step, bool allSequences, double probeFrac,
+              double minSeqFrac);
 
    /** Help debuggin and tuning */
    void printDimensions(std::ostream& os) const;
@@ -62,9 +64,17 @@ protected:
    /** Read a HAL genome into sequence graph */
    void scanGenome(const Genome* genome);
 
-   /** Test if we can add a column.  Does it collide?  does it fail 
-    * heuristics? */
-   bool canAddColumn(ColumnIteratorConstPtr colIt);
+   /** Check maxium distance of this column to any other sampled position.
+    * Also count the number of genomes it aligns to.  This information
+    * will be used to prioritize probed columns*/
+   void evaluateColumn(ColumnIteratorConstPtr colIt, hal_size_t& outDeltaMax,
+                       hal_size_t& outNumGenomes, hal_size_t& outMinSeqLen);
+
+   /* Test if this is the best column based on stats collected above */
+   bool bestColumn(hal_size_t probeStep, hal_size_t delta, 
+                   hal_size_t numGenomes, hal_size_t minSeqLen,
+                   hal_size_t maxDelta, hal_size_t maxNumGenomes,
+                   hal_size_t maxMinSeqLen);
 
    /** Add segments for the telomeres of the sequence, ie at 
     * position -1 and and endPosition + 1 */
@@ -72,6 +82,9 @@ protected:
 
    /** Add a single column iterator as  a block */
    void createColumn(ColumnIteratorConstPtr colIt);
+
+   /** Add an entire sequence as unaliged segment */
+   void createUnaligedSegment(const Sequence* sequence);
 
    /** compute the adjacencies using the SegmentSets */
    void computeAdjacencies();
@@ -108,6 +121,18 @@ protected:
    
    // nodes sorted by sequence
    SequenceMap _seqMap;
+
+   // sample all sequences no matter how small they are
+   bool _allSequences;
+
+   // number of probe positions to try in range as fraction of the
+   // step size
+   // [pos - step / 2, pos + step / 2] before accepting column
+   double _probeFrac;
+   
+   // min size of sequence to not be ignored (computed from the
+   // minSeqFrac paramater)
+   hal_size_t _minSeqLen;
 };
 
 inline const LodBlock* LodGraph::getBlock(hal_size_t index) const
@@ -125,6 +150,11 @@ inline const LodGraph::SegmentSet* LodGraph::getSegmentSet(
 {
   assert(_seqMap.find(sequence) != _seqMap.end());
   return _seqMap.find(sequence)->second;
+}
+
+inline const LodBlock* LodGraph::getTelomeres() const
+{
+  return &_telomeres;
 }
 
 }

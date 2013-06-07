@@ -23,9 +23,23 @@ static CLParserPtr initParser()
                            "Phylogenetic tree of output HAL file.  Must "
                            "contain only genomes from the input HAL file. "
                            "(input\'s tree used if empty)", "\"\"");
+  optionsParser->addOption("probeFrac", 
+                           "Fraction of bases in step-interval to sample while "
+                           "looking for most aligned column.",
+                           0.025);
+  optionsParser->addOption("minSeqFrac", 
+                           "Minumum sequence length to sample as fraction of "
+                           "step size: ie sequences with length <= floor("
+                           "minSeqFrac * step) are ignored.",
+                           0.5);
   optionsParser->addOptionFlag("keepSequences",
                                "Write the sequence strings to the output "
                                "file.", false);
+  optionsParser->addOptionFlag("allSequences", 
+                               "Sample all sequences (chromsomes / contigs /"
+                               " etc.) no matter how small they are.  "
+                               "By default, small sequences may be skipped if "
+                               "they fall within the step size.", false);
   optionsParser->setDescription("Generate a new HAL file at a coarser "
                                 "Level of Detail (LOD) by interpolation.");
   return optionsParser;
@@ -40,6 +54,9 @@ int main(int argc, char** argv)
   string outTree;
   hal_size_t step;
   bool keepSequences;
+  bool allSequences;
+  double probeFrac;
+  double minSeqFrac;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -49,12 +66,19 @@ int main(int argc, char** argv)
     outTree = optionsParser->getOption<string>("outTree");
     step = optionsParser->getArgument<hal_size_t>("step");
     keepSequences = optionsParser->getFlag("keepSequences");
+    allSequences = optionsParser->getFlag("allSequences");
+    probeFrac = optionsParser->getOption<double>("probeFrac");
+    minSeqFrac = optionsParser->getOption<double>("minSeqFrac");
+    if (allSequences == true)
+    {
+      minSeqFrac = 0.;
+    }
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
     optionsParser->printUsage(cerr);
-    exit(1);
+    return 1;
   }
   try
   {
@@ -89,7 +113,8 @@ int main(int argc, char** argv)
     LodExtract lodExtract;
     lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
                                            step, outTree, rootName,
-                                           keepSequences);
+                                           keepSequences, allSequences,
+                                           probeFrac, minSeqFrac);
   }
 /*  catch(hal_exception& e)
   {

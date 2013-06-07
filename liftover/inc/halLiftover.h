@@ -11,11 +11,11 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "hal.h"
+#include "halBedScanner.h"
 
 namespace hal {
 
-class Liftover
+class Liftover : public BedScanner
 {
 public:
    
@@ -24,50 +24,45 @@ public:
 
    void convert(AlignmentConstPtr alignment,
                 const Genome* srcGenome,
-                std::ifstream* inputFile,
+                std::istream* inputFile,
                 const Genome* tgtGenome,
-                std::ofstream* outputFile,
-                bool addDupeColumn);
+                std::ostream* outputFile,
+                int inBedVersion = -1,
+                int outBedVersion = -1,
+                bool addExtraColumns = false,
+                bool traverseDupes = true);
                    
 protected:
 
-   bool readBedLine();
-   void writeBedLine();
-   void liftInterval();
-
-   typedef ColumnIterator::DNASet DNASet;
-   typedef ColumnIterator::ColumnMap ColumnMap;
-   typedef PositionCache::IntervalSet IntervalSet;
-   
-   typedef std::pair<const Sequence*, hal_size_t> SeqIndex;
-   typedef std::map<SeqIndex, PositionCache*> PositionMap;
+   virtual void visitBegin();
+   virtual void visitLine();
+   virtual void visitEOF();
+   virtual void writeLineResults();
+   virtual void collapseExtendedBedLines();
+   virtual void liftBlockIntervals();
+   virtual bool canMerge(const BedLine& bedLine1, const BedLine& bedLine2);
+   virtual void mergeAsBlockInterval(BedLine& bedTarget, 
+                                     const BedLine& bedSource);
+   virtual void liftInterval() = 0;
    
 protected: 
 
+   typedef std::list<BedLine> BedList;
+
    AlignmentConstPtr _alignment;
-   std::ifstream* _inputFile;
-   std::ofstream* _outputFile;
-   bool _addDupeColumn;
+   std::ostream* _outBedStream;
+   bool _addExtraColumns;
+   bool _traverseDupes;
+   BedList _outBedLines;
+   int _inBedVersion;
+   int _outBedVersion;
    
-   // current bed line
-   std::string _inName;
-   hal_size_t _inStart;
-   hal_size_t _inEnd;
-   std::vector<std::string> _data;
-
-   std::string _buffer;
-   std::string _outName;
-   hal_size_t _outStart;
-   hal_size_t _outEnd;
-   hal_size_t _outParalogy;
-
    const Genome* _srcGenome;
    const Genome* _tgtGenome;
    const Sequence* _srcSequence;
    std::set<const Genome*> _tgtSet;
 
    ColumnIteratorConstPtr _colIt;
-
    std::set<std::string> _missedSet;
 };
 

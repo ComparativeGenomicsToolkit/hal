@@ -16,20 +16,27 @@ import subprocess
 import time
 import math
 from collections import defaultdict
+from multiprocessing import Pool
 
-from hal.stats.halStats import runShellCommand
+from hal.stats.halStats import runParallelShellCommands
 from hal.stats.halStats import getHalGenomes
 from hal.stats.halStats import getHalNumSegments
 from hal.stats.halStats import getHalStats
 
 # Wrapper for halLodExtract
-def runHalLodExtract(inHalPath, outHalPath, step, keepSeq, inMemory):
+def getHalLodExtractCmd(inHalPath, outHalPath, step, keepSeq, inMemory,
+                     probeFrac, minSeqFrac):
     cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
-    if keepSeq:
+    if keepSeq is True:
         cmd += " --keepSequences"
-    if inMemory:
+    if inMemory is True:
         cmd += " --inMemory"
-    runShellCommand(cmd)
+    if probeFrac is not None:
+        cmd += " --probeFrac %f" % probeFrac
+    if minSeqFrac is not None:
+        cmd += " --minSeqFrac %f" % minSeqFrac
+
+    return cmd
 
 # All created paths get put in the same place using the same logic
 def makePath(inHalPath, outDir, step, name, ext):
@@ -83,28 +90,39 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
         return os.path.abspath(outHalPath)
     else:
         return os.path.relpath(outHalPath, os.path.dirname(outLodPath))
-
+                         
 # Run halLodExtract for each level of detail.
-def createLods(halPath, outLodPath, outDir, maxBlock, scaleFactor, overwrite,
-               maxDNA, absPath, trans, inMemory):
+def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
+               maxDNA, absPath, trans, inMemory, probeFrac, minSeqFrac,
+               scaleCorFac, numProc):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
-    steps = getSteps(halPath, maxBlock, scaleFactor)
+    steps = getSteps(halPath, maxBlock, scale)
+    curStepFactor = scaleCorFac
+    lodExtractCmds = []
+    prevStep = None
     for stepIdx in xrange(1,len(steps)):
-        step = steps[stepIdx]
-        prevStep = steps[stepIdx - 1]
-        maxQueryLength = maxBlock * prevStep
+        step = int(max(1, steps[stepIdx] * curStepFactor))
+        maxQueryLength = maxBlock * steps[stepIdx - 1]
         keepSequences = maxQueryLength <= maxDNA
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
         srcPath = halPath
         if trans is True and stepIdx > 1:
             srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
-        if overwrite is True or not os.path.isfile(outHalPath):            
-            runHalLodExtract(srcPath, outHalPath, step, keepSequences, inMemory)
+        if overwrite is True or not os.path.isfile(outHalPath):
+            lodExtractCmds.append(
+                getHalLodExtractCmd(srcPath, outHalPath, step, keepSequences,
+                                    inMemory, probeFrac, minSeqFrac))
+  
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
                                                     absPath)))
+        if prevStep > steps[-1]:
+            break
+        prevStep = step
+        curStepFactor *= scaleCorFac
     lodFile.close()
+    runParallelShellCommands(lodExtractCmds, numProc)
     
 def main(argv=None):
     if argv is None:
@@ -123,11 +141,11 @@ def main(argv=None):
     parser.add_argument("--maxBlock",
                         help="maximum desired number of blocks to ever " 
                         "display at once.", type=int,
-                        default=500)
+                        default=123)
     parser.add_argument("--scale",
                         help="scaling factor between two successive levels"
                         " of detail", type=float,
-                        default=10.0)
+                        default=3.0)
     parser.add_argument("--outHalDir", help="path of directory where "
                         "interpolated hal files are stored.  By default "
                         "they will be stored in the same directory as the "
@@ -142,7 +160,7 @@ def main(argv=None):
                         " will not contain sequence information.  -1 can be "
                         "used to specify that all levels will get sequence",
                         type=int,
-                        default=50000)
+                        default=0)
     parser.add_argument("--absPath",
                         help="write absolute path of created HAL files in the"
                         " outLodFile.  By default, the paths are relative to "
@@ -152,14 +170,25 @@ def main(argv=None):
                         "X-1.  By default, all levels of detail are generated "
                         "from the original HAL (X=0)",
                         action="store_true", default=False)
-    parser.add_argument("--keepSequencesBelow",
-                        help="",
-                        type=int, default=0)
     parser.add_argument("--inMemory", help="Load entire hdf5 arrays into "
                         "memory, overriding cache.",
                         action="store_true", default=False)
+    parser.add_argument("--probeFrac", help="Fraction of bases in step-interval"
+                        " to sample while looking for most aligned column. "
+                        "Use default from halLodExtract if not set.",                
+                        type=float, default=None)
+    parser.add_argument("--minSeqFrac", help="Minumum sequence length to sample "
+                        "as fraction of step size: ie sequences with "
+                        "length <= floor(minSeqFrac * step) are ignored."
+                        "Use default from halLodExtract if not set.",                
+                        type=float, default=None)
+    parser.add_argument("--scaleCorFac", help="Correction factor for scaling. "
+                        " Assume that scaling by (X * scaleCorFactor) is "
+                        " required to reduce the number of blocks by X.",
+                        type=float, default=1.3)
+    parser.add_argument("--numProc", help="Number of concurrent processes",
+                        type=int, default=1)
 
-        
     args = parser.parse_args()
 
     if args.outHalDir is not None and not os.path.exists(args.outHalDir):
@@ -171,13 +200,18 @@ def main(argv=None):
         args.outHalDir = os.path.dirname(args.hal)
     if not os.path.isdir(args.outHalDir):
         raise RuntimeError("Invalid output directory %s" % args.outHalDir)
+    assert args.scaleCorFac > 0
+    if args.trans is True and args.numProc > 1:
+        raise RuntimeError("--numProc > 1 not supported when --trans option is "
+                           "set")
 
     if args.maxDNA < 0:
         args.maxDNA = sys.maxint
 
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, args.overwrite, args.maxDNA,
-               args.absPath, args.trans, args.inMemory)
+               args.absPath, args.trans, args.inMemory, args.probeFrac,
+               args.minSeqFrac, args.scaleCorFac, args.numProc)
     
 if __name__ == "__main__":
     sys.exit(main())

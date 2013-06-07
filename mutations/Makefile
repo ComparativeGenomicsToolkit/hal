@@ -2,14 +2,15 @@ rootPath = ../
 include ../include.mk
 
 libSourcesAll = $(wildcard impl/*.cpp)
-libSources1=$(subst impl/halBranchMutationsMain.cpp,,${libSourcesAll})
-libSources=$(subst impl/halSummarizeMutationsMain.cpp,,${libSources1})
+libSources2=$(subst impl/halBranchMutationsMain.cpp,,${libSourcesAll})
+libSources1=$(subst impl/halSummarizeMutationsMain.cpp,,${libSources2})
+libSources=$(subst impl/halSnps.cpp,,${libSources1})
 libHeaders = $(wildcard inc/*.h)
 
-all : ${libPath}/halMutations.a ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations
+all : ${libPath}/halMutations.a ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halSnps
 
 clean : 
-	rm -f ${libPath}/halMutations.a ${libPath}/*.h ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations
+	rm -f ${libPath}/halMutations.a ${libPath}/*.h ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halSnps
 
 ${libPath}/halMutations.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
@@ -24,3 +25,6 @@ ${binPath}/halBranchMutations : impl/halBranchMutationsMain.cpp ${libPath}/halMu
 
 ${binPath}/halSummarizeMutations : impl/halSummarizeMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halSummarizeMutations impl/halSummarizeMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibs}
+
+${binPath}/halSnps : impl/halSnps.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halSnps impl/halSnps.cpp ${libPath}/halLib.a ${basicLibs}

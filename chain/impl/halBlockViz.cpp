@@ -8,7 +8,10 @@
 #include <cassert>
 #include <map>
 #include <sstream>
+#include <cmath>
 #include <limits>
+#include <algorithm>
+#include <stdlib.h>
 #include <string.h>
 #include "hal.h"
 #include "halChain.h"
@@ -43,19 +46,32 @@ static AlignmentConstPtr getExistingAlignment(int handle,
                                               bool needSequence);
 static char* copyCString(const string& inString);
 
-static hal_block_t* readBlocks(const Sequence* tSequence,
-                               hal_index_t absStart, hal_index_t absEnd,
-                               const Genome* qGenome, bool getSequenceString,
-                               bool doDupes);
+static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
+                                       const Sequence* tSequence,
+                                       hal_index_t absStart, hal_index_t absEnd,
+                                       const Genome* qGenome, 
+                                       bool getSequenceString,
+                                       bool doDupes);
 
-static void readBlock(hal_block_t* cur, SegmentIteratorConstPtr refSeg,
-                      SegmentIteratorConstPtr querySeg, bool getSequenceString,
-                      const string& genomeName);
+static void readBlock(AlignmentConstPtr seqAlignment,
+                      hal_block_t* cur, 
+                      vector<MappedSegmentConstPtr>& fragments,                                        bool getSequenceString, const string& genomeName);
+
+static hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
+                                                  BlockMapper::MSSet& paraSet);
+
+static void readTargetRange(hal_target_dupe_list_t* cur,
+                            vector<MappedSegmentConstPtr>& fragments);
+
+static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
 
 
 extern "C" int halOpenLOD(char *lodFilePath)
 {
-  return halOpenLodOrHal(lodFilePath, true);
+  bool isHal = lodFilePath && strlen(lodFilePath) > 4 &&
+     strcmp(lodFilePath + strlen(lodFilePath) - 4, ".hal") == 0;
+
+  return halOpenLodOrHal(lodFilePath, !isHal);
 }
 
 extern "C" int halOpen(char* halFilePath)
@@ -107,6 +123,11 @@ int halOpenLodOrHal(char* inputPath, bool isLod)
     cerr << "Exception caught: " << e.what() << endl;
     handle = -1;
   }
+  catch(...)
+  {
+    cerr << "Error opening " << inputPath << endl;
+    handle = -1;
+  }
   HAL_UNLOCK
   return handle;
 }
@@ -126,16 +147,31 @@ extern "C" int halClose(int handle)
     }
     handleMap.erase(mapIt);
   }
-   catch(exception& e)
+  catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
+    ret = -1;
+  }
+  catch(...)
+  {
+    cerr << "Error closing " << handle << endl;
     ret = -1;
   }
   HAL_UNLOCK
   return ret;
 }
 
-extern "C" void halFreeBlocks(hal_block_t* head)
+extern "C" void halFreeBlockResults(struct hal_block_results_t* results)
+{
+  if (results != NULL)
+  {
+    halFreeBlocks(results->mappedBlocks);
+    halFreeTargetDupeLists(results->targetDupeBlocks);
+    free(results);
+  }
+}
+
+extern "C" void halFreeBlocks(struct hal_block_t* head)
 {
   while (head != NULL)
   {
@@ -147,19 +183,38 @@ extern "C" void halFreeBlocks(hal_block_t* head)
   }
 }
 
-extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
-                                                         char* qSpecies,
-                                                         char* tSpecies,
-                                                         char* tChrom,
-                                                         int tStart, int tEnd,
-                                                         int getSequenceString,
-                                                         int doDupes)
+extern "C" void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes)
+{
+  while (dupes != NULL)
+  {
+    hal_target_dupe_list_t* next = dupes->next;
+    while (dupes->tRange != NULL)
+    {
+      hal_target_range_t* nextRange = dupes->tRange->next;
+      free(dupes->tRange);
+      dupes->tRange = nextRange;
+    }
+    free(dupes->qChrom);
+    free(dupes);
+    dupes = next;
+  }
+}
+
+extern "C" 
+struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
+                                                      char* qSpecies,
+                                                      char* tSpecies,
+                                                      char* tChrom,
+                                                      hal_int_t tStart, 
+                                                      hal_int_t tEnd,
+                                                      int getSequenceString,
+                                                      int doDupes)
 {
   HAL_LOCK
-  hal_block_t* head = NULL;
+  hal_block_results_t* results = NULL;
   try
   {
-    int rangeLength = tEnd - tStart;
+    hal_int_t rangeLength = tEnd - tStart;
     if (rangeLength < 0)
     {
       stringstream ss;
@@ -167,23 +222,12 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
       throw hal_exception(ss.str());
     }
     AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, hal_size_t(rangeLength), 
-                            getSequenceString != 0);
+       getExistingAlignment(halHandle, hal_size_t(rangeLength), false);
     checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
 
     const Genome* qGenome = alignment->openGenome(qSpecies);
     const Genome* tGenome = alignment->openGenome(tSpecies);
     const Sequence* tSequence = tGenome->getSequence(tChrom);
-    // cactus pipeline presently adds species name as prefix of 
-    // sequence name.  check if this caused confusion
-    string sequenceName;
-    if (tSequence == NULL)
-    {
-      sequenceName = tGenome->getName();
-      sequenceName += '.';
-      sequenceName += tChrom;
-      tSequence = tGenome->getSequence(sequenceName);
-    }
 
     hal_index_t myEnd = tEnd > 0 ? tEnd : tSequence->getSequenceLength();
     hal_index_t absStart = tSequence->getStartPosition() + tStart;
@@ -192,27 +236,43 @@ extern "C" struct hal_block_t *halGetBlocksInTargetRange(int halHandle,
     {
       throw hal_exception("Invalid range");
     }
+    if (absEnd > tSequence->getEndPosition())
+    {
+      throw hal_exception("Target end position outside of target sequence");
+    }
     // We now know the query length so we can do a proper lod query
     if (tEnd == 0)
     {
       alignment = getExistingAlignment(halHandle, absEnd - absStart, 
-                                       getSequenceString != 0);
+                                       false);
       checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
       qGenome = alignment->openGenome(qSpecies);
       tGenome = alignment->openGenome(tSpecies);
       tSequence = tGenome->getSequence(tSequence->getName());
     }
 
-    head = readBlocks(tSequence, absStart, absEnd, qGenome,
-                      getSequenceString != 0, doDupes != 0);
+    AlignmentConstPtr seqAlignment;
+    if (getSequenceString != 0)
+    {
+      seqAlignment = getExistingAlignment(halHandle, absEnd - absStart, 
+                                          true);
+    }
+
+    results = readBlocks(seqAlignment, tSequence, absStart, absEnd, qGenome,
+                         getSequenceString != 0, doDupes != 0);
   }
   catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
-    head = NULL;
+    results = NULL;
+  }
+  catch(...)
+  {
+    cerr << "Error in hal block query";
+    results = NULL;
   }
   HAL_UNLOCK
-  return head;
+  return results;
 }
 
 extern "C" struct hal_species_t *halGetSpecies(int halHandle)
@@ -276,6 +336,11 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle)
     cerr << "Exception caught: " << e.what() << endl;
     head = NULL;
   }
+  catch(...)
+  {
+    cerr << "Error in hal get species";
+    head = NULL;
+  }
   HAL_UNLOCK
   return head;
 }
@@ -333,13 +398,18 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
     cerr << "Exception caught: " << e.what() << endl;
     head = NULL;
   }
+  catch(...)
+  {
+    cerr << "Error in hal get chroms";
+    head = NULL;
+  }
   HAL_UNLOCK
   return head;
 }
 
 extern "C" char *halGetDna(int halHandle,
                            char* speciesName, char* chromName, 
-                           int start, int end)
+                           hal_int_t start, hal_int_t end)
 {
   HAL_LOCK
   char* dna = NULL;
@@ -378,6 +448,11 @@ extern "C" char *halGetDna(int halHandle,
   catch(exception& e)
   {
     cerr << "Exception caught: " << e.what() << endl;
+    dna = NULL;
+  }
+  catch(...)
+  {
+    cerr << "Error in hal get dna";
     dna = NULL;
   }
   HAL_UNLOCK
@@ -423,21 +498,10 @@ void checkGenomes(int halHandle,
   }
 
   const Sequence* tSequence = tGenome->getSequence(tChrom);
-  // cactus pipeline presently adds species name as prefix of 
-  // sequence name.  check if this caused confusion
-  string sequenceName;
-  if (tSequence == NULL)
-  {
-    sequenceName = tGenome->getName();
-    sequenceName += '.';
-    sequenceName += tChrom;
-    tSequence = tGenome->getSequence(sequenceName);
-  }
   if (tSequence == NULL)
   {
     stringstream ss;
-    ss << "Unable to locate sequence " << tChrom << "(or " << sequenceName 
-       << ") in genome " << tSpecies;
+    ss << "Unable to locate sequence " << tChrom << " in genome " << tSpecies;
     throw hal_exception(ss.str());
   }
 }
@@ -458,50 +522,74 @@ char* copyCString(const string& inString)
   return outString;
 }
 
-hal_block_t* readBlocks(const Sequence* tSequence,
-                        hal_index_t absStart, hal_index_t absEnd,
-                        const Genome* qGenome, bool getSequenceString,
-                        bool doDupes)
+hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
+                                const Sequence* tSequence,
+                                hal_index_t absStart, hal_index_t absEnd,
+                                const Genome* qGenome, bool getSequenceString,
+                                bool doDupes)
 {
   const Genome* tGenome = tSequence->getGenome();
   string qGenomeName = qGenome->getName();
-  hal_block_t* head = NULL;
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  blockMapper.init(tGenome, qGenome, absStart, absEnd, false);
+  blockMapper.init(tGenome, qGenome, absStart, absEnd, doDupes, 0, true);
   blockMapper.map();
-  const BlockMapper::SegMap& segMap = blockMapper.getMap();
-  for (BlockMapper::SegMap::const_iterator segMapIt = segMap.begin();
+  BlockMapper::MSSet paraSet;
+  if (doDupes == true)
+  {
+    blockMapper.extractReferenceParalogies(paraSet);
+  }
+  BlockMapper::MSSet& segMap = blockMapper.getMap();
+  vector<MappedSegmentConstPtr> fragments;
+  set<hal_index_t> queryCutSet;
+  set<hal_index_t> targetCutSet;
+  targetCutSet.insert(blockMapper.getAbsRefFirst());
+  targetCutSet.insert(blockMapper.getAbsRefLast());
+
+  hal_block_results_t* results = 
+     (hal_block_results_t*)calloc(1, sizeof(hal_block_results_t));
+
+  for (BlockMapper::MSSet::iterator segMapIt = segMap.begin();
        segMapIt != segMap.end(); ++segMapIt)
   {
-    SegmentIteratorConstPtr refSeg = segMapIt->first;
-    BlockMapper::SegSet* segSet = segMapIt->second;
-    assert(doDupes || segSet->size() == 1);
-    for (BlockMapper::SegSet::const_iterator segIt = segSet->begin();
-         segIt != segSet->end(); ++segIt)
+    assert((*segMapIt)->getSource()->getReversed() == false);
+    hal_block_t* cur = (hal_block_t*)calloc(1, sizeof(hal_block_t));
+    if (results->mappedBlocks == NULL)
     {
-      hal_block_t* cur = (hal_block_t*)calloc(1, sizeof(hal_block_t));
-      if (head == NULL)
-      {
-        head = cur;
-      }
-      else
-      {
-        prev->next = cur;
-      }
-      readBlock(cur, refSeg, *segIt, getSequenceString, qGenomeName);
-      prev = cur;
-    }    
+      results->mappedBlocks = cur;
+    }
+    else
+    {
+      prev->next = cur;
+    }
+    BlockMapper::extractSegment(segMapIt, paraSet, fragments, &segMap,
+                                targetCutSet, queryCutSet);
+    readBlock(seqAlignment, cur, fragments, getSequenceString, qGenomeName);
+    prev = cur;
   }
-  return head;
+  if (!paraSet.empty())
+  {
+    results->targetDupeBlocks = processTargetDupes(blockMapper, paraSet);
+  }
+  return results;
 }
 
-void readBlock(hal_block_t* cur, SegmentIteratorConstPtr refSeg,
-               SegmentIteratorConstPtr querySeg, bool getSequenceString,
-               const string& genomeName)
+void readBlock(AlignmentConstPtr seqAlignment,
+               hal_block_t* cur,  
+               vector<MappedSegmentConstPtr>& fragments, 
+               bool getSequenceString, const string& genomeName)
 {
-  const Sequence* qSequence = querySeg->getSequence();
-  const Sequence* tSequence = refSeg->getSequence(); 
+  MappedSegmentConstPtr firstQuerySeg = fragments.front();
+  MappedSegmentConstPtr lastQuerySeg = fragments.back();
+  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
+  SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
+  const Sequence* qSequence = firstQuerySeg->getSequence();
+  const Sequence* tSequence = firstRefSeg->getSequence(); 
+  assert(qSequence == lastQuerySeg->getSequence());
+  assert(tSequence == lastRefSeg->getSequence());
+  assert(firstRefSeg->getReversed() == false);
+  assert(lastRefSeg->getReversed() == false);
+  
   cur->next = NULL;
 
   string seqBuffer = qSequence->getName();
@@ -511,20 +599,250 @@ void readBlock(hal_block_t* cur, SegmentIteratorConstPtr refSeg,
   cur->qChrom = (char*)malloc(seqBuffer.length() + 1 - prefix);
   strcpy(cur->qChrom, seqBuffer.c_str() + prefix);
 
-  cur->tStart = refSeg->getStartPosition() - tSequence->getStartPosition();
-  cur->qStart = querySeg->getStartPosition() - qSequence->getStartPosition();
+  cur->tStart = std::min(std::min(firstRefSeg->getStartPosition(), 
+                                  firstRefSeg->getEndPosition()),
+                         std::min(lastRefSeg->getStartPosition(),
+                                  lastRefSeg->getEndPosition()));
+  cur->tStart -= tSequence->getStartPosition();
+
+  cur->qStart = std::min(std::min(firstQuerySeg->getStartPosition(), 
+                                  firstQuerySeg->getEndPosition()),
+                         std::min(lastQuerySeg->getStartPosition(),
+                                  lastQuerySeg->getEndPosition()));
+  cur->qStart -= qSequence->getStartPosition();
+
+  hal_index_t tEnd = std::max(std::max(firstRefSeg->getStartPosition(), 
+                                       firstRefSeg->getEndPosition()),
+                              std::max(lastRefSeg->getStartPosition(),
+                                       lastRefSeg->getEndPosition()));
+  tEnd -= tSequence->getStartPosition();
+
   assert(cur->tStart >= 0);
   assert(cur->qStart >= 0);
 
-  assert(refSeg->getLength() == querySeg->getLength());
-  cur->size = refSeg->getLength();
-  cur->strand = querySeg->getReversed() ? '-' : '+';
+  assert(firstRefSeg->getLength() == firstQuerySeg->getLength());
+  cur->size = 1 + tEnd - cur->tStart;
+  cur->strand = firstQuerySeg->getReversed() ? '-' : '+';
   cur->sequence = NULL;
   if (getSequenceString != 0)
   {
-    querySeg->getString(dnaBuffer);
-    cur->sequence = (char*)malloc(dnaBuffer.length() + 1);
+    const Genome* qSeqGenome = 
+       seqAlignment->openGenome(qSequence->getGenome()->getName());
+    if (qSeqGenome == NULL)
+    {
+      stringstream ss;
+      ss << "Unable to open genome " << qSequence->getGenome()->getName() 
+         << " for DNA sequence extraction";
+      throw hal_exception(ss.str());
+    }
+    const Sequence* qSeqSequence = qSeqGenome->getSequence(qSequence->getName());
+    if (qSeqSequence == NULL)
+    {
+      stringstream ss;
+      ss << "Unable to open sequence " << qSequence->getName() 
+         << " for DNA sequence extraction";
+      throw hal_exception(ss.str());
+    }
+    
+    qSeqSequence->getSubString(dnaBuffer, cur->qStart, cur->size);
+    if (cur->strand == '-')
+    {
+      reverseComplement(dnaBuffer);
+    }
+    cur->sequence = (char*)malloc(dnaBuffer.length() * sizeof(char) + 1);
     strcpy(cur->sequence, dnaBuffer.c_str());
   }
 }
 
+struct CStringLess { bool operator()(const char* s1, const char* s2) const {
+  return strcmp(s1, s2) < 0;}
+};
+
+hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
+                                           BlockMapper::MSSet& paraSet)
+{
+  vector<hal_target_dupe_list_t*> tempList;
+  vector<MappedSegmentConstPtr> fragments;
+  BlockMapper::MSSet emptySet;
+  set<hal_index_t> queryCutSet;
+  set<hal_index_t> targetCutSet;
+  targetCutSet.insert(blockMapper.getAbsRefFirst());
+  targetCutSet.insert(blockMapper.getAbsRefLast());
+
+  // make a dupe list for each merged segment
+  for (BlockMapper::MSSet::iterator segMapIt = paraSet.begin();
+       segMapIt != paraSet.end(); ++segMapIt)
+  {
+    assert((*segMapIt)->getSource()->getReversed() == false);
+    hal_target_dupe_list_t* cur = (hal_target_dupe_list_t*)calloc(
+      1, sizeof(hal_target_dupe_list_t));
+    BlockMapper::extractSegment(segMapIt, emptySet, fragments, &paraSet,
+                                targetCutSet, queryCutSet);
+    //fragments.clear(); fragments.push_back(*segMapIt);
+    readTargetRange(cur, fragments);
+    tempList.push_back(cur);
+  }
+  
+  cleanTargetDupesList(tempList);
+
+  hal_target_dupe_list_t* head = NULL;
+  hal_target_dupe_list_t* prev = NULL;
+  map<const char*, hal_int_t, CStringLess> idMap;
+  pair<map<const char*, hal_int_t, CStringLess>::iterator, bool> idRes;
+  vector<hal_target_dupe_list_t*>::iterator i;
+  vector<hal_target_dupe_list_t*>::iterator j;
+  vector<hal_target_dupe_list_t*>::iterator k;
+  for (i = tempList.begin(); i != tempList.end(); i = j)
+  {
+    j = i;
+    ++j;
+    // merge dupe lists with overlapping ids by prepending j's
+    // target range to i
+    // (recall we've stuck query start coordinates into the id)
+    while (j != tempList.end() && (*i)->id == (*j)->id)
+    {
+      assert((*i)->next == NULL);
+      assert((*j)->next == NULL);
+      assert(j != i);
+      k = j;
+      ++k;
+      assert((*j)->tRange->size == (*i)->tRange->size);
+      (*j)->tRange->next = (*i)->tRange;
+      (*i)->tRange = (*j)->tRange;
+      (*j)->tRange = NULL;
+      halFreeTargetDupeLists(*j);
+      *j = NULL;
+      j = k;
+    }
+
+    idRes = idMap.insert(pair<const char*, hal_int_t>((*i)->qChrom, 0));
+    (*i)->id = idRes.first->second++;
+    if (head == NULL)
+    {
+      head = *i;
+    }
+    else
+    {
+      prev->next = *i;
+    }
+    prev = *i;
+    prev->next = NULL;
+  }
+  return head;
+}
+
+void readTargetRange(hal_target_dupe_list_t* cur,
+                     vector<MappedSegmentConstPtr>& fragments)
+{
+  MappedSegmentConstPtr firstQuerySeg = fragments.front();
+  MappedSegmentConstPtr lastQuerySeg = fragments.back();
+  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
+  SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
+  const Sequence* qSequence = firstQuerySeg->getSequence();
+  const Sequence* tSequence = firstRefSeg->getSequence(); 
+  assert(qSequence == lastQuerySeg->getSequence());
+  assert(tSequence == lastRefSeg->getSequence());
+  assert(firstRefSeg->getReversed() == false);
+  assert(lastRefSeg->getReversed() == false);
+
+  cur->tRange = (hal_target_range_t*)calloc(1, sizeof(hal_target_range_t));
+ 
+  cur->tRange->tStart = std::min(std::min(firstRefSeg->getStartPosition(), 
+                                          firstRefSeg->getEndPosition()),
+                                 std::min(lastRefSeg->getStartPosition(),
+                                          lastRefSeg->getEndPosition()));
+  cur->tRange->tStart -= tSequence->getStartPosition();
+
+  hal_index_t qStart = std::min(std::min(firstQuerySeg->getStartPosition(), 
+                                         firstQuerySeg->getEndPosition()),
+                                std::min(lastQuerySeg->getStartPosition(),
+                                         lastQuerySeg->getEndPosition()));
+  qStart -= qSequence->getStartPosition();
+
+  hal_index_t tEnd = std::max(std::max(firstRefSeg->getStartPosition(), 
+                                       firstRefSeg->getEndPosition()),
+                              std::max(lastRefSeg->getStartPosition(),
+                                       lastRefSeg->getEndPosition()));
+  tEnd -= tSequence->getStartPosition();
+  
+  cur->tRange->size = 1 + tEnd - cur->tRange->tStart;
+
+  // use query start as proxy for unique id right now
+  cur->id = qStart;
+
+  string qSeqName = qSequence->getName();
+  cur->qChrom = (char*)malloc(qSeqName.length() * sizeof(char) + 1);
+  strcpy(cur->qChrom, qSeqName.c_str());
+}
+
+struct DupeIdLess { bool operator()(const hal_target_dupe_list_t* d1,
+                                    const hal_target_dupe_list_t* d2) const {
+  if (d1 != NULL && d2 != NULL)
+  {
+    return d1->id < d2->id;
+  }
+  return d1 != NULL && d2 == NULL;
+}};
+
+struct DupeStartLess { bool operator()(const hal_target_dupe_list_t* d1,
+                                       const hal_target_dupe_list_t* d2) const {
+  return d1->tRange->tStart < d2->tRange->tStart;
+}};
+
+
+void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
+{
+  // sort based on target start coordinate
+  std::sort(dupeList.begin(), dupeList.end(), DupeStartLess());
+  
+  map<hal_int_t, hal_int_t> idMap;
+  map<hal_int_t, hal_int_t>::iterator idMapIt;
+
+  size_t deadCount = 0;
+
+  vector<hal_target_dupe_list_t*>::iterator i;
+  vector<hal_target_dupe_list_t*>::iterator j;
+  vector<hal_target_dupe_list_t*>::iterator k;
+  for (j = dupeList.begin(); j != dupeList.end(); j = k)
+  {
+    k = j;
+    ++k;
+    if (j == dupeList.begin() || 
+        // note that we should eventually clean up overlapping
+        // segments but don't have the energy to do right now, and
+        // have yet to see it actually happen in an example
+        strcmp((*j)->qChrom, (*i)->qChrom) != 0 ||
+        (*j)->tRange->tStart != (*i)->tRange->tStart ||
+        (*j)->tRange->size != (*i)->tRange->size)
+    {
+      i = j;
+    }
+    else
+    {
+      idMap.insert(pair<hal_int_t, hal_int_t>((*j)->id, (*i)->id));
+      // insert this one to make sure we dont remap it down the road
+      idMap.insert(pair<hal_int_t, hal_int_t>((*i)->id, (*i)->id));
+      halFreeTargetDupeLists(*j);
+      *j = NULL;
+      ++deadCount;
+    }
+  }
+
+  for (i = dupeList.begin(); i != dupeList.end(); ++i)
+  {
+    if (*i != NULL)
+    {
+      idMapIt = idMap.find((*i)->id);
+      if (idMapIt != idMap.end())
+      {
+        (*i)->id = idMapIt->second;
+      }
+    }
+  }
+
+  // sort based on query coordinate
+  std::sort(dupeList.begin(), dupeList.end(), DupeIdLess());
+
+  // sort puts NULL items at end. we resize them out.
+  dupeList.resize(dupeList.size() - deadCount);
+}

@@ -41,13 +41,13 @@ ifdef ENABLE_UDC
 endif
 
 # phyloP support
-phyloPcppflags = ""
-phyloPlibs = ""
+phyloPcppflags = 
+phyloPlibs = 
 ifdef ENABLE_PHYLOP
 # hardcode lapack and phast temporarily
 	PHAST=../../phast
-	CLAPACKPATH=../../CLAPACK
+	CLAPACKPATH=../../CLAPACK-3.2.1
 	F2CPATH=${CLAPACKPATH}/F2CLIBS
-	phyloPcppflags += -I${PHAST}/include -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
 	phyloPlibs += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
 endif

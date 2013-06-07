@@ -54,6 +54,13 @@ public:
    bool isFirst() const;
    bool isLast() const;
    bool isMissingData(double nThreshold) const;
+   bool isTop() const;
+   hal_size_t getMappedSegments(
+     std::set<MappedSegmentConstPtr>& outSegments,
+     const Genome* tgtGenome,
+     const std::set<const Genome*>* genomesOnPath,
+     bool doDupes,
+     hal_size_t minLength) const;
 
    // TOP SEGMENT INTERFACE
    hal_index_t getParentIndex() const;
@@ -70,7 +77,8 @@ public:
    void setNextParalogyIndex(hal_index_t parIdx);
    hal_index_t getLeftParentIndex() const;
    hal_index_t getRightParentIndex() const;
-  
+   bool isCanonicalParalog() const;
+
    // HDF5 SPECIFIC
    static H5::CompType dataType();
    
@@ -237,6 +245,22 @@ inline bool HDF5TopSegment::isLast() const
      (hal_index_t)getSequence()->getNumTopSegments() - 1;
 }
 
+inline bool HDF5TopSegment::isTop() const
+{
+  return true;
+}
+
+inline hal_size_t HDF5TopSegment::getMappedSegments(
+  std::set<MappedSegmentConstPtr>& outSegments,
+  const Genome* tgtGenome,
+  const std::set<const Genome*>* genomesOnPath,
+  bool doDupes,
+  hal_size_t minLength) const
+{
+  throw hal_exception("Internal error.   HDF5 Segment interface should "
+                      "at some point go through the sliced segment");
+}
+
 inline hal_index_t HDF5TopSegment::getLeftParentIndex() const
 {
   assert(isFirst() == false);
@@ -250,6 +274,7 @@ inline hal_index_t HDF5TopSegment::getRightParentIndex() const
   HDF5TopSegment rightSeg(_genome, _array, _index + 1);
   return rightSeg.getParentIndex();
 }
+
 
 }
 

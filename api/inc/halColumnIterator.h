@@ -87,6 +87,13 @@ public:
     * reduce memory as well as speed up queries on the column map. Perhaps
     * this should eventually be built in and made transparent? */
    virtual void defragment() const = 0;
+
+   /** Check whether the column iterator's left-most reference coordinate
+    * is within the iterator's range, ie is "canonical".  This can be used
+    * to ensure that the same reference position does not get sampled by
+    * different iterators covering distinct ranges.  If there are no 
+    * duplications, then this function will always return true. */
+   virtual bool isCanonicalOnRef() const = 0;
    
 protected:
    friend class counted_ptr<ColumnIterator>;
