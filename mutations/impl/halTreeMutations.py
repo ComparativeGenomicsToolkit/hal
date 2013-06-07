@@ -13,27 +13,11 @@ import sys
 import copy
 import subprocess
 
+from hal.stats.halStats import runShellCommand
+from hal.stats.halStats import getHalRootName
+from hal.stats.halStats import getHalParentName
+from hal.stats.halStats import getHalChildrenNames
 
-def runShellCommand(command):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                               stderr=sys.stderr, bufsize=-1)
-    output, nothing = process.communicate()
-    sts = process.wait()
-    if sts != 0:
-        raise RuntimeError("Command: %s exited with non-zero status %i" %
-                           (command, sts))
-    return output
-
-def getHalRootName(halPath):
-    return runShellCommand("halStats %s --root" % halPath).strip()
-
-def getHalParentName(halPath, genomeName):
-    res = runShellCommand("halStats %s --parent %s" % (halPath, genomeName))
-    return res.strip()
-
-def getHalChildrenNames(halPath, genomeName):
-    return runShellCommand("halStats %s --children %s" %
-                           (halPath, genomeName)).split()
                         
 def getHalBranchMutations(halPath, genomeName, args):
     command = "halBranchMutations %s %s --maxGap %s" % (halPath, genomeName,
