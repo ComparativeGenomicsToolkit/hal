@@ -95,7 +95,8 @@ def concatenateSlices(options, sliceCmds):
                 with open(options.mafFile, "a") as tgt:
                     with open(sliceMafPath, "r") as src:
                         for line in src:
-                            tgt.write(line)
+                            if not line[0] == '#':
+                                tgt.write(line)
                 os.remove(sliceMafPath)
 
             
