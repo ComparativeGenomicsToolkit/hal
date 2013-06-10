@@ -24,7 +24,7 @@ public:
                    
 protected:
 
-   void liftInterval();
+   void liftInterval(BedList& mappedBedLines);
 
    typedef ColumnIterator::DNASet DNASet;
    typedef ColumnIterator::ColumnMap ColumnMap;

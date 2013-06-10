@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include "halColumnLiftover.h"
+#include "halBlockLiftover.h"
 
 using namespace std;
 using namespace hal;
@@ -135,7 +136,7 @@ int main(int argc, char** argv)
       }
     }
     
-    ColumnLiftover liftover;
+    BlockLiftover liftover;
     liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
                      inBedVersion, outBedVersion, keepExtra, !noDupes);
 

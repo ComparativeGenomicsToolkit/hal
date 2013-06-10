@@ -34,20 +34,19 @@ public:
                    
 protected:
 
+   typedef std::list<BedLine> BedList;
+
    virtual void visitBegin();
    virtual void visitLine();
    virtual void visitEOF();
    virtual void writeLineResults();
-   virtual void collapseExtendedBedLines();
+   virtual void assignBlocksToIntervals();
+   virtual void writeBlocksAsIntervals();
    virtual void liftBlockIntervals();
-   virtual bool canMerge(const BedLine& bedLine1, const BedLine& bedLine2);
-   virtual void mergeAsBlockInterval(BedLine& bedTarget, 
-                                     const BedLine& bedSource);
-   virtual void liftInterval() = 0;
+   virtual void mergeIntervals();
+   virtual void liftInterval(BedList& mappedBedLines) = 0;
    
 protected: 
-
-   typedef std::list<BedLine> BedList;
 
    AlignmentConstPtr _alignment;
    std::ostream* _outBedStream;
@@ -56,6 +55,8 @@ protected:
    BedList _outBedLines;
    int _inBedVersion;
    int _outBedVersion;
+   
+   BedList _mappedBlocks;
    
    const Genome* _srcGenome;
    const Genome* _tgtGenome;

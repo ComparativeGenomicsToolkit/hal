@@ -15,7 +15,7 @@ using namespace std;
 using namespace hal;
 
 BedLine::BedLine() : _start(NULL_INDEX), _end(NULL_INDEX), _strand('+'),
-                     _version(NULL_INDEX)
+                     _version(NULL_INDEX), _srcStart(NULL_INDEX)
 {
 
 }
@@ -264,30 +264,37 @@ bool BedBlock::operator<(const BedBlock& other) const
   bool isLess = _start < other._start;
   return isLess;
 }
-bool BedLine::operator<(const BedLine& other) const 
+
+bool BedLineLess::operator()(const BedLine& b1, const BedLine& b2) const 
 {
-  if (_chrName < other._chrName)
+  if (b1._chrName < b2._chrName)
   {
     return true;
   }
-  else if (_chrName == other._chrName)
+  else if (b1._chrName == b2._chrName)
   {
-    if (_strand == '+' && other._strand != '+')
+    if (b1._strand == '+' && b2._strand != '+')
     {
       return true;
     }
-    else if (_strand == other._strand)
+    else if (b1._strand == b2._strand)
     {
-      if (_start < other._start)
+      if (b1._start < b2._start)
       {
         return true;
       }
-      else if (_start == other._start)
+      else if (b1._start == b2._start)
       {
-        return _end < other._end;
+        return b1._end < b2._end;
       }
     }
   }
   return false;
 }
+
+bool BedLineSrcLess::operator()(const BedLine& b1, const BedLine& b2) const 
+{
+  return b1._srcStart < b2._srcStart;
+}
+
 

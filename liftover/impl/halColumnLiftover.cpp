@@ -22,7 +22,7 @@ ColumnLiftover::~ColumnLiftover()
 }
 
 
-void ColumnLiftover::liftInterval()
+void ColumnLiftover::liftInterval(BedList& mappedBedLines)
 {  
   PositionMap posCacheMap;
   PositionMap revCacheMap;
@@ -80,12 +80,14 @@ void ColumnLiftover::liftInterval()
     const IntervalSet* iSet = posCache->getIntervalSet();
     for (IntervalSet::const_iterator k = iSet->begin(); k != iSet->end(); ++k)
     {
-      _outBedLines.push_back(_bedLine);
-      BedLine& outBedLine = _outBedLines.back();
+      mappedBedLines.push_back(_bedLine);
+      BedLine& outBedLine = mappedBedLines.back();
+      outBedLine._blocks.clear();
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
       outBedLine._strand = _bedLine._strand == '.' ? '.' : '+';
+      outBedLine._srcStart = NULL_INDEX; // not available from posMap
     }
     delete posCache;
   }
@@ -99,12 +101,13 @@ void ColumnLiftover::liftInterval()
     const IntervalSet* iSet = posCache->getIntervalSet();
     for (IntervalSet::const_iterator k = iSet->begin(); k != iSet->end(); ++k)
     {
-      _outBedLines.push_back(_bedLine);
-      BedLine& outBedLine = _outBedLines.back();
+      mappedBedLines.push_back(_bedLine);
+      BedLine& outBedLine = mappedBedLines.back();
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
       outBedLine._strand = _bedLine._strand == '.' ? '.' : '-';
+      outBedLine._srcStart = NULL_INDEX; // not available from posMap
     }
     delete posCache;
   }

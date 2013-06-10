@@ -99,16 +99,29 @@ void Liftover::visitLine()
               << _srcSequence->getSequenceLength() << endl;
     return;
   }
+
+  _outBedLines.clear();
+  liftInterval(_outBedLines);  
   
   if (_inBedVersion > 9 && !_bedLine._blocks.empty())
   {
+    _mappedBlocks.clear();
     liftBlockIntervals();
-  }
-  else
-  {
-    liftInterval();
+    if (_mappedBlocks.size() > 0 && _outBedVersion > 9)
+    {
+      // extend the intervals
+      mergeIntervals();
+      // fill them with mapped blocks
+      assignBlocksToIntervals();
+    }
+    if (_outBedVersion <= 9)
+    {
+      //only map the blocks and forget about the intervals
+      writeBlocksAsIntervals();
+    }
   }
 
+  _outBedLines.sort(BedLineSrcLess());
   writeLineResults();
 }
 
@@ -118,10 +131,6 @@ void Liftover::visitEOF()
 
 void Liftover::writeLineResults()
 {
-  if (_outBedVersion > 9)
-  {
-    collapseExtendedBedLines();
-  }
   BedList::iterator i = _outBedLines.begin();
   for (; i != _outBedLines.end(); ++i)
   {
@@ -133,94 +142,132 @@ void Liftover::writeLineResults()
   }
 }
 
-void Liftover::collapseExtendedBedLines()
+void Liftover::assignBlocksToIntervals()
 {
-  _outBedLines.sort();
-  
-   // want to greedily merge up colinear intervals
-  BedList::iterator i = _outBedLines.begin();
-  BedList::iterator j;
-  BedList::iterator k;
-  
-  for (; i != _outBedLines.end(); ++i)
+  // sort the mapped blocks by source coordinate
+  _mappedBlocks.sort(BedLineSrcLess());
+
+  // sort intervals in target coordinates
+  set<BedLine*, BedLinePLess> intervalSet;
+  set<BedLine*, BedLinePLess>::iterator setIt;
+  for (BedList::iterator i = _outBedLines.begin(); i != _outBedLines.end(); ++i)
   {
-    j = i;
-    ++j;
-    for (; j != _outBedLines.end() && 
-            i->_chrName == j->_chrName &&
-            i->_strand == j->_strand; j = k)
+    assert((*i)._blocks.empty());
+    intervalSet.insert(&*i);
+  }
+  
+  BedList::iterator blockPrev = _mappedBlocks.end();
+  BedList::iterator blockNext;
+  for (BedList::iterator blockIt = _mappedBlocks.begin(); 
+       blockIt != _mappedBlocks.end(); blockIt = blockNext)
+  {
+    blockNext = blockIt;
+    ++blockNext;
+    
+    // find first interval with start coordinate less than 
+    setIt = intervalSet.lower_bound(&*blockIt);    
+    if (setIt != intervalSet.begin() && ( 
+          (*setIt)->_chrName != (*blockIt)._chrName ||
+          (*setIt)->_start > (*blockIt)._start))
     {
-      k = j;
-      k++;
-      if (canMerge(*i, *j) == true)
+      --setIt;
+    }
+    assert((*setIt)->_chrName == (*blockIt)._chrName);
+
+    // check if the found interval contains the block
+    if ((*setIt)->_start <= (*blockIt)._start &&
+        (*setIt)->_end >= (*blockIt)._end)
+    {
+      bool compatible = blockPrev == _mappedBlocks.end();
+      assert(!compatible || (*setIt)->_blocks.empty());
+      if (!compatible)
       {
-        mergeAsBlockInterval(*i, *j);
-        _outBedLines.erase(j);
+        // test if last block in *setIt is equal to *blockPrev
+        hal_index_t blockStart = (*setIt)->_blocks.back()._start + 
+           (*setIt)->_start;
+        hal_index_t blockEnd = blockStart + (*setIt)->_blocks.back()._length;
+        compatible = (*blockPrev)._start == blockStart && 
+           (*blockPrev)._end == blockEnd;
+        // todo: reverse strand case
+      }
+      BedBlock block;
+      block._start = (*blockIt)._start;
+      block._length = (*blockIt)._end - (*blockIt)._start;
+      
+      // we can add the block to the intervals list without breaking
+      // ordering in the original input
+      if (compatible == true)
+      {
+        (*setIt)->_blocks.push_back(block);
+      }
+      else
+      {
+        // otherwise, we duplicate the containing interval, zap all its
+        // blocks, and add the new block.  the old interval can no longer
+        // be modified and it is removed from the set
+        BedLine newInterval = **setIt;
+        intervalSet.erase(setIt);
+        newInterval._blocks.clear();
+        newInterval._blocks.push_back(block);
+        _outBedLines.push_back(newInterval);
+        intervalSet.insert(&_outBedLines.back());
       }
     }
-  }   
+    else
+    {
+      assert(false);
+    }
+    blockPrev = blockIt;
+  } 
+}
+
+void Liftover::writeBlocksAsIntervals()
+{
+  _outBedLines = _mappedBlocks;
 }
 
 void Liftover::liftBlockIntervals()
 {
   BedLine blockBed = _bedLine;
   std::sort(blockBed._blocks.begin(), blockBed._blocks.end());
-  _bedLine._blocks.clear();
-  hal_index_t prev = _bedLine._start;
   vector<BedBlock>::iterator blockIt = blockBed._blocks.begin();
   for (; blockIt != blockBed._blocks.end(); ++blockIt)
   {
-    // region before this block
-    _bedLine._start = prev;
-    _bedLine._end = blockIt->_start + _bedLine._start;
-    assert(_bedLine._end >= _bedLine._start);
-    if (_bedLine._end > _bedLine._start)
-    {
-      liftInterval();
-    }
-    // the block
     _bedLine._start = blockIt->_start + _bedLine._start;
     _bedLine._end = blockIt->_start + blockIt->_length + _bedLine._start;
     if (_bedLine._end > _bedLine._start)
     {
-      liftInterval();
+      liftInterval(_mappedBlocks);
     }
-    prev = _bedLine._end;
-  }
-  
-  // bit between last block and end
-  _bedLine._start = prev;
-  _bedLine._end = blockBed._end;
-  if (_bedLine._start > _bedLine._end)
-  {
-    liftInterval();
   }
 }
 
-bool Liftover::canMerge(const BedLine& bedLine1, const BedLine& bedLine2)
+// merge intervals (that will contain blocks) if they are on same strand
+// and sequence and are colinear (but not necessarily directly adjacent)
+void Liftover::mergeIntervals()
 {
-  assert(bedLine2._blocks.empty());
-  assert(bedLine1._chrName == bedLine2._chrName);
-  assert(bedLine1._strand == bedLine2._strand);
-
-  return (bedLine1._blocks.empty() ||
-          bedLine2._start >= bedLine1._blocks.back()._start +
-          bedLine1._blocks.back()._length);
-}
-
-void Liftover::mergeAsBlockInterval(BedLine& bedTarget, 
-                                    const BedLine& bedSource)
-{
-  assert(canMerge(bedTarget, bedSource) == true);
-  if (bedTarget._blocks.empty())
+  assert(_outBedLines.empty() == false);
+  if (_outBedLines.size() > 1)
   {
-    BedBlock block = {bedTarget._start, bedTarget._end - bedTarget._start};
-    bedTarget._blocks.push_back(block);
-  }
+    // sort by target coordinate
+    _outBedLines.sort(BedLineLess());
 
-  BedBlock block = {bedSource._start, bedSource._end - bedSource._start};
-  bedTarget._start = std::min(bedTarget._start, bedSource._start);
-  bedTarget._end = std::max(bedTarget._end, bedSource._end);
-  block._start -= bedTarget._start;
-  bedTarget._blocks.push_back(block);
+    BedList::iterator i;
+    BedList::iterator j;
+    for (i = _outBedLines.begin(); i != _outBedLines.end(); ++i)
+    {
+      j = i;
+      ++j;
+      if (j != _outBedLines.end())
+      {
+        if ((*i)._chrName == (*j)._chrName &&
+            (*i)._strand == (*j)._strand)
+        {
+          assert((*i)._start < (*j)._start);
+          (*i)._end = max((*i)._end, (*j)._end);
+          _outBedLines.erase(j);
+        }
+      }
+    }
+  }
 }
