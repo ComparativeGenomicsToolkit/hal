@@ -43,6 +43,7 @@ void BlockLiftover::visitBegin()
 
 void BlockLiftover::liftInterval(BedList& mappedBedLines)
 {
+  _mappedSegments.clear();
   hal_index_t globalStart = _bedLine._start + _srcSequence->getStartPosition();
   hal_index_t globalEnd = _bedLine._end - 1 + _srcSequence->getStartPosition();
   
