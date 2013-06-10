@@ -63,6 +63,14 @@ void Liftover::convert(AlignmentConstPtr alignment,
   {
     _outBedVersion = _inBedVersion;
   }
+  if (_inBedVersion <= 9 && _outBedVersion > _inBedVersion)
+  {
+    stringstream ss;
+    ss << "Unable to convert from BED version " << _inBedVersion << " to "
+       << _outBedVersion << ": input version must be at least as high as output"
+       " version.";
+    throw hal_exception(ss.str());
+  }
 
   if (firstLineStream != NULL)
   {
