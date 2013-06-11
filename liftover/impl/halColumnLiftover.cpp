@@ -103,6 +103,7 @@ void ColumnLiftover::liftInterval(BedList& mappedBedLines)
     {
       mappedBedLines.push_back(_bedLine);
       BedLine& outBedLine = mappedBedLines.back();
+      outBedLine._blocks.clear();
       outBedLine._chrName = seq->getName();
       outBedLine._start = k->second - seqStart;
       outBedLine._end = k->first + 1 - seqStart;
