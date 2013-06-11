@@ -118,6 +118,22 @@ int BedScanner::getBedVersion(istream* bedStream)
   return version;
 }
 
+size_t BedScanner::getNumColumns(const string& bedLine)
+{
+  stringstream ss(bedLine);
+  size_t c = 0;
+  string buffer;
+  while (ss.good())
+  {
+    buffer.clear();
+    ss >> buffer;
+    if (!buffer.empty())
+    {
+      ++c;
+    }
+  }
+  return c;
+}
 void BedScanner::visitBegin()
 {
 }

@@ -58,6 +58,12 @@ void Liftover::convert(AlignmentConstPtr alignment,
     firstLineStream = new stringstream(firstLineBuffer);
     _inBedVersion = BedScanner::getBedVersion(firstLineStream);
     assert(inBedStream->eof() || _inBedVersion >= 3);
+    size_t numCols = BedScanner::getNumColumns(firstLineBuffer);
+    if (numCols > _inBedVersion)
+    {
+      cerr << "Warning: auto-detecting input BED version " << _inBedVersion
+           << " even though " << numCols << " columns present" << endl;
+    }
   }
   if (_outBedVersion <= 0)
   {

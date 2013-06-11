@@ -31,6 +31,7 @@ public:
    virtual void scan(std::istream* bedStream, int bedVersion = -1);
    
    static int getBedVersion(std::istream* bedStream);
+   static size_t getNumColumns(const std::string& bedLine);
 
 protected:
    
