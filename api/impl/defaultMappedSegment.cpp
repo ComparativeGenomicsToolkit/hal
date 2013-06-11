@@ -148,8 +148,8 @@ bool DefaultMappedSegment::canMergeRightWith(
   bool ret = false;
   SlicedSegmentConstPtr ref = this->getSource();
   SlicedSegmentConstPtr nextRef = next->getSource();
-  assert(ref->getReversed() == false);
-  assert(nextRef->getReversed() == false);
+//  assert(ref->getReversed() == false);
+//  assert(nextRef->getReversed() == false);
   assert(ref->getSequence() == nextRef->getSequence());
   assert(this->getGenome() == next->getGenome());
   hal_index_t sourceCut;

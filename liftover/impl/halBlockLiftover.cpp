@@ -65,15 +65,13 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
   {
     if (flip == true)
     {
-      // work around inability to slice from reversed segment by just
-      // flipping offsets (then flipping strand at the very end);
-      _refSeg->slice(_refSeg->getEndOffset(), _refSeg->getStartOffset());
+      _refSeg->toReverseInPlace();
     }
     _refSeg->getMappedSegments(_mappedSegments, _tgtGenome, &_spanningTree,
                               _traverseDupes);
     if (flip == true)
     {
-      _refSeg->slice(_refSeg->getEndOffset(), _refSeg->getStartOffset());
+      _refSeg->toReverseInPlace();
     }
     _refSeg->toRight(globalEnd);
   }
@@ -106,14 +104,7 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
                               max(fragments.back()->getStartPosition(),
                                   fragments.back()->getEndPosition()));
     outBedLine._end -= seqStart;
-    if (flip == false)
-    {
-      outBedLine._strand = (*i)->getReversed() ? '-' : '+';
-    }
-    else
-    {
-      outBedLine._strand = (*i)->getReversed() ? '+' : '-';
-    }    
+    outBedLine._strand = (*i)->getReversed() ? '-' : '+';
 
     SlicedSegmentConstPtr srcFront = fragments.front()->getSource();
     SlicedSegmentConstPtr srcBack = fragments.back()->getSource();
@@ -122,7 +113,6 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
                                min(srcBack->getStartPosition(),
                                    srcBack->getEndPosition()));
     outBedLine._srcStrand = srcFront->getReversed() ? '-' : '+';
-    assert(outBedLine._srcStrand == '+');
 
     if (_bedLine._strand == '.')
     {
