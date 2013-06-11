@@ -169,7 +169,7 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
         {
           throw hal_exception("Error scanning BED blockStarts");
         }
-        if (block._start + block._length > _end)
+        if (_start + block._start + block._length > _end)
         {
           throw hal_exception("Error BED block out of range");
         }

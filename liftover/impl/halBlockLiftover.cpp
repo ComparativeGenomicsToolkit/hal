@@ -46,7 +46,8 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
   _mappedSegments.clear();
   hal_index_t globalStart = _bedLine._start + _srcSequence->getStartPosition();
   hal_index_t globalEnd = _bedLine._end - 1 + _srcSequence->getStartPosition();
-  
+  bool flip = _bedLine._strand == '-';
+  cout << "lifting " << globalStart << " , " << globalEnd << endl;
   _refSeg->toSite(globalStart, false);
   hal_offset_t startOffset = globalStart - _refSeg->getStartPosition();
   hal_offset_t endOffset = 0;
@@ -62,8 +63,18 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
   while (_refSeg->getArrayIndex() < _lastIndex &&
          _refSeg->getStartPosition() <= globalEnd)  
   {
+    if (flip == true)
+    {
+      // work around inability to slice from reversed segment by just
+      // flipping offsets (then flipping strand at the very end);
+      _refSeg->slice(_refSeg->getEndOffset(), _refSeg->getStartOffset());
+    }
     _refSeg->getMappedSegments(_mappedSegments, _tgtGenome, &_spanningTree,
                               _traverseDupes);
+    if (flip == true)
+    {
+      _refSeg->slice(_refSeg->getEndOffset(), _refSeg->getStartOffset());
+    }
     _refSeg->toRight(globalEnd);
   }
 
@@ -90,12 +101,19 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
                             min(fragments.back()->getStartPosition(),
                                 fragments.back()->getEndPosition()));
     outBedLine._start -= seqStart;
-    outBedLine._end = max(max(fragments.front()->getStartPosition(), 
-                                fragments.front()->getEndPosition()),
-                            max(fragments.back()->getStartPosition(),
-                                fragments.back()->getEndPosition()));
+    outBedLine._end = 1 + max(max(fragments.front()->getStartPosition(), 
+                                  fragments.front()->getEndPosition()),
+                              max(fragments.back()->getStartPosition(),
+                                  fragments.back()->getEndPosition()));
     outBedLine._end -= seqStart;
-    outBedLine._strand = (*i)->getReversed() ? '-' : '+';
+    if (flip == false)
+    {
+      outBedLine._strand = (*i)->getReversed() ? '-' : '+';
+    }
+    else
+    {
+      outBedLine._strand = (*i)->getReversed() ? '+' : '-';
+    }    
 
     SlicedSegmentConstPtr srcFront = fragments.front()->getSource();
     SlicedSegmentConstPtr srcBack = fragments.back()->getSource();
@@ -104,6 +122,7 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
                                min(srcBack->getStartPosition(),
                                    srcBack->getEndPosition()));
     outBedLine._srcStrand = srcFront->getReversed() ? '-' : '+';
+    assert(outBedLine._srcStrand == '+');
 
     if (_bedLine._strand == '.')
     {

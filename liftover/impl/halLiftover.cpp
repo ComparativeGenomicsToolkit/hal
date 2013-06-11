@@ -108,7 +108,6 @@ void Liftover::visitLine()
     return;
   }
 
-  _outBedLines.clear();
   liftInterval(_outBedLines);  
   
   if (_inBedVersion > 9 && !_bedLine._blocks.empty())
@@ -169,12 +168,14 @@ void Liftover::assignBlocksToIntervals()
   for (BedList::iterator blockIt = _mappedBlocks.begin(); 
        blockIt != _mappedBlocks.end(); blockIt = blockNext)
   {
+    cout << "lookin at block " << (*blockIt)._start << endl;
     blockNext = blockIt;
     ++blockNext;
     
     // find first interval with start coordinate less than 
     setIt = intervalSet.lower_bound(&*blockIt);    
     if (setIt != intervalSet.begin() && ( 
+          setIt == intervalSet.end() ||
           (*setIt)->_chrName != (*blockIt)._chrName ||
           (*setIt)->_start > (*blockIt)._start))
     {
@@ -186,20 +187,18 @@ void Liftover::assignBlocksToIntervals()
     if ((*setIt)->_start <= (*blockIt)._start &&
         (*setIt)->_end >= (*blockIt)._end)
     {
-      bool compatible = blockPrev == _mappedBlocks.end();
-      assert(!compatible || (*setIt)->_blocks.empty());
+      bool compatible = blockPrev == _mappedBlocks.end() || 
+         (*setIt)->_blocks.empty();         
       if (!compatible)
       {
-        // test if last block in *setIt is equal to *blockPrev
         hal_index_t blockStart = (*setIt)->_blocks.back()._start + 
            (*setIt)->_start;
         hal_index_t blockEnd = blockStart + (*setIt)->_blocks.back()._length;
         compatible = (*blockPrev)._start == blockStart && 
            (*blockPrev)._end == blockEnd;
-        // todo: reverse strand case
       }
       BedBlock block;
-      block._start = (*blockIt)._start;
+      block._start = (*blockIt)._start - (*setIt)->_start;
       block._length = (*blockIt)._end - (*blockIt)._start;
       
       // we can add the block to the intervals list without breaking
@@ -210,6 +209,20 @@ void Liftover::assignBlocksToIntervals()
       }
       else
       {
+        cout << "setIt.start " << (*setIt)->_start 
+             << " setIt.end " << (*setIt)->_end
+             << " blockit.start " << (*blockIt)._start
+             << " blockit.end " << (*blockIt)._end << endl;
+        cout << " blockprev.start " << (*blockPrev)._start
+             << " blockprev.end " << (*blockPrev)._end << endl;
+        cout << " blockback " <<( (*setIt)->_blocks.back()._start + 
+                                  (*setIt)->_start)
+             << " blockbakcend " 
+             << ( (*setIt)->_blocks.back()._start + 
+                  (*setIt)->_start + (*setIt)->_blocks.back()._length) 
+             << endl;
+
+        assert((*setIt)->_blocks.size() > 0);
         // otherwise, we duplicate the containing interval, zap all its
         // blocks, and add the new block.  the old interval can no longer
         // be modified and it is removed from the set
@@ -223,6 +236,10 @@ void Liftover::assignBlocksToIntervals()
     }
     else
     {
+      cout << "setIt.start " << (*setIt)->_start 
+           << " setIt.end " << (*setIt)->_end
+           << " blockit.start " << (*blockIt)._start
+           << " blockit.end " << (*blockIt)._end << endl;
       assert(false);
     }
     blockPrev = blockIt;
@@ -236,18 +253,20 @@ void Liftover::writeBlocksAsIntervals()
 
 void Liftover::liftBlockIntervals()
 {
-  BedLine blockBed = _bedLine;
-  std::sort(blockBed._blocks.begin(), blockBed._blocks.end());
-  vector<BedBlock>::iterator blockIt = blockBed._blocks.begin();
-  for (; blockIt != blockBed._blocks.end(); ++blockIt)
+  BedLine originalBedLine = _bedLine;
+  std::sort(_bedLine._blocks.begin(), _bedLine._blocks.end());
+  vector<BedBlock>::iterator blockIt = _bedLine._blocks.begin();
+  for (; blockIt != _bedLine._blocks.end(); ++blockIt)
   {
-    _bedLine._start = blockIt->_start + _bedLine._start;
-    _bedLine._end = blockIt->_start + blockIt->_length + _bedLine._start;
+    _bedLine._start = blockIt->_start + originalBedLine._start;
+    _bedLine._end = _bedLine._start + blockIt->_length;
     if (_bedLine._end > _bedLine._start)
     {
       liftInterval(_mappedBlocks);
     }
   }
+  _bedLine._start = originalBedLine._start;
+  _bedLine._end = originalBedLine._end;
 }
 
 // merge intervals (that will contain blocks) if they are on same strand
