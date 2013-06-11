@@ -42,6 +42,7 @@ protected:
    virtual void writeLineResults();
    virtual void assignBlocksToIntervals();
    virtual void writeBlocksAsIntervals();
+   virtual void cleanResults();
    virtual void liftBlockIntervals();
    virtual void mergeIntervals();
    virtual void liftInterval(BedList& mappedBedLines) = 0;

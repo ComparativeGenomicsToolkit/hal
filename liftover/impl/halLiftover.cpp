@@ -134,6 +134,7 @@ void Liftover::visitLine()
     }
   }
 
+  cleanResults();
   _outBedLines.sort(BedLineSrcLess());
   writeLineResults();
 }
@@ -199,8 +200,9 @@ void Liftover::assignBlocksToIntervals()
         hal_index_t blockStart = (*setIt)->_blocks.back()._start + 
            (*setIt)->_start;
         hal_index_t blockEnd = blockStart + (*setIt)->_blocks.back()._length;
-        compatible = (*blockPrev)._start == blockStart && 
-           (*blockPrev)._end == blockEnd;
+        compatible = ((*blockPrev)._start == blockStart && 
+                      (*blockPrev)._end == blockEnd &&
+                      (*blockIt)._start >= blockEnd) ;
       }
       BedBlock block;
       block._start = (*blockIt)._start - (*setIt)->_start;
@@ -215,18 +217,18 @@ void Liftover::assignBlocksToIntervals()
       else
       {
 /*
-        cout << "setIt.start " << (*setIt)->_start 
-             << " setIt.end " << (*setIt)->_end
-             << " blockit.start " << (*blockIt)._start
-             << " blockit.end " << (*blockIt)._end << endl;
-        cout << " blockprev.start " << (*blockPrev)._start
-             << " blockprev.end " << (*blockPrev)._end << endl;
-        cout << " blockback " <<( (*setIt)->_blocks.back()._start + 
-                                  (*setIt)->_start)
-             << " blockbakcend " 
-             << ( (*setIt)->_blocks.back()._start + 
-                  (*setIt)->_start + (*setIt)->_blocks.back()._length) 
-             << endl;
+  cout << "setIt.start " << (*setIt)->_start 
+  << " setIt.end " << (*setIt)->_end
+  << " blockit.start " << (*blockIt)._start
+  << " blockit.end " << (*blockIt)._end << endl;
+  cout << " blockprev.start " << (*blockPrev)._start
+  << " blockprev.end " << (*blockPrev)._end << endl;
+  cout << " blockback " <<( (*setIt)->_blocks.back()._start + 
+  (*setIt)->_start)
+  << " blockbakcend " 
+  << ( (*setIt)->_blocks.back()._start + 
+  (*setIt)->_start + (*setIt)->_blocks.back()._length) 
+  << endl;
 */
         assert((*setIt)->_blocks.size() > 0);
         // otherwise, we duplicate the containing interval, zap all its
@@ -243,9 +245,9 @@ void Liftover::assignBlocksToIntervals()
     else
     {
       /* cout << "setIt.start " << (*setIt)->_start 
-           << " setIt.end " << (*setIt)->_end
-           << " blockit.start " << (*blockIt)._start
-           << " blockit.end " << (*blockIt)._end << endl;
+         << " setIt.end " << (*setIt)->_end
+         << " blockit.start " << (*blockIt)._start
+         << " blockit.end " << (*blockIt)._end << endl;
       */
       assert(false);
     }
@@ -301,6 +303,65 @@ void Liftover::mergeIntervals()
           (*i)._end = max((*i)._end, (*j)._end);
           _outBedLines.erase(j);
         }
+      }
+    }
+  }
+}
+
+// do a little postprocessing on the lifted intervals to make sure
+// they are bed compliant
+void Liftover::cleanResults()
+{
+  if (_outBedVersion > 6)
+  {
+    BedList::iterator i;
+    for (i = _outBedLines.begin(); i != _outBedLines.end(); ++i)
+    {
+      if (_bedLine._thickStart != 0 || _bedLine._thickEnd != 0)
+      {
+        i->_thickStart = i->_start;
+        i->_thickEnd = i->_end;
+        if (_bedLine._thickStart != _bedLine._start ||
+            _bedLine._thickEnd != _bedLine._end)
+        {
+          cerr << "Input BED line " << _lineNumber << " warning: "
+               << "thickStart different from chromStart or thickEnd "
+               << "different from chromEnd not supported.  Assuming they"
+               << " are the same." << endl;
+        }
+      }
+      else
+      {
+        assert(i->_thickStart == 0 && i->_thickEnd == 0);
+      }
+      
+      if (_outBedVersion > 9 && i->_blocks.size() > 0)
+      {
+        hal_index_t startDelta = i->_blocks[0]._start;
+        assert(startDelta >= 0);
+        if (startDelta > 0)
+        {
+          vector<BedBlock>::iterator j;
+          vector<BedBlock>::iterator k;
+          for (j = i->_blocks.begin(); j != i->_blocks.end(); ++j)
+          {
+            j->_start -= startDelta;
+            k = j;
+            ++k;
+            assert(k == i->_blocks.end() ||
+                   k->_start >= (j->_start + j->_length));
+          }
+          i->_start += startDelta;
+        }
+        assert(i->_blocks[0]._start == 0);
+
+        hal_index_t endDelta = i->_end - (i->_blocks.back()._start + 
+                                          i->_blocks.back()._length + 
+                                          i->_start);
+        assert(endDelta >= 0);
+        i->_end -= endDelta;
+        assert(i->_blocks.back()._start + 
+               i->_blocks.back()._length + i->_start == i->_end);
       }
     }
   }
