@@ -124,12 +124,12 @@ double halPhyloP::pval(const ColumnIterator::ColumnMap *cmap) {
 	_msa->ss->col_tuples[0][spec] = base;
       else {
 	if (_maskAllDups && _softMaskDups == 0) {  //hard mask, all dups
-	  return 1.0;  // duplication; mask this base
+	  return 0.0;  // duplication; mask this base
 	} else if (_maskAllDups) {  // soft mask, all dups
 	  _msa->ss->col_tuples[0][spec] = 'N';
 	} else if (_msa->ss->col_tuples[0][spec] != base) {
 	  if (_softMaskDups == 0) 
-	    return 1.0;
+	    return 0.0;
 	  else _msa->ss->col_tuples[0][spec] ='N';
 	} else {
 	  _msa->ss->col_tuples[0][spec] = base;
@@ -170,11 +170,13 @@ double halPhyloP::pval(const ColumnIterator::ColumnMap *cmap) {
     pval = 1e-20;
   /* approx limit of eval of tail prob; pvals of 0 cause problems */
 
+  pval = -log10(pval);
+
   if (_mode == CONACC && this_scale > 1)
     pval *= -1; /* mark as acceleration */
 
   // print out parameters for debugging
-  //  cout << _msa->ss->col_tuples[0] << " " << _mod->scale << " " << alt_lnl << " " << null_lnl << " " << delta_lnl << " " << pval << " ";
+//    cout << _msa->ss->col_tuples[0] << " " << _mod->scale << " " << alt_lnl << " " << null_lnl << " " << delta_lnl << " " << pval << " ";
 
   return pval;
 }
