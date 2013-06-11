@@ -59,7 +59,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
     _inBedVersion = BedScanner::getBedVersion(firstLineStream);
     assert(inBedStream->eof() || _inBedVersion >= 3);
     size_t numCols = BedScanner::getNumColumns(firstLineBuffer);
-    if (numCols > _inBedVersion)
+    if ((int)numCols > _inBedVersion)
     {
       cerr << "Warning: auto-detecting input BED version " << _inBedVersion
            << " even though " << numCols << " columns present" << endl;
@@ -174,7 +174,6 @@ void Liftover::assignBlocksToIntervals()
   for (BedList::iterator blockIt = _mappedBlocks.begin(); 
        blockIt != _mappedBlocks.end(); blockIt = blockNext)
   {
-    cout << "lookin at block " << (*blockIt)._start << endl;
     blockNext = blockIt;
     ++blockNext;
     
@@ -215,6 +214,7 @@ void Liftover::assignBlocksToIntervals()
       }
       else
       {
+/*
         cout << "setIt.start " << (*setIt)->_start 
              << " setIt.end " << (*setIt)->_end
              << " blockit.start " << (*blockIt)._start
@@ -227,7 +227,7 @@ void Liftover::assignBlocksToIntervals()
              << ( (*setIt)->_blocks.back()._start + 
                   (*setIt)->_start + (*setIt)->_blocks.back()._length) 
              << endl;
-
+*/
         assert((*setIt)->_blocks.size() > 0);
         // otherwise, we duplicate the containing interval, zap all its
         // blocks, and add the new block.  the old interval can no longer
@@ -242,10 +242,11 @@ void Liftover::assignBlocksToIntervals()
     }
     else
     {
-      cout << "setIt.start " << (*setIt)->_start 
+      /* cout << "setIt.start " << (*setIt)->_start 
            << " setIt.end " << (*setIt)->_end
            << " blockit.start " << (*blockIt)._start
            << " blockit.end " << (*blockIt)._end << endl;
+      */
       assert(false);
     }
     blockPrev = blockIt;
