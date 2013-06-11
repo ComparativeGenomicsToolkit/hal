@@ -253,6 +253,10 @@ void printSequence(ostream& outStream, halPhyloP *phyloP,
   // note wig coordinates are 1-based for some reason so we shift to right
   outStream << "fixedStep chrom=" << sequenceName << " start=" << start + 1
             << " step=" << step << "\n";
+
+  // set float precision to 3 places to be consistent with non-hal phyloP
+  outStream.setf(ios::fixed, ios::floatfield);
+  outStream.precision(3);
   
   /** Since the column iterator stores coordinates in Genome coordinates
    * internally, we have to switch back to genome coordinates.  */
