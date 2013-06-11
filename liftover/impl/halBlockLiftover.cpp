@@ -47,7 +47,7 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
   hal_index_t globalStart = _bedLine._start + _srcSequence->getStartPosition();
   hal_index_t globalEnd = _bedLine._end - 1 + _srcSequence->getStartPosition();
   bool flip = _bedLine._strand == '-';
-  cout << "lifting " << globalStart << " , " << globalEnd << endl;
+
   _refSeg->toSite(globalStart, false);
   hal_offset_t startOffset = globalStart - _refSeg->getStartPosition();
   hal_offset_t endOffset = 0;
