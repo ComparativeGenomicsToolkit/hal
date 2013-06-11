@@ -8,7 +8,7 @@ libHeaders = $(wildcard inc/*.h)
 all : ${libPath}/halPhyloP.a ${binPath}/halPhyloP
 
 clean : 
-	rm -f ${libPath}/halPhyloP.a ${libPath}/halPhyloP.h ${binPath}/halPhyloP
+	rm -f ${libPath}/halPhyloP.a ${libPath}/halPhyloP.h ${binPath}/halPhyloP *.o
 
 ${libPath}/halPhyloP.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
