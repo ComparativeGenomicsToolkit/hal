@@ -152,7 +152,7 @@ def runParallelSlices(options):
             refLen = genomeLen
             if seqOpts.length is not None and seqOpts.length > 0:
                 refLen = seqOpts.length
-            seqOpts.sliceSize = refLen / seqOpts.numProc
+            seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
                 
         index = 0
         for sStart, sLen, sIdx in computeSlices(seqOpts, genomeLen):
