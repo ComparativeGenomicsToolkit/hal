@@ -577,6 +577,23 @@ DefaultGappedTopSegmentIterator::setLeft(TopSegmentIteratorConstPtr ti) const
   extendRight();
 }
 
+bool DefaultGappedTopSegmentIterator::isCanonicalParalog() const
+{
+  bool isCanon = false;
+  _temp->copy(_left);
+  _temp2->copy(_right);
+  
+  toRightNextUngapped(_temp);
+  toLeftNextUngapped(_temp2);
+  
+  // to verify edge cases here
+  //assert(_temp->hasParent() == _temp2->hasParent());
+  if (_temp->hasParent() && _temp2->hasParent())
+  {
+    isCanon = _temp->isCanonicalParalog() && _temp2->isCanonicalParalog();
+  }
+  return isCanon;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // INTERNAL METHODS

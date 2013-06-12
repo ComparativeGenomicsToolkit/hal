@@ -90,6 +90,7 @@ public:
    virtual TopSegmentIteratorConstPtr getLeft() const;
    virtual TopSegmentIteratorConstPtr getRight() const;
    virtual void setLeft(TopSegmentIteratorConstPtr ts) const;
+   virtual bool isCanonicalParalog() const;
 
 protected:
    
