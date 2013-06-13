@@ -70,7 +70,7 @@ def getGenomesFromHal(halfile):
     system("halStats --genomes %s > %s" %(halfile, statsfile))
     
     f = open(statsfile, 'r')
-    genomes = f.readline().strip().split(',')
+    genomes = f.readline().strip().split()
     f.close()
 
     #clean up
