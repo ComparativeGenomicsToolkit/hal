@@ -46,7 +46,7 @@ def runParallelShellCommands(cmdList, numProc):
             raise "One or more of commands %s failed" % str(cmdList)
 
 def getHalGenomes(halPath):
-    return runShellCommand("halStats %s --genomes" % halPath).split(",")
+    return runShellCommand("halStats %s --genomes" % halPath).split()
 
 def getHalNumSegments(halPath, genomeName):
     res = runShellCommand("halStats %s --numSegments %s" %
