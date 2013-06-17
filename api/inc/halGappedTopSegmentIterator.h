@@ -103,18 +103,4 @@ inline bool operator!=(GappedTopSegmentIteratorConstPtr p1,
 
 }
 
-
-#ifndef NDEBUG
-#include "halGenome.h"
-namespace hal {
-inline std::ostream& operator<<(std::ostream& os, 
-                                GappedTopSegmentIteratorConstPtr gts)
-{
-  os << "Th=" << gts->getGapThreshold() << " chIdx=" << gts->getChildIndex() 
-     << "\nLEFT: " << gts->getLeft() << "\nRIGHT: " << gts->getRight();
-  return os;
-}
-}
-#endif
-
 #endif

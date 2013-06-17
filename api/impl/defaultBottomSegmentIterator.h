@@ -23,6 +23,9 @@ public:
                                 bool inverted = false);
    virtual ~DefaultBottomSegmentIterator();
    
+   // SEGMENT INTERFACE OVERRIDE
+   virtual void print(std::ostream& os) const;
+
    // BOTTOM SEGMENT INTERFACE
    virtual hal_size_t getNumChildren() const;
    virtual hal_index_t getChildIndex(hal_size_t i) const;

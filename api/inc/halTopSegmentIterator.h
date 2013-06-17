@@ -95,35 +95,4 @@ inline bool operator!=(TopSegmentIteratorConstPtr p1,
 }
 
 
-#ifndef NDEBUG
-#include "halGenome.h"
-namespace hal {
-inline std::ostream& operator<<(std::ostream& os, 
-                                TopSegmentIteratorConstPtr ts)
-{
-  const TopSegment* tseg = ts->getTopSegment();
-  const Genome* genome = tseg->getGenome();
-  os << "topIterator: ";
-  os << "Genome=" << genome->getName();
-  os << " Seq=" << tseg->getSequence()->getName();
-  os << " idx=" << tseg->getArrayIndex();
-  if (tseg->getArrayIndex() >= 0 && 
-      tseg->getArrayIndex() < (hal_index_t)genome->getNumTopSegments())
-  {
-    os << " segLen=" << tseg->getLength();
-    os << " segStart=" << tseg->getStartPosition() << std::endl;
-
-    os << " offset=[" << ts->getStartOffset() << "," 
-       << ts->getEndOffset() << "]";
-    os << " start=" << ts->getStartPosition();
-    os << " len=" << ts->getLength();
-    os << " rev=" << ts->getReversed();
-    os << " par=" << tseg->getParentIndex();
-    os << " dup=" << tseg->getNextParalogyIndex();
-  }
-  return os;
-}
-}
-#endif
-
 #endif

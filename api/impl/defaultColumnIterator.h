@@ -44,6 +44,7 @@ public:
    virtual hal_index_t getArrayIndex() const;
    virtual void defragment() const;
    virtual bool isCanonicalOnRef() const;
+   virtual void print(std::ostream& os) const;
 
 protected:
 

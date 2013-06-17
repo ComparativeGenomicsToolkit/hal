@@ -110,6 +110,11 @@ bool HDF5BottomSegment::isMissingData(double nThreshold) const
   return false;
 }
 
+void HDF5BottomSegment::print(std::ostream& os) const
+{
+  os << "HDF5 Bottom Segment";
+}
+
 // HDF5 SPECIFIC
 H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
 {
