@@ -315,8 +315,11 @@ void Liftover::cleanResults()
   if (_outBedVersion > 6)
   {
     BedList::iterator i;
-    for (i = _outBedLines.begin(); i != _outBedLines.end(); ++i)
+    BedList::iterator j;
+    for (i = _outBedLines.begin(); i != _outBedLines.end(); i = j)
     {
+      j = i;
+      ++j;
       if (_bedLine._thickStart != 0 || _bedLine._thickEnd != 0)
       {
         i->_thickStart = i->_start;
@@ -335,33 +338,42 @@ void Liftover::cleanResults()
         assert(i->_thickStart == 0 && i->_thickEnd == 0);
       }
       
-      if (_outBedVersion > 9 && i->_blocks.size() > 0)
+      if (_outBedVersion > 9)
       {
-        hal_index_t startDelta = i->_blocks[0]._start;
-        assert(startDelta >= 0);
-        if (startDelta > 0)
+        if  (i->_blocks.size() > 0)
         {
-          vector<BedBlock>::iterator j;
-          vector<BedBlock>::iterator k;
-          for (j = i->_blocks.begin(); j != i->_blocks.end(); ++j)
+          hal_index_t startDelta = i->_blocks[0]._start;
+          assert(startDelta >= 0);
+          if (startDelta > 0)
           {
-            j->_start -= startDelta;
-            k = j;
-            ++k;
-            assert(k == i->_blocks.end() ||
-                   k->_start >= (j->_start + j->_length));
+            vector<BedBlock>::iterator j;
+            vector<BedBlock>::iterator k;
+            for (j = i->_blocks.begin(); j != i->_blocks.end(); ++j)
+            {
+              j->_start -= startDelta;
+              k = j;
+              ++k;
+              assert(k == i->_blocks.end() ||
+                     k->_start >= (j->_start + j->_length));
+            }
+            i->_start += startDelta;
           }
-          i->_start += startDelta;
-        }
-        assert(i->_blocks[0]._start == 0);
+          assert(i->_blocks[0]._start == 0);
 
-        hal_index_t endDelta = i->_end - (i->_blocks.back()._start + 
-                                          i->_blocks.back()._length + 
-                                          i->_start);
-        assert(endDelta >= 0);
-        i->_end -= endDelta;
-        assert(i->_blocks.back()._start + 
-               i->_blocks.back()._length + i->_start == i->_end);
+          hal_index_t endDelta = i->_end - (i->_blocks.back()._start + 
+                                            i->_blocks.back()._length + 
+                                            i->_start);
+          assert(endDelta >= 0);
+          i->_end -= endDelta;
+          assert(i->_blocks.back()._start + 
+                 i->_blocks.back()._length + i->_start == i->_end);
+        }
+        else
+        {
+          // if we're in bed 12, we don't want any empty regions in the 
+          // output
+          _outBedLines.erase(i);
+        }
       }
     }
   }
