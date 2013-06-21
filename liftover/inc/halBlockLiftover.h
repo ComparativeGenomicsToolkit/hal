@@ -24,7 +24,7 @@ public:
                    
 protected:
 
-   void liftInterval();
+   void liftInterval(BedList& mappedBedLines);
    void visitBegin();
 
    void cleanTargetParalogies();

@@ -21,16 +21,21 @@ static CLParserPtr initParser()
                              "this genome and its parent).");
   optionsParser->addOption("refFile", 
                            "bed file to write structural "
-                           "rearrangements in reference genome coordinates",
+                           "rearrangements in reference genome coordinates "
+                           "(or stdout)",
                            "\"\"");
   optionsParser->addOption("parentFile", 
                            "bed file to write rearrangements "
                            "(deletions and duplications) in "
-                           "reference's parent genome coordinates",
+                           "reference's parent genome coordinates (or stdout)",
                            "\"\"");
   optionsParser->addOption("snpFile", 
                            "bed file write point mutations to "
-                           "in reference genome coordinates",
+                           "in reference genome coordinates (or stdout)",
+                           "\"\"");
+  optionsParser->addOption("delBreakFile", 
+                           "bed file write deletion breakpoints to "
+                           "in reference genome coordinates (or stdout)",
                            "\"\"");
   optionsParser->addOption("refSequence",
                            "name of reference sequence within reference genome"
@@ -71,6 +76,7 @@ int main(int argc, char** argv)
   string refBedPath;
   string parentBedPath;
   string snpBedPath;
+  string delBreakBedPath;
   string refGenomeName;
   string refSequenceName;
   string refTargetsPath;
@@ -86,6 +92,7 @@ int main(int argc, char** argv)
     refBedPath = optionsParser->getOption<string>("refFile");
     parentBedPath = optionsParser->getOption<string>("parentFile");
     snpBedPath = optionsParser->getOption<string>("snpFile");
+    delBreakBedPath = optionsParser->getOption<string>("delBreakFile");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     refTargetsPath = optionsParser->getOption<string>("refTargets");
     start = optionsParser->getOption<hal_index_t>("start");
@@ -125,10 +132,26 @@ int main(int argc, char** argv)
     {
       throw hal_exception(string("Invalid range for ") + refGenomeName);
     }
-    if (refBedPath == "\"\"" && parentBedPath == "\"\"" && snpBedPath == "\"\"")
+    if (refBedPath == "\"\"" && parentBedPath == "\"\"" 
+        && snpBedPath == "\"\"" && delBreakBedPath == "\"\"")
     {
-      throw hal_exception("at least one of --refFile, --parentFile or "
-                          "--snpFile must be specified");
+      throw hal_exception("at least one of --refFile, --parentFile, "
+                          "--snpFile or --delBreakFile must be specified");
+    }
+    if (refTargetsPath != "\"\"" && (
+          refTargetsPath == refBedPath ||
+          refTargetsPath == snpBedPath ||
+          refTargetsPath == parentBedPath ||
+          refTargetsPath == delBreakBedPath))
+    {
+      throw hal_exception("cannot output to same file as --refTargets");
+    }
+    if (parentBedPath != "\"\"" && (
+          parentBedPath == refBedPath ||
+          parentBedPath == snpBedPath ||
+          parentBedPath == delBreakBedPath))
+    {
+      throw hal_exception("--parentBedPath must be unique");
     }
 
     const Sequence* refSequence = NULL;
@@ -158,33 +181,91 @@ int main(int argc, char** argv)
       length = refGenome->getSequenceLength() - start;
     }
 
-    ofstream refBedStream;
+    ostream* refBedStream = NULL;
+    bool newRef = false;
     if (refBedPath != "\"\"")
     {
-      refBedStream.open(refBedPath.c_str());
-      if (!refBedStream)
+      if (refBedPath == "stdout")
+      {
+        refBedStream = &cout;
+      }
+      else
+      {
+        newRef = true;
+        refBedStream = new ofstream(refBedPath.c_str());
+      }
+      if (!*refBedStream)
       {
         throw hal_exception("Error opening " + refBedPath);
       }
     }
   
-    ofstream parentBedStream;
+    ostream* parentBedStream = NULL;
+    bool newParent = false;
     if (parentBedPath != "\"\"")
     {
-      parentBedStream.open(parentBedPath.c_str());
-      if (!parentBedStream)
+      if (parentBedPath == "stdout")
+      {
+        parentBedStream = &cout;
+      }
+      else
+      {
+        newParent = true;
+        parentBedStream = new ofstream(parentBedPath.c_str());
+      }
+      if (!*parentBedStream)
       {
         throw hal_exception("Error opening " + parentBedPath);
       }
     }
 
-    ofstream snpBedStream;
+    ostream* snpBedStream = NULL;
+    bool newSnp = false;
     if (snpBedPath != "\"\"")
     {
-      snpBedStream.open(snpBedPath.c_str());
-      if (!snpBedStream)
+      if (snpBedPath == refBedPath)
+      {
+        snpBedStream = refBedStream;
+      }
+      else if (snpBedPath == "stdout")
+      {
+        snpBedStream = &cout;
+      }
+      else
+      {
+        snpBedStream = new ofstream(snpBedPath.c_str());
+        newSnp = true;
+      }
+      if (!*snpBedStream)
       {
         throw hal_exception("Error opening " + snpBedPath);
+      }
+    }
+
+    ostream* delBreakBedStream = NULL;
+    bool newDelBreak = false;
+    if (delBreakBedPath != "\"\"")
+    {
+      if (delBreakBedPath == snpBedPath)
+      {
+        delBreakBedStream = snpBedStream;
+      }
+      else if (delBreakBedPath == refBedPath)
+      {
+        delBreakBedStream = refBedStream;
+      }
+      else if (delBreakBedPath == "stdout")
+      {
+        delBreakBedStream = &cout;
+      }
+      else
+      {
+        delBreakBedStream = new ofstream(delBreakBedPath.c_str());
+        newDelBreak = true;
+      }
+      if (!delBreakBedStream)
+      {
+        throw hal_exception("Error opening " + delBreakBedPath);
       }
     }
 
@@ -224,12 +305,8 @@ int main(int argc, char** argv)
             start = refSequence->getStartPosition() + start;
             BranchMutations mutations;
             mutations.analyzeBranch(alignment, maxGap, nThreshold,
-                                    refBedStream.is_open() ? &refBedStream : 
-                                    NULL, 
-                                    parentBedStream.is_open() ? 
-                                    &parentBedStream : NULL ,
-                                    snpBedStream.is_open() ? &snpBedStream : 
-                                    NULL, 
+                                    refBedStream, parentBedStream,
+                                    snpBedStream, delBreakBedStream,
                                     refGenome, start, length);
 
           }
@@ -240,11 +317,25 @@ int main(int argc, char** argv)
     {
       BranchMutations mutations;
       mutations.analyzeBranch(alignment, maxGap, nThreshold,
-                              refBedStream.is_open() ? &refBedStream : NULL, 
-                              parentBedStream.is_open() ? &parentBedStream : 
-                              NULL ,
-                              snpBedStream.is_open() ? &snpBedStream : NULL, 
+                              refBedStream, parentBedStream,
+                              snpBedStream, delBreakBedStream,
                               refGenome, start, length);
+    }
+    if (newRef)
+    {
+      delete refBedStream;
+    }
+    if (newParent)
+    {
+      delete parentBedStream;
+    }
+    if (newSnp)
+    {
+      delete snpBedStream;
+    }
+    if (newDelBreak)
+    {
+      delete delBreakBedStream;
     }
   }
   catch(hal_exception& e)

@@ -148,8 +148,8 @@ bool DefaultMappedSegment::canMergeRightWith(
   bool ret = false;
   SlicedSegmentConstPtr ref = this->getSource();
   SlicedSegmentConstPtr nextRef = next->getSource();
-  assert(ref->getReversed() == false);
-  assert(nextRef->getReversed() == false);
+//  assert(ref->getReversed() == false);
+//  assert(nextRef->getReversed() == false);
   assert(ref->getSequence() == nextRef->getSequence());
   assert(this->getGenome() == next->getGenome());
   hal_index_t sourceCut;
@@ -207,20 +207,6 @@ bool DefaultMappedSegment::canMergeRightWith(
     }
   }
   return ret;
-}
-
-void DefaultMappedSegment::print(ostream& os) const
-{
-  os << "src: " << _source->getGenome()->getName() << "." 
-     << _source->getSequence()->getName() << " ai=" 
-     << _source->getArrayIndex() << "[" << _source->getStartPosition()
-     << "," << _source->getEndPosition() << "] rev=" 
-     << _source->getReversed() << "\n"
-     << "tgt: " << _target->getGenome()->getName() << "." 
-     << _target->getSequence()->getName() << " ai=" 
-     << _target->getArrayIndex() << "[" << _target->getStartPosition()
-     << "," << _target->getEndPosition() << "] rev=" 
-     << _target->getReversed() << "\n";
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1151,6 +1137,29 @@ hal_size_t DefaultMappedSegment::getMappedSegments(
 {
   return _target->getMappedSegments(outSegments, tgtGenome, genomesOnPath,
                                     doDupes, minLength);
+}
+
+void DefaultMappedSegment::print(ostream& os) const
+{
+  os << "Mapped Segment:\n";
+  os << "Source: ";
+  if (_source.get() == NULL)
+  {
+    os << "NULL";
+  }
+  else
+  {
+    os << *_source;
+  }
+  os << "\nTarget: ";
+  if (_target.get() == NULL)
+  {
+    os << "NULL";
+  }
+  else
+  {
+    os << *_target;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

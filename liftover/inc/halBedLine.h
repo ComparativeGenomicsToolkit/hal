@@ -31,7 +31,6 @@ struct BedLine
    virtual ~BedLine();
    std::istream& read(std::istream& is, int version, std::string& lineBuffer);
    std::ostream& write(std::ostream& os, int version=-1);
-   bool operator<(const BedLine& other) const;
 
    std::string _chrName;
    hal_index_t _start;
@@ -47,8 +46,32 @@ struct BedLine
    std::vector<BedBlock> _blocks;
    std::vector<std::string> _extra;
    int _version;
+
+   // not part of output, but needed to preserve ordering
+   hal_index_t _srcStart;
+   char _srcStrand;
 };
 
+struct BedLineLess
+{
+  bool operator()(const BedLine& b1, const BedLine& b2) const;
+};
+
+struct BedLinePLess
+{
+  bool operator()(const BedLine* b1, const BedLine* b2) const;
+};
+
+struct BedLineSrcLess
+{
+  bool operator()(const BedLine& b1, const BedLine& b2) const;
+};
+
+inline bool BedLinePLess::operator()(const BedLine* b1, const BedLine* b2) const
+{
+  assert(b1 != NULL && b2 != NULL);
+  return BedLineLess().operator()(*b1, *b2);
 }
 
+}
 #endif

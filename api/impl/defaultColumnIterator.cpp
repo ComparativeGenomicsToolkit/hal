@@ -256,6 +256,21 @@ bool DefaultColumnIterator::isCanonicalOnRef() const
      _leftmostRefPos <= _stack[0]->_lastIndex;
 }
 
+void DefaultColumnIterator::print(ostream& os) const
+{
+  const ColumnIterator::ColumnMap* cmap = getColumnMap();
+  for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin();
+       i != cmap->end(); ++i)
+  {
+    os << i->first->getName() << ": ";
+    for (size_t j = 0; j < i->second->size(); ++j)
+    {
+      os << i->second->at(j)->getArrayIndex() << ", ";
+    }
+    os << "\n";
+  }
+}
+
 // Starting from the reference sequence which is determined 
 // from the stack, we start recursing over the entire column. 
 // if init is specified, all the initial iterators are created

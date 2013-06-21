@@ -46,7 +46,7 @@ def runParallelShellCommands(cmdList, numProc):
             raise "One or more of commands %s failed" % str(cmdList)
 
 def getHalGenomes(halPath):
-    return runShellCommand("halStats %s --genomes" % halPath).split(",")
+    return runShellCommand("halStats %s --genomes" % halPath).split()
 
 def getHalNumSegments(halPath, genomeName):
     res = runShellCommand("halStats %s --numSegments %s" %
@@ -72,6 +72,23 @@ def getHalSequenceStats(halPath, genomeName):
     for line in res[1:]:
         tokens = line.strip().split(",")
         if len(tokens) == 4:
-            outList.append(tuple(tokens))
+            outList.append((tokens[0], int(tokens[1]), int(tokens[2]),
+                            int(tokens[3])))
     return outList
 
+def getHalRootName(halPath):
+    return runShellCommand("halStats %s --root" % halPath).strip()
+
+def getHalParentName(halPath, genomeName):
+    res = runShellCommand("halStats %s --parent %s" % (halPath, genomeName))
+    return res.strip()
+
+def getHalChildrenNames(halPath, genomeName):
+    return runShellCommand("halStats %s --children %s" %
+                           (halPath, genomeName)).split()
+
+def getHalGenomeLength(halPath, genomeName):
+    for genomeStats in getHalStats(halPath):
+        if genomeStats[0] == genomeName:
+            return int(genomeStats[2])
+    return None

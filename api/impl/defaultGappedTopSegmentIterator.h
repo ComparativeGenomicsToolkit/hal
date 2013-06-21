@@ -53,6 +53,7 @@ public:
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
      hal_size_t minLength) const;
+   virtual void print(std::ostream& os) const;
 
    // SEGMENT ITERATOR INTERFACE
    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const;
@@ -90,6 +91,7 @@ public:
    virtual TopSegmentIteratorConstPtr getLeft() const;
    virtual TopSegmentIteratorConstPtr getRight() const;
    virtual void setLeft(TopSegmentIteratorConstPtr ts) const;
+   virtual bool isCanonicalParalog() const;
 
 protected:
    

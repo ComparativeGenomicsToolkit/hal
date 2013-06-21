@@ -41,11 +41,13 @@ void BlockLiftover::visitBegin()
   getGenomesInSpanningTree(inputSet, _spanningTree);
 }
 
-void BlockLiftover::liftInterval()
+void BlockLiftover::liftInterval(BedList& mappedBedLines)
 {
+  _mappedSegments.clear();
   hal_index_t globalStart = _bedLine._start + _srcSequence->getStartPosition();
   hal_index_t globalEnd = _bedLine._end - 1 + _srcSequence->getStartPosition();
-  
+  bool flip = _bedLine._strand == '-';
+
   _refSeg->toSite(globalStart, false);
   hal_offset_t startOffset = globalStart - _refSeg->getStartPosition();
   hal_offset_t endOffset = 0;
@@ -61,8 +63,16 @@ void BlockLiftover::liftInterval()
   while (_refSeg->getArrayIndex() < _lastIndex &&
          _refSeg->getStartPosition() <= globalEnd)  
   {
+    if (flip == true)
+    {
+      _refSeg->toReverseInPlace();
+    }
     _refSeg->getMappedSegments(_mappedSegments, _tgtGenome, &_spanningTree,
                               _traverseDupes);
+    if (flip == true)
+    {
+      _refSeg->toReverseInPlace();
+    }
     _refSeg->toRight(globalEnd);
   }
 
@@ -80,20 +90,36 @@ void BlockLiftover::liftInterval()
 
     const Sequence* seq = (*i)->getSequence();
     hal_size_t seqStart = seq->getStartPosition();
-    _outBedLines.push_back(_bedLine);
-    BedLine& outBedLine = _outBedLines.back();
+    mappedBedLines.push_back(_bedLine);
+    BedLine& outBedLine = mappedBedLines.back();
+    outBedLine._blocks.clear();
     outBedLine._chrName = seq->getName();
     outBedLine._start = min(min(fragments.front()->getStartPosition(), 
                                 fragments.front()->getEndPosition()),
                             min(fragments.back()->getStartPosition(),
                                 fragments.back()->getEndPosition()));
     outBedLine._start -= seqStart;
-    outBedLine._end = max(max(fragments.front()->getStartPosition(), 
-                                fragments.front()->getEndPosition()),
-                            max(fragments.back()->getStartPosition(),
-                                fragments.back()->getEndPosition()));
+    outBedLine._end = 1 + max(max(fragments.front()->getStartPosition(), 
+                                  fragments.front()->getEndPosition()),
+                              max(fragments.back()->getStartPosition(),
+                                  fragments.back()->getEndPosition()));
     outBedLine._end -= seqStart;
     outBedLine._strand = (*i)->getReversed() ? '-' : '+';
+
+    SlicedSegmentConstPtr srcFront = fragments.front()->getSource();
+    SlicedSegmentConstPtr srcBack = fragments.back()->getSource();
+    outBedLine._srcStart = min(min(srcFront->getStartPosition(), 
+                                   srcFront->getEndPosition()),
+                               min(srcBack->getStartPosition(),
+                                   srcBack->getEndPosition()));
+    outBedLine._srcStrand = srcFront->getReversed() ? '-' : '+';
+
+    if (_bedLine._strand == '.')
+    {
+      outBedLine._strand = '.';
+      outBedLine._srcStrand = '.';
+    }
+
     assert(outBedLine._start < outBedLine._end);
   }
 }

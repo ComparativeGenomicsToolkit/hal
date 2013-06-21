@@ -91,7 +91,11 @@ TopSegmentIteratorConstPtr DefaultRearrangement::getRightBreakpoint() const
 bool DefaultRearrangement::identifyFromLeftBreakpoint(
   TopSegmentIteratorConstPtr topSegment)
 {
-  if (scanNothingCycle(topSegment) == true)
+  if (scanDuplicationCycle(topSegment) == true)
+  {
+    _id = _cur->isMissingData(_nThreshold) ? Missing : Duplication;
+  }
+  else if (scanNothingCycle(topSegment) == true)
   {
     _id = Nothing;
   }
@@ -128,10 +132,6 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
     {
       _id = Complex;
     }
-  }
-  else if (scanDuplicationCycle(topSegment) == true)
-  {
-    _id = _cur->isMissingData(_nThreshold) ? Missing : Duplication;
   }
   else
   {
@@ -701,15 +701,6 @@ bool DefaultRearrangement::scanDuplicationCycle(
 {
   assert(topSegment.get());
   resetStatus(topSegment);
-  
-  if (_cur->hasNextParalogy() == true)
-  {
-    assert(_cur->hasParent() == true);
-    _right->toNextParalogy();
-    if (_right->getLeftArrayIndex() > _cur->getLeftArrayIndex())
-    {
-      return true;
-    }
-  }
-  return false;
+  return _cur->hasNextParalogy() == true &&
+     _cur->isCanonicalParalog() == false;
 }

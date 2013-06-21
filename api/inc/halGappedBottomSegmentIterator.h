@@ -91,16 +91,4 @@ inline bool operator!=(GappedBottomSegmentIteratorConstPtr p1,
 }
 
 
-#ifndef NDEBUG
-#include "halGenome.h"
-namespace hal {
-inline std::ostream& operator<<(std::ostream& os, 
-                                GappedBottomSegmentIteratorConstPtr gbs)
-{
-  os << "Th=" << gbs->getGapThreshold() << " chIdx=" << gbs->getChildIndex() 
-     << "\nLEFT: " << gbs->getLeft() << "\nRIGHT: " << gbs->getRight();
-  return os;
-}
-}
-#endif
 #endif

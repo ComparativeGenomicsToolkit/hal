@@ -45,7 +45,31 @@ hal_size_t DefaultBottomSegmentIterator::getNumSegmentsInGenome() const
 {
   return getGenome()->getNumBottomSegments();
 }
-   
+ 
+//////////////////////////////////////////////////////////////////////////////
+// SEGMENT INTERFACE OVERRIDE
+//////////////////////////////////////////////////////////////////////////////
+void DefaultBottomSegmentIterator::print(ostream& os) const
+{
+  os << "BotSegIt: ";
+  DefaultSegmentIterator::print(os);
+
+  hal_index_t ai = getArrayIndex();
+  bool offRight = 
+     isTop() ? ai >= (hal_index_t)getGenome()->getNumTopSegments() :
+     ai >= (hal_index_t)getGenome()->getNumBottomSegments();
+  
+  if (ai != NULL_INDEX && !offRight)
+  {
+    os << " numChilds=" << getNumChildren();
+    for (hal_size_t i = 0; i < getNumChildren(); ++i)
+    {
+      os << " cI[" << i << "]=" << getChildIndex(i);
+      os << " cR[" << i << "]=" << getChildReversed(i);
+    }
+  }
+}
+  
 //////////////////////////////////////////////////////////////////////////////
 // BOTTOM SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////

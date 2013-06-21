@@ -1,4 +1,4 @@
-Hierarchical Alignment (HAL) Format API (v1.3)
+Hierarchical Alignment (HAL) Format API (v1.4)
 =====
 Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
 Released under the MIT license, see LICENSE.txt
@@ -165,12 +165,25 @@ Export a MAF consisting of the alignment of all apes referenced on gorilla
 
 		 hal2maf mammals.hal mammals.maf --rootGenome ape_ancestor --refGenome gorilla
 
-By default, no gaps are written to the reference sequence.  The `--maxRefGap` can be specified to allow gaps up to a certain size in the reference.  This is achieved by recursively following indels in the graph that could correspond to reference gaps. 
+By default, no gaps are written to the reference sequence.  The `--maxRefGap` can be specified to allow gaps up to a certain size in the reference.  This is achieved by recursively following indels in the graph that could correspond to reference gaps.  
+
+Mafs can be generated in parallel using the hal2mafMP.py wrapper
+
+		 hal2mafMP.py mammals.hal mammals.maf --numProc 10
 
 #### FASTA Export
 
 DNA sequences (without any alignment information) can be extracted from HAL files in FASTA format using `hal2fasta`. 
 
+### Displaying in the UCSC Genome Browser
+
+HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To create an assembly hub, run
+
+	hal2assemblyHub.py mammals.hal outputDirectory
+
+Larger alignments require the use of the `--lod` option to generate precomputed levels of detail.  
+
+Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. 
 
 ### Summary Information
 
@@ -226,7 +239,23 @@ can be lifted over between genomes using `halLiftover`.  halLiftover does a base
 
 will map all annotations in human_annotation.bed, which must refer to sequences in the human genome, to their corresponding locations in dog (if they exist), outputting the resulting annotations in dog_annotation.bed
 
+halLiftover attempts to autodetect the BED version of the input.  This can be overried with the `--inVedVersion` option.   Columns that are not described in the official BED specs can be optionally mapped as-is using the `--keepExtra` option.
+
+#### Alignability
+
+The number of distinct genomes different bases of a set of target genomes align to can be computed using the `halAlignability` tool.  The output is in `.wig` format.  
+
 #### Mutation Annotation
+
+### SNPs
+
+To compute the point mutations (SNPs) between a given pair of genomes in the HAL graph, `halSnps` can be used:
+
+     halSnps mammals.hal human duck --bed human_duck_snps.bed
+
+will produce a BED files listing the SNPs in human coordinates between human and duck.  A count of the number of snps and the total aligned columns are printed to stdout.  
+
+### General mutations along branches
 
 Annotation files, as described above, can be generated from the alignment to provide the locations of substitutions and rearrangements.  Annotations are done on a branch-by-branch basis, but can be mapped back to arbitrary references using `halLiftover` if so desired.  The produced annotation files have the format
 
@@ -239,6 +268,7 @@ The ID's refer to the types of mutations described above, and are explained in t
 Two bed files must be specified because the coordinates of inserted (and by convention inverted and transposed) segments are with respect to bases in the human genome (reference), where as deleted bases are in ancestral coordinates (parent).  
 
 Point mutations can optionally be written using the `--snpFile <file>` option.  The '--maxGap' and '--maxNFraction' options can specify the gap indel threshold and missing data threshold, respectively, as described above in the *halSummarizeMtuations* section.  
+
 
 ### Importing from other formats
 

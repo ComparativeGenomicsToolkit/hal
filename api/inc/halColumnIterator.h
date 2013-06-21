@@ -94,6 +94,9 @@ public:
     * different iterators covering distinct ranges.  If there are no 
     * duplications, then this function will always return true. */
    virtual bool isCanonicalOnRef() const = 0;
+
+   /** Print contents of column iterator */
+   virtual void print(std::ostream& os) const = 0;
    
 protected:
    friend class counted_ptr<ColumnIterator>;
@@ -103,29 +106,13 @@ protected:
 
 inline ColumnIterator::~ColumnIterator() {}
 
-}
-
-#ifndef NDEBUG
-#include "halGenome.h"
-namespace hal {
-inline std::ostream& operator<<(std::ostream& os, ColumnIteratorConstPtr ci)
+inline std::ostream& operator<<(std::ostream& os, const ColumnIterator& cit)
 {
-  const ColumnIterator::ColumnMap* cmap = ci->getColumnMap();
-  for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin();
-       i != cmap->end(); ++i)
-  {
-    os << i->first->getName() << ": ";
-    for (size_t j = 0; j < i->second->size(); ++j)
-    {
-      os << i->second->at(j)->getArrayIndex() << ", ";
-    }
-    os << "\n";
-  }
-
+  cit.print(os);
   return os;
 }
+
 }
-#endif
 
 
 #endif

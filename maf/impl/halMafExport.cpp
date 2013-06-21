@@ -46,6 +46,11 @@ void MafExport::setUnique(bool unique)
   _unique = unique;
 }
 
+void MafExport::setAppend(bool append)
+{
+  _append = append;
+}
+
 void MafExport::writeHeader()
 {
   assert(_mafStream != NULL);
@@ -81,7 +86,10 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
 
   _mafStream = &mafStream;
   _alignment = alignment;
-  writeHeader();
+  if (!_append)
+  {
+    writeHeader();
+  }
 
   ColumnIteratorConstPtr colIt = seq->getColumnIterator(&targets,
                                                         _maxRefGap, 
@@ -89,11 +97,14 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                                         lastPosition,
                                                         _noDupes,
                                                         _noAncestors);
-  _mafBlock.initBlock(colIt, _ucscNames);
-  assert(_mafBlock.canAppendColumn(colIt) == true);
+
+  hal_size_t appendCount = 0;
   if (_unique == false || colIt->isCanonicalOnRef() == true)
   {
+    _mafBlock.initBlock(colIt, _ucscNames);
+    assert(_mafBlock.canAppendColumn(colIt) == true);
     _mafBlock.appendColumn(colIt);
+    ++appendCount;
   }
   size_t numBlocks = 0;
   while (colIt->lastColumn() == false)
@@ -101,6 +112,11 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
     colIt->toRight();
     if (_unique == false || colIt->isCanonicalOnRef() == true)
     {
+      if (appendCount == 0)
+      {
+        _mafBlock.initBlock(colIt, _ucscNames);
+        assert(_mafBlock.canAppendColumn(colIt) == true);
+      }
       if (_mafBlock.canAppendColumn(colIt) == false)
       {
         // erase empty entries from the column.  helps when there are 
@@ -109,12 +125,15 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
         {
           colIt->defragment();
         }
-
-        mafStream << _mafBlock << '\n';
+        if (appendCount > 0)
+        {
+          mafStream << _mafBlock << '\n';
+        }
         _mafBlock.initBlock(colIt, _ucscNames);
         assert(_mafBlock.canAppendColumn(colIt) == true);
       }
       _mafBlock.appendColumn(colIt);
+      ++appendCount;
     }
   }
   mafStream << _mafBlock << endl;

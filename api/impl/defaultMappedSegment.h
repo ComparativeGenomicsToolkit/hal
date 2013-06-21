@@ -54,6 +54,7 @@ public:
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
      hal_size_t minLength) const;
+   virtual void print(std::ostream& os) const;
 
    // SLICED SEGMENT INTERFACE 
    virtual void toReverse() const;
@@ -76,7 +77,6 @@ public:
      const MappedSegmentConstPtr& next,
      const std::set<hal_index_t>* cutSet,
      const std::set<hal_index_t>* sourceCutSet) const;
-   virtual void print(std::ostream& os) const;
 
 
    // INTERNAL METHODS

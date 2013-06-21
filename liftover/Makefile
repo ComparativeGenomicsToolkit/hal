@@ -6,8 +6,8 @@ libSources=$(subst impl/halLiftoverMain.cpp,,${libSourcesAll})
 libHeaders = $(wildcard inc/*.h)
 libTestSources = $(wildcard tests/*.cpp)
 libTestHeaders = $(wildcard tests/*.h)
-libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
-libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
+libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp ${rootPath}/api/tests/halAlignmentInstanceTest.cpp
+libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/halAlignmentInstanceTest.h ${rootPath}/api/tests/allTests.h
 
 all : ${libPath}/halLiftover.a ${binPath}/halLiftover ${binPath}/halLiftoverTests
 

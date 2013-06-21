@@ -20,7 +20,7 @@ public:
                           bool inverted = false);
    virtual ~DefaultSegmentIterator();
 
- // SEGMENT INTERFACE
+   // SEGMENT INTERFACE
    virtual void setArrayIndex(Genome* genome, 
                               hal_index_t arrayIndex);
    virtual void setArrayIndex(const Genome* genome, 
@@ -48,6 +48,7 @@ public:
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
      hal_size_t minLength) const;
+   virtual void print(std::ostream& os) const;
 
    // SLICED SEGMENT INTERFACE 
    virtual void toReverse() const;

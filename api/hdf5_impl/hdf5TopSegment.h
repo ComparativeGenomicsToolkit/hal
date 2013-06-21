@@ -61,6 +61,7 @@ public:
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
      hal_size_t minLength) const;
+   void print(std::ostream& os) const;
 
    // TOP SEGMENT INTERFACE
    hal_index_t getParentIndex() const;
