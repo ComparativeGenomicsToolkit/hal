@@ -121,6 +121,11 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     }
 
     assert(outBedLine._start < outBedLine._end);
+
+    if (_outPSL == true && !fragments.empty())
+    {
+      readPSLInfo(fragments, outBedLine);
+    }
   }
 }
 
@@ -144,3 +149,62 @@ void BlockLiftover::cleanTargetParalogies()
   }
 }
 
+void BlockLiftover::readPSLInfo(vector<MappedSegmentConstPtr>& fragments, 
+                                BedLine& outBedLine)
+{
+  const Sequence* srcSequence = fragments[0]->getSource()->getSequence();
+  const Sequence* tSequence = fragments[0]->getSequence();
+
+  outBedLine._psl.resize(1);
+  PSLInfo& psl = outBedLine._psl[0];
+  psl._matches = 0;
+  psl._misMatches = 0;
+  psl._repMatches = 0;
+  psl._nCount = 0;
+  psl._qNumInsert = 0;
+  psl._qBaseInsert = 0;
+  psl._tNumInsert = 0;
+  psl._tBaseInsert = 0;
+  psl._qSeqName = srcSequence->getName();
+  psl._qSeqSize = srcSequence->getSequenceLength();
+  psl._qStrand = fragments[0]->getSource()->getReversed() ? '-' : '+';
+  psl._qEnd = outBedLine._srcStart + (outBedLine._end - outBedLine._start);
+  psl._tSeqSize = tSequence->getSequenceLength();
+  psl._qBlockStarts.clear();
+
+  string sBuf;
+  string tBuf;
+  for (size_t i = 0; i < fragments.size(); ++i)
+  {
+    assert(fragments[i]->getSource()->getReversed() == 
+           fragments[0]->getSource()->getReversed());
+    assert(fragments[i]->getSource()->getSequence() == srcSequence);
+    assert(fragments[i]->getSequence() == tSequence);
+
+    fragments[i]->getSource()->getString(sBuf);
+    fragments[i]->getString(tBuf);
+    
+    for (size_t j = 0; j < sBuf.length(); ++j)
+    {
+      if (sBuf[j] == tBuf[j])
+      {
+        if (!isMasked(sBuf[j]) && !isMasked(tBuf[j]))
+        {
+          ++psl._matches;
+        }
+        else
+        {
+          ++psl._repMatches;
+        }
+      }
+      else
+      {
+        ++psl._misMatches;
+      }
+      if (isMissingData(tBuf[j]))
+      {
+        ++psl._nCount;
+      }
+    }
+  }
+}

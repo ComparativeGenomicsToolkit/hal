@@ -298,3 +298,58 @@ bool BedLineSrcLess::operator()(const BedLine& b1, const BedLine& b2) const
 }
 
 
+ostream& BedLine::writePSL(ostream& os)
+{
+  assert(_psl.size() == 1);
+  const PSLInfo& psl = _psl[0];
+  assert(_blocks.size() == psl._qBlockStarts.size());
+  assert(_blocks.size() > 0);
+
+  os << psl._matches << '\t'
+     << psl._misMatches << '\t'
+     << psl._repMatches << '\t'
+     << psl._nCount << '\t'
+     << psl._qNumInsert << '\t'
+     << psl._qBaseInsert << '\t'
+     << psl._tNumInsert << '\t'
+     << psl._tBaseInsert << '\t'
+     << psl._qStrand << _strand << '\t'
+     << psl._qSeqName << '\t'
+     << psl._qSeqSize << '\t'
+     << _srcStart << '\t'
+     << psl._qEnd << '\t'
+     << _chrName << '\t'
+     << psl._tSeqSize << '\t'
+     << _end << '\t'
+     << _blocks.size() << '\t';
+
+  for (size_t i = 0; i < _blocks.size(); ++i)
+  {
+    os << _blocks[i]._length << ',';
+  }
+  os << '\t';
+
+  for (size_t i = 0; i < psl._qBlockStarts.size(); ++i)
+  {
+    hal_index_t start = psl._qBlockStarts[i] + _srcStart;
+    if (psl._qStrand == '-')
+    {
+      start = psl._qSeqSize + 1 - start;
+    }
+    os << start << ',';
+  }
+  os << '\t';
+
+  for (size_t i = 0; i < _blocks.size(); ++i)
+  {
+    hal_index_t start = _blocks[i]._start + _start;
+    if (_strand == '-')
+    {
+      start = psl._tSeqSize + 1 - start;
+    }
+    os << start << ',';
+  }
+
+  os << '\n';
+  return os;
+}

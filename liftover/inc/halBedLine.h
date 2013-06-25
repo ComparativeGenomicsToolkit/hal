@@ -22,6 +22,28 @@ struct BedBlock
    bool operator<(const BedBlock& other) const;
 };
 
+/** hack to store extra fields required to write PSL.  option was never
+ * considered in original design and dont have time to refactor properly
+ */
+struct PSLInfo 
+{
+   hal_size_t _matches;
+   hal_size_t _misMatches;
+   hal_size_t _repMatches;
+   hal_size_t _nCount;
+   hal_size_t _qNumInsert;
+   hal_size_t _qBaseInsert;
+   hal_size_t _tNumInsert;
+   hal_size_t _tBaseInsert;
+   std::string _qSeqName;
+   hal_size_t _qSeqSize;
+   char _qStrand;
+   hal_size_t _qEnd;
+   hal_size_t _tSeqSize;
+   // absolute sequence coordinates
+   std::vector<hal_index_t> _qBlockStarts;
+};
+
 /** store a line of a BED file 
  * https://genome.ucsc.edu/FAQ/FAQformat.html#format1
  */
@@ -31,6 +53,7 @@ struct BedLine
    virtual ~BedLine();
    std::istream& read(std::istream& is, int version, std::string& lineBuffer);
    std::ostream& write(std::ostream& os, int version=-1);
+   std::ostream& writePSL(std::ostream& os);
 
    std::string _chrName;
    hal_index_t _start;
@@ -50,6 +73,11 @@ struct BedLine
    // not part of output, but needed to preserve ordering
    hal_index_t _srcStart;
    char _srcStrand;
+
+   // hack for optional records that are (in addition to above) required
+   // to write psl output.  put in vector so they dont get stored or 
+   // copied around if not in use.  vector should never have length  > 1
+   std::vector<PSLInfo> _psl;
 };
 
 struct BedLineLess

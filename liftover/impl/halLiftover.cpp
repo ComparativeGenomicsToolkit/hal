@@ -13,6 +13,7 @@ using namespace hal;
 
 Liftover::Liftover() : _outBedStream(NULL),                       
                        _inBedVersion(-1), _outBedVersion(-1),
+                       _outPSL(false),
                        _srcGenome(NULL), _tgtGenome(NULL)
 {
 
@@ -31,7 +32,8 @@ void Liftover::convert(AlignmentConstPtr alignment,
                        int inBedVersion,
                        int outBedVersion,
                        bool addExtraColumns,
-                       bool traverseDupes)
+                       bool traverseDupes,
+                       bool outPSL)
 {
   _srcGenome = srcGenome;
   _tgtGenome = tgtGenome;
@@ -40,6 +42,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
   _inBedVersion = inBedVersion;
   _outBedVersion = outBedVersion;
   _traverseDupes = traverseDupes;
+  _outPSL = outPSL;
   _missedSet.clear();
   _tgtSet.clear();
   assert(_srcGenome && inBedStream && tgtGenome && outBedStream);
@@ -69,15 +72,24 @@ void Liftover::convert(AlignmentConstPtr alignment,
   {
     _outBedVersion = _inBedVersion;
   }
-  if (_inBedVersion <= 9 && _outBedVersion > _inBedVersion)
+  if (_inBedVersion <= 9)
   {
-    stringstream ss;
-    ss << "Unable to convert from BED version " << _inBedVersion << " to "
-       << _outBedVersion << ": input version must be at least as high as output"
-       " version.";
-    throw hal_exception(ss.str());
+     if (_outPSL == false && _outBedVersion > _inBedVersion)
+     {
+       stringstream ss;
+       ss << "Unable to convert from BED version " << _inBedVersion << " to "
+          << _outBedVersion << ": input version must be at least as high as "
+          << " output version.";
+       throw hal_exception(ss.str());
+     }
+     if (_outPSL == true)
+     {
+       stringstream ss;
+       ss << "Unable to convert from BED version " << _inBedVersion << " to "
+          << "PSL : input version must be at least 12 to convert to PSL.";
+       throw hal_exception(ss.str());
+     }
   }
-
   if (firstLineStream != NULL)
   {
     scan(firstLineStream, _inBedVersion);
@@ -152,7 +164,14 @@ void Liftover::writeLineResults()
     {
       i->_extra.clear();
     }
-    i->write(*_outBedStream, _outBedVersion);
+    if (_outPSL == false)
+    {
+      i->write(*_outBedStream, _outBedVersion);
+    }
+    else
+    {
+      i->writePSL(*_outBedStream);
+    }
   }
 }
 
@@ -213,23 +232,21 @@ void Liftover::assignBlocksToIntervals()
       if (compatible == true)
       {
         (*setIt)->_blocks.push_back(block);
+        // copy source information for psl block
+        if (_outPSL == true)
+        {
+          (*setIt)->_psl.resize(1);
+          (*setIt)->_psl[0]._qBlockStarts.push_back((*blockIt)._srcStart);
+          (*setIt)->_psl[0]._matches += (*blockIt)._psl[0]._matches;
+          (*setIt)->_psl[0]._misMatches += (*blockIt)._psl[0]._misMatches;
+          (*setIt)->_psl[0]._repMatches += (*blockIt)._psl[0]._repMatches;
+          (*setIt)->_psl[0]._nCount += (*blockIt)._psl[0]._nCount;
+          assert((*setIt)->_blocks.size() == 
+                 (*setIt)->_psl[0]._qBlockStarts.size());
+        }
       }
       else
       {
-/*
-  cout << "setIt.start " << (*setIt)->_start 
-  << " setIt.end " << (*setIt)->_end
-  << " blockit.start " << (*blockIt)._start
-  << " blockit.end " << (*blockIt)._end << endl;
-  cout << " blockprev.start " << (*blockPrev)._start
-  << " blockprev.end " << (*blockPrev)._end << endl;
-  cout << " blockback " <<( (*setIt)->_blocks.back()._start + 
-  (*setIt)->_start)
-  << " blockbakcend " 
-  << ( (*setIt)->_blocks.back()._start + 
-  (*setIt)->_start + (*setIt)->_blocks.back()._length) 
-  << endl;
-*/
         assert((*setIt)->_blocks.size() > 0);
         // otherwise, we duplicate the containing interval, zap all its
         // blocks, and add the new block.  the old interval can no longer
@@ -238,6 +255,17 @@ void Liftover::assignBlocksToIntervals()
         intervalSet.erase(setIt);
         newInterval._blocks.clear();
         newInterval._blocks.push_back(block);
+        // copy source information for psl block
+        if (_outPSL == true)
+        {
+          newInterval._psl.resize(1);
+          newInterval._psl[0]._qBlockStarts.clear();
+          newInterval._psl[0]._qBlockStarts.push_back((*blockIt)._srcStart);
+          newInterval._psl[0]._matches = (*blockIt)._psl[0]._matches;
+          newInterval._psl[0]._misMatches = (*blockIt)._psl[0]._misMatches;
+          newInterval._psl[0]._repMatches = (*blockIt)._psl[0]._repMatches;
+          newInterval._psl[0]._nCount = (*blockIt)._psl[0]._nCount;
+        }
         _outBedLines.push_back(newInterval);
         intervalSet.insert(&_outBedLines.back());
       }
@@ -301,6 +329,14 @@ void Liftover::mergeIntervals()
         {
           assert((*i)._start < (*j)._start);
           (*i)._end = max((*i)._end, (*j)._end);
+          if (_outPSL == true)
+          {
+            (*i)._psl[0]._qEnd = max((*i)._psl[0]._qEnd, (*j)._psl[0]._qEnd);
+            (*i)._psl[0]._matches += (*j)._psl[0]._matches;
+            (*i)._psl[0]._misMatches += (*j)._psl[0]._misMatches;
+            (*i)._psl[0]._repMatches += (*j)._psl[0]._repMatches;
+            (*i)._psl[0]._nCount += (*j)._psl[0]._nCount;
+          }
           _outBedLines.erase(j);
         }
       }
@@ -367,6 +403,20 @@ void Liftover::cleanResults()
           i->_end -= endDelta;
           assert(i->_blocks.back()._start + 
                  i->_blocks.back()._length + i->_start == i->_end);
+
+          if (_outPSL == true)
+          {
+            assert(i->_psl.size() == 1);
+            i->_srcStart = numeric_limits<hal_index_t>::max();
+            i->_psl[0]._qEnd = 0;
+            for (size_t j = 0; j < i->_psl[0]._qBlockStarts.size(); ++j)
+            {
+              i->_srcStart = min(i->_srcStart, i->_psl[0]._qBlockStarts[j]);
+              i->_psl[0]._qEnd = max(i->_psl[0]._qEnd, 
+                                     (hal_size_t)i->_psl[0]._qBlockStarts[j] +
+                                     i->_blocks[j]._length);
+            }
+          }
         }
         else
         {

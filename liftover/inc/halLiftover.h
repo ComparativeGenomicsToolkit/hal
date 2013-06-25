@@ -30,7 +30,8 @@ public:
                 int inBedVersion = -1,
                 int outBedVersion = -1,
                 bool addExtraColumns = false,
-                bool traverseDupes = true);
+                bool traverseDupes = true,
+                bool outPSL = false);
                    
 protected:
 
@@ -56,6 +57,7 @@ protected:
    BedList _outBedLines;
    int _inBedVersion;
    int _outBedVersion;
+   bool _outPSL;
    
    BedList _mappedBlocks;
    
