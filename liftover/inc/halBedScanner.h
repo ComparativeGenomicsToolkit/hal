@@ -46,6 +46,7 @@ protected:
    std::istream* _bedStream;
    BedLine _bedLine;
    hal_size_t _lineNumber;
+   int _bedVersion;
 };
 
 }
