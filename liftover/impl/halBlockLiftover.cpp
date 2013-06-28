@@ -168,7 +168,10 @@ void BlockLiftover::readPSLInfo(vector<MappedSegmentConstPtr>& fragments,
   psl._qSeqName = srcSequence->getName();
   psl._qSeqSize = srcSequence->getSequenceLength();
   psl._qStrand = fragments[0]->getSource()->getReversed() ? '-' : '+';
-  psl._qEnd = outBedLine._srcStart + (outBedLine._end - outBedLine._start);
+  assert(outBedLine._srcStart >= srcSequence->getStartPosition());
+  psl._qChromOffset = srcSequence->getStartPosition();
+  psl._qEnd = outBedLine._srcStart - psl._qChromOffset + 
+     (outBedLine._end - outBedLine._start);
   psl._tSeqSize = tSequence->getSequenceLength();
   psl._qBlockStarts.clear();
 

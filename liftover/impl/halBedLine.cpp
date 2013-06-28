@@ -304,6 +304,7 @@ ostream& BedLine::writePSL(ostream& os)
   const PSLInfo& psl = _psl[0];
   assert(_blocks.size() == psl._qBlockStarts.size());
   assert(_blocks.size() > 0);
+  assert(_srcStart >= psl._qChromOffset);
 
   os << psl._matches << '\t'
      << psl._misMatches << '\t'
@@ -316,7 +317,7 @@ ostream& BedLine::writePSL(ostream& os)
      << psl._qStrand << _strand << '\t'
      << psl._qSeqName << '\t'
      << psl._qSeqSize << '\t'
-     << _srcStart << '\t'
+     << _srcStart - psl._qChromOffset << '\t'
      << psl._qEnd << '\t'
      << _chrName << '\t'
      << psl._tSeqSize << '\t'
@@ -332,7 +333,8 @@ ostream& BedLine::writePSL(ostream& os)
 
   for (size_t i = 0; i < psl._qBlockStarts.size(); ++i)
   {
-    hal_index_t start = psl._qBlockStarts[i] + _srcStart;
+    assert(psl._qBlockStarts[i] >= psl._qChromOffset);
+    hal_index_t start = psl._qBlockStarts[i] - psl._qChromOffset;
     if (psl._qStrand == '-')
     {
       start = psl._qSeqSize + 1 - start;

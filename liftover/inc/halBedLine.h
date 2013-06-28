@@ -39,6 +39,7 @@ struct PSLInfo
    hal_size_t _qSeqSize;
    char _qStrand;
    hal_size_t _qEnd;
+   hal_size_t _qChromOffset;
    hal_size_t _tSeqSize;
    // absolute sequence coordinates
    std::vector<hal_index_t> _qBlockStarts;
