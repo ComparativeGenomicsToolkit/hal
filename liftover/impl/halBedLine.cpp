@@ -320,6 +320,7 @@ ostream& BedLine::writePSL(ostream& os)
      << psl._qEnd << '\t'
      << _chrName << '\t'
      << psl._tSeqSize << '\t'
+     << _start << '\t'
      << _end << '\t'
      << _blocks.size() << '\t';
 
