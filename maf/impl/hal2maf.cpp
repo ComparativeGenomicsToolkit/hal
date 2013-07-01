@@ -118,11 +118,6 @@ int main(int argc, char** argv)
       throw hal_exception("--rootGenome and --targetGenomes options are "
                           "mutually exclusive");
     }
-    if (refTargetsPath != "\"\"" && refSequenceName != "\"\"")
-    {
-      throw hal_exception("--refSequence and --refTargets options are "
-                          "mutually exclusive");
-    }
   }
   catch(exception& e)
   {
@@ -236,7 +231,8 @@ int main(int argc, char** argv)
         }
       }
       istream& bedStream = refTargetsPath != "stdin" ? bedFileStream : cin;
-      MafBed mafBed(mafStream, alignment, refGenome, targetSet, mafExport);
+      MafBed mafBed(mafStream, alignment, refGenome, refSequence,
+                    targetSet, mafExport);
       mafBed.scan(&bedStream);
     }
     else

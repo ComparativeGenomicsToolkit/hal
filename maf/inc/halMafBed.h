@@ -23,7 +23,8 @@ class MafBed : public BedScanner
 public:
 
    MafBed(std::ostream& mafStream, AlignmentConstPtr alignment,
-          const Genome* refGenome, std::set<const Genome*>& targetSet,
+          const Genome* refGenome, const Sequence* refSequence,
+          std::set<const Genome*>& targetSet,
           MafExport& mafExport);
    virtual ~MafBed();
 
@@ -38,6 +39,7 @@ protected:
    std::ostream& _mafStream;
    AlignmentConstPtr _alignment;
    const Genome* _refGenome;
+   const Sequence* _refSequence;
    std::set<const Genome*>& _targetSet;
    MafExport& _mafExport;
 };

@@ -12,12 +12,14 @@ using namespace std;
 using namespace hal;
 
 MafBed::MafBed(std::ostream& mafStream, AlignmentConstPtr alignment,
-               const Genome* refGenome, std::set<const Genome*>& targetSet,
+               const Genome* refGenome, const Sequence* refSequence,
+               std::set<const Genome*>& targetSet,
                MafExport& mafExport) :
   BedScanner(),
   _mafStream(mafStream),
   _alignment(alignment),
   _refGenome(refGenome),
+  _refSequence(refSequence),
   _targetSet(targetSet),
   _mafExport(mafExport)
 {
@@ -32,7 +34,8 @@ MafBed::~MafBed()
 void MafBed::visitLine()
 {
   const Sequence* refSequence = _refGenome->getSequence(_bedLine._chrName);
-  if (refSequence != NULL)
+  if (refSequence != NULL && 
+      (_refSequence == NULL || refSequence == _refSequence))
   {
     if (_bedVersion <= 9)
     {
@@ -72,7 +75,7 @@ void MafBed::visitLine()
       }
     }
   }
-  else
+  else if (_refSequence == NULL)
   {
     cerr << "Line " << _lineNumber << ": BED sequence " << _bedLine._chrName
          << " not found in genome " << _refGenome->getName() << '\n';
