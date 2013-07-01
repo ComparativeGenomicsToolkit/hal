@@ -58,9 +58,9 @@ static CLParserPtr initParser()
    * line because it automatically adds some comman options.  Using the 
    * parser is by no means required however */
   CLParserPtr optionsParser = hdf5CLParserInstance(false);
-  optionsParser->addArgument("modPath", "input neutral model file");
   optionsParser->addArgument("halPath", "input hal file");
   optionsParser->addArgument("refGenome", "reference genome to scan");
+  optionsParser->addArgument("modPath", "input neutral model file");
   optionsParser->addOption("outWiggle", "output wig file (stdout if none)",
                            "stdout");
   optionsParser->addOption("refSequence", "sequence name to export ("
