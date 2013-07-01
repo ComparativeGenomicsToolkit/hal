@@ -61,8 +61,8 @@ static CLParserPtr initParser()
   optionsParser->addArgument("halPath", "input hal file");
   optionsParser->addArgument("refGenome", "reference genome to scan");
   optionsParser->addArgument("modPath", "input neutral model file");
-  optionsParser->addOption("outWiggle", "output wig file (stdout if none)",
-                           "stdout");
+  optionsParser->addArgument("outWiggle", "output wig file (or \"stdout\""
+                             " to pipe to standard output)");
   optionsParser->addOption("refSequence", "sequence name to export ("
                            "all sequences by default)", 
                            "\"\"");
@@ -86,7 +86,7 @@ static CLParserPtr initParser()
                            "soft (default): mask species where duplications occur",
                            "soft");
   optionsParser->addOption("step", "step size", 1);
-  optionsParser->setDescription("Make alignability wiggle plot for a genome.");
+  optionsParser->setDescription("Make PhyloP wiggle plot for a genome.");
   return optionsParser;
 }
 
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
     modPath = optionsParser->getArgument<string>("modPath");
     halPath = optionsParser->getArgument<string>("halPath");
     refGenomeName = optionsParser->getArgument<string>("refGenome");
-    wigPath = optionsParser->getOption<string>("outWiggle");
+    wigPath = optionsParser->getArgument<string>("outWiggle");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     start = optionsParser->getOption<hal_size_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
