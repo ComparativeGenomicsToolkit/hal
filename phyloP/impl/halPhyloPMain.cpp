@@ -76,14 +76,18 @@ static CLParserPtr initParser()
                            " the entire thing is converted",
                            0);
   optionsParser->addOption("dupType",
-                           "Which duplications to mask according to dupMask option. Choices are: "
-                           "all: Any duplicated region "
-                           "ambiguous (default): Regions within duplications where alignments from the same species do not contain the same base",
+                           "Which duplications to mask according to dupMask "
+                           "option. Choices are: "
+                           "\"all\": Any duplicated region; or "
+                           "\"ambiguous\": Regions within duplications where "
+                           "alignments from the same species do not contain"
+                           " the same base.",
                            "ambiguous");
   optionsParser->addOption("dupMask",
                            "What to do with duplicated regions. Choices are: "
-                           "hard: mask entire alignment column if any duplications occur "
-                           "soft (default): mask species where duplications occur",
+                           "\"hard\": mask entire alignment column if any "
+                           "duplications occur; or "
+                           "\"soft\": mask species where duplications occur.",
                            "soft");
   optionsParser->addOption("step", "step size", 1);
   optionsParser->setDescription("Make PhyloP wiggle plot for a genome.");
