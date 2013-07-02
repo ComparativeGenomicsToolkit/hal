@@ -56,7 +56,7 @@ endif
 #	Local Linux install (phast and clapack sister dirs to hal/)
 #	(note CLAPACKPATH not needed in Mac)
 	PHAST=../../phast
-	CLAPACKPATH=../../CLAPACK-3.2.1
+	CLAPACKPATH=../../clapack
 
 #	Melissa's version of the above
 #	PHAST=/home/mt269/phast
