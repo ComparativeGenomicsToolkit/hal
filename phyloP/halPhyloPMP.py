@@ -32,7 +32,10 @@ from hal.stats.halStats import getHalRootName
 
 # Wrapper for hal2maf
 def getHalPhyloPCmd(options):
-    cmd = "hal2maf %s %s --unique" % (options.halFile, makeOutMafPath(options))
+    cmd = "halPhyloP %s %s %s %s" % (options.halFile, 
+                                     options.refGenome,
+                                     options.modFile,
+                                     makeOutWigglePath(options))
     for opt,val in options.__dict__.items():
         if (val is not None and
             (type(val) != bool or val == True) and
@@ -87,21 +90,20 @@ def concatenateSlices(sliceOpts, sliceCmds):
     if (sliceOpts[0].sliceSize is not None):
         for opt, cmd in zip(sliceOpts, sliceCmds):
             first = opt.sliceNumber == 0            
-            sliceMafPath = makeOutMafPath(opt)
-            assert os.path.isfile(sliceMafPath)
+            sliceWigglePath = makeOutWigglePath(opt)
+            assert os.path.isfile(sliceWigglePath)
             sliceNum = opt.sliceNumber
             opt.sliceNumber = None
-            outMafPath = makeOutMafPath(opt)
+            outWigglePath = makeOutWigglePath(opt)
             opt.sliceNumber = sliceNum
             if first:
-                os.rename(sliceMafPath, outMafPath)
+                os.rename(sliceWigglePath, outWigglePath)
             else:
-                with open(outMafPath, "a") as tgt:
-                    with open(sliceMafPath, "r") as src:
+                with open(outWigglePath, "a") as tgt:
+                    with open(sliceWigglePath, "r") as src:
                         for line in src:
-                            if not line[0] == '#':
-                                tgt.write(line)
-                os.remove(sliceMafPath)
+                            tgt.write(line)
+                os.remove(sliceWigglePath)
             
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes. 
@@ -122,7 +124,7 @@ def runParallelSlices(options):
                 options.refSequence, options.refGenome))
         totalLength = int(refStat[1])
     else:
-        totalLength = getHalGenomeLength(seqOpts.halFile, refGenome)
+        totalLength = getHalGenomeLength(options.halFile, refGenome)
     
     seqOpts = copy.deepcopy(options)
 
@@ -134,11 +136,11 @@ def runParallelSlices(options):
         seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
                 
     index = 0
-    for sStart, sLen, sIdx in computeSlices(seqOpts, genomeLen):
+    for sStart, sLen, sIdx in computeSlices(seqOpts, totalLength):
         seqOpts.start = sStart
         seqOpts.length = sLen
         seqOpts.sliceNumber = sIdx
-        sliceCmds.append(getHal2MafCmd(seqOpts))
+        sliceCmds.append(getHalPhyloPCmd(seqOpts))
         sliceOpts.append(copy.deepcopy(seqOpts))
             
     # run in parallel
@@ -227,10 +229,10 @@ def main(argv=None):
                         "\"all\": Any duplicated region; or "
                         "\"ambiguous\": Regions within duplications where "
                         "alignments from the same species do not contain"
-                        " the same base."
+                        " the same base.",
                         default=None)
     hppGrp.add_argument("--dupMask",
-                        "What to do with duplicated regions. Choices are: "
+                        help="What to do with duplicated regions. Choices are: "
                         "\"hard\": mask entire alignment column if any "
                         "duplications occur; or "
                         "\"soft\": mask species where duplications occur.",
@@ -244,7 +246,7 @@ def main(argv=None):
         raise RuntimeError("Input hal file %s not found" % args.halFile)
     if not os.path.isfile(args.modFile):
         raise RuntimeError("Input mod file %s not found" % args.modFile)
-    args.halGenomes = getHalGenomes(args.hal)
+    args.halGenomes = getHalGenomes(args.halFile)
     if not args.refGenome in args.halGenomes:
         raise RuntimeError("Reference genome %s not found." % args.refGenome)
 
