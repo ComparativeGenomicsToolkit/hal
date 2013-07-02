@@ -31,45 +31,35 @@ from hal.stats.halStats import getHalRootName
 
 
 # Wrapper for hal2maf
-def getHal2MafCmd(options):
+def getHalPhyloPCmd(options):
     cmd = "hal2maf %s %s --unique" % (options.halFile, makeOutMafPath(options))
     for opt,val in options.__dict__.items():
         if (val is not None and
             (type(val) != bool or val == True) and
-            (opt == 'refGenome' or
-             opt == 'refSequence' or
+            (opt == 'refSequence' or
              opt == 'refTargets' or
              opt == 'start' or
              opt == 'length' or
-             opt == 'rootGenome' or
              opt == 'targetGenomes' or
-             opt == 'maxRefGap' or
-             opt == 'noDupes' or
-             opt == 'noAncestors' or
-             opt == 'ucscNames')):
+             opt == 'dupType' or
+             opt == 'dupMask' or
+             opt == 'step')):
             if val is not True:
                 cmd += ' --%s %s' % (opt, str(val))
             else:
                 cmd += ' --%s' % opt
-    if options.smallFile and not options.firstSmallFile:
-        cmd += ' --append'
     return cmd
 
-# Generate a MAF file name from an input HAL file and some options
-# the MAF file will be in the specified directory
-def makeOutMafPath(options):
-    mafFile = os.path.basename(options.mafFile)
-    mafName = os.path.splitext(mafFile)[0]
-    mafDir = os.path.dirname(options.mafFile)
-    if options.smallFile:
-        mafName += '_small'
-    else:
-        if options.refSequence is not None and options.splitBySequence is True:
-            mafName += '_%s' % options.refSequence
-        if options.sliceNumber is not None:
-            mafName += '_%s_%d' % (options.tempID, options.sliceNumber)
-    mafPath = os.path.join(mafDir, mafName + '.maf')
-    return mafPath
+# Generate a WIGGLE file name from an input HAL file and some options
+# the WIGGLE file will be in the specified directory
+def makeOutWigglePath(options):
+    wiggleFile = os.path.basename(options.wiggleFile)
+    wiggleName = os.path.splitext(wiggleFile)[0]
+    wiggleDir = os.path.dirname(options.wiggleFile)
+    if options.sliceNumber is not None:
+        wiggleName += '_%s_%d' % (options.tempID, options.sliceNumber)
+    wigglePath = os.path.join(wiggleDir, wiggleName + '.wig')
+    return wigglePath
 
 # slice an interval
 # return (start, length, sliceIndex)
@@ -124,43 +114,32 @@ def runParallelSlices(options):
     options.firstSmallFile = True
     sliceCmds = []
     sliceOpts = []
-    # we are going to deal with sequence coordinates
-    if options.splitBySequence is True or options.refSequence is not None:
-        for sequence, seqLen, nt, nb in refSequenceStats:
-            if options.refSequence is None or sequence == options.refSequence:
-                seqOpts = copy.deepcopy(options)
-                if seqLen < options.smallSize:
-                    seqOpts.smallFile = True
-                seqOpts.refGenome = refGenome
-                seqOpts.refSequence = sequence
-                index = 0
-                for sStart, sLen, sIdx in computeSlices(seqOpts, seqLen):
-                    seqOpts.start = sStart
-                    seqOpts.length = sLen
-                    seqOpts.sliceNumber = sIdx
-                    sliceCmds.append(getHal2MafCmd(seqOpts))
-                    sliceOpts.append(copy.deepcopy(seqOpts))
-                if seqOpts.smallFile is True and seqLen > 0:
-                    options.firstSmallFile = False
-    # we are slicing the gnome coordinates directly
+    if options.refSequence is not None:   
+        refStat = [x for x in refSequenceStats if x[1] == 
+                   options.refSequence]
+        if len(refStat != 1):
+            raise RuntimeError("Sequence %s not found in genome %s" % (
+                options.refSequence, options.refGenome))
+        totalLength = int(refStat[1])
     else:
-        seqOpts = copy.deepcopy(options)
-        assert seqOpts.splitBySequence is False
-        genomeLen = getHalGenomeLength(seqOpts.halFile, refGenome)
-        # auto compute slice size from numprocs
-        if seqOpts.sliceSize == None and seqOpts.numProc > 1:
-            refLen = genomeLen
-            if seqOpts.length is not None and seqOpts.length > 0:
-                refLen = seqOpts.length
-            seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
+        totalLength = getHalGenomeLength(seqOpts.halFile, refGenome)
+    
+    seqOpts = copy.deepcopy(options)
+
+    # auto compute slice size from numprocs
+    if seqOpts.sliceSize == None and seqOpts.numProc > 1:
+        refLen = totalLength
+        if seqOpts.length is not None and seqOpts.length > 0:
+            refLen = seqOpts.length
+        seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
                 
-        index = 0
-        for sStart, sLen, sIdx in computeSlices(seqOpts, genomeLen):
-            seqOpts.start = sStart
-            seqOpts.length = sLen
-            seqOpts.sliceNumber = sIdx
-            sliceCmds.append(getHal2MafCmd(seqOpts))
-            sliceOpts.append(copy.deepcopy(seqOpts))
+    index = 0
+    for sStart, sLen, sIdx in computeSlices(seqOpts, genomeLen):
+        seqOpts.start = sStart
+        seqOpts.length = sLen
+        seqOpts.sliceNumber = sIdx
+        sliceCmds.append(getHal2MafCmd(seqOpts))
+        sliceOpts.append(copy.deepcopy(seqOpts))
             
     # run in parallel
     runParallelShellCommands(sliceCmds, options.numProc)
@@ -175,7 +154,7 @@ def main(argv=None):
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Multi-Process wrapper for hal2maf.")
+        description="Multi-Process wrapper for halPhyloP.")
 
     parser.add_argument("halFile", help="Input HAL file")
     parser.add_argument("refGenome", help="Reference genome to scan")
@@ -250,6 +229,12 @@ def main(argv=None):
                         "alignments from the same species do not contain"
                         " the same base."
                         default=None)
+    hppGrp.add_argument("--dupMask",
+                        "What to do with duplicated regions. Choices are: "
+                        "\"hard\": mask entire alignment column if any "
+                        "duplications occur; or "
+                        "\"soft\": mask species where duplications occur.",
+                        default=None);
     hppGrp.add_argument("--step",
                         help="step size", type=int, default=None)
 
@@ -271,6 +256,7 @@ def main(argv=None):
     # make a little id tag for temporary slices
     S = string.ascii_uppercase + string.digits
     args.tempID = 'halPhyloPTemp' + ''.join(random.choice(S) for x in range(5))
+    
     runParallelSlices(args)
     
 if __name__ == "__main__":
