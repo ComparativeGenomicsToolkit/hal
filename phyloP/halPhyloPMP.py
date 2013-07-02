@@ -104,7 +104,18 @@ def concatenateSlices(sliceOpts, sliceCmds):
                         for line in src:
                             tgt.write(line)
                 os.remove(sliceWigglePath)
-            
+
+# Write out the chrom.sizes file for wigToBigWig
+def writeChromSizes(options):
+    if options.chromSizes is not None:
+        csFile = open(options.chromSizes, "w")
+        refSequenceStats = getHalSequenceStats(options.halFile, 
+                                               options.refGenome)
+        assert refSequenceStats is not None
+        for seqStat in refSequenceStats:
+            csFile.write("%s\t%s\n" % (seqStat[0], seqStat[1]))
+        csFile.close()
+
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes. 
 def runParallelSlices(options):
@@ -149,7 +160,8 @@ def runParallelSlices(options):
     # concatenate into output if desired
     concatenateSlices(sliceOpts, sliceCmds)
 
-
+    writeChromSizes(options)
+    
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -173,6 +185,10 @@ def main(argv=None):
     parser.add_argument("--sliceSize",
                         help="Maximum slice of reference sequence to process "
                         "in a single process.", type=int,
+                        default=None)
+    parser.add_argument("--chromSizes",
+                        help="Path of file to output chromosome sizes to. "
+                        "Necessary for wigToBigWig",
                         default=None)
 
     ##################################################################
@@ -254,7 +270,13 @@ def main(argv=None):
     test.write("\n")
     test.close()
     os.remove(args.wiggleFile)
-    
+
+    if args.chromSizes is not None:
+        test = open(args.chromSizes, "w")
+        test.write("\n")
+        test.close()
+        os.remove(args.chromSizes)
+
     # make a little id tag for temporary slices
     S = string.ascii_uppercase + string.digits
     args.tempID = 'halPhyloPTemp' + ''.join(random.choice(S) for x in range(5))
