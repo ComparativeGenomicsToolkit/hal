@@ -355,11 +355,7 @@ void printGenome(ostream& outStream, halPhyloP *phyloP,
           runningLength < length)
       {
         hal_size_t readStart = seqStart >= start ? 0 : start - seqStart;
-        hal_size_t readLen = seqLen - readStart;
-        if (readLen + runningLength > length)
-        {
-          readLen -= length - runningLength;
-        }
+        hal_size_t readLen = min(seqLen - readStart, length);
 
         printSequence(outStream, phyloP, sequence, readStart, readLen, step);
         runningLength += readLen;
