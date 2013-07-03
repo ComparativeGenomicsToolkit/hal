@@ -1,4 +1,3 @@
-#ifdef ENABLE_PHYLOP
 #include "halPhyloP.h"
 
 using namespace std;
@@ -181,4 +180,3 @@ double halPhyloP::pval(const ColumnIterator::ColumnMap *cmap) {
   return pval;
 }
     
-#endif

@@ -5,7 +5,12 @@ libSourcesAll = $(wildcard impl/*.cpp)
 libSources=$(subst impl/halPhyloPMain.cpp,,${libSourcesAll})
 libHeaders = $(wildcard inc/*.h)
 
+ifdef ENABLE_PHYLOP
 all : ${libPath}/halPhyloP.a ${binPath}/halPhyloP ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py
+else
+all :
+	cd .
+endif
 
 clean : 
 	rm -f ${libPath}/halPhyloP.a ${libPath}/halPhyloP.h ${binPath}/halPhyloP *.o ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py

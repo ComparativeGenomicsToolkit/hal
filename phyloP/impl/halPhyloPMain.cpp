@@ -1,4 +1,3 @@
-#ifdef ENABLE_PHYLOP
 /*
  * Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
  *
@@ -363,4 +362,4 @@ void printGenome(ostream& outStream, halPhyloP *phyloP,
     }
   }
 }
-#endif
+
