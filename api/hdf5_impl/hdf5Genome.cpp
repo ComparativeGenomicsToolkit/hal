@@ -488,6 +488,11 @@ bool HDF5Genome::containsDNAArray() const
   return _dnaArray.getSize() > 0;
 }
 
+const Alignment* HDF5Genome::getAlignment() const
+{
+  return _alignment;
+}
+
 // SEGMENTED SEQUENCE INTERFACE
 
 const string& HDF5Genome::getName() const
