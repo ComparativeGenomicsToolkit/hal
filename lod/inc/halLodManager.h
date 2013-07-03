@@ -58,7 +58,6 @@ protected:
 
    CLParserConstPtr _options;
    AlignmentMap _map;
-   hal_size_t _coarsestLevelWithSeq;
 };
 
 HAL_FORWARD_DEC_CLASS(LodManager)
