@@ -437,15 +437,15 @@ const Genome* HDF5Genome::getParent() const
 Genome* HDF5Genome::getChild(hal_size_t childIdx)
 {
   assert(childIdx < _numChildrenInBottomArray);
-  if (_childCache.size() <= childIdx || 
-      _childCache[childIdx] == NULL)
+  if (_childCache.size() <= childIdx)
+  {
+    _childCache.assign(_numChildrenInBottomArray, NULL);
+  }
+  if (_childCache[childIdx] == NULL)
   {
     vector<string> childNames = _alignment->getChildNames(_name);
-    _childCache.resize(childNames.size());
-    for (size_t i = 0; i < _childCache.size(); ++i)
-    {
-      _childCache[i] = _alignment->openGenome(childNames.at(i));
-    }
+    assert(childNames.size() > childIdx);
+    _childCache[childIdx] = _alignment->openGenome(childNames.at(childIdx));
   }
   return _childCache[childIdx];
 }
@@ -453,15 +453,15 @@ Genome* HDF5Genome::getChild(hal_size_t childIdx)
 const Genome* HDF5Genome::getChild(hal_size_t childIdx) const
 {
   assert(childIdx < _numChildrenInBottomArray);
-  if (_childCache.size() <= childIdx || 
-      _childCache[childIdx] == NULL)
+  if (_childCache.size() <= childIdx)
+  {
+    _childCache.assign(_numChildrenInBottomArray, NULL);
+  }
+  if (_childCache[childIdx] == NULL)
   {
     vector<string> childNames = _alignment->getChildNames(_name);
-    _childCache.resize(childNames.size());
-    for (size_t i = 0; i < _childCache.size(); ++i)
-    {
-      _childCache[i] = _alignment->openGenome(childNames.at(i));
-    }
+    assert(childNames.size() > childIdx);
+    _childCache[childIdx] = _alignment->openGenome(childNames.at(childIdx));
   }
   return _childCache[childIdx];
 }
