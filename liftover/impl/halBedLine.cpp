@@ -305,6 +305,7 @@ ostream& BedLine::writePSL(ostream& os)
   assert(_blocks.size() == psl._qBlockStarts.size());
   assert(_blocks.size() > 0);
   assert(_srcStart >= psl._qChromOffset);
+  assert(validatePSL() == true);
 
   os << psl._matches << '\t'
      << psl._misMatches << '\t'
@@ -355,4 +356,30 @@ ostream& BedLine::writePSL(ostream& os)
 
   os << '\n';
   return os;
+}
+
+bool BedLine::validatePSL() const
+{
+  if (_psl.size() != 1)
+  {
+    assert(false); return false;
+  }
+
+  const PSLInfo& psl = _psl[0];
+  if (psl._qBlockStarts.size() != _blocks.size())
+  {
+    assert(false); return false;
+  }
+
+  hal_size_t totBlockLen = 0;
+  for (size_t i = 0; i < _blocks.size(); ++i)
+  {
+    totBlockLen += _blocks[i]._length;
+  }
+  
+  if (totBlockLen != psl._matches + psl._misMatches + psl._repMatches)
+  {
+    assert(false); return false;
+  }
+  return true;
 }
