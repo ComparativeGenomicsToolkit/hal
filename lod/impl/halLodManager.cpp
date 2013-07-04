@@ -180,6 +180,7 @@ void LodManager::checkAlignment(hal_size_t minQuery,
     throw hal_exception(ss.str());
   }
 
+#ifndef NDEBUG
   if (minQuery == 0)
   {
     vector<string> leafNames = alignment->getLeafNamesBelow(
@@ -197,4 +198,5 @@ void LodManager::checkAlignment(hal_size_t minQuery,
       throw hal_exception(ss.str());
     }
   }
+#endif
 }
