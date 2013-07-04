@@ -473,9 +473,11 @@ hal_size_t HDF5Genome::getNumChildren() const
 
 hal_index_t HDF5Genome::getChildIndex(const Genome* child) const
 {
-  for (hal_size_t i = 0; i < _numChildrenInBottomArray; ++i)
+  string childName = child->getName();
+  vector<string> childNames = _alignment->getChildNames(childName);
+  for (hal_size_t i = 0; i < childNames.size(); ++i)
   {
-    if (getChild(i) == child)
+    if (childNames[i] == childName)
     {
       return i;
     }
