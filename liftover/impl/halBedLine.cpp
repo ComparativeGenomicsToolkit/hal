@@ -304,8 +304,11 @@ ostream& BedLine::writePSL(ostream& os)
   const PSLInfo& psl = _psl[0];
   assert(_blocks.size() == psl._qBlockStarts.size());
   assert(_blocks.size() > 0);
-  assert(_srcStart >= psl._qChromOffset);
-  assert(validatePSL() == true);
+  assert(_srcStart >= (hal_index_t)psl._qChromOffset);
+  if (validatePSL() == false)
+  {
+    throw hal_exception("Internal error: PSL does not validate");
+  }
 
   os << psl._matches << '\t'
      << psl._misMatches << '\t'
@@ -334,11 +337,11 @@ ostream& BedLine::writePSL(ostream& os)
 
   for (size_t i = 0; i < psl._qBlockStarts.size(); ++i)
   {
-    assert(psl._qBlockStarts[i] >= psl._qChromOffset);
+    assert(psl._qBlockStarts[i] >= (hal_index_t)psl._qChromOffset);
     hal_index_t start = psl._qBlockStarts[i] - psl._qChromOffset;
     if (psl._qStrand == '-')
     {
-      start = psl._qSeqSize + 1 - start;
+      start = psl._qSeqSize - start - _blocks[i]._length;
     }
     os << start << ',';
   }
@@ -349,7 +352,7 @@ ostream& BedLine::writePSL(ostream& os)
     hal_index_t start = _blocks[i]._start + _start;
     if (_strand == '-')
     {
-      start = psl._tSeqSize + 1 - start;
+      start = psl._tSeqSize - start - _blocks[i]._length;
     }
     os << start << ',';
   }
@@ -364,8 +367,17 @@ bool BedLine::validatePSL() const
   {
     assert(false); return false;
   }
-
   const PSLInfo& psl = _psl[0];
+
+  if (_blocks.size() < 1)
+  {
+    assert(false); return false;
+  }
+  if (_blocks.size() != psl._qBlockStarts.size())
+  {
+    assert(false); return false;
+  }
+
   if (psl._qBlockStarts.size() != _blocks.size())
   {
     assert(false); return false;
@@ -381,5 +393,67 @@ bool BedLine::validatePSL() const
   {
     assert(false); return false;
   }
+
+  if (totBlockLen + psl._qBaseInsert != psl._qEnd - 
+      (_srcStart - psl._qChromOffset))
+  {
+    assert(false); return false;
+  }
+  
+  if (totBlockLen + psl._tBaseInsert != (hal_size_t)_end - _start)
+  {
+    assert(false); return false;
+  }
+
+  if (_strand != '-')
+  {
+    if (_blocks[0]._start != 0)
+    {
+      assert(false); return false;
+    }
+    if (_blocks.back()._start + _blocks.back()._length + _start != _end)
+    {
+      assert(false); return false;
+    }
+  }
+  else
+  {
+    if (_blocks.back()._start != 0)
+    {
+      assert(false); return false;
+    }
+    if (_blocks[0]._start + _blocks[0]._length + _start != _end)
+    {
+      assert(false); return false;
+    } 
+  }
+  
+  if (psl._qStrand != '-')
+  {
+    if (psl._qBlockStarts[0] - psl._qChromOffset !=
+        _srcStart - psl._qChromOffset)
+    {
+      assert(false); return false;
+    }
+    if ((psl._qBlockStarts.back() - psl._qChromOffset) +
+        _blocks.back()._length !=psl._qEnd)
+    {
+      assert(false); return false;
+    }
+  }
+  else
+  {
+    if (psl._qBlockStarts.back() - psl._qChromOffset !=
+        _srcStart - psl._qChromOffset)
+    {
+      assert(false); return false;
+    }
+    if ((psl._qBlockStarts[0] - psl._qChromOffset) +
+        _blocks[0]._length != psl._qEnd)
+    {
+      assert(false); return false;
+    }
+  }
+
   return true;
 }

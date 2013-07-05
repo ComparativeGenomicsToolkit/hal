@@ -42,10 +42,12 @@ protected:
    virtual void visitEOF();
    virtual void writeLineResults();
    virtual void assignBlocksToIntervals();
+   virtual bool compatible(const BedLine& tgtBed, const BedLine& newBlock);
+   virtual void flipBlocks(BedList& bedList);
+   virtual void computePSLInserts(BedList& bedList);
    virtual void writeBlocksAsIntervals();
    virtual void cleanResults();
    virtual void liftBlockIntervals();
-   virtual void mergeIntervals();
    virtual void liftInterval(BedList& mappedBedLines) = 0;
    
 protected: 

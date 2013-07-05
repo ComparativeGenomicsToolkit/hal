@@ -72,24 +72,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
   {
     _outBedVersion = _inBedVersion;
   }
-  if (_inBedVersion <= 9)
-  {
-     if (_outPSL == false && _outBedVersion > _inBedVersion)
-     {
-       stringstream ss;
-       ss << "Unable to convert from BED version " << _inBedVersion << " to "
-          << _outBedVersion << ": input version must be at least as high as "
-          << " output version.";
-       throw hal_exception(ss.str());
-     }
-     if (_outPSL == true)
-     {
-       stringstream ss;
-       ss << "Unable to convert from BED version " << _inBedVersion << " to "
-          << "PSL : input version must be at least 12 to convert to PSL.";
-       throw hal_exception(ss.str());
-     }
-  }
+
   if (firstLineStream != NULL)
   {
     scan(firstLineStream, _inBedVersion);
@@ -126,24 +109,32 @@ void Liftover::visitLine()
     return;
   }
 
-  liftInterval(_outBedLines);  
-  
-  if (_inBedVersion > 9 && !_bedLine._blocks.empty())
+  else if (_inBedVersion > 9 && _bedLine._blocks.empty())
   {
-    _mappedBlocks.clear();
+    std::cerr << "Skipping input line with 0 blocks" << endl;
+    return;
+  }
+
+  _mappedBlocks.clear();
+  if (_inBedVersion <= 9)
+  {
+    liftInterval(_mappedBlocks);  
+  }
+  else
+  {
+    assert(!_bedLine._blocks.empty());
     liftBlockIntervals();
-    if (_mappedBlocks.size() > 0 && _outBedVersion > 9)
-    {
-      // extend the intervals
-      mergeIntervals();
-      // fill them with mapped blocks
-      assignBlocksToIntervals();
-    }
-    if (_outBedVersion <= 9)
-    {
-      //only map the blocks and forget about the intervals
-      writeBlocksAsIntervals();
-    }
+  }
+
+  if (_mappedBlocks.size() > 0 && _outBedVersion > 9)
+  {
+    // fill them with mapped blocks
+    assignBlocksToIntervals();
+  }
+  if (_outBedVersion <= 9)
+  {
+    //only map the blocks and forget about the intervals
+    writeBlocksAsIntervals();
   }
 
   cleanResults();
@@ -177,111 +168,178 @@ void Liftover::writeLineResults()
 
 void Liftover::assignBlocksToIntervals()
 {
-  // sort the mapped blocks by source coordinate
+  assert(_outBedLines.size() == 0);
+
+   // sort the mapped blocks by source coordinate
   _mappedBlocks.sort(BedLineSrcLess());
 
-  // sort intervals in target coordinates
-  set<BedLine*, BedLinePLess> intervalSet;
-  set<BedLine*, BedLinePLess>::iterator setIt;
-  for (BedList::iterator i = _outBedLines.begin(); i != _outBedLines.end(); ++i)
+  for (BedList::iterator blockIt = _mappedBlocks.begin();
+       blockIt != _mappedBlocks.end(); ++blockIt)
   {
-    assert((*i)._blocks.empty());
-    intervalSet.insert(&*i);
-  }
-  
-  BedList::iterator blockPrev = _mappedBlocks.end();
-  BedList::iterator blockNext;
-  for (BedList::iterator blockIt = _mappedBlocks.begin(); 
-       blockIt != _mappedBlocks.end(); blockIt = blockNext)
-  {
-    blockNext = blockIt;
-    ++blockNext;
-    
-    // find first interval with start coordinate less than 
-    setIt = intervalSet.lower_bound(&*blockIt);    
-    if (setIt != intervalSet.begin() && ( 
-          setIt == intervalSet.end() ||
-          (*setIt)->_chrName != (*blockIt)._chrName ||
-          (*setIt)->_start > (*blockIt)._start))
+    if (_outBedLines.empty() || !compatible(_outBedLines.back(), *blockIt))
     {
-      --setIt;
+      _outBedLines.push_back(*blockIt);
     }
-    assert((*setIt)->_chrName == (*blockIt)._chrName);
+    BedLine& tgtBed = _outBedLines.back();
+    tgtBed._start = min(tgtBed._start, blockIt->_start);
+    tgtBed._end = max(tgtBed._end, blockIt->_end);
+    BedBlock block;
+    block._start = blockIt->_start - tgtBed._start;
+    block._length = blockIt->_end - blockIt->_start;
+    tgtBed._blocks.push_back(block);
 
-    // check if the found interval contains the block
-    if ((*setIt)->_start <= (*blockIt)._start &&
-        (*setIt)->_end >= (*blockIt)._end)
+    if (_outPSL == true)
     {
-      bool compatible = blockPrev == _mappedBlocks.end() || 
-         (*setIt)->_blocks.empty();         
-      if (!compatible)
+      assert(tgtBed._psl.size() == 1);
+      tgtBed._psl[0]._qBlockStarts.push_back(blockIt->_srcStart);
+      // note that these get done on assignmnet for first block
+      if (tgtBed._blocks.size() > 1)
       {
-        hal_index_t blockStart = (*setIt)->_blocks.back()._start + 
-           (*setIt)->_start;
-        hal_index_t blockEnd = blockStart + (*setIt)->_blocks.back()._length;
-        compatible = ((*blockPrev)._start == blockStart && 
-                      (*blockPrev)._end == blockEnd &&
-                      (*blockIt)._start >= blockEnd) ;
+        tgtBed._psl[0]._matches += blockIt->_psl[0]._matches;
+        tgtBed._psl[0]._misMatches += blockIt->_psl[0]._misMatches;
+        tgtBed._psl[0]._repMatches += blockIt->_psl[0]._repMatches;
+        tgtBed._psl[0]._nCount += blockIt->_psl[0]._nCount;
       }
-      BedBlock block;
-      block._start = (*blockIt)._start - (*setIt)->_start;
-      block._length = (*blockIt)._end - (*blockIt)._start;
-      
-      // we can add the block to the intervals list without breaking
-      // ordering in the original input
-      if (compatible == true)
-      {
-        (*setIt)->_blocks.push_back(block);
-        // copy source information for psl block
-        if (_outPSL == true)
-        {
-          (*setIt)->_psl.resize(1);
-          (*setIt)->_psl[0]._qBlockStarts.push_back((*blockIt)._srcStart);
-          (*setIt)->_psl[0]._matches += (*blockIt)._psl[0]._matches;
-          (*setIt)->_psl[0]._misMatches += (*blockIt)._psl[0]._misMatches;
-          (*setIt)->_psl[0]._repMatches += (*blockIt)._psl[0]._repMatches;
-          (*setIt)->_psl[0]._nCount += (*blockIt)._psl[0]._nCount;
-          assert((*setIt)->_blocks.size() == 
-                 (*setIt)->_psl[0]._qBlockStarts.size());
-        }
-      }
-      else
-      {
-        assert((*setIt)->_blocks.size() > 0);
-        // otherwise, we duplicate the containing interval, zap all its
-        // blocks, and add the new block.  the old interval can no longer
-        // be modified and it is removed from the set
-        BedLine newInterval = **setIt;
-        intervalSet.erase(setIt);
-        newInterval._blocks.clear();
-        newInterval._blocks.push_back(block);
-        // copy source information for psl block
-        if (_outPSL == true)
-        {
-          newInterval._psl.resize(1);
-          newInterval._psl[0]._qBlockStarts.clear();
-          newInterval._psl[0]._qBlockStarts.push_back((*blockIt)._srcStart);
-          newInterval._psl[0]._matches = (*blockIt)._psl[0]._matches;
-          newInterval._psl[0]._misMatches = (*blockIt)._psl[0]._misMatches;
-          newInterval._psl[0]._repMatches = (*blockIt)._psl[0]._repMatches;
-          newInterval._psl[0]._nCount = (*blockIt)._psl[0]._nCount;
-        }
-        _outBedLines.push_back(newInterval);
-        intervalSet.insert(&_outBedLines.back());
-      }
+      assert(tgtBed._blocks.size() == 
+             tgtBed._psl[0]._qBlockStarts.size());
     }
-    else
-    {
-      /* cout << "setIt.start " << (*setIt)->_start 
-         << " setIt.end " << (*setIt)->_end
-         << " blockit.start " << (*blockIt)._start
-         << " blockit.end " << (*blockIt)._end << endl;
-      */
-      assert(false);
-    }
-    blockPrev = blockIt;
-  } 
+  }
+
+  // Flip the block ordering to make sure it's ascending in the output
+  if (!_outBedLines.empty())
+  {
+    flipBlocks(_outBedLines);
+  }
+
+  // Fill in some informtation for the insert PSL fields
+  if (_outPSL == true)
+  {
+    computePSLInserts(_outBedLines);
+  }
 }
+
+bool Liftover::compatible(const BedLine& tgtBed, const BedLine& newBlock)
+{
+  if (tgtBed._strand != newBlock._strand)
+  {
+    return false;
+  }
+  assert(newBlock._srcStart >= tgtBed._srcStart);
+  if (tgtBed._srcStart == newBlock._srcStart)
+  {
+    return false;
+  }
+
+  hal_index_t delta;
+  const BedBlock& tgtBlock = tgtBed._blocks.back();
+
+  if ((tgtBed._strand == '-') != (newBlock._strand == '-'))
+  {
+    delta = tgtBlock._start + tgtBed._start - newBlock._end;
+  }
+  else
+  {
+    delta = newBlock._start - 
+       (tgtBlock._start + tgtBlock._length + tgtBed._start);
+  }
+  if (delta < 0)
+  {
+    return false;
+  }
+
+  return true;
+}
+
+void Liftover::flipBlocks(BedList& bedList)
+{
+  for (BedList::iterator bedIt = bedList.begin(); bedIt != bedList.end(); 
+       ++bedIt)
+  {
+    if (bedIt->_blocks.size() > 1)
+    {
+      hal_index_t delta = bedIt->_blocks[1]._start - 
+         bedIt->_blocks[0]._start;
+      if (_outPSL == false && delta < 0 ||
+          (_outPSL == true && 
+           ((bedIt->_strand == '-' && delta > 0) ||
+            (bedIt->_strand != '-' && delta < 0))))
+      {
+        std::reverse(bedIt->_blocks.begin(),
+                     bedIt->_blocks.end());
+        if (_outPSL == true)
+        {
+          std::reverse(bedIt->_psl[0]._qBlockStarts.begin(),
+                       bedIt->_psl[0]._qBlockStarts.end());
+        }
+      }
+    }
+  }
+}
+
+void Liftover::computePSLInserts(BedList& bedList)
+{
+  for (BedList::iterator bedIt = bedList.begin(); bedIt != bedList.end(); 
+       ++bedIt)
+  {
+    PSLInfo& psl = bedIt->_psl[0];
+    psl._qNumInsert = 0;
+    psl._qBaseInsert = 0;
+    psl._tNumInsert = 0;
+    psl._tBaseInsert = 0;  
+
+    assert(bedIt->_blocks.size() == psl._qBlockStarts.size());
+    vector<BedBlock>::iterator blockIt = bedIt->_blocks.begin();
+    vector<BedBlock>::iterator blockPrev = blockIt;
+
+    vector<hal_index_t>::iterator qStartIt = psl._qBlockStarts.begin();
+    vector<hal_index_t>::iterator qStartPrev = qStartIt;
+
+    if (blockIt != bedIt->_blocks.end())
+    {
+      ++blockIt;
+      ++qStartIt;
+    }       
+    for (; blockIt != bedIt->_blocks.end(); ++blockIt, ++blockPrev, 
+            ++qStartIt, ++qStartPrev)
+    {
+      if (bedIt->_strand == '-')
+      {
+        swap(blockIt, blockPrev);
+      }
+      assert(blockIt->_start >= (blockPrev->_start + blockPrev->_length));
+      hal_size_t gap = blockIt->_start -
+         (blockPrev->_start + blockPrev->_length);
+      if (gap > 0)
+      {
+        ++psl._tNumInsert;
+        psl._tBaseInsert += gap;
+      }      
+      if (bedIt->_strand == '-')
+      {
+        swap(blockIt, blockPrev);
+      }
+
+      if (psl._qStrand == '-')
+      {
+        swap(qStartIt, qStartPrev);
+        swap(blockIt, blockPrev);
+      }
+      assert(*qStartIt >= (*qStartPrev + blockPrev->_length));
+      gap = *qStartIt - (*qStartPrev + blockPrev->_length);
+      if (gap > 0)
+      {
+        ++psl._qNumInsert;
+        psl._qBaseInsert += gap;
+      }      
+      if (psl._qStrand == '-')
+      {
+        swap(qStartIt, qStartPrev);
+        swap(blockIt, blockPrev);
+      }
+    }
+  }
+}
+  
 
 void Liftover::writeBlocksAsIntervals()
 {
@@ -304,44 +362,6 @@ void Liftover::liftBlockIntervals()
   }
   _bedLine._start = originalBedLine._start;
   _bedLine._end = originalBedLine._end;
-}
-
-// merge intervals (that will contain blocks) if they are on same strand
-// and sequence and are colinear (but not necessarily directly adjacent)
-void Liftover::mergeIntervals()
-{
-  assert(_outBedLines.empty() == false);
-  if (_outBedLines.size() > 1)
-  {
-    // sort by target coordinate
-    _outBedLines.sort(BedLineLess());
-
-    BedList::iterator i;
-    BedList::iterator j;
-    for (i = _outBedLines.begin(); i != _outBedLines.end(); ++i)
-    {
-      j = i;
-      ++j;
-      if (j != _outBedLines.end())
-      {
-        if ((*i)._chrName == (*j)._chrName &&
-            (*i)._strand == (*j)._strand)
-        {
-          assert((*i)._start < (*j)._start);
-          (*i)._end = max((*i)._end, (*j)._end);
-          if (_outPSL == true)
-          {
-            (*i)._psl[0]._qEnd = max((*i)._psl[0]._qEnd, (*j)._psl[0]._qEnd);
-            (*i)._psl[0]._matches += (*j)._psl[0]._matches;
-            (*i)._psl[0]._misMatches += (*j)._psl[0]._misMatches;
-            (*i)._psl[0]._repMatches += (*j)._psl[0]._repMatches;
-            (*i)._psl[0]._nCount += (*j)._psl[0]._nCount;
-          }
-          _outBedLines.erase(j);
-        }
-      }
-    }
-  }
 }
 
 // do a little postprocessing on the lifted intervals to make sure
@@ -378,32 +398,6 @@ void Liftover::cleanResults()
       {
         if  (i->_blocks.size() > 0)
         {
-          hal_index_t startDelta = i->_blocks[0]._start;
-          assert(startDelta >= 0);
-          if (startDelta > 0)
-          {
-            vector<BedBlock>::iterator j;
-            vector<BedBlock>::iterator k;
-            for (j = i->_blocks.begin(); j != i->_blocks.end(); ++j)
-            {
-              j->_start -= startDelta;
-              k = j;
-              ++k;
-              assert(k == i->_blocks.end() ||
-                     k->_start >= (j->_start + j->_length));
-            }
-            i->_start += startDelta;
-          }
-          assert(i->_blocks[0]._start == 0);
-
-          hal_index_t endDelta = i->_end - (i->_blocks.back()._start + 
-                                            i->_blocks.back()._length + 
-                                            i->_start);
-          assert(endDelta >= 0);
-          i->_end -= endDelta;
-          assert(i->_blocks.back()._start + 
-                 i->_blocks.back()._length + i->_start == i->_end);
-
           if (_outPSL == true)
           {
             assert(i->_psl.size() == 1);
