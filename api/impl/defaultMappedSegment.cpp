@@ -170,9 +170,9 @@ bool DefaultMappedSegment::canMergeRightWith(
     else if (this->getReversed() == true && ref->getReversed() == true)
     {
       qdelta = next->getEndPosition() - this->getStartPosition();
-      rdelta = nextRef->getStartPosition() - ref->getEndPosition();
+      rdelta = nextRef->getEndPosition() - ref->getStartPosition();
       cut = this->getStartPosition();
-      sourceCut = ref->getEndPosition();
+      sourceCut = ref->getStartPosition();
     }
     else if (this->getReversed() == false && ref->getReversed() == true)
     {
