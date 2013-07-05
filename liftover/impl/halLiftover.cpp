@@ -172,14 +172,23 @@ void Liftover::assignBlocksToIntervals()
 
    // sort the mapped blocks by source coordinate
   _mappedBlocks.sort(BedLineSrcLess());
-
+  hal_index_t prevSrcStart = NULL_INDEX;
+  BedList::iterator blockNext;
   for (BedList::iterator blockIt = _mappedBlocks.begin();
        blockIt != _mappedBlocks.end(); ++blockIt)
   {
-    if (_outBedLines.empty() || !compatible(_outBedLines.back(), *blockIt))
+    blockNext = blockIt;
+    ++blockNext;
+    if (_outBedLines.empty() || 
+        // filter dupes in psl but let them be on single bed line
+        (_outPSL && (blockIt->_srcStart == prevSrcStart ||
+                     (blockNext != _mappedBlocks.end() && 
+                      blockNext->_srcStart == blockIt->_srcStart))) ||
+        !compatible(_outBedLines.back(), *blockIt))
     {
       _outBedLines.push_back(*blockIt);
     }
+    prevSrcStart = blockIt->_srcStart;
     BedLine& tgtBed = _outBedLines.back();
     tgtBed._start = min(tgtBed._start, blockIt->_start);
     tgtBed._end = max(tgtBed._end, blockIt->_end);
