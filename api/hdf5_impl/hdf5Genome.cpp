@@ -149,7 +149,7 @@ void HDF5Genome::setDimensions(
     _sequenceArray.create(&_group, sequenceArrayName, 
                           // pad names a bit to allow renaming
                           HDF5Sequence::dataType(maxName + 32), 
-                          totalSeq, NULL, _numChunksInArrayBuffer);
+                          totalSeq, &_dcprops, _numChunksInArrayBuffer);
     writeSequences(sequenceDimensions);
     
   }
@@ -437,15 +437,15 @@ const Genome* HDF5Genome::getParent() const
 Genome* HDF5Genome::getChild(hal_size_t childIdx)
 {
   assert(childIdx < _numChildrenInBottomArray);
-  if (_childCache.size() <= childIdx || 
-      _childCache[childIdx] == NULL)
+  if (_childCache.size() <= childIdx)
+  {
+    _childCache.assign(_numChildrenInBottomArray, NULL);
+  }
+  if (_childCache[childIdx] == NULL)
   {
     vector<string> childNames = _alignment->getChildNames(_name);
-    _childCache.resize(childNames.size());
-    for (size_t i = 0; i < _childCache.size(); ++i)
-    {
-      _childCache[i] = _alignment->openGenome(childNames.at(i));
-    }
+    assert(childNames.size() > childIdx);
+    _childCache[childIdx] = _alignment->openGenome(childNames.at(childIdx));
   }
   return _childCache[childIdx];
 }
@@ -453,15 +453,15 @@ Genome* HDF5Genome::getChild(hal_size_t childIdx)
 const Genome* HDF5Genome::getChild(hal_size_t childIdx) const
 {
   assert(childIdx < _numChildrenInBottomArray);
-  if (_childCache.size() <= childIdx || 
-      _childCache[childIdx] == NULL)
+  if (_childCache.size() <= childIdx)
+  {
+    _childCache.assign(_numChildrenInBottomArray, NULL);
+  }
+  if (_childCache[childIdx] == NULL)
   {
     vector<string> childNames = _alignment->getChildNames(_name);
-    _childCache.resize(childNames.size());
-    for (size_t i = 0; i < _childCache.size(); ++i)
-    {
-      _childCache[i] = _alignment->openGenome(childNames.at(i));
-    }
+    assert(childNames.size() > childIdx);
+    _childCache[childIdx] = _alignment->openGenome(childNames.at(childIdx));
   }
   return _childCache[childIdx];
 }
@@ -473,9 +473,11 @@ hal_size_t HDF5Genome::getNumChildren() const
 
 hal_index_t HDF5Genome::getChildIndex(const Genome* child) const
 {
-  for (hal_size_t i = 0; i < _numChildrenInBottomArray; ++i)
+  string childName = child->getName();
+  vector<string> childNames = _alignment->getChildNames(_name);
+  for (hal_size_t i = 0; i < childNames.size(); ++i)
   {
-    if (getChild(i) == child)
+    if (childNames[i] == childName)
     {
       return i;
     }
@@ -486,6 +488,11 @@ hal_index_t HDF5Genome::getChildIndex(const Genome* child) const
 bool HDF5Genome::containsDNAArray() const
 {
   return _dnaArray.getSize() > 0;
+}
+
+const Alignment* HDF5Genome::getAlignment() const
+{
+  return _alignment;
 }
 
 // SEGMENTED SEQUENCE INTERFACE

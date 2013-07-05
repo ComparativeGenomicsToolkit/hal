@@ -117,6 +117,22 @@ inline bool isMasked(char c)
   return c == std::tolower(c);
 }
 
+/** test if 3rd codon position is 4-fold degenerate given first 2 positions */
+inline bool isFourfoldDegenerate(char c1, char c2)
+{
+  char x1 = std::toupper((char)c1);
+  char x2 = std::toupper((char)c2);
+  if (x2 == 'T' || x2 == 'G')
+  {
+    return x1 == 'C' || x1 == 'G';
+  }
+  else if (x2 == 'C')
+  {
+    return x1 == 'A' || x1 == 'C' || x1 == 'G' || x1 == 'T';
+  }
+  return false;
+}
+
 /** Count the mutations between two DNA strings */
 inline hal_size_t hammingDistance(const std::string& s1, const std::string& s2)
 {

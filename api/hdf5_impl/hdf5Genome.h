@@ -94,6 +94,8 @@ public:
 
    bool containsDNAArray() const;
 
+   const Alignment* getAlignment() const;
+
    // SEGMENTED SEQUENCE INTERFACE
 
    hal_size_t getSequenceLength() const;

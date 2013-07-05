@@ -284,6 +284,7 @@ def main(argv=None):
     test = open(args.mafFile, "w")
     test.write("\n")
     test.close()
+    os.remove(args.mafFile)
     if args.splitBySequence:
         if args.start is not None:
             raise RuntimeError("--splitBySequence option currently "

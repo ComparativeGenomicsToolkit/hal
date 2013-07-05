@@ -8,44 +8,45 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include "hal.h"
-
+#include "halPhyloP.h"
+#undef min
 using namespace std;
 using namespace hal;
 
-/** This is a tool that counts the number of other genomes each base in
- * a query region is aligned to. Duplications are considered
+/** This is basically copied from halAlignability.cpp but returns
+ * the phyloP score rather than the count of alignments.
  *
  * Coordinates are always genome-relative by default (as opposed to 
  * sequence-relative).  The one exception is all methods within the
  * Sequence interface. 
  *
- * By default, all bases in the referecen genome are scanned.  And all
+ * By default, all bases in the reference genome are scanned.  And all
  * other genomes are considered.  The --refSequence, --start, and 
  * --length options can limit the query to a subrange.  Note that unless
  * --refSequence is specified, --start is genome-relative (based on 
  * all sequences being concatenated together).
  *
- * Other genomes to query (default all) are controlled by --rootGenome
- * (name of highest ancestor to consider) and/or --targetGenomes
- * (a list of genomes to consider).  
+ * Genomes to include are determined by genomes in the neutral model 
+ * (.mod) file- this should be in the format outputted by phyloFit.
  *
- * So if a base in the reference genome is aligned to a base in a genome
- * that is not under root or in the target list, it will not count to the
- * alignability.
+ * There are a few options for dealing with duplications. The default
+ * is dupMask=soft, dupType=ambiguous. This replaces any species base 
+ * with an N if duplications cause uncertainty in the base for a 
+ * particular alignment column. If dupType=all, then all duplications
+ * are masked regardless of whether they cause uncertainty. If
+ * dupMask=hard, then the entire column is masked (p-value returned is 1.0)
  */
 
-/** Print the alignability wiggle for a subrange of a given sequence to
+/** Print the phyloP wiggle for a subrange of a given sequence to
  * the output stream. */
-static void printSequence(ostream& outStream, const Sequence* sequence, 
-                          const set<const Genome*>& targetSet,
+static void printSequence(ostream& outStream, halPhyloP *phyloP, 
+                          const Sequence* sequence, 
                           hal_size_t start, hal_size_t length, hal_size_t step);
 
 /** If given genome-relative coordinates, map them to a series of 
  * sequence subranges */
-static void printGenome(ostream& outStream,
+static void printGenome(ostream& outStream, halPhyloP *phyloP,
                         const Genome* genome, const Sequence* sequence,
-                        const set<const Genome*>& targetSet,
                         hal_size_t start, hal_size_t length, hal_size_t step);
 
 static const hal_size_t StringBufferSize = 1024;
@@ -58,8 +59,9 @@ static CLParserPtr initParser()
   CLParserPtr optionsParser = hdf5CLParserInstance(false);
   optionsParser->addArgument("halPath", "input hal file");
   optionsParser->addArgument("refGenome", "reference genome to scan");
-  optionsParser->addOption("outWiggle", "output wig file (stdout if none)",
-                           "stdout");
+  optionsParser->addArgument("modPath", "input neutral model file");
+  optionsParser->addArgument("outWiggle", "output wig file (or \"stdout\""
+                             " to pipe to standard output)");
   optionsParser->addOption("refSequence", "sequence name to export ("
                            "all sequences by default)", 
                            "\"\"");
@@ -72,49 +74,52 @@ static CLParserPtr initParser()
                            " if specified) to convert.  If set to 0,"
                            " the entire thing is converted",
                            0);
-  optionsParser->addOption("rootGenome", 
-                           "name of root genome (none if empty)", 
-                           "\"\"");
-  optionsParser->addOption("targetGenomes",
-                           "comma-separated (no spaces) list of target genomes "
-                           "(others are excluded) (vist all if empty)",
-                           "\"\"");
+  optionsParser->addOption("dupType",
+                           "Which duplications to mask according to dupMask "
+                           "option. Choices are: "
+                           "\"all\": Any duplicated region; or "
+                           "\"ambiguous\": Regions within duplications where "
+                           "alignments from the same species do not contain"
+                           " the same base.",
+                           "ambiguous");
+  optionsParser->addOption("dupMask",
+                           "What to do with duplicated regions. Choices are: "
+                           "\"hard\": mask entire alignment column if any "
+                           "duplications occur; or "
+                           "\"soft\": mask species where duplications occur.",
+                           "soft");
   optionsParser->addOption("step", "step size", 1);
-  optionsParser->setDescription("Make alignability wiggle plot for a genome.");
+  optionsParser->setDescription("Make PhyloP wiggle plot for a genome.");
   return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
   CLParserPtr optionsParser = initParser();
-
+  string modPath;
   string halPath;
   string wigPath;
   string refGenomeName;
-  string rootGenomeName;
-  string targetGenomes;
   string refSequenceName;
+  string dupType;
+  string dupMask;
   hal_size_t start;
   hal_size_t length;
   hal_size_t step;
   try
   {
     optionsParser->parseOptions(argc, argv);
+    modPath = optionsParser->getArgument<string>("modPath");
     halPath = optionsParser->getArgument<string>("halPath");
     refGenomeName = optionsParser->getArgument<string>("refGenome");
-    wigPath = optionsParser->getOption<string>("outWiggle");
+    wigPath = optionsParser->getArgument<string>("outWiggle");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     start = optionsParser->getOption<hal_size_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
-    rootGenomeName = optionsParser->getOption<string>("rootGenome");
-    targetGenomes = optionsParser->getOption<string>("targetGenomes");
     step = optionsParser->getOption<hal_size_t>("step");
+    dupType = optionsParser->getOption<string>("dupType");
+    dupMask = optionsParser->getOption<string>("dupMask");
 
-    if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
-    {
-      throw hal_exception("--rootGenome and --targetGenomes options are "
-                          " mutually exclusive");
-    }
   }
   catch(exception& e)
   {
@@ -131,45 +136,17 @@ int main(int argc, char** argv)
      * hal/api/inc/halAlignmentInstance.h */
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
                                                            optionsParser);
+
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");
     }
     
-    /** Alignments are composed of sets of Genomes.  Each genome is a set
-     * of Sequences (chromosomes).  They are accessed by their names.  
-     * here we map the root and targetSet parameters (if specifeid) to 
-     * a sset of readonly Genome pointers */
-    set<const Genome*> targetSet;
-    const Genome* rootGenome = NULL;
-    if (rootGenomeName != "\"\"")
-    {
-      rootGenome = alignment->openGenome(rootGenomeName);
-      if (rootGenome == NULL)
-      {
-        throw hal_exception(string("Root genome, ") + rootGenomeName + 
-                            ", not found in alignment");
-      }
-      if (rootGenomeName != alignment->getRootName())
-      {
-        getGenomesInSubTree(rootGenome, targetSet);
-      }
-    }
 
-    if (targetGenomes != "\"\"")
-    {
-      vector<string> targetNames = chopString(targetGenomes, ",");
-      for (size_t i = 0; i < targetNames.size(); ++i)
-      {
-        const Genome* tgtGenome = alignment->openGenome(targetNames[i]);
-        if (tgtGenome == NULL)
-        {
-          throw hal_exception(string("Target genome, ") + targetNames[i] + 
-                              ", not found in alignment");
-        }
-        targetSet.insert(tgtGenome);
-      }
-    }
+    halPhyloP phyloPObj = halPhyloP(alignment, modPath);
+    halPhyloP *phyloP = &phyloPObj;
+    phyloP->setDupMask(dupMask);
+    phyloP->setDupType(dupType);
 
     /** Open the reference genome */
     const Genome* refGenome = NULL;
@@ -186,14 +163,12 @@ int main(int argc, char** argv)
     {
       refGenome = alignment->openGenome(alignment->getRootName());
     }
-    const SegmentedSequence* ref = refGenome;
     
     /** If a sequence was spefied we look for it in the reference genome */
     const Sequence* refSequence = NULL;
     if (refSequenceName != "\"\"")
     {
       refSequence = refGenome->getSequence(refSequenceName);
-      ref = refSequence;
       if (refSequence == NULL)
       {
         throw hal_exception(string("Reference sequence, ") + refSequenceName + 
@@ -214,8 +189,8 @@ int main(int argc, char** argv)
       }
     }
     
-    printGenome(outStream, refGenome, refSequence, targetSet, start, length, 
-                step);
+    printGenome(outStream, phyloP, refGenome, refSequence, start, length, 
+	        step);
     
   }
   catch(hal_exception& e)
@@ -233,10 +208,10 @@ int main(int argc, char** argv)
 }
 
 /** Given a Sequence (chromosome) and a (sequence-relative) coordinate
- * range, print the alignmability wiggle with respect to the genomes
+ * range, print the phyloP wiggle with respect to the genomes
  * in the target set */
-void printSequence(ostream& outStream, const Sequence* sequence, 
-                   const set<const Genome*>& targetSet,
+void printSequence(ostream& outStream, halPhyloP *phyloP, 
+		   const Sequence* sequence, 
                    hal_size_t start, hal_size_t length, hal_size_t step)
 {
   hal_size_t seqLen = sequence->getSequenceLength();
@@ -274,13 +249,17 @@ void printSequence(ostream& outStream, const Sequence* sequence,
    * in advance when we get the iterator.  This will limit it following
    * duplications out of the desired range while we are iterating. */
   hal_size_t pos = start;
-  ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&targetSet,
+  ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&phyloP->_targetSet,
                                                              0, pos,
                                                              last - 1,
                                                              true);
   // note wig coordinates are 1-based for some reason so we shift to right
   outStream << "fixedStep chrom=" << sequenceName << " start=" << start + 1
             << " step=" << step << "\n";
+
+  // set float precision to 3 places to be consistent with non-hal phyloP
+  outStream.setf(ios::fixed, ios::floatfield);
+  outStream.precision(3);
   
   /** Since the column iterator stores coordinates in Genome coordinates
    * internally, we have to switch back to genome coordinates.  */
@@ -289,26 +268,13 @@ void printSequence(ostream& outStream, const Sequence* sequence,
   last += sequence->getStartPosition();
   while (pos <= last)
   {
-    hal_size_t count = 0;
     /** ColumnIterator::ColumnMap maps a Sequence to a list of bases
      * the bases in the map form the alignment column.  Some sequences
      * in the map can have no bases (for efficiency reasons) */ 
     const ColumnIterator::ColumnMap* cmap = colIt->getColumnMap();
+    double pval = phyloP->pval(cmap);
 
-    /** For every sequence in the map */
-    for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin();
-         i != cmap->end(); ++i)
-    {
-      /** If the sequence belongs to the reference genome, we don't 
-       * count it.  So a homology in the same genome is not considered
-       * here.  But paralgous bases in other genomes will each be counted */
-      if (i->first->getGenome() != genome && !i->second->empty())
-      {
-        ++count; 
-      }
-    }
-
-    outStream << count << '\n';
+    outStream << pval << '\n';
     
     /** lastColumn checks if we are at the last column (inclusive)
      * in range.  So we need to check at end of iteration instead
@@ -351,14 +317,13 @@ void printSequence(ostream& outStream, const Sequence* sequence,
  * for the hal::Sequence interface.  We can convert between the two by 
  * adding or subtracting the sequence start position (in the example it woudl
  * be 0 for ChrA and 500 for ChrB) */
-void printGenome(ostream& outStream,
+void printGenome(ostream& outStream, halPhyloP *phyloP, 
                  const Genome* genome, const Sequence* sequence,
-                 const set<const Genome*>& targetSet,
                  hal_size_t start, hal_size_t length, hal_size_t step)
 {
   if (sequence != NULL)
   {
-    printSequence(outStream, sequence, targetSet, start, length, step);
+    printSequence(outStream, phyloP, sequence, start, length, step);
   }
   else
   {
@@ -391,7 +356,7 @@ void printGenome(ostream& outStream,
         hal_size_t readStart = seqStart >= start ? 0 : start - seqStart;
         hal_size_t readLen = min(seqLen - readStart, length);
 
-        printSequence(outStream, sequence, targetSet, readStart, readLen, step);
+        printSequence(outStream, phyloP, sequence, readStart, readLen, step);
         runningLength += readLen;
       }
     }

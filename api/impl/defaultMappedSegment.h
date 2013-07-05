@@ -136,7 +136,7 @@ protected:
                            std::list<DefaultMappedSegmentConstPtr>& input,
                            std::list<DefaultMappedSegmentConstPtr>& results,
                            const Genome* tgtGenome,
-                           const std::set<const Genome*>* genomesOnPath,
+                           const std::set<std::string>& namesOnPath,
                            bool doDupes,
                            hal_size_t minLength);
    static 
