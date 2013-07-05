@@ -183,8 +183,9 @@ void Liftover::assignBlocksToIntervals()
     BedLine& tgtBed = _outBedLines.back();
     tgtBed._start = min(tgtBed._start, blockIt->_start);
     tgtBed._end = max(tgtBed._end, blockIt->_end);
+    // keep start absolute for now
     BedBlock block;
-    block._start = blockIt->_start - tgtBed._start;
+    block._start = blockIt->_start;
     block._length = blockIt->_end - blockIt->_start;
     tgtBed._blocks.push_back(block);
 
@@ -202,6 +203,17 @@ void Liftover::assignBlocksToIntervals()
       }
       assert(tgtBed._blocks.size() == 
              tgtBed._psl[0]._qBlockStarts.size());
+    }
+  }
+
+  // relativize block starts
+  for (BedList::iterator blockIt = _outBedLines.begin();
+       blockIt != _outBedLines.end(); ++blockIt)
+  {
+    for (size_t i = 0; i < blockIt->_blocks.size(); ++i)
+    {
+      assert(blockIt->_blocks[i]._start >= blockIt->_start);
+      blockIt->_blocks[i]._start -= blockIt->_start;
     }
   }
 
@@ -233,14 +245,14 @@ bool Liftover::compatible(const BedLine& tgtBed, const BedLine& newBlock)
   hal_index_t delta;
   const BedBlock& tgtBlock = tgtBed._blocks.back();
 
-  if ((tgtBed._strand == '-') != (newBlock._strand == '-'))
+  if (tgtBed._strand != _bedLine._strand)
   {
-    delta = tgtBlock._start + tgtBed._start - newBlock._end;
+    delta = tgtBlock._start - newBlock._end;
   }
   else
   {
     delta = newBlock._start - 
-       (tgtBlock._start + tgtBlock._length + tgtBed._start);
+       (tgtBlock._start + (hal_index_t)tgtBlock._length);
   }
   if (delta < 0)
   {
@@ -258,12 +270,21 @@ void Liftover::flipBlocks(BedList& bedList)
     if (bedIt->_blocks.size() > 1)
     {
       hal_index_t delta = bedIt->_blocks[1]._start - 
-         bedIt->_blocks[0]._start;
-      if (_outPSL == false && delta < 0 ||
-          (_outPSL == true && 
-           ((bedIt->_strand == '-' && delta > 0) ||
-            (bedIt->_strand != '-' && delta < 0))))
+         (bedIt->_blocks[0]._start + (hal_index_t)bedIt->_blocks[0]._length);
+      bool mustFlip = false;
+
+      if (_outPSL != true)
       {
+        mustFlip = delta < 0;
+      }      
+      else
+      {
+        mustFlip = (bedIt->_strand == '-' && delta >= 0 || 
+                    bedIt->_strand != '-' && delta < 0);
+      }
+      
+      if (mustFlip == true)
+      {         
         std::reverse(bedIt->_blocks.begin(),
                      bedIt->_blocks.end());
         if (_outPSL == true)
@@ -272,6 +293,33 @@ void Liftover::flipBlocks(BedList& bedList)
                        bedIt->_psl[0]._qBlockStarts.end());
         }
       }
+
+#ifndef NDEBUG
+      if (_outPSL == true)
+      {
+        for (size_t i = 1; i < bedIt->_blocks.size(); ++i)
+        {
+          if (bedIt->_strand == '-')
+          {
+            assert(bedIt->_blocks[i]._start < bedIt->_blocks[i-1]._start);
+          }
+          else
+          {
+            assert(bedIt->_blocks[i]._start > bedIt->_blocks[i-1]._start);
+          }
+          if (bedIt->_psl[0]._qStrand == '-')
+          {
+            assert(bedIt->_psl[0]._qBlockStarts[i] < 
+                   bedIt->_psl[0]._qBlockStarts[i-1]);
+          }
+          else
+          {
+            assert(bedIt->_psl[0]._qBlockStarts[i] >
+                   bedIt->_psl[0]._qBlockStarts[i-1]);
+          }
+        }
+      }
+#endif      
     }
   }
 }
