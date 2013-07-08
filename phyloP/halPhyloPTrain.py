@@ -144,8 +144,9 @@ def main(argv=None):
     if not os.path.exists(args.bedDir):
         raise RuntimeError("% not found" % args.bedDir)
     if os.path.isdir(args.bedDir):
-        args.bedFiles = [f for f in os.path.listdir(args.bedDir) 
-                         if os.path.isfile(join(args.bedDir, f))]
+        args.bedFiles = [os.path.join(args.bedDir, f) for f
+                         in os.listdir(args.bedDir) 
+                         if os.path.isfile(os.path.join(args.bedDir, f))]
     else:
         args.bedFiles = [args.bedDir]
     outTest = open(args.outMod, "w")
