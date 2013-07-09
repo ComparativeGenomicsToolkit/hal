@@ -20,3 +20,32 @@ WiggleLiftover::~WiggleLiftover()
 {
 
 }
+
+void WiggleLiftover::convert(AlignmentConstPtr alignment,
+                             const Genome* srcGenome,
+                             istream* inputFile,
+                             const Genome* tgtGenome,
+                             ostream* outputFile,
+                             bool traverseDupes,
+                             bool unique)
+{
+  _alignment = alignment;
+  _srcGenome = srcGenome;
+  _tgtGenome = tgtGenome;
+  _outStream = outputFile;
+  _traverseDupes = traverseDupes;
+  _unique = unique;
+
+  scan(inputFile);
+}
+
+void WiggleLiftover::visitHeader()
+{
+  _srcSequence = _srcGenome->getSequence(_sequenceName);
+}
+
+void WiggleLiftover::visitLine()
+{
+
+}
+                      

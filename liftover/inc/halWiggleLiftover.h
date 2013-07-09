@@ -11,11 +11,11 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "hal.h"
+#include "halWiggleScanner.h"
 
 namespace hal {
 
-class WiggleLiftover
+class WiggleLiftover : public WiggleScanner
 {
 public:
    
@@ -27,17 +27,19 @@ public:
                 std::istream* inputFile,
                 const Genome* tgtGenome,
                 std::ostream* outputFile,
-                int inBedVersion = -1,
-                int outBedVersion = -1,
-                bool addExtraColumns = false,
                 bool traverseDupes = true,
-                bool outPSL = false);
+                bool unique = false);
+
+   virtual void visitLine();
+   virtual void visitHeader();
                       
 protected: 
 
    AlignmentConstPtr _alignment;
-   std::ostream* _outBedStream;
+   std::istream* _inStream;
+   std::ostream* _outStream;
    bool _traverseDupes;
+   bool _unique;
       
    const Genome* _srcGenome;
    const Genome* _tgtGenome;
