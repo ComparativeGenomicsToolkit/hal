@@ -26,6 +26,12 @@ from hal.stats.halStats import getHalStats
 from hal.stats.halStats import getHalTree
 from hal.stats.halStats import getHalBaseComposition
 
+# it seems that msa view doesn't like the second line of MAF headers
+# (reads the tree as a maf block then spits an error).  so we use
+# this to remove 2nd lines from generated mafs. 
+def remove2ndLine(path):
+    runShellCommand("sed -e 2d -i -f %s" % path)
+
 def extractGeneMAFs(options):
     runShellCommand("rm -f %s" % options.outMafAllPaths)
 
@@ -50,6 +56,9 @@ def extractGeneMAFs(options):
     for mafFile in glob.glob(options.outMafAllPaths):
         if os.path.getsize(mafFile) < 5:
             os.remove(mafFile)
+        else:
+            pass
+            remove2ndLine(mafFile)
     if len(glob.glob(options.outMafAllPaths)) < 1:
         raise RuntimeError("Given BED files do not overlap alignment")
 
@@ -79,9 +88,10 @@ def computeMAFStats(options):
 # *** error: can't allocate region
 def computeAgMAFStats(options):
     halSpecies = ",".join(options.halGenomes)
+    
     runShellCommand("msa_view -o SS -z -k --in-format MAF --aggregate %s %s > %s" % (
         halSpecies, options.outMafAllPaths, options.outMafSS))
-    runShellCommand("rm -f %s" % args.outMafAllPaths)
+    runShellCommand("rm -f %s" % options.outMafAllPaths)
 
 
 def computeFit(options):
@@ -105,7 +115,7 @@ def modFreqs(options):
 def computeModel(options):
     runShellCommand("rm -f %s" % options.outMafAllPaths)
     extractGeneMAFs(options)
-    computeMAFStats(options)
+    computeAgMAFStats(options)
     computeFit(options)
     modFreqs(options)
     runShellCommand("rm -f %s" % options.outMafAllPaths)
