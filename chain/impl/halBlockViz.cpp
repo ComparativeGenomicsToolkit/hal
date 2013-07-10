@@ -51,7 +51,7 @@ static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                        hal_index_t absStart, hal_index_t absEnd,
                                        const Genome* qGenome, 
                                        bool getSequenceString,
-                                       bool doDupes);
+                                       bool doDupes, double flipStrandPct);
 
 static void readBlock(AlignmentConstPtr seqAlignment,
                       hal_block_t* cur, 
@@ -64,6 +64,8 @@ static void readTargetRange(hal_target_dupe_list_t* cur,
                             vector<MappedSegmentConstPtr>& fragments);
 
 static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
+
+static void flipStrand(hal_block_t* firstBlock);
 
 
 extern "C" int halOpenLOD(char *lodFilePath)
@@ -259,7 +261,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     }
 
     results = readBlocks(seqAlignment, tSequence, absStart, absEnd, qGenome,
-                         getSequenceString != 0, doDupes != 0);
+                         getSequenceString != 0, doDupes != 0, 0.5);
   }
   catch(exception& e)
   {
@@ -526,7 +528,7 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                 const Sequence* tSequence,
                                 hal_index_t absStart, hal_index_t absEnd,
                                 const Genome* qGenome, bool getSequenceString,
-                                bool doDupes)
+                                bool doDupes, double flipStrandPct)
 {
   const Genome* tGenome = tSequence->getGenome();
   string qGenomeName = qGenome->getName();
@@ -535,6 +537,8 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   blockMapper.init(tGenome, qGenome, absStart, absEnd, doDupes, 0, true);
   blockMapper.map();
   BlockMapper::MSSet paraSet;
+  hal_size_t totalLength = 0;
+  hal_size_t reversedLength = 0;
   if (doDupes == true)
   {
     blockMapper.extractReferenceParalogies(paraSet);
@@ -565,11 +569,18 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
     BlockMapper::extractSegment(segMapIt, paraSet, fragments, &segMap,
                                 targetCutSet, queryCutSet);
     readBlock(seqAlignment, cur, fragments, getSequenceString, qGenomeName);
+    totalLength += cur->size;
+    reversedLength += cur->strand == '-' ? cur->size : 0;
     prev = cur;
   }
   if (!paraSet.empty())
   {
     results->targetDupeBlocks = processTargetDupes(blockMapper, paraSet);
+  }
+  if (totalLength > 0 &&
+      (double)reversedLength / (double)totalLength > flipStrandPct)
+  {
+    flipStrand(results->mappedBlocks);
   }
   return results;
 }
@@ -846,3 +857,12 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
   // sort puts NULL items at end. we resize them out.
   dupeList.resize(dupeList.size() - deadCount);
 }
+
+static void flipStrand(hal_block_t* firstBlock)
+{
+  for (hal_block_t* cur = firstBlock; cur; cur = cur->next)
+  {
+    cur->strand = cur->strand == '-' ? '+' : '-';
+  }
+}
+
