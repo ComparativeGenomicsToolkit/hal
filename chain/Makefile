@@ -27,21 +27,26 @@ ${libPath}/halChain.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicL
 
 ${binPath}/hal2chain : impl/hal2chain.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/hal2chain impl/hal2chain.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 test/blockVizTest: test/blockVizTest.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLib\
 sDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizTest test/blockVizTest.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 test/blockVizBed: test/blockVizBed.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLib\
 sDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizBed test/blockVizBed.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLibs}
+	rm *.o
  
 test/blockInterpolateTest: test/blockInterpolateTest.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLib\
 sDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockInterpolateTest test/blockInterpolateTest.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 ${binPath}/halChainTests : ${libTests} ${libTestsHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halChainTests ${libHalTests} ${libTests} ${libPath}/halLib.a ${libPath}/halChain.a ${basicLibs}
+	rm *.o
 
 ${binPath}/hal2assemblyHub.py : hal2assemblyHub.py
 	cp hal2assemblyHub.py ${binPath}/hal2assemblyHub.py

@@ -25,6 +25,7 @@ ${libPath}/halPhyloP.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basic
 
 ${binPath}/halPhyloP : impl/halPhyloPMain.cpp ${libPath}/halPhyloP.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${phyloPcppflags} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halPhyloP impl/halPhyloPMain.cpp ${libPath}/halPhyloP.a ${libPath}/halLib.a ${basicLibs} ${phyloPlibs}
+	rm *.o
 
 ${binPath}/halPhyloPTrain.py : halPhyloPTrain.py
 	cp halPhyloPTrain.py ${binPath}/halPhyloPTrain.py

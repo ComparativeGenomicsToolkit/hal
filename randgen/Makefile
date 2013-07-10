@@ -11,6 +11,8 @@ clean :
 
 ${binPath}/halRandGen : Makefile ${libRandSources} ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I ${rootPath}/api/tests -o ${binPath}/halRandGen ${libRandSources} ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 ${binPath}/halTestGen : Makefile ${libTestGenSources} ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I ${rootPath}/api/tests -o ${binPath}/halTestGen ${libTestGenSources} ${libPath}/halLib.a ${basicLibs}
+	rm *.o
