@@ -30,7 +30,7 @@ from hal.stats.halStats import getHalBaseComposition
 # (reads the tree as a maf block then spits an error).  so we use
 # this to remove 2nd lines from generated mafs. 
 def remove2ndLine(path):
-    runShellCommand("sed -e 2d -i -f %s" % path)
+    runShellCommand("sed -e 2d -i %s" % path)
 
 def extractGeneMAFs(options):
     runShellCommand("rm -f %s" % options.outMafAllPaths)
