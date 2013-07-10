@@ -63,6 +63,7 @@ void WiggleScanner::scan(istream* is)
     while (_wiggleStream->good())
     {
       ++_lineNumber;
+      std::getline(*is, lineBuffer);
       if (scanHeader(lineBuffer) == true)
       {
         visitHeader();
@@ -93,20 +94,20 @@ bool WiggleScanner::scanHeader(const string& lineBuffer)
   {
     _fixedStep = false;
     ss >> _buffer;
-    if (!ss || _buffer.length() < 7 || _buffer.substr(0, 6) != "chrom=")
+    if (!ss || _buffer.length() <= 6 || _buffer.substr(0, 6) != "chrom=")
     {
       throw hal_exception("Error parsing chrom in variableStep header");
     }
-    _sequenceName = _buffer.substr(7);
+    _sequenceName = _buffer.substr(6);
     
     ss >> _buffer;
-    if (!ss || _buffer.length() < 6 || _buffer.substr(0, 5) != "span=")
+    if (!ss || _buffer.length() <= 5 || _buffer.substr(0, 5) != "span=")
     {
       _span = NULL_INDEX;
     }
     else
     {
-      _buffer = _buffer.substr(6);
+      _buffer = _buffer.substr(5);
       stringstream ss1(_buffer);
       ss1 >> _span;
       if (!ss1)
@@ -121,18 +122,18 @@ bool WiggleScanner::scanHeader(const string& lineBuffer)
     _fixedStep = true;
     _offset = 0;
     ss >> _buffer;
-    if (!ss || _buffer.length() < 7 || _buffer.substr(0, 6) != "chrom=")
+    if (!ss || _buffer.length() <= 6 || _buffer.substr(0, 6) != "chrom=")
     {
       throw hal_exception("Error parsing chrom in fixedStep header");
     }
-    _sequenceName = _buffer.substr(7);
+    _sequenceName = _buffer.substr(6);
     
     ss >> _buffer;
-    if (!ss || _buffer.length() < 7 || _buffer.substr(0, 6) != "start=")
+    if (!ss || _buffer.length() <= 6 || _buffer.substr(0, 6) != "start=")
     {
       throw hal_exception("Error parsing start in fixedStep header");
     }
-    _buffer = _buffer.substr(7);
+    _buffer = _buffer.substr(6);
     stringstream ss1(_buffer);
     ss1 >> _start;
     if (!ss1)
@@ -141,11 +142,11 @@ bool WiggleScanner::scanHeader(const string& lineBuffer)
     }
 
     ss >> _buffer;
-    if (!ss || _buffer.length() < 6 || _buffer.substr(0, 5) != "step=")
+    if (!ss || _buffer.length() <= 5 || _buffer.substr(0, 5) != "step=")
     {
       throw hal_exception("Error parsing step in fixedStep header");
     }
-    _buffer = _buffer.substr(6);
+    _buffer = _buffer.substr(5);
     stringstream ss2(_buffer);
     ss2 >> _step;
     if (!ss2)
@@ -154,13 +155,13 @@ bool WiggleScanner::scanHeader(const string& lineBuffer)
     }
 
     ss >> _buffer;
-    if (!ss || _buffer.length() < 6 || _buffer.substr(0, 5) != "span=")
+    if (!ss || _buffer.length() <= 5 || _buffer.substr(0, 5) != "span=")
     {
       _span = NULL_INDEX;
     }
     else
     {
-      _buffer = _buffer.substr(6);
+      _buffer = _buffer.substr(5);
       stringstream ss1(_buffer);
       ss1 >> _span;
       if (!ss1)

@@ -25,14 +25,14 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("noDupes", "do not map between duplications in"
                                " graph.", false);
   optionsParser->addOptionFlag("append", "append results to tgtWig", false);
-  optionsParser->addOptionFlag("unique",
+/*  optionsParser->addOptionFlag("unique",
                                "only map block if its left-most paralog is in"
                                "the input.  this "
                                "is used to insure that the same column isnt "
                                "sampled twice (due to ducplications) by mafs "
                                "generated on distinct ranges.",
                                false);
-
+*/
   optionsParser->setDescription("Map wiggle genome annotation between two"
                                 " genomes.");
   return optionsParser;
@@ -60,7 +60,8 @@ int main(int argc, char** argv)
     tgtWigPath =  optionsParser->getArgument<string>("tgtWig");
     noDupes = optionsParser->getFlag("noDupes");
     append = optionsParser->getFlag("append");
-    unique = optionsParser->getFlag("unique");
+    //  unique = optionsParser->getFlag("unique");
+    unique = false;
   }
   catch(exception& e)
   {
@@ -69,7 +70,7 @@ int main(int argc, char** argv)
     exit(1);
   }
 
-  try
+  //try
   {
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
                                                            optionsParser);
@@ -125,21 +126,19 @@ int main(int argc, char** argv)
     }
     
     WiggleLiftover liftover;
-//    liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
-//                     inBedVersion, outBedVersion, keepExtra, !noDupes,
-//                     outPSL);
-
+    liftover.convert(alignment, srcGenome, srcWigPtr, tgtGenome, tgtWigPtr,
+                     !noDupes, unique);
   }
-  catch(hal_exception& e)
-  {
-    cerr << "hal exception caught: " << e.what() << endl;
-    return 1;
-  }
-  catch(exception& e)
-  {
-    cerr << "Exception caught: " << e.what() << endl;
-    return 1;
-  }
+  // catch(hal_exception& e)
+  // {
+  //   cerr << "hal exception caught: " << e.what() << endl;
+  //   return 1;
+  // }
+  // catch(exception& e)
+  // {
+  //   cerr << "Exception caught: " << e.what() << endl;
+  //   return 1;
+  // }
 
   return 0;
 }

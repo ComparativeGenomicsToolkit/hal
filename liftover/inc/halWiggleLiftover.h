@@ -41,6 +41,8 @@ protected:
    virtual void visitEOF();
 
    void mapSegment();
+   void mapFragments(std::vector<MappedSegmentConstPtr>& fragments);
+   void write();
                       
 protected: 
 
@@ -63,6 +65,7 @@ protected:
    SegmentIteratorConstPtr _segment;
    ValVec _cvals;
    WiggleTiles<double> _outVals;
+   hal_index_t _cvIdx; 
 
 };
 
