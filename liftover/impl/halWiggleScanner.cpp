@@ -182,7 +182,7 @@ void WiggleScanner::scanLine(const string& lineBuffer)
   stringstream ss(lineBuffer);
   if (_fixedStep == true)
   {
-    _first = _start + _offset;
+    _first = _start + _offset * _step;
     _last = _first;
     if (_span > 1)
     {
