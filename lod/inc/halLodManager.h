@@ -44,6 +44,10 @@ public:
 
    AlignmentConstPtr getAlignment(hal_size_t queryLength, 
                                   bool needDNA);
+
+   /** Maximum age of a URL in seconds such that we dont try to 
+    * preload headers for all the HAL files */
+   static const unsigned long MaxAgeSec;
    
 protected:
 
@@ -52,6 +56,7 @@ protected:
    void checkMap(const std::string& lodPath);
    void checkAlignment(hal_size_t minQuery, const std::string& path,
                        AlignmentConstPtr alignment);
+   void preloadAlignments();
 
    typedef std::pair<std::string, AlignmentConstPtr> PathAlign;
    typedef std::map<hal_size_t, PathAlign> AlignmentMap;
