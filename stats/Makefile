@@ -20,4 +20,4 @@ ${libPath}/halStats.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicL
 
 ${binPath}/halStats : impl/halStatsMain.cpp ${libPath}/halStats.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halStats impl/halStatsMain.cpp ${libPath}/halStats.a ${libPath}/halLib.a ${basicLibs}
-
+	rm *.o

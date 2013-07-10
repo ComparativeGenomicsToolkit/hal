@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <algorithm>
+#include <limits>
 #include "halCountedPtr.h"
 
 /** 

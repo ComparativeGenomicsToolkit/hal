@@ -64,7 +64,7 @@ def computeMAFStats(options):
             with open(options.outMafPath, "a") as outMaf:
                 with open(mafFile, "r") as inMaf:
                     for line in inMaf:
-                        l = line.lstr()
+                        l = line.lstrip()
                         if len(l) > 0 and l[0] != "#":
                             outMaf.write(line + "\n")            
             

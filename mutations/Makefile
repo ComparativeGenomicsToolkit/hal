@@ -22,9 +22,11 @@ ${libPath}/halMutations.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${ba
 
 ${binPath}/halBranchMutations : impl/halBranchMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halBranchMutations impl/halBranchMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 ${binPath}/halSummarizeMutations : impl/halSummarizeMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halSummarizeMutations impl/halSummarizeMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 ${binPath}/halTreeMutations.py : impl/halTreeMutations.py
 	cp impl/halTreeMutations.py ${binPath}
@@ -32,4 +34,5 @@ ${binPath}/halTreeMutations.py : impl/halTreeMutations.py
 
 ${binPath}/halSnps : impl/halSnps.cpp ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halSnps impl/halSnps.cpp ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 

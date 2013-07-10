@@ -27,12 +27,15 @@ ${libPath}/halMaf.a : ${libSources} ${libHeaders} ${libPath}/halLiftover.a ${lib
 
 ${binPath}/hal2maf : impl/hal2maf.cpp ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/hal2maf impl/hal2maf.cpp ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 ${binPath}/maf2hal : impl/maf2hal.cpp ${libPath}/halMaf.a ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/maf2hal impl/maf2hal.cpp ${libPath}/halMaf.a ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 ${binPath}/halMafTests : ${libTests} ${libTestsHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halMafTests ${libHalTests} ${libTests} ${libPath}/halLib.a ${libPath}/halMaf.a ${basicLibs}
+	rm *.o
 
 ${binPath}/hal2mafMP.py : hal2mafMP.py
 	cp hal2mafMP.py ${binPath}/hal2mafMP.py

@@ -27,6 +27,8 @@ ${libPath}/halLib.a : ${libSources} ${libHeaders} ${libInternalHeaders} ${basicL
 
 ${binPath}/halApiTests : ${libTests} ${libTestsHeaders} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halApiTests ${libTests} ${libPath}/halLib.a ${basicLibs}
+	rm *.o
 
 ${binPath}/halHdf5Tests : ${libHdf5Tests} ${libHdf5TestsHeaders} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I hdf5_impl -I ${libPath} -I impl -I tests -o ${binPath}/halHdf5Tests ${libHdf5Tests} ${libPath}/halLib.a ${basicLibs}
+	rm *.o
