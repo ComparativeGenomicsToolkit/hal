@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include "halWiggleScanner.h"
+#include "halWiggleTiles.h"
 
 namespace hal {
 
@@ -30,10 +31,21 @@ public:
                 bool traverseDupes = true,
                 bool unique = false);
 
+   static const double DefaultValue;
+   static const hal_size_t DefaultTileSize;
+
+protected:
+
    virtual void visitLine();
    virtual void visitHeader();
+   virtual void visitEOF();
+
+   void mapSegment();
                       
 protected: 
+
+   struct CoordVal { hal_index_t _first; hal_index_t _last; double _val; };
+   typedef std::vector<CoordVal> ValVec;
 
    AlignmentConstPtr _alignment;
    std::istream* _inStream;
@@ -45,6 +57,12 @@ protected:
    const Genome* _tgtGenome;
    const Sequence* _srcSequence;
    std::set<const Genome*> _tgtSet;
+   std::set<MappedSegmentConstPtr> _mappedSegments;
+   hal_index_t _lastIndex;
+
+   SegmentIteratorConstPtr _segment;
+   ValVec _cvals;
+   WiggleTiles<double> _outVals;
 
 };
 
