@@ -321,8 +321,8 @@ ostream& BedLine::writePSL(ostream& os)
      << psl._qStrand << _strand << '\t'
      << psl._qSeqName << '\t'
      << psl._qSeqSize << '\t'
-     << _srcStart - psl._qChromOffset << '\t'
-     << psl._qEnd << '\t'
+     << (_srcStart - psl._qChromOffset) << '\t'
+     << (psl._qEnd - psl._qChromOffset) << '\t'
      << _chrName << '\t'
      << psl._tSeqSize << '\t'
      << _start << '\t'
@@ -394,8 +394,7 @@ bool BedLine::validatePSL() const
     assert(false); return false;
   }
 
-  if (totBlockLen + psl._qBaseInsert != psl._qEnd - 
-      (_srcStart - psl._qChromOffset))
+  if (totBlockLen + psl._qBaseInsert != psl._qEnd - _srcStart)
   {
     assert(false); return false;
   }
@@ -435,8 +434,7 @@ bool BedLine::validatePSL() const
     {
       assert(false); return false;
     }
-    if ((psl._qBlockStarts.back() - psl._qChromOffset) +
-        _blocks.back()._length !=psl._qEnd)
+    if (psl._qBlockStarts.back() + _blocks.back()._length != psl._qEnd)
     {
       assert(false); return false;
     }
@@ -448,8 +446,7 @@ bool BedLine::validatePSL() const
     {
       assert(false); return false;
     }
-    if ((psl._qBlockStarts[0] - psl._qChromOffset) +
-        _blocks[0]._length != psl._qEnd)
+    if (psl._qBlockStarts[0] + _blocks[0]._length != psl._qEnd)
     {
       assert(false); return false;
     }
