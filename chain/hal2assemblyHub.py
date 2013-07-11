@@ -151,7 +151,7 @@ def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome):
         f.write("longLabel %s Liftovered Genes\n" % genome)
         f.write("shortLabel %sgenes\n" % genome)
         f.write("bigDataUrl ../%s\n" % os.path.join( os.path.basename(bigbeddir), genome, "%s.bb" % currgenome ) )
-        f.write("type bigBed\n")
+        f.write("type bigBed 12\n")
         if genome == currgenome: 
             f.write("visibility dense\n")
         else:
