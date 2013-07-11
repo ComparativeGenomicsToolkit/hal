@@ -268,6 +268,11 @@ bool Liftover::compatible(const BedLine& tgtBed, const BedLine& newBlock)
     return false;
   }
 
+  if (tgtBed._chrName != newBlock._chrName)
+  {
+    return false;
+  }
+
   return true;
 }
 
