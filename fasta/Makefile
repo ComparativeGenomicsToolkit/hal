@@ -10,5 +10,4 @@ clean :
 
 ${binPath}/hal2fasta : ${libSources} ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I ${rootPath}/api/tests -o ${binPath}/hal2fasta ${libSources} ${libPath}/halLib.a ${basicLibs}
-	rm *.o
 
