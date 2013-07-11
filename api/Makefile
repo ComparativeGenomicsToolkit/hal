@@ -19,6 +19,7 @@ doxy :
 
 ${libPath}/halLib.a : ${libSources} ${libHeaders} ${libInternalHeaders} ${basicLibsDependencies}
 	cp ${libHeaders} ${libPath}/
+	rm -f *.o
 	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
 	ar rc halLib.a *.o
 	ranlib halLib.a 

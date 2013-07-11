@@ -19,6 +19,7 @@ clean :
 
 ${libPath}/halMaf.a : ${libSources} ${libHeaders} ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
+	rm -f *.o
 	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
 	ar rc halMaf.a *.o
 	ranlib halMaf.a 

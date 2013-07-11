@@ -17,6 +17,7 @@ clean :
 
 ${libPath}/halPhyloP.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
+	rm -f *.o
 	${cpp} ${phyloPcppflags} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
 	ar rc halPhyloP.a *.o
 	ranlib halPhyloP.a 
