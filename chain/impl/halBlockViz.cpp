@@ -860,9 +860,12 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
 
 static void flipStrand(hal_block_t* firstBlock)
 {
-  for (hal_block_t* cur = firstBlock; cur; cur = cur->next)
-  {
-    cur->strand = cur->strand == '-' ? '+' : '-';
-  }
+  // below is stupid and naive and will not work for anything but 
+  // dense mode (ie where no edges between blocks).  put off fixing
+  // for now....
+//  for (hal_block_t* cur = firstBlock; cur; cur = cur->next)
+//  {
+//    cur->strand = cur->strand == '-' ? '+' : '-';
+//  }
 }
 
