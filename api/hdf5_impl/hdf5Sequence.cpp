@@ -331,7 +331,7 @@ void HDF5Sequence::set(hal_size_t startPosition,
   char* arrayBuffer = _nameArray->getUpdate(_index);
   strcpy(arrayBuffer, sequenceInfo._name.c_str());
 
-  assert(getStartPosition() == startPosition);
+  assert(getStartPosition() == (hal_index_t)startPosition);
   assert(getNumTopSegments() == sequenceInfo._numTopSegments);
   assert(getNumBottomSegments() == sequenceInfo._numBottomSegments);
   assert(getSequenceLength() == sequenceInfo._length);

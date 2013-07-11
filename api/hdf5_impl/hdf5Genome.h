@@ -171,6 +171,8 @@ protected:
    void writeSequences(const std::vector<hal::Sequence::Info>&
                        sequenceDimensions);
    void deleteSequenceCache();
+   void loadSequencePosCache() const;
+   void loadSequenceNameCache() const;
    void setGenomeTopDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
 
