@@ -57,8 +57,9 @@ def extractGeneMAFs(options):
         if os.path.getsize(mafFile) < 5:
             os.remove(mafFile)
         else:
-            pass
             remove2ndLine(mafFile)
+            runShellCommand("msa_view -o SS --in-format MAF %s > %s" % (
+                mafFile, mafFile.replace(".maf", ".SS")))
     if len(glob.glob(options.outMafAllPaths)) < 1:
         raise RuntimeError("Given BED files do not overlap alignment")
 
@@ -89,9 +90,11 @@ def computeMAFStats(options):
 def computeAgMAFStats(options):
     halSpecies = ",".join(options.halGenomes)
     
-    runShellCommand("msa_view -o SS -z -k --in-format MAF --aggregate %s %s > %s" % (
-        halSpecies, options.outMafAllPaths, options.outMafSS))
+    runShellCommand("msa_view -o SS -z --in-format SS --aggregate %s %s > %s" % (
+        halSpecies, options.outMafAllPaths.replace(".maf", ".SS"), 
+        options.outMafSS))
     runShellCommand("rm -f %s" % options.outMafAllPaths)
+    runShellCommand("rm -f %s" % options.outMafAllPaths.replace(".maf", ".SS"))
 
 
 def computeFit(options):
