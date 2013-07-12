@@ -18,6 +18,7 @@ from multiprocessing import Pool
 
 def runShellCommand(command):
     try:
+        print "RUN %s" % command
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                    stderr=sys.stderr, bufsize=-1)
         output, nothing = process.communicate()

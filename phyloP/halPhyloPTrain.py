@@ -39,11 +39,11 @@ def extractGeneMAFs(options):
         bedFile4d = (os.path.splitext(options.outMafPath)[0] + "_" + 
                      os.path.splitext(os.path.basename(bedFile))[0] + 
                      "4d.bed")
-    if not options.no4d:
-        runShellCommand("hal4dExtract %s %s %s %s" % (
-            options.hal, options.refGenome, bedFile, bedFile4d))
-    else:
-        runShellCommand("cp %s %s" % (bedFile, bedFile4d))
+        if not options.no4d:
+            runShellCommand("hal4dExtract %s %s %s %s" % (
+                options.hal, options.refGenome, bedFile, bedFile4d))
+        else:
+            runShellCommand("cp %s %s" % (bedFile, bedFile4d))
             
     outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
               os.path.splitext(os.path.basename(bedFile))[0] + ".maf")
