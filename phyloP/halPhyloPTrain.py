@@ -47,11 +47,14 @@ def extractGeneMAFs(options):
             
     outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
               os.path.splitext(os.path.basename(bedFile))[0] + ".maf")
-    runShellCommand("hal2mafMP.py %s %s --ucscNames --splitBySequence "
+    h2mFlags = "--ucscNames --splitBySequence --noDupes"
+    if options.noAncestors is True:
+        h2mFlags += " --noAncestors"
+    runShellCommand("hal2mafMP.py %s %s %s "
                     "--numProc %d --refTargets %s --refGenome %s "
-                    "--noDupes" % (options.hal, outMaf, options.numProc,
-                                   bedFile4d, options.refGenome))
-    os.remove(bedFile4d)            
+                    % (options.hal, outMaf, h2mFlags,options.numProc,
+                       bedFile4d, options.refGenome))
+    os.remove(bedFile4d)
             
     for mafFile in glob.glob(options.outMafAllPaths):
         if os.path.getsize(mafFile) < 5:
@@ -149,6 +152,10 @@ def main(argv=None):
     parser.add_argument("--numProc",
                         help="Maximum number of processes for hal2maf.",
                         type=int, default=1)
+    parser.add_argument("--noAncestors",
+                        help="Don't write ancestral genomes in hal2maf",
+                        action="store_true", default=False)
+
     
     args = parser.parse_args()
 
