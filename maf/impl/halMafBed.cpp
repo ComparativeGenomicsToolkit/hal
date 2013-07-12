@@ -40,7 +40,7 @@ void MafBed::visitLine()
     if (_bedVersion <= 9)
     {
       if (_bedLine._end <= _bedLine._start ||
-          _bedLine._end >= (hal_index_t)refSequence->getSequenceLength())
+          _bedLine._end > (hal_index_t)refSequence->getSequenceLength())
       {
         cerr << "Line " << _lineNumber << ": BED coordinates invalid\n";
       }
