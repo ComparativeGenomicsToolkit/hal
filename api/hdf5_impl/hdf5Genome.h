@@ -171,6 +171,8 @@ protected:
    void writeSequences(const std::vector<hal::Sequence::Info>&
                        sequenceDimensions);
    void deleteSequenceCache();
+   void loadSequencePosCache() const;
+   void loadSequenceNameCache() const;
    void setGenomeTopDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
 
@@ -189,7 +191,8 @@ protected:
    HDF5ExternalArray _dnaArray;
    HDF5ExternalArray _topArray;
    HDF5ExternalArray _bottomArray;
-   HDF5ExternalArray _sequenceArray;
+   HDF5ExternalArray _sequenceIdxArray;
+   HDF5ExternalArray _sequenceNameArray;
    H5::Group _group;
    H5::DSetCreatPropList _dcprops;
    hal_size_t _numChildrenInBottomArray;
@@ -204,7 +207,8 @@ protected:
    static const std::string dnaArrayName;
    static const std::string topArrayName;
    static const std::string bottomArrayName;
-   static const std::string sequenceArrayName;
+   static const std::string sequenceIdxArrayName;
+   static const std::string sequenceNameArrayName;
    static const std::string metaGroupName;
    static const std::string rupGroupName;
 
