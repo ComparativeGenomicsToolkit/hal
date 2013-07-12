@@ -26,6 +26,7 @@ from hal.stats.halStats import getHalStats
 from hal.stats.halStats import getHalTree
 from hal.stats.halStats import getHalBaseComposition
 
+    
 # it seems that msa view doesn't like the second line of MAF headers
 # (reads the tree as a maf block then spits an error).  so we use
 # this to remove 2nd lines from generated mafs. 
@@ -45,16 +46,16 @@ def extractGeneMAFs(options):
         else:
             runShellCommand("cp %s %s" % (bedFile, bedFile4d))
             
-    outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
-              os.path.splitext(os.path.basename(bedFile))[0] + ".maf")
-    h2mFlags = "--ucscNames --splitBySequence --noDupes"
-    if options.noAncestors is True:
-        h2mFlags += " --noAncestors"
-    runShellCommand("hal2mafMP.py %s %s %s "
-                    "--numProc %d --refTargets %s --refGenome %s "
-                    % (options.hal, outMaf, h2mFlags,options.numProc,
-                       bedFile4d, options.refGenome))
-    os.remove(bedFile4d)
+        outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
+                  os.path.splitext(os.path.basename(bedFile))[0] + ".maf")
+        h2mFlags = "--ucscNames --splitBySequence --noDupes"
+        if options.noAncestors is True:
+            h2mFlags += " --noAncestors"
+        runShellCommand("hal2mafMP.py %s %s %s "
+                        "--numProc %d --refTargets %s --refGenome %s "
+                        % (options.hal, outMaf, h2mFlags,options.numProc,
+                           bedFile4d, options.refGenome))
+        os.remove(bedFile4d)
             
     for mafFile in glob.glob(options.outMafAllPaths):
         if os.path.getsize(mafFile) < 5:
