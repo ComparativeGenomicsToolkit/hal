@@ -30,7 +30,8 @@ public:
                 int inBedVersion = -1,
                 int outBedVersion = -1,
                 bool addExtraColumns = false,
-                bool traverseDupes = true);
+                bool traverseDupes = true,
+                bool outPSL = false);
                    
 protected:
 
@@ -41,10 +42,12 @@ protected:
    virtual void visitEOF();
    virtual void writeLineResults();
    virtual void assignBlocksToIntervals();
+   virtual bool compatible(const BedLine& tgtBed, const BedLine& newBlock);
+   virtual void flipBlocks(BedList& bedList);
+   virtual void computePSLInserts(BedList& bedList);
    virtual void writeBlocksAsIntervals();
    virtual void cleanResults();
    virtual void liftBlockIntervals();
-   virtual void mergeIntervals();
    virtual void liftInterval(BedList& mappedBedLines) = 0;
    
 protected: 
@@ -56,6 +59,7 @@ protected:
    BedList _outBedLines;
    int _inBedVersion;
    int _outBedVersion;
+   bool _outPSL;
    
    BedList _mappedBlocks;
    

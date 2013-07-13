@@ -15,7 +15,7 @@ cflags += -I${sonLibPath}
 cppflags += -I${sonLibPath}
 
 basicLibs = ${sonLibPath}/sonLib.a ${sonLibPath}/cuTest.a
-basicLibsDependencies = ${sonLibPath}/cuTest.a 
+basicLibsDependencies = ${basicLibs}
 
 # hdf5 compilation is done through its wrappers.
 # we can speficy our own (sonlib) compilers with these variables:
@@ -38,4 +38,37 @@ ifdef ENABLE_UDC
 	cppflags += -DENABLE_UDC -I${KENTSRC}/src/inc -pthread
 	cflags += -I${KENTSRC}/src/inc -pthread
 	basicLibs += ${KENTSRC}/src/lib/${MACHTYPE}/jkweb.a  ${SAMTABIXDIR}/libsamtabix.a -lssl -lcrypto
+endif
+
+
+#
+# phyloP support
+#
+phyloPcppflags = 
+phyloPlibs = 
+
+ifdef ENABLE_PHYLOP
+
+ifndef TARGETOS
+  TARGETOS := $(shell uname -s)
+endif
+
+#	Local Linux install (phast and clapack sister dirs to hal/)
+#	(note CLAPACKPATH not needed in Mac)
+	PHAST=../../phast
+	CLAPACKPATH=../../clapack
+
+#	Melissa's version of the above
+#	PHAST=/home/mt269/phast
+#	CLAPACKPATH=/usr/local/software/CLAPACK
+
+ifeq ($(TARGETOS), Darwin)
+	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -framework vecLib -DVECLIB
+	phyloPlibs += -L${PHAST}/lib -lphast -lc
+else
+	F2CPATH=${CLAPACKPATH}/F2CLIBS
+	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+	phyloPlibs += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
+endif
+
 endif

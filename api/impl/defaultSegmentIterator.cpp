@@ -211,8 +211,10 @@ void DefaultSegmentIterator::print(ostream& os) const
 
   if (ai != NULL_INDEX && !offRight)
   {
-    os << " len=" << getLength()
+    os 
        << " start=" << getStartPosition()
+       << " end=" << getEndPosition()
+       << " len=" << getLength()
        << " off=[" << getStartOffset() << "," << getEndOffset() << "]"
        << " rev=" << getReversed();
   }

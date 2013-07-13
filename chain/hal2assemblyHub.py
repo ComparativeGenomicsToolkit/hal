@@ -151,7 +151,7 @@ def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome):
         f.write("longLabel %s Liftovered Genes\n" % genome)
         f.write("shortLabel %sgenes\n" % genome)
         f.write("bigDataUrl ../%s\n" % os.path.join( os.path.basename(bigbeddir), genome, "%s.bb" % currgenome ) )
-        f.write("type bigBed\n")
+        f.write("type bigBed 12\n")
         if genome == currgenome: 
             f.write("visibility dense\n")
         else:
@@ -238,7 +238,10 @@ def writeGenomesFile(genome2seq2len, halfile, options, outdir):
     if os.path.abspath(localHalfile) != os.path.abspath(halfile):
         if os.path.exists(localHalfile):
             system("rm %s" %localHalfile)
-        system("ln -s %s %s" %(os.path.abspath(halfile), localHalfile))
+        if options.cpHal:
+            system("cp %s %s" %(os.path.abspath(halfile), localHalfile))
+        else:
+            system("ln -s %s %s" %(os.path.abspath(halfile), localHalfile))
 
     #Create lod files if useLod is specified
     lodtxtfile = ''
@@ -337,7 +340,8 @@ def addOptions(parser):
     parser.add_option('--lodInMemory', dest='lodInMemory', action='store_true', help='Load entire hal file into memory when generating levels of detail instead of using hdf5 cache. Default=%default.', default=False)
     parser.add_option('--lodNumProc', dest='lodNumProc', type='int', help='Number of levels of detail to generate concurrently in parallel processes', default=None)
     parser.add_option('--lodMinSeqFrac', dest='lodMinSeqFrac', type='float', help='Minumum sequence length to sample as fraction of step size for level of detail generation: ie sequences with length <= floor(minSeqFrac * step) are ignored. Use default from halLodExtract if not set.', default=None)
-    
+    parser.add_option('--cpHalFileToOut', dest='cpHal', action='store_true', default=False, help='If specified, copy the input halfile to the output directory (instead of just make a softlink). Default=%default')
+
     parser.add_option('--bedDir', dest='beddir', help='Directory containing bed files of the input genomes. Format: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
     parser.add_option('--hub', dest='hubLabel', default='myHub', help='a single-word name of the directory containing the track hub files. Not displayed to hub users. Default=%default')
     parser.add_option('--shortLabel', dest='shortLabel', default='my hub', help='the short name for the track hub. Suggested maximum length is 17 characters. Displayed as the hub name on the Track Hubs page and the track group name on the browser tracks page. Default=%default')

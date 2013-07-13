@@ -28,6 +28,9 @@ protected:
    void visitBegin();
 
    void cleanTargetParalogies();
+   void readPSLInfo(std::vector<MappedSegmentConstPtr>& fragments, 
+                    BedLine& outBedLine);
+
    
 protected: 
    

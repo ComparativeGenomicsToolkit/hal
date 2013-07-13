@@ -12,7 +12,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = hdf5CLParserInstance(true);
   optionsParser->addArgument("inHalPath", "Input hal file");
   optionsParser->addArgument("outHalPath", "output hal file");
   optionsParser->addArgument("step", "Step size for interpolation");
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
                                            keepSequences, allSequences,
                                            probeFrac, minSeqFrac);
   }
-/*  catch(hal_exception& e)
+  catch(hal_exception& e)
   {
     cerr << "hal exception caught: " << e.what() << endl;
     return 1;
@@ -126,7 +126,6 @@ int main(int argc, char** argv)
     cerr << "Exception caught: " << e.what() << endl;
     return 1;
   }
-*/
-  catch(float temp) {}
+
   return 0;
 }

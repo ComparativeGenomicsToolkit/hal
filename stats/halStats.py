@@ -92,3 +92,11 @@ def getHalGenomeLength(halPath, genomeName):
         if genomeStats[0] == genomeName:
             return int(genomeStats[2])
     return None
+
+def getHalTree(halPath):
+    return runShellCommand("halStats %s --tree" % halPath).strip()
+
+def getHalBaseComposition(halPath, genomeName, step):
+    strList = runShellCommand("halStats %s --baseComp %s,%d" % (
+        halPath, genomeName, step)).split()
+    return [float(x) for x in strList]
