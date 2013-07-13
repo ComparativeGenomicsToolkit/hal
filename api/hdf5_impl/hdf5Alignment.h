@@ -45,6 +45,11 @@ public:
 
    void removeGenome(const std::string& name);
 
+   Genome* insertGenome(const std::string& name,
+                        const std::string& parentName,
+                        const std::string& childName,
+                        double upperBranchLength);
+
    const Genome* openGenome(const std::string& name) const;
 
    Genome* openGenome(const std::string& name);
