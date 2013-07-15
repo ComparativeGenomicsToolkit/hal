@@ -838,7 +838,7 @@ void HDF5Genome::readSequences()
 
 void HDF5Genome::deleteSequenceCache()
 {
-  if (_sequencePosCache.size() > 0)
+  if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0)
   {
     map<hal_size_t, HDF5Sequence*>::iterator i;
     for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i)
@@ -933,9 +933,9 @@ void HDF5Genome::loadSequenceNameCache() const
   }
   hal_size_t numSequences = _sequenceNameArray.getSize();
   
-  if (_sequencePosCache.size() > 0)
+  if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0)
   {
-    assert(_sequencePosCache.size() == numSequences);
+    assert(_sequencePosCache.size() + _zeroLenPosCache.size() == numSequences);
     map<hal_size_t, HDF5Sequence*>::iterator i;
     for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i)
     {
