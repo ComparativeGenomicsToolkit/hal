@@ -202,6 +202,7 @@ protected:
    mutable Genome* _parentCache;
    mutable std::vector<Genome*> _childCache;
    mutable std::map<hal_size_t, HDF5Sequence*> _sequencePosCache;
+   mutable std::vector<HDF5Sequence*> _zeroLenPosCache;
    mutable std::map<std::string, HDF5Sequence*> _sequenceNameCache;
 
    static const std::string dnaArrayName;
