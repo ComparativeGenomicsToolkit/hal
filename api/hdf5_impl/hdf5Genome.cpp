@@ -914,7 +914,7 @@ void HDF5Genome::loadSequencePosCache() const
       }
     }
   }
-  if (totalReadLen != _totalSequenceLength)
+  if (_totalSequenceLength > 0 && totalReadLen != _totalSequenceLength)
   {
     stringstream ss;
     ss << "Sequences for genome " << getName() << " have total length " 
