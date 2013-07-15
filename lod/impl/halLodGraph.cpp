@@ -133,6 +133,7 @@ void LodGraph::scanGenome(const Genome* genome)
             colIt->toSite(sequence->getStartPosition() + tryPos, 
                           sequence->getEndPosition());
           }
+          assert(colIt->getReferenceSequence() == sequence);
           assert(colIt->getReferenceSequencePosition() == tryPos);
           hal_size_t delta;
           hal_size_t numGenomes;
@@ -157,6 +158,8 @@ void LodGraph::scanGenome(const Genome* genome)
             colIt->toSite(sequence->getStartPosition() + bestPos, 
                           sequence->getEndPosition());
           }
+          assert(colIt->getReferenceSequence() == sequence);
+          assert(colIt->getReferenceSequencePosition() == bestPos);
           createColumn(colIt);
           lastSampledPos = sequence->getStartPosition() + bestPos;
         }
