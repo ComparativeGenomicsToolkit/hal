@@ -122,10 +122,14 @@ void LodGraph::scanGenome(const Genome* genome)
         hal_size_t maxDelta = 0;     
         hal_size_t maxMinSeqLen = 0;
         hal_index_t tryPos = numProbe == 1 ? pos : minTry;
-        ColumnIteratorConstPtr colIt; 
+        ColumnIteratorConstPtr colIt = 
+           sequence->getColumnIterator(&_genomes, 0, tryPos);
         do 
         {
-          colIt = sequence->getColumnIterator(&_genomes, 0, tryPos);
+          if (colIt->getReferenceSequencePosition() != tryPos)
+          {
+            colIt->toSite(tryPos, sequence->getSequenceLength() - 1);
+          }
           assert(colIt->getReferenceSequencePosition() == tryPos);
           hal_size_t delta;
           hal_size_t numGenomes;
@@ -145,7 +149,10 @@ void LodGraph::scanGenome(const Genome* genome)
 
         if (bestPos != NULL_INDEX)
         {
-          colIt = sequence->getColumnIterator(&_genomes, 0, bestPos);
+          if (colIt->getReferenceSequencePosition() != bestPos)
+          {
+            colIt->toSite(bestPos, sequence->getSequenceLength() - 1);
+          }
           createColumn(colIt);
           lastSampledPos = sequence->getStartPosition() + bestPos;
         }
