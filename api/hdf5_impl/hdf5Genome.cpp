@@ -68,6 +68,12 @@ HDF5Genome::HDF5Genome(const string& name,
   {
     _totalSequenceLength -= 1;
   }
+  else if (_totalSequenceLength == 0 && _sequenceIdxArray.getSize() > 0)
+  {
+    HDF5Sequence lastSeq(this, &_sequenceIdxArray, &_sequenceNameArray,
+                          _sequenceNameArray.getSize() - 1);
+    _totalSequenceLength = lastSeq.getEndPosition() + 1;
+  }
 
   hsize_t chunk;
   _dcprops.getChunk(1, &chunk);
