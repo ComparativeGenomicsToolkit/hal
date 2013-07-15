@@ -112,8 +112,10 @@ void LodGraph::scanGenome(const Genome* genome)
         // scan range trying to find genome to add
         hal_index_t minTry = std::max((hal_index_t)0, pos - halfStep);
         hal_index_t maxTry = std::min(pos + halfStep, (hal_index_t)len - 1);
+        double redProbFac = _probeFrac * (
+          (double)(maxTry - minTry) / (double)sequence->getSequenceLength());
         hal_index_t numProbe = 
-           (hal_index_t)std::max(1., (double)(maxTry - minTry) * _probeFrac);
+           (hal_index_t)std::max(1., (double)(maxTry - minTry) * redProbFac);
         hal_index_t npMinus1 = numProbe < 2 ? numProbe : numProbe - 1;
         hal_index_t probeStep = std::max((hal_index_t)1,
                                          (maxTry - minTry) / (npMinus1));
@@ -128,7 +130,8 @@ void LodGraph::scanGenome(const Genome* genome)
         {
           if (colIt->getReferenceSequencePosition() != tryPos)
           {
-            colIt->toSite(tryPos, sequence->getSequenceLength() - 1);
+            colIt->toSite(sequence->getStartPosition() + tryPos, 
+                          sequence->getEndPosition());
           }
           assert(colIt->getReferenceSequencePosition() == tryPos);
           hal_size_t delta;
@@ -151,7 +154,8 @@ void LodGraph::scanGenome(const Genome* genome)
         {
           if (colIt->getReferenceSequencePosition() != bestPos)
           {
-            colIt->toSite(bestPos, sequence->getSequenceLength() - 1);
+            colIt->toSite(sequence->getStartPosition() + bestPos, 
+                          sequence->getEndPosition());
           }
           createColumn(colIt);
           lastSampledPos = sequence->getStartPosition() + bestPos;
