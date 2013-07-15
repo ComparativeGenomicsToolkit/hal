@@ -174,7 +174,7 @@ void DefaultColumnIterator::toRight() const
 void DefaultColumnIterator::toSite(hal_index_t columnIndex, 
                                    hal_index_t lastColumnIndex) const
 {
-  const Genome* reference = _top->getGenome();
+  const Genome* reference = getReferenceGenome();
   assert (columnIndex >= 0 && lastColumnIndex >= columnIndex && 
           lastColumnIndex < (hal_index_t)reference->getSequenceLength());  
 
@@ -187,6 +187,8 @@ void DefaultColumnIterator::toSite(hal_index_t columnIndex,
   // note columnIndex in genome (not sequence) coordinates
   _stack.push(sequence, columnIndex, lastColumnIndex);
   toRight();
+  assert(getReferenceSequencePosition() + sequence->getStartPosition() == 
+         columnIndex);
 }
 
 bool DefaultColumnIterator::lastColumn() const
