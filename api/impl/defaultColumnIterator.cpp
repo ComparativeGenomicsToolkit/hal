@@ -66,12 +66,6 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
   {
     _targets = *targets;
     _targets.insert(reference);
-    const Genome* root = reference;
-    while (root->getParent() != NULL)
-    {
-      // stupid!
-      root = root->getParent();
-    }
     getGenomesInSpanningTree(_targets, _scope);
   }
   
