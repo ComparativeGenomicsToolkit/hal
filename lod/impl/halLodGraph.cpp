@@ -131,7 +131,7 @@ void LodGraph::scanGenome(const Genome* genome)
           if (colIt->getReferenceSequencePosition() != tryPos)
           {
             colIt->toSite(sequence->getStartPosition() + tryPos, 
-                          sequence->getEndPosition());
+                          sequence->getEndPosition(), true);
           }
           assert(colIt->getReferenceSequence() == sequence);
           assert(colIt->getReferenceSequencePosition() == tryPos);
@@ -156,7 +156,7 @@ void LodGraph::scanGenome(const Genome* genome)
           if (colIt->getReferenceSequencePosition() != bestPos)
           {
             colIt->toSite(sequence->getStartPosition() + bestPos, 
-                          sequence->getEndPosition());
+                          sequence->getEndPosition(), true);
           }
           assert(colIt->getReferenceSequence() == sequence);
           assert(colIt->getReferenceSequencePosition() == bestPos);

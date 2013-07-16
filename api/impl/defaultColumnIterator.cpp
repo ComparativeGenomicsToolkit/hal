@@ -172,7 +172,8 @@ void DefaultColumnIterator::toRight() const
 }
 
 void DefaultColumnIterator::toSite(hal_index_t columnIndex, 
-                                   hal_index_t lastColumnIndex) const
+                                   hal_index_t lastColumnIndex,
+                                   bool clearCache) const
 {
   const Genome* reference = getReferenceGenome();
   assert (columnIndex >= 0 && lastColumnIndex >= columnIndex && 
@@ -183,6 +184,15 @@ void DefaultColumnIterator::toSite(hal_index_t columnIndex,
   _ref =sequence;    
   _stack.clear();
   _indelStack.clear();
+  if (clearCache == true)
+  {
+    for (VisitCache::iterator i = _visitCache.begin();
+         i != _visitCache.end(); ++i)
+    {
+      delete i->second;
+    }
+    _visitCache.clear();
+  }
   defragment();
   // note columnIndex in genome (not sequence) coordinates
   _stack.push(sequence, columnIndex, lastColumnIndex);
