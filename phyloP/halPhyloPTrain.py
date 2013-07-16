@@ -26,7 +26,37 @@ from hal.stats.halStats import getHalStats
 from hal.stats.halStats import getHalTree
 from hal.stats.halStats import getHalBaseComposition
 
-    
+# it seems that msa_view doesnt like big files.  hack in some 
+# code to split up beds.
+def splitBed(path, options):
+    numLines = int(runShellCommand("wc -l %s" % path).split()[0])
+    outPaths = []
+    outDir = os.path.dirname(options.outMafPath)
+    if numLines > options.maxBedLines:
+        inBed = open(path, "r")
+        curLine = 0
+        curBed = 0
+        outPath = path.replace(".bed", "_%d.bed" % curLine)
+        outPaths.append(outPath)
+        outBed = open(outPath, "w")
+        for inLine in inBed:
+            if curLine > options.maxBedLines:
+                curBed += 1
+                outBed.close()
+                outPath = path.replace(".bed", "_%d.bed" % curBed)
+                outPath = os.path.join(outDir, os.path.basename(outPath))
+                outPaths.append(outPath)
+                outBed = open(outPath, "w")
+                curLine = 0
+            else:
+                curLine += 1
+            outBed.write(inLine)
+        outBed.close()
+    else:
+        outPaths = [path]
+    return outPaths
+        
+
 # it seems that msa view doesn't like the second line of MAF headers
 # (reads the tree as a maf block then spits an error).  so we use
 # this to remove 2nd lines from generated mafs. 
@@ -35,7 +65,7 @@ def remove2ndLine(path):
 
 def extractGeneMAFs(options):
     runShellCommand("rm -f %s" % options.outMafAllPaths)
-
+    
     for bedFile in options.bedFiles:
         bedFile4d = (os.path.splitext(options.outMafPath)[0] + "_" + 
                      os.path.splitext(os.path.basename(bedFile))[0] + 
@@ -45,17 +75,20 @@ def extractGeneMAFs(options):
                 options.hal, options.refGenome, bedFile, bedFile4d))
         else:
             runShellCommand("cp %s %s" % (bedFile, bedFile4d))
-            
-        outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
-                  os.path.splitext(os.path.basename(bedFile))[0] + ".maf")
-        h2mFlags = "--ucscNames --splitBySequence --noDupes"
-        if options.noAncestors is True:
-            h2mFlags += " --noAncestors"
-        runShellCommand("hal2mafMP.py %s %s %s "
-                        "--numProc %d --refTargets %s --refGenome %s "
-                        % (options.hal, outMaf, h2mFlags,options.numProc,
-                           bedFile4d, options.refGenome))
-        os.remove(bedFile4d)
+
+        for sBedFile in splitBed(bedFile4d, options):
+            outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
+            os.path.splitext(os.path.basename(sBedFile))[0] + ".maf")
+            h2mFlags = "--ucscNames --splitBySequence --noDupes"
+            if options.noAncestors is True:
+                h2mFlags += " --noAncestors"
+            runShellCommand("hal2mafMP.py %s %s %s "
+                            "--numProc %d --refTargets %s --refGenome %s "
+                            % (options.hal, outMaf, h2mFlags,options.numProc,
+                               sBedFile, options.refGenome))
+            os.remove(sBedFile)
+        if os.path.exists(bedFile4d):
+            os.remove(bedFile4d)
             
     for mafFile in glob.glob(options.outMafAllPaths):
         if os.path.getsize(mafFile) < 5:
@@ -99,7 +132,8 @@ def computeAgMAFStats(options):
         options.outMafSS))
     runShellCommand("rm -f %s" % options.outMafAllPaths)
     runShellCommand("rm -f %s" % options.outMafAllPaths.replace(".maf", ".SS"))
-
+    runShellCommand("rm -f %s" % options.outMafAllPaths.replace(".maf", 
+                                                                ".maf-e"))
 
 def computeFit(options):
     runShellCommand("phyloFit --tree \"%s\" --subst-mod SSREV --sym-freqs %s --out-root %s" % (
@@ -156,7 +190,10 @@ def main(argv=None):
     parser.add_argument("--noAncestors",
                         help="Don't write ancestral genomes in hal2maf",
                         action="store_true", default=False)
-
+    parser.add_argument("--maxBedLines",
+                        help="Split bed files so they have at most this many"
+                        " lines",
+                        type=int, default=100000)
     
     args = parser.parse_args()
 
