@@ -190,10 +190,8 @@ def main(argv=None):
                         type=float, default=1.3)
     parser.add_argument("--numProc", help="Number of concurrent processes",
                         type=int, default=1)
-    parser.add_argument("--chunk", help="Chunk size of output hal files.  "
-                        "Note we keep the default lower than regular HAL "
-                        "(1000) to try to favor network access",
-                        type=int, default=200)
+    parser.add_argument("--chunk", help="Chunk size of output hal files.  ",
+                        type=int, default=None)
 
     args = parser.parse_args()
 
