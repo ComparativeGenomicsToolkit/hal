@@ -82,6 +82,8 @@ def extractGeneMAFs(options):
             h2mFlags = "--ucscNames --splitBySequence --noDupes"
             if options.noAncestors is True:
                 h2mFlags += " --noAncestors"
+            if options.sliceSize is not None:
+                h2mFlags += " --sliceSize %d" % options.sliceSize
             runShellCommand("hal2mafMP.py %s %s %s "
                             "--numProc %d --refTargets %s --refGenome %s "
                             % (options.hal, outMaf, h2mFlags,options.numProc,
@@ -194,6 +196,10 @@ def main(argv=None):
                         help="Split bed files so they have at most this many"
                         " lines",
                         type=int, default=100000)
+    parser.add_argument("--sliceSize",
+                        help="Slice size for hal2maf.",
+                        type=int, default=None)
+
     
     args = parser.parse_args()
 
