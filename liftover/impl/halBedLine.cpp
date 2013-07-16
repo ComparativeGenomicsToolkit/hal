@@ -109,7 +109,7 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
       throw hal_exception("Error parsing BED itemRGB");
     }
     _itemG = _itemR;
-    _itemB = _itemB;
+    _itemB = _itemR;
     if (rgbTokens.size() > 1)
     {
       stringstream rgbssg(rgbTokens[1]);
