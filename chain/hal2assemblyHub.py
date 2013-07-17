@@ -114,10 +114,6 @@ def liftoverBedFiles(indir, halfile, genome2seq2len, outdir):
                 continue
             liftovertempbed = "%s.bed" % os.path.join(genomeoutdir, othergenome)
             system("halLiftover %s %s %s %s %s" %(halfile, genome, tempbed, othergenome, liftovertempbed))
-            if re.search("Anc", othergenome): #HACK
-                system("awk ' $0 !~ /#/ {split($1, arr, \".\"); print arr[2] \"\t\" $2 \"\t\" $3 \"\t\" $4} ' %s > %s-reformat" %(liftovertempbed, liftovertempbed))
-                system("mv %s-reformat %s" %(liftovertempbed, liftovertempbed))
-
             system("bedSort %s %s" %(liftovertempbed, liftovertempbed))
             outbigbed = os.path.join(genomeoutdir, "%s.bb" %othergenome)
             chrsizefile = os.path.join(chrsizedir, othergenome)
