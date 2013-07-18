@@ -206,7 +206,7 @@ def main(argv=None):
     if not os.path.isfile(args.hal):
         raise RuntimeError("Input hal file %s not found" % args.hal)
     if not os.path.exists(args.bedDir):
-        raise RuntimeError("% not found" % args.bedDir)
+        raise RuntimeError("%s not found" % args.bedDir)
     if os.path.isdir(args.bedDir):
         args.bedFiles = [os.path.join(args.bedDir, f) for f
                          in os.listdir(args.bedDir) 
