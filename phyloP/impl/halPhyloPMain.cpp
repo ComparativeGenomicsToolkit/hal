@@ -215,6 +215,10 @@ void printSequence(ostream& outStream, halPhyloP *phyloP,
                    hal_size_t start, hal_size_t length, hal_size_t step)
 {
   hal_size_t seqLen = sequence->getSequenceLength();
+  if (seqLen == 0)
+  {
+    return;
+  }
   /** If the length is 0, we do from the start position until the end
    * of the sequence */
   if (length == 0)
