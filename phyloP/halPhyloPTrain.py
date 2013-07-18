@@ -32,7 +32,7 @@ def splitBed(path, options):
     numLines = int(runShellCommand("wc -l %s" % path).split()[0])
     outPaths = []
     outDir = os.path.dirname(options.outMafPath)
-    if numLines > options.maxBedLines:
+    if options.maxBedLines is not None and numLines > options.maxBedLines:
         inBed = open(path, "r")
         curLine = 0
         curBed = 0
@@ -195,7 +195,7 @@ def main(argv=None):
     parser.add_argument("--maxBedLines",
                         help="Split bed files so they have at most this many"
                         " lines",
-                        type=int, default=100000)
+                        type=int, default=None)
     parser.add_argument("--sliceSize",
                         help="Slice size for hal2maf.",
                         type=int, default=None)
