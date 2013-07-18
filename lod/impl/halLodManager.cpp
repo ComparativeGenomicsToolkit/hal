@@ -158,7 +158,7 @@ bool LodManager::needPreload(const string& path)
   if (path.find("http") == 0)
   {
     unsigned long cpathAge = udcCacheAge(
-      const_cast<char*>path.c_str(), NULL);
+      const_cast<char*>(path.c_str()), NULL);
     ret = cpathAge > MaxAgeSec;
   }
 #endif

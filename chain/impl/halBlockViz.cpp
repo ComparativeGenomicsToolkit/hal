@@ -154,27 +154,27 @@ extern "C" void halPrefetchLOD(char* lodFilePath, char* qSpecies,
   if (LodManager::needPreload(lodFilePath) == true)
   {
     pid_t childPid = fork();
-    if (pid_t == 0)
+    if (childPid == 0)
     {
       // child process;
       int handle = halOpenLodOrHal(lodFilePath, true, false);
       assert(handleMap.size() == 1);
-      LodManagerPtr lodMgr = handleMap.find(handle)->second;
+      LodManagerPtr lodMgr = handleMap.find(handle)->second.second;
       vector<AlignmentConstPtr> alignments;
-      lodManger->getAllAlignments(alignments);
+      lodMgr->getAllAlignments(alignments);
       for (size_t i = 0; i < alignments.size(); ++i)
       {
         const Genome* qGenome = alignments[i]->openGenome(qSpecies);
         const Genome* tGenome = alignments[i]->openGenome(tSpecies);
         const Sequence* tSpecies = tGenome ? tGenome->getSequence(tChrom) : 0;
         if (tSpecies != NULL && qGenome != NULL && 
-            tStart < tSpecies->getSequenceLength()
+            tStart < tSpecies->getSequenceLength() &&
             tEnd <= tSpecies->getSequenceLength())
         {
           set<const Genome*> tgts;
           tgts.insert(qGenome);
           tgts.insert(tGenome);
-          ColumnIteratrPtr colIt = tSpecies->getColumnIterator(&tgts, 0, tStart);
+          ColumnIteratorConstPtr colIt = tSpecies->getColumnIterator(&tgts, 0, tStart);
           colIt = tSpecies->getColumnIterator(&tgts, 0, tEnd - 1);
         }
       }
