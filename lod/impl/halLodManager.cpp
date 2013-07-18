@@ -49,16 +49,10 @@ void LodManager::loadLODFile(const string& lodPath,
                              CLParserConstPtr options)
 {
   _map.clear();
-  bool loadAll = false;
+  bool loadAll = needPreload(lodPath);
 
 #ifdef ENABLE_UDC
-  char* cpath = const_cast<char*>(lodPath.c_str());
-  if (lodPath.find("http") == 0)
-  {
-    unsigned long cpathAge = udcCacheAge(cpath, NULL);
-    loadAll = cpathAge > MaxAgeSec;
-  }
-  
+  char* cpath = const_cast<char*>(lodPath.c_str());  
   size_t cbufSize = 0;
   char* cbuffer = udcFileReadAll(cpath, NULL, 100000, &cbufSize);
   if (cbuffer == NULL)
@@ -146,6 +140,29 @@ AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength,
   }
   assert(mapIt->second.second.get() != NULL);
   return alignment;
+}
+
+void LodManager::getAllAlignments(vector<AlignmentConstPtr>& outAlignments)
+{
+  outAlignments.clear();
+  for (AlignmentMap::iterator i = _map.begin(); i != _map.end(); ++i)
+  {
+    outAlignments.push_back(i->second.second);
+  }
+}
+
+bool LodManager::needPreload(const string& path)
+{
+  bool ret = false;
+#ifdef ENABLE_UDC
+  if (path.find("http") == 0)
+  {
+    unsigned long cpathAge = udcCacheAge(
+      const_cast<char*>path.c_str(), NULL);
+    ret = cpathAge > MaxAgeSec;
+  }
+#endif
+  return ret;
 }
 
 string LodManager::resolvePath(const string& lodPath,

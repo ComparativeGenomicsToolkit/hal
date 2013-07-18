@@ -110,6 +110,16 @@ int halOpenLOD(char *lodFilePath);
 */
 int halOpen(char *halFilePath);
 
+/** Prefetch some information in a separate process 
+ * Params same as halGetBlocksInTargetRange */
+void halPrefetchLOD(char* lodFilePath, char* qSpecies,
+                    char* tSpecies,
+                    char* tChrom,
+                    hal_int_t tStart, 
+                    hal_int_t tEnd,
+                    int getSequenceString,
+                    int doDupes);
+
 /** Close a HAL alignment, given its handle
  * @param halHandle previously obtained from halOpen 
  * @return 0: success -1: failure
@@ -153,7 +163,6 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       int getSequenceString,
                                                       int doDupes);
  
-
 /** Create a linked list of the species in the hal file.
  * @param halHandle handle for the HAL alignment obtained from halOpen
  * @return  species structure -- must be freed by client */

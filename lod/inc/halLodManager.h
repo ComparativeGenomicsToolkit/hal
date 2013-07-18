@@ -45,6 +45,13 @@ public:
    AlignmentConstPtr getAlignment(hal_size_t queryLength, 
                                   bool needDNA);
 
+   /** Get an alignment for each level of detail */
+   void getAllAlignments(std::vector<AlignmentConstPtr>& outAlignments);
+   
+   /** Check if the path is older than MaxAgeSec (always false if 
+       UDC not enabled */
+   static bool needPreload(const std::string& path);
+
    /** Maximum age of a URL in seconds such that we dont try to 
     * preload headers for all the HAL files */
    static const unsigned long MaxAgeSec;

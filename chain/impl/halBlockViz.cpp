@@ -21,6 +21,8 @@
 
 #ifdef ENABLE_UDC
 #include <pthread.h>
+#include <sys/types.h>
+#include <unistd.h>
 static pthread_mutex_t HAL_MUTEX;
 #define HAL_LOCK pthread_mutex_lock(&HAL_MUTEX);
 #define HAL_UNLOCK pthread_mutex_unlock(&HAL_MUTEX);
@@ -35,7 +37,7 @@ using namespace hal;
 typedef map<int, pair<string, LodManagerPtr> > HandleMap;
 static HandleMap handleMap;
 
-static int halOpenLodOrHal(char* inputPath, bool isLod);
+static int halOpenLodOrHal(char* inputPath, bool isLod, bool lock = true);
 static void checkHandle(int handle);
 static void checkGenomes(int halHandle, 
                          AlignmentConstPtr alignment, const string& qSpecies,
@@ -81,9 +83,12 @@ extern "C" int halOpen(char* halFilePath)
   return halOpenLodOrHal(halFilePath, false);
 }
 
-int halOpenLodOrHal(char* inputPath, bool isLod)
+int halOpenLodOrHal(char* inputPath, bool isLod, bool lock)
 {
-  HAL_LOCK
+  if (lock == true)
+  {
+    HAL_LOCK
+  }
   int handle = -1;
   try
   {
@@ -130,8 +135,52 @@ int halOpenLodOrHal(char* inputPath, bool isLod)
     cerr << "Error opening " << inputPath << endl;
     handle = -1;
   }
-  HAL_UNLOCK
+  if (lock == true)
+  {
+    HAL_UNLOCK
+  }
   return handle;
+}
+
+extern "C" void halPrefetchLOD(char* lodFilePath, char* qSpecies,
+                               char* tSpecies,
+                               char* tChrom,
+                               hal_int_t tStart, 
+                               hal_int_t tEnd,
+                               int getSequenceString,
+                               int doDupes)
+{
+#ifdef ENABLE_UDC
+  if (LodManager::needPreload(lodFilePath) == true)
+  {
+    pid_t childPid = fork();
+    if (pid_t == 0)
+    {
+      // child process;
+      int handle = halOpenLodOrHal(lodFilePath, true, false);
+      assert(handleMap.size() == 1);
+      LodManagerPtr lodMgr = handleMap.find(handle)->second;
+      vector<AlignmentConstPtr> alignments;
+      lodManger->getAllAlignments(alignments);
+      for (size_t i = 0; i < alignments.size(); ++i)
+      {
+        const Genome* qGenome = alignments[i]->openGenome(qSpecies);
+        const Genome* tGenome = alignments[i]->openGenome(tSpecies);
+        const Sequence* tSpecies = tGenome ? tGenome->getSequence(tChrom) : 0;
+        if (tSpecies != NULL && qGenome != NULL && 
+            tStart < tSpecies->getSequenceLength()
+            tEnd <= tSpecies->getSequenceLength())
+        {
+          set<const Genome*> tgts;
+          tgts.insert(qGenome);
+          tgts.insert(tGenome);
+          ColumnIteratrPtr colIt = tSpecies->getColumnIterator(&tgts, 0, tStart);
+          colIt = tSpecies->getColumnIterator(&tgts, 0, tEnd - 1);
+        }
+      }
+    }
+  }
+#endif
 }
 
 extern "C" int halClose(int handle)
