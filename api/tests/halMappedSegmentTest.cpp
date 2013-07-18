@@ -922,7 +922,7 @@ CuSuite* halMappedSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck1);
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck2);
   SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
-  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
+  // SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
   // SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
   return suite;
 }

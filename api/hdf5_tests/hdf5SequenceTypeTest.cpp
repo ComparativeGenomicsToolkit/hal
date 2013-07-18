@@ -66,47 +66,59 @@ void hdf5SequenceTypeTest(CuTest *testCase)
       setup();
       try 
       {
-        CompType datatype = HDF5Sequence::dataType(length);
+        CompType idxDatatype = HDF5Sequence::idxDataType();
+        StrType nameDatatype = HDF5Sequence::nameDataType(length);
         H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
 
-        HDF5ExternalArray myArray;
+        HDF5ExternalArray myIdxArray;
+        HDF5ExternalArray myNameArray;
         DSetCreatPropList cparms;
         if (chunkSize > 0)
         {
           cparms.setChunk(1, &chunkSize);
         }
-        myArray.create(&file, datasetName, datatype, N, &cparms);
+        myIdxArray.create(&file, datasetName, idxDatatype, N + 1, &cparms);
+        myNameArray.create(&file, datasetName + "_n", nameDatatype, N, 
+                           &cparms);
         hal_size_t totalTopSegments = 0;
         hal_size_t totalBottomSegments = 0;
+        hal_index_t startPosition = 0;
         for (hsize_t i = 0; i < N; ++i)
         {
-          HDF5Sequence sequence(NULL, &myArray, i);
+          HDF5Sequence sequence(NULL, &myIdxArray, &myNameArray, i);
           Sequence::Info seqInfo(genName(i, length), i * 2, i * 3, i * 4);
-          sequence.set(i, seqInfo, totalTopSegments, totalBottomSegments);
+          sequence.set(startPosition, seqInfo, totalTopSegments, 
+                       totalBottomSegments);
+          startPosition += i * 2;
           totalTopSegments += seqInfo._numTopSegments;
           totalBottomSegments += seqInfo._numBottomSegments;
         }
-        myArray.write();
+        myIdxArray.write();
+        myNameArray.write();
         file.flush(H5F_SCOPE_LOCAL);
         file.close();
 
         H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);
-        HDF5ExternalArray readArray;
-        readArray.load(&rfile, datasetName);
-
+        HDF5ExternalArray readIdxArray;
+        HDF5ExternalArray readNameArray;
+        readIdxArray.load(&rfile, datasetName);
+        readNameArray.load(&rfile, datasetName + "_n");
+        
+        startPosition = 0;
         for (hsize_t i = 0; i < N; ++i)
         {
-          HDF5Sequence sequence(NULL, &readArray, i);
+          HDF5Sequence sequence(NULL, &readIdxArray, &readNameArray, i);
           CuAssertTrue(testCase,
                        sequence.getName() == genName(i, length));
           CuAssertTrue(testCase, 
-                       sequence.getStartPosition() == (hal_index_t)i);
+                       sequence.getStartPosition() == startPosition);
           CuAssertTrue(testCase,
                        sequence.getSequenceLength() == i * 2);
           CuAssertTrue(testCase,
                        sequence.getNumTopSegments() == i * 3);
           CuAssertTrue(testCase,
                        sequence.getNumBottomSegments() == i * 4);
+          startPosition += i * 2;
         }
       }
       catch(Exception& exception)

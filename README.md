@@ -1,6 +1,6 @@
-Hierarchical Alignment (HAL) Format API (v1.4)
+Hierarchical Alignment (HAL) Format API (v2.0)
 =====
-Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
+Copyright (C) 2012 - 2013 by Glenn Hickey (hickey@soe.ucsc.edu)
 Released under the MIT license, see LICENSE.txt
 
 HAL is a structure to efficiently store and index multiple genome alignments and ancestral reconstructions.  HAL is a graph-based representation which provides several advantages over matrix/block-based formats such as MAF, such as improved scalability and the ability to perform queries with respect to an arbitrary reference or subtree. 
@@ -84,7 +84,7 @@ Those without the UCSC genome browser already installed locally will probably fi
 
 #### Optional support of PhyloP evolutionary constraint annotation
 
-PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  In order to enable this support, Phast must be installed.  We recommend downloading the latest source using Subversion.  Note that PhyloP support and UDC support cannot be currently enabled at the same time.
+PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  In order to enable this support, Phast must be installed.  We recommend downloading the latest source using Subversion. 
 
 From the same parent directory where you downloaded HAL:
 

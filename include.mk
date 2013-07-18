@@ -15,7 +15,7 @@ cflags += -I${sonLibPath}
 cppflags += -I${sonLibPath}
 
 basicLibs = ${sonLibPath}/sonLib.a ${sonLibPath}/cuTest.a
-basicLibsDependencies = ${sonLibPath}/cuTest.a 
+basicLibsDependencies = ${basicLibs}
 
 # hdf5 compilation is done through its wrappers.
 # we can speficy our own (sonlib) compilers with these variables:
