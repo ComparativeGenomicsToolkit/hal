@@ -97,7 +97,7 @@ def extractGeneMAFs(options):
             os.remove(mafFile)
         else:
             remove2ndLine(mafFile)
-            #runShellCommand("msa_view -o SS --in-format MAF %s > %s" % (
+            #runShellCommand("msa_view -o SS -z --in-format MAF %s > %s" % (
             #mafFile, mafFile.replace(".maf", ".SS")))
     if len(glob.glob(options.outMafAllPaths)) < 1:
         raise RuntimeError("Given BED files do not overlap alignment")
@@ -138,8 +138,12 @@ def computeAgMAFStats(options):
                                                                 ".maf-e"))
 
 def computeFit(options):
+    if options.tree is not None:
+        tree = options.tree
+    else:
+        tree = getHalTree(options.hal)
     runShellCommand("phyloFit --tree \"%s\" --subst-mod SSREV --sym-freqs %s --out-root %s" % (
-        getHalTree(options.hal), options.outMafSS, 
+        tree, options.outMafSS, 
         os.path.splitext(options.outMod)[0]))
     runShellCommand("rm -f %s" % options.outMafSS)
 
@@ -199,8 +203,14 @@ def main(argv=None):
     parser.add_argument("--sliceSize",
                         help="Slice size for hal2maf.",
                         type=int, default=None)
+    parser.add_argument("--tree",
+                        help="String describing phylogeny in NEWICK format "
+                        "that will be used instead of the tree stored in the"
+                        " HAL file.  This tree should contain all the species"
+                        " in the alignment. Note that it is best to enclose"
+                        " this string in quotes",
+                        default=None)
 
-    
     args = parser.parse_args()
 
     if not os.path.isfile(args.hal):
