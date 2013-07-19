@@ -9,7 +9,7 @@ libTestsHeaders = $(wildcard tests/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 
-all : ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome
+all : ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome ${binPath}/replaceGenome
 
 clean : 
 	rm ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome copyGenomes.o
@@ -25,3 +25,6 @@ ${binPath}/insertAlignedGenome: insertAlignedGenome.cpp copyGenomes.o ${libPath}
 
 ${binPath}/addNewLeafGenome: addNewLeafGenome.cpp copyGenomes.o ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/addNewLeafGenome addNewLeafGenome.cpp ${libPath}/halLib.a ${basicLibs} copyGenomes.o
+
+${binPath}/replaceGenome: replaceGenome.cpp copyGenomes.o ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/replaceGenome replaceGenome.cpp ${libPath}/halLib.a ${basicLibs} copyGenomes.o
