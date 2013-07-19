@@ -238,12 +238,6 @@ void printSequence(ostream& outStream, halPhyloP *phyloP,
   const Genome* genome = sequence->getGenome();
   string sequenceName = sequence->getName();
   string genomeName = genome->getName();
-  /** A hack to take the genome name out of the chromosome name.  Should
-   * be largely unnecessary now that our naming conventions are better */
-  if (sequenceName.find(genomeName + '.') == 0)
-  {
-    sequenceName = sequenceName.substr(genomeName.length() + 1);
-  }
 
   /** The ColumnIterator is fundamental structure used in this example to
    * traverse the alignment.  It essientially generates the multiple alignment
