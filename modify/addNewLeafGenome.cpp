@@ -17,7 +17,6 @@ static CLParserPtr initParser()
   return optionsParser;
 }
 
-
 int main(int argc, char *argv[])
 {
   CLParserPtr optParser = initParser();

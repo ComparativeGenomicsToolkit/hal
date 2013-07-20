@@ -123,6 +123,51 @@ public:
     * AlignmentConstPtr object since its memory is already spoken for */
    virtual const Alignment* getAlignment() const = 0;
 
+   /** Copy all information from this genome to another. The genomes
+    * must be in different alignments. The genome must not have
+    * uninitialized data.
+    * @param dest Genome to be copied to */
+   void copy(Genome *dest) const;
+
+   /** Copy all dimensions (sequence, top, and bottom) from this
+    * genome to another.
+    * @param dest Genome to be copied to */
+   void copyDimensions(Genome *dest) const;
+
+   /** Copy top dimensions from this genome to another (the genomes can be in
+    * different alignment)
+    * @param dest Genome to be copied to */
+   void copyTopDimensions(Genome *dest) const;
+
+   /** Copy bottom dimensions from this genome to another (the genomes can be in
+    * different alignments)
+    * @param dest Genome to be copied to */
+   void copyBottomDimensions(Genome *dest) const;
+
+   /** Copy top segments from this genome to another (the genomes can be in
+    * different alignments)
+    * @param dest Genome to be copied to */
+   void copyTopSegments(Genome *dest) const;
+
+   /** Copy bottom segments from this genome to another. The genomes
+    * must be in different alignments. The child indices do not have
+    * to be consistent between the genomes.
+    * @param dest Genome to be copied to */
+   void copyBottomSegments(Genome *dest) const;
+
+   /** Copy sequence from this genome to another (the genomes can be
+    * in different alignments).
+    * @param dest Genome to be copied to */
+   void copySequence(Genome *dest) const;
+
+   /** Copy metadata from this genome to another (the genomes can be
+    * in different alignments).
+    * @param dest Genome to be copied to */
+   void copyMetadata(Genome *dest) const;
+
+   /** Recompute parse info for this genome. */
+   void fixParseInfo();
+
 protected:
 
    /** Destructor */
