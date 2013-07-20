@@ -1,5 +1,4 @@
 #include "hal.h"
-#include "copyGenomes.h"
 
 using namespace std;
 using namespace hal;
@@ -41,14 +40,13 @@ int main(int argc, char *argv[])
   Genome *outLeafGenome = mainAlignment->addLeafGenome(leafName, parentName,
                                                        leafBranchLength);
   const Genome *inLeafGenome = subtreeAlignment->openGenome(leafName);
-  copyAllDimensions(subtreeAlignment, inLeafGenome, outLeafGenome);
-  copyGenomeWithoutBotSegments(inLeafGenome, outLeafGenome);
+  inLeafGenome->copy(outLeafGenome);
     
   Genome *outParentGenome = mainAlignment->openGenome(parentName);
   const Genome *inParentGenome = subtreeAlignment->openGenome(parentName);
-  copyBotDimensions(inParentGenome, outParentGenome);
-  copyBotSegments(inParentGenome, outParentGenome);
-  fixParseInfo(outParentGenome);
+  inParentGenome->copyBottomDimensions(outParentGenome);
+  inParentGenome->copyBottomSegments(outParentGenome);
+  outParentGenome->fixParseInfo();
 
   // Fix the parent's other children as well.
   vector<string> allChildren = mainAlignment->getChildNames(parentName);
@@ -58,9 +56,9 @@ int main(int argc, char *argv[])
     {
       Genome *outGenome = mainAlignment->openGenome(allChildren[i]);
       const Genome *inGenome = subtreeAlignment->openGenome(allChildren[i]);
-      copyTopDimensions(inGenome, outGenome);
-      copyGenomeWithoutBotSegments(inGenome, outGenome);
-      fixParseInfo(outGenome);            
+      inGenome->copyTopDimensions(outGenome);
+      inGenome->copyTopSegments(outGenome);
+      outGenome->fixParseInfo();
     }
   }
 }

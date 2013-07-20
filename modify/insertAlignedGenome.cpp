@@ -1,5 +1,4 @@
 #include "hal.h"
-#include "copyGenomes.h"
 
 using namespace std;
 using namespace hal;
@@ -58,19 +57,21 @@ int main(int argc, char *argv[])
   Genome *insertGenome = mainAlignment->openGenome(insertName);
   const Genome *topInsertGenome = topAlignment->openGenome(insertName);
   const Genome *botInsertGenome = botAlignment->openGenome(insertName);
-  copyAllDimensions(topAlignment, topInsertGenome, insertGenome);
-  copyTopDimensions(topInsertGenome, insertGenome);
-  copyBotDimensions(botInsertGenome, insertGenome);
-  copyGenomeWithoutBotSegments(topInsertGenome, insertGenome);
-  copyBotSegments(botInsertGenome, insertGenome);
-  fixParseInfo(insertGenome);
+  topInsertGenome->copyDimensions(insertGenome);
+  topInsertGenome->copyTopDimensions(insertGenome);
+  botInsertGenome->copyBottomDimensions(insertGenome);
+  topInsertGenome->copySequence(insertGenome);
+  topInsertGenome->copyTopSegments(insertGenome);
+  topInsertGenome->copyMetadata(insertGenome);
+  botInsertGenome->copyBottomSegments(insertGenome);
+  insertGenome->fixParseInfo();
 
   // Copy the bottom segments for the parent genome from the top alignment.
   Genome *parentGenome = mainAlignment->openGenome(parentName);
   const Genome *botParentGenome = topAlignment->openGenome(parentName);
-  copyBotDimensions(botParentGenome, parentGenome);
-  copyBotSegments(botParentGenome, parentGenome);
-  fixParseInfo(parentGenome);
+  botParentGenome->copyBottomDimensions(parentGenome);
+  botParentGenome->copyBottomSegments(parentGenome);
+  parentGenome->fixParseInfo();
 
   // Fix the parent's other children as well.
   vector<string> allChildren = mainAlignment->getChildNames(parentName);
@@ -80,9 +81,9 @@ int main(int argc, char *argv[])
     {
       Genome *outGenome = mainAlignment->openGenome(allChildren[i]);
       const Genome *topSegmentsGenome = topAlignment->openGenome(allChildren[i]);
-      copyTopDimensions(topSegmentsGenome, outGenome);
-      copyGenomeWithoutBotSegments(topSegmentsGenome, outGenome);
-      fixParseInfo(outGenome);
+      topSegmentsGenome->copyTopDimensions(outGenome);
+      topSegmentsGenome->copyTopSegments(outGenome);
+      outGenome->fixParseInfo();
             
     }
   }
@@ -90,15 +91,14 @@ int main(int argc, char *argv[])
   // Copy the top segments for the child genome from the bottom alignment.
   Genome *childGenome = mainAlignment->openGenome(childName);
   const Genome *topChildGenome = botAlignment->openGenome(childName);
-  copyTopDimensions(topChildGenome, childGenome);
-  copyGenomeWithoutBotSegments(topChildGenome, childGenome);
-  fixParseInfo(childGenome);
+  topChildGenome->copyTopDimensions(childGenome);
+  topChildGenome->copyTopSegments(childGenome);
+  childGenome->fixParseInfo();
 
   // Copy the entire genome for the leaf from the bottom alignment.
   Genome *outLeafGenome = mainAlignment->openGenome(leafName);
   const Genome *inLeafGenome = botAlignment->openGenome(leafName);
-  copyAllDimensions(botAlignment, inLeafGenome, outLeafGenome);
-  copyGenomeWithoutBotSegments(inLeafGenome, outLeafGenome);
+  inLeafGenome->copy(outLeafGenome);
 
   mainAlignment->close();
   botAlignment->close();

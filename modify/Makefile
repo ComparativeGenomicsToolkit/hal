@@ -1,3 +1,4 @@
+
 rootPath = ../
 include ../include.mk
 
@@ -12,19 +13,16 @@ libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 all : ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome ${binPath}/replaceGenome
 
 clean : 
-	rm ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome copyGenomes.o
+	rm ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome
 
 ${binPath}/halRemoveGenome: halRemoveGenome.cpp ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halRemoveGenome halRemoveGenome.cpp ${libPath}/halLib.a ${basicLibs}
 
-copyGenomes.o: copyGenomes.cpp
-	${cpp} -c ${cppflags} -I ${libPath} -o copyGenomes.o copyGenomes.cpp
+${binPath}/insertAlignedGenome: insertAlignedGenome.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/insertAlignedGenome insertAlignedGenome.cpp ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/insertAlignedGenome: insertAlignedGenome.cpp copyGenomes.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/insertAlignedGenome insertAlignedGenome.cpp ${libPath}/halLib.a ${basicLibs} copyGenomes.o
+${binPath}/addNewLeafGenome: addNewLeafGenome.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/addNewLeafGenome addNewLeafGenome.cpp ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/addNewLeafGenome: addNewLeafGenome.cpp copyGenomes.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/addNewLeafGenome addNewLeafGenome.cpp ${libPath}/halLib.a ${basicLibs} copyGenomes.o
-
-${binPath}/replaceGenome: replaceGenome.cpp copyGenomes.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/replaceGenome replaceGenome.cpp ${libPath}/halLib.a ${basicLibs} copyGenomes.o
+${binPath}/replaceGenome: replaceGenome.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/replaceGenome replaceGenome.cpp ${libPath}/halLib.a ${basicLibs}
