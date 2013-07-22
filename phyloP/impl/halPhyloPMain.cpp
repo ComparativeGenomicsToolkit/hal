@@ -11,6 +11,8 @@
 #include <fstream>
 #include <algorithm>
 #include "halPhyloP.h"
+#include "halPhyloPBed.h"
+
 #undef min
 using namespace std;
 using namespace hal;
@@ -61,6 +63,10 @@ static CLParserPtr initParser()
                            "\"soft\": mask species where duplications occur.",
                            "soft");
   optionsParser->addOption("step", "step size", 1);
+  optionsParser->addOption("refBed", "Bed file with coordinates to "
+                           "annotate in the reference genome (or \"stdin\") "
+                           "to stream from standard input", "\"\"");
+  
   optionsParser->setDescription("Make PhyloP wiggle plot for a genome.");
   return optionsParser;
 }
@@ -78,6 +84,7 @@ int main(int argc, char** argv)
   hal_size_t start;
   hal_size_t length;
   hal_size_t step;
+  string refBedPath;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -92,6 +99,7 @@ int main(int argc, char** argv)
     dupType = optionsParser->getOption<string>("dupType");
     dupMask = optionsParser->getOption<string>("dupMask");
     std::transform(dupMask.begin(), dupMask.end(), dupMask.begin(), ::tolower);
+    refBedPath = optionsParser->getOption<string>("refBed");
   }
   catch(exception& e)
   {
@@ -158,8 +166,27 @@ int main(int argc, char** argv)
     PhyloP phyloP;
     phyloP.init(alignment, modPath, &outStream, dupMask == "soft" , dupType);
 
-    printGenome(&phyloP, refGenome, refSequence, start, length, step);
-    
+    ifstream refBedStream;
+    if (refBedPath != "\"\"")
+    {
+      ifstream bedFileStream;
+      if (refBedPath != "stdin")
+      {
+        bedFileStream.open(refBedPath.c_str());
+        if (!refBedStream)
+        {
+          throw hal_exception("Error opening " + refBedPath);
+        }
+      }
+      istream& bedStream = refBedPath != "stdin" ? bedFileStream : cin;
+      PhyloPBed phyloPBed(alignment, refGenome, refSequence, step, phyloP, 
+                          outStream);
+      phyloPBed.scan(&bedStream);
+    }
+    else
+    {
+      printGenome(&phyloP, refGenome, refSequence, start, length, step);
+    }
   }
   catch(hal_exception& e)
   {

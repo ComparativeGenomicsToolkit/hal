@@ -15,7 +15,7 @@ endif
 clean : 
 	rm -f ${libPath}/halPhyloP.a ${libPath}/halPhyloP.h ${binPath}/halPhyloP *.o ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py
 
-${libPath}/halPhyloP.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
+${libPath}/halPhyloP.a : ${libSources} ${libHeaders} ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
 	${cpp} ${phyloPcppflags} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
 	ar rc halPhyloP.a *.o
@@ -23,8 +23,8 @@ ${libPath}/halPhyloP.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basic
 	rm *.o
 	mv halPhyloP.a ${libPath}/
 
-${binPath}/halPhyloP : impl/halPhyloPMain.cpp ${libPath}/halPhyloP.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${phyloPcppflags} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halPhyloP impl/halPhyloPMain.cpp ${libPath}/halPhyloP.a ${libPath}/halLib.a ${basicLibs} ${phyloPlibs}
+${binPath}/halPhyloP : impl/halPhyloPMain.cpp ${libPath}/halPhyloP.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${phyloPcppflags} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halPhyloP impl/halPhyloPMain.cpp ${libPath}/halPhyloP.a ${libPath}/halLib.a ${libPath}/halLiftover.a ${basicLibs} ${phyloPlibs}
 	rm *.o
 
 ${binPath}/halPhyloPTrain.py : halPhyloPTrain.py
