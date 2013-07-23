@@ -231,8 +231,8 @@ int main(int argc, char** argv)
         }
       }
       istream& bedStream = refTargetsPath != "stdin" ? bedFileStream : cin;
-      MafBed mafBed(mafStream, alignment, refGenome, refSequence,
-                    targetSet, mafExport);
+      MafBed mafBed(mafStream, alignment, refGenome, refSequence, start,
+                    length, targetSet, mafExport);
       mafBed.scan(&bedStream);
     }
     else

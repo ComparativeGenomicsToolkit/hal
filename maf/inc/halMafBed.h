@@ -24,6 +24,7 @@ public:
 
    MafBed(std::ostream& mafStream, AlignmentConstPtr alignment,
           const Genome* refGenome, const Sequence* refSequence,
+          hal_index_t refStart, hal_size_t refLength,
           std::set<const Genome*>& targetSet,
           MafExport& mafExport);
    virtual ~MafBed();
@@ -40,6 +41,8 @@ protected:
    AlignmentConstPtr _alignment;
    const Genome* _refGenome;
    const Sequence* _refSequence;
+   hal_index_t _refStart;
+   hal_size_t _refLength;
    std::set<const Genome*>& _targetSet;
    MafExport& _mafExport;
 };
