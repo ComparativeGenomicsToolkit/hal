@@ -105,9 +105,6 @@ def liftoverBedFiles(indir, halfile, genome2seq2len, bigbeddir, outdir):
                 continue
             liftovertempbed = "%s.bed" % os.path.join(genomeoutdir, othergenome)
             system("halLiftover %s %s %s %s %s" %(halfile, genome, tempbed, othergenome, liftovertempbed))
-            #if re.search("Anc", othergenome): #HACK
-            #    system("awk ' $0 !~ /#/ {split($1, arr, \".\"); print arr[2] \"\t\" $2 \"\t\" $3 \"\t\" $4} ' %s > %s-reformat" %(liftovertempbed, liftovertempbed))
-            #    system("mv %s-reformat %s" %(liftovertempbed, liftovertempbed))
             system("bedSort %s %s" %(liftovertempbed, liftovertempbed))
             outbigbed = os.path.join(genomeoutdir, "%s.bb" %othergenome)
             chrsizefile = os.path.join(outdir, othergenome, "chrom.sizes")
@@ -150,15 +147,17 @@ def getAlignability(genomedir, genome, halfile):
     system("wigToBigWig %s %s %s" %(tempwig, chrsizefile, outfile))
     system("rm -f %s" %tempwig)
 
-def getBasicFiles(halfile, genome2seq2len, outdir):
+def getBasicFiles(halfile, genome2seq2len, outdir, options):
     for genome, seq2len in genome2seq2len.iteritems():
         genomedir = os.path.join(outdir, genome)
         system("mkdir -p %s" % genomedir)
 
         makeTwoBitSeqFile(genome, halfile, genomedir) #genomedir/genome.2bit
         getChromSizes(halfile, seq2len, os.path.join(genomedir, "chrom.sizes")) #genomedir/chrom.sizes
-        getCGpercent(genomedir, genome) #genomedir/genome.cg.bw
-        getAlignability(genomedir, genome, halfile) #genomedir/genome.alignability.bw
+        if options.gcContent:
+            getCGpercent(genomedir, genome) #genomedir/genome.cg.bw
+        if options.alignability:
+            getAlignability(genomedir, genome, halfile) #genomedir/genome.alignability.bw
 
 def writeTrackDb_cgPercent(f, genome):
     f.write("track cgPercent\n")
@@ -265,8 +264,10 @@ def writeTrackDbFile(genomes, halfile, outdir, options):
     filename = os.path.join(outdir, "trackDb.txt")
     f = open(filename, 'w')
     
-    writeTrackDb_cgPercent(f, currgenome)
-    writeTrackDb_alignability(f, currgenome, len(genomes))
+    if options.gcContent:
+        writeTrackDb_cgPercent(f, currgenome)
+    if options.alignability:
+        writeTrackDb_alignability(f, currgenome, len(genomes))
 
     if options.bigbeddir:
         writeTrackDb_bigbeds(f, options.bigbeddir, genomes, currgenome)
@@ -453,6 +454,8 @@ def addOptions(parser):
     parser.add_option('--email', dest='email', default='NoEmail', help='the contact to whom questions regarding the track hub should be directed. Default=%default')
     parser.add_option('--bedDir', dest='beddir', help='Directory containing bed files of the input genomes. Format: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
     parser.add_option('--rmskDir', dest='rmskdir', help="Directory containing repeatMasker's output files for each genome. Format: rmskDir/ then genome1/ then genome.rmsk.SINE.bb, genome.rmsk.LINE.bb, ... Default=%default")
+    parser.add_option('--gcContent', dest='gcContent', action='store_true', default=False, help='If specified, make GC-content tracks. Default=%default')
+    parser.add_option('--alignability', dest='alignability', action='store_true', default=False, help='If specified, make Alignability tracks. Default=%default')
 
 def checkOptions(parser, args, options):
     if len(args) < 2:
@@ -480,7 +483,7 @@ def main():
     genome2seq2len = getGenomeSequences(halfile, genomes)
   
     #Get basic files (2bit, chrom.sizes, alignability, CG%) for each genome:
-    getBasicFiles(halfile, genome2seq2len, outdir)
+    getBasicFiles(halfile, genome2seq2len, outdir, options)
 
     #Lift-over gene annotations of each sample to all other samples
     options.bigbeddir = None
