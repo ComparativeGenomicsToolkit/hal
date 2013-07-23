@@ -23,7 +23,6 @@ static void printGenome(PhyloP *phyloP,
                         const Genome* genome, const Sequence* sequence,
                         hal_size_t start, hal_size_t length, hal_size_t step);
 
-static const hal_size_t StringBufferSize = 1024;
 
 static CLParserPtr initParser()
 {
@@ -179,8 +178,8 @@ int main(int argc, char** argv)
         }
       }
       istream& bedStream = refBedPath != "stdin" ? bedFileStream : cin;
-      PhyloPBed phyloPBed(alignment, refGenome, refSequence, step, phyloP, 
-                          outStream);
+      PhyloPBed phyloPBed(alignment, refGenome, refSequence, 
+                          start, length, step, phyloP, outStream);
       phyloPBed.scan(&bedStream);
     }
     else
