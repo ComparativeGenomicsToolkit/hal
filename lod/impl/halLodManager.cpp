@@ -223,8 +223,9 @@ void LodManager::preloadAlignments()
     if (alignment->getNumGenomes() > 0)
     {
       const Genome* root = alignment->openGenome(alignment->getRootName()); 
-      set<const Genome*> genomeSet;
-      getGenomesInSubTree(root, genomeSet);
+      (void)root;
+//      set<const Genome*> genomeSet;
+//      getGenomesInSubTree(root, genomeSet);
      }
   }
 }

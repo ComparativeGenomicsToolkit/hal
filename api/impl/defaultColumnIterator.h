@@ -35,7 +35,8 @@ public:
 
    // COLUMN ITERATOR INTERFACE
    virtual void toRight() const;
-   virtual void toSite(hal_index_t columnIndex, hal_index_t lastIndex) const;
+   virtual void toSite(hal_index_t columnIndex, hal_index_t lastIndex,
+                       bool clearCache) const;
    virtual bool lastColumn() const;
    virtual const hal::Genome* getReferenceGenome() const;
    virtual const hal::Sequence* getReferenceSequence() const;

@@ -7,9 +7,9 @@
 #Wed Apr 10 15:30:53 PDT 2013
 #
 #Generates necessary files to make assembly hub
-#Input: 1/ Output directory (e.g ~nknguyen/public_html/ecoli/hub/testhubs)
+#Input: 1/ Output directory 
 #       2/ hal file of the multiple alignment
-#       4/ (Optional: directory containing annotated bed files. e.g : genes)
+#       3/ (Optional: directory containing annotated bed files. e.g : genes)
 #Output:
 #   outdir/
 #       hub.txt
@@ -53,16 +53,12 @@ def getGenomeSequences(halfile, genomes):
             genome2seq2len[genome] = seq2len
     return genome2seq2len
 
-def getChromSizes(halfile, genome2seq2len, outdir):
-    #Get chrom.sizes for all genomes
-    #Output to outdir/genomeChr.sizes for each genome
-    for genome, seq2len in genome2seq2len.iteritems():
-        outfile = os.path.join(outdir, genome)
-        f = open(outfile, 'w')
-        for s, l in seq2len.iteritems():
-            if l > 0:
-                f.write("%s\t%d\n" %(s, l))
-        f.close()
+def getChromSizes(halfile, seq2len, outfile):
+    f = open(outfile, 'w')
+    for s, l in seq2len.iteritems():
+        if l > 0:
+            f.write("%s\t%d\n" %(s, l))
+    f.close()
 
 def getGenomesFromHal(halfile):
     #Get a list of all genomes from the output of halStats
@@ -78,14 +74,9 @@ def getGenomesFromHal(halfile):
     
     return genomes
 
-def liftoverBedFiles(indir, halfile, genome2seq2len, outdir):
+def liftoverBedFiles(indir, halfile, genome2seq2len, bigbeddir, outdir):
     #beddir has the hierachy: indir/genome/chr1.bed, chr2.bed...
     #for each genome in beddir, lifeover the bed records of that genome to the coordinate of all other genomes
-
-    #Get chr.sizes for all genomes:
-    chrsizedir = os.path.join(outdir, "chrsizes")
-    system("mkdir -p %s" %chrsizedir)
-    getChromSizes(halfile, genome2seq2len, chrsizedir)
 
     #liftover bed file of each genome with availabel beds to all genomes
     genomes = genome2seq2len.keys()
@@ -96,7 +87,7 @@ def liftoverBedFiles(indir, halfile, genome2seq2len, outdir):
         assert os.path.isdir(genomeindir)
 
         #Create bed directory for current genome
-        genomeoutdir = os.path.join(outdir, genome)
+        genomeoutdir = os.path.join(bigbeddir, genome)
         system("mkdir -p %s" %genomeoutdir)
 
         #Concatenate all the input bed files and convert it into bigbed to outdir/genome/genome.bb
@@ -105,7 +96,7 @@ def liftoverBedFiles(indir, halfile, genome2seq2len, outdir):
         system( "bedSort %s %s" % (tempbed, tempbed) )
 
         outbigbed = os.path.join(genomeoutdir, "%s.bb" %genome) 
-        chrsizefile = os.path.join(chrsizedir, genome)
+        chrsizefile = os.path.join(outdir, genome, "chrom.sizes")
         system( "bedToBigBed %s %s %s" %(tempbed, chrsizefile, outbigbed) )
 
         #Liftover to all other genomes:
@@ -114,19 +105,13 @@ def liftoverBedFiles(indir, halfile, genome2seq2len, outdir):
                 continue
             liftovertempbed = "%s.bed" % os.path.join(genomeoutdir, othergenome)
             system("halLiftover %s %s %s %s %s" %(halfile, genome, tempbed, othergenome, liftovertempbed))
-            if re.search("Anc", othergenome): #HACK
-                system("awk ' $0 !~ /#/ {split($1, arr, \".\"); print arr[2] \"\t\" $2 \"\t\" $3 \"\t\" $4} ' %s > %s-reformat" %(liftovertempbed, liftovertempbed))
-                system("mv %s-reformat %s" %(liftovertempbed, liftovertempbed))
-
             system("bedSort %s %s" %(liftovertempbed, liftovertempbed))
             outbigbed = os.path.join(genomeoutdir, "%s.bb" %othergenome)
-            chrsizefile = os.path.join(chrsizedir, othergenome)
+            chrsizefile = os.path.join(outdir, othergenome, "chrom.sizes")
             system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
             #Cleanup:
             system("rm %s" % liftovertempbed)
         system("rm %s" %tempbed) #cleanup
-    #Cleanup
-    system("rm -Rf %s" %chrsizedir)
 
 def makeTwoBitSeqFile(genome, halfile, outdir):
     fafile = os.path.join(outdir, "%s.fa" %genome)
@@ -143,15 +128,115 @@ def makeTwoBitSeqFile(genome, halfile, outdir):
     system("faToTwoBit %s %s" %(fafile2, twobitfile))
     system("rm %s" %fafile2)
 
+def getCGpercent(genomedir, genome):
+    twobitfile = os.path.join(genomedir, "%s.2bit" %genome)
+    tempfile = os.path.join(genomedir, "%s.gc.wigVarStep.gz" %genome)
+    cmd = "hgGcPercent -wigOut -doGaps -file=stdout -win=5 -verbose=0 %s %s | gzip -c > %s" %(genome, twobitfile, tempfile)
+    system(cmd)
+    chrsizefile = os.path.join(genomedir, "chrom.sizes")
+    gcfile = os.path.join(genomedir, "%s.gc.bw" %genome)
+    cmd = "wigToBigWig %s %s %s" %(tempfile, chrsizefile, gcfile)
+    system(cmd)
+    system("rm -f %s" %tempfile)
+
+def getAlignability(genomedir, genome, halfile):
+    outfile = os.path.join(genomedir, "%s.alignability.bw" %genome)
+    tempwig = os.path.join(genomedir, "%s.alignability.wig" %genome)
+    system("halAlignability %s %s > %s" %(halfile, genome, tempwig))
+    chrsizefile = os.path.join(genomedir, "chrom.sizes")
+    system("wigToBigWig %s %s %s" %(tempwig, chrsizefile, outfile))
+    system("rm -f %s" %tempwig)
+
+def getBasicFiles(halfile, genome2seq2len, outdir, options):
+    for genome, seq2len in genome2seq2len.iteritems():
+        genomedir = os.path.join(outdir, genome)
+        system("mkdir -p %s" % genomedir)
+
+        makeTwoBitSeqFile(genome, halfile, genomedir) #genomedir/genome.2bit
+        getChromSizes(halfile, seq2len, os.path.join(genomedir, "chrom.sizes")) #genomedir/chrom.sizes
+        if options.gcContent:
+            getCGpercent(genomedir, genome) #genomedir/genome.cg.bw
+        if options.alignability:
+            getAlignability(genomedir, genome, halfile) #genomedir/genome.alignability.bw
+
+def writeTrackDb_cgPercent(f, genome):
+    f.write("track cgPercent\n")
+    f.write("longLabel GC Percent in 5-base Window\n")
+    f.write("shortLabel GC Percent\n")
+    f.write("type bigWig 0 100\n")
+    f.write("group map\n")
+    f.write("visibility dense\n")
+    f.write("windowingFunction Mean\n")
+    f.write("bigDataUrl %s.gc.bw\n" %genome)
+    
+    f.write("priority 23.5\n")
+    f.write("autoScale Off\n")
+    f.write("maxHeightPixels 128:36:16\n")
+    f.write("graphTypeDefault Bar\n")
+    f.write("gridDefault OFF\n")
+    f.write("color 0,0,0\n")
+    f.write("altColor 128,128,128\n")
+    f.write("viewLimits 30:70\n")
+    f.write("\n")
+
+def writeTrackDb_alignability(f, genome, genomeCount):
+    f.write("track alignability\n")
+    f.write("longLabel Alignability\n")
+    f.write("shortLabel Alignability\n")
+    f.write("type bigWig 0 %d\n" %genomeCount)
+    f.write("group map\n")
+    f.write("visibility dense\n")
+    f.write("windowingFunction Mean\n")
+    f.write("bigDataUrl %s.alignability.bw\n" %genome)
+    
+    f.write("priority 23.5\n")
+    f.write("autoScale Off\n")
+    f.write("maxHeightPixels 128:36:16\n")
+    f.write("graphTypeDefault Bar\n")
+    f.write("gridDefault OFF\n")
+    f.write("color 0,0,0\n")
+    f.write("altColor 128,128,128\n")
+    f.write("viewLimits 0:%d\n" %genomeCount)
+    f.write("\n")
+    f.write("\n")
+
+def writeTrackDb_rmsk(f, rmskdir, genomedir):
+    if not os.path.exists(rmskdir):
+        return
+    f.write("track repeatMasker_\n")
+    f.write("compositeTrack on\n")
+    f.write("shortLabel RepeatMasker\n")
+    f.write("longLabel Repeating Elements by RepeatMasker\n")
+    f.write("group map\n")
+    f.write("visibility dense\n")
+    f.write("type bed 3 .")
+    f.write("noInherit on\n")
+    
+    system("ln -s %s %s" %(os.path.abspath(rmskdir), os.path.join(genomedir, "repeatMasker")))
+    files = os.listdir(rmskdir)
+    for i, file in enumerate(files):
+        element = file.split('.')[0]
+        f.write("\ttrack repeatMasker%s\n" %element)
+        f.write("\tparent repeatMasker_\n")
+        f.write("\tshortLabel %s\n" %element)
+        f.write("\tlongLabel %s Repeating Elements by RepeatMasker\n" %element)
+        f.write("\tpriority %d\n" %i)
+        f.write("\tspectrum on\n")
+        f.write("\tmaxWindowToDraw 10000000\n")
+        f.write("\tcolorByStrand 50,50,150 150,50,50\n")
+        f.write("\ttype bigBed 6 +\n")
+        f.write("\tbigDataUrl repeatMasker/%s.bb\n" %element)
+        f.write("\n")
+    f.write("\n")
+
 def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome):
     for genome in os.listdir(bigbeddir):
-        if genome == 'chrsizes':
-            continue
         f.write("track gene%s\n" % genome)
         f.write("longLabel %s Liftovered Genes\n" % genome)
         f.write("shortLabel %sgenes\n" % genome)
         f.write("bigDataUrl ../%s\n" % os.path.join( os.path.basename(bigbeddir), genome, "%s.bb" % currgenome ) )
         f.write("type bigBed 12\n")
+        f.write("group annotation\n")
         if genome == currgenome: 
             f.write("visibility dense\n")
         else:
@@ -164,22 +249,32 @@ def writeTrackDb_snakes(f, halfile, genomes, currgenome):
             continue
         #SNAKE TRACKS
         f.write("track snake%s\n" %genome)
-        f.write("longLabel %s Snake\n" %genome)
+        f.write("longLabel %s\n" %genome)
         f.write("shortLabel %s\n" %genome)
         f.write("otherSpecies %s\n" %genome)
         f.write("visibility full\n")
         f.write("bigDataUrl %s\n" % halfile)
         f.write("type halSnake\n")
+        f.write("group snake\n")
         f.write("\n")
 
-def writeTrackDbFile(genomes, halfile, outdir, bigbeddir):
+def writeTrackDbFile(genomes, halfile, outdir, options):
+
     currgenome = outdir.rstrip('/').split("/")[-1]
     filename = os.path.join(outdir, "trackDb.txt")
     f = open(filename, 'w')
     
-    if bigbeddir:
-        writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome)
-    
+    if options.gcContent:
+        writeTrackDb_cgPercent(f, currgenome)
+    if options.alignability:
+        writeTrackDb_alignability(f, currgenome, len(genomes))
+
+    if options.bigbeddir:
+        writeTrackDb_bigbeds(f, options.bigbeddir, genomes, currgenome)
+
+    if options.rmskdir:
+        writeTrackDb_rmsk(f, os.path.join(options.rmskdir, currgenome), outdir)
+
     writeTrackDb_snakes(f, halfile, genomes, currgenome)
     f.close()
 
@@ -259,6 +354,8 @@ def writeGenomesFile(genome2seq2len, halfile, options, outdir):
         options.lodOpts += '--numProc %d ' % options.lodNumProc
     if options.lodMinSeqFrac is not None:
         options.lodOpts += '--minSeqFrac %f ' % options.lodMinSeqFrac
+    if options.lodChunk is not None:
+        options.lodOpts += '--chunk %d ' % options.lodChunk
     if len(options.lodOpts) > 0:
         options.lod = True
     if options.lod:
@@ -269,20 +366,16 @@ def writeGenomesFile(genome2seq2len, halfile, options, outdir):
     genomes = genome2seq2len.keys()
     for genome in genomes:
         genomedir = os.path.join(outdir, genome)
-        system("mkdir -p %s" % genomedir)
         f.write("genome %s\n" %genome)
+        f.write("twoBitPath %s/%s.2bit\n" % (genome, genome))
 
         #create trackDb for the current genome:
         if lodtxtfile == '':
-            writeTrackDbFile(genomes, "../%s" % os.path.basename(halfile), genomedir, options.bigbeddir)
+            writeTrackDbFile(genomes, "../%s" % os.path.basename(halfile), genomedir, options)
         else:
-            writeTrackDbFile(genomes, "../%s" % os.path.basename(lodtxtfile), genomedir, options.bigbeddir)
+            writeTrackDbFile(genomes, "../%s" % os.path.basename(lodtxtfile), genomedir, options)
         f.write("trackDb %s/trackDb.txt\n" %genome)
         
-        #create 2bit file for the current genome:
-        makeTwoBitSeqFile(genome, halfile, genomedir)
-        f.write("twoBitPath %s/%s.2bit\n" % (genome, genome))
-
         #other info
         f.write("groups groups.txt\n")
 
@@ -313,11 +406,24 @@ def writeGroupFile(outdir):
     f.write("defaultIsClosed 0\n")
     f.write("\n")
 
-    f.write("name x\n")
+    f.write("name snake\n")
+    f.write("label Alignment Snakes\n")
+    f.write("priority 10\n")
+    f.write("defaultIsClosed 0\n")
+    f.write("\n")
+    
+    f.write("name annotation\n")
+    f.write("label Genes and Other Annotations\n")
+    f.write("priority 10\n")
+    f.write("defaultIsClosed 1\n")
+    f.write("\n")
+    
+    f.write("name exp\n")
     f.write("label Experimental\n")
     f.write("priority 10\n")
     f.write("defaultIsClosed 1\n")
     f.write("\n")
+    
     f.close()
 
 def writeHubFile(outdir, options):
@@ -340,13 +446,16 @@ def addOptions(parser):
     parser.add_option('--lodInMemory', dest='lodInMemory', action='store_true', help='Load entire hal file into memory when generating levels of detail instead of using hdf5 cache. Default=%default.', default=False)
     parser.add_option('--lodNumProc', dest='lodNumProc', type='int', help='Number of levels of detail to generate concurrently in parallel processes', default=None)
     parser.add_option('--lodMinSeqFrac', dest='lodMinSeqFrac', type='float', help='Minumum sequence length to sample as fraction of step size for level of detail generation: ie sequences with length <= floor(minSeqFrac * step) are ignored. Use default from halLodExtract if not set.', default=None)
+    parser.add_option('--lodChunk', dest='lodChunk', type='int', help='HDF5 chunk size for generated levels of detail.', default=None)
     parser.add_option('--cpHalFileToOut', dest='cpHal', action='store_true', default=False, help='If specified, copy the input halfile to the output directory (instead of just make a softlink). Default=%default')
-
-    parser.add_option('--bedDir', dest='beddir', help='Directory containing bed files of the input genomes. Format: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
     parser.add_option('--hub', dest='hubLabel', default='myHub', help='a single-word name of the directory containing the track hub files. Not displayed to hub users. Default=%default')
     parser.add_option('--shortLabel', dest='shortLabel', default='my hub', help='the short name for the track hub. Suggested maximum length is 17 characters. Displayed as the hub name on the Track Hubs page and the track group name on the browser tracks page. Default=%default')
     parser.add_option('--longLabel', dest='longLabel', default='my hub', help='a longer descriptive label for the track hub. Suggested maximum length is 80 characters. Displayed in the description field on the Track Hubs page. Default=%default')
     parser.add_option('--email', dest='email', default='NoEmail', help='the contact to whom questions regarding the track hub should be directed. Default=%default')
+    parser.add_option('--bedDir', dest='beddir', help='Directory containing bed files of the input genomes. Format: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
+    parser.add_option('--rmskDir', dest='rmskdir', help="Directory containing repeatMasker's output files for each genome. Format: rmskDir/ then genome1/ then genome.rmsk.SINE.bb, genome.rmsk.LINE.bb, ... Default=%default")
+    parser.add_option('--gcContent', dest='gcContent', action='store_true', default=False, help='If specified, make GC-content tracks. Default=%default')
+    parser.add_option('--alignability', dest='alignability', action='store_true', default=False, help='If specified, make Alignability tracks. Default=%default')
 
 def checkOptions(parser, args, options):
     if len(args) < 2:
@@ -372,12 +481,16 @@ def main():
     writeGroupFile(outdir)
     genomes = getGenomesFromHal(halfile)
     genome2seq2len = getGenomeSequences(halfile, genomes)
-   
+  
+    #Get basic files (2bit, chrom.sizes, alignability, CG%) for each genome:
+    getBasicFiles(halfile, genome2seq2len, outdir, options)
+
+    #Lift-over gene annotations of each sample to all other samples
     options.bigbeddir = None
     if options.beddir:
         bigbeddir = os.path.join(outdir, "liftoverbeds")
         system("mkdir -p %s" % bigbeddir)
-        liftoverBedFiles(options.beddir, halfile, genome2seq2len, bigbeddir)
+        liftoverBedFiles(options.beddir, halfile, genome2seq2len, bigbeddir, outdir)
         options.bigbeddir = bigbeddir
 
     writeGenomesFile(genome2seq2len, halfile, options, outdir)

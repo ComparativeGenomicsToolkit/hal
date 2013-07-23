@@ -112,8 +112,10 @@ void LodGraph::scanGenome(const Genome* genome)
         // scan range trying to find genome to add
         hal_index_t minTry = std::max((hal_index_t)0, pos - halfStep);
         hal_index_t maxTry = std::min(pos + halfStep, (hal_index_t)len - 1);
+        double redProbFac = _probeFrac * (
+          (double)(maxTry - minTry) / (double)sequence->getSequenceLength());
         hal_index_t numProbe = 
-           (hal_index_t)std::max(1., (double)(maxTry - minTry) * _probeFrac);
+           (hal_index_t)std::max(1., (double)(maxTry - minTry) * redProbFac);
         hal_index_t npMinus1 = numProbe < 2 ? numProbe : numProbe - 1;
         hal_index_t probeStep = std::max((hal_index_t)1,
                                          (maxTry - minTry) / (npMinus1));
@@ -122,10 +124,16 @@ void LodGraph::scanGenome(const Genome* genome)
         hal_size_t maxDelta = 0;     
         hal_size_t maxMinSeqLen = 0;
         hal_index_t tryPos = numProbe == 1 ? pos : minTry;
-        ColumnIteratorConstPtr colIt; 
+        ColumnIteratorConstPtr colIt = 
+           sequence->getColumnIterator(&_genomes, 0, tryPos);
         do 
         {
-          colIt = sequence->getColumnIterator(&_genomes, 0, tryPos);
+          if (colIt->getReferenceSequencePosition() != tryPos)
+          {
+            colIt->toSite(sequence->getStartPosition() + tryPos, 
+                          sequence->getEndPosition(), true);
+          }
+          assert(colIt->getReferenceSequence() == sequence);
           assert(colIt->getReferenceSequencePosition() == tryPos);
           hal_size_t delta;
           hal_size_t numGenomes;
@@ -145,7 +153,13 @@ void LodGraph::scanGenome(const Genome* genome)
 
         if (bestPos != NULL_INDEX)
         {
-          colIt = sequence->getColumnIterator(&_genomes, 0, bestPos);
+          if (colIt->getReferenceSequencePosition() != bestPos)
+          {
+            colIt->toSite(sequence->getStartPosition() + bestPos, 
+                          sequence->getEndPosition(), true);
+          }
+          assert(colIt->getReferenceSequence() == sequence);
+          assert(colIt->getReferenceSequencePosition() == bestPos);
           createColumn(colIt);
           lastSampledPos = sequence->getStartPosition() + bestPos;
         }
