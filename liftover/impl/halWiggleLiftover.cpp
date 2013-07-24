@@ -56,7 +56,7 @@ void WiggleLiftover::convert(AlignmentConstPtr alignment,
   inputSet.insert(_srcGenome);
   inputSet.insert(_tgtGenome);
   getGenomesInSpanningTree(inputSet, _tgtSet);
-  _outVals.init(srcGenome->getSequenceLength(), DefaultValue, DefaultTileSize);
+  _outVals.init(tgtGenome->getSequenceLength(), DefaultValue, DefaultTileSize);
   scan(inputFile);
   write();
   _outVals.clear();
@@ -81,6 +81,10 @@ void WiggleLiftover::visitLine()
   {
     throw hal_exception("Missing Wig header");
   }
+  if (_segment->getArrayIndex() >= _lastIndex)
+  {
+    _segment->setArrayIndex(_segment->getGenome(), 0);
+  }
   hal_index_t absFirst = _first + _srcSequence->getStartPosition();
   hal_index_t absLast = _last + _srcSequence->getStartPosition();
   _segment->slice(0,0);
@@ -88,7 +92,6 @@ void WiggleLiftover::visitLine()
       absLast > _segment->getStartPosition())
   {
     mapSegment();
-    _cvals.clear();
   }
   if (_cvals.size() > 0 && _cvals.back()._last >= absFirst)
   {
@@ -112,7 +115,8 @@ void WiggleLiftover::mapSegment()
   {
     return;
   }
-  if (_segment->getArrayIndex() == 0)
+  if (_segment->getArrayIndex() == 0 || 
+      _segment->getArrayIndex() >= _lastIndex)
   {
     _segment->toSite(_cvals[0]._first, false);
   }
@@ -161,6 +165,7 @@ void WiggleLiftover::mapSegment()
                                 targetCutSet, queryCutSet);
     mapFragments(fragments);
   }
+  _cvals.clear();
 }
 
 void WiggleLiftover::mapFragments(vector<MappedSegmentConstPtr>& fragments)
@@ -218,7 +223,8 @@ void WiggleLiftover::write()
           assert(outSequence != NULL);
           *_outStream << "fixedStep"
                       << "\tchrom=" << outSequence->getName()
-                      << "\tstart=" << (pos - outSequence->getStartPosition())
+                      << "\tstart=" 
+                      << (1 + pos - outSequence->getStartPosition())
                       << "\tstep=1\n";
         }
         *_outStream << _outVals.get(pos) << '\n';
