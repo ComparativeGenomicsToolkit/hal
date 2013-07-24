@@ -208,6 +208,8 @@ void WiggleLiftover::write()
 {
   const Sequence* outSequence = NULL;
   hal_size_t ogSize = _tgtGenome->getSequenceLength();
+  bool needHeader = true;
+  hal_index_t prevPos = NULL_INDEX;
   for (hal_size_t i = 0; i < _outVals.getNumTiles(); ++i)
   {
     if (_outVals.isTileEmpty(i) == false)
@@ -216,18 +218,31 @@ void WiggleLiftover::write()
       for (hal_size_t j = 0; pos < ogSize && j < _outVals.getTileSize(); ++j, 
               ++pos)
       {
-        if (outSequence == NULL || pos < outSequence->getStartPosition() ||
-            pos > outSequence->getEndPosition())
+        if (_outVals.exists(pos) == true)
         {
-          outSequence = _tgtGenome->getSequenceBySite(pos);
-          assert(outSequence != NULL);
-          *_outStream << "fixedStep"
-                      << "\tchrom=" << outSequence->getName()
-                      << "\tstart=" 
-                      << (1 + pos - outSequence->getStartPosition())
-                      << "\tstep=1\n";
+          if (outSequence == NULL || pos < outSequence->getStartPosition() ||
+                pos > outSequence->getEndPosition())
+          {
+            outSequence = _tgtGenome->getSequenceBySite(pos);
+            assert(outSequence != NULL);
+            needHeader = true;
+          }
+          else if (pos != prevPos + 1)
+          {
+            needHeader = true;
+          }
+          if (needHeader == true)
+          {
+            *_outStream << "fixedStep"
+                        << "\tchrom=" << outSequence->getName()
+                        << "\tstart=" 
+                        << (1 + pos - outSequence->getStartPosition())
+                        << "\tstep=1\n";
+            needHeader = false;
+          }
+          *_outStream << _outVals.get(pos) << '\n';
+          prevPos = pos;
         }
-        *_outStream << _outVals.get(pos) << '\n';
       }
     }
   }

@@ -42,6 +42,11 @@ public:
     * pos which is set to val*/
    void set(hal_index_t pos, T val);
 
+   /** Test if a value was written to using set().  Doing a get() isn't 
+    * really sufficient because it will return the default value in the case
+    * where it was not set, or if it was set with the default value */
+   bool exists(hal_index_t pos) const;
+
    /** Methods to get basic structure info */
    hal_size_t getGenomeSize() const;
    hal_size_t getTileSize() const;
@@ -52,6 +57,7 @@ public:
 protected:
 
    std::vector<std::vector<T> > _tiles;
+   std::vector<std::vector<bool> > _bits;
    hal_size_t _tileSize;
    hal_size_t _genomeSize;
    hal_size_t _lastTileSize;
@@ -91,14 +97,17 @@ inline void WiggleTiles<T>::init(hal_size_t genomeSize, T defaultValue,
   for (size_t i = 0; i < _tiles.size(); ++i)
   {
     _tiles[i].clear();
+    _bits[i].clear();
   }
   _tiles.resize(numTiles);
+  _bits.resize(numTiles);
 }
 
 template <class T>
 inline void WiggleTiles<T>::clear()
 {
   _tiles.clear();
+  _bits.clear();
 }
 
 template <class T>
@@ -129,9 +138,27 @@ inline void WiggleTiles<T>::set(hal_index_t pos, T val)
   {
     hal_size_t len = tile == _tiles.size() - 1 ? _lastTileSize : _tileSize;
     _tiles[tile].assign(len, _defaultValue);
+    _bits[tile].assign(len, false);
   }
   hal_size_t offset = pos % _tileSize;
   _tiles[tile][offset] = val;
+  _bits[tile][offset] = true;
+}
+
+template <class T>
+inline bool WiggleTiles<T>::exists(hal_index_t pos) const
+{
+  assert(pos < _genomeSize);
+  hal_size_t tile = pos / _tileSize;
+  assert(tile < _tiles.size());
+  assert(_tiles[tile].size() == 0 || _tiles[tile].size() == _tileSize ||
+         _tiles[tile].size() == _lastTileSize);
+  if (_tiles[tile].size() == 0)
+  {
+    return false;
+  }
+  hal_size_t offset = pos % _tileSize;
+  return _bits[tile][offset];
 }
 
 template <class T>
