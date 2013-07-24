@@ -10,7 +10,7 @@ libTestsHeaders = $(wildcard tests/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 
-all : ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome ${binPath}/replaceGenome
+all : ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome ${binPath}/replaceGenome ${binPath}/halAppendSubtree
 
 clean : 
 	rm ${binPath}/halRemoveGenome ${binPath}/insertAlignedGenome ${binPath}/addNewLeafGenome
@@ -26,3 +26,6 @@ ${binPath}/addNewLeafGenome: addNewLeafGenome.cpp ${libPath}/halLib.a ${basicLib
 
 ${binPath}/replaceGenome: replaceGenome.cpp ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/replaceGenome replaceGenome.cpp ${libPath}/halLib.a ${basicLibs}
+
+${binPath}/halAppendSubtree: halAppendSubtree.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halAppendSubtree halAppendSubtree.cpp ${libPath}/halLib.a ${basicLibs}
