@@ -218,8 +218,7 @@ void PhyloP::processSequence(const Sequence* sequence,
   ColumnIteratorConstPtr colIt = 
      sequence->getColumnIterator(&_targetSet,
                                  0, pos,
-                                 last - 1,
-                                 true);
+                                 last - 1);
 
   // note wig coordinates are 1-based for some reason so we shift to right
   *_outStream << "fixedStep chrom=" << sequenceName << " start=" << start + 1
@@ -330,7 +329,7 @@ double PhyloP::pval(const ColumnIterator::ColumnMap *cmap)
     }
   }
   
-  for (int i=0; i < _msa->nseqs; i++) 
+  for (int i = 0; i < _msa->nseqs; i++) 
   {
     if (_msa->ss->col_tuples[0][i] == '*')
     {
