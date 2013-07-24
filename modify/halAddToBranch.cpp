@@ -1,4 +1,5 @@
 #include "hal.h"
+#include "markAncestors.h"
 
 using namespace std;
 using namespace hal;
@@ -7,14 +8,9 @@ static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance(true);
   optionsParser->addArgument("inFile", "existing tree");
-  optionsParser->addArgument("botSegmentsFile", "tree containing insert, its "
+  optionsParser->addArgument("botAlignmentFile", "tree containing insert, its "
                              "proper bottom segments, and the new leaf genome");
-
-  // FIXME: now bot, top segments are bad names for the file since
-  // there is more copied than just the intermediate top/bot segments:
-  // the parent bot segs, child top segs, leaf genome, and
-  // intermediate top/bot segs are all copied
-  optionsParser->addArgument("topSegmentsFile", "tree containing insert, its "
+  optionsParser->addArgument("topAlignmentFile", "tree containing insert, its "
                              "parent, and its proper top segments");
   optionsParser->addArgument("parentName", "insert's future parent");
   optionsParser->addArgument("insertName", "insert name");
@@ -29,14 +25,14 @@ static CLParserPtr initParser()
 int main(int argc, char *argv[])
 {
   CLParserPtr optParser = initParser();
-  string inPath, botSegmentsPath, topSegmentsPath, parentName, insertName,
+  string inPath, botAlignmentPath, topAlignmentPath, parentName, insertName,
     childName, leafName;
   double upperBranchLength, leafBranchLength;
   try {
     optParser->parseOptions(argc, argv);
     inPath = optParser->getArgument<string>("inFile");
-    botSegmentsPath = optParser->getArgument<string>("botSegmentsFile");
-    topSegmentsPath = optParser->getArgument<string>("topSegmentsFile");
+    botAlignmentPath = optParser->getArgument<string>("botAlignmentFile");
+    topAlignmentPath = optParser->getArgument<string>("topAlignmentFile");
     parentName = optParser->getArgument<string>("parentName");
     insertName = optParser->getArgument<string>("insertName");
     childName = optParser->getArgument<string>("childName");
@@ -48,8 +44,10 @@ int main(int argc, char *argv[])
     return 1;
   }
   AlignmentPtr mainAlignment = openHalAlignment(inPath, optParser);
-  AlignmentConstPtr botAlignment = openHalAlignment(botSegmentsPath, optParser);
-  AlignmentConstPtr topAlignment = openHalAlignment(topSegmentsPath, optParser);
+  AlignmentConstPtr botAlignment = openHalAlignment(botAlignmentPath,
+                                                    optParser);
+  AlignmentConstPtr topAlignment = openHalAlignment(topAlignmentPath,
+                                                    optParser);
   mainAlignment->insertGenome(insertName, parentName, childName,
                               upperBranchLength);
   mainAlignment->addLeafGenome(leafName, insertName, leafBranchLength);
@@ -99,6 +97,8 @@ int main(int argc, char *argv[])
   Genome *outLeafGenome = mainAlignment->openGenome(leafName);
   const Genome *inLeafGenome = botAlignment->openGenome(leafName);
   inLeafGenome->copy(outLeafGenome);
+
+  markAncestorsForUpdate(mainAlignment, insertName);
 
   mainAlignment->close();
   botAlignment->close();

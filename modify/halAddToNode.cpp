@@ -1,4 +1,5 @@
 #include "hal.h"
+#include "markAncestors.h"
 
 using namespace std;
 using namespace hal;
@@ -61,4 +62,5 @@ int main(int argc, char *argv[])
       outGenome->fixParseInfo();
     }
   }
+  markAncestorsForUpdate(mainAlignment, leafName);
 }

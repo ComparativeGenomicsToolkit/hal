@@ -1,4 +1,5 @@
 #include "hal.h"
+#include "markAncestors.h"
 
 using namespace std;
 using namespace hal;
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
     bridgeChildGenome->copyTopDimensions(mainChildGenome);
     bridgeChildGenome->copyTopSegments(mainChildGenome);
   }
-
+  markAncestorsForUpdate(mainAlignment, rootName);
   mainAlignment->close();
   appendAlignment->close();
   bridgeAlignment->close();

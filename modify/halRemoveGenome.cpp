@@ -1,4 +1,5 @@
 #include "hal.h"
+#include "markAncestors.h"
 
 using namespace std;
 using namespace hal;
@@ -18,6 +19,7 @@ int main(int argc, char *argv[])
   string inPath = optParser->getArgument<string>("inFile");
   string deleteNode = optParser->getArgument<string>("deleteNode");
   AlignmentPtr alignment = openHalAlignment(inPath, optParser);
+  markAncestorsForUpdate(alignment, deleteNode);
   alignment->removeGenome(deleteNode);
   return 0;
 }
