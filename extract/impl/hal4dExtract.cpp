@@ -46,7 +46,7 @@ void Extract4d::visitLine()
     if (_bedVersion <= 9)
     {
       if (_bedLine._end <= _bedLine._start ||
-          _bedLine._end >= (hal_index_t)_refSequence->getSequenceLength())
+          _bedLine._end > (hal_index_t)_refSequence->getSequenceLength())
       {
         cerr << "Line " << _lineNumber << ": BED coordinates invalid\n";
       }

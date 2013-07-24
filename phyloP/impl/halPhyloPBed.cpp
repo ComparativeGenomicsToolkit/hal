@@ -6,25 +6,28 @@
 
 #include <deque>
 #include <cassert>
-#include "halMafBed.h"
-
+#include <algorithm>
+#include "halPhyloPBed.h"
+// get rid of phast macros in order to use stl
+#undef min
+#undef max
 using namespace std;
 using namespace hal;
 
-MafBed::MafBed(std::ostream& mafStream, AlignmentConstPtr alignment,
-               const Genome* refGenome, const Sequence* refSequence,
-               hal_index_t refStart, hal_size_t refLength,
-               std::set<const Genome*>& targetSet,
-               MafExport& mafExport) :
+
+PhyloPBed::PhyloPBed(AlignmentConstPtr alignment,
+                     const Genome* refGenome, const Sequence* refSequence,
+                     hal_index_t start, hal_size_t length, 
+                     hal_size_t step, PhyloP& phyloP, ostream& outStream) :
   BedScanner(),
-  _mafStream(mafStream),
   _alignment(alignment),
   _refGenome(refGenome),
   _refSequence(refSequence),
-  _refStart(refStart),
-  _refLength(refLength),
-  _targetSet(targetSet),
-  _mafExport(mafExport)
+  _refStart(start),
+  _refLength(length),
+  _step(step),
+  _phyloP(phyloP),
+  _outStream(outStream)
 {
   if (_refLength == 0)
   {
@@ -39,12 +42,12 @@ MafBed::MafBed(std::ostream& mafStream, AlignmentConstPtr alignment,
   }
 }
    
-MafBed::~MafBed()
+PhyloPBed::~PhyloPBed()
 {
 
 }
 
-void MafBed::visitLine()
+void PhyloPBed::visitLine()
 {
   const Sequence* refSequence = _refGenome->getSequence(_bedLine._chrName);
   if (refSequence != NULL && 
@@ -53,10 +56,11 @@ void MafBed::visitLine()
     hal_index_t refStart = _refStart;
     if (_refSequence == NULL)
     {
-      // _refStart is in genome coordinate, switch it to be relative to seq
+      // _refStart is in genome coordinate, switch it to be relative to sequence
       refStart = _refStart - refSequence->getStartPosition();
     }
     hal_index_t refEnd = std::min(refStart + _refLength, 
+                                  (hal_index_t)
                                   refSequence->getSequenceLength());
     if (refStart < 0 || refEnd <= refStart)
     {
@@ -76,9 +80,7 @@ void MafBed::visitLine()
         hal_index_t end = std::min(_bedLine._end, refEnd);
         if (end > start)
         {
-          _mafExport.convertSegmentedSequence(_mafStream, _alignment, 
-                                              refSequence, start, end - start,
-                                              _targetSet);
+          _phyloP.processSequence(refSequence, start, end - start, _step);
         }
       }
     }
@@ -100,9 +102,7 @@ void MafBed::visitLine()
                                      _bedLine._blocks[i]._length, refEnd);
           if (end > start)
           {
-            _mafExport.convertSegmentedSequence(_mafStream, _alignment, 
-                                                refSequence, start, end - start,
-                                                _targetSet);
+            _phyloP.processSequence(refSequence, start, end - start, _step);
           }
         }
       }
