@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 #include "halMafExport.h"
 #include "halMafBed.h"
 
@@ -239,6 +240,17 @@ int main(int argc, char** argv)
     {
       mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
                                          start, length, targetSet);
+    }
+    if (mafPath != "stdout")
+    {
+      // dont want to leave a size 0 file when there's not ouput because
+      // it can make some scripts (ie that process a maf for each contig)
+      // obnoxious (presently the case for halPhlyoPTrain which uses 
+      // hal2mafMP --splitBySequence). 
+      if (mafFileStream.tellp() == (streampos)0)
+      {
+        std::remove(mafPath.c_str());
+      }
     }
   }
   catch(hal_exception& e)
