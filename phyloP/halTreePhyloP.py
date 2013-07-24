@@ -71,7 +71,8 @@ def computeTreePhyloP(args):
         if args.bigWig is True and os.path.isfile(wigFile):
             sizesFile = outFileName(args, genome, "sizes", "chr", True)
             bwFile = outFileName(args, genome, "bw", "phyloP", False)
-            bwCmd = "halStats %s --chrSizes %s && " % (args.hal, genome)
+            bwCmd = "halStats %s --chromSizes %s > %s && " % (args.hal, genome,
+                                                              sizesFile)
             bwCmd += "wigToBigWig %s %s %s && " % (wigFile, sizesFile, bwFile)
             bwCmd += "rm -f %s &&" % wigFile
             bwCmd += "rm -f %s" % sizesFile
@@ -117,6 +118,8 @@ def main(argv=None):
         raise RuntimeError("Input hal file %s not found" % args.hal)
     if not os.path.isfile(args.mod):
         raise RuntimeError("Input mod file %s not found" % args.mod)
+    if not os.path.isdir(args.outWigDir):
+        os.makedirs(args.outWigDir)
     if not os.path.isdir(args.outWigDir):
         raise RuntimeError("%s not found" % args.outWigDir)
 
