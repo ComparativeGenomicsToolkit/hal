@@ -39,7 +39,12 @@ def getHalPhyloPCmd(options):
     for opt,val in options.__dict__.items():
         if (val is not None and
             (type(val) != bool or val == True) and
-            (opt == 'refSequence' or
+            (opt == 'cacheMDC' or
+             opt == 'cacheRDC' or
+             opt == 'cacheW0' or
+             opt == 'cacheBytes' or
+             opt == 'inMemory' or
+             opt == 'refSequence' or
              opt == 'refTargets' or
              opt == 'start' or
              opt == 'length' or
