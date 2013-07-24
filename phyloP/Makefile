@@ -6,14 +6,14 @@ libSources=$(subst impl/halPhyloPMain.cpp,,${libSourcesAll})
 libHeaders = $(wildcard inc/*.h)
 
 ifdef ENABLE_PHYLOP
-all : ${libPath}/halPhyloP.a ${binPath}/halPhyloP ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py
+all : ${libPath}/halPhyloP.a ${binPath}/halPhyloP ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py ${binPath}/halTreePhyloP.py
 else
 all :
 	cd .
 endif
 
 clean : 
-	rm -f ${libPath}/halPhyloP.a ${libPath}/halPhyloP.h ${binPath}/halPhyloP *.o ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py
+	rm -f ${libPath}/halPhyloP.a ${libPath}/halPhyloP.h ${binPath}/halPhyloP *.o ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py ${binPath}/halTreePhyloP.py
 
 ${libPath}/halPhyloP.a : ${libSources} ${libHeaders} ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
@@ -35,3 +35,6 @@ ${binPath}/halPhyloPMP.py : halPhyloPMP.py
 	cp halPhyloPMP.py ${binPath}/halPhyloPMP.py
 	chmod +x ${binPath}/halPhyloPMP.py
 
+${binPath}/halTreePhyloP.py : halTreePhyloP.py
+	cp halTreePhyloP.py ${binPath}/halTreePhyloP.py
+	chmod +x ${binPath}/halTreePhyloP.py
