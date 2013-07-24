@@ -46,7 +46,8 @@ def getHal2MafCmd(options):
              opt == 'maxRefGap' or
              opt == 'noDupes' or
              opt == 'noAncestors' or
-             opt == 'ucscNames')):
+             opt == 'ucscNames' or
+             opt == 'inMemory')):
             if val is not True:
                 cmd += ' --%s %s' % (opt, str(val))
             else:
