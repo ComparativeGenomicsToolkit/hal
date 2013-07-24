@@ -29,7 +29,17 @@ PhyloPBed::PhyloPBed(AlignmentConstPtr alignment,
   _phyloP(phyloP),
   _outStream(outStream)
 {
-  
+  if (_refLength == 0)
+  {
+    if (_refGenome != NULL)
+    {
+      _refLength = _refGenome->getSequenceLength();
+    }
+    if (_refSequence != NULL)
+    {
+      _refLength = _refSequence->getSequenceLength();
+    }
+  }
 }
    
 PhyloPBed::~PhyloPBed()

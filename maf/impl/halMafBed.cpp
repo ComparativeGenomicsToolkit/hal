@@ -26,7 +26,17 @@ MafBed::MafBed(std::ostream& mafStream, AlignmentConstPtr alignment,
   _targetSet(targetSet),
   _mafExport(mafExport)
 {
-
+  if (_refLength == 0)
+  {
+    if (_refGenome != NULL)
+    {
+      _refLength = _refGenome->getSequenceLength();
+    }
+    if (_refSequence != NULL)
+    {
+      _refLength = _refSequence->getSequenceLength();
+    }
+  }
 }
    
 MafBed::~MafBed()
@@ -67,7 +77,7 @@ void MafBed::visitLine()
         if (end > start)
         {
           _mafExport.convertSegmentedSequence(_mafStream, _alignment, 
-                                              refSequence, start, end,
+                                              refSequence, start, end - start,
                                               _targetSet);
         }
       }
@@ -91,7 +101,7 @@ void MafBed::visitLine()
           if (end > start)
           {
             _mafExport.convertSegmentedSequence(_mafStream, _alignment, 
-                                                refSequence, start, end,
+                                                refSequence, start, end - start,
                                                 _targetSet);
           }
         }
