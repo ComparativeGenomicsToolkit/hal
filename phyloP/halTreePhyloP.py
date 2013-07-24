@@ -37,43 +37,53 @@ def outFileName(args, genome, extension, token, temp):
         fileName = "%s_%s" % (args.tempID, fileName)
     return os.path.join(args.outWigDir, fileName)
 
-def computePhyloPRecursive(args, genome):
-    bedFlags = ""
-    # Generate a bed file of all regions of genome that dont align to parent
-    bedInsertsFile = outFileName(args, genome, "bed", "inserts", True)
-    if genome != args.root:
-        runShellCommand(
+def computeTreePhyloP(args):
+    visitQueue = [args.root]
+    bigwigCmds = []
+    while len(visitQueue) > 0:
+        genome = visitQueue.pop()
+        bedFlags = ""
+        # Generate a bed file of all regions of 
+        # genome that dont align to parent
+        bedInsertsFile = outFileName(args, genome, "bed", "inserts", True)
+        if genome != args.root:
+            runShellCommand(
             "halAlignedExtract %s %s --alignedFile %s --complement" % (
                 args.hal, genome, bedInsertsFile))
-        bedFlags = "--refBed %s" % bedInsertsFile
+            bedFlags = "--refBed %s" % bedInsertsFile
 
-    # Run halPhyloP on the inserts
-    wigFile = outFileName(args, genome, "wig", "phyloP", False)
-    runShellCommand("halPhyloPMP.py %s %s %s --numProc %d %s" % (
-        args.hal, genome, args.mod, args.numProc, wigFile))
+        # Run halPhyloP on the inserts
+        wigFile = outFileName(args, genome, "wig", "phyloP", False)
+        runShellCommand("halPhyloPMP.py %s %s %s %s --numProc %d %s" % (
+            args.hal, genome, args.mod, bedFlags, args.numProc, wigFile))
     
-    runShellCommand("rm -f %s" % bedInsertsFile)
+        runShellCommand("rm -f %s" % bedInsertsFile)
 
-    # Lift down from the parent, appending to the wig file computed above
-    if genome != args.root:
-        parent = getHalParentName(args.hal, genome)
-        parentWig = outFileName(args, parent, "wig", "phyloP", False)
-        if os.path.isfile(parentWig):
-            runShellCommand("halWiggleLiftover %s %s %s %s %s --append" % (
-                args.hal, parent, parentWig, genome, wigFile))
+        # Lift down from the parent, appending to the wig file computed above
+        if genome != args.root:
+            parent = getHalParentName(args.hal, genome)
+            parentWig = outFileName(args, parent, "wig", "phyloP", False)
+            if os.path.isfile(parentWig):
+                runShellCommand("halWiggleLiftover %s %s %s %s %s --append" % (
+                    args.hal, parent, parentWig, genome, wigFile))
 
-    # Convert to bigwig if desired and delete wig file
-    if args.bigWig is True and os.path.isfile(wigFile):
-        sizesFile = outFileName(args, genome, "sizes", "chr", True)
-        bwFile = outFileName(args, genome, "bw", "phyloP", False)
-        runShellCommand("halStats %s --chrSizes %s" % (args.hal, genome))
-        runShellCommand("wigToBigWig %s %s %s" % (wigFile, sizesFile, bwFile))
-        runShellCommand("rm -f %s" % wigFile)
+        # Convert to bigwig if desired and delete wig file
+        if args.bigWig is True and os.path.isfile(wigFile):
+            sizesFile = outFileName(args, genome, "sizes", "chr", True)
+            bwFile = outFileName(args, genome, "bw", "phyloP", False)
+            bwCmd = "halStats %s --chrSizes %s && " % (args.hal, genome)
+            bwCmd += "wigToBigWig %s %s %s && " % (wigFile, sizesFile, bwFile)
+            bwCmd += "rm -f %s &&" % wigFile
+            bwCmd += "rm -f %s" % sizesFile
+            bigwigCmds.append(bwCmd)
 
-    # Recurse on children.
-    children = getHalChildrenNames(args.hal, genome)
-    for child in children:
-        computePhyloPRecursive(args, child)
+        # Recurse on children.
+        children = getHalChildrenNames(args.hal, genome)
+        for child in children:
+            visitQueue.append(child)
+
+    #parallel bigwig conversion
+    runParallelShellCommands(bigwigCmds, args.numProc)
 
 def main(argv=None):
     if argv is None:
@@ -121,7 +131,7 @@ def main(argv=None):
     S = string.ascii_uppercase + string.digits
     args.tempID = 'halTreePhyloP' + ''.join(random.choice(S) for x in range(5))
 
-    computePhyloPRecursive(args, args.root)
+    computeTreePhyloP(args)
     
 if __name__ == "__main__":
     sys.exit(main())
