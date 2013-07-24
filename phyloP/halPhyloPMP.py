@@ -46,7 +46,8 @@ def getHalPhyloPCmd(options):
              opt == 'targetGenomes' or
              opt == 'dupType' or
              opt == 'dupMask' or
-             opt == 'step')):
+             opt == 'step' or
+             opt == 'refBed')):
             if val is not True:
                 cmd += ' --%s %s' % (opt, str(val))
             else:
@@ -255,6 +256,11 @@ def main(argv=None):
                         default=None);
     hppGrp.add_argument("--step",
                         help="step size", type=int, default=None)
+    hppGrp.add_argument("--refBed", 
+                        help="Bed file with coordinates to annotate in the "
+                        "reference genome to stream from standard "
+                        " input.",
+                        default=None)
 
     args = parser.parse_args()
 
