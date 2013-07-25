@@ -83,6 +83,12 @@ int main(int argc, char *argv[])
     topChild->copyTopSegments(mainChild);
     mainChild->fixParseInfo();
   }
+  // Clear update flag if present, since the genome has just been updated.
+  MetaData *metaData = mainReplacedGenome->getMetaData();
+  if (metaData->has("needsUpdate")) {
+    metaData->set("needsUpdate", "false");
+  }
+
   if (!noMarkAncestors) {
     markAncestorsForUpdate(mainAlignment, genomeName);
   }
