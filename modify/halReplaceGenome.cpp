@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < children.size(); i++)
   {
     Genome *mainChild = mainAlignment->openGenome(children[i]);
-    const Genome *topChild  = topAlignment->openGenome(parentChildren[i]);
+    const Genome *topChild  = botAlignment->openGenome(children[i]);
     topChild->copyTopDimensions(mainChild);
     topChild->copyTopSegments(mainChild);
     mainChild->fixParseInfo();
