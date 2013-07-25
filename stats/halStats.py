@@ -100,3 +100,9 @@ def getHalBaseComposition(halPath, genomeName, step):
     strList = runShellCommand("halStats %s --baseComp %s,%d" % (
         halPath, genomeName, step)).split()
     return [float(x) for x in strList]
+
+def getHalMetaData(halPath, genomeName):
+    res = runShellCommand("halStats %s --metaData %s" % (halPath, genomeName))
+    if res.strip() == '':
+        return dict()
+    return dict([line.split("\t") for line in res.strip().split("\n")])

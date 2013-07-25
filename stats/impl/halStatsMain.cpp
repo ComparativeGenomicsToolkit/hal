@@ -33,7 +33,8 @@ static void printNumSegments(ostream& os, AlignmentConstPtr alignment,
                              const string& genomeName); 
 static void printBaseComp(ostream& os, AlignmentConstPtr alignment, 
                           const string& baseCompPair);
-
+static void printMetaData(ostream &os, AlignmentConstPtr alignment,
+                          const string &genomeName);
 
 int main(int argc, char** argv)
 {
@@ -79,7 +80,8 @@ int main(int argc, char** argv)
                            "fraction_of_As fraction_of_Gs fraction_of_Cs "
                            "fraction_of_Ts.", 
                            "\"\"");
-
+  optionsParser->addOption("metaData", "print metadata for given genome, one "
+                           "entry per line, tab-seperated.", "\"\"");
   string path;
   bool listGenomes;
   string sequencesFromGenome;
@@ -95,6 +97,7 @@ int main(int argc, char** argv)
   string nameForBL;
   string numSegmentsGenome;
   string baseCompPair;
+  string metaData;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -113,6 +116,7 @@ int main(int argc, char** argv)
     nameForBL = optionsParser->getOption<string>("branchLength");
     numSegmentsGenome = optionsParser->getOption<string>("numSegments");
     baseCompPair = optionsParser->getOption<string>("baseComp");
+    metaData = optionsParser->getOption<string>("metaData");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -128,12 +132,14 @@ int main(int argc, char** argv)
     if (nameForBL != "\"\"") ++optCount;
     if (numSegmentsGenome != "\"\"") ++optCount;
     if (baseCompPair != "\"\"") ++optCount;
+    if (metaData != "\"\"") ++optCount;
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                           "--branches, --sequenceStats, --children, --parent, "
-                          "--bedSequences, --root, --numSegments, --baseComp "
-                          "and --branchLength options are exclusive" );
+                          "--bedSequences, --root, --numSegments, --baseComp, "
+                          "--metaData and --branchLength options are "
+                          "exclusive");
     }
   }
   catch(exception& e)
@@ -201,6 +207,10 @@ int main(int argc, char** argv)
     else if (baseCompPair != "\"\"")
     {
       printBaseComp(cout, alignment, baseCompPair);
+    }
+    else if (metaData != "\"\"")
+    {
+      printMetaData(cout, alignment, metaData);
     }
     else
     {
@@ -531,4 +541,20 @@ void printBaseComp(ostream& os, AlignmentConstPtr alignment,
      << (double)numC / total << '\t'
      << (double)numG / total << '\t'
      << (double)numT / total << '\n';
+}
+
+void printMetaData(ostream &os, AlignmentConstPtr alignment,
+                   const string &genomeName)
+{
+  const Genome *genome = alignment->openGenome(genomeName);
+  if (genome == NULL) {
+    throw hal_exception("Genome not found: " + genomeName);
+  }
+  const MetaData *metaData = genome->getMetaData();
+  const map<string, string> metaDataMap = metaData->getMap();
+  map<string, string>::const_iterator mapIt = metaDataMap.begin();
+  for (; mapIt != metaDataMap.end(); mapIt++) {
+    os << mapIt->first << '\t' << mapIt->second << '\n';
+  }
+  alignment->closeGenome(genome);
 }
