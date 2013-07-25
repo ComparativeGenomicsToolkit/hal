@@ -19,6 +19,8 @@ static CLParserPtr initParser()
   optionsParser->addArgument("upperBranchLength", "length of branch from parent"
                              " to insert");
   optionsParser->addArgument("leafBranchLength", "leaf branch length");
+  optionsParser->addOptionFlag("noMarkAncestors", "don't mark ancestors for"
+                               " update", false);
   return optionsParser;
 }
 
@@ -28,6 +30,7 @@ int main(int argc, char *argv[])
   string inPath, botAlignmentPath, topAlignmentPath, parentName, insertName,
     childName, leafName;
   double upperBranchLength, leafBranchLength;
+  bool noMarkAncestors;
   try {
     optParser->parseOptions(argc, argv);
     inPath = optParser->getArgument<string>("inFile");
@@ -39,6 +42,7 @@ int main(int argc, char *argv[])
     leafName = optParser->getArgument<string>("leafName");
     upperBranchLength = optParser->getArgument<double>("upperBranchLength");
     leafBranchLength = optParser->getArgument<double>("leafBranchLength");
+    noMarkAncestors = optParser->getFlag("noMarkAncestors");
   } catch (exception &e) {
     optParser->printUsage(cerr);
     return 1;
@@ -97,9 +101,9 @@ int main(int argc, char *argv[])
   Genome *outLeafGenome = mainAlignment->openGenome(leafName);
   const Genome *inLeafGenome = botAlignment->openGenome(leafName);
   inLeafGenome->copy(outLeafGenome);
-
-  markAncestorsForUpdate(mainAlignment, insertName);
-
+  if (!noMarkAncestors) {
+    markAncestorsForUpdate(mainAlignment, insertName);
+  }
   mainAlignment->close();
   botAlignment->close();
   topAlignment->close();

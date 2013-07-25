@@ -15,6 +15,8 @@ static CLParserPtr initParser()
   optionsParser->addArgument("parentName", "node to be added to");
   optionsParser->addArgument("rootName", "name of subtree root");
   optionsParser->addArgument("branchLength", "branch length");
+  optionsParser->addOptionFlag("noMarkAncestors", "don't mark ancestors for"
+                               " update", false);
   return optionsParser;
 }
 
@@ -38,6 +40,7 @@ int main(int argc, char *argv[])
   CLParserPtr optParser = initParser();
   string mainPath, appendPath, bridgePath, parentName, rootName;
   double branchLength;
+  bool noMarkAncestors;
   try {
     optParser->parseOptions(argc, argv);
     mainPath = optParser->getArgument<string>("mainFile");
@@ -46,6 +49,7 @@ int main(int argc, char *argv[])
     parentName = optParser->getArgument<string>("parentName");
     rootName = optParser->getArgument<string>("rootName");
     branchLength = optParser->getArgument<double>("branchLength");
+    noMarkAncestors = optParser->getFlag("noMarkAncestors");
   } catch (exception &e) {
     optParser->printUsage(cerr);
     return 1;
@@ -72,7 +76,9 @@ int main(int argc, char *argv[])
     bridgeChildGenome->copyTopDimensions(mainChildGenome);
     bridgeChildGenome->copyTopSegments(mainChildGenome);
   }
-  markAncestorsForUpdate(mainAlignment, rootName);
+  if (!noMarkAncestors) {
+    markAncestorsForUpdate(mainAlignment, rootName);
+  }
   mainAlignment->close();
   appendAlignment->close();
   bridgeAlignment->close();

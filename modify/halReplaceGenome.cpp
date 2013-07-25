@@ -1,4 +1,5 @@
 #include "hal.h"
+#include "markAncestors.h"
 
 using namespace hal;
 using namespace std;
@@ -13,6 +14,8 @@ static CLParserPtr initParser()
                              "alignment of the genome, its parent, and "
                              "its siblings");
   optionsParser->addArgument("genomeName", "name of genome to be replaced");
+  optionsParser->addOptionFlag("noMarkAncestors", "don't mark ancestors for"
+                               " update", false);
   return optionsParser;
 }
 
@@ -20,12 +23,14 @@ int main(int argc, char *argv[])
 {
   CLParserPtr optParser = initParser();
   string inPath, botAlignmentFile, topAlignmentFile, genomeName;
+  bool noMarkAncestors;
   try {
     optParser->parseOptions(argc, argv);
     inPath = optParser->getArgument<string>("inFile");
     botAlignmentFile = optParser->getArgument<string>("botAlignmentFile");
     topAlignmentFile = optParser->getArgument<string>("topAlignmentFile");
     genomeName = optParser->getArgument<string>("genomeName");
+    noMarkAncestors = optParser->getFlag("noMarkAncestors");
   } catch (exception &e) {
     optParser->printUsage(cerr);
     return 1;
@@ -78,7 +83,9 @@ int main(int argc, char *argv[])
     topChild->copyTopSegments(mainChild);
     mainChild->fixParseInfo();
   }
-
+  if (!noMarkAncestors) {
+    markAncestorsForUpdate(mainAlignment, genomeName);
+  }
   mainAlignment->close();
   botAlignment->close();
   topAlignment->close();
