@@ -9,7 +9,6 @@
 
 #include <fstream>
 #include <string>
-#include <deque>
 #include <cstdlib>
 #include <vector>
 #include <string>

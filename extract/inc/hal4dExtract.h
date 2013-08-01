@@ -11,6 +11,7 @@
 #include <string>
 #include <set>
 #include <vector>
+#include <deque>
 #include "halBedScanner.h"
 
 namespace hal {

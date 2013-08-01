@@ -35,6 +35,8 @@ static void printBaseComp(ostream& os, AlignmentConstPtr alignment,
                           const string& baseCompPair);
 static void printGenomeMetaData(ostream &os, AlignmentConstPtr alignment,
                           const string &genomeName);
+static void printChromSizes(ostream& os, AlignmentConstPtr alignment, 
+                            const string& genomeName);
 
 int main(int argc, char** argv)
 {
@@ -82,6 +84,14 @@ int main(int argc, char** argv)
                            "\"\"");
   optionsParser->addOption("genomeMetaData", "print metadata for given genome, "
                            "one entry per line, tab-seperated.", "\"\"");
+  optionsParser->addOption("chromSizes", "print the name and length of each"
+                           " sequence in a given genome.  This is a subset"
+                           " of the"
+                           " information returned by --sequenceStats but is"
+                           " useful because it is in the format used by"
+                           " wigToBigWig", 
+                           "\"\"");
+
   string path;
   bool listGenomes;
   string sequencesFromGenome;
@@ -98,6 +108,7 @@ int main(int argc, char** argv)
   string numSegmentsGenome;
   string baseCompPair;
   string genomeMetaData;
+  string chromSizesFromGenome;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -117,6 +128,7 @@ int main(int argc, char** argv)
     numSegmentsGenome = optionsParser->getOption<string>("numSegments");
     baseCompPair = optionsParser->getOption<string>("baseComp");
     genomeMetaData = optionsParser->getOption<string>("genomeMetaData");
+    chromSizesFromGenome = optionsParser->getOption<string>("chromSizes");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -133,13 +145,14 @@ int main(int argc, char** argv)
     if (numSegmentsGenome != "\"\"") ++optCount;
     if (baseCompPair != "\"\"") ++optCount;
     if (genomeMetaData != "\"\"") ++optCount;
+    if (chromSizesFromGenome != "\"\"") ++optCount;
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                           "--branches, --sequenceStats, --children, --parent, "
                           "--bedSequences, --root, --numSegments, --baseComp, "
-                          "--genomeMetaData and --branchLength options are "
-                          "exclusive");
+                          "--genomeMetaData, --chromSizes and --branchLength "
+                          "options are exclusive");
     }
   }
   catch(exception& e)
@@ -211,6 +224,10 @@ int main(int argc, char** argv)
     else if (genomeMetaData != "\"\"")
     {
       printGenomeMetaData(cout, alignment, genomeMetaData);
+    }
+    else if (chromSizesFromGenome != "\"\"")
+    {
+      printChromSizes(cout, alignment, chromSizesFromGenome);
     }
     else
     {
@@ -557,4 +574,24 @@ void printGenomeMetaData(ostream &os, AlignmentConstPtr alignment,
     os << mapIt->first << '\t' << mapIt->second << '\n';
   }
   alignment->closeGenome(genome);
+}
+
+void printChromSizes(ostream& os, AlignmentConstPtr alignment, 
+                     const string& genomeName)
+{
+  const Genome* genome = alignment->openGenome(genomeName);
+  if (genome == NULL)
+  {
+    throw hal_exception(string("Genome ") + genomeName + " not found.");
+  }
+  if (genome->getNumSequences() > 0)
+  {
+    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+    for (; !seqIt->equals(seqEnd); seqIt->toNext())
+    {
+      os << seqIt->getSequence()->getName() << '\t'
+         << seqIt->getSequence()->getSequenceLength() << '\n';
+    }
+  }
 }

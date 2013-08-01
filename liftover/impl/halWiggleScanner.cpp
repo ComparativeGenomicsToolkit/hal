@@ -140,6 +140,9 @@ bool WiggleScanner::scanHeader(const string& lineBuffer)
     {
       throw hal_exception("Error parsing start in fixedStep header");
     }
+    assert(_start > 0);
+    // store internally in 0-based coordinates.
+    --_start;
 
     ss >> _buffer;
     if (!ss || _buffer.length() <= 5 || _buffer.substr(0, 5) != "step=")
@@ -183,18 +186,6 @@ void WiggleScanner::scanLine(const string& lineBuffer)
   if (_fixedStep == true)
   {
     _first = _start + _offset * _step;
-    _last = _first;
-    if (_span > 1)
-    {
-      _last += _span - 1;
-    }
-    ss >> _value;
-    if (!ss)
-    {
-      stringstream ss1;
-      ss1 << "Error parsing value for " << _sequenceName << " pos " << _start;
-      throw hal_exception(ss1.str());
-    }
     ++_offset;
   }
   else
@@ -206,13 +197,22 @@ void WiggleScanner::scanLine(const string& lineBuffer)
       ss1 << "Error parsing position for " << _sequenceName;
       throw hal_exception(ss1.str());
     }
-    ss >> _value;
-    if (!ss)
-    {
-      stringstream ss1;
-      ss1 << "Error parsing value for " << _sequenceName << " pos " << _start;
-      throw hal_exception(ss1.str());
-    }
+    assert(_first > 0);
+    // store internally in 0-based coordinates.
+    --_start;
+  }
+
+  ss >> _value;
+  if (!ss)
+  {
+    stringstream ss1;
+    ss1 << "Error parsing value for " << _sequenceName << " pos " << _start;
+    throw hal_exception(ss1.str());
+  }
+  _last = _first;
+  if (_span > 1)
+  {
+    _last += _span - 1;
   }
 }
 
