@@ -18,6 +18,7 @@
 #include "halBlockViz.h"
 #include "halBlockMapper.h"
 #include "halLodManager.h"
+#include "halMafExport.h"
 
 #ifdef ENABLE_UDC
 #include <pthread.h>
@@ -275,6 +276,86 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
   }
   HAL_UNLOCK
   return results;
+}
+
+extern "C" hal_int_t halGetMAF(FILE* outFile,
+                               int halHandle, 
+                               hal_species_t* qSpeciesNames,
+                               char* tSpecies,
+                               char* tChrom,
+                               hal_int_t tStart, 
+                               hal_int_t tEnd,
+                               int doDupes)
+{
+  HAL_LOCK
+  hal_int_t numBytes = 0;
+  try
+  {
+    hal_int_t rangeLength = tEnd - tStart;
+    if (rangeLength < 0)
+    {
+      stringstream ss;
+      ss << "Invalid query range [" << tStart << "," << tEnd << ").";
+      throw hal_exception(ss.str());
+    }
+    AlignmentConstPtr alignment = 
+       getExistingAlignment(halHandle, hal_size_t(0), true);
+
+    set<const Genome*> qGenomeSet;
+    for (hal_species_t* qSpecies = qSpeciesNames; qSpecies != NULL;
+         qSpecies = qSpecies->next)
+    {
+      checkGenomes(halHandle, alignment, qSpecies->name, tSpecies, tChrom);
+      const Genome* qGenome = alignment->openGenome(qSpecies->name);
+      qGenomeSet.insert(qGenome);
+    }
+    
+    const Genome* tGenome = alignment->openGenome(tSpecies);
+    const Sequence* tSequence = tGenome->getSequence(tChrom);
+
+    hal_index_t myEnd = tEnd > 0 ? tEnd : tSequence->getSequenceLength();
+    hal_index_t absStart = tSequence->getStartPosition() + tStart;
+    hal_index_t absEnd = tSequence->getStartPosition() + myEnd - 1;
+    if (absStart > absEnd)
+    {
+      throw hal_exception("Invalid range");
+    }
+    if (absEnd > tSequence->getEndPosition())
+    {
+      throw hal_exception("Target end position outside of target sequence");
+    }
+
+    stringstream mafBuffer;
+    MafExport mafExport;
+    mafExport.setNoDupes(doDupes == 0);
+    mafExport.setUcscNames(true);
+    mafExport.convertSegmentedSequence(mafBuffer, alignment, tGenome, 
+                                       absStart, 1 + absEnd - absStart,
+                                       qGenomeSet);
+    // if these buffers are very big, it is my intuition that 
+    // chopping them up and, saw, only converting and writing a few kb
+    // at a time would be more efficient... but i think that's the least
+    // of our problems right now.  
+    string mafStringBuffer = mafBuffer.str();
+    if (mafStringBuffer.empty() == false)
+    {
+      numBytes = (hal_int_t)fwrite(mafStringBuffer.c_str(), 
+                                   mafStringBuffer.length(), 
+                                   sizeof(char), outFile);
+    }                 
+  }
+  catch(exception& e)
+  {
+    cerr << "Exception caught: " << e.what() << endl;
+    numBytes = -1;
+  }
+  catch(...)
+  {
+    cerr << "Error in hal maf query";
+    numBytes = -1;
+  }
+  return numBytes;
+  HAL_UNLOCK
 }
 
 extern "C" struct hal_species_t *halGetSpecies(int halHandle)
@@ -858,7 +939,7 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
   dupeList.resize(dupeList.size() - deadCount);
 }
 
-static void flipStrand(hal_block_t* firstBlock)
+void flipStrand(hal_block_t* firstBlock)
 {
   // below is stupid and naive and will not work for anything but 
   // dense mode (ie where no edges between blocks).  put off fixing

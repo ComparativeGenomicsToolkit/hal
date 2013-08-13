@@ -152,7 +152,31 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       hal_int_t tEnd,
                                                       int getSequenceString,
                                                       int doDupes);
- 
+
+/** Read alignment into an output file in MAF format.  Interface very 
+ * similar to halGetBlocksInTargetRange except multiple query species 
+ * can be specified
+ *
+ * @param halHandle handle for the HAL alignment obtained from halOpen
+ * @param qSpeciesNames the names of the query species (no other information
+ * is read from the hal_species_t structure -- just the names).
+ * @param tSpecies the name of the reference species.
+ * @param tChrom name of the chromosome in reference.
+ * @param tStart start position in reference  
+ * @param tEnd last + 1 position in reference (if 0, then the size of the 
+ * chromosome is used). 
+ * @param doDupes create blocks for duplications if not 0.  When this 
+ * option is enabled, the same region can appear in more than one block.
+ * @return  number of bytes written
+ */
+hal_int_t halGetMAF(FILE* outFile,
+                    int halHandle, 
+                    hal_species_t* qSpeciesNames,
+                    char* tSpecies,
+                    char* tChrom,
+                    hal_int_t tStart, 
+                    hal_int_t tEnd,
+                    int doDupes); 
 
 /** Create a linked list of the species in the hal file.
  * @param halHandle handle for the HAL alignment obtained from halOpen
