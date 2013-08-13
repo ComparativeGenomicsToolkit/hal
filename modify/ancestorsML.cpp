@@ -89,6 +89,27 @@ pair<const Genome *, hal_index_t> findRoot(const Genome *genome,
   }
 }
 
+// Remove a node from the tree and prune any unneeded nodes left over
+// (ancestral nodes that would have no children).
+void removeAndPrune(stTree *tree) {
+  felsensteinData *data = (felsensteinData *) stTree_getClientData(tree);
+  for (int i = 0; i < 4; i++) {
+    free(data->MLChildrenChars[i]);
+  }
+  free(data);
+  stTree *parentNode = stTree_getParent(tree);
+  if (parentNode != NULL) {
+    stTree_setParent(tree, NULL);
+    // We need to avoid freeing the root so main can know that there
+    // is no point in continuing for this site (root has no children)
+    if (stTree_getChildNumber(parentNode) == 0
+        && stTree_getParent(parentNode) != NULL) {
+      removeAndPrune(parentNode);
+    }
+  }
+  stTree_destruct(tree);
+}
+
 // Build site-specific tree below this genome.
 void buildTree(AlignmentConstPtr alignment, const Genome *genome,
                hal_index_t pos, stTree *tree)
@@ -150,9 +171,17 @@ void buildTree(AlignmentConstPtr alignment, const Genome *genome,
       buildTree(alignment, childGenome, childPos, childNode);
     }
   }
-  // Assume that ancestors cannot have insertions. Otherwise will have to think
-  // more carefully about how leaves in the stTree are treated.
-  assert(insertion == false);
+  if (insertion) {
+    // If there is an insertion in an ancestor, this genome can provide no
+    // useful information about the site, so we remove it.
+    if (stTree_getParent(tree) == NULL) {
+      // In this case (node is the root) we need to let main know
+      // there is no point in examining this site (0 children), so we
+      // shouldn't delete the node. main will clean up the tree.
+      return;
+    }
+    removeAndPrune(tree);
+  }
 }
 
 double jukesCantor(char childDNA, char parentDNA, double branchLength,
@@ -319,6 +348,13 @@ int main(int argc, char *argv[])
     const Genome *root = rootInfo.first;
     hal_index_t rootPos = rootInfo.second;
     buildTree(alignment, root, rootPos, tree);
+    if(stTree_getChildNumber(tree) == 0) {
+      // No reason to build a tree, there's an insertion in the root
+      // node relative to its children.
+      freeClientData(tree);
+      stTree_destruct(tree);
+      continue;
+    }
     doFelsenstein(tree, alpha);
     // Find assignment for root node that maximizes P(leaves)
     felsensteinData *rootData = (felsensteinData *) stTree_getClientData(tree);
