@@ -480,7 +480,8 @@ hal_size_t DefaultMappedSegment::mapRecursive(
     }
     
     if (doDupes == true && genome->getParent() != NULL &&
-        (!nextGenome || nextGenome != genome->getParent()))
+        (!nextGenome || nextGenome != genome->getParent())
+        && namesOnPath.find(parentName) != namesOnPath.end())
     {   
       outputPtr->clear();
       list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();

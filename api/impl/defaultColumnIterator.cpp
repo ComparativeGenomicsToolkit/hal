@@ -633,15 +633,16 @@ void DefaultColumnIterator::updateChild(LinkedBottomIterator* bottomIt,
 void DefaultColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
 {
   assert (topIt->_it.get() != NULL);
+  const Genome* genome =  topIt->_it->getTopSegment()->getGenome();
   if (_break || _noDupes == true ||
-      topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX)
+      topIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX ||
+      genome->getParent() == NULL || parentInScope(genome) == false)
   {
     return;
   }
 
   hal_index_t firstIndex = topIt->_it->getTopSegment()->getArrayIndex();
   LinkedTopIterator* currentTopIt = topIt;
-  const Genome* genome =  topIt->_it->getTopSegment()->getGenome();
 
   do  
   {
