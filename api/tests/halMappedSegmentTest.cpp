@@ -696,7 +696,7 @@ void MappedSegmentColCompareTest::compareArrays()
     {
       cout << "col " << i << " cs=" << colEntry.size() << " bs="
            << blockEntry.size() << endl;
-      continue;
+      //continue;
     }
     CuAssertTrue(_testCase, colEntry.size() == blockEntry.size());
     for (set<pair<hal_index_t, bool> >::iterator j = colEntry.begin(); 
@@ -922,7 +922,7 @@ CuSuite* halMappedSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck1);
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck2);
   SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
-  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
+  // SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
   // SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
   return suite;
 }

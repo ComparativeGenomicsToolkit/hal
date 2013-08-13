@@ -36,7 +36,12 @@ def getHal2MafCmd(options):
     for opt,val in options.__dict__.items():
         if (val is not None and
             (type(val) != bool or val == True) and
-            (opt == 'refGenome' or
+            (opt == 'cacheMDC' or
+             opt == 'cacheRDC' or
+             opt == 'cacheW0' or
+             opt == 'cacheBytes' or
+             opt == 'inMemory' or
+             opt == 'refGenome' or
              opt == 'refSequence' or
              opt == 'refTargets' or
              opt == 'start' or
@@ -220,7 +225,7 @@ def main(argv=None):
                          type=int,
                          default=None)
     hdf5Grp.add_argument("--cacheW0",
-                         help="w0 parameter fro hdf5 cache", type=int,
+                         help="w0 parameter fro hdf5 cache", type=float,
                          default=None)
     hdf5Grp.add_argument("--inMemory",
                          help="load all data in memory (& disable hdf5 cache)",

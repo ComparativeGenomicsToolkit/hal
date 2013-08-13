@@ -240,6 +240,10 @@ void printSequence(ostream& outStream, const Sequence* sequence,
                    hal_size_t start, hal_size_t length, hal_size_t step)
 {
   hal_size_t seqLen = sequence->getSequenceLength();
+  if (seqLen == 0)
+  {
+    return;
+  }
   /** If the length is 0, we do from the start position until the end
    * of the sequence */
   if (length == 0)
@@ -259,12 +263,6 @@ void printSequence(ostream& outStream, const Sequence* sequence,
   const Genome* genome = sequence->getGenome();
   string sequenceName = sequence->getName();
   string genomeName = genome->getName();
-  /** A hack to take the genome name out of the chromosome name.  Should
-   * be largely unnecessary now that our naming conventions are better */
-  if (sequenceName.find(genomeName + '.') == 0)
-  {
-    sequenceName = sequenceName.substr(genomeName.length() + 1);
-  }
 
   /** The ColumnIterator is fundamental structure used in this example to
    * traverse the alignment.  It essientially generates the multiple alignment
@@ -390,7 +388,7 @@ void printGenome(ostream& outStream,
       {
         hal_size_t readStart = seqStart >= start ? 0 : start - seqStart;
         hal_size_t readLen = min(seqLen - readStart, length);
-
+        readLen = min(readLen, length - runningLength);
         printSequence(outStream, sequence, targetSet, readStart, readLen, step);
         runningLength += readLen;
       }

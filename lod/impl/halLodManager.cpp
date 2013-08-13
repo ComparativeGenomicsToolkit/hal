@@ -224,9 +224,8 @@ void LodManager::preloadAlignments()
     {
       const Genome* root = alignment->openGenome(alignment->getRootName()); 
       (void)root;
-      // too darn slow right now.  
-      //set<const Genome*> genomeSet;
-      //getGenomesInSubTree(root, genomeSet);
+//      set<const Genome*> genomeSet;
+//      getGenomesInSubTree(root, genomeSet);
      }
   }
 }

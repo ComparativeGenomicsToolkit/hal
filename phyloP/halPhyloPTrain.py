@@ -26,39 +26,79 @@ from hal.stats.halStats import getHalStats
 from hal.stats.halStats import getHalTree
 from hal.stats.halStats import getHalBaseComposition
 
+# it seems that msa_view doesnt like big files.  hack in some 
+# code to split up beds.
+def splitBed(path, options):
+    numLines = int(runShellCommand("wc -l %s" % path).split()[0])
+    outPaths = []
+    outDir = os.path.dirname(options.outMafPath)
+    if options.maxBedLines is not None and numLines > options.maxBedLines:
+        inBed = open(path, "r")
+        curLine = 0
+        curBed = 0
+        outPath = path.replace(".bed", "_%d.bed" % curLine)
+        outPaths.append(outPath)
+        outBed = open(outPath, "w")
+        for inLine in inBed:
+            if curLine > options.maxBedLines:
+                curBed += 1
+                outBed.close()
+                outPath = path.replace(".bed", "_%d.bed" % curBed)
+                outPath = os.path.join(outDir, os.path.basename(outPath))
+                outPaths.append(outPath)
+                outBed = open(outPath, "w")
+                curLine = 0
+            else:
+                curLine += 1
+            outBed.write(inLine)
+        outBed.close()
+    else:
+        outPaths = [path]
+    return outPaths
+        
+
 # it seems that msa view doesn't like the second line of MAF headers
 # (reads the tree as a maf block then spits an error).  so we use
 # this to remove 2nd lines from generated mafs. 
 def remove2ndLine(path):
-    runShellCommand("sed -e 2d -i %s" % path)
+    runShellCommand("sed -i -e 2d %s" % path)
 
 def extractGeneMAFs(options):
     runShellCommand("rm -f %s" % options.outMafAllPaths)
-
+    
     for bedFile in options.bedFiles:
         bedFile4d = (os.path.splitext(options.outMafPath)[0] + "_" + 
                      os.path.splitext(os.path.basename(bedFile))[0] + 
                      "4d.bed")
-    if not options.no4d:
-        runShellCommand("hal4dExtract %s %s %s %s" % (
-            options.hal, options.refGenome, bedFile, bedFile4d))
-    else:
-        runShellCommand("cp %s %s" % (bedFile, bedFile4d))
-            
-    outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
-              os.path.splitext(os.path.basename(bedFile))[0] + ".maf")
-    runShellCommand("hal2mafMP.py %s %s --ucscNames --splitBySequence "
-                    "--numProc %d --refTargets %s --refGenome %s "
-                    "--noDupes" % (options.hal, outMaf, options.numProc,
-                                   bedFile4d, options.refGenome))
-    os.remove(bedFile4d)            
+        if not options.no4d:
+            runShellCommand("hal4dExtract %s %s %s %s" % (
+                options.hal, options.refGenome, bedFile, bedFile4d))
+        else:
+            runShellCommand("cp %s %s" % (bedFile, bedFile4d))
+
+        for sBedFile in splitBed(bedFile4d, options):
+            outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
+            os.path.splitext(os.path.basename(sBedFile))[0] + ".maf")
+            h2mFlags = "--ucscNames --splitBySequence --noDupes"
+            if options.noAncestors is True:
+                h2mFlags += " --noAncestors"
+            if options.sliceSize is not None:
+                h2mFlags += " --sliceSize %d" % options.sliceSize
+            runShellCommand("hal2mafMP.py %s %s %s "
+                            "--numProc %d --refTargets %s --refGenome %s "
+                            % (options.hal, outMaf, h2mFlags,options.numProc,
+                               sBedFile, options.refGenome))
+            os.remove(sBedFile)
+        if os.path.exists(bedFile4d):
+            os.remove(bedFile4d)
             
     for mafFile in glob.glob(options.outMafAllPaths):
         if os.path.getsize(mafFile) < 5:
             os.remove(mafFile)
         else:
-            pass
             remove2ndLine(mafFile)
+            #runShellCommand("msa_view -o SS -z --in-format MAF %s > %s" % (
+            #mafFile, mafFile.replace(".maf", ".SS")))
     if len(glob.glob(options.outMafAllPaths)) < 1:
         raise RuntimeError("Given BED files do not overlap alignment")
 
@@ -89,14 +129,21 @@ def computeMAFStats(options):
 def computeAgMAFStats(options):
     halSpecies = ",".join(options.halGenomes)
     
-    runShellCommand("msa_view -o SS -z -k --in-format MAF --aggregate %s %s > %s" % (
-        halSpecies, options.outMafAllPaths, options.outMafSS))
+    runShellCommand("msa_view -o SS -z --in-format MAF --aggregate %s %s > %s" % (
+        halSpecies, options.outMafAllPaths, 
+        options.outMafSS))
     runShellCommand("rm -f %s" % options.outMafAllPaths)
-
+    #runShellCommand("rm -f %s" % options.outMafAllPaths.replace(".maf", ".SS"))
+    runShellCommand("rm -f %s" % options.outMafAllPaths.replace(".maf", 
+                                                                ".maf-e"))
 
 def computeFit(options):
+    if options.tree is not None:
+        tree = options.tree
+    else:
+        tree = getHalTree(options.hal)
     runShellCommand("phyloFit --tree \"%s\" --subst-mod SSREV --sym-freqs %s --out-root %s" % (
-        getHalTree(options.hal), options.outMafSS, 
+        tree, options.outMafSS, 
         os.path.splitext(options.outMod)[0]))
     runShellCommand("rm -f %s" % options.outMafSS)
 
@@ -146,13 +193,30 @@ def main(argv=None):
     parser.add_argument("--numProc",
                         help="Maximum number of processes for hal2maf.",
                         type=int, default=1)
-    
+    parser.add_argument("--noAncestors",
+                        help="Don't write ancestral genomes in hal2maf",
+                        action="store_true", default=False)
+    parser.add_argument("--maxBedLines",
+                        help="Split bed files so they have at most this many"
+                        " lines",
+                        type=int, default=None)
+    parser.add_argument("--sliceSize",
+                        help="Slice size for hal2maf.",
+                        type=int, default=None)
+    parser.add_argument("--tree",
+                        help="String describing phylogeny in NEWICK format "
+                        "that will be used instead of the tree stored in the"
+                        " HAL file.  This tree should contain all the species"
+                        " in the alignment. Note that it is best to enclose"
+                        " this string in quotes",
+                        default=None)
+
     args = parser.parse_args()
 
     if not os.path.isfile(args.hal):
         raise RuntimeError("Input hal file %s not found" % args.hal)
     if not os.path.exists(args.bedDir):
-        raise RuntimeError("% not found" % args.bedDir)
+        raise RuntimeError("%s not found" % args.bedDir)
     if os.path.isdir(args.bedDir):
         args.bedFiles = [os.path.join(args.bedDir, f) for f
                          in os.listdir(args.bedDir) 

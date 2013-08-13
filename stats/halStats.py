@@ -32,7 +32,7 @@ def runShellCommand(command):
 def runParallelShellCommands(cmdList, numProc):
     if numProc == 1 or len(cmdList) == 1:
         map(runShellCommand, cmdList)
-    else:
+    elif len(cmdList) > 0:
         mpPool = Pool(processes=min(numProc, len(cmdList)))
         result = mpPool.map_async(runShellCommand, cmdList)
         # specifying a timeout allows keyboard interrupts to work?!
