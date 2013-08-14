@@ -171,7 +171,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
  */
 hal_int_t halGetMAF(FILE* outFile,
                     int halHandle, 
-                    hal_species_t* qSpeciesNames,
+                    struct hal_species_t* qSpeciesNames,
                     char* tSpecies,
                     char* tChrom,
                     hal_int_t tStart, 
