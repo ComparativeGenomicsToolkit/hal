@@ -12,6 +12,7 @@
 #include <limits>
 #include <algorithm>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "hal.h"
 #include "halChain.h"
