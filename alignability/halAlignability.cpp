@@ -388,7 +388,7 @@ void printGenome(ostream& outStream,
       {
         hal_size_t readStart = seqStart >= start ? 0 : start - seqStart;
         hal_size_t readLen = min(seqLen - readStart, length);
-
+        readLen = min(readLen, length - runningLength);
         printSequence(outStream, sequence, targetSet, readStart, readLen, step);
         runningLength += readLen;
       }

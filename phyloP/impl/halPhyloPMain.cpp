@@ -248,7 +248,7 @@ void printGenome(PhyloP *phyloP,
       {
         hal_size_t readStart = seqStart >= start ? 0 : start - seqStart;
         hal_size_t readLen = min(seqLen - readStart, length);
-
+        readLen = min(readLen, length - runningLength);
         phyloP->processSequence(sequence, readStart, readLen, step);
         runningLength += readLen;
       }
