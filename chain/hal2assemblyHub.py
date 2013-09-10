@@ -550,7 +550,7 @@ def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome):
             f.write("longLabel %s %s\n" % (genome, annotation))
             f.write("priority 1\n")
         else:
-            f.write("longLabel %s Liftovered %s\n" % (genome, annotation))
+            f.write("longLabel %s Lifted-over %s\n" % (genome, annotation))
             f.write("priority %d\n" %(i + 2))
         f.write("shortLabel %s%s\n" % (genome, annotation))
         f.write("bigDataUrl ../liftoverbeds/%s\n" % os.path.join( annotation, genome, "%s.bb" % currgenome ) )
