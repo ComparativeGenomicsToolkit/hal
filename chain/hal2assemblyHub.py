@@ -35,7 +35,12 @@ class Setup( Target ):
 
     def run(self):
         writeHubFile(self.outdir, self.options)
-        writeGroupFile(self.outdir)
+        annotations = []
+        if self.options.beddirs:
+            annotations.extend( [os.path.basename(item) for item in self.options.beddirs.split(',')] )
+        if self.options.bbdirs:
+            annotations.extend( [os.path.basename(item) for item in self.options.bbdirs.split(',')] )
+        writeGroupFile(self.outdir, annotations)
         allgenomes = getGenomesFromHal(self.halfile)
         genomes = []
         if self.options.genomes:
@@ -48,6 +53,7 @@ class Setup( Target ):
         #Get basic files (2bit, chrom.sizes) for each genome:
         for genome in genomes: 
             self.addChildTarget( GetBasicFiles(genome, genome2seq2len[genome], self.halfile, self.outdir, self.options) )
+        
         self.setFollowOnTarget( MakeTracks(genomes, genome2seq2len, self.halfile, self.outdir, self.options) )
 
 class GetBasicFiles( Target ):
@@ -84,6 +90,13 @@ class MakeTracks( Target ):
             if self.options.alignability:
                 self.addChildTarget( GetAlignability(genomedir, genome, self.halfile) )#genomedir/genome.alignability.bw
         
+        #Compute conservation track:
+        #if not self.options.conservationDir and self.options.conservation: #HACK
+        if self.options.conservation:
+            conservationDir = os.path.join(self.outdir, "conservation")
+            system("mkdir -p %s" %conservationDir)
+            self.addChildTarget( GetConservationFiles(self.halfile, conservationDir, self.options) )
+
         #Lift-over annotations of each sample to all other samples
         self.options.bigbeddirs = []
         if self.options.beddirs:
@@ -94,6 +107,17 @@ class MakeTracks( Target ):
                 system("mkdir -p %s" % bigbeddir)
                 self.options.bigbeddirs.append(bigbeddir)
                 self.addChildTarget( LiftoverBedFiles(beddir, self.halfile, self.genome2seq2len, bigbeddir, self.outdir) )
+        #Add the 'final' annotation tracks, no liftover
+        if self.options.bbdirs:
+            bbdirs = self.options.bbdirs.split(',')
+            for bbdir in bbdirs:
+                annotation = os.path.basename(bbdir)
+                bigbeddir = os.path.join(self.outdir, "liftoverbeds", annotation)
+                self.options.bigbeddirs.append(bigbeddir)
+                #Copy bb files to bigbeddir
+                if os.path.abspath(bigbeddir) != os.path.abspath(bbdir):
+                    #system("mkdir -p %s" %bigbeddir)
+                    system("cp -r %s %s" %(bbdir, bigbeddir))
 
         #Get LOD if needed, and Write trackDb files
         self.setFollowOnTarget( WriteGenomesFile(self.genomes, self.genome2seq2len, self.halfile, self.options, self.outdir) )
@@ -129,6 +153,47 @@ class GetAlignability( Target ):
         chrsizefile = os.path.join(self.genomedir, "chrom.sizes")
         system("wigToBigWig %s %s %s" %(tempwig, chrsizefile, outfile))
         system("rm -f %s" %tempwig)
+
+class GetConservationFiles( Target ):
+    '''Compute conservation bigWig for the input genome and lift it over to all other genomes
+    '''
+    def __init__(self, halfile, outdir, options):
+        Target.__init__(self)
+        self.halfile = halfile
+        self.outdir = outdir
+        self.options = options
+
+    def run(self):
+        #First create the model:
+        #halPhyloPTrain.py ../../out.hal reference genesMin66Samples.bed ref.mod --numProc 16 --tree rootedTree.nw
+        modfile = os.path.join(self.outdir, "%s.mod" % self.options.conservationGenomeName)
+        cmd = "halPhyloPTrain.py %s %s %s %s --numProc %d" %(self.halfile, \
+                self.options.conservationGenomeName, self.options.conservation, \
+                modfile, self.options.conservationNumProc)
+        if self.options.conservationTree:
+            cmd += " --tree %s" %self.options.conservationTree
+        system(cmd)
+
+        self.setFollowOnTarget( GetConservationFiles2(self.halfile, self.outdir, modfile, self.options.conservationNumProc) )
+
+class GetConservationFiles2( Target ):
+    '''Modify mod file to convert small branch lengths (change all the xxxe-1y to xxxe-08)
+       Then do liftover
+    '''
+    def __init__(self, halfile, outdir, modfile, numproc):
+        Target.__init__(self)
+        self.halfile = halfile
+        self.outdir = outdir
+        self.modfile = modfile
+        self.numproc = numproc
+
+    def run(self):
+        newmodfile = "%s-modified" %self.modfile
+        #modify small branch lengths (change all the xxxe-1y to xxxe-10)
+        system("sed 's/e-1./e-08/g' %s > %s" %(self.modfile, newmodfile))
+        #get conservation bigwig and liftover files:
+        cmd = "halTreePhyloP.py %s %s %s --bigWig --numProc %d" %(self.halfile, newmodfile, self.outdir, self.numproc)
+        system(cmd)
 
 class LiftoverBedFiles( Target ):
     def __init__(self, indir, halfile, genome2seq2len, bigbeddir, outdir):
@@ -179,7 +244,8 @@ class CleanupLiftoverBedFiles(Target):
         self.files = files
 
     def run(self):
-        system( "rm %s" % " ".join(self.files) ) #cleanup
+        if len(self.files) > 0:
+            system( "rm %s" % " ".join(self.files) ) #cleanup
 
 class LiftoverBed( Target ):
     def __init__(self, genomeoutdir, bed, genome, othergenome, halfile, outdir):
@@ -197,7 +263,8 @@ class LiftoverBed( Target ):
         system("bedSort %s %s" %(liftovertempbed, liftovertempbed))
         outbigbed = os.path.join(self.genomeoutdir, "%s.bb" %self.othergenome)
         chrsizefile = os.path.join(self.outdir, self.othergenome, "chrom.sizes")
-        system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+        if os.stat(liftovertempbed).st_size > 0:#make sure the file is not empty
+            system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
         #Cleanup:
         system("rm %s" % liftovertempbed)
 
@@ -292,6 +359,9 @@ class WriteTrackDbFile( Target ):
             writeTrackDb_cgPercent(f, currgenome)
         if self.options.alignability:
             writeTrackDb_alignability(f, currgenome, len(self.genomes))
+        if self.options.conservation:
+            conservationDir = os.path.join(self.outdir, "..", "conservation")
+            writeTrackDb_conservation(f, currgenome, conservationDir)
 
         for bigbeddir in self.options.bigbeddirs:
             writeTrackDb_bigbeds(f, bigbeddir, self.genomes, currgenome)
@@ -382,7 +452,7 @@ def writeTrackDb_cgPercent(f, genome):
     f.write("windowingFunction Mean\n")
     f.write("bigDataUrl %s.gc.bw\n" %genome)
     
-    f.write("priority 23.5\n")
+    f.write("priority 2\n")
     f.write("autoScale Off\n")
     f.write("maxHeightPixels 128:36:16\n")
     f.write("graphTypeDefault Bar\n")
@@ -402,7 +472,7 @@ def writeTrackDb_alignability(f, genome, genomeCount):
     f.write("windowingFunction Mean\n")
     f.write("bigDataUrl %s.alignability.bw\n" %genome)
     
-    f.write("priority 23.5\n")
+    f.write("priority 2\n")
     f.write("autoScale Off\n")
     f.write("maxHeightPixels 128:36:16\n")
     f.write("graphTypeDefault Bar\n")
@@ -411,7 +481,28 @@ def writeTrackDb_alignability(f, genome, genomeCount):
     f.write("altColor 128,128,128\n")
     f.write("viewLimits 0:%d\n" %genomeCount)
     f.write("\n")
-    f.write("\n")
+
+def writeTrackDb_conservation(f, genome, conservationDir):
+    wigfile = os.path.join(conservationDir, "%s_phyloP.bw" %genome)
+    if os.path.exists(wigfile):
+        f.write("track conservation\n")
+        f.write("longLabel Conservation\n")
+        f.write("shortLabel Conservation\n")
+        f.write("type bigWig -1 1\n")
+        f.write("group map\n")
+        f.write("visibility dense\n")
+        f.write("windowingFunction Mean\n")
+        f.write("bigDataUrl ../conservation/%s_phyloP.bw\n" %genome)
+        
+        f.write("priority 2\n")
+        f.write("autoScale Off\n")
+        f.write("maxHeightPixels 128:36:16\n")
+        f.write("graphTypeDefault Bar\n")
+        f.write("gridDefault OFF\n")
+        f.write("color 0,0,0\n")
+        f.write("altColor 128,128,128\n")
+        f.write("viewLimits -1:1\n")
+        f.write("\n")
 
 def writeTrackDb_rmsk(f, rmskdir, genomedir):
     if not os.path.exists(rmskdir):
@@ -450,26 +541,31 @@ def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome):
     if re.search('gene', annotation):
         fields = 12
 
-    for genome in os.listdir(bigbeddir):
+    for i, genome in enumerate(genomes):
+        bbfile = os.path.join(bigbeddir, genome, "%s.bb" %currgenome)
+        if not os.path.exists(bbfile):
+            continue
         f.write("track %s%s\n" % (annotation, genome))
         if genome == currgenome:
             f.write("longLabel %s %s\n" % (genome, annotation))
+            f.write("priority 1\n")
         else:
-            f.write("longLabel %s Liftovered %s\n" % (genome, annotation))
+            f.write("longLabel %s Lifted-over %s\n" % (genome, annotation))
+            f.write("priority %d\n" %(i + 2))
         f.write("shortLabel %s%s\n" % (genome, annotation))
         f.write("bigDataUrl ../liftoverbeds/%s\n" % os.path.join( annotation, genome, "%s.bb" % currgenome ) )
         f.write("type bigBed %d\n" %fields)
-        f.write("group annotation\n")
+        f.write("group annotation%s\n" %annotation)
         if not re.search('gene', annotation): #HACK
             f.write("itemRgb On\n")
-        if genome == currgenome: 
+        if genome == currgenome or not re.search('gene', annotation): #HACK
             f.write("visibility dense\n")
         else:
             f.write("visibility hide\n")
         f.write("\n")
 
 def writeTrackDb_snakes(f, halfile, genomes, currgenome):
-    for genome in genomes:
+    for i, genome in enumerate(genomes):
         if re.search(genome, currgenome): #current genome
             continue
         #SNAKE TRACKS
@@ -478,6 +574,7 @@ def writeTrackDb_snakes(f, halfile, genomes, currgenome):
         f.write("shortLabel %s\n" %genome)
         f.write("otherSpecies %s\n" %genome)
         f.write("visibility full\n")
+        f.write("priority %d\n" %(i + 2))
         f.write("bigDataUrl %s\n" % halfile)
         f.write("type halSnake\n")
         f.write("group snake\n")
@@ -530,7 +627,7 @@ def getLodFiles(localHalfile, options, outdir):
         fixLodFilePath(lodtxtfile, localHalfile, outdir)
     return lodtxtfile, loddir
 
-def writeGroupFile(outdir):
+def writeGroupFile(outdir, annotations):
     filename = os.path.join(outdir, "groups.txt")
     f = open(filename, 'w')
     f.write("name user\n")
@@ -547,19 +644,20 @@ def writeGroupFile(outdir):
 
     f.write("name snake\n")
     f.write("label Alignment Snakes\n")
-    f.write("priority 10\n")
+    f.write("priority 3\n")
     f.write("defaultIsClosed 0\n")
     f.write("\n")
     
-    f.write("name annotation\n")
-    f.write("label Genes and Other Annotations\n")
-    f.write("priority 10\n")
-    f.write("defaultIsClosed 1\n")
-    f.write("\n")
-    
+    for annotation in annotations:
+        f.write("name annotation%s\n" %annotation)
+        f.write("label %s Annotations\n" % annotation.capitalize() )
+        f.write("priority 3\n")
+        f.write("defaultIsClosed 1\n")
+        f.write("\n")   
+
     f.write("name exp\n")
     f.write("label Experimental\n")
-    f.write("priority 10\n")
+    f.write("priority 4\n")
     f.write("defaultIsClosed 1\n")
     f.write("\n")
     
@@ -599,11 +697,18 @@ def addOptions(parser):
     parser.add_option('--shortLabel', dest='shortLabel', default='my hub', help='the short name for the track hub. Suggested maximum length is 17 characters. Displayed as the hub name on the Track Hubs page and the track group name on the browser tracks page. Default=%default')
     parser.add_option('--longLabel', dest='longLabel', default='my hub', help='a longer descriptive label for the track hub. Suggested maximum length is 80 characters. Displayed in the description field on the Track Hubs page. Default=%default')
     parser.add_option('--email', dest='email', default='NoEmail', help='the contact to whom questions regarding the track hub should be directed. Default=%default')
-    parser.add_option('--bedDirs', dest='beddirs', help='comma separated list of directories containing bed files of the input genomes. Each directory represent a type of annotation. Example: "genes,genomicIsland,tRNA". Format of each directory: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
+    parser.add_option('--bedDirs', dest='beddirs', help='comma separated list of directories containing bed files of the input genomes. Each directory represents a type of annotation. The annotations of each genome will then be liftovered to all other genomes in the MSA. Example: "genes,genomicIsland,tRNA". Format of each directory: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
+    parser.add_option('--finalBigBedDirs', dest='bbdirs', help='comma separated list of directories containing final big bed files to be displayed. No liftover will be done for these files. Each directory represents a type of annotation. Example: "genes,genomicIsland,tRNA". Format of each directory: bbDir/ then queryGenome/ then targetGenome1.bb, targetGenome2.bb ... (so annotation of queryGenome has been mapped to targetGenomes and will be display on the targetGenome browsers). Default=%default' )
     parser.add_option('--rmskDir', dest='rmskdir', help="Directory containing repeatMasker's output files for each genome. Format: rmskDir/ then genome1/ then genome.rmsk.SINE.bb, genome.rmsk.LINE.bb, ... Default=%default")
     parser.add_option('--gcContent', dest='gcContent', action='store_true', default=False, help='If specified, make GC-content tracks. Default=%default')
     parser.add_option('--alignability', dest='alignability', action='store_true', default=False, help='If specified, make Alignability tracks. Default=%default')
     parser.add_option('--genomes', dest='genomes', help='File specified list of genomes to make browser for. If specified, only create browsers for these genomes in the order provided by the list. Otherwise create browsers for all genomes in the input hal file')
+    parser.add_option('--conservation', dest='conservation', help='Bed file providing regions to calculate the conservation tracks.')
+    parser.add_option('--conservationGenomeName', dest='conservationGenomeName', help='Name of the genome of the bed file provided in the "--conversation" option')
+    parser.add_option('--conservationTree', dest='conservationTree', help='Optional. Newick tree for the conservation track')
+    parser.add_option('--conservationNumProc', dest='conservationNumProc', type='int', default=1, help='Optional. Number of processors to run conservation')
+    #parser.add_option('--conservationDir', dest='conservationDir', help='Directory contains conservation bigwigs')
+    
 
 def checkOptions(parser, args, options):
     if len(args) < 2:
