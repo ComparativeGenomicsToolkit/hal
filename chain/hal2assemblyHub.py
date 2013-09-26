@@ -17,7 +17,7 @@
 #
 #http://genomewiki.ucsc.edu/index.php/Browser_Track_Construction
 
-import os, sys, re
+import os, sys, re, time
 from optparse import OptionParser
 from sonLib.bioio import system  #(may need to remove this dependency on sonLib)
 from jobTree.scriptTree.target import Target
@@ -207,10 +207,11 @@ class LiftoverBedFiles( Target ):
     def run(self):
         #beddir has the hierachy: indir/genome/chr1.bed, chr2.bed...
         #for each genome in beddir, lifeover the bed records of that genome to the coordinate of all other genomes
-        
+         
         #liftover bed file of each genome with available beds to all genomes
         genomes = self.genome2seq2len.keys()
         tempbeds = []
+        
         for genome in os.listdir(self.indir):
             if genome not in genomes:
                 continue
@@ -220,21 +221,40 @@ class LiftoverBedFiles( Target ):
             #Create bed directory for current genome
             genomeoutdir = os.path.join(self.bigbeddir, genome)
             system("mkdir -p %s" %genomeoutdir)
+        
+            #get all the bed files (".bed" ext) and as files if available (".as" ext) 
+            bedfiles, asfile, extrafields, numfield = readBedDir(genomeindir)
+
+            #Copy as file to bigbed dir:
+            if asfile:
+                system("cp %s %s" %(asfile, os.path.join(genomeoutdir, "%s.as" %genome)))
+            elif numfield > 12: #does not have .as file, and have more than 12 fields, just treat as 12 fields
+                numfield = 12
 
             #Concatenate all the input bed files and convert it into bigbed to outdir/genome/genome.bb
             tempbed = "%s-temp.bed" % os.path.join(genomeoutdir, genome)
-            system( "cat %s/*bed > %s" %(genomeindir, tempbed) )
+            system( "cat %s/*bed | cut -f-%d > %s" %(genomeindir, numfield, tempbed) )
             system( "bedSort %s %s" % (tempbed, tempbed) )
 
             outbigbed = os.path.join(genomeoutdir, "%s.bb" %genome) 
             chrsizefile = os.path.join(self.outdir, genome, "chrom.sizes")
-            system( "bedToBigBed %s %s %s" %(tempbed, chrsizefile, outbigbed) )
+            if not asfile:
+                system( "bedToBigBed -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed) )
+            else:
+                numextra = len(extrafields)
+                if numextra > 0:
+                    type="bed%d+%d" %(numfield - numextra, numextra)
+                    extraIndex = "name,%s" % ",".join(extrafields)
+                else:
+                    type="bed%d" %numfield
+                    extraIndex = "name"
+                system( "bedToBigBed -as=%s -type=%s -extraIndex=%s %s %s %s" %(asfile, type, extraIndex, tempbed, chrsizefile, outbigbed) )
 
             #Liftover to all other genomes:
             for othergenome in genomes:
                 if othergenome == genome:
                     continue
-                self.addChildTarget( LiftoverBed(genomeoutdir, tempbed, genome, othergenome, self.halfile, self.outdir) )
+                self.addChildTarget( LiftoverBed(genomeoutdir, tempbed, asfile, extrafields, numfield, genome, othergenome, self.halfile, self.outdir) )
             tempbeds.append( tempbed )
         self.setFollowOnTarget( CleanupLiftoverBedFiles(tempbeds) )
 
@@ -248,10 +268,13 @@ class CleanupLiftoverBedFiles(Target):
             system( "rm %s" % " ".join(self.files) ) #cleanup
 
 class LiftoverBed( Target ):
-    def __init__(self, genomeoutdir, bed, genome, othergenome, halfile, outdir):
+    def __init__(self, genomeoutdir, bed, asfile, extrafields, numfield, genome, othergenome, halfile, outdir):
         Target.__init__(self)
         self.genomeoutdir = genomeoutdir
         self.bed = bed
+        self.asfile = asfile
+        self.extrafields = extrafields
+        self.numfield = numfield
         self.genome = genome
         self.othergenome = othergenome
         self.halfile = halfile
@@ -259,12 +282,27 @@ class LiftoverBed( Target ):
 
     def run(self):
         liftovertempbed = "%s.bed" % os.path.join(self.genomeoutdir, self.othergenome)
-        system("halLiftover %s %s %s %s %s" %(self.halfile, self.genome, self.bed, self.othergenome, liftovertempbed))
+        if len(self.extrafields) > 0:
+            system("halLiftover %s %s %s %s %s --keepExtra" %(self.halfile, self.genome, self.bed, self.othergenome, liftovertempbed))
+        else:
+            system("halLiftover %s %s %s %s %s" %(self.halfile, self.genome, self.bed, self.othergenome, liftovertempbed))
+        
         system("bedSort %s %s" %(liftovertempbed, liftovertempbed))
         outbigbed = os.path.join(self.genomeoutdir, "%s.bb" %self.othergenome)
         chrsizefile = os.path.join(self.outdir, self.othergenome, "chrom.sizes")
         if os.stat(liftovertempbed).st_size > 0:#make sure the file is not empty
-            system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+            if not self.asfile:
+                system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+            else:
+                numextra = len(self.extrafields)
+                if numextra > 0:
+                    type="bed%d+%d" %(self.numfield - numextra, numextra)
+                    extraIndex = "name,%s" % ",".join(self.extrafields)
+                else:
+                    type="bed%d" %self.numfield
+                    extraIndex = "name"
+                system( "bedToBigBed -as=%s -type=%s -extraIndex=%s %s %s %s" %(self.asfile, type, extraIndex, liftovertempbed, chrsizefile, outbigbed) )
+
         #Cleanup:
         system("rm %s" % liftovertempbed)
 
@@ -364,12 +402,12 @@ class WriteTrackDbFile( Target ):
             writeTrackDb_conservation(f, currgenome, conservationDir)
 
         for bigbeddir in self.options.bigbeddirs:
-            writeTrackDb_bigbeds(f, bigbeddir, self.genomes, currgenome)
+            writeTrackDb_bigbeds(f, bigbeddir, self.genomes, currgenome, self.options.properName)
 
         if self.options.rmskdir:
             writeTrackDb_rmsk(f, os.path.join(self.options.rmskdir, currgenome), self.outdir)
 
-        writeTrackDb_snakes(f, self.halfile, self.genomes, currgenome)
+        writeTrackDb_snakes(f, self.halfile, self.genomes, currgenome, self.options.properName)
         f.close()
 
 ############################ UTILITIES FUNCTIONS ###################
@@ -534,28 +572,44 @@ def writeTrackDb_rmsk(f, rmskdir, genomedir):
         f.write("\n")
     f.write("\n")
 
-def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome):
+def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome, properName):
     annotation = os.path.basename(bigbeddir)
-    #HACK number of bed fields
-    fields = 9
-    if re.search('gene', annotation):
-        fields = 12
-
     for i, genome in enumerate(genomes):
         bbfile = os.path.join(bigbeddir, genome, "%s.bb" %currgenome)
         if not os.path.exists(bbfile):
             continue
+        #see if there is an as file:
+        searchIndexStr = "name"
+        asfile = os.path.join(bigbeddir, genome, "%s.as" %genome)
+        if os.path.exists(asfile):
+            extrafields, numfield = getBedExtraFieldsFromAsFile(asfile)
+            fields = "%d" %numfield
+            if len(extrafields) > 0:
+                fields += " +"
+                searchIndexStr += ",%s" %(",".join(extrafields))
+            else:
+                fields += " ."
+        else:
+            numfield = getBedNumField(bbfile)
+            fields = "%d ." %numfield
+        
+        #start writing track
+        genomeProperName = genome
+        if genome in properName:
+            genomeProperName = properName[genome]
+
         f.write("track %s%s\n" % (annotation, genome))
         if genome == currgenome:
-            f.write("longLabel %s %s\n" % (genome, annotation))
+            f.write("longLabel %s %s\n" % (genomeProperName, annotation))
             f.write("priority 1\n")
         else:
-            f.write("longLabel %s Lifted-over %s\n" % (genome, annotation))
+            f.write("longLabel %s Lifted-over %s\n" % (genomeProperName, annotation))
             f.write("priority %d\n" %(i + 2))
-        f.write("shortLabel %s%s\n" % (genome, annotation))
+        f.write("shortLabel %s%s\n" % (genomeProperName, annotation))
         f.write("bigDataUrl ../liftoverbeds/%s\n" % os.path.join( annotation, genome, "%s.bb" % currgenome ) )
-        f.write("type bigBed %d\n" %fields)
+        f.write("type bigBed %s\n" %fields)
         f.write("group annotation%s\n" %annotation)
+        f.write("searchIndex %s\n" %searchIndexStr)
         if not re.search('gene', annotation): #HACK
             f.write("itemRgb On\n")
         if genome == currgenome or not re.search('gene', annotation): #HACK
@@ -564,14 +618,17 @@ def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome):
             f.write("visibility hide\n")
         f.write("\n")
 
-def writeTrackDb_snakes(f, halfile, genomes, currgenome):
+def writeTrackDb_snakes(f, halfile, genomes, currgenome, properName):
     for i, genome in enumerate(genomes):
         if re.search(genome, currgenome): #current genome
             continue
         #SNAKE TRACKS
+        genomeProperName = genome
+        if genome in properName:
+            genomeProperName = properName[genome]
         f.write("track snake%s\n" %genome)
-        f.write("longLabel %s\n" %genome)
-        f.write("shortLabel %s\n" %genome)
+        f.write("longLabel %s\n" %genomeProperName)
+        f.write("shortLabel %s\n" %genomeProperName)
         f.write("otherSpecies %s\n" %genome)
         f.write("visibility full\n")
         f.write("priority %d\n" %(i + 2))
@@ -681,6 +738,92 @@ def readList(file):
     f.close()
     return items
 
+def readRename(file):
+    name2new = {}
+    f = open(file, 'r')
+    for line in f:
+        line = line.strip()
+        if len(line) == 0 or line[0] == "#":
+            continue
+        items = line.split('\t')
+        if len(items) >=2:
+            name2new[items[0]] = items[1]
+    f.close()
+    return name2new
+
+def getFilesByExt(indir, fileExtension):
+    #Return all files in indir that have "fileExtension"
+    allfiles = os.listdir(indir)
+    files = []
+    for f in allfiles:
+        if os.path.splitext(f) == ".%s" %fileExtension :
+            files.append(f)
+    return files
+
+def readBedDir(indir):
+    #Get all the bed files in "indir", as well as the accompanying ".as" files if present
+    bedfiles = []
+    asfile = None 
+    extrafields = []
+    numfield = 0
+    allfiles = os.listdir(indir)
+
+    for f in allfiles:
+        ext = os.path.splitext(f)[-1]
+        if ext == ".bed":
+            bedfiles.append(f)
+        elif ext == ".as":
+            asfile = os.path.join(indir, f)
+
+    #Check to make sure asfile and bedfiles have the same number of fields:
+    if asfile:
+        extrafields, numfield = getBedExtraFieldsFromAsFile(asfile)
+    elif len(bedfiles) > 0:
+        numfield = getFileColumnCount(os.path.join(indir, bedfiles[0]))
+    
+    for b in bedfiles:
+        bedfile = os.path.join(indir, b)
+        assert getFileColumnCount(bedfile) == numfield
+
+    return bedfiles, asfile, extrafields, numfield
+
+def getFileColumnCount(file):
+    f = open(file, 'r')
+    firstline = f.readline()
+    items = firstline.split()
+    f.close()
+    return len(items)
+
+def getBedNumField(bbfile): 
+    tempbed = "%s-TEMP-%s" %(bbfile, time.time())
+    system("bigBedToBed %s %s" %(bbfile, tempbed))
+    numfield = getFileColumnCount(tempbed)
+    system("rm %s" %tempbed)
+    return numfield
+
+def getBedExtraFieldsFromAsFile(asfile):
+    numfield = 0
+    fields = []
+    standardFields = ['chrom', 'chromStart', 'chromEnd', 'name', 'score', 'strand', 'thickStart', 'thickEnd', 'reserved', 'blockCount', 'blockSizes', 'chromStarts'] #standard fields of a bed entry
+    
+    f = open(asfile, 'r')
+    begin = False
+    for line in f:
+        line = line.strip()
+        if re.search("^\(", line):
+            begin = True
+            line = line.lstrip("(")
+        if len(line) == 0 or not begin or re.search("\)", line):
+            continue
+        items = line.split('\t')
+        assert len(items) >= 2
+        field = items[1].rstrip(';')
+        numfield += 1
+        if field not in standardFields:
+            fields.append(field)
+    f.close()
+    return fields, numfield
+
 def addOptions(parser):
     parser.add_option('--lod', dest='lod', action="store_true", default=False, help='If specified, create "level of detail" (lod) hal files and will put the lod.txt at the bigUrl instead of the original hal file. Default=%default')
     parser.add_option('--lodTxtFile', dest='lodtxtfile', help='"hal Level of detail" lod text file. If specified, will put this at the bigUrl instead of the hal file. Default=%default')
@@ -708,7 +851,7 @@ def addOptions(parser):
     parser.add_option('--conservationTree', dest='conservationTree', help='Optional. Newick tree for the conservation track')
     parser.add_option('--conservationNumProc', dest='conservationNumProc', type='int', default=1, help='Optional. Number of processors to run conservation')
     #parser.add_option('--conservationDir', dest='conservationDir', help='Directory contains conservation bigwigs')
-    
+    parser.add_option('--rename', dest='rename', help='File that maps halfile genomeNames to names displayed on the browser. Format: <halGenomeName>\\t<genomeNameToDisplayOnBrowser>. Default=%default') 
 
 def checkOptions(parser, args, options):
     if len(args) < 2:
@@ -721,6 +864,9 @@ def checkOptions(parser, args, options):
         parser.error("Output directory specified (%s) is not a directory\n" %args[1])
     if options.genomes:
         options.genomes = readList(options.genomes)
+    options.properName = {}
+    if options.rename and os.path.exists(options.rename):
+        options.properName = readRename(options.rename)
 
 def main():
     usage = '%prog <halFile> <outputDirectory> [options]'
