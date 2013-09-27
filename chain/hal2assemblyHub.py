@@ -94,8 +94,12 @@ class MakeTracks( Target ):
         #if not self.options.conservationDir and self.options.conservation: #HACK
         if self.options.conservation:
             conservationDir = os.path.join(self.outdir, "conservation")
-            system("mkdir -p %s" %conservationDir)
-            self.addChildTarget( GetConservationFiles(self.halfile, conservationDir, self.options) )
+            if not self.options.conservationDir: 
+                system("mkdir -p %s" %conservationDir)
+                self.addChildTarget( GetConservationFiles(self.halfile, conservationDir, self.options) )
+            else:
+                if os.path.abspath(self.options.conservationDir) != os.path.abspath(conservationDir):
+                    system("cp -r %s %s" %(self.options.conservationDir, conservationDir))
 
         #Lift-over annotations of each sample to all other samples
         self.options.bigbeddirs = []
@@ -292,7 +296,8 @@ class LiftoverBed( Target ):
         chrsizefile = os.path.join(self.outdir, self.othergenome, "chrom.sizes")
         if os.stat(liftovertempbed).st_size > 0:#make sure the file is not empty
             if not self.asfile:
-                system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+                system("bedToBigBed -extraIndex=name %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+                #system( "bedToBigBed -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed) )
             else:
                 numextra = len(self.extrafields)
                 if numextra > 0:
@@ -771,7 +776,8 @@ def readBedDir(indir):
     for f in allfiles:
         ext = os.path.splitext(f)[-1]
         if ext == ".bed":
-            bedfiles.append(f)
+            if os.stat(os.path.join(indir, f)).st_size > 0:#make sure the file is not empty
+                bedfiles.append(f)
         elif ext == ".as":
             asfile = os.path.join(indir, f)
 
@@ -850,7 +856,7 @@ def addOptions(parser):
     parser.add_option('--conservationGenomeName', dest='conservationGenomeName', help='Name of the genome of the bed file provided in the "--conversation" option')
     parser.add_option('--conservationTree', dest='conservationTree', help='Optional. Newick tree for the conservation track')
     parser.add_option('--conservationNumProc', dest='conservationNumProc', type='int', default=1, help='Optional. Number of processors to run conservation')
-    #parser.add_option('--conservationDir', dest='conservationDir', help='Directory contains conservation bigwigs')
+    parser.add_option('--conservationDir', dest='conservationDir', help='Directory contains conservation bigwigs')
     parser.add_option('--rename', dest='rename', help='File that maps halfile genomeNames to names displayed on the browser. Format: <halGenomeName>\\t<genomeNameToDisplayOnBrowser>. Default=%default') 
 
 def checkOptions(parser, args, options):
