@@ -6,6 +6,8 @@
 
 #include <cassert>
 #include <deque>
+#include <limits>
+#include <algorithm>
 #include "halLodExtract.h"
 extern "C" {
 #include "sonLibTree.h"
