@@ -138,10 +138,15 @@ void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
  * @param tStart start position in reference  
  * @param tEnd last + 1 position in reference (if 0, then the size of the 
  * chromosome is used). 
+ * @param tReversed Input region is on the reverse strand (but still 
+ * in forward coordinates like BED).  can only be used in liftOverMode
+ * otherwise must be set to 0
  * @param getSequenceString copy DNA sequence (of query species) into 
  * output blocks if not 0. 
  * @param doDupes create blocks for duplications if not 0.  When this 
  * option is enabled, the same region can appear in more than one block.
+ * @param liftoverMode do not map back target adjacencies.  do not compute
+ * target dupes.  
  * @return  block structure -- must be freed by halFreeBlockResults()
  */
 struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle, 
@@ -150,8 +155,10 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       char* tChrom,
                                                       hal_int_t tStart, 
                                                       hal_int_t tEnd,
+                                                      hal_int_t tReversed,
                                                       int getSequenceString,
-                                                      int doDupes);
+                                                      int doDupes,
+                                                      int liftoverMode);
  
 
 /** Create a linked list of the species in the hal file.

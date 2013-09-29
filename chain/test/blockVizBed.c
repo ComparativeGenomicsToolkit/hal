@@ -124,9 +124,11 @@ int main(int argc, char** argv)
                                  args.tSpecies,
                                  args.tChrom, 
                                  args.tStart,
-                                 args.tEnd, 
+                                 args.tEnd,
+                                 0,
                                  args.doSeq, 
-                                 args.doDupes);
+                                 args.doDupes,
+                                 0);
     if (results == NULL)
     {
       ret = -1;

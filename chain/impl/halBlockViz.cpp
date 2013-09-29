@@ -48,10 +48,13 @@ static char* copyCString(const string& inString);
 
 static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                        const Sequence* tSequence,
-                                       hal_index_t absStart, hal_index_t absEnd,
+                                       hal_index_t absStart, 
+                                       hal_index_t absEnd,
+                                       bool tReversed,
                                        const Genome* qGenome, 
                                        bool getSequenceString,
-                                       bool doDupes, double flipStrandPct);
+                                       bool doDupes, bool doTargetDupes,
+                                       bool doAdjes);
 
 static void readBlock(AlignmentConstPtr seqAlignment,
                       hal_block_t* cur, 
@@ -64,8 +67,6 @@ static void readTargetRange(hal_target_dupe_list_t* cur,
                             vector<MappedSegmentConstPtr>& fragments);
 
 static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
-
-static void flipStrand(hal_block_t* firstBlock);
 
 
 extern "C" int halOpenLOD(char *lodFilePath)
@@ -209,8 +210,10 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       char* tChrom,
                                                       hal_int_t tStart, 
                                                       hal_int_t tEnd,
+                                                      hal_int_t tReversed,
                                                       int getSequenceString,
-                                                      int doDupes)
+                                                      int doDupes,
+                                                      int liftoverMode)
 {
   HAL_LOCK
   hal_block_results_t* results = NULL;
@@ -222,6 +225,10 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
       stringstream ss;
       ss << "Invalid query range [" << tStart << "," << tEnd << ").";
       throw hal_exception(ss.str());
+    }
+    if (tReversed != 0 && liftoverMode == 0)
+    {
+      throw hal_exception("tReversed can only be set when liftoverMode used");
     }
     AlignmentConstPtr alignment = 
        getExistingAlignment(halHandle, hal_size_t(rangeLength), false);
@@ -260,8 +267,12 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                           true);
     }
 
-    results = readBlocks(seqAlignment, tSequence, absStart, absEnd, qGenome,
-                         getSequenceString != 0, doDupes != 0, 0.5);
+    results = readBlocks(seqAlignment, tSequence, absStart, absEnd, 
+                         tReversed != 0,
+                         qGenome,
+                         getSequenceString != 0, doDupes != 0, 
+                         doDupes != 0 && liftoverMode == 0,
+                         liftoverMode == 0);
   }
   catch(exception& e)
   {
@@ -527,14 +538,17 @@ char* copyCString(const string& inString)
 hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                 const Sequence* tSequence,
                                 hal_index_t absStart, hal_index_t absEnd,
+                                bool tReversed,
                                 const Genome* qGenome, bool getSequenceString,
-                                bool doDupes, double flipStrandPct)
+                                bool doDupes, bool doTargetDupes, 
+                                bool doAdjes)
 {
   const Genome* tGenome = tSequence->getGenome();
   string qGenomeName = qGenome->getName();
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  blockMapper.init(tGenome, qGenome, absStart, absEnd, doDupes, 0, true);
+  blockMapper.init(tGenome, qGenome, absStart, tReversed,
+                   absEnd, doDupes, 0, doAdjes);
   blockMapper.map();
   BlockMapper::MSSet paraSet;
   hal_size_t totalLength = 0;
@@ -577,10 +591,10 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   {
     results->targetDupeBlocks = processTargetDupes(blockMapper, paraSet);
   }
-  if (totalLength > 0 &&
-      (double)reversedLength / (double)totalLength > flipStrandPct)
+  if (doTargetDupes == false && results->targetDupeBlocks != NULL)
   {
-    flipStrand(results->mappedBlocks);
+    halFreeTargetDupeLists(results->targetDupeBlocks);
+    results->targetDupeBlocks = NULL;
   }
   return results;
 }
@@ -856,16 +870,5 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
 
   // sort puts NULL items at end. we resize them out.
   dupeList.resize(dupeList.size() - deadCount);
-}
-
-static void flipStrand(hal_block_t* firstBlock)
-{
-  // below is stupid and naive and will not work for anything but 
-  // dense mode (ie where no edges between blocks).  put off fixing
-  // for now....
-//  for (hal_block_t* cur = firstBlock; cur; cur = cur->next)
-//  {
-//    cur->strand = cur->strand == '-' ? '+' : '-';
-//  }
 }
 

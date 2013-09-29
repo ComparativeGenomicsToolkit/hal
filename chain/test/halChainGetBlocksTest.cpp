@@ -62,7 +62,7 @@ void ChainGetBlocksSimpleTest::checkCallBack(AlignmentConstPtr alignment)
 
   // BASIC TEST
   BlockMapper mapper;
-  mapper.init(parent, child, 0, 9, false, 0, true);
+  mapper.init(parent, child, 0, 9, false, false, 0, true);
   mapper.map();
   const BlockMapper::MSSet& segMap = mapper.getMap();
   CuAssertTrue(_testCase, segMap.size() == 1);
@@ -89,7 +89,7 @@ void ChainGetBlocksInversionTest::checkCallBack(AlignmentConstPtr alignment)
 
   // BASIC TEST
   BlockMapper mapper;
-  mapper.init(parent, child, 0, 9, false, 0, true);
+  mapper.init(parent, child, 0, 9, false, false, 0, true);
   mapper.map();
   MSRefSet segMap;
   segMap.insert(mapper.getMap().begin(), mapper.getMap().end());
@@ -118,7 +118,7 @@ void ChainGetBlocksOffsetTest::checkCallBack(
 
   // BASIC TEST
   BlockMapper mapper;
-  mapper.init(parent, child, 1, 4, false, 0, true);
+  mapper.init(parent, child, 1, 4, false, false, 0, true);
   mapper.map();
   MSRefSet segMap;
   segMap.insert(mapper.getMap().begin(), mapper.getMap().end());
@@ -177,7 +177,7 @@ void ChainGetBlocksInversionOffsetTest::checkCallBack(
 
   // BASIC TEST
   BlockMapper mapper;
-  mapper.init(parent, child, 1, 4, false, 0, true);
+  mapper.init(parent, child, 1, 4, false, false, 0, true);
   mapper.map();
   MSRefSet segMap;
   segMap.insert(mapper.getMap().begin(), mapper.getMap().end());
@@ -236,7 +236,7 @@ void ChainGetBlocksOffsetQRefTest::checkCallBack(
 
   // BASIC TEST
   BlockMapper mapper;
-  mapper.init(child, parent, 1, 4, false, 0, true);
+  mapper.init(child, parent, 1, 4, false, false, 0, true);
   mapper.map();
   MSRefSet segMap;
   segMap.insert(mapper.getMap().begin(), mapper.getMap().end());
@@ -295,7 +295,7 @@ void ChainGetBlocksInversionOffsetQRefTest::checkCallBack(
 
   // BASIC TEST
   BlockMapper mapper;
-  mapper.init(child, parent, 1, 4, false, 0, true);
+  mapper.init(child, parent, 1, 4, false, false, 0, true);
   mapper.map();
   MSRefSet segMap;
   segMap.insert(mapper.getMap().begin(), mapper.getMap().end());
@@ -355,7 +355,7 @@ void ChainGetBlocksInversionOffsetQSisTest::checkCallBack(
 
   // BASIC TEST
   BlockMapper mapper;
-  mapper.init(child1, child2, 1, 4, false, 0, true);
+  mapper.init(child1, child2, 1, 4, false, false, 0, true);
   mapper.map();
   MSRefSet segMap;
   segMap.insert(mapper.getMap().begin(), mapper.getMap().end());
@@ -404,6 +404,34 @@ void ChainGetBlocksInversionOffsetQSisTest::checkCallBack(
   CuAssertTrue(_testCase, queSeg->getReversed() == true);  
   CuAssertTrue(_testCase, queSeg->getLength() == 5);    
 
+}
+
+void ChainGetBlocksSimpleLiftoverTest::checkCallBack(
+  AlignmentConstPtr alignment)
+{
+  const Genome* parent = alignment->openGenome("parent");
+  const Genome* child = alignment->openGenome("child2");
+
+  // BASIC TEST
+  BlockMapper mapper;
+  mapper.init(parent, child, 0, 9, true, false, 0, false);
+  mapper.map();
+  const BlockMapper::MSSet& segMap = mapper.getMap();
+  CuAssertTrue(_testCase, segMap.size() == 1);
+  MSRefSet::const_iterator mapIt = segMap.begin();
+  
+  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
+  SlicedSegmentConstPtr queSeg = (*mapIt);
+
+  CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
+  CuAssertTrue(_testCase, refSeg->getStartPosition() == 9);  
+  CuAssertTrue(_testCase, refSeg->getReversed() == true);  
+  CuAssertTrue(_testCase, refSeg->getLength() == 10);  
+
+  CuAssertTrue(_testCase, queSeg->getGenome() == child);
+  CuAssertTrue(_testCase, queSeg->getStartPosition() == 9);  
+  CuAssertTrue(_testCase, queSeg->getReversed() == true);  
+  CuAssertTrue(_testCase, queSeg->getLength() == 10);    
 }
 
 void halChainGetBlocksSimpleTest(CuTest *testCase)
@@ -497,6 +525,20 @@ void halChainGetBlocksInversionOffsetQSisTest(CuTest *testCase)
   } 
 }
 
+void halChainGetBlocksSimpleLiftoverTest(CuTest *testCase)
+{
+  try 
+  {
+    ChainGetBlocksSimpleLiftoverTest tester;
+    tester.check(testCase);
+  }
+   catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } 
+}
+
+
 CuSuite *halChainGetBlocksTestSuite(void)
 {
   CuSuite* suite = CuSuiteNew();
@@ -507,6 +549,7 @@ CuSuite *halChainGetBlocksTestSuite(void)
   SUITE_ADD_TEST(suite, halChainGetBlocksOffsetQRefTest);
   SUITE_ADD_TEST(suite, halChainGetBlocksInversionOffsetQRefTest);
   SUITE_ADD_TEST(suite, halChainGetBlocksInversionOffsetQSisTest);
+  SUITE_ADD_TEST(suite, halChainGetBlocksSimpleLiftoverTest);
   return suite;
 }
 

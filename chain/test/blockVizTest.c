@@ -122,13 +122,15 @@ static void* getBlocksWrapper(void* voidArgs)
   if (handle >= 0)
   {
     results = halGetBlocksInTargetRange(handle,
-                                     args->qSpecies,
-                                     args->tSpecies,
-                                     args->tChrom, 
-                                     args->tStart,
-                                     args->tEnd, 
-                                     args->doSeq, 
-                                     0);
+                                        args->qSpecies,
+                                        args->tSpecies,
+                                        args->tChrom, 
+                                        args->tStart,
+                                        args->tEnd, 
+                                        0,
+                                        args->doSeq, 
+                                        0,
+                                        0);
     halFreeBlockResults(results);
   }
   pthread_exit(NULL);
@@ -165,8 +167,10 @@ int main(int argc, char** argv)
                                  args.tChrom, 
                                  args.tStart,
                                  args.tEnd, 
+                                 0,
                                  args.doSeq, 
-                                 args.doDupes);
+                                 args.doDupes,
+                                 0);
     if (results == NULL)
     {
       ret = -1;
