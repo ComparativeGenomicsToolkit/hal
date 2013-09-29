@@ -15,7 +15,7 @@ static CLParserPtr initParser()
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->addArgument("inHalPath", "Input hal file");
   optionsParser->addArgument("outHalPath", "output hal file");
-  optionsParser->addArgument("step", "Step size for interpolation");
+  optionsParser->addArgument("scale", "Scale factor for interpolation");
   optionsParser->addOption("root", 
                            "Name of root genome of tree to extract (root if "
                            "empty)", "\"\"");
@@ -41,7 +41,11 @@ static CLParserPtr initParser()
                                "By default, small sequences may be skipped if "
                                "they fall within the step size.", false);
   optionsParser->setDescription("Generate a new HAL file at a coarser "
-                                "Level of Detail (LOD) by interpolation.");
+                                "Level of Detail (LOD) by interpolation. "
+                                "The scale parameter is used to estimate "
+                                "the interpolation step-size so that the "
+                                "output has \"scale\" fewer blocks than the"
+                                " input.");
   return optionsParser;
 }
 
@@ -52,7 +56,7 @@ int main(int argc, char** argv)
   string outHalPath;
   string rootName;
   string outTree;
-  hal_size_t step;
+  double scale;
   bool keepSequences;
   bool allSequences;
   double probeFrac;
@@ -64,7 +68,7 @@ int main(int argc, char** argv)
     outHalPath = optionsParser->getArgument<string>("outHalPath");
     rootName = optionsParser->getOption<string>("root");
     outTree = optionsParser->getOption<string>("outTree");
-    step = optionsParser->getArgument<hal_size_t>("step");
+    scale = optionsParser->getArgument<double>("scale");
     keepSequences = optionsParser->getFlag("keepSequences");
     allSequences = optionsParser->getFlag("allSequences");
     probeFrac = optionsParser->getOption<double>("probeFrac");
@@ -112,11 +116,11 @@ int main(int argc, char** argv)
 
     LodExtract lodExtract;
     lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
-                                           step, outTree, rootName,
+                                           scale, outTree, rootName,
                                            keepSequences, allSequences,
                                            probeFrac, minSeqFrac);
   }
-/*  catch(hal_exception& e)
+  catch(hal_exception& e)
   {
     cerr << "hal exception caught: " << e.what() << endl;
     return 1;
@@ -126,7 +130,5 @@ int main(int argc, char** argv)
     cerr << "Exception caught: " << e.what() << endl;
     return 1;
   }
-*/
-  catch(float temp) {}
   return 0;
 }

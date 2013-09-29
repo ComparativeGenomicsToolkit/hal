@@ -24,9 +24,9 @@ from hal.stats.halStats import getHalNumSegments
 from hal.stats.halStats import getHalStats
 
 # Wrapper for halLodExtract
-def getHalLodExtractCmd(inHalPath, outHalPath, step, keepSeq, inMemory,
+def getHalLodExtractCmd(inHalPath, outHalPath, scale, keepSeq, inMemory,
                      probeFrac, minSeqFrac):
-    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
+    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, scale)
     if keepSeq is True:
         cmd += " --keepSequences"
     if inMemory is True:
@@ -105,13 +105,18 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         step = int(max(1, steps[stepIdx] * curStepFactor))
         maxQueryLength = maxBlock * steps[stepIdx - 1]
         keepSequences = maxQueryLength <= maxDNA
+        #we no longer pass the step to the halLodExtract executable,
+        #rather we give the corresponding the scale factor and let
+        #the step get computed for each internal node (instead of using the step
+        #here which is a global minimum
+        stepScale = (scale ** stepIdx) * curStepFactor
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
         srcPath = halPath
         if trans is True and stepIdx > 1:
             srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
         if overwrite is True or not os.path.isfile(outHalPath):
             lodExtractCmds.append(
-                getHalLodExtractCmd(srcPath, outHalPath, step, keepSequences,
+                getHalLodExtractCmd(srcPath, outHalPath, stepScale, keepSequences,
                                     inMemory, probeFrac, minSeqFrac))
   
         lodFile.write("%d %s\n" % (maxQueryLength,

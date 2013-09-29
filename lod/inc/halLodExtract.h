@@ -36,7 +36,7 @@ public:
 
    void createInterpolatedAlignment(AlignmentConstPtr inAlignment,
                                     AlignmentPtr outAlignment,
-                                    hal_size_t step,
+                                    double scale,
                                     const std::string& tree,
                                     const std::string& rootName,
                                     bool keepSequences,
@@ -53,7 +53,7 @@ protected:
 protected:
 
    void createTree(const std::string& tree, const std::string& rootName);
-   void convertInternalNode(const std::string& genomeName, hal_size_t step);
+   void convertInternalNode(const std::string& genomeName, double scale);
    void countSegmentsInGraph(
      std::map<const Sequence*, hal_size_t>& segmentCounts);
    void writeDimensions(
@@ -74,6 +74,9 @@ protected:
                          BottomSegmentIteratorPtr bottom,
                          TopSegmentIteratorPtr top);
    void writeParseInfo(Genome* genome);
+   hal_size_t getMinAvgBlockSize(
+     const Genome* inParent,
+     const std::vector<const Genome*>& inChildren) const;
 
    
    AlignmentConstPtr _inAlignment;
