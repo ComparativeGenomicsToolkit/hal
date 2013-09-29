@@ -296,8 +296,9 @@ class LiftoverBed( Target ):
         chrsizefile = os.path.join(self.outdir, self.othergenome, "chrom.sizes")
         if os.stat(liftovertempbed).st_size > 0:#make sure the file is not empty
             if not self.asfile:
-                system("bedToBigBed -extraIndex=name %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
-                #system( "bedToBigBed -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed) )
+                system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+                #system("bedToBigBed -extraIndex=name %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+                ##system( "bedToBigBed -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed) )
             else:
                 numextra = len(self.extrafields)
                 if numextra > 0:
@@ -306,7 +307,8 @@ class LiftoverBed( Target ):
                 else:
                     type="bed%d" %self.numfield
                     extraIndex = "name"
-                system( "bedToBigBed -as=%s -type=%s -extraIndex=%s %s %s %s" %(self.asfile, type, extraIndex, liftovertempbed, chrsizefile, outbigbed) )
+                system( "bedToBigBed -as=%s -type=%s %s %s %s" %(self.asfile, type, liftovertempbed, chrsizefile, outbigbed) )
+                #system( "bedToBigBed -as=%s -type=%s -extraIndex=%s %s %s %s" %(self.asfile, type, extraIndex, liftovertempbed, chrsizefile, outbigbed) )
 
         #Cleanup:
         system("rm %s" % liftovertempbed)
@@ -579,7 +581,14 @@ def writeTrackDb_rmsk(f, rmskdir, genomedir):
 
 def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome, properName):
     annotation = os.path.basename(bigbeddir)
+    genome2priority = {}
     for i, genome in enumerate(genomes):
+        if genome == currgenome:
+            genome2priority[genome] = 1
+        else:
+            genome2priority[genome] = i + 2
+    
+    for genome in os.listdir(bigbeddir):
         bbfile = os.path.join(bigbeddir, genome, "%s.bb" %currgenome)
         if not os.path.exists(bbfile):
             continue
@@ -590,34 +599,37 @@ def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome, properName):
             extrafields, numfield = getBedExtraFieldsFromAsFile(asfile)
             fields = "%d" %numfield
             if len(extrafields) > 0:
-                fields += " +"
+                fields = "%d +" %(numfield - len(extrafields))
                 searchIndexStr += ",%s" %(",".join(extrafields))
             else:
                 fields += " ."
         else:
             numfield = getBedNumField(bbfile)
             fields = "%d ." %numfield
-        
         #start writing track
         genomeProperName = genome
         if genome in properName:
             genomeProperName = properName[genome]
+        priority = 1
+        if genome in genome2priority:
+            priority = genome2priority[genome]
 
         f.write("track %s%s\n" % (annotation, genome))
         if genome == currgenome:
             f.write("longLabel %s %s\n" % (genomeProperName, annotation))
-            f.write("priority 1\n")
         else:
             f.write("longLabel %s Lifted-over %s\n" % (genomeProperName, annotation))
-            f.write("priority %d\n" %(i + 2))
+        f.write("priority %d\n" %priority)
         f.write("shortLabel %s%s\n" % (genomeProperName, annotation))
         f.write("bigDataUrl ../liftoverbeds/%s\n" % os.path.join( annotation, genome, "%s.bb" % currgenome ) )
         f.write("type bigBed %s\n" %fields)
         f.write("group annotation%s\n" %annotation)
-        f.write("searchIndex %s\n" %searchIndexStr)
-        if not re.search('gene', annotation): #HACK
-            f.write("itemRgb On\n")
-        if genome == currgenome or not re.search('gene', annotation): #HACK
+        #if numfield >=4:
+        if numfield >=4 and genome == currgenome: #DEBUG
+            f.write("searchIndex %s\n" %searchIndexStr)
+        #if not re.search('gene', annotation): #HACK
+        f.write("itemRgb On\n")
+        if genome == currgenome or not re.search('Gene', annotation): #HACK
             f.write("visibility dense\n")
         else:
             f.write("visibility hide\n")
