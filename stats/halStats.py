@@ -65,6 +65,14 @@ def getHalStats(halPath):
             outList.append(tuple(tokens))
     return outList
 
+def getHalTotalStats(halPath):
+    allStats = getHalStats(halPath)
+    totals = (0, 0, 0, 0, 0)
+    for genome in allStats:
+        assert len(genome) == 6
+        totals = tuple(sum(t) for t in zip(totals, genome)[1:])
+    return totals
+
 def getHalSequenceStats(halPath, genomeName):
     res = runShellCommand("halStats %s --sequenceStats %s" %
                           (halPath, genomeName)).split("\n")
