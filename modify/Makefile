@@ -1,6 +1,8 @@
 rootPath = ../
 include ../include.mk
 
+phastCflags = -I../../phast/include -I../../clapack/INCLUDE
+phastLinkflags = ../../phast/lib/libphast.a ../../phast/lib/liblapack.a ../../phast/lib/libblaswr.a ../../clapack/F2CLIBS/libf2c.a
 libHeaders = $(wildcard inc/*.h )
 libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
 libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
@@ -9,7 +11,7 @@ libTestsHeaders = $(wildcard tests/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 
-all : ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree # ${binPath}/findDuplications ${binPath}/ancestorsML ${binPath}/adjacenciesParsimony
+all : ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree ${binPath}/findDuplications ${binPath}/findRegionsExclusivelyInGroup
 
 clean : 
 	rm -f ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome
@@ -27,14 +29,17 @@ ${binPath}/halAppendSubtree: halAppendSubtree.cpp markAncestors.o ${libPath}/hal
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halAppendSubtree halAppendSubtree.cpp markAncestors.o ${libPath}/halLib.a ${basicLibs}
 
 # TMP
-# ${binPath}/findDuplications: findDuplications.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-# 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/findDuplications findDuplications.cpp ${libPath}/halLib.a ${basicLibs}
+${binPath}/findDuplications: findDuplications.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/findDuplications findDuplications.cpp ${libPath}/halLib.a ${basicLibs}
 
-# ${binPath}/ancestorsML: ancestorsML.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-# 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/ancestorsML ancestorsML.cpp ${libPath}/halLib.a ${basicLibs}
+${binPath}/findRegionsExclusivelyInGroup: findRegionsExclusivelyInGroup.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/findRegionsExclusivelyInGroup findRegionsExclusivelyInGroup.cpp ${libPath}/halLib.a ${libPath}/halLiftover.a ${basicLibs}
 
-# ${binPath}/adjacenciesParsimony: adjacenciesParsimony.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-# 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/adjacenciesParsimony adjacenciesParsimony.cpp ${libPath}/halLib.a ${basicLibs}
+${binPath}/ancestorsML: ancestorsML.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} ${phastCflags} ancestorsML.cpp ${basicLibs} ${libPath}/halLib.a ${phastLinkflags}
+
+${binPath}/adjacenciesParsimony: adjacenciesParsimony.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/adjacenciesParsimony adjacenciesParsimony.cpp ${libPath}/halLib.a ${basicLibs}
 
 markAncestors.o: markAncestors.cpp
 	${cpp} ${cppflags} -I ${libPath} -c -o markAncestors.o markAncestors.cpp
