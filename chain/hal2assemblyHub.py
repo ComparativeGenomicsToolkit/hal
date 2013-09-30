@@ -114,6 +114,9 @@ class MakeTracks( Target ):
         #Add the 'final' annotation tracks, no liftover
         if self.options.bbdirs:
             bbdirs = self.options.bbdirs.split(',')
+            liftoverdir = os.path.join(self.outdir, "liftoverbeds")
+            if not os.path.exists(liftoverdir):
+                system("mkdir -p %s" %liftoverdir)
             for bbdir in bbdirs:
                 annotation = os.path.basename(bbdir)
                 bigbeddir = os.path.join(self.outdir, "liftoverbeds", annotation)
@@ -296,8 +299,8 @@ class LiftoverBed( Target ):
         chrsizefile = os.path.join(self.outdir, self.othergenome, "chrom.sizes")
         if os.stat(liftovertempbed).st_size > 0:#make sure the file is not empty
             if not self.asfile:
-                system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
-                #system("bedToBigBed -extraIndex=name %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+                #system("bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
+                system("bedToBigBed -extraIndex=name %s %s %s" %(liftovertempbed, chrsizefile, outbigbed))
                 ##system( "bedToBigBed -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed) )
             else:
                 numextra = len(self.extrafields)
@@ -307,8 +310,8 @@ class LiftoverBed( Target ):
                 else:
                     type="bed%d" %self.numfield
                     extraIndex = "name"
-                system( "bedToBigBed -as=%s -type=%s %s %s %s" %(self.asfile, type, liftovertempbed, chrsizefile, outbigbed) )
-                #system( "bedToBigBed -as=%s -type=%s -extraIndex=%s %s %s %s" %(self.asfile, type, extraIndex, liftovertempbed, chrsizefile, outbigbed) )
+                #system( "bedToBigBed -as=%s -type=%s %s %s %s" %(self.asfile, type, liftovertempbed, chrsizefile, outbigbed) )
+                system( "bedToBigBed -as=%s -type=%s -extraIndex=%s %s %s %s" %(self.asfile, type, extraIndex, liftovertempbed, chrsizefile, outbigbed) )
 
         #Cleanup:
         system("rm %s" % liftovertempbed)
@@ -624,8 +627,8 @@ def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome, properName):
         f.write("bigDataUrl ../liftoverbeds/%s\n" % os.path.join( annotation, genome, "%s.bb" % currgenome ) )
         f.write("type bigBed %s\n" %fields)
         f.write("group annotation%s\n" %annotation)
-        #if numfield >=4:
-        if numfield >=4 and genome == currgenome: #DEBUG
+        if numfield >=4:
+        #if numfield >=4 and genome == currgenome: #DEBUG
             f.write("searchIndex %s\n" %searchIndexStr)
         #if not re.search('gene', annotation): #HACK
         f.write("itemRgb On\n")
