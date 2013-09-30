@@ -128,13 +128,11 @@ void HDF5ExternalArray::load(CommonFG* file, const H5std_string& path,
   
   // create the internal data buffer
   _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
-  _bufStart = 0;
   _bufEnd = _bufStart + _bufSize - 1;
+  // set out of range to ensure page happens
+  _bufStart = _bufEnd + 1;
   delete [] _buf;
   _buf = new char[_bufSize * _dataSize];
-
-  // fill buffer from disk
-  page(0);
 
   assert(_bufSize > 0 || _size == 0);
 }

@@ -19,6 +19,7 @@ clean :
 
 ${libPath}/halChain.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
+	rm -f *.o
 	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
 	ar rc halChain.a *.o
 	ranlib halChain.a 

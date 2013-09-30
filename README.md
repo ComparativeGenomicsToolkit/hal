@@ -1,6 +1,6 @@
-Hierarchical Alignment (HAL) Format API (v1.3)
+Hierarchical Alignment (HAL) Format API (v2.0)
 =====
-Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
+Copyright (C) 2012 - 2013 by Glenn Hickey (hickey@soe.ucsc.edu)
 Released under the MIT license, see LICENSE.txt
 
 HAL is a structure to efficiently store and index multiple genome alignments and ancestral reconstructions.  HAL is a graph-based representation which provides several advantages over matrix/block-based formats such as MAF, such as improved scalability and the ability to perform queries with respect to an arbitrary reference or subtree. 
@@ -25,6 +25,10 @@ Installation
 From the parent directory of where you want HAL installed:
 
 	 git clone git://github.com/glennhickey/hal.git
+
+#### Progressive Cactus Package
+
+Note that HAL can also be downloaded and installed (automatically along with all its dependencies) as part of the [Progressive Cactus installation package](https://github.com/glennhickey/progressiveCactus)
 
 ### Installing Dependencies
 
@@ -73,24 +77,54 @@ to reflect the directory where you installed sonLib
 
 Define ENABLE_UDC before making, and specify the path of the Kent source tree using KENTSRC.  When built with this enabled, all HAL files opened read-only will be accessed using UDC which supports both local files and URLs. 
 
-     `export  ENABLE_UDC=1`
-     `export  KENTSRC=<path to top level of Kent source tree>`
+	  export  ENABLE_UDC=1   
+	  export  KENTSRC=<path to top level of Kent source tree>
 
 Those without the UCSC genome browser already installed locally will probably find it simpler to first mount URLs with [HTTPFS](http://httpfs.sourceforge.net/) before opening with HAL.  
+
+#### Optional support of PhyloP evolutionary constraint annotation
+
+PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  In order to enable this support, Phast must be installed.  We recommend downloading the latest source using Subversion. 
+
+From the same parent directory where you downloaded HAL:
+
+* First install CLAPACK (Linux only)
+
+    `wget http://www.netlib.org/clapack/clapack.tgz`  
+    `tar -xvzf clapack.tgz`  
+    `mv CLAPACK-3.2.1 clapack`  
+    `cd clapack`  
+    `cp make.inc.example make.inc && make f2clib && make blaslib && make lib`  
+    ``export CLAPACKPATH=`pwd` ``  
+    `cd ..`  
+
+*  Install Phast (Mac or Linux)
+
+     `svn co http://compgen.bscb.cornell.edu/svnrepo/phast/trunk phast/`  
+     `cd phast`  
+     ``export PHAST=`pwd` ``  
+     `cd src && make`  
+     `cd ../..`  
+
+* Before building HAL
+
+     `export ENABLE_PHYLOP=1`
+
+Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for their work on extending their tools to work with HAL.
 
 ### Building HAL
 
 From the hal/ directory:  
 
-	  `make`  
+	  make
 
 Before using HAL, add it to your path:   
 
-     `export PATH=<path to hal>/bin:${PATH}`
+	  export PATH=<path to hal>/bin:${PATH}
 
 The parent directory of hal/ should be in your PYTHONPATH in order to use any of the Python functionality.  This includes running `make test`
 	 
-     `export PYTHONPATH=<parent of hal>:${PYTHONPATH}`
+	  export PYTHONPATH=<parent of hal>:${PYTHONPATH}
 
 HAL Tools
 -----
@@ -165,12 +199,25 @@ Export a MAF consisting of the alignment of all apes referenced on gorilla
 
 		 hal2maf mammals.hal mammals.maf --rootGenome ape_ancestor --refGenome gorilla
 
-By default, no gaps are written to the reference sequence.  The `--maxRefGap` can be specified to allow gaps up to a certain size in the reference.  This is achieved by recursively following indels in the graph that could correspond to reference gaps. 
+By default, no gaps are written to the reference sequence.  The `--maxRefGap` can be specified to allow gaps up to a certain size in the reference.  This is achieved by recursively following indels in the graph that could correspond to reference gaps.  
+
+Mafs can be generated in parallel using the hal2mafMP.py wrapper
+
+		 hal2mafMP.py mammals.hal mammals.maf --numProc 10
 
 #### FASTA Export
 
 DNA sequences (without any alignment information) can be extracted from HAL files in FASTA format using `hal2fasta`. 
 
+### Displaying in the UCSC Genome Browser
+
+HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To create an assembly hub, run
+
+	hal2assemblyHub.py mammals.hal outputDirectory
+
+Larger alignments require the use of the `--lod` option to generate precomputed levels of detail.  
+
+Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. 
 
 ### Summary Information
 
@@ -226,7 +273,23 @@ can be lifted over between genomes using `halLiftover`.  halLiftover does a base
 
 will map all annotations in human_annotation.bed, which must refer to sequences in the human genome, to their corresponding locations in dog (if they exist), outputting the resulting annotations in dog_annotation.bed
 
+halLiftover attempts to autodetect the BED version of the input.  This can be overried with the `--inVedVersion` option.   Columns that are not described in the official BED specs can be optionally mapped as-is using the `--keepExtra` option.
+
+#### Alignability
+
+The number of distinct genomes different bases of a set of target genomes align to can be computed using the `halAlignability` tool.  The output is in `.wig` format.  
+
 #### Mutation Annotation
+
+### SNPs
+
+To compute the point mutations (SNPs) between a given pair of genomes in the HAL graph, `halSnps` can be used:
+
+     halSnps mammals.hal human duck --bed human_duck_snps.bed
+
+will produce a BED files listing the SNPs in human coordinates between human and duck.  A count of the number of snps and the total aligned columns are printed to stdout.  
+
+### General mutations along branches
 
 Annotation files, as described above, can be generated from the alignment to provide the locations of substitutions and rearrangements.  Annotations are done on a branch-by-branch basis, but can be mapped back to arbitrary references using `halLiftover` if so desired.  The produced annotation files have the format
 
@@ -240,7 +303,22 @@ Two bed files must be specified because the coordinates of inserted (and by conv
 
 Point mutations can optionally be written using the `--snpFile <file>` option.  The '--maxGap' and '--maxNFraction' options can specify the gap indel threshold and missing data threshold, respectively, as described above in the *halSummarizeMtuations* section.  
 
-### Importing from other formats
+### Constrained Element Prediction
+
+(Under development)
+
+PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  
+
+* Train a neutral model
+
+     See `halPhyloPTrain.py`
+
+* Detect constrained elements
+
+     See `halPhyloPMP.py`
+
+Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for their work on extending their tools to work with HAL.
+
 
 Example of HAL Genome Representation
 -----

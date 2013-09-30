@@ -36,6 +36,9 @@ static CLParserPtr initParser()
                            "the number of columns (see bed "
                            "format specification for more details). Will "
                            "be same as input by default.", 0);
+  optionsParser->addOptionFlag("outPSL", "write output in PSL instead of "
+                               "bed format. overrides --outBedVersion when "
+                               "specified.", false);
   optionsParser->addOptionFlag("keepExtra", "keep extra columns. these are "
                                "columns in the input beyond the specified or "
                                "detected bed version, and which are cut by "
@@ -60,6 +63,7 @@ int main(int argc, char** argv)
   int inBedVersion;
   int outBedVersion;
   bool keepExtra;
+  bool outPSL;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -73,6 +77,7 @@ int main(int argc, char** argv)
     inBedVersion = optionsParser->getOption<int>("inBedVersion");
     outBedVersion = optionsParser->getOption<int>("outBedVersion");
     keepExtra = optionsParser->getFlag("keepExtra");
+    outPSL = optionsParser->getFlag("outPSL");
   }
   catch(exception& e)
   {
@@ -83,6 +88,11 @@ int main(int argc, char** argv)
 
   try
   {
+    if (outPSL == true)
+    {
+      outBedVersion = 12;
+    }
+
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
                                                            optionsParser);
     if (alignment->getNumGenomes() == 0)
@@ -138,7 +148,8 @@ int main(int argc, char** argv)
     
     BlockLiftover liftover;
     liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
-                     inBedVersion, outBedVersion, keepExtra, !noDupes);
+                     inBedVersion, outBedVersion, keepExtra, !noDupes,
+                     outPSL);
 
   }
   catch(hal_exception& e)

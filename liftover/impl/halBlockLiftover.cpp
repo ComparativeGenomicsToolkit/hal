@@ -47,7 +47,7 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
   hal_index_t globalStart = _bedLine._start + _srcSequence->getStartPosition();
   hal_index_t globalEnd = _bedLine._end - 1 + _srcSequence->getStartPosition();
   bool flip = _bedLine._strand == '-';
-  cout << "lifting " << globalStart << " , " << globalEnd << endl;
+
   _refSeg->toSite(globalStart, false);
   hal_offset_t startOffset = globalStart - _refSeg->getStartPosition();
   hal_offset_t endOffset = 0;
@@ -65,15 +65,13 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
   {
     if (flip == true)
     {
-      // work around inability to slice from reversed segment by just
-      // flipping offsets (then flipping strand at the very end);
-      _refSeg->slice(_refSeg->getEndOffset(), _refSeg->getStartOffset());
+      _refSeg->toReverseInPlace();
     }
     _refSeg->getMappedSegments(_mappedSegments, _tgtGenome, &_spanningTree,
                               _traverseDupes);
     if (flip == true)
     {
-      _refSeg->slice(_refSeg->getEndOffset(), _refSeg->getStartOffset());
+      _refSeg->toReverseInPlace();
     }
     _refSeg->toRight(globalEnd);
   }
@@ -106,14 +104,7 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
                               max(fragments.back()->getStartPosition(),
                                   fragments.back()->getEndPosition()));
     outBedLine._end -= seqStart;
-    if (flip == false)
-    {
-      outBedLine._strand = (*i)->getReversed() ? '-' : '+';
-    }
-    else
-    {
-      outBedLine._strand = (*i)->getReversed() ? '+' : '-';
-    }    
+    outBedLine._strand = (*i)->getReversed() ? '-' : '+';
 
     SlicedSegmentConstPtr srcFront = fragments.front()->getSource();
     SlicedSegmentConstPtr srcBack = fragments.back()->getSource();
@@ -122,7 +113,6 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
                                min(srcBack->getStartPosition(),
                                    srcBack->getEndPosition()));
     outBedLine._srcStrand = srcFront->getReversed() ? '-' : '+';
-    assert(outBedLine._srcStrand == '+');
 
     if (_bedLine._strand == '.')
     {
@@ -131,6 +121,11 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     }
 
     assert(outBedLine._start < outBedLine._end);
+
+    if (_outPSL == true && !fragments.empty())
+    {
+      readPSLInfo(fragments, outBedLine);
+    }
   }
 }
 
@@ -154,3 +149,65 @@ void BlockLiftover::cleanTargetParalogies()
   }
 }
 
+void BlockLiftover::readPSLInfo(vector<MappedSegmentConstPtr>& fragments, 
+                                BedLine& outBedLine)
+{
+  const Sequence* srcSequence = fragments[0]->getSource()->getSequence();
+  const Sequence* tSequence = fragments[0]->getSequence();
+
+  outBedLine._psl.resize(1);
+  PSLInfo& psl = outBedLine._psl[0];
+  psl._matches = 0;
+  psl._misMatches = 0;
+  psl._repMatches = 0;
+  psl._nCount = 0;
+  psl._qNumInsert = 0;
+  psl._qBaseInsert = 0;
+  psl._tNumInsert = 0;
+  psl._tBaseInsert = 0;
+  psl._qSeqName = srcSequence->getName();
+  psl._qSeqSize = srcSequence->getSequenceLength();
+  psl._qStrand = fragments[0]->getSource()->getReversed() ? '-' : '+';
+  assert(outBedLine._srcStart >= srcSequence->getStartPosition());
+  psl._qChromOffset = srcSequence->getStartPosition();
+  psl._qEnd = outBedLine._srcStart + 
+     (outBedLine._end - outBedLine._start);
+  psl._tSeqSize = tSequence->getSequenceLength();
+  psl._qBlockStarts.clear();
+
+  string sBuf;
+  string tBuf;
+  for (size_t i = 0; i < fragments.size(); ++i)
+  {
+    assert(fragments[i]->getSource()->getReversed() == 
+           fragments[0]->getSource()->getReversed());
+    assert(fragments[i]->getSource()->getSequence() == srcSequence);
+    assert(fragments[i]->getSequence() == tSequence);
+
+    fragments[i]->getSource()->getString(sBuf);
+    fragments[i]->getString(tBuf);
+    
+    for (size_t j = 0; j < sBuf.length(); ++j)
+    {
+      if (sBuf[j] == tBuf[j])
+      {
+        if (!isMasked(sBuf[j]) && !isMasked(tBuf[j]))
+        {
+          ++psl._matches;
+        }
+        else
+        {
+          ++psl._repMatches;
+        }
+      }
+      else
+      {
+        ++psl._misMatches;
+      }
+      if (isMissingData(tBuf[j]))
+      {
+        ++psl._nCount;
+      }
+    }
+  }
+}

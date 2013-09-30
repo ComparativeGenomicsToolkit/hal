@@ -119,6 +119,11 @@ bool HDF5TopSegment::isCanonicalParalog() const
   return isCanon;
 }
 
+void HDF5TopSegment::print(std::ostream& os) const
+{
+  os << "HDF5 Top Segment";
+}
+
 // HDF5 SPECIFIC
 H5::CompType HDF5TopSegment::dataType()
 {

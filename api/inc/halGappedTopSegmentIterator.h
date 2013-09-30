@@ -70,6 +70,13 @@ public:
     * right segment will be extended as far as possible */
    virtual void setLeft(TopSegmentIteratorConstPtr ts) const = 0;
 
+   /** For every set of paralogous top segments in a given genome, we identify a
+    * unique segment as the canonical reference.  This is the segment that 
+    * will be traversed when disabling duplication edges when mapping via 
+    * the column iterator or mappedSegment interface.  It is also the segment
+    * that is connected from its parent's down edge.*/
+   virtual bool isCanonicalParalog() const = 0;
+
 protected:
    friend class counted_ptr<GappedTopSegmentIterator>;
    friend class counted_ptr<const GappedTopSegmentIterator>;
@@ -95,19 +102,5 @@ inline bool operator!=(GappedTopSegmentIteratorConstPtr p1,
 }
 
 }
-
-
-#ifndef NDEBUG
-#include "halGenome.h"
-namespace hal {
-inline std::ostream& operator<<(std::ostream& os, 
-                                GappedTopSegmentIteratorConstPtr gts)
-{
-  os << "Th=" << gts->getGapThreshold() << " chIdx=" << gts->getChildIndex() 
-     << "\nLEFT: " << gts->getLeft() << "\nRIGHT: " << gts->getRight();
-  return os;
-}
-}
-#endif
 
 #endif

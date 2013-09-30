@@ -50,9 +50,11 @@ void BedScanner::scan(istream* is, int bedVersion)
 {
   visitBegin();
   _bedStream = is;
-  if (bedVersion == -1)
+  _bedVersion = bedVersion;
+
+  if (_bedVersion == -1)
   {
-    bedVersion = getBedVersion(is);
+    _bedVersion = getBedVersion(is);
   }
 
   if (_bedStream->bad())
@@ -67,7 +69,7 @@ void BedScanner::scan(istream* is, int bedVersion)
     while (_bedStream->good())
     {
       ++_lineNumber;
-      _bedLine.read(*_bedStream, bedVersion, lineBuffer);
+      _bedLine.read(*_bedStream, _bedVersion, lineBuffer);
       visitLine();
       skipWhiteSpaces(_bedStream);
     }

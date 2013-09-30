@@ -7,7 +7,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 #include "halMafExport.h"
+#include "halMafBed.h"
 
 using namespace std;
 using namespace hal;
@@ -16,7 +18,8 @@ static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addArgument("mafFile", "output maf file");
+  optionsParser->addArgument("mafFile", "output maf file (or \"stdout\" to "
+                             "pipe to standard output)");
   optionsParser->addOption("refGenome", 
                            "name of reference genome (root if empty)", 
                            "\"\"");
@@ -26,7 +29,8 @@ static CLParserPtr initParser()
                            "\"\"");
   optionsParser->addOption("refTargets", 
                            "bed file coordinates of intervals in the reference "
-                           "genome to export",
+                           "genome to export (or \"stdin\" to pipe from "
+                           "standard input)",
                            "\"\"");
   optionsParser->addOption("start",
                            "coordinate within reference genome (or sequence"
@@ -115,11 +119,6 @@ int main(int argc, char** argv)
       throw hal_exception("--rootGenome and --targetGenomes options are "
                           "mutually exclusive");
     }
-    if (refTargetsPath != "\"\"" && refSequenceName != "\"\"")
-    {
-      throw hal_exception("--refSequence and --refTargets options are "
-                          "mutually exclusive");
-    }
   }
   catch(exception& e)
   {
@@ -201,11 +200,16 @@ int main(int argc, char** argv)
     {
       openFlags |= ios_base::app;
     }
-    ofstream mafStream(mafPath.c_str(), openFlags);
-    if (!mafStream)
+    ofstream mafFileStream;
+    if (mafPath != "stdout")
     {
-      throw hal_exception("Error opening " + mafPath);
+      mafFileStream.open(mafPath.c_str(), openFlags);
+      if (!mafFileStream)
+      {
+        throw hal_exception("Error opening " + mafPath);
+      }
     }
+    ostream& mafStream = mafPath != "stdout" ? mafFileStream : cout;
 
     MafExport mafExport;
     mafExport.setMaxRefGap(maxRefGap);
@@ -218,55 +222,35 @@ int main(int argc, char** argv)
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")
     {
-      refTargetsStream.open(refTargetsPath.c_str());
-      if (!refTargetsStream)
+      ifstream bedFileStream;
+      if (refTargetsPath != "stdin")
       {
-        throw hal_exception("Error opening " + refTargetsPath);
-      }
-      string line;
-      hal_size_t end;
-      while (!refTargetsStream.bad() && !refTargetsStream.eof())
-      {
-        getline(refTargetsStream, line);
-        istringstream ss(line);
-        start = -1;
-        end = (hal_size_t)-1;
-        refSequenceName.erase();
-        ss >> refSequenceName >> start >> end;
-        if (ss.bad() || ss.fail() ||
-            refSequenceName.empty() || start == -1 || end == (hal_size_t)-1 ||
-            (hal_index_t)end <= start)
+        bedFileStream.open(refTargetsPath.c_str());
+        if (!refTargetsStream)
         {
-          if (!refSequenceName.empty() && refSequenceName[0] != '#')
-          {
-            cerr << "skipping malformed line " << line << " in " 
-                 << refTargetsPath << "\n";
-          }
-        }
-        else
-        {
-          refSequence = refGenome->getSequence(refSequenceName);
-          length = end - start;
-          if (refSequence != NULL && 
-              start + length <= refSequence->getSequenceLength())
-          {
-            mafExport.convertSegmentedSequence(mafStream, alignment, 
-                                               refSequence, 
-                                               start, length, targetSet);
-          }
-          else
-          {
-            cerr << "bed coordinate " << refSequenceName << " " 
-                 << start << " " << end << " not found in " 
-                 << refGenome->getName() << "\n";
-          }
+          throw hal_exception("Error opening " + refTargetsPath);
         }
       }
+      istream& bedStream = refTargetsPath != "stdin" ? bedFileStream : cin;
+      MafBed mafBed(mafStream, alignment, refGenome, refSequence, start,
+                    length, targetSet, mafExport);
+      mafBed.scan(&bedStream);
     }
     else
     {
       mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
                                          start, length, targetSet);
+    }
+    if (mafPath != "stdout")
+    {
+      // dont want to leave a size 0 file when there's not ouput because
+      // it can make some scripts (ie that process a maf for each contig)
+      // obnoxious (presently the case for halPhlyoPTrain which uses 
+      // hal2mafMP --splitBySequence). 
+      if (mafFileStream.tellp() == (streampos)0)
+      {
+        std::remove(mafPath.c_str());
+      }
     }
   }
   catch(hal_exception& e)

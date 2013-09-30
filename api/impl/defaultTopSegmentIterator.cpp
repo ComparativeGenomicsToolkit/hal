@@ -44,7 +44,26 @@ hal_size_t DefaultTopSegmentIterator::getNumSegmentsInGenome() const
 {
   return getGenome()->getNumTopSegments();
 }
-   
+
+//////////////////////////////////////////////////////////////////////////////
+// SEGMENT INTERFACE OVERRIDE
+//////////////////////////////////////////////////////////////////////////////
+void DefaultTopSegmentIterator::print(ostream& os) const
+{
+  os << "TopSegIt: ";
+  DefaultSegmentIterator::print(os);
+
+  hal_index_t ai = getArrayIndex();
+  bool offRight = 
+     isTop() ? ai >= (hal_index_t)getGenome()->getNumTopSegments() :
+     ai >= (hal_index_t)getGenome()->getNumBottomSegments();
+
+  if (ai != NULL_INDEX && !offRight)
+  {
+    os << " pIdx=" << getParentIndex() << " npIdx=" << getNextParalogyIndex();
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // TOP SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////

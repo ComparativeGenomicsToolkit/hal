@@ -94,6 +94,8 @@ public:
 
    bool containsDNAArray() const;
 
+   const Alignment* getAlignment() const;
+
    // SEGMENTED SEQUENCE INTERFACE
 
    hal_size_t getSequenceLength() const;
@@ -169,6 +171,8 @@ protected:
    void writeSequences(const std::vector<hal::Sequence::Info>&
                        sequenceDimensions);
    void deleteSequenceCache();
+   void loadSequencePosCache() const;
+   void loadSequenceNameCache() const;
    void setGenomeTopDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
 
@@ -187,7 +191,8 @@ protected:
    HDF5ExternalArray _dnaArray;
    HDF5ExternalArray _topArray;
    HDF5ExternalArray _bottomArray;
-   HDF5ExternalArray _sequenceArray;
+   HDF5ExternalArray _sequenceIdxArray;
+   HDF5ExternalArray _sequenceNameArray;
    H5::Group _group;
    H5::DSetCreatPropList _dcprops;
    hal_size_t _numChildrenInBottomArray;
@@ -197,12 +202,14 @@ protected:
    mutable Genome* _parentCache;
    mutable std::vector<Genome*> _childCache;
    mutable std::map<hal_size_t, HDF5Sequence*> _sequencePosCache;
+   mutable std::vector<HDF5Sequence*> _zeroLenPosCache;
    mutable std::map<std::string, HDF5Sequence*> _sequenceNameCache;
 
    static const std::string dnaArrayName;
    static const std::string topArrayName;
    static const std::string bottomArrayName;
-   static const std::string sequenceArrayName;
+   static const std::string sequenceIdxArrayName;
+   static const std::string sequenceNameArrayName;
    static const std::string metaGroupName;
    static const std::string rupGroupName;
 

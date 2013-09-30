@@ -22,22 +22,18 @@ using namespace H5;
 using namespace hal;
 
 const size_t HDF5Sequence::startOffset = 0;
-const size_t HDF5Sequence::lengthOffset = sizeof(hal_size_t);
-const size_t HDF5Sequence::numTopSegmentsOffset = lengthOffset + sizeof(hal_size_t);
-const size_t HDF5Sequence::numBottomSegmentsOffset = numTopSegmentsOffset + sizeof(hal_size_t);
-const size_t HDF5Sequence::topSegmentArrayIndexOffset = numBottomSegmentsOffset + sizeof(hal_size_t);
+const size_t HDF5Sequence::topSegmentArrayIndexOffset = sizeof(hal_size_t);
 const size_t HDF5Sequence::bottomSegmentArrayIndexOffset = topSegmentArrayIndexOffset + sizeof(hal_size_t);
-const size_t HDF5Sequence::nameOffset = bottomSegmentArrayIndexOffset + sizeof(hal_size_t);
+const size_t HDF5Sequence::totalSize = bottomSegmentArrayIndexOffset + sizeof(hal_size_t);
 
 HDF5Sequence::HDF5Sequence(HDF5Genome* genome,
-                           HDF5ExternalArray* array,
+                           HDF5ExternalArray* idxArray,
+                           HDF5ExternalArray* nameArray,
                            hal_index_t index) :
-  _array(array),
+  _idxArray(idxArray),
+  _nameArray(nameArray),
   _index(index),
-  _genome(genome),
-  _cacheIndex(NULL_INDEX),
-  _startCache(NULL_INDEX),
-  _lengthCache(0)
+  _genome(genome)
 {
 
 }
@@ -47,31 +43,24 @@ HDF5Sequence::~HDF5Sequence()
   
 }
 
-// Some tools (ie maf export) access the same sequence
-// info over and over again deep inside a loop.  So I hack
-// in a little cache, mostly to avoid copying the same string
-// (name) out of hdf5.  
-inline void HDF5Sequence::refreshCache() const
+H5::CompType HDF5Sequence::idxDataType()
 {
-  if (_index != _cacheIndex)
-  {
-    _nameCache = _array->get(_index) + nameOffset;
-    // genome can be null in unit tests so we hack to not crash. 
-    if (_genome != NULL)
-    {
-      _fullNameCache = _genome->getName() + '.' + _nameCache;
-    }
-    else
-    {
-      _fullNameCache = _nameCache;
-    }
-    _startCache = _array->getValue<hal_size_t>(_index, startOffset);
-    _lengthCache = _array->getValue<hal_size_t>(_index, lengthOffset);
-    _cacheIndex = _index;
-  }
+  // the in-memory representations and hdf5 representations 
+  // don't necessarily have to be the same, but it simplifies 
+  // testing for now. 
+  assert(PredType::NATIVE_HSIZE.getSize() == sizeof(hal_size_t));
+  CompType dataType(totalSize);
+  dataType.insertMember("start", startOffset, PredType::NATIVE_HSIZE);
+  dataType.insertMember("topSegmentArrayIndexOffset", 
+                        topSegmentArrayIndexOffset, 
+                        PredType::NATIVE_HSIZE);
+  dataType.insertMember("bottomSegmentArrayIndexOffset",
+                        bottomSegmentArrayIndexOffset, 
+                        PredType::NATIVE_HSIZE);
+  return dataType;
 }
 
-H5::CompType HDF5Sequence::dataType(hal_size_t maxNameLength)
+H5::StrType HDF5Sequence::nameDataType(hal_size_t maxNameLength)
 {
   // the in-memory representations and hdf5 representations 
   // don't necessarily have to be the same, but it simplifies 
@@ -79,32 +68,22 @@ H5::CompType HDF5Sequence::dataType(hal_size_t maxNameLength)
   assert(PredType::NATIVE_HSIZE.getSize() == sizeof(hal_size_t));
   assert(PredType::NATIVE_CHAR.getSize() == sizeof(char));
   StrType strType(PredType::NATIVE_CHAR, (maxNameLength + 1) * sizeof(char));
-  CompType dataType(nameOffset + strType.getSize());
-  dataType.insertMember("start", startOffset, PredType::NATIVE_HSIZE);
-  dataType.insertMember("length", lengthOffset, PredType::NATIVE_HSIZE);
-  dataType.insertMember("numSequences", numTopSegmentsOffset, 
-                        PredType::NATIVE_HSIZE);
-  dataType.insertMember("numBottomSegments", numBottomSegmentsOffset, 
-                        PredType::NATIVE_HSIZE);
-  dataType.insertMember("topSegmentArrayIndexOffset", topSegmentArrayIndexOffset, 
-                        PredType::NATIVE_HSIZE);
-  dataType.insertMember("bottomSegmentArrayIndexOffset", bottomSegmentArrayIndexOffset, 
-                        PredType::NATIVE_HSIZE);
-  dataType.insertMember("name", nameOffset, strType);
-  return dataType;
+//  CompType dataType(nameOffset + strType.getSize());
+//  dataType.insertMember("name", nameOffset, strType);
+  return strType;
+//  return dataType;
 }
 
 // SEQUENCE INTERFACE
-const string& HDF5Sequence::getName() const
+string HDF5Sequence::getName() const
 {
-  refreshCache();
-  return _nameCache;
+  return _nameArray->get(_index);
 }
 
-const string& HDF5Sequence::getFullName() const
+string HDF5Sequence::getFullName() const
 {
-  refreshCache();
-  return _fullNameCache;
+  assert(_genome != NULL);
+  return _genome->getName() + '.' + getName();
 }
 
 const Genome* HDF5Sequence::getGenome() const
@@ -119,14 +98,12 @@ Genome* HDF5Sequence::getGenome()
 
 hal_index_t HDF5Sequence::getStartPosition() const
 {
-  refreshCache();
-  return _startCache;
+  return _idxArray->getValue<hal_size_t>(_index, startOffset);
 }
 
 hal_index_t HDF5Sequence::getEndPosition() const
 {
-  refreshCache();
-  return _startCache + (hal_index_t)(_lengthCache - 1);
+  return _idxArray->getValue<hal_size_t>(_index + 1 , startOffset) - 1;
 }
 
 hal_index_t HDF5Sequence::getArrayIndex() const
@@ -137,31 +114,43 @@ hal_index_t HDF5Sequence::getArrayIndex() const
 hal_index_t HDF5Sequence::getTopSegmentArrayIndex() const
 {
   return (hal_index_t)
-     _array->getValue<hal_size_t>(_index, topSegmentArrayIndexOffset);
+     _idxArray->getValue<hal_size_t>(_index, topSegmentArrayIndexOffset);
 }
 
 hal_index_t HDF5Sequence::getBottomSegmentArrayIndex() const
 {
   return (hal_index_t)
-     _array->getValue<hal_size_t>(_index, bottomSegmentArrayIndexOffset);
+     _idxArray->getValue<hal_size_t>(_index, bottomSegmentArrayIndexOffset);
 }
 
 // SEGMENTED SEQUENCE INTERFACE
 
 hal_size_t HDF5Sequence::getSequenceLength() const
 {
-  refreshCache();
-  return _lengthCache;
+  hal_size_t len = _idxArray->getValue<hal_size_t>(_index, startOffset);
+  hal_size_t nlen = _idxArray->getValue<hal_size_t>(_index + 1, startOffset);
+  assert(nlen >= len);
+  return (nlen - len);
 }
 
 hal_size_t HDF5Sequence::getNumTopSegments() const
 {
-  return _array->getValue<hal_size_t>(_index, numTopSegmentsOffset);
+  hal_index_t idx = 
+     _idxArray->getValue<hal_size_t>(_index, topSegmentArrayIndexOffset);
+  hal_index_t nextIdx = 
+     _idxArray->getValue<hal_size_t>(_index + 1, topSegmentArrayIndexOffset);
+  assert(nextIdx >= idx);
+  return nextIdx - idx;
 }
 
 hal_size_t HDF5Sequence::getNumBottomSegments() const
 {
-  return _array->getValue<hal_size_t>(_index, numBottomSegmentsOffset);
+  hal_index_t idx = 
+     _idxArray->getValue<hal_size_t>(_index, bottomSegmentArrayIndexOffset);
+  hal_index_t nextIdx = 
+     _idxArray->getValue<hal_size_t>(_index + 1, bottomSegmentArrayIndexOffset);
+  assert(nextIdx >= idx);
+  return nextIdx - idx;
 }
 
 TopSegmentIteratorPtr HDF5Sequence::getTopSegmentIterator(
@@ -329,37 +318,44 @@ void HDF5Sequence::set(hal_size_t startPosition,
                        hal_size_t topSegmentStartIndex,
                        hal_size_t bottomSegmentStartIndex)
 {
-  _array->setValue(_index, startOffset, startPosition);
-  _array->setValue(_index, lengthOffset, sequenceInfo._length);
-  _array->setValue(_index, numTopSegmentsOffset, sequenceInfo._numTopSegments);
-  _array->setValue(_index, numBottomSegmentsOffset,
-                   sequenceInfo._numBottomSegments);
-  _array->setValue(_index, topSegmentArrayIndexOffset, topSegmentStartIndex);
-  _array->setValue(_index, bottomSegmentArrayIndexOffset, 
-                   bottomSegmentStartIndex);
-  char* arrayBuffer = _array->getUpdate(_index) + nameOffset;
+  _idxArray->setValue(_index, startOffset, startPosition);
+  _idxArray->setValue(_index + 1, startOffset, 
+                      startPosition + sequenceInfo._length);
+  _idxArray->setValue(_index, topSegmentArrayIndexOffset, topSegmentStartIndex);
+  _idxArray->setValue(_index, bottomSegmentArrayIndexOffset, 
+                      bottomSegmentStartIndex);
+  _idxArray->setValue(_index + 1, topSegmentArrayIndexOffset, 
+                      topSegmentStartIndex + sequenceInfo._numTopSegments);
+  _idxArray->setValue(_index + 1, bottomSegmentArrayIndexOffset,
+                      bottomSegmentStartIndex + sequenceInfo._numBottomSegments);
+  char* arrayBuffer = _nameArray->getUpdate(_index);
   strcpy(arrayBuffer, sequenceInfo._name.c_str());
-  // keep cache for frequently used queries. 
-  _cacheIndex = NULL_INDEX;
-  refreshCache();
+
+  assert(getStartPosition() == (hal_index_t)startPosition);
+  assert(getNumTopSegments() == sequenceInfo._numTopSegments);
+  assert(getNumBottomSegments() == sequenceInfo._numBottomSegments);
+  assert(getSequenceLength() == sequenceInfo._length);
 }
 
+// These functions look dangerous.  Dont think they're used.
 void HDF5Sequence::setNumTopSegments(hal_size_t numTopSegments)
 {
-  _array->setValue(_index, numTopSegmentsOffset, numTopSegments);
+  _idxArray->setValue(_index + 1, topSegmentArrayIndexOffset, 
+                      getTopSegmentArrayIndex() + numTopSegments);
 }
 
 void HDF5Sequence::setNumBottomSegments(hal_size_t numBottomSegments)
 {
-  _array->setValue(_index, numBottomSegmentsOffset, numBottomSegments);
+  _idxArray->setValue(_index + 1, bottomSegmentArrayIndexOffset, 
+                      getBottomSegmentArrayIndex() + numBottomSegments);
 }
 
 void HDF5Sequence::setTopSegmentArrayIndex(hal_size_t topIndex)
 {
-  _array->setValue(_index, topSegmentArrayIndexOffset, topIndex);
+  _idxArray->setValue(_index, topSegmentArrayIndexOffset, topIndex);
 }
 
 void HDF5Sequence::setBottomSegmentArrayIndex(hal_size_t bottomIndex)
 {
-  _array->setValue(_index, bottomSegmentArrayIndexOffset, bottomIndex);
+  _idxArray->setValue(_index, bottomSegmentArrayIndexOffset, bottomIndex);
 }

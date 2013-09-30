@@ -1,0 +1,67 @@
+Please adhere to these style convetions for source code you will push (or send pull requests for) into the HAL repository.  They should be pretty obvious by looking any of the existing source code...
+
+
+indent: 2 spaces (no tab characters)
+
+curly braces: on their own lines, no indent.  ex:
+
+if (x > y)
+{
+  return true;
+}
+
+class names, struct names and other types:  first character capitalized 
+
+function names and variable names: first character lower case (ex variableNameOne)
+
+member variables: begin with _
+
+multiword names: capitalize subsequent words (ie no underscore) (ex ClassNameOne, variableNameOne)
+
+inline functions: not defined in class definition.  ex:
+
+class X
+{
+  void f();
+};
+
+inline X::voidf()
+{
+
+}
+
+maximum line width: 80 characters
+
+never use "using namespace" in a header file
+
+--Glenn 
+
+
+.emacs for the above:
+
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
+
+(c-add-style "mycodingstyle"
+             '((c-comment-only-line-offset . 0)
+               (c-hanging-braces-alist . ((substatement-open beforeafter)))
+               (c-offsets-alist . ((topmost-intro        . 0)
+                                   (topmost-intro-cont   . 0)
+                                   (substatement         . 3)
+                                   (substatement-open    . 0)
+                                   (statement-case-open  . 3)
+                                   (statement-cont       . 3)
+                                   (access-label         . -3)
+                                   (inclass              . 3)
+                                   (inline-open          . 3)
+                                   (innamespace          . 0)
+                                   ))))
+
+;; c/c++ mode
+(add-hook 'c-mode-common-hook
+          '(lambda()
+             (c-set-style "mycodingstyle")
+             (setq tab-width 2)
+             (setq c-basic-offset tab-width)
+				 (setq tab-width 8
+						 ;; this will make sure spaces are used instead of tabs
+						 indent-tabs-mode nil))) 

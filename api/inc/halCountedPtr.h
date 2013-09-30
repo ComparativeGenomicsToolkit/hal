@@ -222,5 +222,11 @@ inline void counted_ptr<T>::release()
   }
 }
 
+template <class T>
+inline std::ostream& operator<<(std::ostream& os, const counted_ptr<T>& cp)
+{
+  return os << cp.get();
+}
+
 }
 #endif // COUNTEDPTR_H

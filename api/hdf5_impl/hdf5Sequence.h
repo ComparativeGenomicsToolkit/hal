@@ -22,21 +22,18 @@ class HDF5Sequence : public Sequence
 
 public:
 
-   /** Constructor 
-    * @param genome Smart pointer to genome to which segment belongs
-    * @param array HDF5 array containg segment
-    * @param index Index of segment in the array */
    HDF5Sequence(HDF5Genome* genome,
-                HDF5ExternalArray* array,
+                HDF5ExternalArray* idxArray,
+                HDF5ExternalArray* nameArray,
                 hal_index_t index);
 
    /** Destructor */
    ~HDF5Sequence();
 
    // SEQUENCE INTERFACE
-   const std::string& getName() const;
+   std::string getName() const;
 
-   const std::string& getFullName() const;
+   std::string getFullName() const;
 
    const Genome* getGenome() const;
 
@@ -116,7 +113,8 @@ public:
 
    // LOCAL NON-INTERFACE METHODS
 
-   static H5::CompType dataType(hal_size_t maxNameLength);
+   static H5::CompType idxDataType();
+   static H5::StrType nameDataType(hal_size_t maxNameLength);
 
    void set(hal_size_t startPosition, const Sequence::Info& sequenceInfo,
             hal_size_t topSegmentStartIndex,
@@ -132,25 +130,19 @@ public:
    
 protected:
 
-   void refreshCache() const;
+   void refreshNameCache() const;
+   void refreshFullNameCache() const;
+   void refreshIdxCache() const;
 
    static const size_t startOffset;
-   static const size_t lengthOffset;
-   static const size_t numTopSegmentsOffset;
-   static const size_t numBottomSegmentsOffset;
    static const size_t topSegmentArrayIndexOffset;
    static const size_t bottomSegmentArrayIndexOffset;
-   static const size_t nameOffset;
+   static const size_t totalSize;
    
-   mutable HDF5ExternalArray* _array;
+   mutable HDF5ExternalArray* _idxArray;
+   mutable HDF5ExternalArray* _nameArray;
    mutable hal_index_t _index;
    mutable HDF5Genome* _genome;
-
-   mutable hal_index_t _cacheIndex;
-   mutable std::string _nameCache;
-   mutable std::string _fullNameCache;
-   mutable hal_index_t _startCache;
-   mutable hal_size_t _lengthCache;
 };
 
 }

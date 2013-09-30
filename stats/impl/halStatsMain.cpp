@@ -31,6 +31,10 @@ static void printBranchLength(ostream& os, AlignmentConstPtr alignment,
 static void printBranches(ostream& os, AlignmentConstPtr alignment); 
 static void printNumSegments(ostream& os, AlignmentConstPtr alignment,
                              const string& genomeName); 
+static void printBaseComp(ostream& os, AlignmentConstPtr alignment, 
+                          const string& baseCompPair);
+static void printChromSizes(ostream& os, AlignmentConstPtr alignment, 
+                            const string& genomeName);
 
 
 int main(int argc, char** argv)
@@ -70,6 +74,21 @@ int main(int argc, char** argv)
   optionsParser->addOption("numSegments", "print numTopSegments "
                            "numBottomSegments for given genome.",
                            "\"\"");
+  optionsParser->addOption("baseComp", "print base composition for given "
+                           "genome by sampling every step bases. Parameter "
+                           "value is of the form genome,step.  Ex: "
+                           "--baseComp human,1000.  The ouptut is of the form "
+                           "fraction_of_As fraction_of_Gs fraction_of_Cs "
+                           "fraction_of_Ts.", 
+                           "\"\"");
+  optionsParser->addOption("chromSizes", "print the name and length of each"
+                           " sequence in a given genome.  This is a subset"
+                           " of the"
+                           " information returned by --sequenceStats but is"
+                           " useful because it is in the format used by"
+                           " wigToBigWig", 
+                           "\"\"");
+
 
   string path;
   bool listGenomes;
@@ -85,6 +104,8 @@ int main(int argc, char** argv)
   bool printRoot;
   string nameForBL;
   string numSegmentsGenome;
+  string baseCompPair;
+  string chromSizesFromGenome;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -102,6 +123,8 @@ int main(int argc, char** argv)
     printRoot = optionsParser->getFlag("root");
     nameForBL = optionsParser->getOption<string>("branchLength");
     numSegmentsGenome = optionsParser->getOption<string>("numSegments");
+    baseCompPair = optionsParser->getOption<string>("baseComp");
+    chromSizesFromGenome = optionsParser->getOption<string>("chromSizes");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -116,12 +139,15 @@ int main(int argc, char** argv)
     if (printRoot) ++optCount;
     if (nameForBL != "\"\"") ++optCount;
     if (numSegmentsGenome != "\"\"") ++optCount;
+    if (baseCompPair != "\"\"") ++optCount;
+    if (chromSizesFromGenome != "\"\"") ++optCount;
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                           "--branches, --sequenceStats, --children, --parent, "
-                          "--bedSequences, --root, --numSegments and "
-                          "--branchLength " );
+                          "--bedSequences, --root, --numSegments, --baseComp, "
+                          "--chromSizes "
+                          "and --branchLength options are exclusive" );
     }
   }
   catch(exception& e)
@@ -185,6 +211,14 @@ int main(int argc, char** argv)
     else if (numSegmentsGenome != "\"\"")
     {
       printNumSegments(cout, alignment, numSegmentsGenome);
+    }
+    else if (baseCompPair != "\"\"")
+    {
+      printBaseComp(cout, alignment, baseCompPair);
+    }
+    else if (chromSizesFromGenome != "\"\"")
+    {
+      printChromSizes(cout, alignment, chromSizesFromGenome);
     }
     else
     {
@@ -445,4 +479,94 @@ void printNumSegments(ostream& os, AlignmentConstPtr alignment,
   }
   os << genome->getNumTopSegments() << " " << genome->getNumBottomSegments()
      << endl;
+}
+
+void printBaseComp(ostream& os, AlignmentConstPtr alignment, 
+                   const string& baseCompPair)
+{
+  string genomeName;
+  hal_size_t step = 0;
+  vector<string> tokens = chopString(baseCompPair, ",");
+  if (tokens.size() == 2)
+  {
+    genomeName = tokens[0];
+    stringstream ss(tokens[1]);
+    ss >> step;
+  }
+  if (step == 0)
+  {
+    stringstream ss;
+    ss << "Invalid value for --baseComp: " << baseCompPair << ".  Must be of"
+       << " format genomeName,step";
+    throw hal_exception(ss.str());
+  }
+      
+  const Genome* genome = alignment->openGenome(genomeName);
+  if (genome == NULL)
+  {
+    throw hal_exception(string("Genome ") + genomeName + " not found.");
+  }
+  hal_size_t numA = 0;
+  hal_size_t numC = 0;
+  hal_size_t numG = 0;
+  hal_size_t numT = 0;
+
+  hal_size_t len = genome->getSequenceLength();
+  if (step >= len)
+  {
+    step = len - 1;
+  }
+
+  DNAIteratorConstPtr dna = genome->getDNAIterator();
+  for (hal_size_t i = 0; i < len; i += step)
+  {
+    dna->jumpTo(i);
+    switch (dna->getChar())
+    {
+    case 'a':
+    case 'A':
+      ++numA;
+      break;
+    case 'c':
+    case 'C':
+      ++numC;
+      break;
+    case 'g':
+    case 'G':
+      ++numG;
+      break;
+    case 't':
+    case 'T':
+      ++numT;
+      break;
+    default:
+      break;
+    }
+  } 
+  
+  double total = numA + numC + numG + numT;
+  os << (double)numA / total << '\t'
+     << (double)numC / total << '\t'
+     << (double)numG / total << '\t'
+     << (double)numT / total << '\n';
+}
+
+void printChromSizes(ostream& os, AlignmentConstPtr alignment, 
+                     const string& genomeName)
+{
+  const Genome* genome = alignment->openGenome(genomeName);
+  if (genome == NULL)
+  {
+    throw hal_exception(string("Genome ") + genomeName + " not found.");
+  }
+  if (genome->getNumSequences() > 0)
+  {
+    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+    for (; !seqIt->equals(seqEnd); seqIt->toNext())
+    {
+      os << seqIt->getSequence()->getName() << '\t'
+         << seqIt->getSequence()->getSequenceLength() << '\n';
+    }
+  }
 }

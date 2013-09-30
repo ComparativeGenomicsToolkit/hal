@@ -9,7 +9,6 @@
 
 #include <fstream>
 #include <string>
-#include <deque>
 #include <cstdlib>
 #include <vector>
 #include <string>
@@ -46,6 +45,7 @@ protected:
    std::istream* _bedStream;
    BedLine _bedLine;
    hal_size_t _lineNumber;
+   int _bedVersion;
 };
 
 }

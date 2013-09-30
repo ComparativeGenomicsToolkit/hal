@@ -71,20 +71,24 @@ void hal::reverseComplement(std::string& s)
   }
 }
 
-static size_t lcaRecursive(const Genome* genome,
-                           const set<const Genome*>& inputSet,
-                           map<const Genome*, size_t>& table)
+// we now work with names instead of Genome*s to avoid expensive openGenome
+// function
+static size_t lcaRecursive(const Alignment* alignment,
+                           const string& genome,
+                           const set<string>& inputSet,
+                           map<string, size_t>& table)
 {
   size_t score = 0;
   if (inputSet.find(genome) != inputSet.end())
   {
     score = 1;
   }
-  for (hal_size_t i = 0; i < genome->getNumChildren(); ++i)
+  vector<string> childs = alignment->getChildNames(genome);
+  for (hal_size_t i = 0; i < childs.size(); ++i)
   {
-    score += lcaRecursive(genome->getChild(i), inputSet, table);
+    score += lcaRecursive(alignment, childs[i], inputSet, table);
   }
-  table.insert(pair<const Genome*, size_t>(genome, score));
+  table.insert(pair<string, size_t>(genome, score));
   return score;
 }
 
@@ -92,51 +96,65 @@ const Genome* hal::getLowestCommonAncestor(const set<const Genome*>& inputSet)
 {
   if (inputSet.empty())
      return NULL;
-  // dumb algorithm but it's friday and i'm too tired to think
-  const Genome* root = *inputSet.begin();
-  while (root->getParent() != NULL)
+  
+  const Alignment* alignment = (*inputSet.begin())->getAlignment();
+  set<string> inputNames;
+  for (set<const Genome*>::iterator i = inputSet.begin(); i != inputSet.end();
+       ++i)
   {
-     root = root->getParent();
+    inputNames.insert((*i)->getName());
   }
-  map<const Genome*, size_t> table;
-  lcaRecursive(root, inputSet, table);
-  const Genome* lca = root;
+
+  // dumb algorithm but it's friday and i'm too tired to think
+  string root = alignment->getRootName();
+  map<string, size_t> table;
+  lcaRecursive(alignment, root, inputNames, table);
+  string lca = root;
   bool found = false;
   while (!found)
   {
     found = true;
     hal_size_t score = table.find(lca)->second;
-    for (hal_size_t i = 0; found && i < lca->getNumChildren(); ++i)
+    vector<string> childs = alignment->getChildNames(lca);
+
+    for (hal_size_t i = 0; found && i < childs.size(); ++i)
     {
-      if (table.find(lca->getChild(i))->second == score)
+      if (table.find(childs[i])->second == score)
       {
-        lca = lca->getChild(i);
+        lca = childs[i];
         found = false;
       }
     }
   }
-  return lca;
+  return alignment->openGenome(lca);
 }
 
-static bool spanningRecursive(const Genome* genome, set<const Genome*>& outputSet, 
+// we now work with names instead of Genome*s to avoid expensive openGenome
+// function
+static bool spanningRecursive(const Alignment* alignment,
+                              const string& genome, 
+                              set<const Genome*>& outputSet, 
+                              set<string>& outputNames,
                               bool below = false)
 {
   bool above = false;
-  if (outputSet.find(genome) != outputSet.end())
+  if (outputNames.find(genome) != outputNames.end())
   {
     below = true;
     above = true;
   }
-  hal_size_t numChildren = genome->getNumChildren();
-  for (hal_size_t i = 0; i < numChildren; ++i)
+  vector<string> childs = alignment->getChildNames(genome);
+  for (hal_size_t i = 0; i < childs.size(); ++i)
   {
-    bool childAbove = spanningRecursive(genome->getChild(i), outputSet, below);
+    bool childAbove = spanningRecursive(alignment, childs[i], outputSet, 
+                                        outputNames, below);
     above = above || childAbove;
   }
 
   if (above && below)
   {
-    outputSet.insert(genome);
+    outputSet.insert(alignment->openGenome(genome));
+    outputNames.insert(genome);
   }
   return above;  
 }
@@ -149,7 +167,13 @@ void hal::getGenomesInSpanningTree(const set<const Genome*>& inputSet,
      return;
   outputSet = inputSet;
   outputSet.insert(lca);
-  spanningRecursive(lca, outputSet);
+  set<string> outputNames;
+  for (set<const Genome*>::iterator i = outputSet.begin(); i != outputSet.end();
+       ++i)
+  {
+    outputNames.insert((*i)->getName());
+  }
+  spanningRecursive(lca->getAlignment(), lca->getName(), outputSet, outputNames);
 }
 
 
