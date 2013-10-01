@@ -56,7 +56,7 @@ def simulateLoad(options):
     cmds = [getBlockVizCmd(options, tgtGenome) for tgtGenome in options.tgtGenomes]
     elapsedTime = 0.
     for cmd in cmds:
-        if options.udc is not None and options.udcZap is True:
+        if options.udc is not None and options.zapUdc is True:
             runShellCommand("rm -rf %s" % os.path.join(options.udc, "*")) 
         elapsedTime += timeCmd(cmd)
     return elapsedTime
