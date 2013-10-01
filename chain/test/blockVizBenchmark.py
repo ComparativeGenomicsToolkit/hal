@@ -56,6 +56,8 @@ def simulateLoad(options):
     cmds = [getBlockVizCmd(options, tgtGenome) for tgtGenome in options.tgtGenomes]
     elapsedTime = 0.
     for cmd in cmds:
+        if options.udc is not None and options.udcZap is True:
+            runShellCommand("rm -rf %s" % os.path.join(options.udc, "*")) 
         elapsedTime += timeCmd(cmd)
     return elapsedTime
 
@@ -119,6 +121,11 @@ def main(argv=None):
 
     parser.add_argument("--udc", help="UDC path", default=None)
 
+    parser.add_argument("--zapUdc", help="If a UDC path is specified with --udc, then"
+                        " erase it before each individual query to make sure it doesnt"
+                        " get used.  this is for comparison only", action="store_true",
+                        default=False)
+    
     parser.add_argument("--doDupes", help="Do duplications", action="store_true",
                         default=False)
 
@@ -130,6 +137,9 @@ def main(argv=None):
 
     args = parser.parse_args()
     args.tgtGenomes = args.tgtGenomes.split(",")
+
+    if args.udc is not None and not os.path.exists(args.udc):
+        os.makedirs(args.udc)
 
     times = runSim(args)
     binnedTimes = binTimes(args, times)
