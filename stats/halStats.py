@@ -27,7 +27,7 @@ def runShellCommand(command):
                                (command, sts))
         return output
     except KeyboardInterrupt:
-        raise RuntimeError("Aborting %s" % cmd)
+        raise RuntimeError("Aborting %s" % command)
 
 def runParallelShellCommands(cmdList, numProc):
     if numProc == 1 or len(cmdList) == 1:
