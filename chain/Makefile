@@ -12,10 +12,10 @@ libTestsHeaders = $(wildcard test/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 
-all : ${libPath}/halChain.a ${binPath}/hal2chain test/blockVizTest test/blockVizBed test/blockInterpolateTest ${binPath}/halChainTests ${binPath}/hal2assemblyHub.py
+all : ${libPath}/halChain.a ${binPath}/hal2chain test/blockVizTest test/blockVizBed test/blockVizTime test/blockInterpolateTest ${binPath}/halChainTests ${binPath}/hal2assemblyHub.py
 
 clean : 
-	rm -f ${libPath}/halChain.a ${libPath}/*.h ${binPath}/hal2chain test/blockVizTest test/BlockVizBed test/blockInterpolateTest ${binPath}/hal2assemblyHub.py
+	rm -f ${libPath}/halChain.a ${libPath}/*.h ${binPath}/hal2chain test/blockVizTest test/BlockVizBed test/blockVizTime test/blockInterpolateTest ${binPath}/hal2assemblyHub.py
 
 ${libPath}/halChain.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
@@ -36,7 +36,11 @@ sDependencies}
 test/blockVizBed: test/blockVizBed.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLib\
 sDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizBed test/blockVizBed.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLibs}
- 
+
+test/blockVizTime: test/blockVizTime.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLib\
+sDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizTime test/blockVizTime.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halLib.a ${basicLibs}
+
 test/blockInterpolateTest: test/blockInterpolateTest.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLib\
 sDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockInterpolateTest test/blockInterpolateTest.cpp ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibs}
