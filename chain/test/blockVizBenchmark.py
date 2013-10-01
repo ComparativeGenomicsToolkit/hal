@@ -17,6 +17,7 @@ import time
 import math
 import random
 from datetime import datetime
+from collections import OrderedDict
 
 from hal.stats.halStats import runShellCommand
 from hal.stats.halStats import getHalGenomes
@@ -74,6 +75,30 @@ def runSim(options):
         options.refLast = trial[1]
         elapsedTimes.append((options.refLast - options.refFirst, simulateLoad(options)))
     return elapsedTimes
+
+def binTimes(options, elapsedTimes):
+    binnedTimes = dict()
+    for (size, time) in elapsedTimes:
+        theBin = int(size / options.binSize) * options.binSize
+        if theBin not in binnedTimes:
+            binnedTimes[theBin] = (1, size, time, time, time)
+        else:
+            curVal = binnedTimes[theBin]
+            binnedTimes[theBin] = (curVal[0] + 1,
+                                   curVal[1] + size,
+                                   curVal[2] + time,
+                                   min(curVal[3], time),
+                                   max(curVal[4], time))
+    return binnedTimes
+
+def printTable(options, binnedTimes):
+    print "Bin, nElem, totTime, minTime, maxTime, avgTime"
+    for key in sorted(binnedTimes.iterkeys()):
+        theBin = key
+        nElem, totSize, totTime, minTime, maxTime = binnedTimes[theBin]
+        avgTime = float(totTime) / nElem
+        print "%d, %d, %f, %f, %f, %f" % (
+            theBin, nElem, totTime, minTime, maxTime, avgTime)
         
 def main(argv=None):
     if argv is None:
@@ -100,11 +125,15 @@ def main(argv=None):
     parser.add_argument("--maxSnp", help="Max query size to get bases",
                         type=int, default=50000)
 
+    parser.add_argument("--binSize", help="Bin size for output table",
+                        type=int, default=1000)
+
     args = parser.parse_args()
     args.tgtGenomes = args.tgtGenomes.split(",")
 
     times = runSim(args)
-    print times
+    binnedTimes = binTimes(args, times)
+    printTable(args, binnedTimes)
     
 if __name__ == "__main__":
     sys.exit(main())
