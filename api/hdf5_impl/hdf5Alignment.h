@@ -55,6 +55,10 @@ public:
 
    std::string getParentName(const std::string& name) const;
 
+   void updateBranchLength(const std::string& parentName,
+                           const std::string& childName,
+                           double length);
+
    double getBranchLength(const std::string& parentName,
                           const std::string& childName) const;   
 
