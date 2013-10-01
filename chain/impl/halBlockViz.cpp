@@ -547,8 +547,8 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   string qGenomeName = qGenome->getName();
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  blockMapper.init(tGenome, qGenome, absStart, tReversed,
-                   absEnd, doDupes, 0, doAdjes);
+  blockMapper.init(tGenome, qGenome, absStart, absEnd,
+                   tReversed, doDupes, 0, doAdjes);
   blockMapper.map();
   BlockMapper::MSSet paraSet;
   hal_size_t totalLength = 0;
