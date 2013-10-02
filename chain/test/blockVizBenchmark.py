@@ -135,11 +135,16 @@ def main(argv=None):
     parser.add_argument("--binSize", help="Bin size for output table",
                         type=int, default=1000)
 
+    parser.add_argument("--seed", help="Random seed", type=int, default=None)
+
     args = parser.parse_args()
     args.tgtGenomes = args.tgtGenomes.split(",")
 
     if args.udc is not None and not os.path.exists(args.udc):
         os.makedirs(args.udc)
+
+    if args.seed is not None:
+        random.seed(args.seed)
 
     times = runSim(args)
     binnedTimes = binTimes(args, times)
