@@ -66,6 +66,7 @@ def simulateLoad(options):
                 lastExcep = None
             except Exception as e:
                 lastExcep = e
+                time.sleep(2)
         if lastExcep is None:
             elapsedTime += t
         else:
