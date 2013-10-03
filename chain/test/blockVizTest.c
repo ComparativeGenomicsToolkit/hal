@@ -129,8 +129,8 @@ static void* getBlocksWrapper(void* voidArgs)
                                         args->tEnd, 
                                         0,
                                         args->doSeq, 
-                                        0,
-                                        0);
+                                        HAL_QUERY_AND_TARGET_DUPS,
+                                        1);
     halFreeBlockResults(results);
   }
   pthread_exit(NULL);
@@ -169,8 +169,9 @@ int main(int argc, char** argv)
                                  args.tEnd, 
                                  0,
                                  args.doSeq, 
-                                 args.doDupes,
-                                 0);
+                                 HAL_QUERY_AND_TARGET_DUPS,
+                                 1);
+
     if (results == NULL)
     {
       ret = -1;

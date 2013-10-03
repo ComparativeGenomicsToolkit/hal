@@ -79,6 +79,19 @@ struct hal_chromosome_t
    hal_int_t length;
 };
 
+/** Duplication mode toggler.  
+ * HAL_NO_DUPS: No duplications computed
+ * HAL_QUERY_DUPS: The same query range can map to multiple places in target
+ * HAL_QUERY_AND_TARGET_DUPS: As above, but target can also map to multiple
+ * places in query.  Note that these instances are returned in the special
+ * target dup list structure */
+typedef enum
+{
+  HAL_NO_DUPS = 0,
+  HAL_QUERY_DUPS,
+  HAL_QUERY_AND_TARGET_DUPS,
+} hal_dup_type_t;
+
 /** Open a text file created by halLodInterpolate.py for viewing. 
  * This text file contains a list of paths to progressively coarser
  * levels of detail of a source HAL file.  For example, it may look like
@@ -143,10 +156,13 @@ void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
  * otherwise must be set to 0
  * @param getSequenceString copy DNA sequence (of query species) into 
  * output blocks if not 0. 
- * @param doDupes create blocks for duplications if not 0.  When this 
- * option is enabled, the same region can appear in more than one block.
- * @param liftoverMode do not map back target adjacencies.  do not compute
- * target dupes.  
+ * @param dupMode Specifies which types of duplications to compute. 
+ * (note that when tReversed != 0, target duplications are not supported,
+ * so when doing liftover use no dupes or query dupes only) 
+ * @param mapBackAdjacencies Species if segments adjacent to query segments
+ * in the alignment are mapped back ot the target (producing offscreen 
+ * results). Must be set to 0 it tReversed is not 0 (so set to 0 when doing 
+ * liftover).
  * @return  block structure -- must be freed by halFreeBlockResults()
  */
 struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle, 
@@ -157,8 +173,8 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       hal_int_t tEnd,
                                                       hal_int_t tReversed,
                                                       int getSequenceString,
-                                                      int doDupes,
-                                                      int liftoverMode);
+                                                      hal_dup_type_t dupMode,
+                                                      int mapBackAdjacencies);
  
 
 /** Create a linked list of the species in the hal file.

@@ -212,8 +212,8 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       hal_int_t tEnd,
                                                       hal_int_t tReversed,
                                                       int getSequenceString,
-                                                      int doDupes,
-                                                      int liftoverMode)
+                                                      hal_dup_type_t dupMode,
+                                                      int mapBackAdjacencies)
 {
   HAL_LOCK
   hal_block_results_t* results = NULL;
@@ -226,9 +226,15 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
       ss << "Invalid query range [" << tStart << "," << tEnd << ").";
       throw hal_exception(ss.str());
     }
-    if (tReversed != 0 && liftoverMode == 0)
+    if (tReversed != 0 && mapBackAdjacencies != 0)
     {
-      throw hal_exception("tReversed can only be set when liftoverMode used");
+      throw hal_exception("tReversed can only be set when"
+                          "mapBackAdjacencies is 0");
+    }
+    if (tReversed != 0 && dupMode == HAL_QUERY_AND_TARGET_DUPS)
+    {
+      throw hal_exception("tReversed cannot be set in conjunction with"
+                          " dupMode=HAL_QUERY_AND_TARGET_DUPS");
     }
     AlignmentConstPtr alignment = 
        getExistingAlignment(halHandle, hal_size_t(rangeLength), false);
@@ -270,9 +276,9 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     results = readBlocks(seqAlignment, tSequence, absStart, absEnd, 
                          tReversed != 0,
                          qGenome,
-                         getSequenceString != 0, doDupes != 0, 
-                         doDupes != 0 && liftoverMode == 0,
-                         liftoverMode == 0);
+                         getSequenceString != 0, dupMode != HAL_NO_DUPS, 
+                         dupMode == HAL_QUERY_AND_TARGET_DUPS,
+                         mapBackAdjacencies != 0);
   }
   catch(exception& e)
   {
