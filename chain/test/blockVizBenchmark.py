@@ -56,9 +56,20 @@ def simulateLoad(options):
     cmds = [getBlockVizCmd(options, tgtGenome) for tgtGenome in options.tgtGenomes]
     elapsedTime = 0.
     for cmd in cmds:
-        if options.udc is not None and options.zapUdc is True:
-            runShellCommand("rm -rf %s" % os.path.join(options.udc, "*")) 
-        elapsedTime += timeCmd(cmd)
+        lastExcep = None
+        for trial in xrange(options.retry):
+            if options.udc is not None and options.zapUdc is True:
+                runShellCommand("rm -rf %s" % os.path.join(options.udc, "*"))
+            t = -1
+            try:
+                t = timeCmd(cmd)
+                lastExcep = None
+            except Exception as e:
+                lastExcep = e
+        if lastExcep is None:
+            elapsedTime += t
+        else:
+            raise lastExcep
     return elapsedTime
 
 def uniformRuns(options):
@@ -136,6 +147,9 @@ def main(argv=None):
                         type=int, default=1000)
 
     parser.add_argument("--seed", help="Random seed", type=int, default=None)
+
+    parser.add_argument("--retry", help="Number of retries if a query fails (which"
+                        " happens more than you think", type=int, default=10)
 
     args = parser.parse_args()
     args.tgtGenomes = args.tgtGenomes.split(",")
