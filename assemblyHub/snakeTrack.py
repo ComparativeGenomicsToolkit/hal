@@ -16,14 +16,16 @@ def writeTrackDb_snakes(f, halfile, genomes, currgenome, properName):
         genomeProperName = genome
         if genome in properName:
             genomeProperName = properName[genome]
-        f.write("track snake%s\n" %genome)
-        f.write("longLabel %s\n" %genomeProperName)
-        f.write("shortLabel %s\n" %genomeProperName)
-        f.write("otherSpecies %s\n" %genome)
-        f.write("visibility full\n")
-        f.write("priority %d\n" %(i + 2))
-        f.write("bigDataUrl %s\n" % halfile)
-        f.write("type halSnake\n")
-        f.write("group snake\n")
+        f.write("\t\ttrack snake%s\n" %genome)
+        f.write("\t\tlongLabel %s\n" %genomeProperName)
+        f.write("\t\tshortLabel %s\n" %genomeProperName)
+        f.write("\t\totherSpecies %s\n" %genome)
+        f.write("\t\tvisibility full\n")
+        f.write("\t\tpriority %d\n" %(i + 2))
+        f.write("\t\tbigDataUrl %s\n" % halfile)
+        f.write("\t\ttype halSnake\n")
+        f.write("\t\tgroup snake\n")
+        f.write("\t\tparent hubCentralAlignments\n")
+        f.write("\t\tsubGroups view=Snake orgs=%s\n" %genome)
         f.write("\n")
 

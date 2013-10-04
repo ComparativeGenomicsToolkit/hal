@@ -10,6 +10,7 @@ import os, re, time
 from sonLib.bioio import system  
 from jobTree.scriptTree.target import Target
 from optparse import OptionGroup
+from hal.assemblyHub.assemblyHubCommon import CleanupFiles
 
 class LiftoverBedFiles( Target ):
     def __init__(self, indir, halfile, genome2seq2len, bigbeddir, noLiftover, outdir):
@@ -74,16 +75,7 @@ class LiftoverBedFiles( Target ):
                         continue
                     self.addChildTarget( LiftoverBed(genomeoutdir, tempbed, asfile, extrafields, numfield, genome, othergenome, self.halfile, self.outdir) )
             tempbeds.append( tempbed )
-        self.setFollowOnTarget( CleanupLiftoverBedFiles(tempbeds) )
-
-class CleanupLiftoverBedFiles(Target):
-    def __init__(self, files):
-        Target.__init__(self)
-        self.files = files
-
-    def run(self):
-        if len(self.files) > 0:
-            system( "rm %s" % " ".join(self.files) ) #cleanup
+        self.setFollowOnTarget( CleanupFiles(tempbeds) )
 
 class LiftoverBed( Target ):
     def __init__(self, genomeoutdir, bed, asfile, extrafields, numfield, genome, othergenome, halfile, outdir):
@@ -162,25 +154,27 @@ def writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome, properName):
         if genome in genome2priority:
             priority = genome2priority[genome]
 
-        f.write("track %s%s\n" % (annotation, genome))
+        f.write("\t\ttrack %s%s\n" % (annotation, genome))
         if genome == currgenome:
-            f.write("longLabel %s %s\n" % (genomeProperName, annotation))
+            f.write("\t\tlongLabel %s %s\n" % (genomeProperName, annotation))
         else:
-            f.write("longLabel %s Lifted-over %s\n" % (genomeProperName, annotation))
-        f.write("priority %d\n" %priority)
-        f.write("shortLabel %s%s\n" % (genomeProperName, annotation))
-        f.write("bigDataUrl ../liftoverbeds/%s\n" % os.path.join( annotation, genome, "%s.bb" % currgenome ) )
-        f.write("type bigBed %s\n" %fields)
-        f.write("group annotation%s\n" %annotation)
+            f.write("\t\tlongLabel %s Lifted-over %s\n" % (genomeProperName, annotation))
+        f.write("\t\tpriority %d\n" %priority)
+        f.write("\t\tshortLabel %s%s\n" % (genomeProperName, annotation))
+        f.write("\t\tbigDataUrl ../liftoverbeds/%s\n" % os.path.join( annotation, genome, "%s.bb" % currgenome ) )
+        f.write("\t\ttype bigBed %s\n" %fields)
+        f.write("\t\tgroup annotation%s\n" %annotation)
         if numfield >=4:
         #if numfield >=4 and genome == currgenome: #DEBUG
-            f.write("searchIndex %s\n" %searchIndexStr)
+            f.write("\t\tsearchIndex %s\n" %searchIndexStr)
         #if not re.search('gene', annotation): #HACK
-        f.write("itemRgb On\n")
+        f.write("\t\titemRgb On\n")
         if genome == currgenome or not re.search('Gene', annotation): #HACK
-            f.write("visibility dense\n")
+            f.write("\t\tvisibility dense\n")
         else:
-            f.write("visibility hide\n")
+            f.write("\t\tvisibility hide\n")
+        f.write("\t\tparent hubCentral%s\n"%annotation)
+        f.write("\t\tsubGroups view=%s orgs=%s\n" %(annotation, genome))
         f.write("\n")
 
 def readBedDir(indir):
@@ -254,4 +248,19 @@ def addBedOptions(parser):
     group.add_option('--finalBigBedDirs', dest='bbdirs', help='comma separated list of directories containing final big bed files to be displayed. No liftover will be done for these files. Each directory represents a type of annotation. Example: "genes,genomicIsland,tRNA". Format of each directory: bbDir/ then queryGenome/ then targetGenome1.bb, targetGenome2.bb ... (so annotation of queryGenome has been mapped to targetGenomes and will be display on the targetGenome browsers). Default=%default' )
     group.add_option('--noBedLiftover', dest='noBedLiftover', action='store_true', default=False, help='If specified, will not lift over the bed annotations. Default=%default')
     parser.add_option_group(group)
+
+def checkBedOptions(parser, options):
+    if options.beddirs:
+        dirs = [d.rstrip('/') for d in options.beddirs.split(',')]
+        options.beddirs = dirs
+        for d in dirs:
+            if not os.path.exists(d) or not os.path.isdir(d):
+                parser.error("Bed directory %s does not exist or is not a directory.\n" %d)
+    if options.bbdirs:
+        dirs = [d.rstrip('/') for d in options.bbdirs.split(',')]
+        options.bbdirs = dirs
+        for d in dirs:
+            if not os.path.exists(d) or not os.path.isdir(d):
+                parser.error("Bigbed directory %s does not exist or is not a directory.\n" %d)
+
 

@@ -12,6 +12,7 @@ Also prepare description.html files
 import os
 from sonLib.bioio import system  
 from optparse import OptionGroup
+from hal.assemblyHub.assemblyHubCommon import getProperName
 
 def writeDescriptionFile(genome, outdir):
     filename = os.path.join(outdir, "description.html")
@@ -20,7 +21,41 @@ def writeDescriptionFile(genome, outdir):
     f.close()
     return
 
-def writeGroupFile(outdir, annotations):
+def writeTrackDb_compositeStart(f, shortLabel, longLabel, bbdirs, bwdirs, genomes, properName):
+    #Composite track includes all annotations in BED & WIGGLE formats, their lifted-over tracks, and Snake tracks
+    f.write("track hubCentral\n")
+    f.write("compositeTrack on\n")
+    f.write("shortLabel %s\n" %shortLabel)
+    f.write("longLabel %s\n" %longLabel)
+    f.write("group comphub\n")
+
+    bedtracktypes = [os.path.basename(b.rstrip('/')) for b in bbdirs]
+    bedstr = " ".join(["%s=%s" %(item, item) for item in bedtracktypes])
+    wigtracktypes = [os.path.basename(b.rstrip('/')) for b in bwdirs]
+    wigstr = " ".join(["%s=%s" %(item, item) for item in wigtracktypes])
+    
+    f.write("subGroup1 view Track_Type Snake=Alignments %s %s\n" %(bedstr, wigstr))
+    
+    genomeStr = " ".join(["%s=%s" %(g, getProperName(g, properName)) for g in genomes])
+    f.write("subGroup2 orgs Organisms %s\n" %genomeStr)
+    f.write("dragAndDrop subTracks\n")
+    f.write("#allButtonPair on\n")
+    #f.write("sortOrder view=+ orgs=+\n")
+    f.write("dimensions dimensionX=view dimensionY=orgs\n") 
+    f.write("noInherit on\n")
+    f.write("priority 0\n")
+    f.write("type bed 3\n")
+    f.write("\n")
+
+def writeTrackDb_compositeSubTrack(f, name):
+    f.write("\ttrack hubCentral%s\n" %name)
+    f.write("\tshortLabel %s\n" %name) 
+    f.write("\tview %s\n" %name)
+    f.write("\tvisibility pack\n")
+    f.write("\tsubTrack hubCentral\n")
+    f.write("\n")
+
+def writeGroupFile(outdir, hubLabel, annotations):
     filename = os.path.join(outdir, "groups.txt")
     f = open(filename, 'w')
     f.write("name user\n")
@@ -32,6 +67,12 @@ def writeGroupFile(outdir, annotations):
     f.write("name map\n")
     f.write("label Mapping\n")
     f.write("priority 2\n")
+    f.write("defaultIsClosed 0\n")
+    f.write("\n")
+
+    f.write("name comphub\n")
+    f.write("label %s\n" % hubLabel)
+    f.write("priority 3\n")
     f.write("defaultIsClosed 0\n")
     f.write("\n")
 
