@@ -64,6 +64,7 @@ def simulateLoad(options):
             try:
                 t = timeCmd(cmd)
                 lastExcep = None
+                break
             except Exception as e:
                 lastExcep = e
                 time.sleep(2)
