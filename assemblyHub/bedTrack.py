@@ -208,7 +208,7 @@ def readBedDir(indir):
 def getFileColumnCount(file):
     f = open(file, 'r')
     firstline = f.readline()
-    items = firstline.split('\t')
+    items = firstline.split()
     f.close()
     return len(items)
 
