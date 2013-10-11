@@ -865,7 +865,7 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
 
   hal_target_dupe_list_t* head = NULL;
   hal_target_dupe_list_t* prev = NULL;
-  for (i = tempList.begin(); i != tempList.end() && *i != NULL; i = j)
+  for (i = tempList.begin(); i != tempList.end() && *i != NULL; ++i)
   {
     if (head == NULL)
     {
@@ -1009,10 +1009,12 @@ void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList)
   {
     hal_target_range_t* range1 = (*i)->tRange;
     j = i;
-    for (++j; j != dupeList.end() && *j != NULL; ++j)
+    bool compatible = true;
+    for (++j; j != dupeList.end() && *j != NULL && compatible; ++j)
     {
       hal_target_range_t* range2 = (*j)->tRange;
-      if (areRangesCompatible(range1, range2) == true)
+      compatible = areRangesCompatible(range1, range2);
+      if (compatible == true)
       {
         range2 = (*j)->tRange;
         for (range1 = (*i)->tRange; range1 != NULL; range1 = range1->next) 
