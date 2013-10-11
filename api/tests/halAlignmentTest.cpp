@@ -103,14 +103,18 @@ void AlignmentTestTrees::createCallBack(hal::AlignmentPtr alignment)
   alignment->addLeafGenome("Leaf2", "Root", 5.1);
   alignment->addLeafGenome("Leaf3", "Root", 6.1);
   alignment->addLeafGenome("Leaf4", "Root", 7.1);
+  alignment->updateBranchLength("Root", "Leaf1", 3.0);
+  alignment->updateBranchLength("Root", "Leaf2", 6.1);
+  alignment->updateBranchLength("Root", "Leaf2", 5.1);
 }
 
 void AlignmentTestTrees::checkCallBack(hal::AlignmentConstPtr alignment)
 {
   CuAssertTrue(_testCase, alignment->getRootName() == "NewRoot");
   CuAssertTrue(_testCase, alignment->getNewickTree() == 
-        "((Leaf:10,Leaf1:4.1,Leaf2:5.1,Leaf3:6.1,Leaf4:7.1)Root:15)NewRoot;");
+        "((Leaf:10,Leaf1:3,Leaf2:5.1,Leaf3:6.1,Leaf4:7.1)Root:15)NewRoot;");
   CuAssertTrue(_testCase, alignment->getBranchLength("Root", "Leaf") == 10.0);
+  CuAssertTrue(_testCase, alignment->getBranchLength("Root", "Leaf1") == 3.0);
   vector<string> children = alignment->getChildNames("Root");
   CuAssertTrue(_testCase, children.size() == 5);
 

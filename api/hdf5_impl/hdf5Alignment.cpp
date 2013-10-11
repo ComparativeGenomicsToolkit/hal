@@ -402,6 +402,27 @@ string HDF5Alignment::getParentName(const string& name) const
   return stTree_getLabel(parent);
 }
 
+
+void HDF5Alignment::updateBranchLength(const string& parentName,
+                                       const string& childName,
+                                       double length)
+{
+  map<string, stTree*>::iterator findIt = _nodeMap.find(childName);
+  if (findIt == _nodeMap.end())
+  {
+    throw hal_exception(string("node ") + childName + " not found");
+  }
+  stTree* node = findIt->second;
+  stTree* parent = stTree_getParent(node);
+  if (parent == NULL || parentName != stTree_getLabel(parent))
+  {
+    throw hal_exception(string("edge ") + parentName + "--" + childName + 
+                        " not found");
+  }
+  stTree_setBranchLength(node, length);
+  _dirty = true;
+}
+
 double HDF5Alignment::getBranchLength(const string& parentName,
                                       const string& childName) const
 {
