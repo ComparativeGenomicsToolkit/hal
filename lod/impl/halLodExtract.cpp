@@ -6,6 +6,8 @@
 
 #include <cassert>
 #include <deque>
+#include <limits>
+#include <algorithm>
 #include "halLodExtract.h"
 extern "C" {
 #include "sonLibTree.h"
@@ -27,7 +29,7 @@ LodExtract::~LodExtract()
 
 void LodExtract::createInterpolatedAlignment(AlignmentConstPtr inAlignment,
                                              AlignmentPtr outAlignment,
-                                             hal_size_t step,
+                                             double scale,
                                              const string& tree,
                                              const string& rootName,
                                              bool keepSequences,
@@ -55,7 +57,7 @@ void LodExtract::createInterpolatedAlignment(AlignmentConstPtr inAlignment,
     vector<string> childNames = _outAlignment->getChildNames(genomeName);
     if (!childNames.empty())
     {
-      convertInternalNode(genomeName, step);
+      convertInternalNode(genomeName, scale);
       for (size_t childIdx = 0; childIdx < childNames.size(); childIdx++)
       {
         bfQueue.push_back(childNames[childIdx]);
@@ -149,7 +151,7 @@ void LodExtract::createTree(const string& tree, const string& rootName)
 }
 
 void LodExtract::convertInternalNode(const string& genomeName, 
-                                      hal_size_t step)
+                                     double scale)
 {
   const Genome* parent = _inAlignment->openGenome(genomeName);
   assert(parent != NULL);
@@ -159,6 +161,8 @@ void LodExtract::convertInternalNode(const string& genomeName,
   {
     children.push_back(_inAlignment->openGenome(childNames[i]));
   }
+  hal_size_t minAvgBlockSize = getMinAvgBlockSize(parent, children);
+  hal_size_t step = (hal_size_t)(scale * minAvgBlockSize);
   _graph.build(_inAlignment, parent, children, step, _allSequences, _probeFrac,
                _minSeqFrac);
 
@@ -623,4 +627,31 @@ void LodExtract::writeParseInfo(Genome* genome)
       topIterator->toRight();
     }
   }
+}
+
+hal_size_t LodExtract::getMinAvgBlockSize(
+  const Genome* inParent,
+  const vector<const Genome*>& inChildren) const
+{
+  hal_size_t minAvgBlockSize = numeric_limits<hal_size_t>::max();
+  if (inParent->getSequenceLength() > 0)
+  {
+    assert(inParent->getNumBottomSegments() > 0);
+    assert(inParent->getNumBottomSegments() < inParent->getSequenceLength());
+    minAvgBlockSize = inParent->getSequenceLength() / 
+       inParent->getNumBottomSegments();
+  }
+  for (size_t i = 0; i < inChildren.size(); ++i)
+  {
+    if (inChildren[i]->getSequenceLength() > 0)
+    {
+      assert(inChildren[i]->getNumTopSegments() > 0);
+      assert(inChildren[i]->getNumTopSegments() <
+             inParent->getSequenceLength());
+      minAvgBlockSize = std::min(minAvgBlockSize, 
+                                 inChildren[i]->getSequenceLength() / 
+                                 inChildren[i]->getNumTopSegments());
+    }
+  }
+  return minAvgBlockSize;
 }
