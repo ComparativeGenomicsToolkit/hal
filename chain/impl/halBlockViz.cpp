@@ -70,6 +70,7 @@ static void readTargetRange(hal_target_dupe_list_t* cur,
 
 static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
 
+static void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList);
 
 extern "C" int halOpenLOD(char *lodFilePath)
 {
@@ -771,6 +772,31 @@ struct CStringLess { bool operator()(const char* s1, const char* s2) const {
   return strcmp(s1, s2) < 0;}
 };
 
+struct DupeIdLess { bool operator()(const hal_target_dupe_list_t* d1,
+                                    const hal_target_dupe_list_t* d2) const {
+  if (d1 != NULL && d2 != NULL)
+  {
+    if (d1->id == d2->id)
+    {
+      // hack to keep ties in reverse sorted order based on tStart
+      // this is so that the prepend in processTargetDupes when the 
+      // lists gets merged keeps the tStarts in ascending order
+      return d1->tRange->tStart > d2->tRange->tStart;
+    }
+    return d1->id < d2->id;
+  }
+  return d1 != NULL && d2 == NULL;
+}};
+
+struct DupeStartLess { bool operator()(const hal_target_dupe_list_t* d1,
+                                       const hal_target_dupe_list_t* d2) const {
+  if (d1 != NULL && d2 != NULL)
+  {
+    return d1->tRange->tStart < d2->tRange->tStart;
+  }
+  return d1 != NULL && d2 == NULL;
+}};
+
 hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
                                            BlockMapper::MSSet& paraSet)
 {
@@ -798,8 +824,6 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
   
   cleanTargetDupesList(tempList);
 
-  hal_target_dupe_list_t* head = NULL;
-  hal_target_dupe_list_t* prev = NULL;
   map<const char*, hal_int_t, CStringLess> idMap;
   pair<map<const char*, hal_int_t, CStringLess>::iterator, bool> idRes;
   vector<hal_target_dupe_list_t*>::iterator i;
@@ -823,6 +847,10 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
       (*j)->tRange->next = (*i)->tRange;
       (*i)->tRange = (*j)->tRange;
       (*j)->tRange = NULL;
+      // DupeIdLess sorting comparator should ensure that these 
+      // elemens are added in the proper order so that trange list
+      // stays sorted here
+      assert((*i)->tRange->tStart < (*i)->tRange->next->tStart);
       halFreeTargetDupeLists(*j);
       *j = NULL;
       j = k;
@@ -830,17 +858,26 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
 
     idRes = idMap.insert(pair<const char*, hal_int_t>((*i)->qChrom, 0));
     (*i)->id = idRes.first->second++;
+  }
+ 
+  std::sort(tempList.begin(), tempList.end(), DupeStartLess());
+  mergeCompatibleDupes(tempList);
+
+  hal_target_dupe_list_t* head = NULL;
+  hal_target_dupe_list_t* prev = NULL;
+  for (i = tempList.begin(); i != tempList.end() && *i != NULL; i = j)
+  {
     if (head == NULL)
     {
       head = *i;
     }
-    else
+    else 
     {
       prev->next = *i;
     }
     prev = *i;
-    prev->next = NULL;
   }
+  
   return head;
 }
 
@@ -887,21 +924,6 @@ void readTargetRange(hal_target_dupe_list_t* cur,
   cur->qChrom = (char*)malloc(qSeqName.length() * sizeof(char) + 1);
   strcpy(cur->qChrom, qSeqName.c_str());
 }
-
-struct DupeIdLess { bool operator()(const hal_target_dupe_list_t* d1,
-                                    const hal_target_dupe_list_t* d2) const {
-  if (d1 != NULL && d2 != NULL)
-  {
-    return d1->id < d2->id;
-  }
-  return d1 != NULL && d2 == NULL;
-}};
-
-struct DupeStartLess { bool operator()(const hal_target_dupe_list_t* d1,
-                                       const hal_target_dupe_list_t* d2) const {
-  return d1->tRange->tStart < d2->tRange->tStart;
-}};
-
 
 void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
 {
@@ -960,3 +982,48 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
   dupeList.resize(dupeList.size() - deadCount);
 }
 
+static bool areRangesCompatible(hal_target_range_t* range1,
+                                hal_target_range_t* range2)
+{
+  for (; range1 != NULL; range1 = range1->next)
+  {
+    if ((range1->next == NULL) != (range2->next != NULL) ||
+        range2->tStart != range1->tStart + range1->size ||
+        (range1->next != NULL && 
+         range1->next->tStart - (range1->tStart + range1->size) < 
+         range2->size))
+    {
+      return false;
+    }        
+  }
+  return true;
+}
+
+void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList)
+{
+  vector<hal_target_dupe_list_t*>::iterator i;
+  vector<hal_target_dupe_list_t*>::iterator j;
+  vector<hal_target_dupe_list_t*>::iterator k;
+  
+  for (i = dupeList.begin(); i != dupeList.end() && *i != NULL; i = j)
+  {
+    hal_target_range_t* range1 = (*i)->tRange;
+    j = i;
+    for (++j; j != dupeList.end() && *j != NULL; ++j)
+    {
+      hal_target_range_t* range2 = (*j)->tRange;
+      if (areRangesCompatible(range1, range2) == true)
+      {
+        range2 = (*j)->tRange;
+        for (range1 = (*i)->tRange; range1 != NULL; range1 = range1->next) 
+        {
+          assert(range2 != NULL);
+          range1->size += range2->size;
+          range2 = range2->next;
+        } 
+        halFreeTargetDupeLists(*j);
+        *j = NULL;
+      }
+    }
+  }
+}
