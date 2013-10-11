@@ -91,7 +91,14 @@ public:
     * @param childName name of child genome */
    virtual double getBranchLength(const std::string& parentName,
                                   const std::string& childName) const = 0;
-   
+
+   /** Change the branch length between two genomes in the phylogeny 
+    * @param parentName name of parent genome
+    * @param childName name of child genome */   
+   virtual void updateBranchLength(const std::string& parentName,
+                                   const std::string& childName,
+                                   double length) = 0;
+
    /** Get names of child genomes in the phylogeny (empty vector for leaves)
     * @param name Name of genome */
    virtual std::vector<std::string> 

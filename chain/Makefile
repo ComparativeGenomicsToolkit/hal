@@ -12,10 +12,10 @@ libTestsHeaders = $(wildcard test/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 
-all : ${libPath}/halChain.a ${binPath}/hal2chain test/blockVizTest test/blockVizBed test/blockInterpolateTest ${binPath}/halChainTests ${binPath}/hal2assemblyHub.py
+all : ${libPath}/halChain.a ${binPath}/hal2chain test/blockVizTest test/blockVizBed test/blockInterpolateTest ${binPath}/halChainTests 
 
 clean : 
-	rm -f ${libPath}/halChain.a ${libPath}/*.h ${binPath}/hal2chain test/blockVizTest test/BlockVizBed test/blockInterpolateTest ${binPath}/hal2assemblyHub.py
+	rm -f ${libPath}/halChain.a ${libPath}/*.h ${binPath}/hal2chain test/blockVizTest test/BlockVizBed test/blockInterpolateTest 
 
 ${libPath}/halChain.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
 	cp ${libHeaders} ${libPath}/
@@ -44,6 +44,3 @@ sDependencies}
 ${binPath}/halChainTests : ${libTests} ${libTestsHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halChainTests ${libHalTests} ${libTests} ${libPath}/halLib.a ${libPath}/halChain.a ${basicLibs}
 
-${binPath}/hal2assemblyHub.py : hal2assemblyHub.py
-	cp hal2assemblyHub.py ${binPath}/hal2assemblyHub.py
-	chmod +x ${binPath}/hal2assemblyHub.py
