@@ -985,9 +985,9 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
 static bool areRangesCompatible(hal_target_range_t* range1,
                                 hal_target_range_t* range2)
 {
-  for (; range1 != NULL; range1 = range1->next)
+  for (; range1 != NULL; range1 = range1->next, range2 = range2->next)
   {
-    if ((range1->next == NULL) != (range2->next != NULL) ||
+    if ((range1->next == NULL) != (range2->next == NULL) ||
         range2->tStart != range1->tStart + range1->size ||
         (range1->next != NULL && 
          range1->next->tStart - (range1->tStart + range1->size) < 
