@@ -53,7 +53,6 @@ int main(int argc, char *argv[])
     ColumnIteratorConstPtr colIt = seqIt->getSequence()->getColumnIterator(NULL, 0, 0, NULL_INDEX, false, true);
     bool inRegion = false;
     BedLine curBedLine;
-
     while (1) {
       bool wasInRegion = inRegion;
       inRegion = true;
@@ -66,6 +65,10 @@ int main(int argc, char *argv[])
       // false positives.) So it's done here instead.
       set <const Genome *> seenGenomes;
       for (colMapIt = cols->begin(); colMapIt != cols->end(); colMapIt++) {
+        if (colMapIt->second->empty()) {
+          // The column map can contain empty entries.
+          continue;
+        }
         const Genome *colGenome = colMapIt->first->getGenome();
         if (ingroupGenomes.count(colGenome) && !seenGenomes.count(colGenome)) {
           ingroupCount += 1;
@@ -95,7 +98,6 @@ int main(int argc, char *argv[])
       if (colIt->lastColumn()) {
         // Have to break here instead of at the beginning of the loop to
         // avoid missing the last column.
-        
         // UPDATE TO LATEST CODE FROM ABOVE (OR STOP BEING LAZY)
         if (inRegion) {
           // current single-copy region has ended, finish bed entry
@@ -105,8 +107,7 @@ int main(int argc, char *argv[])
         }
         break;
       }
-      colIt->toSite(colIt->getReferenceSequencePosition() + 1, referenceGenome->getSequenceLength() - 1, true);
-//    colIt->toRight();
+      colIt->toRight();
     }
   }
   return 0;
