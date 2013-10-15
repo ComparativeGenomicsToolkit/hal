@@ -82,7 +82,7 @@ public:
     * * (note that other genomes in their spanning tree will be
     * * traversed as necessary but not reported)
     * @param maxInsertLength maximum insertion to be traversed
-    * @param position Index in genome of returned iterator 
+    * @param position Index in sequence of returned iterator 
     * @param noDupes Don't follow paralogy edges
     * @param noAncestors Don't report any non-leaf nodes in output
     * @param reverseStrand Map from reverse strand of this sequence
