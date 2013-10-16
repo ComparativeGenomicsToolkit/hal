@@ -89,7 +89,7 @@ void WiggleLiftover::visitLine()
   hal_index_t absLast = _last + _srcSequence->getStartPosition();
   _segment->slice(0,0);
   if (absFirst < _segment->getStartPosition() || 
-      absLast > _segment->getStartPosition())
+      absLast > _segment->getEndPosition())
   {
     mapSegment();
   }
@@ -183,22 +183,25 @@ void WiggleLiftover::mapFragments(vector<MappedSegmentConstPtr>& fragments)
       {
         ++_cvIdx;
       }
-      assert(_cvals[_cvIdx]._first <= pos);
-      hal_index_t mpos;
+      if (pos >= _cvals[_cvIdx]._first && pos <= _cvals[_cvIdx]._last)
+      {
+        assert(_cvals[_cvIdx]._first <= pos);
+        hal_index_t mpos;
 
-      if (seg->getReversed() == false)
-      {
-        mpos = seg->getStartPosition() + j;
-      }
-      else
-      {
-        mpos = seg->getEndPosition() - j;
-      }
-      if (_cvIdx < _cvals.size() && _cvals[_cvIdx]._first <= pos && 
-          _cvals[_cvIdx]._last >= pos)
-      {
-        double val = std::max(_cvals[_cvIdx]._val, _outVals.get(mpos));
-        _outVals.set(mpos, val);
+        if (seg->getReversed() == false)
+        {
+          mpos = seg->getStartPosition() + j;
+        }
+        else
+        {
+          mpos = seg->getEndPosition() - j;
+        }
+        if (_cvIdx < _cvals.size() && _cvals[_cvIdx]._first <= pos && 
+            _cvals[_cvIdx]._last >= pos)
+        {
+          double val = std::max(_cvals[_cvIdx]._val, _outVals.get(mpos));
+          _outVals.set(mpos, val);
+        }  
       }
     }
   }

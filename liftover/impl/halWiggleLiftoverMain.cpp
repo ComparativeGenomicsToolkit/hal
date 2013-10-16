@@ -70,7 +70,7 @@ int main(int argc, char** argv)
     exit(1);
   }
 
-  //try
+  try
   {
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
                                                            optionsParser);
@@ -129,16 +129,16 @@ int main(int argc, char** argv)
     liftover.convert(alignment, srcGenome, srcWigPtr, tgtGenome, tgtWigPtr,
                      !noDupes, unique);
   }
-  // catch(hal_exception& e)
-  // {
-  //   cerr << "hal exception caught: " << e.what() << endl;
-  //   return 1;
-  // }
-  // catch(exception& e)
-  // {
-  //   cerr << "Exception caught: " << e.what() << endl;
-  //   return 1;
-  // }
+  catch(hal_exception& e)
+  {
+    cerr << "hal exception caught: " << e.what() << endl;
+    return 1;
+  }
+  catch(exception& e)
+  {
+    cerr << "Exception caught: " << e.what() << endl;
+    return 1;
+  }
 
   return 0;
 }

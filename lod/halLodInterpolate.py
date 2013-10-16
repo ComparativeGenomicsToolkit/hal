@@ -26,7 +26,7 @@ from hal.stats.halStats import getHalStats
 # Wrapper for halLodExtract
 def getHalLodExtractCmd(inHalPath, outHalPath, scale, keepSeq, inMemory,
                      probeFrac, minSeqFrac, chunk):
-    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
+    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, scale)
     if keepSeq is True:
         cmd += " --keepSequences"
     if inMemory is True:
