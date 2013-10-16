@@ -30,6 +30,7 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
   _version = version;
   std::getline(is, lineBuffer);
   stringstream ss(lineBuffer);
+  ss.imbue(is.getloc());
   ss >> _chrName;
   if (ss.bad() || ss.fail()) 
   {

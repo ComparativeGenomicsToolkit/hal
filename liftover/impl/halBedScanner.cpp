@@ -25,10 +25,15 @@ BedScanner::~BedScanner()
 
 }
 
-void BedScanner::scan(const string& bedPath, int bedVersion)
+void BedScanner::scan(const string& bedPath, int bedVersion,
+                      const locale* inLocale)
 {
   assert(_bedStream == NULL);
   _bedStream = new ifstream(bedPath.c_str());
+  if (inLocale != NULL)
+  {
+    _bedStream->imbue(*inLocale);
+  }
   
   try {
     scan(_bedStream, bedVersion);
@@ -46,11 +51,15 @@ void BedScanner::scan(const string& bedPath, int bedVersion)
   _bedStream = NULL;
 }
 
-void BedScanner::scan(istream* is, int bedVersion)
+void BedScanner::scan(istream* is, int bedVersion, const locale* inLocale)
 {
   visitBegin();
   _bedStream = is;
   _bedVersion = bedVersion;
+  if (inLocale != NULL)
+  {
+    _bedStream->imbue(*inLocale);
+  }
 
   if (_bedVersion == -1)
   {
@@ -65,13 +74,13 @@ void BedScanner::scan(istream* is, int bedVersion)
   _lineNumber = 0;
   try
   {
-    skipWhiteSpaces(_bedStream);
+    skipWhiteSpaces(_bedStream, inLocale);
     while (_bedStream->good())
     {
       ++_lineNumber;
       _bedLine.read(*_bedStream, _bedVersion, lineBuffer);
       visitLine();
-      skipWhiteSpaces(_bedStream);
+      skipWhiteSpaces(_bedStream, inLocale);
     }
   }
   catch(hal_exception e)
@@ -84,13 +93,18 @@ void BedScanner::scan(istream* is, int bedVersion)
   _bedStream = NULL;
 }
 
-int BedScanner::getBedVersion(istream* bedStream)
+int BedScanner::getBedVersion(istream* bedStream, const locale* inLocale)
 {
   assert(bedStream != &cin);
   if (bedStream->bad())
   {
     throw hal_exception("Error reading bed input stream");
   }
+  if (inLocale != NULL)
+  {
+    bedStream->imbue(*inLocale);
+  }
+
   string lineBuffer;
   BedLine bedLine;
   int version = 12;
@@ -101,7 +115,7 @@ int BedScanner::getBedVersion(istream* bedStream)
     {
       bedStream->clear();
       bedStream->seekg(pos);
-      skipWhiteSpaces(bedStream);
+      skipWhiteSpaces(bedStream, inLocale);
       *bedStream >> std::skipws;
       bedLine.read(*bedStream, version, lineBuffer);
       break;
@@ -120,9 +134,14 @@ int BedScanner::getBedVersion(istream* bedStream)
   return version;
 }
 
-size_t BedScanner::getNumColumns(const string& bedLine)
+size_t BedScanner::getNumColumns(const string& bedLine,
+                                 const locale* inLocale)
 {
   stringstream ss(bedLine);
+  if (inLocale != NULL)
+  {
+    ss.imbue(*inLocale);
+  }
   size_t c = 0;
   string buffer;
   while (ss.good())
@@ -148,9 +167,12 @@ void BedScanner::visitEOF()
 {
 }
 
-void BedScanner::skipWhiteSpaces(istream* bedStream)
+void BedScanner::skipWhiteSpaces(istream* bedStream,
+                                 const locale* inLocale)
 {
-  while (bedStream->good() && std::isspace(bedStream->peek()))
+  locale defaultLocale;
+  const locale& myLocale = inLocale == NULL ? defaultLocale : *inLocale;
+  while (bedStream->good() && std::isspace((char)bedStream->peek(), myLocale))
   {
     bedStream->get();
   }
