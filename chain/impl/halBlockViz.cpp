@@ -373,8 +373,8 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     cerr << "Error in hal maf query";
     numBytes = -1;
   }
-  return numBytes;
   HAL_UNLOCK
+  return numBytes;
 }
 
 extern "C" struct hal_species_t *halGetSpecies(int halHandle)
