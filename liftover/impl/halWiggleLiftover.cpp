@@ -194,7 +194,7 @@ void WiggleLiftover::mapFragments(vector<MappedSegmentConstPtr>& fragments)
         }
         else
         {
-          mpos = seg->getEndPosition() - j;
+          mpos = seg->getStartPosition() - j;
         }
         if (_cvIdx < _cvals.size() && _cvals[_cvIdx]._first <= pos && 
             _cvals[_cvIdx]._last >= pos)
