@@ -26,6 +26,11 @@ HDF5_CCLINKER = ${cxx}
 cpp = h5c++ ${h5prefix}
 cxx = h5cc ${h5prefix}
 
+ifeq (${SYS},Darwin) #This is to deal with the Mavericks replacing gcc with clang fully and changing libraries
+  cppflags += -stdlib=libstdc++
+  cflags += -stdlib=libstdc++
+endif
+
 # add compiler flag and kent paths if udc is enabled
 # relies on KENTSRC containing path to top level kent/ dir
 # and MACHTYPE being specified
