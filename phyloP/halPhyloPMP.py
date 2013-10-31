@@ -52,7 +52,8 @@ def getHalPhyloPCmd(options):
              opt == 'dupType' or
              opt == 'dupMask' or
              opt == 'step' or
-             opt == 'refBed')):
+             opt == 'refBed' or
+             opt == 'subtree')):
             if val is not True:
                 cmd += ' --%s %s' % (opt, str(val))
             else:
@@ -265,6 +266,9 @@ def main(argv=None):
                         help="Bed file with coordinates to annotate in the "
                         "reference genome to stream from standard "
                         " input.",
+                        default=None)
+    hppGrp.add_argument("--subtree",
+                        help="Subtree root for lineage-specific acceleration/conservation",
                         default=None)
 
     args = parser.parse_args()
