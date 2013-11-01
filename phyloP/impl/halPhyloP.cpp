@@ -54,10 +54,6 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
   _softMaskDups = (int)softMaskDups;
   _outStream = outStream;
 
-  // set float precision to 3 places to be consistent with non-hal phyloP
-  _outStream->setf(ios::fixed, ios::floatfield);
-  _outStream->precision(3);
-
   if (dupType == "ambiguous")
   {
     _maskAllDups = 0;

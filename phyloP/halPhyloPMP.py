@@ -53,7 +53,8 @@ def getHalPhyloPCmd(options):
              opt == 'dupMask' or
              opt == 'step' or
              opt == 'refBed' or
-             opt == 'subtree')):
+             opt == 'subtree' or
+             opt == 'prec')):
             if val is not True:
                 cmd += ' --%s %s' % (opt, str(val))
             else:
@@ -269,6 +270,9 @@ def main(argv=None):
                         default=None)
     hppGrp.add_argument("--subtree",
                         help="Subtree root for lineage-specific acceleration/conservation",
+                        default=None)
+    hppGrp.add_argument("--prec",
+                        help="Number of decimal places in wig output", type=int,
                         default=None)
 
     args = parser.parse_args()

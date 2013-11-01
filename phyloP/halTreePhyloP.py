@@ -58,6 +58,8 @@ def computeTreePhyloP(args):
             args.hal, genome, args.mod, bedFlags, args.numProc, wigFile)
         if args.subtree is not None:
             cmd += " --subtree %s" % args.subtree
+        if args.prec is not None:
+            cmd += " --prec %d" % args.prec
 
         runShellCommand(cmd)
     
@@ -117,6 +119,10 @@ def main(argv=None):
     parser.add_argument("--subtree",
                         help="Run clade-specific acceleration/conservation on subtree below this node",
                         default=None)
+    parser.add_argument("--prec",
+                        help="Number of decimal places in wig output", type=int,
+                        default=None)
+
     # need phyloP options here:
     
     args = parser.parse_args()

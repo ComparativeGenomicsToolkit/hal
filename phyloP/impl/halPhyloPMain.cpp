@@ -70,6 +70,7 @@ static CLParserPtr initParser()
 			   "leading up to this node), and test for "
 			   "conservation/acceleration in this subtree "
 			   "relative to the rest of the tree", "\"\"");
+  optionsParser->addOption("prec", "Number of decimal places in wig output", 3);
   
   optionsParser->setDescription("Make PhyloP wiggle plot for a genome.");
   return optionsParser;
@@ -90,6 +91,7 @@ int main(int argc, char** argv)
   hal_size_t length;
   hal_size_t step;
   string refBedPath;
+  hal_size_t prec;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -106,6 +108,7 @@ int main(int argc, char** argv)
     subtree = optionsParser->getOption<string>("subtree");
     std::transform(dupMask.begin(), dupMask.end(), dupMask.begin(), ::tolower);
     refBedPath = optionsParser->getOption<string>("refBed");
+    prec = optionsParser->getOption<hal_size_t>("prec");
   }
   catch(exception& e)
   {
@@ -168,6 +171,10 @@ int main(int argc, char** argv)
                             wigPath);
       }
     }
+    
+    // set the precision of floating point output
+    outStream.setf(ios::fixed, ios::floatfield);
+    outStream.precision(prec);
     
     PhyloP phyloP;
     phyloP.init(alignment, modPath, &outStream, dupMask == "soft" , dupType,
