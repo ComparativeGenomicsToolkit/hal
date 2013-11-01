@@ -171,7 +171,7 @@ int main(int argc, char** argv)
     
     PhyloP phyloP;
     phyloP.init(alignment, modPath, &outStream, dupMask == "soft" , dupType,
-		"CONACC", subtree=subtree);
+		"CONACC", subtree);
 
     ifstream refBedStream;
     if (refBedPath != "\"\"")
