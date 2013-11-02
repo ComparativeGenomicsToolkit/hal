@@ -24,7 +24,10 @@ static CLParserPtr initParser()
                              " to stream to standard output.");
   optionsParser->addOptionFlag("noDupes", "do not map between duplications in"
                                " graph.", false);
-  optionsParser->addOptionFlag("append", "append results to tgtWig", false);
+  optionsParser->addOptionFlag("append", "append/merge results into tgtWig.  "
+                               "Note that the entire tgtWig file will be loaded into"
+                               " memory then overwritten, so this data can be lost "
+                               "in event of a crash", false);
 /*  optionsParser->addOptionFlag("unique",
                                "only map block if its left-most paralog is in"
                                "the input.  this "
@@ -107,8 +110,19 @@ int main(int argc, char** argv)
         throw hal_exception("Error opening srcWig, " + srcWigPath);
       }
     }
-    
-    ios_base::openmode mode = append ? ios::out | ios::app : ios_base::out;
+
+    WiggleLiftover liftover;
+    if (append == true && tgtWigPath != "stdout")
+    {
+      // load the wig data into memory so that it can be properly merged
+      // with the new data from the liftover.
+      ifstream tgtWig(tgtWigPath.c_str());
+      if (tgtWig)
+      {
+        liftover.preloadOutput(alignment, tgtGenome, &tgtWig);
+      }
+    }
+
     ofstream tgtWig;
     ostream* tgtWigPtr;
     if (tgtWigPath == "stdout")
@@ -117,15 +131,14 @@ int main(int argc, char** argv)
     }
     else
     {      
-      tgtWig.open(tgtWigPath.c_str(), mode);
+      tgtWig.open(tgtWigPath.c_str());
       tgtWigPtr = &tgtWig;
       if (!tgtWig)
       {
         throw hal_exception("Error opening tgtWig, " + tgtWigPath);
       }
     }
-    
-    WiggleLiftover liftover;
+
     liftover.convert(alignment, srcGenome, srcWigPtr, tgtGenome, tgtWigPtr,
                      !noDupes, unique);
   }

@@ -8,6 +8,7 @@
 #include <cassert>
 #include "halWiggleLiftover.h"
 #include "halBlockMapper.h"
+#include "halWiggleLoader.h"
 
 using namespace std;
 using namespace hal;
@@ -23,6 +24,15 @@ WiggleLiftover::WiggleLiftover()
 WiggleLiftover::~WiggleLiftover()
 {
 
+}
+
+void WiggleLiftover::preloadOutput(AlignmentConstPtr alignment,
+                                   const Genome* tgtGenome,
+                                   istream* inputFile)
+{
+  WiggleLoader loader;
+  _outVals.init(tgtGenome->getSequenceLength(), DefaultValue, DefaultTileSize);
+  loader.load(alignment, tgtGenome, inputFile, &_outVals);
 }
 
 void WiggleLiftover::convert(AlignmentConstPtr alignment,
@@ -56,7 +66,12 @@ void WiggleLiftover::convert(AlignmentConstPtr alignment,
   inputSet.insert(_srcGenome);
   inputSet.insert(_tgtGenome);
   getGenomesInSpanningTree(inputSet, _tgtSet);
-  _outVals.init(tgtGenome->getSequenceLength(), DefaultValue, DefaultTileSize);
+  // if not init'd by preload()...
+  if (_outVals.getGenomeSize() == 0)
+  {
+    _outVals.init(tgtGenome->getSequenceLength(), DefaultValue, 
+                  DefaultTileSize);
+  }
   scan(inputFile);
   write();
   _outVals.clear();
