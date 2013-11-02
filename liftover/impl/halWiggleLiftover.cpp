@@ -112,11 +112,8 @@ void WiggleLiftover::visitLine()
   {
     throw hal_exception("Coordinate out of order");
   }
-  if (_value != DefaultValue)
-  {
-    CoordVal cv = {absFirst, absLast, _value};
-    _cvals.push_back(cv);
-  }
+  CoordVal cv = {absFirst, absLast, _value};
+  _cvals.push_back(cv);
 }
                
 void WiggleLiftover::visitEOF()
