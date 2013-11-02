@@ -42,20 +42,14 @@ def computeTreePhyloP(args):
     bigwigCmds = []
     while len(visitQueue) > 0:
         genome = visitQueue.pop()
-        children = getHalChildrenNames(args.hal, genome)
         bedFlags = ""
         # Generate a bed file of all regions of 
         # genome that dont align to parent
         bedInsertsFile = outFileName(args, genome, "bed", "inserts", True)
         if genome != args.root:
-            if True or len(children) > 0:
-                runShellCommand(
-                    "halAlignedExtract %s %s --alignedFile %s --complement" % (
-                        args.hal, genome, bedInsertsFile))
-            else:
-                #empty file for leaves (ie we dont want to phyloP anything
-                #-- it all gets lifted down)
-                runShellCommand("rm -f %s && touch %s" % (bedInsertsFile, bedInsertsFile))
+            runShellCommand(
+            "halAlignedExtract %s %s --alignedFile %s --complement" % (
+                args.hal, genome, bedInsertsFile))
             bedFlags = "--refBed %s" % bedInsertsFile
 
         # Run halPhyloP on the inserts
@@ -91,6 +85,7 @@ def computeTreePhyloP(args):
             bigwigCmds.append(bwCmd)
 
         # Recurse on children.
+        children = getHalChildrenNames(args.hal, genome)
         for child in children:
             visitQueue.append(child)
 
