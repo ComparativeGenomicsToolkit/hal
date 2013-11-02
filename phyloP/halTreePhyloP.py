@@ -42,14 +42,20 @@ def computeTreePhyloP(args):
     bigwigCmds = []
     while len(visitQueue) > 0:
         genome = visitQueue.pop()
+        children = getHalChildrenNames(args.hal, genome)
         bedFlags = ""
         # Generate a bed file of all regions of 
         # genome that dont align to parent
         bedInsertsFile = outFileName(args, genome, "bed", "inserts", True)
         if genome != args.root:
-            runShellCommand(
-            "halAlignedExtract %s %s --alignedFile %s --complement" % (
-                args.hal, genome, bedInsertsFile))
+            if True or len(children) > 0:
+                runShellCommand(
+                    "halAlignedExtract %s %s --alignedFile %s --complement" % (
+                        args.hal, genome, bedInsertsFile))
+            else:
+                #empty file for leaves (ie we dont want to phyloP anything
+                #-- it all gets lifted down)
+                runShellCommand("rm -f %s && touch %s" % (bedInsertsFile, bedInsertsFile))
             bedFlags = "--refBed %s" % bedInsertsFile
 
         # Run halPhyloP on the inserts
@@ -58,6 +64,8 @@ def computeTreePhyloP(args):
             args.hal, genome, args.mod, bedFlags, args.numProc, wigFile)
         if args.subtree is not None:
             cmd += " --subtree %s" % args.subtree
+        if args.prec is not None:
+            cmd += " --prec %d" % args.prec
 
         runShellCommand(cmd)
     
@@ -83,7 +91,6 @@ def computeTreePhyloP(args):
             bigwigCmds.append(bwCmd)
 
         # Recurse on children.
-        children = getHalChildrenNames(args.hal, genome)
         for child in children:
             visitQueue.append(child)
 
@@ -117,6 +124,10 @@ def main(argv=None):
     parser.add_argument("--subtree",
                         help="Run clade-specific acceleration/conservation on subtree below this node",
                         default=None)
+    parser.add_argument("--prec",
+                        help="Number of decimal places in wig output", type=int,
+                        default=None)
+
     # need phyloP options here:
     
     args = parser.parse_args()
