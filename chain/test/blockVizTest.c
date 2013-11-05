@@ -70,8 +70,8 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
 
 static void printBlock(FILE* file, struct hal_block_t* b)
 {
-  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: %s\n", 
-          b->qChrom, b->tStart, b->qStart, b->size, b->strand, b->sequence);
+  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: tgt : %s query: %s\n", 
+          b->qChrom, b->tStart, b->qStart, b->size, b->strand, b->tSequence, b->qSequence);
 }
 
 static void printDupeList(FILE* file, struct hal_target_dupe_list_t* d)
