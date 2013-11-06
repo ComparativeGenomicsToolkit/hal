@@ -33,7 +33,8 @@ void Liftover::convert(AlignmentConstPtr alignment,
                        int outBedVersion,
                        bool addExtraColumns,
                        bool traverseDupes,
-                       bool outPSL)
+                       bool outPSL,
+                       const locale* inLocale)
 {
   _srcGenome = srcGenome;
   _tgtGenome = tgtGenome;
@@ -43,6 +44,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
   _outBedVersion = outBedVersion;
   _traverseDupes = traverseDupes;
   _outPSL = outPSL;
+  _inLocale = inLocale;
   _missedSet.clear();
   _tgtSet.clear();
   assert(_srcGenome && inBedStream && tgtGenome && outBedStream);
@@ -56,12 +58,12 @@ void Liftover::convert(AlignmentConstPtr alignment,
   stringstream* firstLineStream = NULL;
   if (_inBedVersion <= 0)
   {
-    skipWhiteSpaces(inBedStream);
+    skipWhiteSpaces(inBedStream, _inLocale);
     std::getline(*inBedStream, firstLineBuffer);
     firstLineStream = new stringstream(firstLineBuffer);
-    _inBedVersion = BedScanner::getBedVersion(firstLineStream);
+    _inBedVersion = BedScanner::getBedVersion(firstLineStream, inLocale);
     assert(inBedStream->eof() || _inBedVersion >= 3);
-    size_t numCols = BedScanner::getNumColumns(firstLineBuffer);
+    size_t numCols = BedScanner::getNumColumns(firstLineBuffer, inLocale);
     if ((int)numCols > _inBedVersion)
     {
       cerr << "Warning: auto-detecting input BED version " << _inBedVersion
@@ -75,10 +77,10 @@ void Liftover::convert(AlignmentConstPtr alignment,
 
   if (firstLineStream != NULL)
   {
-    scan(firstLineStream, _inBedVersion);
+    scan(firstLineStream, _inBedVersion, inLocale);
     delete firstLineStream;
   }
-  scan(inBedStream, _inBedVersion);
+  scan(inBedStream, _inBedVersion, inLocale);
 }
 
 void Liftover::visitBegin()

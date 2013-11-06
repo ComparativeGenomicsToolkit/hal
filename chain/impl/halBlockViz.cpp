@@ -182,7 +182,8 @@ extern "C" void halFreeBlocks(struct hal_block_t* head)
   while (head != NULL)
   {
     hal_block_t* next = head->next;
-    free(head->sequence);
+    free(head->qSequence);
+    free(head->tSequence);
     free(head->qChrom);
     free(head);
     head = next;
@@ -707,7 +708,8 @@ void readBlock(AlignmentConstPtr seqAlignment,
   cur->next = NULL;
 
   string seqBuffer = qSequence->getName();
-  string dnaBuffer;
+  string qDnaBuffer;
+  string tDnaBuffer;
   size_t prefix = 
      seqBuffer.find(genomeName + '.') != 0 ? 0 : genomeName.length() + 1;
   cur->qChrom = (char*)malloc(seqBuffer.length() + 1 - prefix);
@@ -737,7 +739,8 @@ void readBlock(AlignmentConstPtr seqAlignment,
   assert(firstRefSeg->getLength() == firstQuerySeg->getLength());
   cur->size = 1 + tEnd - cur->tStart;
   cur->strand = firstQuerySeg->getReversed() ? '-' : '+';
-  cur->sequence = NULL;
+  cur->tSequence = NULL;
+  cur->qSequence = NULL;
   if (getSequenceString != 0)
   {
     const Genome* qSeqGenome = 
@@ -757,14 +760,36 @@ void readBlock(AlignmentConstPtr seqAlignment,
          << " for DNA sequence extraction";
       throw hal_exception(ss.str());
     }
+
+    const Genome* tSeqGenome = 
+       seqAlignment->openGenome(tSequence->getGenome()->getName());
+    if (tSeqGenome == NULL)
+    {
+      stringstream ss;
+      ss << "Unable to open genome " << tSequence->getGenome()->getName() 
+         << " for DNA sequence extraction";
+      throw hal_exception(ss.str());
+    }
+
+    const Sequence* tSeqSequence = tSeqGenome->getSequence(tSequence->getName());
+    if (tSeqSequence == NULL)
+    {
+      stringstream ss;
+      ss << "Unable to open sequence " << tSequence->getName() 
+         << " for DNA sequence extraction";
+      throw hal_exception(ss.str());
+    }
     
-    qSeqSequence->getSubString(dnaBuffer, cur->qStart, cur->size);
+    qSeqSequence->getSubString(qDnaBuffer, cur->qStart, cur->size);
+    tSeqSequence->getSubString(tDnaBuffer, cur->tStart, cur->size);
     if (cur->strand == '-')
     {
-      reverseComplement(dnaBuffer);
+      reverseComplement(qDnaBuffer);
     }
-    cur->sequence = (char*)malloc(dnaBuffer.length() * sizeof(char) + 1);
-    strcpy(cur->sequence, dnaBuffer.c_str());
+    cur->qSequence = (char*)malloc(qDnaBuffer.length() * sizeof(char) + 1);
+    cur->tSequence = (char*)malloc(tDnaBuffer.length() * sizeof(char) + 1);
+    strcpy(cur->qSequence, qDnaBuffer.c_str());
+    strcpy(cur->tSequence, tDnaBuffer.c_str());
   }
 }
 

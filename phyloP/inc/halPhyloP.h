@@ -37,12 +37,17 @@ public:
     * @param phyloPMode "CONACC", "CON", "ACC", "NNEUT" are choices, 
     * though I think we are mainly interested in CONACC 
     * (conservation/acceleration- negative p-values indicate acceleration)
+    * @param subtree If equal to empty string, perform phyloP test on 
+    * entire tree. Otherwise, subtree names a branch to perform test on
+    * subtree relative to rest of tree. The subtree includes all children
+    * of the named node as well as the branch leading to the node.
     */
    void init(AlignmentConstPtr alignment, const std::string& modFilePath,
              std::ostream* outStream,
              bool softMaskDups = true, 
              const std::string& dupType = "ambiguous",
-             const std::string& phyloPMode = "CONACC");
+             const std::string& phyloPMode = "CONACC",
+             const std::string& subtree = "\"\"");
 
    void processSequence(const Sequence* sequence,
                         hal_index_t start,
@@ -60,6 +65,7 @@ protected:
 
    hal::AlignmentConstPtr _alignment;
    TreeModel* _mod;
+   TreeModel* _modcpy;
    std::set<const Genome*> _targetSet;
    std::ostream* _outStream;
   
@@ -70,6 +76,9 @@ protected:
    // 0 default = mask only ambiguous bases in dups; if 1 mask any duplication
    hash_table* _seqnameHash;
    ColFitData* _colfitdata;
+   ColFitData *_colfitdata2;
+   List *_insideNodes;
+   List *_outsideNodes;
    mode_type _mode;
    MSA* _msa;
 };

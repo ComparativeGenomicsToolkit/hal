@@ -46,24 +46,21 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
                   ostream* outStream,
                   bool softMaskDups, 
                   const string& dupType,
-                  const string& phyloPMode)
+                  const string& phyloPMode,
+		  const string &subtree)
 {
   clear();
   _alignment = alignment;
   _softMaskDups = (int)softMaskDups;
   _outStream = outStream;
 
-  // set float precision to 3 places to be consistent with non-hal phyloP
-  _outStream->setf(ios::fixed, ios::floatfield);
-  _outStream->precision(3);
-
   if (dupType == "ambiguous")
   {
-    _maskAllDups = 1;
+    _maskAllDups = 0;
   }
   else if (dupType == "all")
   {
-    _maskAllDups = 0;
+    _maskAllDups = 1;
   }
   else
   {
@@ -97,6 +94,7 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
   _mod = tm_new_from_file(infile, TRUE);
   phast_fclose(infile);
 
+ 
   // make sure all species in the tree are in the alignment, otherwise print
   // warning and prune tree; create targetSet from these species.
   // Make a hash of species names to species index (using phast's hash
@@ -131,6 +129,7 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
   lst_free(leafNames);
   lst_free(pruneNames);
 
+
   //create a dummy alignment with a single column. As we iterate through the 
   // columns we will fill in the bases and compute the phyloP scores for
   // individual columns.
@@ -144,7 +143,28 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
   _msa = msa_new(seqs, names, numspec, 1, NULL);
   ss_from_msas(_msa, 1, 0, NULL, NULL, NULL, -1, FALSE);
   msa_free_seqs(_msa);
-  _colfitdata = col_init_fit_data(_mod, _msa, ALL, _mode, FALSE);
+
+
+  if (subtree != "\"\"") {
+    _mod->subtree_root = tr_get_node(_mod->tree, subtree.c_str());
+    if (_mod->subtree_root == NULL) {
+      tr_name_ancestors(_mod->tree);
+      _mod->subtree_root = tr_get_node(_mod->tree, subtree.c_str());
+      if (_mod->subtree_root == NULL)
+	throw hal_exception("no node named " + subtree);
+    }
+    _modcpy = tm_create_copy(_mod);
+    _modcpy->subtree_root = NULL;
+    _colfitdata = col_init_fit_data(_modcpy, _msa, ALL, NNEUT, FALSE);
+    _colfitdata2 = col_init_fit_data(_mod, _msa, SUBTREE, _mode, FALSE);
+    _colfitdata2->tupleidx = 0;
+    _insideNodes = lst_new_ptr(_mod->tree->nnodes);
+    _outsideNodes = lst_new_ptr(_mod->tree->nnodes);
+    tr_partition_leaves(_mod->tree, _mod->subtree_root, 
+			_insideNodes, _outsideNodes);
+  } else {
+    _colfitdata = col_init_fit_data(_mod, _msa, ALL, _mode, FALSE);
+  }
   _colfitdata->tupleidx = 0;
 }
 
@@ -267,7 +287,7 @@ void PhyloP::processSequence(const Sequence* sequence,
     else
     {
       /** Reset the iterator to a non-contiguous position */
-      colIt->toSite(pos, last);
+      colIt->toSite(pos, last - 1);
     }
   }
 }
@@ -340,18 +360,43 @@ double PhyloP::pval(const ColumnIterator::ColumnMap *cmap)
   //finally, compute the score!
   double alt_lnl, null_lnl, this_scale, delta_lnl, pval;
   int sigfigs=4;  //same value used in phyloP code
-  _mod->scale = 1;
-  tm_set_subst_matrices(_mod);
-  null_lnl = col_compute_log_likelihood(_mod, _msa, 0,
-                                        _colfitdata->fels_scratch[0]);
-  vec_set(_colfitdata->params, 0, _colfitdata->init_scale);
-  opt_newton_1d(col_likelihood_wrapper_1d, &_colfitdata->params->data[0],
-                _colfitdata,
-		&alt_lnl, sigfigs, _colfitdata->lb->data[0], 
-                _colfitdata->ub->data[0],
-		NULL, NULL, NULL);
-  alt_lnl *= -1;
-  this_scale = _colfitdata->params->data[0];
+
+  if (_mod->subtree_root == NULL) {
+    _mod->scale = 1;
+    tm_set_subst_matrices(_mod);
+    null_lnl = col_compute_log_likelihood(_mod, _msa, 0,
+					  _colfitdata->fels_scratch[0]);
+    vec_set(_colfitdata->params, 0, _colfitdata->init_scale);
+    opt_newton_1d(col_likelihood_wrapper_1d, &_colfitdata->params->data[0],
+		  _colfitdata,
+		  &alt_lnl, sigfigs, _colfitdata->lb->data[0], 
+		  _colfitdata->ub->data[0],
+		  NULL, NULL, NULL);
+    alt_lnl *= -1;
+    this_scale = _colfitdata->params->data[0];
+  } else {  //subtree case
+    if (!col_has_data_sub(_mod, _msa, 0, _insideNodes, _outsideNodes)) {
+      alt_lnl = 0;
+      null_lnl = 0;
+      this_scale = 1;
+    } else {
+      vec_set(_colfitdata->params, 0, _colfitdata->init_scale);
+      opt_newton_1d(col_likelihood_wrapper_1d, &_colfitdata->params->data[0],
+		    _colfitdata,
+		    &null_lnl, sigfigs, _colfitdata->lb->data[0], 
+		    _colfitdata->ub->data[0], NULL, NULL, NULL);
+      null_lnl *= -1;
+      
+      vec_set(_colfitdata2->params, 0, 
+	      max(0.05, _colfitdata->params->data[0]));
+      vec_set(_colfitdata2->params, 1, _colfitdata2->init_scale_sub);
+      opt_bfgs(col_likelihood_wrapper, _colfitdata2->params, 
+	       _colfitdata2, &alt_lnl, _colfitdata2->lb,
+	       _colfitdata2->ub, NULL, NULL, OPT_HIGH_PREC, NULL, NULL);
+      alt_lnl *= -1;
+      this_scale = _colfitdata2->params->data[1];
+    }
+  }
   delta_lnl = alt_lnl - null_lnl;
   
   if (delta_lnl <= -0.01) 
@@ -360,6 +405,7 @@ double PhyloP::pval(const ColumnIterator::ColumnMap *cmap)
     cerr << "got delta_lnl = " << delta_lnl << endl;
     throw hal_exception(string("ERROR col_lrts: delta_lnl < 0 "));
   }
+  if (delta_lnl < 0) delta_lnl=0;
   if (_mode == NNEUT || _mode == CONACC) 
   {
     pval = chisq_cdf(2*delta_lnl, 1, FALSE);

@@ -13,6 +13,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <locale>
 #include "hal.h"
 #include "halBedLine.h"
 
@@ -26,11 +27,15 @@ class BedScanner
 public:
    BedScanner();
    virtual ~BedScanner();
-   virtual void scan(const std::string& bedPath, int bedVersion = -1);
-   virtual void scan(std::istream* bedStream, int bedVersion = -1);
+   virtual void scan(const std::string& bedPath, int bedVersion = -1,
+                     const std::locale* inLocale = NULL);
+   virtual void scan(std::istream* bedStream, int bedVersion = -1,
+                     const std::locale* inLocale = NULL);
    
-   static int getBedVersion(std::istream* bedStream);
-   static size_t getNumColumns(const std::string& bedLine);
+   static int getBedVersion(std::istream* bedStream, 
+                            const std::locale* inLocale = NULL);
+   static size_t getNumColumns(const std::string& bedLine,
+                               const std::locale* inLocale = NULL);
 
 protected:
    
@@ -38,7 +43,8 @@ protected:
    virtual void visitLine();
    virtual void visitEOF();
    
-   static void skipWhiteSpaces(std::istream* bedStream);
+   static void skipWhiteSpaces(std::istream* bedStream,
+                               const std::locale* inLocale = NULL);
 
 protected:
 

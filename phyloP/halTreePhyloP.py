@@ -54,8 +54,14 @@ def computeTreePhyloP(args):
 
         # Run halPhyloP on the inserts
         wigFile = outFileName(args, genome, "wig", "phyloP", False)
-        runShellCommand("halPhyloPMP.py %s %s %s %s --numProc %d %s" % (
-            args.hal, genome, args.mod, bedFlags, args.numProc, wigFile))
+        cmd = "halPhyloPMP.py %s %s %s %s --numProc %d %s" % (
+            args.hal, genome, args.mod, bedFlags, args.numProc, wigFile)
+        if args.subtree is not None:
+            cmd += " --subtree %s" % args.subtree
+        if args.prec is not None:
+            cmd += " --prec %d" % args.prec
+
+        runShellCommand(cmd)
     
         runShellCommand("rm -f %s" % bedInsertsFile)
 
@@ -110,6 +116,13 @@ def main(argv=None):
     parser.add_argument("--bigWig",
                         help="Run wigToBigWig on each generated wiggle",
                         action="store_true", default=False)
+    parser.add_argument("--subtree",
+                        help="Run clade-specific acceleration/conservation on subtree below this node",
+                        default=None)
+    parser.add_argument("--prec",
+                        help="Number of decimal places in wig output", type=int,
+                        default=None)
+
     # need phyloP options here:
     
     args = parser.parse_args()
@@ -126,9 +139,12 @@ def main(argv=None):
     args.halGenomes = getHalGenomes(args.hal)
     if args.root is None:
         args.root = getHalRootName(args.hal)
-    
+
     if not args.root in args.halGenomes:
         raise RuntimeError("Root genome %s not found." % args.root)
+
+    if args.subtree is not None and args.root not in args.halGenomes:
+        raise RuntimeError("Subtree root %s not found." % args.subtree)
 
     # make a little id tag for temporary maf slices
     S = string.ascii_uppercase + string.digits

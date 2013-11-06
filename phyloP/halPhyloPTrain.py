@@ -142,8 +142,8 @@ def computeFit(options):
         tree = options.tree
     else:
         tree = getHalTree(options.hal)
-    runShellCommand("phyloFit --tree \"%s\" --subst-mod SSREV --sym-freqs %s --out-root %s" % (
-        tree, options.outMafSS, 
+    runShellCommand("phyloFit --tree \"%s\" --subst-mod %s --sym-freqs %s --out-root %s" % (
+        tree, options.substMod, options.outMafSS, 
         os.path.splitext(options.outMod)[0]))
     runShellCommand("rm -f %s" % options.outMafSS)
 
@@ -164,7 +164,8 @@ def computeModel(options):
     extractGeneMAFs(options)
     computeAgMAFStats(options)
     computeFit(options)
-    modFreqs(options)
+    if not options.noModFreqs:
+        modFreqs(options)
     runShellCommand("rm -f %s" % options.outMafAllPaths)
       
 def main(argv=None):
@@ -210,6 +211,17 @@ def main(argv=None):
                         " in the alignment. Note that it is best to enclose"
                         " this string in quotes",
                         default=None)
+    parser.add_argument("--substMod", help="Substitution model for phyloFit"
+                        ": valid options are JC69|F81|HKY85|HKY85+Gap|REV|"
+                        "SSREV|UNREST|R2|R2S|U2|U2S|R3|R3S|U3|U3S",
+                        default = "SSREV")
+    parser.add_argument("--noModFreqs", help="By default, equilibrium "
+                        "frequencies for the nucleotides of the trained model"
+                        " are corrected with the observed frequencies of "
+                        "the reference genome (using the PHAST  modFreqs"
+                        " tool.  This flag disables this step, and keeps the"
+                        " trained frequencies", action="store_true",
+                        default=False)
 
     args = parser.parse_args()
 
@@ -231,6 +243,8 @@ def main(argv=None):
         raise RuntimeError("Reference genome %s not found." % args.refGenome)
     if os.path.splitext(args.outMod)[1] != ".mod":
         raise RuntimeError("Output model must have .mod extension")
+    if not args.substMod in "JC69|F81|HKY85|HKY85+Gap|REV|SSREV|UNREST|R2|R2S|U2|U2S|R3|R3S|U3|U3S".split("|"):
+        raise RuntimeError("Invalid substitution model: %s" % args.substMod)
 
     args.outDir = os.path.dirname(args.outMod)
     args.outName = os.path.splitext(os.path.basename(args.outMod))[0]

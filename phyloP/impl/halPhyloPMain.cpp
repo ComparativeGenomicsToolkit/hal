@@ -65,6 +65,12 @@ static CLParserPtr initParser()
   optionsParser->addOption("refBed", "Bed file with coordinates to "
                            "annotate in the reference genome (or \"stdin\") "
                            "to stream from standard input", "\"\"");
+  optionsParser->addOption("subtree", "Partition the tree into the subtree "
+			   "beneath the node given (including the branch "
+			   "leading up to this node), and test for "
+			   "conservation/acceleration in this subtree "
+			   "relative to the rest of the tree", "\"\"");
+  optionsParser->addOption("prec", "Number of decimal places in wig output", 3);
   
   optionsParser->setDescription("Make PhyloP wiggle plot for a genome.");
   return optionsParser;
@@ -80,10 +86,12 @@ int main(int argc, char** argv)
   string refSequenceName;
   string dupType;
   string dupMask;
+  string subtree;
   hal_size_t start;
   hal_size_t length;
   hal_size_t step;
   string refBedPath;
+  hal_size_t prec;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -97,8 +105,10 @@ int main(int argc, char** argv)
     step = optionsParser->getOption<hal_size_t>("step");
     dupType = optionsParser->getOption<string>("dupType");
     dupMask = optionsParser->getOption<string>("dupMask");
+    subtree = optionsParser->getOption<string>("subtree");
     std::transform(dupMask.begin(), dupMask.end(), dupMask.begin(), ::tolower);
     refBedPath = optionsParser->getOption<string>("refBed");
+    prec = optionsParser->getOption<hal_size_t>("prec");
   }
   catch(exception& e)
   {
@@ -162,8 +172,13 @@ int main(int argc, char** argv)
       }
     }
     
+    // set the precision of floating point output
+    outStream.setf(ios::fixed, ios::floatfield);
+    outStream.precision(prec);
+    
     PhyloP phyloP;
-    phyloP.init(alignment, modPath, &outStream, dupMask == "soft" , dupType);
+    phyloP.init(alignment, modPath, &outStream, dupMask == "soft" , dupType,
+		"CONACC", subtree);
 
     ifstream refBedStream;
     if (refBedPath != "\"\"")

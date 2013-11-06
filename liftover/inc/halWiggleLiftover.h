@@ -22,7 +22,11 @@ public:
    
    WiggleLiftover();
    virtual ~WiggleLiftover();
-
+   
+   void preloadOutput(AlignmentConstPtr alignment,
+                      const Genome* tgtGenome,
+                      std::istream* inputFile);
+   
    void convert(AlignmentConstPtr alignment,
                 const Genome* srcGenome,
                 std::istream* inputFile,

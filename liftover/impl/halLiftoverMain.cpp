@@ -9,6 +9,7 @@
 #include <fstream>
 #include "halColumnLiftover.h"
 #include "halBlockLiftover.h"
+#include "halTabFacet.h"
 
 using namespace std;
 using namespace hal;
@@ -43,7 +44,10 @@ static CLParserPtr initParser()
                                "columns in the input beyond the specified or "
                                "detected bed version, and which are cut by "
                                "default.", false);
-
+  optionsParser->addOptionFlag("tab", "input is tab-separated. this allows"
+                               " column entries to contain spaces.  if this"
+                               " flag is not set, both spaces and tabs are"
+                               " used to separate input columns.", false);
   optionsParser->setDescription("Map BED genome interval coordinates between "
                                 "two genomes.");
   return optionsParser;
@@ -64,6 +68,7 @@ int main(int argc, char** argv)
   int outBedVersion;
   bool keepExtra;
   bool outPSL;
+  bool tab;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -78,6 +83,7 @@ int main(int argc, char** argv)
     outBedVersion = optionsParser->getOption<int>("outBedVersion");
     keepExtra = optionsParser->getFlag("keepExtra");
     outPSL = optionsParser->getFlag("outPSL");
+    tab = optionsParser->getFlag("tab");
   }
   catch(exception& e)
   {
@@ -145,11 +151,21 @@ int main(int argc, char** argv)
         throw hal_exception("Error opening tgtBed, " + tgtBedPath);
       }
     }
+
+    locale* inLocale = NULL;
+    if (tab == true)
+    {
+      inLocale = new locale(cin.getloc(), new TabSepFacet(cin.getloc()));
+      assert(std::isspace('\t', *inLocale) == true);
+      assert(std::isspace(' ', *inLocale) == false);
+    }
     
     BlockLiftover liftover;
     liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
                      inBedVersion, outBedVersion, keepExtra, !noDupes,
-                     outPSL);
+                     outPSL, inLocale);
+    
+    delete inLocale;
 
   }
   catch(hal_exception& e)

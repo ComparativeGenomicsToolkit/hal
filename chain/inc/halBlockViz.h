@@ -57,7 +57,8 @@ struct hal_block_t
    hal_int_t qStart;
    hal_int_t size;
    char strand;
-   char *sequence;
+   char *qSequence; // query DNA, if requested
+   char *tSequence; // target DNA, if requested
 };
 
 /** Some information about a genome */
