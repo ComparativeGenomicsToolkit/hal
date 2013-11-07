@@ -87,7 +87,8 @@ void MafBed::visitLine()
       for (size_t i = 0; i < _bedLine._blocks.size(); ++i)
       {
         if (_bedLine._blocks[i]._length == 0 ||
-            _bedLine._blocks[i]._start + _bedLine._blocks[i]._length >= 
+            _bedLine._start + _bedLine._blocks[i]._start +
+            _bedLine._blocks[i]._length >= 
             (hal_index_t)refSequence->getSequenceLength())
         {
           cerr << "Line " << _lineNumber << ", block " << i 
@@ -95,8 +96,10 @@ void MafBed::visitLine()
         }
         else
         {
-          hal_index_t start = std::max(_bedLine._blocks[i]._start, refStart);
-          hal_index_t end = std::min(_bedLine._blocks[i]._start + 
+          hal_index_t start = std::max(_bedLine._start +
+                                       _bedLine._blocks[i]._start, refStart);
+          hal_index_t end = std::min(_bedLine._start +
+                                     _bedLine._blocks[i]._start + 
                                      _bedLine._blocks[i]._length, refEnd);
           if (end > start)
           {
