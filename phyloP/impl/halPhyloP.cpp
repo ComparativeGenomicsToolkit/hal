@@ -7,6 +7,20 @@
 
 #include "halPhyloP.h"
 
+extern "C"{
+#include "tree_model.h"
+#include "fit_column.h"
+#include "msa.h"
+#include "sufficient_stats.h"
+#include "hashtable.h"
+}
+
+HAL_PHAST_FORWARD_DEF(MSA)
+HAL_PHAST_FORWARD_DEF(TreeModel)
+HAL_PHAST_FORWARD_DEF(hash_table)
+HAL_PHAST_FORWARD_DEF(ColFitData)
+HAL_PHAST_FORWARD_DEF(List)
+
 using namespace std;
 using namespace hal;
 
@@ -91,7 +105,7 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
   
   //read in neutral model
   FILE *infile = phast_fopen(modFilePath.c_str(), "r");
-  _mod = tm_new_from_file(infile, TRUE);
+  _mod = (HAL_PHAST_TYPE(TreeModel)*)tm_new_from_file(infile, TRUE);
   phast_fclose(infile);
 
  
@@ -103,7 +117,7 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
   List *leafNames = tr_leaf_names(_mod->tree);
   int numleaf = lst_size(leafNames);
   List *pruneNames = lst_new_ptr(numleaf);
-  _seqnameHash = hsh_new(numleaf*10);
+  _seqnameHash = (HAL_PHAST_TYPE(hash_table)*)hsh_new(numleaf*10);
   char **names = (char**)smalloc(numleaf * sizeof(char*));
   for (int i=0; i < lst_size(leafNames); i++) 
   {
@@ -140,7 +154,7 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
     seqs[i][0] = 'N';
     seqs[i][1] = '\0';
   }
-  _msa = msa_new(seqs, names, numspec, 1, NULL);
+  _msa = (HAL_PHAST_TYPE(MSA)*)msa_new(seqs, names, numspec, 1, NULL);
   ss_from_msas(_msa, 1, 0, NULL, NULL, NULL, -1, FALSE);
   msa_free_seqs(_msa);
 
@@ -153,17 +167,20 @@ void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
       if (_mod->subtree_root == NULL)
 	throw hal_exception("no node named " + subtree);
     }
-    _modcpy = tm_create_copy(_mod);
+    _modcpy = (HAL_PHAST_TYPE(TreeModel)*)tm_create_copy(_mod);
     _modcpy->subtree_root = NULL;
-    _colfitdata = col_init_fit_data(_modcpy, _msa, ALL, NNEUT, FALSE);
-    _colfitdata2 = col_init_fit_data(_mod, _msa, SUBTREE, _mode, FALSE);
+    _colfitdata = (HAL_PHAST_TYPE(ColFitData)*)
+       col_init_fit_data(_modcpy, _msa, ALL, NNEUT, FALSE);
+    _colfitdata2 = (HAL_PHAST_TYPE(ColFitData)*)
+       col_init_fit_data(_mod, _msa, SUBTREE, (mode_type)_mode, FALSE);
     _colfitdata2->tupleidx = 0;
-    _insideNodes = lst_new_ptr(_mod->tree->nnodes);
-    _outsideNodes = lst_new_ptr(_mod->tree->nnodes);
+    _insideNodes = (HAL_PHAST_TYPE(List)*)lst_new_ptr(_mod->tree->nnodes);
+    _outsideNodes = (HAL_PHAST_TYPE(List)*)lst_new_ptr(_mod->tree->nnodes);
     tr_partition_leaves(_mod->tree, _mod->subtree_root, 
 			_insideNodes, _outsideNodes);
   } else {
-    _colfitdata = col_init_fit_data(_mod, _msa, ALL, _mode, FALSE);
+    _colfitdata = (HAL_PHAST_TYPE(ColFitData)*)
+       col_init_fit_data(_mod, _msa, ALL, (mode_type)_mode, FALSE);
   }
   _colfitdata->tupleidx = 0;
 }
