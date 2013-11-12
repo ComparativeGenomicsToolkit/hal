@@ -10,11 +10,8 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-
-
 #include "halPhyloP.h"
 #include "halPhyloPBed.h"
-
 
 #undef min
 using namespace std;

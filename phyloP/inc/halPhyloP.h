@@ -12,20 +12,13 @@
 #include <string>
 #include "hal.h"
 
-// Want to avoid including phast include structure in hal header.  
-// so we want to forward declare.  Problem is half the phast types are 
-// anonymous (ie unnamed structs like MSA) so we use this 
-// ugly hack to delay defining them till halPhyloP.cpp
-#define HAL_PHAST_FORWARD_DEC(T) \
-  struct HAL_PHAST_FDEC ## T;
-#define HAL_PHAST_FORWARD_DEF(T) \
-  struct HAL_PHAST_FDEC ## T : public T {};
-#define HAL_PHAST_TYPE(T) HAL_PHAST_FDEC ## T
-HAL_PHAST_FORWARD_DEC(MSA)
-HAL_PHAST_FORWARD_DEC(TreeModel)
-HAL_PHAST_FORWARD_DEC(hash_table)
-HAL_PHAST_FORWARD_DEC(ColFitData)
-HAL_PHAST_FORWARD_DEC(List)
+extern "C"{
+#include "tree_model.h"
+#include "fit_column.h"
+#include "msa.h"
+#include "sufficient_stats.h"
+#include "hashtable.h"
+}
 
 namespace hal {
 
@@ -71,8 +64,8 @@ protected:
 protected:
 
    hal::AlignmentConstPtr _alignment;
-   HAL_PHAST_TYPE(TreeModel)* _mod;
-   HAL_PHAST_TYPE(TreeModel)* _modcpy;
+   TreeModel* _mod;
+   TreeModel* _modcpy;
    std::set<const Genome*> _targetSet;
    std::ostream* _outStream;
   
@@ -81,13 +74,13 @@ protected:
    int _maskAllDups;  
 
    // 0 default = mask only ambiguous bases in dups; if 1 mask any duplication
-   HAL_PHAST_TYPE(hash_table)* _seqnameHash;
-   HAL_PHAST_TYPE(ColFitData)* _colfitdata;
-   HAL_PHAST_TYPE(ColFitData) *_colfitdata2;
-   HAL_PHAST_TYPE(List) *_insideNodes;
-   HAL_PHAST_TYPE(List) *_outsideNodes;
-   unsigned int _mode; //   mode_type _mode;
-   HAL_PHAST_TYPE(MSA)* _msa;
+   hash_table* _seqnameHash;
+   ColFitData* _colfitdata;
+   ColFitData *_colfitdata2;
+   List *_insideNodes;
+   List *_outsideNodes;
+   mode_type _mode;
+   MSA* _msa;
 };
 
 }
