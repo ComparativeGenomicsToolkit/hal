@@ -248,8 +248,7 @@ void Extract4d::extractConservedBlocks4d()
           if (is4dSite && !splitCodon)
           {
             BedBlock block;
-            block._start = colIt->getReferenceSequencePosition() -
-              _refSequence->getStartPosition();
+            block._start = colIt->getReferenceSequencePosition();
             block._length = 1;
             if (reversed) {
               buffer.push_front(block);

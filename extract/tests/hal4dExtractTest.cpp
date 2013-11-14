@@ -123,18 +123,21 @@ void ConservedBlock4dExtractTest::createCallBack(AlignmentPtr alignment)
   Genome *root = alignment->addRootGenome("root");
   Genome *leaf1 = alignment->addLeafGenome("leaf1", "root", 1);
   Genome *leaf2 = alignment->addLeafGenome("leaf2", "root", 1);
-  vector<Sequence::Info> seqVec(1);
+  vector<Sequence::Info> seqVec(2);
   seqVec[0] = Sequence::Info("rootSequence", 192, 0, 1);
+  seqVec[1] = Sequence::Info("rootSequence2", 192, 0, 1);
   root->setDimensions(seqVec);
   seqVec[0] = Sequence::Info("leaf1Sequence", 192, 1, 0);
+  seqVec[1] = Sequence::Info("leaf1Sequence2", 192, 1, 0);
   leaf1->setDimensions(seqVec);
   seqVec[0] = Sequence::Info("leaf2Sequence", 192, 1, 0);
+  seqVec[1] = Sequence::Info("leaf2Sequence2", 192, 1, 0);
   leaf2->setDimensions(seqVec);
   // all possible codons, in a single frame -- we will test only a few but make
   // sure that the correct number of sites is output as well
   // changed final 4d site, which should change nothing since ancestors are
   // ignored
-  root->setString("aaaaacaagaatacaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgttttgatgctggtgtttattcttgttt");
+  root->setString("aaaaacaagaatacaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgttttgatgctggtgtttattcttgtttaaaaacaagaatacaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgttttgatgctggtgtttattcttgttt");
   BottomSegmentIteratorPtr botIt = root->getBottomSegmentIterator();
   botIt->setCoordinates(0, 192);
   botIt->setChildIndex(0, 0);
@@ -142,21 +145,40 @@ void ConservedBlock4dExtractTest::createCallBack(AlignmentPtr alignment)
   botIt->setChildReversed(0, false);
   botIt->setChildReversed(1, false);
   botIt->setTopParseIndex(NULL_INDEX);
+  botIt->toRight();
+  botIt->setCoordinates(192, 192);
+  botIt->setChildIndex(0, 1);
+  botIt->setChildIndex(1, 1);
+  botIt->setChildReversed(0, false);
+  botIt->setChildReversed(1, false);
+  botIt->setTopParseIndex(NULL_INDEX);
 
   // added unconserved 4d site at 2, disabled 4d site at 14 and 18/20
-  leaf1->setString("acaaacaagaataaaaccatgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
+  leaf1->setString("acaaacaagaataaaaccatgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgtttacaaacaagaataaaaccatgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
   TopSegmentIteratorPtr topIt = leaf1->getTopSegmentIterator();
   topIt->setCoordinates(0, 192);
   topIt->setParentIndex(0);
   topIt->setParentReversed(false);
   topIt->setNextParalogyIndex(NULL_INDEX);
   topIt->setBottomParseIndex(NULL_INDEX);
+  topIt->toRight();
+  topIt->setCoordinates(192, 192);
+  topIt->setParentIndex(1);
+  topIt->setParentReversed(false);
+  topIt->setNextParalogyIndex(NULL_INDEX);
+  topIt->setBottomParseIndex(NULL_INDEX);
 
   // disabled 4d site at 14
-  leaf2->setString("aaaaacaagaataaaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
+  leaf2->setString("aaaaacaagaataaaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgtttaaaaacaagaataaaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
   topIt = leaf2->getTopSegmentIterator();
   topIt->setCoordinates(0, 192);
   topIt->setParentIndex(0);
+  topIt->setParentReversed(false);
+  topIt->setNextParalogyIndex(NULL_INDEX);
+  topIt->setBottomParseIndex(NULL_INDEX);
+  topIt->toRight();
+  topIt->setCoordinates(192, 192);
+  topIt->setParentIndex(1);
   topIt->setParentReversed(false);
   topIt->setNextParalogyIndex(NULL_INDEX);
   topIt->setBottomParseIndex(NULL_INDEX);
@@ -167,7 +189,9 @@ void ConservedBlock4dExtractTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome *genome = alignment->openGenome("root");
   // test frame shift
   stringstream bedFile("rootSequence\t0\t192\tFORWARD\t0\t+\t0\t192\t0\t3\t17,6,7\t0,30,60\n"
-                       "rootSequence\t0\t192\tREV\t0\t-\t0\t192\t0\t2\t13,17\t0,175");
+                       "rootSequence\t0\t192\tREV\t0\t-\t0\t192\t0\t2\t13,17\t0,175\n"
+                       "rootSequence2\t0\t192\tFORWARD\t0\t+\t0\t192\t0\t3\t17,6,7\t0,30,60\n"
+                       "rootSequence2\t0\t192\tREV\t0\t-\t0\t192\t0\t2\t13,17\t0,175\n");
   stringstream outStream;
   Extract4d extract;
   extract.run(genome, &bedFile, &outStream, -1, true);
@@ -175,7 +199,9 @@ void ConservedBlock4dExtractTest::checkCallBack(AlignmentConstPtr alignment)
   cout << outStream.str();
   CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t33\t67\tFORWARD\t0\t+\t0\t192\t0,0,0\t2\t1,1\t0,33") != streamResults.end());
   CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t3\t178\tREV\t0\t-\t0\t192\t0,0,0\t3\t1,1,1\t0,3,174") != streamResults.end());
-  CuAssertTrue(_testCase, streamResults.size() == 2);
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence2\t33\t67\tFORWARD\t0\t+\t0\t192\t0,0,0\t2\t1,1\t0,33") != streamResults.end());
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence2\t3\t178\tREV\t0\t-\t0\t192\t0,0,0\t3\t1,1,1\t0,3,174") != streamResults.end());
+  CuAssertTrue(_testCase, streamResults.size() == 4);
 }
 
 void halBlock4dExtractTest(CuTest *testCase)
