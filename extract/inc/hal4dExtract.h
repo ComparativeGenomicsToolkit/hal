@@ -27,7 +27,7 @@ public:
 
    void run(const Genome* refGenome,
             std::istream* inBedStream, std::ostream* outBedStream,
-            int bedVersion = -1);
+            int bedVersion = -1, bool conserved = false);
 
    static const char CodonPrefixTable[2][8];
 
@@ -36,7 +36,9 @@ protected:
    virtual void visitLine();
 
    void extractBed4d();
+   void extractConservedBed4d();
    void extractBlocks4d();
+   void extractConservedBlocks4d();
    void write();
    
 
@@ -47,6 +49,7 @@ protected:
    const Sequence* _refSequence;
    std::deque<BedLine> _outBedLines;
    int _bedVersion;
+   bool _conserved;
 };
 
 }
