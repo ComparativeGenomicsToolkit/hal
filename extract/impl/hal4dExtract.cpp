@@ -264,9 +264,11 @@ void Extract4d::extractConservedBlocks4d()
           if (reversed) {
             colIt->toSite(colIt->getReferenceSequencePosition() + _refSequence->getStartPosition() - 1,
                           colIt->getReferenceSequencePosition() + _refSequence->getStartPosition(),
-                          false);
+                          true);
           } else {
-            colIt->toRight();
+            colIt->toSite(colIt->getReferenceSequencePosition() + _refSequence->getStartPosition() + 1,
+                          colIt->getReferenceSequencePosition() + _refSequence->getStartPosition() + 2,
+                          true);
           }
         }
       }
