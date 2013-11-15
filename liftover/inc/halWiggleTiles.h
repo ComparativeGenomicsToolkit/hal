@@ -85,7 +85,7 @@ inline void WiggleTiles<T>::init(hal_size_t genomeSize, T defaultValue,
   _defaultValue = defaultValue;
   _tileSize = std::min(tileSize, genomeSize);
   _lastTileSize = genomeSize % _tileSize;
-  hal_size_t numTiles = genomeSize / tileSize;
+  hal_size_t numTiles = genomeSize / _tileSize;
   if (_lastTileSize > 0)
   {
     ++numTiles;
