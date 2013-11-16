@@ -108,6 +108,9 @@ inline void WiggleTiles<T>::clear()
 {
   _tiles.clear();
   _bits.clear();
+  _tileSize = 0;
+  _genomeSize = 0;
+  _lastTileSize = 0;
 }
 
 template <class T>
