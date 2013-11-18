@@ -13,6 +13,14 @@ Glenn Hickey, Benedict Paten, Dent Earl, Daniel Zerbino, and David
 Haussler.  HAL: A Hierarchical Format for Storing and Analyzing
 Multiple Genome Alignments. Bioinformatics. 2013. [Advance Online Access](http://bioinformatics.oxfordjournals.org/content/early/2013/03/16/bioinformatics.btt128.abstract)
 
+Code Contributors
+-----
+* Glenn Hickey (UCSC)
+* Joel Armstrong (UCSC)
+* Ngan Nguyen (UCSC)
+* Benedict Paten (UCSC)
+* Melissa Jane Hubisz (Cornell)
+
 Installation
 -----
 
