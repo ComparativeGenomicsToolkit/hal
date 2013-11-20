@@ -244,6 +244,8 @@ int main(int argc, char** argv)
            refSequence != NULL ? refSequence->getName() : refGenome->getName();
         cerr << "hal2maf: Warning reference sequence " << refSeqName
              << " has zero length.  MAF output will be empty" << endl;
+        mafStream << "##maf version=1 scoring=N/A\n"
+                  << "# hal " << alignment->getNewickTree() << endl << endl;
       }
       else
       {
