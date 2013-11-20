@@ -27,8 +27,10 @@ cpp = h5c++ ${h5prefix}
 cxx = h5cc ${h5prefix}
 
 ifeq (${SYS},Darwin) #This is to deal with the Mavericks replacing gcc with clang fully and changing libraries
+ifneq ($(wildcard /usr/bin/clang),)
   cppflags += -stdlib=libstdc++
   cflags += -stdlib=libstdc++
+endif
 endif
 
 # add compiler flag and kent paths if udc is enabled
