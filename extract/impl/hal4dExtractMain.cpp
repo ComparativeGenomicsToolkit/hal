@@ -32,7 +32,9 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("append",
                                "append to instead of overwrite output file.",
                                false);
-
+  optionsParser->addOptionFlag("conserved",
+                               "ensure 4d sites are 4d sites in all leaf genomes",
+                               false);
   return optionsParser;
 }
 
@@ -46,6 +48,7 @@ int main(int argc, char** argv)
   string outBedPath;
   int bedVersion;
   bool append;
+  bool conserved;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -55,6 +58,7 @@ int main(int argc, char** argv)
     outBedPath = optionsParser->getArgument<string>("outBed");
     bedVersion = optionsParser->getOption<int>("bedVersion");
     append = optionsParser->getFlag("append");
+    conserved = optionsParser->getFlag("conserved");
   }
   catch(exception& e)
   {
@@ -118,7 +122,7 @@ int main(int argc, char** argv)
     }
 
     Extract4d extractor;
-    extractor.run(genome, inBedStream, outBedStream, bedVersion);
+    extractor.run(genome, inBedStream, outBedStream, bedVersion, conserved);
   }
   catch(hal_exception& e)
   {

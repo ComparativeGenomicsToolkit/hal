@@ -238,8 +238,18 @@ int main(int argc, char** argv)
     }
     else
     {
-      mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
-                                         start, length, targetSet);
+      if (start == 0 && length == 0 && ref->getSequenceLength() == 0)
+      {
+        string refSeqName = 
+           refSequence != NULL ? refSequence->getName() : refGenome->getName();
+        cerr << "hal2maf: Warning reference sequence " << refSeqName
+             << " has zero length.  MAF output will be empty" << endl;
+      }
+      else
+      {
+        mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
+                                           start, length, targetSet);
+      }
     }
     if (mafPath != "stdout")
     {

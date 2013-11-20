@@ -27,8 +27,10 @@ cpp = h5c++ ${h5prefix}
 cxx = h5cc ${h5prefix}
 
 ifeq (${SYS},Darwin) #This is to deal with the Mavericks replacing gcc with clang fully and changing libraries
+ifneq ($(wildcard /usr/bin/clang),)
   cppflags += -stdlib=libstdc++
   cflags += -stdlib=libstdc++
+endif
 endif
 
 # add compiler flag and kent paths if udc is enabled
@@ -68,11 +70,11 @@ endif
 #	CLAPACKPATH=/usr/local/software/CLAPACK
 
 ifeq ($(TARGETOS), Darwin)
-	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -framework vecLib -DVECLIB
+	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -framework vecLib -DVECLIB
 	phyloPlibs += -L${PHAST}/lib -lphast -lc
 else
 	F2CPATH=${CLAPACKPATH}/F2CLIBS
-	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
 	phyloPlibs += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
 endif
 
