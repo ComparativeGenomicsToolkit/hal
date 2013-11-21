@@ -70,8 +70,8 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
 
 static void printBlock(FILE* file, struct hal_block_t* b)
 {
-  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: %s\n", 
-          b->qChrom, b->tStart, b->qStart, b->size, b->strand, b->sequence);
+  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: tgt : %s query: %s\n", 
+          b->qChrom, b->tStart, b->qStart, b->size, b->strand, b->tSequence, b->qSequence);
 }
 
 static void printDupeList(FILE* file, struct hal_target_dupe_list_t* d)
@@ -122,13 +122,15 @@ static void* getBlocksWrapper(void* voidArgs)
   if (handle >= 0)
   {
     results = halGetBlocksInTargetRange(handle,
-                                     args->qSpecies,
-                                     args->tSpecies,
-                                     args->tChrom, 
-                                     args->tStart,
-                                     args->tEnd, 
-                                     args->doSeq, 
-                                     0);
+                                        args->qSpecies,
+                                        args->tSpecies,
+                                        args->tChrom, 
+                                        args->tStart,
+                                        args->tEnd, 
+                                        0,
+                                        args->doSeq, 
+                                        HAL_QUERY_AND_TARGET_DUPS,
+                                        1);
     halFreeBlockResults(results);
   }
   pthread_exit(NULL);
@@ -165,8 +167,11 @@ int main(int argc, char** argv)
                                  args.tChrom, 
                                  args.tStart,
                                  args.tEnd, 
+                                 0,
                                  args.doSeq, 
-                                 args.doDupes);
+                                 HAL_QUERY_AND_TARGET_DUPS,
+                                 1);
+
     if (results == NULL)
     {
       ret = -1;

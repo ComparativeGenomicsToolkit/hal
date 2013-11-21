@@ -31,6 +31,7 @@ public:
 
    void init(const Genome* refGenome, const Genome* queryGenome, 
              hal_index_t absRefFirst, hal_index_t absRefLast,
+             bool targetReversed,
              bool doDupes, hal_size_t minLength,
              bool mapTargetAdjacencies);
    void map();
@@ -82,6 +83,7 @@ protected:
    hal_index_t _absRefFirst;
    hal_index_t _absRefLast;
    bool _mapAdj;
+   bool _targetReversed;
 
    static hal_size_t _maxAdjScan;
 };

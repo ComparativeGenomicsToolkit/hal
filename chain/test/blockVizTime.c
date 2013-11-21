@@ -68,14 +68,6 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
   return 0; 
 }
 
-static void printBlock(FILE* tFile, FILE* qFile, struct hal_block_t* b, 
-                       const char* tChrom, size_t idx)
-{
-  fprintf(tFile, "%s\t%ld\t%ld\t%ld\t0\t+\n", tChrom, b->tStart,
-          b->tStart + b->size, idx);
-  fprintf(qFile, "%s\t%ld\t%ld\t%ld\t0\t%c\n", b->qChrom, b->qStart,
-          b->qStart + b->size, idx, b->strand);
-}
 
 static int openWrapper(char* path)
 {
@@ -102,18 +94,7 @@ int main(int argc, char** argv)
     udcSetDefaultDir(args.udcPath);
   }
 #endif
-  
-  char tFilePath[1000];
-  char qFilePath[1000];
-  sprintf(tFilePath, "%s.bed", args.tSpecies);
-  sprintf(qFilePath, "%s.bed", args.qSpecies);
-  
-  FILE* tFile = fopen(tFilePath, "w");
-  FILE* qFile = fopen(qFilePath, "w");
-  if (!tFile || !qFile)
-  {
-    fprintf(stderr, "Error opening %s or %s\n", tFilePath, qFilePath);
-  }
+     
   int handle = openWrapper(args.path);
   int ret = 0;
   if (handle >= 0)
@@ -124,35 +105,20 @@ int main(int argc, char** argv)
                                  args.tSpecies,
                                  args.tChrom, 
                                  args.tStart,
-                                 args.tEnd,
+                                 args.tEnd, 
                                  0,
                                  args.doSeq, 
                                  HAL_QUERY_AND_TARGET_DUPS,
                                  1);
-
     if (results == NULL)
     {
       ret = -1;
     }
-    struct hal_block_t* cur = results->mappedBlocks;
-    size_t index = 0;
-    printf("Writing target blocks to %s and query blocks to %s...\n",
-           tFilePath, qFilePath);
-    while (cur)
-    {
-      printBlock(tFile, qFile, cur, args.tChrom, index++);
-      cur = cur->next;
-    }
     halFreeBlockResults(results);
-    fclose(tFile);
-    fclose(qFile);
   }
   else
   {
     ret = -1;
   }
-#ifdef ENABLE_UDC
-  pthread_exit(NULL);
-#endif
   return ret;
 }

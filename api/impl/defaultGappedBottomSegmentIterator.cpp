@@ -530,7 +530,7 @@ bool DefaultGappedBottomSegmentIterator::hasChild() const
 
   if (_left->equals(_right))
   {
-    assert(_temp->equals(_left) && _temp2->equals(_right));
+    //assert(_temp->equals(_left) && _temp2->equals(_right));
   }
   // to do: verify edge cases
   // assert(_temp->hasChild(_childIndex) == _temp2->hasChild(_childIndex));

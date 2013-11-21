@@ -36,12 +36,14 @@ void BlockMapper::erase()
 
 void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
                        hal_index_t absRefFirst, hal_index_t absRefLast,
+                       bool targetReversed,
                        bool doDupes, hal_size_t minLength,
                        bool mapTargetAdjacencies)
 {
   erase();
   _absRefFirst = absRefFirst;
   _absRefLast = absRefLast;
+  _targetReversed = targetReversed;
   _doDupes = doDupes;
   _minLength = minLength;
   _mapAdj = mapTargetAdjacencies;
@@ -89,13 +91,22 @@ void BlockMapper::map()
   while (refSeg->getArrayIndex() < lastIndex &&
          refSeg->getStartPosition() <= _absRefLast)  
   {
+    if (_targetReversed == true)
+    {
+      refSeg->toReverseInPlace();            
+    }
     refSeg->getMappedSegments(_segSet, _queryGenome, &_spanningTree,
                               _doDupes, _minLength);
+    if (_targetReversed == true)
+    {
+      refSeg->toReverseInPlace();            
+    }
     refSeg->toRight(_absRefLast);
   }
 
   if (_mapAdj)
   {
+    assert(_targetReversed == false);
     MSSet::const_iterator i;
     for (i = _segSet.begin(); i != _segSet.end(); ++i)
     {
