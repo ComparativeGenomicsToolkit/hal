@@ -103,20 +103,20 @@ def concatenateSlices(sliceOpts, sliceCmds):
         for opt, cmd in zip(sliceOpts, sliceCmds):
             first = opt.sliceNumber == 0            
             sliceMafPath = makeOutMafPath(opt)
-            assert os.path.isfile(sliceMafPath)
-            sliceNum = opt.sliceNumber
-            opt.sliceNumber = None
-            outMafPath = makeOutMafPath(opt)
-            opt.sliceNumber = sliceNum
-            if first:
-                os.rename(sliceMafPath, outMafPath)
-            else:
-                with open(outMafPath, "a") as tgt:
-                    with open(sliceMafPath, "r") as src:
-                        for line in src:
-                            if not line[0] == '#':
-                                tgt.write(line)
-                os.remove(sliceMafPath)
+            if os.path.isfile(sliceMafPath) and opt.sliceNumber is not None:
+                sliceNum = opt.sliceNumber
+                opt.sliceNumber = None
+                outMafPath = makeOutMafPath(opt)
+                opt.sliceNumber = sliceNum
+                if first:
+                    os.rename(sliceMafPath, outMafPath)
+                else:
+                    with open(outMafPath, "a") as tgt:
+                        with open(sliceMafPath, "r") as src:
+                            for line in src:
+                                if not line[0] == '#':
+                                    tgt.write(line)
+                    os.remove(sliceMafPath)
             
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes. 
