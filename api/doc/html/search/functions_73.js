@@ -22,5 +22,5 @@ var searchData=
   ['setstring',['setString',['../classhal_1_1_segmented_sequence.html#aca5f111d4cd2c0189ee7554f77ff989b',1,'hal::SegmentedSequence']]],
   ['setsubstring',['setSubString',['../classhal_1_1_segmented_sequence.html#a4a45f3b249151a42bf1c296231c327cb',1,'hal::SegmentedSequence']]],
   ['settopparseindex',['setTopParseIndex',['../classhal_1_1_bottom_segment.html#ac83b5c218df47514e7810879df312147',1,'hal::BottomSegment']]],
-  ['slice',['slice',['../classhal_1_1_segment_iterator.html#a0d80d83afa8d7c31a590569e6077cfd7',1,'hal::SegmentIterator']]]
+  ['slice',['slice',['../classhal_1_1_sliced_segment.html#a7263b6a7b8d31dcc834e571137625080',1,'hal::SlicedSegment']]]
 ];
