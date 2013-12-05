@@ -275,13 +275,17 @@ Annotations in [BED](http://genome.ucsc.edu/FAQ/FAQformat.html#format1), ie tab-
 
      SequenceName     StartPosition    LastPosition+1
 
-can be lifted over between genomes using `halLiftover`.  halLiftover does a base-by-base mapping between any two sequences in the alignment (following paralogy relations as well).  
+can be lifted over between genomes using `halLiftover`.  halLiftover does a base-by-base mapping between any two sequences in the alignment (following paralogy relations as well).  The output is written in BED (default) or PSL format. 
 
 	 halLiftover mammals.hal human human_annotation.bed dog dog_annotation.bed
 
 will map all annotations in human_annotation.bed, which must refer to sequences in the human genome, to their corresponding locations in dog (if they exist), outputting the resulting annotations in dog_annotation.bed
 
 halLiftover attempts to autodetect the BED version of the input.  This can be overried with the `--inVedVersion` option.   Columns that are not described in the official BED specs can be optionally mapped as-is using the `--keepExtra` option.
+
+By default, halLiftover uses spaces and/or tabs to separate columns. To use only tabs (ie to allow spaces within names), use the `--tab` option.
+
+Annotations in [Wiggle](http://genome.ucsc.edu/goldenPath/help/wiggle.html) format can likewise be mapped using `halWiggleLiftover`
 
 #### Alignability
 
