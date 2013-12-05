@@ -194,6 +194,30 @@ hal_size_t DefaultGappedBottomSegmentIterator::getMappedSegments(
                       "DefaultGappedTopSegmentIterator");
 }
 
+void DefaultGappedBottomSegmentIterator::print(std::ostream& os) const
+{
+  os << "Gapped Bottom Segment: (thresh=" << getGapThreshold() 
+     << " ci=" << getChildIndex() << ")\n";
+  os << "Left: ";
+  if (_left.get() == NULL)
+  {
+    os << "NULL";
+  }
+  else
+  {
+    os << *_left;
+  }
+  os << "\nRight: ";
+  if (_right.get() == NULL)
+  {
+    os << "NULL";
+  }
+  else
+  {
+    os << *_right;
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
@@ -506,7 +530,7 @@ bool DefaultGappedBottomSegmentIterator::hasChild() const
 
   if (_left->equals(_right))
   {
-    assert(_temp->equals(_left) && _temp2->equals(_right));
+    //assert(_temp->equals(_left) && _temp2->equals(_right));
   }
   // to do: verify edge cases
   // assert(_temp->hasChild(_childIndex) == _temp2->hasChild(_childIndex));

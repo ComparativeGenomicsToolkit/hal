@@ -11,6 +11,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include "halBedScanner.h"
 
 namespace hal {
@@ -30,7 +31,9 @@ public:
                 int inBedVersion = -1,
                 int outBedVersion = -1,
                 bool addExtraColumns = false,
-                bool traverseDupes = true);
+                bool traverseDupes = true,
+                bool outPSL = false,
+                const std::locale* inLocale = NULL);
                    
 protected:
 
@@ -41,10 +44,12 @@ protected:
    virtual void visitEOF();
    virtual void writeLineResults();
    virtual void assignBlocksToIntervals();
+   virtual bool compatible(const BedLine& tgtBed, const BedLine& newBlock);
+   virtual void flipBlocks(BedList& bedList);
+   virtual void computePSLInserts(BedList& bedList);
    virtual void writeBlocksAsIntervals();
    virtual void cleanResults();
    virtual void liftBlockIntervals();
-   virtual void mergeIntervals();
    virtual void liftInterval(BedList& mappedBedLines) = 0;
    
 protected: 
@@ -56,6 +61,8 @@ protected:
    BedList _outBedLines;
    int _inBedVersion;
    int _outBedVersion;
+   bool _outPSL;
+   const std::locale* _inLocale;
    
    BedList _mappedBlocks;
    

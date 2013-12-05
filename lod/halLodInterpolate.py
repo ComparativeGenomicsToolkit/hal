@@ -24,9 +24,9 @@ from hal.stats.halStats import getHalNumSegments
 from hal.stats.halStats import getHalStats
 
 # Wrapper for halLodExtract
-def getHalLodExtractCmd(inHalPath, outHalPath, step, keepSeq, inMemory,
-                     probeFrac, minSeqFrac):
-    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, step)
+def getHalLodExtractCmd(inHalPath, outHalPath, scale, keepSeq, inMemory,
+                     probeFrac, minSeqFrac, chunk):
+    cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, scale)
     if keepSeq is True:
         cmd += " --keepSequences"
     if inMemory is True:
@@ -35,6 +35,8 @@ def getHalLodExtractCmd(inHalPath, outHalPath, step, keepSeq, inMemory,
         cmd += " --probeFrac %f" % probeFrac
     if minSeqFrac is not None:
         cmd += " --minSeqFrac %f" % minSeqFrac
+    if chunk is not None and chunk > 0:
+        cmd += " --chunk %d" % chunk
 
     return cmd
 
@@ -94,7 +96,7 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
                maxDNA, absPath, trans, inMemory, probeFrac, minSeqFrac,
-               scaleCorFac, numProc):
+               scaleCorFac, numProc, chunk):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
     steps = getSteps(halPath, maxBlock, scale)
@@ -105,14 +107,19 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         step = int(max(1, steps[stepIdx] * curStepFactor))
         maxQueryLength = maxBlock * steps[stepIdx - 1]
         keepSequences = maxQueryLength <= maxDNA
+        #we no longer pass the step to the halLodExtract executable,
+        #rather we give the corresponding the scale factor and let
+        #the step get computed for each internal node (instead of using the step
+        #here which is a global minimum
+        stepScale = (scale ** stepIdx) * curStepFactor
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
         srcPath = halPath
         if trans is True and stepIdx > 1:
             srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
         if overwrite is True or not os.path.isfile(outHalPath):
             lodExtractCmds.append(
-                getHalLodExtractCmd(srcPath, outHalPath, step, keepSequences,
-                                    inMemory, probeFrac, minSeqFrac))
+                getHalLodExtractCmd(srcPath, outHalPath, stepScale, keepSequences,
+                                    inMemory, probeFrac, minSeqFrac, chunk))
   
         lodFile.write("%d %s\n" % (maxQueryLength,
                                    formatOutHalPath(outLodPath, outHalPath,
@@ -188,6 +195,8 @@ def main(argv=None):
                         type=float, default=1.3)
     parser.add_argument("--numProc", help="Number of concurrent processes",
                         type=int, default=1)
+    parser.add_argument("--chunk", help="Chunk size of output hal files.  ",
+                        type=int, default=None)
 
     args = parser.parse_args()
 
@@ -211,7 +220,7 @@ def main(argv=None):
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, args.overwrite, args.maxDNA,
                args.absPath, args.trans, args.inMemory, args.probeFrac,
-               args.minSeqFrac, args.scaleCorFac, args.numProc)
+               args.minSeqFrac, args.scaleCorFac, args.numProc, args.chunk)
     
 if __name__ == "__main__":
     sys.exit(main())

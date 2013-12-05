@@ -132,6 +132,9 @@ public:
      bool doDupes = true,
      hal_size_t minLength = 0) const = 0;
 
+   /** Print contents of segment */
+   virtual void print(std::ostream& os) const = 0;
+
 protected:
    friend class counted_ptr<Segment>;
    friend class counted_ptr<const Segment>;
@@ -139,6 +142,13 @@ protected:
 };
 
 inline Segment::~Segment() {}
+
+inline std::ostream& operator<<(std::ostream& os, const Segment& s)
+{
+  s.print(os);
+  return os;
+}
+
 
 }
 #endif

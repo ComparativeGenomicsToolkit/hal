@@ -15,7 +15,8 @@ using namespace hal;
 
 HDF5SequenceIterator::HDF5SequenceIterator(HDF5Genome* genome, 
                                            hal_index_t index) :
-  _sequence(genome, &genome->_sequenceArray, index)
+_sequence(genome, &genome->_sequenceIdxArray, 
+          &genome->_sequenceNameArray, index)
 {
   
 }
@@ -52,7 +53,7 @@ void HDF5SequenceIterator::toPrev() const
 Sequence* HDF5SequenceIterator::getSequence()
 {
   assert(_sequence._index >= 0 && _sequence._index < 
-         (hal_index_t)_sequence._genome->_sequenceArray.getSize()); 
+         (hal_index_t)_sequence._genome->_sequenceNameArray.getSize()); 
   // don't return local sequence pointer.  give cached pointer from
   // genome instead (so it will not expire when iterator moves!)
   return _sequence._genome->getSequence(_sequence.getName());
@@ -61,7 +62,7 @@ Sequence* HDF5SequenceIterator::getSequence()
 const Sequence* HDF5SequenceIterator::getSequence() const
 {
   assert(_sequence._index >= 0 && _sequence._index < 
-         (hal_index_t)_sequence._genome->_sequenceArray.getSize());
+         (hal_index_t)_sequence._genome->_sequenceNameArray.getSize());
   // don't return local sequence pointer.  give cached pointer from
   // genome instead (so it will not expire when iterator moves!)
   return _sequence._genome->getSequence(_sequence.getName());

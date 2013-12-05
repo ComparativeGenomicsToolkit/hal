@@ -124,9 +124,12 @@ int main(int argc, char** argv)
                                  args.tSpecies,
                                  args.tChrom, 
                                  args.tStart,
-                                 args.tEnd, 
+                                 args.tEnd,
+                                 0,
                                  args.doSeq, 
-                                 args.doDupes);
+                                 HAL_QUERY_AND_TARGET_DUPS,
+                                 1);
+
     if (results == NULL)
     {
       ret = -1;

@@ -1,6 +1,6 @@
-Hierarchical Alignment (HAL) Format API (v1.4)
+Hierarchical Alignment (HAL) Format API (v2.1)
 =====
-Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
+Copyright (C) 2012 - 2013 by Glenn Hickey (hickey@soe.ucsc.edu)
 Released under the MIT license, see LICENSE.txt
 
 HAL is a structure to efficiently store and index multiple genome alignments and ancestral reconstructions.  HAL is a graph-based representation which provides several advantages over matrix/block-based formats such as MAF, such as improved scalability and the ability to perform queries with respect to an arbitrary reference or subtree. 
@@ -12,6 +12,14 @@ Citing
 Glenn Hickey, Benedict Paten, Dent Earl, Daniel Zerbino, and David
 Haussler.  HAL: A Hierarchical Format for Storing and Analyzing
 Multiple Genome Alignments. Bioinformatics. 2013. [Advance Online Access](http://bioinformatics.oxfordjournals.org/content/early/2013/03/16/bioinformatics.btt128.abstract)
+
+Code Contributors
+-----
+* Glenn Hickey (UCSC)
+* Joel Armstrong (UCSC)
+* Ngan Nguyen (UCSC)
+* Benedict Paten (UCSC)
+* Melissa Jane Hubisz (Cornell)
 
 Installation
 -----
@@ -25,6 +33,10 @@ Installation
 From the parent directory of where you want HAL installed:
 
 	 git clone git://github.com/glennhickey/hal.git
+
+#### Progressive Cactus Package
+
+Note that HAL can also be downloaded and installed (automatically along with all its dependencies) as part of the [Progressive Cactus installation package](https://github.com/glennhickey/progressiveCactus)
 
 ### Installing Dependencies
 
@@ -73,24 +85,54 @@ to reflect the directory where you installed sonLib
 
 Define ENABLE_UDC before making, and specify the path of the Kent source tree using KENTSRC.  When built with this enabled, all HAL files opened read-only will be accessed using UDC which supports both local files and URLs. 
 
-     `export  ENABLE_UDC=1`
-     `export  KENTSRC=<path to top level of Kent source tree>`
+	  export  ENABLE_UDC=1   
+	  export  KENTSRC=<path to top level of Kent source tree>
 
 Those without the UCSC genome browser already installed locally will probably find it simpler to first mount URLs with [HTTPFS](http://httpfs.sourceforge.net/) before opening with HAL.  
+
+#### Optional support of PhyloP evolutionary constraint annotation
+
+PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  In order to enable this support, Phast must be installed.  We recommend downloading the latest source using Subversion. 
+
+From the same parent directory where you downloaded HAL:
+
+* First install CLAPACK (Linux only)
+
+    `wget http://www.netlib.org/clapack/clapack.tgz`  
+    `tar -xvzf clapack.tgz`  
+    `mv CLAPACK-3.2.1 clapack`  
+    `cd clapack`  
+    `cp make.inc.example make.inc && make f2clib && make blaslib && make lib`  
+    ``export CLAPACKPATH=`pwd` ``  
+    `cd ..`  
+
+*  Install Phast (Mac or Linux)
+
+     `svn co http://compgen.bscb.cornell.edu/svnrepo/phast/trunk phast/`  
+     `cd phast`  
+     ``export PHAST=`pwd` ``  
+     `cd src && make`  
+     `cd ../..`  
+
+* Before building HAL
+
+     `export ENABLE_PHYLOP=1`
+
+Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for their work on extending their tools to work with HAL.
 
 ### Building HAL
 
 From the hal/ directory:  
 
-	  `make`  
+	  make
 
 Before using HAL, add it to your path:   
 
-     `export PATH=<path to hal>/bin:${PATH}`
+	  export PATH=<path to hal>/bin:${PATH}
 
 The parent directory of hal/ should be in your PYTHONPATH in order to use any of the Python functionality.  This includes running `make test`
 	 
-     `export PYTHONPATH=<parent of hal>:${PYTHONPATH}`
+	  export PYTHONPATH=<parent of hal>:${PYTHONPATH}
 
 HAL Tools
 -----
@@ -233,13 +275,17 @@ Annotations in [BED](http://genome.ucsc.edu/FAQ/FAQformat.html#format1), ie tab-
 
      SequenceName     StartPosition    LastPosition+1
 
-can be lifted over between genomes using `halLiftover`.  halLiftover does a base-by-base mapping between any two sequences in the alignment (following paralogy relations as well).  
+can be lifted over between genomes using `halLiftover`.  halLiftover does a base-by-base mapping between any two sequences in the alignment (following paralogy relations as well).  The output is written in BED (default) or PSL format. 
 
 	 halLiftover mammals.hal human human_annotation.bed dog dog_annotation.bed
 
 will map all annotations in human_annotation.bed, which must refer to sequences in the human genome, to their corresponding locations in dog (if they exist), outputting the resulting annotations in dog_annotation.bed
 
 halLiftover attempts to autodetect the BED version of the input.  This can be overried with the `--inVedVersion` option.   Columns that are not described in the official BED specs can be optionally mapped as-is using the `--keepExtra` option.
+
+By default, halLiftover uses spaces and/or tabs to separate columns. To use only tabs (ie to allow spaces within names), use the `--tab` option.
+
+Annotations in [Wiggle](http://genome.ucsc.edu/goldenPath/help/wiggle.html) format can likewise be mapped using `halWiggleLiftover`
 
 #### Alignability
 
@@ -269,8 +315,22 @@ Two bed files must be specified because the coordinates of inserted (and by conv
 
 Point mutations can optionally be written using the `--snpFile <file>` option.  The '--maxGap' and '--maxNFraction' options can specify the gap indel threshold and missing data threshold, respectively, as described above in the *halSummarizeMtuations* section.  
 
+### Constrained Element Prediction
 
-### Importing from other formats
+(Under development)
+
+PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  
+
+* Train a neutral model
+
+     See `halPhyloPTrain.py`
+
+* Detect constrained elements
+
+     See `halPhyloPMP.py`
+
+Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for their work on extending their tools to work with HAL.
+
 
 Example of HAL Genome Representation
 -----

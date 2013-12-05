@@ -30,6 +30,7 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
   _version = version;
   std::getline(is, lineBuffer);
   stringstream ss(lineBuffer);
+  ss.imbue(is.getloc());
   ss >> _chrName;
   if (ss.bad() || ss.fail()) 
   {
@@ -98,7 +99,7 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
       throw hal_exception("Error scanning BED itemRGB");
     }
     vector<string> rgbTokens = chopString(rgb, ",");
-    if (rgbTokens.size() != 3)
+    if (rgbTokens.size() > 3 || rgbTokens.size() == 0)
     {
       throw hal_exception("Error parsing BED itemRGB");
     }
@@ -108,18 +109,26 @@ istream& BedLine::read(istream& is, int version, string& lineBuffer)
     {
       throw hal_exception("Error parsing BED itemRGB");
     }
-    stringstream rgbssg(rgbTokens[1]);
-    rgbssg >> _itemG;
-    if (rgbssg.bad())
+    _itemG = _itemR;
+    _itemB = _itemR;
+    if (rgbTokens.size() > 1)
     {
-      throw hal_exception("Error parsing BED itemRGB");
+      stringstream rgbssg(rgbTokens[1]);
+      rgbssg >> _itemG;
+      if (rgbssg.bad())
+      {
+        throw hal_exception("Error parsing BED itemRGB");
+      }
     }
-    stringstream rgbssb(rgbTokens[2]);
-    rgbssb >> _itemB;
-    if (rgbssb.bad())
+    if (rgbTokens.size() == 3)
     {
-      throw hal_exception("Error parsing BED itemRGB");
-    }    
+      stringstream rgbssb(rgbTokens[2]);
+      rgbssb >> _itemB;
+      if (rgbssb.bad())
+      {
+        throw hal_exception("Error parsing BED itemRGB");
+      }    
+    }
   }
   if (_version > 9)
   {
@@ -298,3 +307,159 @@ bool BedLineSrcLess::operator()(const BedLine& b1, const BedLine& b2) const
 }
 
 
+ostream& BedLine::writePSL(ostream& os)
+{
+  assert(_psl.size() == 1);
+  const PSLInfo& psl = _psl[0];
+  assert(_blocks.size() == psl._qBlockStarts.size());
+  assert(_blocks.size() > 0);
+  assert(_srcStart >= (hal_index_t)psl._qChromOffset);
+  if (validatePSL() == false)
+  {
+    throw hal_exception("Internal error: PSL does not validate");
+  }
+
+  os << psl._matches << '\t'
+     << psl._misMatches << '\t'
+     << psl._repMatches << '\t'
+     << psl._nCount << '\t'
+     << psl._qNumInsert << '\t'
+     << psl._qBaseInsert << '\t'
+     << psl._tNumInsert << '\t'
+     << psl._tBaseInsert << '\t'
+     << psl._qStrand << _strand << '\t'
+     << psl._qSeqName << '\t'
+     << psl._qSeqSize << '\t'
+     << (_srcStart - psl._qChromOffset) << '\t'
+     << (psl._qEnd - psl._qChromOffset) << '\t'
+     << _chrName << '\t'
+     << psl._tSeqSize << '\t'
+     << _start << '\t'
+     << _end << '\t'
+     << _blocks.size() << '\t';
+
+  for (size_t i = 0; i < _blocks.size(); ++i)
+  {
+    os << _blocks[i]._length << ',';
+  }
+  os << '\t';
+
+  for (size_t i = 0; i < psl._qBlockStarts.size(); ++i)
+  {
+    assert(psl._qBlockStarts[i] >= (hal_index_t)psl._qChromOffset);
+    hal_index_t start = psl._qBlockStarts[i] - psl._qChromOffset;
+    if (psl._qStrand == '-')
+    {
+      start = psl._qSeqSize - start - _blocks[i]._length;
+    }
+    os << start << ',';
+  }
+  os << '\t';
+
+  for (size_t i = 0; i < _blocks.size(); ++i)
+  {
+    hal_index_t start = _blocks[i]._start + _start;
+    if (_strand == '-')
+    {
+      start = psl._tSeqSize - start - _blocks[i]._length;
+    }
+    os << start << ',';
+  }
+
+  os << '\n';
+  return os;
+}
+
+bool BedLine::validatePSL() const
+{
+  if (_psl.size() != 1)
+  {
+    assert(false); return false;
+  }
+  const PSLInfo& psl = _psl[0];
+
+  if (_blocks.size() < 1)
+  {
+    assert(false); return false;
+  }
+  if (_blocks.size() != psl._qBlockStarts.size())
+  {
+    assert(false); return false;
+  }
+
+  if (psl._qBlockStarts.size() != _blocks.size())
+  {
+    assert(false); return false;
+  }
+
+  hal_size_t totBlockLen = 0;
+  for (size_t i = 0; i < _blocks.size(); ++i)
+  {
+    totBlockLen += _blocks[i]._length;
+  }
+  
+  if (totBlockLen != psl._matches + psl._misMatches + psl._repMatches)
+  {
+    assert(false); return false;
+  }
+
+  if (totBlockLen + psl._qBaseInsert != psl._qEnd - _srcStart)
+  {
+    assert(false); return false;
+  }
+  
+  if (totBlockLen + psl._tBaseInsert != (hal_size_t)_end - _start)
+  {
+    assert(false); return false;
+  }
+
+  if (_strand != '-')
+  {
+    if (_blocks[0]._start != 0)
+    {
+      assert(false); return false;
+    }
+    if (_blocks.back()._start + _blocks.back()._length + _start != _end)
+    {
+      assert(false); return false;
+    }
+  }
+  else
+  {
+    if (_blocks.back()._start != 0)
+    {
+      assert(false); return false;
+    }
+    if (_blocks[0]._start + _blocks[0]._length + _start != _end)
+    {
+      assert(false); return false;
+    } 
+  }
+  
+  if (psl._qStrand != '-')
+  {
+    if (psl._qBlockStarts[0] - psl._qChromOffset !=
+        _srcStart - psl._qChromOffset)
+    {
+      assert(false); return false;
+    }
+    if (psl._qBlockStarts.back() + _blocks.back()._length != psl._qEnd)
+    {
+      assert(false); return false;
+    }
+  }
+  else
+  {
+    if (psl._qBlockStarts.back() - psl._qChromOffset !=
+        _srcStart - psl._qChromOffset)
+    {
+      assert(false); return false;
+    }
+    if (psl._qBlockStarts[0] + _blocks[0]._length != psl._qEnd)
+    {
+      assert(false); return false;
+    }
+  }
+
+  return true;
+}

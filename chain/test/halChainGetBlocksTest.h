@@ -50,5 +50,11 @@ struct ChainGetBlocksInversionOffsetQSisTest : public ChainGetBlocksSimpleTest
    void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
+struct ChainGetBlocksSimpleLiftoverTest : public ChainGetBlocksSimpleTest
+{
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
+
 
 #endif

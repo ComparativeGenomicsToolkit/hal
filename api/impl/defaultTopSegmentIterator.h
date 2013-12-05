@@ -23,6 +23,9 @@ public:
                              bool inverted = false);
    virtual ~DefaultTopSegmentIterator();
    
+   // SEGMENT INTERFACE OVERRIDE
+   virtual void print(std::ostream& os) const;
+
    // TOP SEGMENT INTERFACE
    virtual hal_index_t getParentIndex() const;
    virtual bool hasParent() const;

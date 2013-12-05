@@ -170,9 +170,9 @@ bool DefaultMappedSegment::canMergeRightWith(
     else if (this->getReversed() == true && ref->getReversed() == true)
     {
       qdelta = next->getEndPosition() - this->getStartPosition();
-      rdelta = nextRef->getStartPosition() - ref->getEndPosition();
+      rdelta = nextRef->getEndPosition() - ref->getStartPosition();
       cut = this->getStartPosition();
-      sourceCut = ref->getEndPosition();
+      sourceCut = ref->getStartPosition();
     }
     else if (this->getReversed() == false && ref->getReversed() == true)
     {
@@ -207,20 +207,6 @@ bool DefaultMappedSegment::canMergeRightWith(
     }
   }
   return ret;
-}
-
-void DefaultMappedSegment::print(ostream& os) const
-{
-  os << "src: " << _source->getGenome()->getName() << "." 
-     << _source->getSequence()->getName() << " ai=" 
-     << _source->getArrayIndex() << "[" << _source->getStartPosition()
-     << "," << _source->getEndPosition() << "] rev=" 
-     << _source->getReversed() << "\n"
-     << "tgt: " << _target->getGenome()->getName() << "." 
-     << _target->getSequence()->getName() << " ai=" 
-     << _target->getArrayIndex() << "[" << _target->getStartPosition()
-     << "," << _target->getEndPosition() << "] rev=" 
-     << _target->getReversed() << "\n";
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -423,7 +409,15 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
   list<DefaultMappedSegmentConstPtr> input;
   input.push_back(newMappedSeg);
   list<DefaultMappedSegmentConstPtr> output;
-  mapRecursive(NULL, input, output, tgtGenome, genomesOnPath, doDupes, 
+
+  set<string> namesOnPath;
+  assert(genomesOnPath != NULL);
+  for (set<const Genome*>::const_iterator i = genomesOnPath->begin();
+       i != genomesOnPath->end(); ++i)
+  {
+    namesOnPath.insert((*i)->getName());
+  }
+  mapRecursive(NULL, input, output, tgtGenome, namesOnPath, doDupes, 
                minLength);
 
   list<DefaultMappedSegmentConstPtr>::iterator outIt = output.begin();
@@ -440,7 +434,7 @@ hal_size_t DefaultMappedSegment::mapRecursive(
   list<DefaultMappedSegmentConstPtr>& input,
   list<DefaultMappedSegmentConstPtr>& results,
   const Genome* tgtGenome,
-  const set<const Genome*>* genomesOnPath,
+  const set<string>& namesOnPath,
   bool doDupes,
   hal_size_t minLength)
 {
@@ -457,33 +451,37 @@ hal_size_t DefaultMappedSegment::mapRecursive(
     srcGenome = (*inputPtr->begin())->getSource()->getGenome();
     genome = (*inputPtr->begin())->getGenome();
 
-    const Genome* parentGenome = genome->getParent();
-    if (parentGenome != NULL &&
-        parentGenome != prevGenome && (
-          parentGenome == tgtGenome || 
-          genomesOnPath->find(parentGenome) != genomesOnPath->end()))
+    const Alignment* alignment = genome->getAlignment();
+    string parentName = alignment->getParentName(genome->getName());
+    if (parentName == tgtGenome->getName() ||
+        namesOnPath.find(parentName) != namesOnPath.end())
     {
-      nextGenome = parentGenome;
-    }
-    for (hal_size_t child = 0; 
-         nextGenome == NULL && child < genome->getNumChildren(); ++child)
-    {
-      // note that this code is potentially unfriendly to the 
-      // inmemory option where entire child genomes get loaded
-      // when they may not be needed.  but since the column iterator
-      // does the same thing, we don't worry for now
-      const Genome* childGenome = genome->getChild(child);
-      if (childGenome != prevGenome && (
-            childGenome == tgtGenome ||
-            genomesOnPath->find(childGenome) != genomesOnPath->end()))
+      const Genome* parentGenome = genome->getParent();
+      if (parentGenome != NULL &&
+          parentGenome != prevGenome)
       {
-        nextGenome = childGenome;
-        nextChildIndex = child;
+        nextGenome = parentGenome;
+      }
+    }
+    vector<string> childNames = alignment->getChildNames(genome->getName());
+    for (hal_size_t child = 0; 
+         nextGenome == NULL && child < childNames.size(); ++child)
+    {
+      if (childNames[child] == tgtGenome->getName() ||
+          namesOnPath.find(childNames[child]) != namesOnPath.end())
+      {
+        const Genome* childGenome = genome->getChild(child);
+        if (childGenome != prevGenome)
+        {
+          nextGenome = childGenome;
+          nextChildIndex = child;
+        }
       }
     }
     
     if (doDupes == true && genome->getParent() != NULL &&
-        (!nextGenome || nextGenome != genome->getParent()))
+        (!nextGenome || nextGenome != genome->getParent())
+        && namesOnPath.find(parentName) != namesOnPath.end())
     {   
       outputPtr->clear();
       list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
@@ -521,7 +519,7 @@ hal_size_t DefaultMappedSegment::mapRecursive(
     swap(inputPtr, outputPtr);
     assert(genome != NULL);
     
-    mapRecursive(genome, *inputPtr, *outputPtr, tgtGenome, genomesOnPath, 
+    mapRecursive(genome, *inputPtr, *outputPtr, tgtGenome, namesOnPath, 
                  doDupes, minLength);
   }
   else
@@ -1151,6 +1149,29 @@ hal_size_t DefaultMappedSegment::getMappedSegments(
 {
   return _target->getMappedSegments(outSegments, tgtGenome, genomesOnPath,
                                     doDupes, minLength);
+}
+
+void DefaultMappedSegment::print(ostream& os) const
+{
+  os << "Mapped Segment:\n";
+  os << "Source: ";
+  if (_source.get() == NULL)
+  {
+    os << "NULL";
+  }
+  else
+  {
+    os << *_source;
+  }
+  os << "\nTarget: ";
+  if (_target.get() == NULL)
+  {
+    os << "NULL";
+  }
+  else
+  {
+    os << *_target;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

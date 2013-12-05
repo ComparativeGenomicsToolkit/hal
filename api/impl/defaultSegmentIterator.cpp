@@ -197,6 +197,29 @@ hal_size_t DefaultSegmentIterator::getMappedSegments(
   return numResults;
 }
 
+void DefaultSegmentIterator::print(ostream& os) const
+{
+  hal_index_t ai = getArrayIndex();
+
+  os << "gen=" << getGenome()->getName()
+     << " seq=" << getSequence()->getName()
+     << " idx=" << ai;
+
+  bool offRight = 
+     isTop() ? ai >= (hal_index_t)getGenome()->getNumTopSegments() :
+     ai >= (hal_index_t)getGenome()->getNumBottomSegments();
+
+  if (ai != NULL_INDEX && !offRight)
+  {
+    os 
+       << " start=" << getStartPosition()
+       << " end=" << getEndPosition()
+       << " len=" << getLength()
+       << " off=[" << getStartOffset() << "," << getEndOffset() << "]"
+       << " rev=" << getReversed();
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SLICED SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////

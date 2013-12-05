@@ -51,9 +51,13 @@ public:
     * new iterators in some cases).  
     * @param columnIndex position of column in forward genome coordinates 
     * @param lastIndex last column position (for iteration).  must be greater
-    *  than columnIndex */
+    *  than columnIndex 
+    * @param clearCache clear the cache that prevents columns from being 
+    * visited twice.  If not set to true, then its possible the iterator
+    * ends up not at "columnIndex" but at the next unvisited column.*/
    virtual void toSite(hal_index_t columnIndex, 
-                       hal_index_t lastIndex) const = 0;
+                       hal_index_t lastIndex,
+                       bool clearCache = false) const = 0;
 
    /** Use this method to bound iteration loops.  When the column iterator
     * is retrieved from the sequence or genome, the last column is specfied.
@@ -94,6 +98,9 @@ public:
     * different iterators covering distinct ranges.  If there are no 
     * duplications, then this function will always return true. */
    virtual bool isCanonicalOnRef() const = 0;
+
+   /** Print contents of column iterator */
+   virtual void print(std::ostream& os) const = 0;
    
 protected:
    friend class counted_ptr<ColumnIterator>;
@@ -103,29 +110,13 @@ protected:
 
 inline ColumnIterator::~ColumnIterator() {}
 
-}
-
-#ifndef NDEBUG
-#include "halGenome.h"
-namespace hal {
-inline std::ostream& operator<<(std::ostream& os, ColumnIteratorConstPtr ci)
+inline std::ostream& operator<<(std::ostream& os, const ColumnIterator& cit)
 {
-  const ColumnIterator::ColumnMap* cmap = ci->getColumnMap();
-  for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin();
-       i != cmap->end(); ++i)
-  {
-    os << i->first->getName() << ": ";
-    for (size_t j = 0; j < i->second->size(); ++j)
-    {
-      os << i->second->at(j)->getArrayIndex() << ", ";
-    }
-    os << "\n";
-  }
-
+  cit.print(os);
   return os;
 }
+
 }
-#endif
 
 
 #endif

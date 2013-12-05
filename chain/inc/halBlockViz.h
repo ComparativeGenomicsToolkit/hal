@@ -57,7 +57,8 @@ struct hal_block_t
    hal_int_t qStart;
    hal_int_t size;
    char strand;
-   char *sequence;
+   char *qSequence; // query DNA, if requested
+   char *tSequence; // target DNA, if requested
 };
 
 /** Some information about a genome */
@@ -78,6 +79,19 @@ struct hal_chromosome_t
    char* name;
    hal_int_t length;
 };
+
+/** Duplication mode toggler.  
+ * HAL_NO_DUPS: No duplications computed
+ * HAL_QUERY_DUPS: The same query range can map to multiple places in target
+ * HAL_QUERY_AND_TARGET_DUPS: As above, but target can also map to multiple
+ * places in query.  Note that these instances are returned in the special
+ * target dup list structure */
+typedef enum
+{
+  HAL_NO_DUPS = 0,
+  HAL_QUERY_DUPS,
+  HAL_QUERY_AND_TARGET_DUPS,
+} hal_dup_type_t;
 
 /** Open a text file created by halLodInterpolate.py for viewing. 
  * This text file contains a list of paths to progressively coarser
@@ -138,10 +152,18 @@ void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
  * @param tStart start position in reference  
  * @param tEnd last + 1 position in reference (if 0, then the size of the 
  * chromosome is used). 
+ * @param tReversed Input region is on the reverse strand (but still 
+ * in forward coordinates like BED).  can only be used in liftOverMode
+ * otherwise must be set to 0
  * @param getSequenceString copy DNA sequence (of query species) into 
  * output blocks if not 0. 
- * @param doDupes create blocks for duplications if not 0.  When this 
- * option is enabled, the same region can appear in more than one block.
+ * @param dupMode Specifies which types of duplications to compute. 
+ * (note that when tReversed != 0, target duplications are not supported,
+ * so when doing liftover use no dupes or query dupes only) 
+ * @param mapBackAdjacencies Species if segments adjacent to query segments
+ * in the alignment are mapped back ot the target (producing offscreen 
+ * results). Must be set to 0 it tReversed is not 0 (so set to 0 when doing 
+ * liftover).
  * @return  block structure -- must be freed by halFreeBlockResults()
  */
 struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle, 
@@ -150,9 +172,35 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       char* tChrom,
                                                       hal_int_t tStart, 
                                                       hal_int_t tEnd,
+                                                      hal_int_t tReversed,
                                                       int getSequenceString,
-                                                      int doDupes);
- 
+                                                      hal_dup_type_t dupMode,
+                                                      int mapBackAdjacencies);
+
+/** Read alignment into an output file in MAF format.  Interface very 
+ * similar to halGetBlocksInTargetRange except multiple query species 
+ * can be specified
+ *
+ * @param halHandle handle for the HAL alignment obtained from halOpen
+ * @param qSpeciesNames the names of the query species (no other information
+ * is read from the hal_species_t structure -- just the names).
+ * @param tSpecies the name of the reference species.
+ * @param tChrom name of the chromosome in reference.
+ * @param tStart start position in reference  
+ * @param tEnd last + 1 position in reference (if 0, then the size of the 
+ * chromosome is used). 
+ * @param doDupes create blocks for duplications if not 0.  When this 
+ * option is enabled, the same region can appear in more than one block.
+ * @return  number of bytes written
+ */
+hal_int_t halGetMAF(FILE* outFile,
+                    int halHandle, 
+                    struct hal_species_t* qSpeciesNames,
+                    char* tSpecies,
+                    char* tChrom,
+                    hal_int_t tStart, 
+                    hal_int_t tEnd,
+                    int doDupes); 
 
 /** Create a linked list of the species in the hal file.
  * @param halHandle handle for the HAL alignment obtained from halOpen

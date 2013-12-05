@@ -109,7 +109,7 @@ void HDF5MetaData::write()
     // we delve into C api for this test
     if (H5Aexists(_group.getId(), i->first.c_str()) == true)
     {
-      _group.removeAttr(_name);
+      _group.removeAttr(i->first.c_str());
     }
     attr = _group.createAttribute(i->first, vlsType, attSpace);
     attr.write(vlsType, i->second);

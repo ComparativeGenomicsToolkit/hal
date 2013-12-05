@@ -12,12 +12,14 @@
 #include <limits>
 #include <algorithm>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "hal.h"
 #include "halChain.h"
 #include "halBlockViz.h"
 #include "halBlockMapper.h"
 #include "halLodManager.h"
+#include "halMafExport.h"
 
 #ifdef ENABLE_UDC
 #include <pthread.h>
@@ -48,10 +50,13 @@ static char* copyCString(const string& inString);
 
 static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                        const Sequence* tSequence,
-                                       hal_index_t absStart, hal_index_t absEnd,
+                                       hal_index_t absStart, 
+                                       hal_index_t absEnd,
+                                       bool tReversed,
                                        const Genome* qGenome, 
                                        bool getSequenceString,
-                                       bool doDupes);
+                                       bool doDupes, bool doTargetDupes,
+                                       bool doAdjes);
 
 static void readBlock(AlignmentConstPtr seqAlignment,
                       hal_block_t* cur, 
@@ -65,6 +70,7 @@ static void readTargetRange(hal_target_dupe_list_t* cur,
 
 static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
 
+static void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList);
 
 extern "C" int halOpenLOD(char *lodFilePath)
 {
@@ -176,7 +182,8 @@ extern "C" void halFreeBlocks(struct hal_block_t* head)
   while (head != NULL)
   {
     hal_block_t* next = head->next;
-    free(head->sequence);
+    free(head->qSequence);
+    free(head->tSequence);
     free(head->qChrom);
     free(head);
     head = next;
@@ -207,8 +214,10 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       char* tChrom,
                                                       hal_int_t tStart, 
                                                       hal_int_t tEnd,
+                                                      hal_int_t tReversed,
                                                       int getSequenceString,
-                                                      int doDupes)
+                                                      hal_dup_type_t dupMode,
+                                                      int mapBackAdjacencies)
 {
   HAL_LOCK
   hal_block_results_t* results = NULL;
@@ -220,6 +229,16 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
       stringstream ss;
       ss << "Invalid query range [" << tStart << "," << tEnd << ").";
       throw hal_exception(ss.str());
+    }
+    if (tReversed != 0 && mapBackAdjacencies != 0)
+    {
+      throw hal_exception("tReversed can only be set when"
+                          "mapBackAdjacencies is 0");
+    }
+    if (tReversed != 0 && dupMode == HAL_QUERY_AND_TARGET_DUPS)
+    {
+      throw hal_exception("tReversed cannot be set in conjunction with"
+                          " dupMode=HAL_QUERY_AND_TARGET_DUPS");
     }
     AlignmentConstPtr alignment = 
        getExistingAlignment(halHandle, hal_size_t(rangeLength), false);
@@ -258,8 +277,12 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                           true);
     }
 
-    results = readBlocks(seqAlignment, tSequence, absStart, absEnd, qGenome,
-                         getSequenceString != 0, doDupes != 0);
+    results = readBlocks(seqAlignment, tSequence, absStart, absEnd, 
+                         tReversed != 0,
+                         qGenome,
+                         getSequenceString != 0, dupMode != HAL_NO_DUPS, 
+                         dupMode == HAL_QUERY_AND_TARGET_DUPS,
+                         mapBackAdjacencies != 0);
   }
   catch(exception& e)
   {
@@ -273,6 +296,86 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
   }
   HAL_UNLOCK
   return results;
+}
+
+extern "C" hal_int_t halGetMAF(FILE* outFile,
+                               int halHandle, 
+                               hal_species_t* qSpeciesNames,
+                               char* tSpecies,
+                               char* tChrom,
+                               hal_int_t tStart, 
+                               hal_int_t tEnd,
+                               int doDupes)
+{
+  HAL_LOCK
+  hal_int_t numBytes = 0;
+  try
+  {
+    hal_int_t rangeLength = tEnd - tStart;
+    if (rangeLength < 0)
+    {
+      stringstream ss;
+      ss << "Invalid query range [" << tStart << "," << tEnd << ").";
+      throw hal_exception(ss.str());
+    }
+    AlignmentConstPtr alignment = 
+       getExistingAlignment(halHandle, hal_size_t(0), true);
+
+    set<const Genome*> qGenomeSet;
+    for (hal_species_t* qSpecies = qSpeciesNames; qSpecies != NULL;
+         qSpecies = qSpecies->next)
+    {
+      checkGenomes(halHandle, alignment, qSpecies->name, tSpecies, tChrom);
+      const Genome* qGenome = alignment->openGenome(qSpecies->name);
+      qGenomeSet.insert(qGenome);
+    }
+    
+    const Genome* tGenome = alignment->openGenome(tSpecies);
+    const Sequence* tSequence = tGenome->getSequence(tChrom);
+
+    hal_index_t myEnd = tEnd > 0 ? tEnd : tSequence->getSequenceLength();
+    hal_index_t absStart = tSequence->getStartPosition() + tStart;
+    hal_index_t absEnd = tSequence->getStartPosition() + myEnd - 1;
+    if (absStart > absEnd)
+    {
+      throw hal_exception("Invalid range");
+    }
+    if (absEnd > tSequence->getEndPosition())
+    {
+      throw hal_exception("Target end position outside of target sequence");
+    }
+
+    stringstream mafBuffer;
+    MafExport mafExport;
+    mafExport.setNoDupes(doDupes == 0);
+    mafExport.setUcscNames(true);
+    mafExport.convertSegmentedSequence(mafBuffer, alignment, tGenome, 
+                                       absStart, 1 + absEnd - absStart,
+                                       qGenomeSet);
+    // if these buffers are very big, it is my intuition that 
+    // chopping them up and, saw, only converting and writing a few kb
+    // at a time would be more efficient... but i think that's the least
+    // of our problems right now.  
+    string mafStringBuffer = mafBuffer.str();
+    if (mafStringBuffer.empty() == false)
+    {
+      numBytes = (hal_int_t)fwrite(mafStringBuffer.c_str(), 
+                                   mafStringBuffer.length(), 
+                                   sizeof(char), outFile);
+    }                 
+  }
+  catch(exception& e)
+  {
+    cerr << "Exception caught: " << e.what() << endl;
+    numBytes = -1;
+  }
+  catch(...)
+  {
+    cerr << "Error in hal maf query";
+    numBytes = -1;
+  }
+  HAL_UNLOCK
+  return numBytes;
 }
 
 extern "C" struct hal_species_t *halGetSpecies(int halHandle)
@@ -525,16 +628,21 @@ char* copyCString(const string& inString)
 hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                 const Sequence* tSequence,
                                 hal_index_t absStart, hal_index_t absEnd,
+                                bool tReversed,
                                 const Genome* qGenome, bool getSequenceString,
-                                bool doDupes)
+                                bool doDupes, bool doTargetDupes, 
+                                bool doAdjes)
 {
   const Genome* tGenome = tSequence->getGenome();
   string qGenomeName = qGenome->getName();
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  blockMapper.init(tGenome, qGenome, absStart, absEnd, doDupes, 0, true);
+  blockMapper.init(tGenome, qGenome, absStart, absEnd,
+                   tReversed, doDupes, 0, doAdjes);
   blockMapper.map();
   BlockMapper::MSSet paraSet;
+  hal_size_t totalLength = 0;
+  hal_size_t reversedLength = 0;
   if (doDupes == true)
   {
     blockMapper.extractReferenceParalogies(paraSet);
@@ -565,11 +673,18 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
     BlockMapper::extractSegment(segMapIt, paraSet, fragments, &segMap,
                                 targetCutSet, queryCutSet);
     readBlock(seqAlignment, cur, fragments, getSequenceString, qGenomeName);
+    totalLength += cur->size;
+    reversedLength += cur->strand == '-' ? cur->size : 0;
     prev = cur;
   }
   if (!paraSet.empty())
   {
     results->targetDupeBlocks = processTargetDupes(blockMapper, paraSet);
+  }
+  if (doTargetDupes == false && results->targetDupeBlocks != NULL)
+  {
+    halFreeTargetDupeLists(results->targetDupeBlocks);
+    results->targetDupeBlocks = NULL;
   }
   return results;
 }
@@ -593,7 +708,8 @@ void readBlock(AlignmentConstPtr seqAlignment,
   cur->next = NULL;
 
   string seqBuffer = qSequence->getName();
-  string dnaBuffer;
+  string qDnaBuffer;
+  string tDnaBuffer;
   size_t prefix = 
      seqBuffer.find(genomeName + '.') != 0 ? 0 : genomeName.length() + 1;
   cur->qChrom = (char*)malloc(seqBuffer.length() + 1 - prefix);
@@ -623,7 +739,8 @@ void readBlock(AlignmentConstPtr seqAlignment,
   assert(firstRefSeg->getLength() == firstQuerySeg->getLength());
   cur->size = 1 + tEnd - cur->tStart;
   cur->strand = firstQuerySeg->getReversed() ? '-' : '+';
-  cur->sequence = NULL;
+  cur->tSequence = NULL;
+  cur->qSequence = NULL;
   if (getSequenceString != 0)
   {
     const Genome* qSeqGenome = 
@@ -643,20 +760,67 @@ void readBlock(AlignmentConstPtr seqAlignment,
          << " for DNA sequence extraction";
       throw hal_exception(ss.str());
     }
+
+    const Genome* tSeqGenome = 
+       seqAlignment->openGenome(tSequence->getGenome()->getName());
+    if (tSeqGenome == NULL)
+    {
+      stringstream ss;
+      ss << "Unable to open genome " << tSequence->getGenome()->getName() 
+         << " for DNA sequence extraction";
+      throw hal_exception(ss.str());
+    }
+
+    const Sequence* tSeqSequence = tSeqGenome->getSequence(tSequence->getName());
+    if (tSeqSequence == NULL)
+    {
+      stringstream ss;
+      ss << "Unable to open sequence " << tSequence->getName() 
+         << " for DNA sequence extraction";
+      throw hal_exception(ss.str());
+    }
     
-    qSeqSequence->getSubString(dnaBuffer, cur->qStart, cur->size);
+    qSeqSequence->getSubString(qDnaBuffer, cur->qStart, cur->size);
+    tSeqSequence->getSubString(tDnaBuffer, cur->tStart, cur->size);
     if (cur->strand == '-')
     {
-      reverseComplement(dnaBuffer);
+      reverseComplement(qDnaBuffer);
     }
-    cur->sequence = (char*)malloc(dnaBuffer.length() * sizeof(char) + 1);
-    strcpy(cur->sequence, dnaBuffer.c_str());
+    cur->qSequence = (char*)malloc(qDnaBuffer.length() * sizeof(char) + 1);
+    cur->tSequence = (char*)malloc(tDnaBuffer.length() * sizeof(char) + 1);
+    strcpy(cur->qSequence, qDnaBuffer.c_str());
+    strcpy(cur->tSequence, tDnaBuffer.c_str());
   }
 }
 
 struct CStringLess { bool operator()(const char* s1, const char* s2) const {
   return strcmp(s1, s2) < 0;}
 };
+
+struct DupeIdLess { bool operator()(const hal_target_dupe_list_t* d1,
+                                    const hal_target_dupe_list_t* d2) const {
+  if (d1 != NULL && d2 != NULL)
+  {
+    if (d1->id == d2->id)
+    {
+      // hack to keep ties in reverse sorted order based on tStart
+      // this is so that the prepend in processTargetDupes when the 
+      // lists gets merged keeps the tStarts in ascending order
+      return d1->tRange->tStart > d2->tRange->tStart;
+    }
+    return d1->id < d2->id;
+  }
+  return d1 != NULL && d2 == NULL;
+}};
+
+struct DupeStartLess { bool operator()(const hal_target_dupe_list_t* d1,
+                                       const hal_target_dupe_list_t* d2) const {
+  if (d1 != NULL && d2 != NULL)
+  {
+    return d1->tRange->tStart < d2->tRange->tStart;
+  }
+  return d1 != NULL && d2 == NULL;
+}};
 
 hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
                                            BlockMapper::MSSet& paraSet)
@@ -685,8 +849,6 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
   
   cleanTargetDupesList(tempList);
 
-  hal_target_dupe_list_t* head = NULL;
-  hal_target_dupe_list_t* prev = NULL;
   map<const char*, hal_int_t, CStringLess> idMap;
   pair<map<const char*, hal_int_t, CStringLess>::iterator, bool> idRes;
   vector<hal_target_dupe_list_t*>::iterator i;
@@ -710,6 +872,10 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
       (*j)->tRange->next = (*i)->tRange;
       (*i)->tRange = (*j)->tRange;
       (*j)->tRange = NULL;
+      // DupeIdLess sorting comparator should ensure that these 
+      // elemens are added in the proper order so that trange list
+      // stays sorted here
+      assert((*i)->tRange->tStart < (*i)->tRange->next->tStart);
       halFreeTargetDupeLists(*j);
       *j = NULL;
       j = k;
@@ -717,17 +883,26 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
 
     idRes = idMap.insert(pair<const char*, hal_int_t>((*i)->qChrom, 0));
     (*i)->id = idRes.first->second++;
+  }
+ 
+  std::sort(tempList.begin(), tempList.end(), DupeStartLess());
+  mergeCompatibleDupes(tempList);
+
+  hal_target_dupe_list_t* head = NULL;
+  hal_target_dupe_list_t* prev = NULL;
+  for (i = tempList.begin(); i != tempList.end() && *i != NULL; ++i)
+  {
     if (head == NULL)
     {
       head = *i;
     }
-    else
+    else 
     {
       prev->next = *i;
     }
     prev = *i;
-    prev->next = NULL;
   }
+  
   return head;
 }
 
@@ -774,21 +949,6 @@ void readTargetRange(hal_target_dupe_list_t* cur,
   cur->qChrom = (char*)malloc(qSeqName.length() * sizeof(char) + 1);
   strcpy(cur->qChrom, qSeqName.c_str());
 }
-
-struct DupeIdLess { bool operator()(const hal_target_dupe_list_t* d1,
-                                    const hal_target_dupe_list_t* d2) const {
-  if (d1 != NULL && d2 != NULL)
-  {
-    return d1->id < d2->id;
-  }
-  return d1 != NULL && d2 == NULL;
-}};
-
-struct DupeStartLess { bool operator()(const hal_target_dupe_list_t* d1,
-                                       const hal_target_dupe_list_t* d2) const {
-  return d1->tRange->tStart < d2->tRange->tStart;
-}};
-
 
 void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
 {
@@ -845,4 +1005,52 @@ void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
 
   // sort puts NULL items at end. we resize them out.
   dupeList.resize(dupeList.size() - deadCount);
+}
+
+static bool areRangesCompatible(hal_target_range_t* range1,
+                                hal_target_range_t* range2)
+{
+  for (; range1 != NULL; range1 = range1->next, range2 = range2->next)
+  {
+    if ((range1->next == NULL) != (range2->next == NULL) ||
+        range2->tStart != range1->tStart + range1->size ||
+        (range1->next != NULL && 
+         range1->next->tStart - (range1->tStart + range1->size) < 
+         range2->size))
+    {
+      return false;
+    }        
+  }
+  return true;
+}
+
+void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList)
+{
+  vector<hal_target_dupe_list_t*>::iterator i;
+  vector<hal_target_dupe_list_t*>::iterator j;
+  vector<hal_target_dupe_list_t*>::iterator k;
+  
+  for (i = dupeList.begin(); i != dupeList.end() && *i != NULL; i = j)
+  {
+    hal_target_range_t* range1 = (*i)->tRange;
+    j = i;
+    bool compatible = true;
+    for (++j; j != dupeList.end() && *j != NULL && compatible; ++j)
+    {
+      hal_target_range_t* range2 = (*j)->tRange;
+      compatible = areRangesCompatible(range1, range2);
+      if (compatible == true)
+      {
+        range2 = (*j)->tRange;
+        for (range1 = (*i)->tRange; range1 != NULL; range1 = range1->next) 
+        {
+          assert(range2 != NULL);
+          range1->size += range2->size;
+          range2 = range2->next;
+        } 
+        halFreeTargetDupeLists(*j);
+        *j = NULL;
+      }
+    }
+  }
 }

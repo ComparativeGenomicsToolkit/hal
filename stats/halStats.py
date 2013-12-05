@@ -27,12 +27,12 @@ def runShellCommand(command):
                                (command, sts))
         return output
     except KeyboardInterrupt:
-        raise RuntimeError("Aborting %s" % cmd)
+        raise RuntimeError("Aborting %s" % command)
 
 def runParallelShellCommands(cmdList, numProc):
     if numProc == 1 or len(cmdList) == 1:
         map(runShellCommand, cmdList)
-    else:
+    elif len(cmdList) > 0:
         mpPool = Pool(processes=min(numProc, len(cmdList)))
         result = mpPool.map_async(runShellCommand, cmdList)
         # specifying a timeout allows keyboard interrupts to work?!
@@ -65,6 +65,14 @@ def getHalStats(halPath):
             outList.append(tuple(tokens))
     return outList
 
+def getHalTotalStats(halPath):
+    allStats = getHalStats(halPath)
+    totals = (0, 0, 0, 0, 0)
+    for genome in allStats:
+        assert len(genome) == 6
+        totals = tuple(sum(t) for t in zip(totals, genome)[1:])
+    return totals
+
 def getHalSequenceStats(halPath, genomeName):
     res = runShellCommand("halStats %s --sequenceStats %s" %
                           (halPath, genomeName)).split("\n")
@@ -92,3 +100,11 @@ def getHalGenomeLength(halPath, genomeName):
         if genomeStats[0] == genomeName:
             return int(genomeStats[2])
     return None
+
+def getHalTree(halPath):
+    return runShellCommand("halStats %s --tree" % halPath).strip()
+
+def getHalBaseComposition(halPath, genomeName, step):
+    strList = runShellCommand("halStats %s --baseComp %s,%d" % (
+        halPath, genomeName, step)).split()
+    return [float(x) for x in strList]

@@ -185,6 +185,29 @@ hal_size_t DefaultGappedTopSegmentIterator::getMappedSegments(
                       "DefaultGappedTopSegmentIterator");
 }
 
+void DefaultGappedTopSegmentIterator::print(std::ostream& os) const
+{
+  os << "Gapped Top Segment: (thresh=" << getGapThreshold() << ")\n";
+  os << "Left: ";
+  if (_left.get() == NULL)
+  {
+    os << "NULL";
+  }
+  else
+  {
+    os << *_left;
+  }
+  os << "\nRight: ";
+  if (_right.get() == NULL)
+  {
+    os << "NULL";
+  }
+  else
+  {
+    os << *_right;
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////

@@ -138,7 +138,8 @@ def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
                                "lod", "hal")        
         
         if overwrite is True or not os.path.isfile(outPath):
-            runHalLodExtract(srcPath, outPath, step, keepSeq, inMemory)
+            stepScale = (scale ** stepIdx)
+            runHalLodExtract(srcPath, outPath, stepScale, keepSeq, inMemory)
 
         makeMaf(inHalPath, outDir, step, overwrite, doMaf)
         compMaf(inHalPath, outDir, step, overwrite, doMaf)

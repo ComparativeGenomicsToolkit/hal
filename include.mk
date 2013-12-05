@@ -15,7 +15,7 @@ cflags += -I${sonLibPath}
 cppflags += -I${sonLibPath}
 
 basicLibs = ${sonLibPath}/sonLib.a ${sonLibPath}/cuTest.a
-basicLibsDependencies = ${sonLibPath}/cuTest.a 
+basicLibsDependencies = ${basicLibs}
 
 # hdf5 compilation is done through its wrappers.
 # we can speficy our own (sonlib) compilers with these variables:
@@ -25,6 +25,13 @@ HDF5_CC = ${cxx}
 HDF5_CCLINKER = ${cxx} 
 cpp = h5c++ ${h5prefix}
 cxx = h5cc ${h5prefix}
+
+ifeq (${SYS},Darwin) #This is to deal with the Mavericks replacing gcc with clang fully and changing libraries
+ifneq ($(wildcard /usr/bin/clang),)
+  cppflags += -stdlib=libstdc++
+  cflags += -stdlib=libstdc++
+endif
+endif
 
 # add compiler flag and kent paths if udc is enabled
 # relies on KENTSRC containing path to top level kent/ dir
@@ -38,4 +45,37 @@ ifdef ENABLE_UDC
 	cppflags += -DENABLE_UDC -I${KENTSRC}/src/inc -pthread
 	cflags += -I${KENTSRC}/src/inc -pthread
 	basicLibs += ${KENTSRC}/src/lib/${MACHTYPE}/jkweb.a  ${SAMTABIXDIR}/libsamtabix.a -lssl -lcrypto
+endif
+
+
+#
+# phyloP support
+#
+phyloPcppflags = 
+phyloPlibs = 
+
+ifdef ENABLE_PHYLOP
+
+ifndef TARGETOS
+  TARGETOS := $(shell uname -s)
+endif
+
+#	Local Linux install (phast and clapack sister dirs to hal/)
+#	(note CLAPACKPATH not needed in Mac)
+	PHAST=../../phast
+	CLAPACKPATH=../../clapack
+
+#	Melissa's version of the above
+#	PHAST=/home/mt269/phast
+#	CLAPACKPATH=/usr/local/software/CLAPACK
+
+ifeq ($(TARGETOS), Darwin)
+	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -framework vecLib -DVECLIB
+	phyloPlibs += -L${PHAST}/lib -lphast -lc
+else
+	F2CPATH=${CLAPACKPATH}/F2CLIBS
+	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+	phyloPlibs += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
+endif
+
 endif

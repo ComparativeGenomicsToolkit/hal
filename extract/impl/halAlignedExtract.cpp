@@ -13,18 +13,24 @@ using namespace std;
 using namespace hal;
 
 static void extractAlignedRegions(const Genome* genome,
-                                  ostream* bedStream);
+                                  ostream* bedStream,
+                                  bool complement);
 
 static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance(false);
   optionsParser->setDescription("Extract aligned regions of genome (with its"
-                                "parent) and output to bed file");
+                                " parent) and output to bed file");
   optionsParser->addArgument("halPath", "input hal file");
   optionsParser->addArgument("genome", "name of genome to scan"
                              " (can't be root)");
   optionsParser->addOption("alignedFile", "path to bed file to write to", 
                            "stdout");
+  optionsParser->addOptionFlag("complement", "extract the regions of the "
+                               "genome that are *unaligned* to the parent. "
+                               "ie all intervals that are not returned with"
+                               " the default setting.", false);
+
   return optionsParser;
 }
 
@@ -35,12 +41,14 @@ int main(int argc, char** argv)
   string halPath;
   string genomeName;
   string outBedPath;
+  bool complement;
   try
   {
     optionsParser->parseOptions(argc, argv);
     halPath = optionsParser->getArgument<string>("halPath");
     genomeName = optionsParser->getArgument<string>("genome");
     outBedPath = optionsParser->getOption<string>("alignedFile");
+    complement = optionsParser->getFlag("complement");
   }
   catch(exception& e)
   {
@@ -79,7 +87,7 @@ int main(int argc, char** argv)
         throw hal_exception(string("Error opening ") + outBedPath + 
                             " for writing");
       }
-      extractAlignedRegions(genome, bedStream);
+      extractAlignedRegions(genome, bedStream, complement);
     }
   }
   catch(hal_exception& e)
@@ -96,7 +104,8 @@ int main(int argc, char** argv)
   return 0;
 }
 
-void extractAlignedRegions(const Genome* genome, ostream* bedStream)
+void extractAlignedRegions(const Genome* genome, ostream* bedStream,
+                           bool complement)
 {
   assert(genome && bedStream);
   if (genome->getNumTopSegments() > 0)
@@ -105,14 +114,15 @@ void extractAlignedRegions(const Genome* genome, ostream* bedStream)
     TopSegmentIteratorConstPtr endSeg = genome->getTopSegmentEndIterator();
     for (; topSeg->equals(endSeg) == false; topSeg->toRight())
     {
-      if (topSeg->hasParent())
+      if ((topSeg->hasParent() && complement == false) ||
+          (!topSeg->hasParent() && complement == true))
       {
         const Sequence* sequence = topSeg->getSequence();
         *bedStream << sequence->getName() << '\t'
                    << topSeg->getStartPosition() - sequence->getStartPosition()
                    << '\t' 
-                   << topSeg->getEndPosition() - sequence->getStartPosition() +1
-                   << '\n';
+                   << (1 + topSeg->getEndPosition() -
+                       sequence->getStartPosition()) << '\n';
       }
     }
   }

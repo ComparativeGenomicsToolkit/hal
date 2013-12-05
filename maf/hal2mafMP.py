@@ -36,7 +36,12 @@ def getHal2MafCmd(options):
     for opt,val in options.__dict__.items():
         if (val is not None and
             (type(val) != bool or val == True) and
-            (opt == 'refGenome' or
+            (opt == 'cacheMDC' or
+             opt == 'cacheRDC' or
+             opt == 'cacheW0' or
+             opt == 'cacheBytes' or
+             opt == 'inMemory' or
+             opt == 'refGenome' or
              opt == 'refSequence' or
              opt == 'refTargets' or
              opt == 'start' or
@@ -98,20 +103,20 @@ def concatenateSlices(sliceOpts, sliceCmds):
         for opt, cmd in zip(sliceOpts, sliceCmds):
             first = opt.sliceNumber == 0            
             sliceMafPath = makeOutMafPath(opt)
-            assert os.path.isfile(sliceMafPath)
-            sliceNum = opt.sliceNumber
-            opt.sliceNumber = None
-            outMafPath = makeOutMafPath(opt)
-            opt.sliceNumber = sliceNum
-            if first:
-                os.rename(sliceMafPath, outMafPath)
-            else:
-                with open(outMafPath, "a") as tgt:
-                    with open(sliceMafPath, "r") as src:
-                        for line in src:
-                            if not line[0] == '#':
-                                tgt.write(line)
-                os.remove(sliceMafPath)
+            if os.path.isfile(sliceMafPath) and opt.sliceNumber is not None:
+                sliceNum = opt.sliceNumber
+                opt.sliceNumber = None
+                outMafPath = makeOutMafPath(opt)
+                opt.sliceNumber = sliceNum
+                if first:
+                    os.rename(sliceMafPath, outMafPath)
+                else:
+                    with open(outMafPath, "a") as tgt:
+                        with open(sliceMafPath, "r") as src:
+                            for line in src:
+                                if not line[0] == '#':
+                                    tgt.write(line)
+                    os.remove(sliceMafPath)
             
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes. 
@@ -220,7 +225,7 @@ def main(argv=None):
                          type=int,
                          default=None)
     hdf5Grp.add_argument("--cacheW0",
-                         help="w0 parameter fro hdf5 cache", type=int,
+                         help="w0 parameter fro hdf5 cache", type=float,
                          default=None)
     hdf5Grp.add_argument("--inMemory",
                          help="load all data in memory (& disable hdf5 cache)",
@@ -284,6 +289,7 @@ def main(argv=None):
     test = open(args.mafFile, "w")
     test.write("\n")
     test.close()
+    os.remove(args.mafFile)
     if args.splitBySequence:
         if args.start is not None:
             raise RuntimeError("--splitBySequence option currently "
