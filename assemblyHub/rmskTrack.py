@@ -13,7 +13,7 @@ from optparse import OptionGroup
 def writeTrackDb_rmsk(f, rmskdir, genomedir):
     if not os.path.exists(rmskdir):
         return
-    f.write("track repeatMasker_\n")
+    f.write("track repeatMasker\n")
     f.write("compositeTrack on\n")
     f.write("shortLabel RepeatMasker\n")
     f.write("longLabel Repeating Elements by RepeatMasker\n")
@@ -21,6 +21,7 @@ def writeTrackDb_rmsk(f, rmskdir, genomedir):
     f.write("visibility dense\n")
     f.write("type bed 3 .\n")
     f.write("noInherit on\n")
+    f.write("html ../documentation/repeatMasker\n")
     f.write("\n")
     
     system("ln -s %s %s" %(os.path.abspath(rmskdir), os.path.join(genomedir, "repeatMasker")))
@@ -28,7 +29,7 @@ def writeTrackDb_rmsk(f, rmskdir, genomedir):
     for i, file in enumerate(files):
         element = file.split('.')[0]
         f.write("\ttrack repeatMasker%s\n" %element)
-        f.write("\tparent repeatMasker_\n")
+        f.write("\tparent repeatMasker\n")
         f.write("\tshortLabel %s\n" %element)
         f.write("\tlongLabel %s Repeating Elements by RepeatMasker\n" %element)
         f.write("\tpriority %d\n" %i)

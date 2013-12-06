@@ -9,10 +9,12 @@ Make "hub.txt", "groups.txt", files that are required by AssemblyHub
 Also prepare description.html files   
 """
 
-import os
+import os, sys
 from sonLib.bioio import system  
 from optparse import OptionGroup
 from hal.assemblyHub.assemblyHubCommon import getProperName
+from Bio import Phylo
+from hal.assemblyHub.treeCommon import isBinaryTree
 
 def writeDescriptionFile(genome, outdir):
     filename = os.path.join(outdir, "description.html")
@@ -21,7 +23,16 @@ def writeDescriptionFile(genome, outdir):
     f.close()
     return
 
-def writeTrackDb_compositeStart(f, shortLabel, longLabel, bbdirs, bwdirs, genomes, properName):
+def writeTrackDb_composite_html(file, treeFile):
+    f = open(file, 'w')
+    #HACK:
+    #huburl = "http://hgwdev.cse.ucsc.edu/~nknguyen/ecoli/hub/TEST2"
+    huburl = "http://hgwdev.cse.ucsc.edu/~nknguyen/birds/birds2"
+    basename = os.path.basename(treeFile)
+    f.write("<img src=\"%s/%s\">\n" %(huburl, basename))
+    f.close()
+
+def writeTrackDb_compositeStart(f, shortLabel, longLabel, bbdirs, bwdirs, genomes, properName, url, img):
     #Composite track includes all annotations in BED & WIGGLE formats, their lifted-over tracks, and Snake tracks
     f.write("track hubCentral\n")
     f.write("compositeTrack on\n")
@@ -44,14 +55,22 @@ def writeTrackDb_compositeStart(f, shortLabel, longLabel, bbdirs, bwdirs, genome
     f.write("dimensions dimensionX=view dimensionY=orgs\n") 
     f.write("noInherit on\n")
     f.write("priority 0\n")
+    f.write("centerLabelsDense on\n")
+    f.write("visibility full\n")
+    f.write("html ../documentation/hubCentral\n")
+    
+    if url and img:
+        imgurl = os.path.join(url, os.path.basename(img))
+        f.write("treeImage %s\n" %imgurl)
+
     f.write("type bed 3\n")
     f.write("\n")
 
-def writeTrackDb_compositeSubTrack(f, name):
+def writeTrackDb_compositeSubTrack(f, name, visibility):
     f.write("\ttrack hubCentral%s\n" %name)
     f.write("\tshortLabel %s\n" %name) 
     f.write("\tview %s\n" %name)
-    f.write("\tvisibility pack\n")
+    f.write("\tvisibility %s\n" %visibility)
     f.write("\tsubTrack hubCentral\n")
     f.write("\n")
 
@@ -107,6 +126,7 @@ def writeHubFile(outdir, options):
     f.write("email %s\n" %options.email)
     f.close()
 
+#=========== READ FILES ===========
 def readList(file):
     items = []
     f = open(file, 'r')
@@ -128,6 +148,7 @@ def readRename(file):
     f.close()
     return name2new
 
+#=========== OPTIONS =============
 def addHubOptions(parser):
     group = OptionGroup(parser, "HUB INFORMATION")
     group.add_option('--hub', dest='hubLabel', default='myHub', help='a single-word name of the directory containing the track hub files. Not displayed to hub users. Default=%default')
@@ -136,6 +157,9 @@ def addHubOptions(parser):
     group.add_option('--email', dest='email', default='NoEmail', help='the contact to whom questions regarding the track hub should be directed. Default=%default')
     group.add_option('--genomes', dest='genomes', help='File specified list of genomes to make browser for. If specified, only create browsers for these genomes in the order provided by the list. Otherwise create browsers for all genomes in the input hal file')
     group.add_option('--rename', dest='rename', help='File that maps halfile genomeNames to names displayed on the browser. Format: <halGenomeName>\\t<genomeNameToDisplayOnBrowser>. Default=%default') 
+    group.add_option('--tree', dest='treeFile', help='Newick binary tree. The order of the tracks and the default track layout will be based on this tree if option "genomes" is not specified. If not specified, try to extract the newick tree from the input halfile.')
+    group.add_option('--url', dest='url', help='Public url of the hub location')
+    group.add_option('--twobitdir', dest='twobitdir', help='Optional. Directory containing the 2bit files of each genomes. Default: extract from the input hal file.')
     parser.add_option_group(group)
 
 def checkHubOptions(parser, options):
@@ -144,4 +168,16 @@ def checkHubOptions(parser, options):
     options.properName = {}
     if options.rename and os.path.exists(options.rename):
         options.properName = readRename(options.rename)
+    
+    options.treeFig = None
+    options.leaves = None
+    options.tree = None
+    if options.treeFile and not os.path.exists(options.treeFile):
+        parser.error("The tree file %s does not exist.\n" %options.tree)
+    else:
+        tree = Phylo.read(options.treeFile, 'newick')
+        if isBinaryTree(tree):
+            options.tree = tree
+        else:
+            sys.stderr.write("Warnning: tree %s is not a binary tree. Will be ignored!" %options.treeFile)
 

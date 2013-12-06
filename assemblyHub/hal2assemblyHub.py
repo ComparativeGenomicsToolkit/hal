@@ -31,9 +31,12 @@ from hal.assemblyHub.bedTrack import *
 from hal.assemblyHub.wigTrack import *
 from hal.assemblyHub.conservationTrack import *
 from hal.assemblyHub.gcPercentTrack import *
+from hal.assemblyHub.groupExclusiveRegions import *
 from hal.assemblyHub.rmskTrack import *
 from hal.assemblyHub.snakeTrack import *
-from hal.assemblyHub.assemblyHubCommon import MakeAnnotationTracks, preprocessAnnotationInputs
+from hal.assemblyHub.assemblyHubCommon import MakeAnnotationTracks, preprocessAnnotationInputs, getProperName, sortByProperName
+from hal.assemblyHub.treeCommon import *
+from hal.assemblyHub.docs.makeDocs import *
 
 ###################### MAIN PIPELINE #####################
 class Setup( Target ):
@@ -52,11 +55,26 @@ class Setup( Target ):
             annotations.extend( [os.path.basename(item) for item in self.options.beddirs] )
         if self.options.bbdirs:
             annotations.extend( [os.path.basename(item) for item in self.options.bbdirs] )
+        
+        if self.options.beddirs2:
+            annotations.extend( [os.path.basename(item) for item in self.options.beddirs2] )
+        if self.options.bbdirs2:
+            annotations.extend( [os.path.basename(item) for item in self.options.bbdirs2] )
+        
         if self.options.wigdirs:
             annotations.extend( [os.path.basename(item) for item in self.options.wigdirs] )
         if self.options.bwdirs:
             annotations.extend( [os.path.basename(item) for item in self.options.bwdirs] )
         writeGroupFile(self.outdir, self.options.longLabel, annotations)
+         
+        #Get tree
+        if not self.options.tree:
+            checkHalTree(self.halfile, self.outdir, self.options)
+        if self.options.tree: #get the png of the tree
+            self.options.treeFig, self.options.leaves = drawTreeWtInternalNodesAligned(self.options.tree, self.outdir, self.options.properName)
+
+        #Get the ordering of the tracks
+        #getOrderFromTree(self.options)
         allgenomes = getGenomesFromHal(self.halfile)
         genomes = []
         if self.options.genomes:
@@ -86,7 +104,10 @@ class GetBasicFiles( Target ):
     def run(self):
         genomedir = os.path.join(self.outdir, self.genome)
         system("mkdir -p %s" % genomedir)
-        makeTwoBitSeqFile(self.genome, self.halfile, genomedir) #genomedir/genome.2bit
+        if not self.options.twobitdir:
+            makeTwoBitSeqFile(self.genome, self.halfile, genomedir) #genomedir/genome.2bit
+        else:
+            linkTwoBitSeqFile(self.genome, self.options.twobitdir, genomedir) #genomedir/genome.2bit
         getChromSizes(self.halfile, self.seq2len, os.path.join(genomedir, "chrom.sizes")) #genomedir/chrom.sizes
 
 class MakeTracks( Target ):
@@ -109,21 +130,32 @@ class MakeTracks( Target ):
         
         #Compute conservation track:
         if self.options.conservation:
+        #if self.options.conservation or self.options.conservationDir:
             conservationDir = os.path.join(self.outdir, "conservation")
             if not self.options.conservationDir: 
                 system("mkdir -p %s" %conservationDir)
                 self.addChildTarget( GetConservationFiles(self.halfile, conservationDir, self.options) )
             else:
                 if os.path.abspath(self.options.conservationDir) != os.path.abspath(conservationDir):
-                    system("cp -r %s %s" %(self.options.conservationDir, conservationDir))
+                    system("ln -s %s %s" %(os.path.abspath(self.options.conservationDir), conservationDir))
+                    #system("cp -r %s %s" %(self.options.conservationDir, conservationDir))
 
         #Make bed tracks:
         preprocessAnnotationInputs(self.options, self.outdir, "bed") 
         self.addChildTarget( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "bed") )
         
+        #Make bed2 tracks:
+        preprocessAnnotationInputs(self.options, self.outdir, "bed2") 
+        self.addChildTarget( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "bed2") )
+        
         #Make wig tracks:
         preprocessAnnotationInputs(self.options, self.outdir, "wig") 
         self.addChildTarget( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "wig") )
+
+        #Make clade-exclusive tracks:
+        if self.options.tree and self.options.cladeExclusive:
+            self.addChildTarget(GetCladeExclusiveRegions(self.halfile, self.options.tree, os.path.join(self.outdir, "liftoverbeds"), self.options.maxOut, self.options.minIn))
+            self.options.bigbeddirs.append( os.path.join(self.outdir, "liftoverbeds", "CladeExclusive") )
 
         #Get LOD if needed, and Write trackDb files
         self.setFollowOnTarget( WriteGenomesFile(self.genomes, self.genome2seq2len, self.halfile, self.options, self.outdir) )
@@ -152,10 +184,19 @@ class WriteGenomesFile(Target):
 
         #Create lod files if useLod is specified
         lodtxtfile, loddir = getLod(options, localHalfile, self.outdir)
-        
+       
+        genomes = sortByProperName(self.genomes, self.options.properName)
+
+        #Create documentation files:
+        docdir = os.path.join(self.outdir, "documentation")
+        system("mkdir -p %s" %docdir)
+        writeDocFiles(docdir, self.options)
+
+        #Create genomes.txt file
         filename = os.path.join(self.outdir, "genomes.txt")
         f = open(filename, 'w')
-        for genome in self.genomes:
+        #for genome in self.genomes:
+        for genome in genomes:
             genomedir = os.path.join(self.outdir, genome)
             f.write("genome %s\n" %genome)
             f.write("twoBitPath %s/%s.2bit\n" % (genome, genome))
@@ -172,7 +213,8 @@ class WriteGenomesFile(Target):
 
             writeDescriptionFile(genome, genomedir)
             f.write("htmlPath %s/description.html\n" %genome)
-            f.write("organism %s\n" %genome)
+            #f.write("description %s\n" % getProperName(genome, self.options.properName))
+            f.write("organism %s\n" % getProperName(genome, self.options.properName))
             f.write("orderKey 4800\n")
             f.write("scientificName %s\n" %genome)
             
@@ -200,26 +242,52 @@ class WriteTrackDbFile( Target ):
         if self.options.alignability:
             writeTrackDb_alignability(f, currgenome, len(self.genomes))
         if self.options.conservation:
+        #if self.options.conservation or self.options.conservationDir:
             conservationDir = os.path.join(self.outdir, "..", "conservation")
             writeTrackDb_conservation(f, currgenome, conservationDir)
 
         if self.options.rmskdir:
             writeTrackDb_rmsk(f, os.path.join(self.options.rmskdir, currgenome), self.outdir)
 
+        #Get order of genomes relative to currgenome:
+        genomes = self.genomes
+        treeGenomes = self.genomes
+        if not self.options.genomes:
+            if self.options.tree:
+                treeGenomes = []
+                for g in  self.options.leaves:
+                    if g in self.genomes:
+                        treeGenomes.append(g)
+                genomes = treeGenomes
+            #genomes = []
+            #for g in inorder_relative(self.options.tree, currgenome):
+            #    if g in self.genomes:
+            #        genomes.append(g)
+        
+        #Get the neighboring genomes:
+        subgenomes = getNeighbors(self.options.tree, currgenome)
+        
+        #Non composite bed tracks:
+        for bigbeddir in self.options.bigbeddirs2:
+            writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome, self.options.properName, False, self.options.tabbed)
+
         #Composite tracks:
-        writeTrackDb_compositeStart(f, self.options.shortLabel, self.options.longLabel, self.options.bigbeddirs, self.options.bigwigdirs, self.genomes, self.options.properName)
+        writeTrackDb_compositeStart(f, self.options.shortLabel, self.options.longLabel, self.options.bigbeddirs, self.options.bigwigdirs, treeGenomes, self.options.properName, self.options.url, self.options.treeFig)
+        #if self.options.treeFig:
+        #    writeTrackDb_composite_html(os.path.join(self.outdir, "hubCentral.html"), self.options.treeFig)
         for bigbeddir in self.options.bigbeddirs:
             if hasFiles(currgenome, bigbeddir, "bb"):
-                writeTrackDb_compositeSubTrack(f, os.path.basename(bigbeddir.rstrip("/")))
-                writeTrackDb_bigbeds(f, bigbeddir, self.genomes, currgenome, self.options.properName)
+                writeTrackDb_compositeSubTrack(f, os.path.basename(bigbeddir.rstrip("/")), "dense")
+                writeTrackDb_bigbeds(f, bigbeddir, genomes, currgenome, self.options.properName, True, self.options.tabbed)
 
         for bigwigdir in self.options.bigwigdirs:
             if hasFiles(currgenome, bigwigdir, "bw"):
-                writeTrackDb_compositeSubTrack(f, os.path.basename(bigwigdir.rstrip("/")))
-                writeTrackDb_bigwigs(f, bigwigdir, self.genomes, currgenome, self.options.properName)
+                writeTrackDb_compositeSubTrack(f, os.path.basename(bigwigdir.rstrip("/")), "dense")
+                writeTrackDb_bigwigs(f, bigwigdir, genomes, currgenome, self.options.properName)
+                #writeTrackDb_bigwigs(f, bigwigdir, genomes, subgenomes, currgenome, self.options.properName)
 
-        writeTrackDb_compositeSubTrack(f, "Alignments")
-        writeTrackDb_snakes(f, self.halfile, self.genomes, currgenome, self.options.properName)
+        writeTrackDb_compositeSubTrack(f, "Alignments", "full")
+        writeTrackDb_snakes(f, self.halfile, genomes, subgenomes, currgenome, self.options.properName)
         f.close()
 
 ############################ UTILITIES FUNCTIONS ###################
@@ -299,6 +367,12 @@ def makeTwoBitSeqFile(genome, halfile, outdir):
     system("faToTwoBit %s %s" %(fafile2, twobitfile))
     system("rm %s" %fafile2)
 
+def linkTwoBitSeqFile(genome, twobitdir, outdir):
+    twobitfile = os.path.join(outdir, "%s.2bit" %genome)
+    intwobitfile = os.path.abspath( os.path.join(twobitdir, "%s.2bit" %genome) )
+    if not os.path.exists(twobitfile):
+        system("ln -s %s %s" %(intwobitfile, twobitfile))
+
 def addOptions(parser):
     parser.add_option('--cpHalFileToOut', dest='cpHal', action='store_true', default=False, help='If specified, copy the input halfile to the output directory (instead of just make a softlink). Default=%default')
     addHubOptions(parser)
@@ -309,6 +383,7 @@ def addOptions(parser):
     addGcOptions(parser)
     addAlignabilityOptions(parser)
     addConservationOptions(parser)
+    addExclusiveRegionOptions(parser)
 
 def checkOptions(parser, args, options):
     if len(args) < 2:
@@ -319,6 +394,9 @@ def checkOptions(parser, args, options):
         system("mkdir -p %s" %args[1])
     elif not os.path.isdir(args[1]):
         parser.error("Output directory specified (%s) is not a directory\n" %args[1])
+    
+    if not options.jobTree:
+        options.jobTree = os.path.join(args[1], "jobTree")
     checkHubOptions(parser, options)
     checkBedOptions(parser, options)
     checkWigOptions(parser, options)

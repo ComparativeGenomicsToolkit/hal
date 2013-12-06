@@ -43,6 +43,7 @@ def writeTrackDb_alignability(f, genome, genomeCount):
     f.write("color 0,0,0\n")
     f.write("altColor 128,128,128\n")
     f.write("viewLimits 0:%d\n" %genomeCount)
+    f.write("html ../documentation/alignability\n")
     f.write("\n")
 
 def addAlignabilityOptions(parser):

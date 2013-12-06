@@ -79,6 +79,7 @@ class LiftoverWig( Target ):
         #Cleanup:
         system("rm %s" % liftovertempwig)
 
+#def writeTrackDb_bigwigs(f, bigwigdir, genomes, subgenomes, currgenome, properName):
 def writeTrackDb_bigwigs(f, bigwigdir, genomes, currgenome, properName):
     annotation = os.path.basename(bigwigdir)
     genome2priority = {}
@@ -111,10 +112,13 @@ def writeTrackDb_bigwigs(f, bigwigdir, genomes, currgenome, properName):
         f.write("\t\ttype bigWig\n")
         f.write("\t\tgroup annotation%s\n" %annotation)
         f.write("\t\titemRgb On\n")
+        #if genome == currgenome or genome in subgenomes:
         if genome == currgenome:
             f.write("\t\tvisibility dense\n")
+            f.write("\t\tparent hubCentral%s\n"%annotation)
         else:
             f.write("\t\tvisibility hide\n")
+            f.write("\t\tparent hubCentral%s off\n"%annotation)
         f.write("\t\twindowingFunction Mean\n")
         f.write("\t\tautoScale Off\n")
         f.write("\t\tmaxHeightPixels 128:36:16\n")
@@ -123,7 +127,6 @@ def writeTrackDb_bigwigs(f, bigwigdir, genomes, currgenome, properName):
         f.write("\t\tcolor 0,0,0\n")
         f.write("\t\taltColor 128,128,128\n")
         f.write("\t\tviewLimits 30:70\n")
-        f.write("\t\tparent hubCentral%s\n"%annotation)
         f.write("\t\tsubGroups view=%s orgs=%s\n" %(annotation, genome))
         f.write("\n")
 

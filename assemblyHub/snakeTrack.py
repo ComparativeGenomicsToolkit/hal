@@ -8,7 +8,7 @@
 """
 import re
 
-def writeTrackDb_snakes(f, halfile, genomes, currgenome, properName):
+def writeTrackDb_snakes(f, halfile, genomes, subgenomes, currgenome, properName):
     for i, genome in enumerate(genomes):
         if re.search(genome, currgenome): #current genome
             continue
@@ -20,12 +20,16 @@ def writeTrackDb_snakes(f, halfile, genomes, currgenome, properName):
         f.write("\t\tlongLabel %s\n" %genomeProperName)
         f.write("\t\tshortLabel %s\n" %genomeProperName)
         f.write("\t\totherSpecies %s\n" %genome)
-        f.write("\t\tvisibility full\n")
+        if genome in subgenomes:
+            f.write("\t\tvisibility full\n")
+            f.write("\t\tparent hubCentralAlignments\n")
+        else:
+            f.write("\t\tvisibility hide\n")
+            f.write("\t\tparent hubCentralAlignments off\n")
         f.write("\t\tpriority %d\n" %(i + 2))
         f.write("\t\tbigDataUrl %s\n" % halfile)
         f.write("\t\ttype halSnake\n")
         f.write("\t\tgroup snake\n")
-        f.write("\t\tparent hubCentralAlignments\n")
         f.write("\t\tsubGroups view=Snake orgs=%s\n" %genome)
         f.write("\n")
 
