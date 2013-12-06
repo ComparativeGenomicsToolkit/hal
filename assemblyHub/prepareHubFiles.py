@@ -174,7 +174,7 @@ def checkHubOptions(parser, options):
     options.tree = None
     if options.treeFile and not os.path.exists(options.treeFile):
         parser.error("The tree file %s does not exist.\n" %options.tree)
-    else if options.treeFile:
+    elif options.treeFile:
         tree = Phylo.read(options.treeFile, 'newick')
         if isBinaryTree(tree):
             options.tree = tree
