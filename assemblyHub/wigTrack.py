@@ -108,7 +108,7 @@ def writeTrackDb_bigwigs(f, bigwigdir, genomes, currgenome, properName):
             f.write("\t\tlongLabel %s Lifted-over %s\n" % (genomeProperName, annotation))
         f.write("\t\tpriority %d\n" %priority)
         f.write("\t\tshortLabel %s%s\n" % (genomeProperName, annotation))
-        f.write("\t\tbigDataUrl ../liftoverwigs/%s\n" % os.path.join( annotation, genome, "%s.bw" % currgenome ) )
+        f.write("\t\tbigDataUrl ../liftoverwig/%s\n" % os.path.join( annotation, genome, "%s.bw" % currgenome ) )
         f.write("\t\ttype bigWig\n")
         f.write("\t\tgroup annotation%s\n" %annotation)
         f.write("\t\titemRgb On\n")
