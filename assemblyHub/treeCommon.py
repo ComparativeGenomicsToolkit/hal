@@ -79,7 +79,7 @@ def inorder_relative(tree, name):
 def alignInternalNodes(tree):
     newtree = copy.deepcopy(tree)
     for clade in newtree.get_nonterminals():
-        continue #HACK
+        #continue #HACK
         #if clade.name != 'reference':#HACK
         #    continue#HACK
         children = clade.clades
