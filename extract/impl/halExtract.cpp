@@ -155,7 +155,14 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
       outBot->setChildIndex(child, inBot->getChildIndex(child));
       outBot->setChildReversed(child, inBot->getChildReversed(child));
     }
-    outBot->setTopParseIndex(inBot->getTopParseIndex());
+    if (outGenome->getAlignment()->getRootName() == outGenome->getName())
+    {
+      outBot->setTopParseIndex(NULL_INDEX);
+    }
+    else
+    {
+      outBot->setTopParseIndex(inBot->getTopParseIndex());
+    }
   }
 
   const map<string, string>& meta = inGenome->getMetaData()->getMap();
