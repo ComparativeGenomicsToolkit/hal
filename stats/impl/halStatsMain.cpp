@@ -35,7 +35,10 @@ static void printBaseComp(ostream& os, AlignmentConstPtr alignment,
                           const string& baseCompPair);
 static void printChromSizes(ostream& os, AlignmentConstPtr alignment, 
                             const string& genomeName);
-
+static void printPercentID(ostream& os, AlignmentConstPtr alignment,
+                           const string& genomeName);
+static void printPercentCoverage(ostream& os, AlignmentConstPtr alignment,
+                                 const string& genomeName);
 
 int main(int argc, char** argv)
 {
@@ -88,8 +91,12 @@ int main(int argc, char** argv)
                            " useful because it is in the format used by"
                            " wigToBigWig", 
                            "\"\"");
-
-
+  optionsParser->addOption("percentID",
+                           "print % ID of a genome with all other genomes",
+                           "\"\"");
+  optionsParser->addOption("percentCoverage",
+                           "print histogram of % coverage of a genome with"
+                           " all other genomes", "\"\"");
   string path;
   bool listGenomes;
   string sequencesFromGenome;
@@ -106,6 +113,8 @@ int main(int argc, char** argv)
   string numSegmentsGenome;
   string baseCompPair;
   string chromSizesFromGenome;
+  string percentID;
+  string percentCoverage;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -125,6 +134,8 @@ int main(int argc, char** argv)
     numSegmentsGenome = optionsParser->getOption<string>("numSegments");
     baseCompPair = optionsParser->getOption<string>("baseComp");
     chromSizesFromGenome = optionsParser->getOption<string>("chromSizes");
+    percentID = optionsParser->getOption<string>("percentID");
+    percentCoverage = optionsParser->getOption<string>("percentCoverage");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -141,12 +152,14 @@ int main(int argc, char** argv)
     if (numSegmentsGenome != "\"\"") ++optCount;
     if (baseCompPair != "\"\"") ++optCount;
     if (chromSizesFromGenome != "\"\"") ++optCount;
+    if (percentID != "\"\"") ++optCount;
+    if (percentCoverage != "\"\"") ++optCount;
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                           "--branches, --sequenceStats, --children, --parent, "
                           "--bedSequences, --root, --numSegments, --baseComp, "
-                          "--chromSizes "
+                          "--chromSizes, --percentID, --percentCoverage, "
                           "and --branchLength options are exclusive" );
     }
   }
@@ -219,6 +232,13 @@ int main(int argc, char** argv)
     else if (chromSizesFromGenome != "\"\"")
     {
       printChromSizes(cout, alignment, chromSizesFromGenome);
+    }
+    else if (percentID != "\"\"")
+    {
+      printPercentID(cout, alignment, percentID);
+    }
+    else if (percentCoverage != "\"\"") {
+      printPercentCoverage(cout, alignment, percentCoverage);
     }
     else
     {
@@ -568,5 +588,140 @@ void printChromSizes(ostream& os, AlignmentConstPtr alignment,
       os << seqIt->getSequence()->getName() << '\t'
          << seqIt->getSequence()->getSequenceLength() << '\n';
     }
+  }
+}
+
+void printPercentID(ostream& os, AlignmentConstPtr alignment,
+                    const string& genomeName)
+{
+  const Genome *refGenome = alignment->openGenome(genomeName);
+  if (!refGenome) {
+    throw hal_exception("Genome " + genomeName + " does not exist.");
+  }
+  // We don't want paralogies, and we aren't interested in the ancestral sequences.
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
+                                                         NULL_INDEX, true,
+                                                         true);
+  // A bit sloppy, but a mapping from genome to (identical bases, # aligned sites)
+  // The # of aligned sites is necessary since a) not all sites are aligned and
+  // b) we don't consider anything containing N's to be aligned.
+  map<const Genome *, pair<hal_size_t, hal_size_t> > genomeStats;
+  do {
+    // Get DNA for this site in reference
+    DNAIteratorConstPtr refDnaIt = colIt->getReferenceSequence()->getDNAIterator(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition());
+    char refDna = toupper(refDnaIt->getChar());
+    
+    const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
+    for (ColumnIterator::ColumnMap::const_iterator colMapIt = cmap->begin();
+         colMapIt != cmap->end(); colMapIt++) {
+      if (colMapIt->second->empty()) {
+        // There are empty entries in the column map.
+        continue;
+      }
+      const Genome *genome = colMapIt->first->getGenome();
+      const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+      assert(dnaSet->size() == 1);
+      for (hal_size_t i = 0; i < dnaSet->size(); i++) {
+        DNAIteratorConstPtr dnaIt = dnaSet->at(i);
+        char otherDna = toupper(dnaIt->getChar());
+        if (refDna != 'N' && otherDna != 'N') {
+          if (!genomeStats.count(genome)) {
+            // initialize the map for this genome if necessary.
+            genomeStats[genome] = make_pair(0, 0);
+          }
+          hal_size_t numID = genomeStats[genome].first;
+          hal_size_t numSites = genomeStats[genome].second;
+          if (refDna == otherDna) {
+            numID++;
+          }
+          numSites++;
+          genomeStats[genome] = make_pair(numID, numSites);
+        }
+      }
+    }
+    if (colIt->getReferenceSequencePosition() % 1000 == 0) {
+      colIt->defragment();
+    }
+    if (colIt->lastColumn()) {
+      // Break here--the column iterator will crash if we try to go further.
+      break;
+    }
+    colIt->toRight();
+  } while (!colIt->lastColumn());
+  os << "Genome, % ID" << endl;
+  for (map<const Genome *, pair<hal_size_t, hal_size_t> >::iterator statsIt = genomeStats.begin();
+       statsIt != genomeStats.end(); statsIt++) {
+    string name = statsIt->first->getName();
+    hal_size_t numID = genomeStats[statsIt->first].first;
+    hal_size_t numSites = genomeStats[statsIt->first].second;
+    os << name << ", " << ((double) numID)/numSites << endl;
+  }
+}
+void printPercentCoverage(ostream& os, AlignmentConstPtr alignment,
+                          const string& genomeName)
+{
+  const Genome *refGenome = alignment->openGenome(genomeName);
+  if (!refGenome) {
+    throw hal_exception("Genome " + genomeName + " does not exist.");
+  }
+  // Follow paralogies, but ignore ancestors.
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
+                                                         NULL_INDEX, false,
+                                                         true);
+  map<const Genome *, vector<hal_size_t> *> histograms;
+  while(1) {
+    const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
+    // Temporary collecting of per-genome sites mapped, since it's
+    // organized in the column map by sequence, not genome.
+    map<const Genome *, hal_size_t> numSitesMapped;
+    for (ColumnIterator::ColumnMap::const_iterator colMapIt = cmap->begin();
+         colMapIt != cmap->end(); colMapIt++) {
+      if (colMapIt->second->empty()) {
+        // There are empty entries in the column map.
+        continue;
+      }
+      const Genome *genome = colMapIt->first->getGenome();
+      if (!numSitesMapped.count(genome)) {
+        // Initialize map entry
+        numSitesMapped[genome] = 0;
+      }
+      const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+      numSitesMapped[genome] = numSitesMapped[genome] + dnaSet->size();
+    }
+    for (map<const Genome *, hal_size_t>::const_iterator it = numSitesMapped.begin();
+         it != numSitesMapped.end(); it++) {
+      if (!histograms.count(it->first)) {
+        // Initialize map
+        histograms[it->first] = new vector<hal_size_t>;
+      }
+      vector<hal_size_t> *histogram = histograms[it->first];
+      if (histogram->size() < it->second) {
+        histogram->resize(it->second, 0);
+      }
+      for (hal_size_t i = 0; i < it->second; i++) {
+        (*histogram)[i] = histogram->at(i) + 1;
+      }
+    }
+    if (colIt->getReferenceSequencePosition() % 1000 == 0) {
+      colIt->defragment();
+    }
+    if (colIt->lastColumn()) {
+      // Break here--the column iterator will crash if we try to go further.
+      break;
+    }
+    // Need to clear the position cache. If there are 2 reference sites in a
+    // column, we should count them both separately.
+    colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, colIt->getReferenceSequence()->getEndPosition(), true);
+  }
+  os << "Genome, % sites mapping once, twice, thrice, ..." << endl;
+  for (map<const Genome *, vector<hal_size_t> *>::iterator histIt = histograms.begin();
+       histIt != histograms.end(); histIt++) {
+    string name = histIt->first->getName();
+    os << name;
+    vector <hal_size_t> *histogram = histIt->second;
+    for(hal_size_t i = 0; i < histogram->size(); i++) {
+      os << ", " << ((double) histogram->at(i))/refGenome->getSequenceLength();
+    }
+    os << endl;
   }
 }
