@@ -711,7 +711,7 @@ void printPercentCoverage(ostream& os, AlignmentConstPtr alignment,
     }
     // Need to clear the position cache. If there are 2 reference sites in a
     // column, we should count them both separately.
-    colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, colIt->getReferenceSequence()->getEndPosition(), true);
+    colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, refGenome->getSequenceLength() - 1, true);
   }
   os << "Genome, % sites mapping once, twice, thrice, ..." << endl;
   for (map<const Genome *, vector<hal_size_t> *>::iterator histIt = histograms.begin();
