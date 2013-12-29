@@ -174,23 +174,26 @@ void Liftover::assignBlocksToIntervals()
 
    // sort the mapped blocks by source coordinate
   _mappedBlocks.sort(BedLineSrcLess());
-  hal_index_t prevSrcStart = NULL_INDEX;
+  hal_index_t prevSrcBlockEnd = NULL_INDEX;
   BedList::iterator blockNext;
   for (BedList::iterator blockIt = _mappedBlocks.begin();
        blockIt != _mappedBlocks.end(); ++blockIt)
   {
     blockNext = blockIt;
     ++blockNext;
+    hal_index_t srcBlockEnd = blockIt->_srcStart +
+      (blockIt->_end - blockIt->_start);
+    bool dupe = (blockIt->_srcStart < prevSrcBlockEnd)  ||
+      ((blockNext != _mappedBlocks.end()) &&
+       (blockNext->_srcStart < srcBlockEnd));
     if (_outBedLines.empty() || 
         // filter dupes in psl but let them be on single bed line
-        (_outPSL && (blockIt->_srcStart == prevSrcStart ||
-                     (blockNext != _mappedBlocks.end() && 
-                      blockNext->_srcStart == blockIt->_srcStart))) ||
+        (_outPSL && dupe) ||
         !compatible(_outBedLines.back(), *blockIt))
     {
       _outBedLines.push_back(*blockIt);
     }
-    prevSrcStart = blockIt->_srcStart;
+    prevSrcBlockEnd = blockIt->_srcStart + (blockIt->_end - blockIt->_start);
     BedLine& tgtBed = _outBedLines.back();
     tgtBed._start = min(tgtBed._start, blockIt->_start);
     tgtBed._end = max(tgtBed._end, blockIt->_end);
@@ -388,8 +391,16 @@ void Liftover::computePSLInserts(BedList& bedList)
         swap(qStartIt, qStartPrev);
         swap(blockIt, blockPrev);
       }
-      assert(*qStartIt >= (*qStartPrev + blockPrev->_length));
-      gap = *qStartIt - (*qStartPrev + blockPrev->_length);
+
+      if (*qStartIt >= (*qStartPrev + blockPrev->_length))
+      {
+        gap = *qStartIt - (*qStartPrev + blockPrev->_length);
+      }
+      else
+      {
+        // Duplicated blocks can overlap.
+        gap = 0;
+      }
       if (gap > 0)
       {
         ++psl._qNumInsert;
