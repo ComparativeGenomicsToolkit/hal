@@ -35,7 +35,7 @@ public:
                                          const hal::Sequence* s2) const {
      return s1->getGenome() < s2->getGenome() || (
        s1->getGenome() == s2->getGenome() && 
-       s1->getStartPosition() < s2->getStartPosition()); }
+       s1->getArrayIndex() < s2->getArrayIndex()); }
    };
    /// @endcond
 
