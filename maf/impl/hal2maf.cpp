@@ -55,7 +55,10 @@ static CLParserPtr initParser()
                                "ignore paralogy edges", 
                                false);
   optionsParser->addOptionFlag("noAncestors", 
-                               "don't write ancestral sequences", 
+                               "don't write ancestral sequences. IMPORTANT: "
+                               "Must be used in conjunction with --refGenome"
+                               " to set a non-ancestral genome as the reference"
+                               " because the default reference is the root.", 
                                false);
   optionsParser->addOptionFlag("ucscNames",
                                "use UCSC convention of Genome.Seqeunce "
@@ -181,6 +184,15 @@ int main(int argc, char** argv)
       refGenome = alignment->openGenome(alignment->getRootName());
     }
     const SegmentedSequence* ref = refGenome;
+
+    if (noAncestors == true && refGenome->getNumChildren() != 0)
+    {
+      throw hal_exception(string("Since the reference genome to be used for the"
+                                 " MAF is ancestral (") + refGenome->getName() +
+                          "), the --noAncestors option is invalid.  The "
+                          "--refGenome option can be used to specify a "
+                          "different reference.");
+    }
     
     const Sequence* refSequence = NULL;
     if (refSequenceName != "\"\"")
