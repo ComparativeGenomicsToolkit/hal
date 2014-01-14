@@ -142,9 +142,13 @@ def computeFit(options):
         tree = options.tree
     else:
         tree = getHalTree(options.hal)
-    runShellCommand("phyloFit --tree \"%s\" --subst-mod %s --sym-freqs %s --out-root %s" % (
+
+    cmd = "phyloFit --tree \"%s\" --subst-mod %s --sym-freqs %s --out-root %s" % (
         tree, options.substMod, options.outMafSS, 
-        os.path.splitext(options.outMod)[0]))
+        os.path.splitext(options.outMod)[0])
+    if options.error is not None:
+        cmd += " --error %s " % options.error
+    runShellCommand(cmd)
     runShellCommand("rm -f %s" % options.outMafSS)
 
 def modFreqs(options):
@@ -222,7 +226,9 @@ def main(argv=None):
                         " tool.  This flag disables this step, and keeps the"
                         " trained frequencies", action="store_true",
                         default=False)
-
+    parser.add_argument("--error", help="File in which to output confidence"
+                        " intervals for the parameters in the model",
+                        default=None)
     args = parser.parse_args()
 
     if not os.path.isfile(args.hal):
