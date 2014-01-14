@@ -601,14 +601,14 @@ void printPercentID(ostream& os, AlignmentConstPtr alignment,
   // We don't want paralogies, and we aren't interested in the ancestral sequences.
   ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
                                                          NULL_INDEX, true,
-                                                         true);
-  // A bit sloppy, but a mapping from genome to (identical bases, # aligned sites)
+                                                         false);
+  // A bit sloppy, but a mapping from genome to (# identical bases, # aligned sites)
   // The # of aligned sites is necessary since a) not all sites are aligned and
   // b) we don't consider anything containing N's to be aligned.
-  map<const Genome *, pair<hal_size_t, hal_size_t> > genomeStats;
-  do {
+  map<const Genome *, pair<hal_size_t *, hal_size_t *> > genomeStats;
+  while(1) {
     // Get DNA for this site in reference
-    DNAIteratorConstPtr refDnaIt = colIt->getReferenceSequence()->getDNAIterator(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition());
+    DNAIteratorConstPtr refDnaIt = refGenome->getDNAIterator(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition());
     char refDna = toupper(refDnaIt->getChar());
     
     const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
@@ -627,15 +627,16 @@ void printPercentID(ostream& os, AlignmentConstPtr alignment,
         if (refDna != 'N' && otherDna != 'N') {
           if (!genomeStats.count(genome)) {
             // initialize the map for this genome if necessary.
-            genomeStats[genome] = make_pair(0, 0);
+            genomeStats[genome] = make_pair(new hal_size_t, new hal_size_t);
+            *genomeStats[genome].first = 0;
+            *genomeStats[genome].second = 0;
           }
-          hal_size_t numID = genomeStats[genome].first;
-          hal_size_t numSites = genomeStats[genome].second;
+          hal_size_t *numID = genomeStats[genome].first;
+          hal_size_t *numSites = genomeStats[genome].second;
           if (refDna == otherDna) {
-            numID++;
+            (*numID)++;
           }
-          numSites++;
-          genomeStats[genome] = make_pair(numID, numSites);
+          (*numSites)++;
         }
       }
     }
@@ -647,16 +648,17 @@ void printPercentID(ostream& os, AlignmentConstPtr alignment,
       break;
     }
     colIt->toRight();
-  } while (!colIt->lastColumn());
+  }
   os << "Genome, % ID" << endl;
-  for (map<const Genome *, pair<hal_size_t, hal_size_t> >::iterator statsIt = genomeStats.begin();
+  for (map<const Genome *, pair<hal_size_t *, hal_size_t *> >::iterator statsIt = genomeStats.begin();
        statsIt != genomeStats.end(); statsIt++) {
     string name = statsIt->first->getName();
-    hal_size_t numID = genomeStats[statsIt->first].first;
-    hal_size_t numSites = genomeStats[statsIt->first].second;
+    hal_size_t numID = *genomeStats[statsIt->first].first;
+    hal_size_t numSites = *genomeStats[statsIt->first].second;
     os << name << ", " << ((double) numID)/numSites << endl;
   }
 }
+
 void printPercentCoverage(ostream& os, AlignmentConstPtr alignment,
                           const string& genomeName)
 {
