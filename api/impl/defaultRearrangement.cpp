@@ -197,6 +197,9 @@ bool DefaultRearrangement::identifyDeletionFromLeftBreakpoint(
 pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
 {
   pair<hal_index_t, hal_index_t> range;
+  cout << "getDeletedRange:" << endl;
+  cout << "leftParent->getLeft(): start: " << _leftParent->getLeft()->getStartPosition() << " end: " << _leftParent->getLeft()->getEndPosition() << endl << " leftParent->getRight(): start: " << _leftParent->getRight()->getStartPosition() << " end: " << _leftParent->getRight()->getEndPosition() << endl;
+  cout << "rightParent->getLeft(): start: " << _rightParent->getLeft()->getStartPosition() << " end: " << _rightParent->getLeft()->getEndPosition() << endl << " rightParent->getRight(): start: " << _rightParent->getRight()->getStartPosition() << " end: " << _rightParent->getRight()->getEndPosition() << endl;
   if (_leftParent->getReversed() == false)
   {
     range.first = _leftParent->getLeft()->getStartPosition();
@@ -616,21 +619,30 @@ bool DefaultRearrangement::scanDeletionCycle(
   // Case 2) Try to find deletion cycle by going right-up-left-left-down
   else
   {
+      cout << "scanDeletionCycle:" << endl;
+      cout << "cur->getLeft(): start: " << _cur->getLeft()->getStartPosition() << " end: " << _cur->getLeft()->getEndPosition() << endl << " cur->getRight(): start: " << _cur->getRight()->getStartPosition() << " end: " << _cur->getRight()->getEndPosition() << endl;
     _leftParent->toParent(_cur);
-    _right->toRight();
+    if(first) {
+      return false;
+    }
+    _left->toLeft();
 
     assert(_leftParent->getGapThreshold() == _gapThreshold);
     assert(_cur->getGapThreshold() == _gapThreshold);
     assert(_atomic != true || _leftParent->getNumSegments() == 1);
-    assert(_atomic != true || _right->getNumSegments() == 1);
-    if (_right->hasParent() == false)
+    assert(_atomic != true || _left->getNumSegments() == 1);
+    if (_left->hasParent() == false)
     {
       return false;
     }
-    _rightParent->toParent(_right); 
+    _rightParent->toParent(_left); 
     
     if (_leftParent->getSequence() == _rightParent->getSequence())
     {
+      cout << "scanDeletionCycle:" << endl;
+      cout << "leftParent->getLeft(): start: " << _leftParent->getLeft()->getStartPosition() << " end: " << _leftParent->getLeft()->getEndPosition() << endl << " leftParent->getRight(): start: " << _leftParent->getRight()->getStartPosition() << " end: " << _leftParent->getRight()->getEndPosition() << endl;
+      cout << "rightParent->getLeft(): start: " << _rightParent->getLeft()->getStartPosition() << " end: " << _rightParent->getLeft()->getEndPosition() << endl << " rightParent->getRight(): start: " << _rightParent->getRight()->getStartPosition() << " end: " << _rightParent->getRight()->getEndPosition() << endl;
+
       // don't care about inversions
       // so we make sure left is left of right and they are both positive
       if (_leftParent->getReversed() == true)
