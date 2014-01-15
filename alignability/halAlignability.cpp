@@ -14,7 +14,7 @@ using namespace std;
 using namespace hal;
 
 /** This is a tool that counts the number of other genomes each base in
- * a query region is aligned to. Duplications are considered
+ * a query region is aligned to.
  *
  * Coordinates are always genome-relative by default (as opposed to 
  * sequence-relative).  The one exception is all methods within the
@@ -39,14 +39,16 @@ using namespace hal;
  * the output stream. */
 static void printSequence(ostream& outStream, const Sequence* sequence, 
                           const set<const Genome*>& targetSet,
-                          hal_size_t start, hal_size_t length, hal_size_t step);
+                          hal_size_t start, hal_size_t length, hal_size_t step,
+                          bool countDupes);
 
 /** If given genome-relative coordinates, map them to a series of 
  * sequence subranges */
 static void printGenome(ostream& outStream,
                         const Genome* genome, const Sequence* sequence,
                         const set<const Genome*>& targetSet,
-                        hal_size_t start, hal_size_t length, hal_size_t step);
+                        hal_size_t start, hal_size_t length, hal_size_t step,
+                        bool countDupes);
 
 static const hal_size_t StringBufferSize = 1024;
 
@@ -79,8 +81,15 @@ static CLParserPtr initParser()
                            "comma-separated (no spaces) list of target genomes "
                            "(others are excluded) (vist all if empty)",
                            "\"\"");
+  optionsParser->addOptionFlag("countDupes",
+                               "count each other *position* each base aligns "
+                               "to, rather than the number of unique genomes, "
+                               "including paralogies so a genome can be "
+                               "counted  multiple times.  This will give the "
+                               "height of the MAF column created with hal2maf.",
+                               false);
   optionsParser->addOption("step", "step size", 1);
-  optionsParser->setDescription("Make alignability wiggle plot for a genome.");
+  optionsParser->setDescription("Make alignability wiggle plot for a genome. By default, this is a count of the number of other unique genomes each base aligns to.");
   return optionsParser;
 }
 
@@ -97,6 +106,7 @@ int main(int argc, char** argv)
   hal_size_t start;
   hal_size_t length;
   hal_size_t step;
+  bool countDupes;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -109,6 +119,7 @@ int main(int argc, char** argv)
     rootGenomeName = optionsParser->getOption<string>("rootGenome");
     targetGenomes = optionsParser->getOption<string>("targetGenomes");
     step = optionsParser->getOption<hal_size_t>("step");
+    countDupes = optionsParser->getFlag("countDupes");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -215,7 +226,7 @@ int main(int argc, char** argv)
     }
     
     printGenome(outStream, refGenome, refSequence, targetSet, start, length, 
-                step);
+                step, countDupes);
     
   }
   catch(hal_exception& e)
@@ -237,7 +248,8 @@ int main(int argc, char** argv)
  * in the target set */
 void printSequence(ostream& outStream, const Sequence* sequence, 
                    const set<const Genome*>& targetSet,
-                   hal_size_t start, hal_size_t length, hal_size_t step)
+                   hal_size_t start, hal_size_t length, hal_size_t step,
+                   bool countDupes)
 {
   hal_size_t seqLen = sequence->getSequenceLength();
   if (seqLen == 0)
@@ -275,7 +287,7 @@ void printSequence(ostream& outStream, const Sequence* sequence,
   ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&targetSet,
                                                              0, pos,
                                                              last - 1,
-                                                             true);
+                                                             false);
   // note wig coordinates are 1-based for some reason so we shift to right
   outStream << "fixedStep chrom=" << sequenceName << " start=" << start + 1
             << " step=" << step << "\n";
@@ -285,8 +297,11 @@ void printSequence(ostream& outStream, const Sequence* sequence,
   // convert to genome coordinates
   pos += sequence->getStartPosition();
   last += sequence->getStartPosition();
+  // keep track of unique genomes
+  set<const Genome*> genomeSet;
   while (pos <= last)
   {
+    genomeSet.clear();
     hal_size_t count = 0;
     /** ColumnIterator::ColumnMap maps a Sequence to a list of bases
      * the bases in the map form the alignment column.  Some sequences
@@ -297,14 +312,23 @@ void printSequence(ostream& outStream, const Sequence* sequence,
     for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin();
          i != cmap->end(); ++i)
     {
-      /** If the sequence belongs to the reference genome, we don't 
-       * count it.  So a homology in the same genome is not considered
-       * here.  But paralgous bases in other genomes will each be counted */
-      if (i->first->getGenome() != genome && !i->second->empty())
+      if (countDupes == true)
       {
-        ++count; 
+        // countDupes enabled: we just count everything
+        count += i->second->size();
+      }
+      else if (!i->second->empty())
+      {
+        // just counting unique genomes: add it if there's at least one base
+        genomeSet.insert(i->first->getGenome());
       }
     }
+    if (countDupes == false) 
+    {
+      count = genomeSet.size();
+    }
+    // don't want to include reference base in output
+    --count;
 
     outStream << count << '\n';
     
@@ -352,11 +376,12 @@ void printSequence(ostream& outStream, const Sequence* sequence,
 void printGenome(ostream& outStream,
                  const Genome* genome, const Sequence* sequence,
                  const set<const Genome*>& targetSet,
-                 hal_size_t start, hal_size_t length, hal_size_t step)
+                 hal_size_t start, hal_size_t length, hal_size_t step,
+                 bool countDupes)
 {
   if (sequence != NULL)
   {
-    printSequence(outStream, sequence, targetSet, start, length, step);
+    printSequence(outStream, sequence, targetSet, start, length, step, countDupes);
   }
   else
   {
@@ -389,7 +414,8 @@ void printGenome(ostream& outStream,
         hal_size_t readStart = seqStart >= start ? 0 : start - seqStart;
         hal_size_t readLen = min(seqLen - readStart, length);
         readLen = min(readLen, length - runningLength);
-        printSequence(outStream, sequence, targetSet, readStart, readLen, step);
+        printSequence(outStream, sequence, targetSet, readStart, readLen, step,
+          countDupes);
         runningLength += readLen;
       }
     }
