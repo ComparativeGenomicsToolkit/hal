@@ -5,8 +5,7 @@
 #Released under the MIT license, see LICENSE.txt
 #!/usr/bin/env python
 
-"""Generate a series of HAL files at progressively coarse levels of detail
-from an input file by calling halLodExtract
+"""Run hal2maf in parallel by slicing along reference genome.
 """
 import argparse
 import os
@@ -271,7 +270,10 @@ def main(argv=None):
                         action="store_true",
                         default=False)
     h2mGrp.add_argument("--noAncestors", 
-                        help="don't write ancestral sequences",
+                        help= "don't write ancestral sequences. IMPORTANT: "
+                        "Must be used in conjunction with --refGenome"
+                        " to set a non-ancestral genome as the reference"
+                        " because the default reference is the root.",
                         action="store_true",
                         default=False)
     h2mGrp.add_argument("--ucscNames",

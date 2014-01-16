@@ -47,7 +47,9 @@ public:
    /** Left breakpoint is specified by the first base of the returned segment */
    virtual TopSegmentIteratorConstPtr getLeftBreakpoint() const = 0;
 
-   /** Right breakpoint is specified by the last base of the returned segment */
+   /** Right breakpoint is specified by the last base of the returned
+    * segment. If the rearrangement is a deletion, only the left
+    * breakpoint is set. */
    virtual TopSegmentIteratorConstPtr getRightBreakpoint() const = 0;
 
    /** Identify the rearrangement by scanning along the genome, skipping 

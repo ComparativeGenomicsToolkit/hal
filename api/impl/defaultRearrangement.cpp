@@ -598,6 +598,7 @@ bool DefaultRearrangement::scanDeletionCycle(
 
   // Case 1) current segment is a right endpoint.  we consider delection
   // if parent has neighbour
+  // FIXME: the edge cases are probably very wrong.
   if (last)
   {
     _leftParent->toParent(_cur);
@@ -616,18 +617,22 @@ bool DefaultRearrangement::scanDeletionCycle(
   // Case 2) Try to find deletion cycle by going right-up-left-left-down
   else
   {
-    _leftParent->toParent(_cur);
-    _right->toRight();
+    _rightParent->toParent(_cur);
+    // FIXME: the edge cases are probably very wrong.
+    if (first) {
+      return false;
+    }
+    _left->toLeft();
 
-    assert(_leftParent->getGapThreshold() == _gapThreshold);
+    assert(_rightParent->getGapThreshold() == _gapThreshold);
     assert(_cur->getGapThreshold() == _gapThreshold);
-    assert(_atomic != true || _leftParent->getNumSegments() == 1);
-    assert(_atomic != true || _right->getNumSegments() == 1);
-    if (_right->hasParent() == false)
+    assert(_atomic != true || _rightParent->getNumSegments() == 1);
+    assert(_atomic != true || _left->getNumSegments() == 1);
+    if (_left->hasParent() == false)
     {
       return false;
     }
-    _rightParent->toParent(_right); 
+    _leftParent->toParent(_left);
     
     if (_leftParent->getSequence() == _rightParent->getSequence())
     {

@@ -7,3 +7,4 @@ lib/*
 *.pyc
 /bin
 /lib
+chain/test
