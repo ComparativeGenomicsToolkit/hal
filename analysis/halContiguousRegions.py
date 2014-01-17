@@ -51,6 +51,9 @@ class ContiguousRegions:
         for seq, blocks in tBlocks.items():
             mappedBlocks = reduce(lambda r, v: r + (v[1] - v[0]), blocks, 0)
             tSeqMapped.append((seq, mappedBlocks))
+        if len(tSeqMapped) == 0:
+            # can happen if the sequence doesn't map to the target at all
+            return (None, None)
         tSeqName = max(tSeqMapped, key=itemgetter(1))[0]
         qBlocks = qBlocks[tSeqName]
         tBlocks = tBlocks[tSeqName]
@@ -80,6 +83,8 @@ class ContiguousRegions:
 
     def isContiguousInTarget(self, bedLine):
         (qBlocks, tBlocks) = self.liftover(bedLine)
+        if qBlocks is None or tBlocks is None:
+            return False
         bedStart = int(bedLine.split()[1])
         bedEnd = int(bedLine.split()[2])
 
