@@ -31,8 +31,6 @@ bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
     assert(dnaSet->size() == 1);
     DNAIteratorConstPtr dnaIt = dnaSet->at(0);
     if (dnaIt->getChar() == 'N') {
-      cout << "Genome " << colMapIt->first->getGenome()->getName() << " has N "
-           << endl;
       return false;
     }
   }
@@ -73,9 +71,6 @@ bool isContiguous(const ColumnIterator::ColumnMap *colMap,
       // Not on same chromosome
       (genome->getSequenceBySite(currPos) != genome->getSequenceBySite(prevPos))
       ) {
-      cout << "Genome " << genome->getName() << " is not consistent. prevPos "
-           << prevPos << " currPos " << currPos << " myStep " << myStep
-           << endl;
       return false;
     }
   }
@@ -227,11 +222,24 @@ int main(int argc, char *argv[])
         prevStep = 1;
       }
       if (!failedFiltering) {
-        cout << (rearrangement->getID() == Rearrangement::Deletion ? "deletion: " : "insertion: ")
-             << "breakStart: " << breakStart << " breakEnd: " << breakEnd
-             << " start: " << start << " end: " << end << " genome: "
-             << rearrangement->getLeftBreakpoint()->getGenome()->getName()
-             << endl;        
+        if (rearrangement->getID() == Rearrangement::Deletion) {
+          pair<hal_index_t, hal_index_t> deletedRange = rearrangement->getDeletedRange();
+          const Genome *parent = refGenome->getParent();
+          const Sequence *seq = parent->getSequenceBySite(deletedRange.first);
+          assert(seq == parent->getSequenceBySite(deletedRange.second));
+          cout << seq->getName() << "\t"
+               << deletedRange.first - seq->getStartPosition() << "\t"
+               << deletedRange.second - seq->getStartPosition() + 1 << "\tD\t"
+               << parent->getName() << "\t" << refGenome->getName() << endl;
+        } else {
+          const Genome *parent = refGenome->getParent();
+          const Sequence *seq = refGenome->getSequenceBySite(start);
+          assert(seq == refGenome->getSequenceBySite(end));
+          cout << seq->getName() << "\t"
+               << breakStart - seq->getStartPosition() << "\t"
+               << breakEnd - seq->getStartPosition() + 1 << "\tI\t"
+               << parent->getName() << "\t" << refGenome->getName() << endl;
+        }
       }
     }
   } while(rearrangement->identifyNext() == true);
