@@ -639,7 +639,7 @@ void printPercentID(ostream& os, AlignmentConstPtr alignment,
         }
       }
     }
-    if (*tempGenomeStats[refGenome].second == 1) {
+    if (refDna != 'N' && *tempGenomeStats[refGenome].second == 1) {
       // If there isn't a duplication in the reference then we count
       // this column.
       for (map<const Genome *, pair<hal_size_t *, hal_size_t *> >::iterator it = tempGenomeStats.begin();
