@@ -104,8 +104,8 @@ bool isStrictSingleCopy(const ColumnIterator::ColumnMap *colMap,
   if (seenGenomes.size() == targets->size()) {
 #ifndef NDEBUG
     // Should be enough just to check the size. But we'll be careful--
-    for (set <const Genome *>::iterator setIt = targets.begin();
-         setIt != targets.end(); setIt++) {
+    for (set <const Genome *>::iterator setIt = targets->begin();
+         setIt != targets->end(); setIt++) {
       assert(seenGenomes.count(*setIt));
     }
 #endif
