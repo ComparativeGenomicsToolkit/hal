@@ -1,3 +1,5 @@
+// Find clean indels
+// TODO: merge into halBranchMutations
 #include "hal.h"
 
 using namespace std;
@@ -16,7 +18,7 @@ static CLParserPtr initParser()
   return optionsParser;
 }
 
-// Check for Ns in any of the targets
+// Check for Ns in any of the (strict single copy) targets
 bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
 {
   ColumnIterator::ColumnMap::const_iterator colMapIt;
@@ -29,6 +31,8 @@ bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
     assert(dnaSet->size() == 1);
     DNAIteratorConstPtr dnaIt = dnaSet->at(0);
     if (dnaIt->getChar() == 'N') {
+      cout << "Genome " << colMapIt->first->getGenome()->getName() << " has N "
+           << endl;
       return false;
     }
   }
@@ -39,7 +43,8 @@ bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
 // Might crash if the column isn't strictly single copy.
 // Not obvious from the name, but a side effect is updating prevPos.
 bool isContiguous(const ColumnIterator::ColumnMap *colMap,
-                  map<const Genome *, hal_index_t> *prevPositions)
+                  map<const Genome *, hal_index_t> *prevPositions,
+                  hal_size_t step, const Genome *refGenome)
 {
   ColumnIterator::ColumnMap::const_iterator colMapIt;
   for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
@@ -59,10 +64,18 @@ bool isContiguous(const ColumnIterator::ColumnMap *colMap,
     }
     hal_index_t prevPos = (*prevPositions)[genome];
     (*prevPositions)[genome] = currPos;
-    if ((dnaIt->getReversed() && currPos != prevPos - 1) ||
-        (!dnaIt->getReversed() && currPos != prevPos + 1)) {
+    // hacky. but the ref always steps by 1 even in deletions (obviously)
+    hal_size_t myStep = (genome == refGenome) ? 1 : step;
+    if (
+      // Not adjacent in genome coordinates
+      (dnaIt->getReversed() && currPos != prevPos - (hal_index_t) myStep) ||
+      (!dnaIt->getReversed() && currPos != prevPos + (hal_index_t) myStep) ||
+      // Not on same chromosome
+      (genome->getSequenceBySite(currPos) != genome->getSequenceBySite(prevPos))
+      ) {
       cout << "Genome " << genome->getName() << " is not consistent. prevPos "
-           << prevPos << " currPos " << currPos << endl;
+           << prevPos << " currPos " << currPos << " myStep " << myStep
+           << endl;
       return false;
     }
   }
@@ -131,6 +144,12 @@ int main(int argc, char *argv[])
   RearrangementPtr rearrangement = refGenome->getRearrangement(0, 0, 1.0);
 
   // create target set: (ref, sibling(s), outgroup(s)).
+  //
+  // FIXME: In non-binary trees this will enforce the constraints on
+  // *all* siblings, outgroups. This isn't what we want at
+  // all--instead it should enforce the constraints on *at least* one
+  // from each of siblings, outgroups. Otherwise deletions/insertions
+  // shared in 2 of 3 children are not "clean".
   set <const Genome *> targets;
   if (refGenome->getParent() != NULL &&
       refGenome->getParent()->getParent() != NULL) {
@@ -160,23 +179,18 @@ int main(int argc, char *argv[])
       }
       hal_index_t start = breakStart - adjacentBases;
       hal_index_t end = breakEnd + adjacentBases;
-      if (start < 0) {
-        start = 0;
+      if (start < 0 || end >= (hal_index_t) refGenome->getSequenceLength()) {
+        // Indels very close to the end of sequences can't be "clean."
+        continue;
       }
-      if (end >= (hal_index_t) refGenome->getSequenceLength()) {
-        end = refGenome->getSequenceLength() - 1;
-      }
-      cout << (rearrangement->getID() == Rearrangement::Deletion ? "deletion: " : "insertion: ") <<
-        "breakStart: " << breakStart << " breakEnd: " << breakEnd << " start: "
-           << start << " end: " << end << " genome: " << rearrangement->getLeftBreakpoint()->getGenome()->getName() << endl;
       ColumnIteratorPtr colIt = refGenome->getColumnIterator(&targets, 0,
                                                              start, end);
       map <const Genome *, hal_index_t> prevPos;
       bool failedFiltering = false;
+      hal_size_t prevStep = 32432432423; // just to catch bugs...
       while(1) {
         hal_index_t refGenomePos = colIt->getReferenceSequencePosition() + 
           colIt->getReferenceSequence()->getStartPosition();
-        cout << refGenomePos << endl;
         if (refGenomePos == breakStart) {
           // Fiddle with the prevPos map so we only enforce the
           // adjacencies we need (adjacency in the reference for a
@@ -184,19 +198,9 @@ int main(int argc, char *argv[])
           // insertion.)
           if (breakEnd + 1 < end) {
             if (rearrangement->getID() == Rearrangement::Deletion) {
-              // can't delete from the map while iterating over it.
-              // (yes, this is a bad way to do things.)
-              vector<map<const Genome *, hal_index_t>::iterator> toDelete;
-              for (map<const Genome *, hal_index_t>::iterator it = prevPos.begin();
-                   it != prevPos.end(); it++) {
-                
-                if (it->first != refGenome) {
-                  toDelete.push_back(it);
-                }
-              }
-              for (hal_size_t i = 0; i < toDelete.size(); i++) {
-                prevPos.erase(toDelete[i]);
-              }
+              rearrangement->identifyDeletionFromLeftBreakpoint(rearrangement->getLeftBreakpoint());
+              pair<hal_index_t, hal_index_t> deletedRange = rearrangement->getDeletedRange();
+              prevStep = llabs(deletedRange.first - deletedRange.second) + 2;
             } else {
               // just in case the condition is changed above
               assert(rearrangement->getID() == Rearrangement::Insertion);
@@ -211,7 +215,7 @@ int main(int argc, char *argv[])
         const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
 
         if (!isStrictSingleCopy(colMap, &targets) ||
-            !isContiguous(colMap, &prevPos) ||
+            !isContiguous(colMap, &prevPos, prevStep, refGenome) ||
             !isNotAmbiguous(colMap)) {
           failedFiltering = true;
           break;
@@ -220,8 +224,15 @@ int main(int argc, char *argv[])
           break;
         }
         colIt->toRight();
+        prevStep = 1;
       }
-      cout << "failedFiltering: " << failedFiltering << endl;
+      if (!failedFiltering) {
+        cout << (rearrangement->getID() == Rearrangement::Deletion ? "deletion: " : "insertion: ")
+             << "breakStart: " << breakStart << " breakEnd: " << breakEnd
+             << " start: " << start << " end: " << end << " genome: "
+             << rearrangement->getLeftBreakpoint()->getGenome()->getName()
+             << endl;        
+      }
     }
   } while(rearrangement->identifyNext() == true);
 }
