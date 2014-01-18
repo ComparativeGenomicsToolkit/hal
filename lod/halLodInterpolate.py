@@ -211,7 +211,7 @@ def main(argv=None):
     if not os.path.isfile(args.hal):
         raise RuntimeError("Input hal file %s not found" % args.hal)
     if args.outHalDir is None:
-        args.outHalDir = os.path.dirname(args.hal)
+        args.outHalDir = os.path.dirname(os.path.abspath(args.hal))
     if not os.path.isdir(args.outHalDir):
         raise RuntimeError("Invalid output directory %s" % args.outHalDir)
     assert args.scaleCorFac > 0
