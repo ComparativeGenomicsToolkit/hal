@@ -45,6 +45,9 @@ public:
    AlignmentConstPtr getAlignment(hal_size_t queryLength, 
                                   bool needDNA);
 
+   /** Check if query length corresponds to LOD 0 (ie original HAL) */
+   bool isLod0(hal_size_t queryLenth) const;
+
    /** Maximum age of a URL in seconds such that we dont try to 
     * preload headers for all the HAL files */
    static const unsigned long MaxAgeSec;

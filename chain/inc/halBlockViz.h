@@ -156,7 +156,9 @@ void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
  * in forward coordinates like BED).  can only be used in liftOverMode
  * otherwise must be set to 0
  * @param getSequenceString copy DNA sequence (of query species) into 
- * output blocks if not 0. 
+ * output blocks if not 0. UPDATE: Only effective on LOD-0 (ie original hal)
+ * so if the input range is for another lod, this parameter will be ignored
+ * and assumed to be 0.
  * @param dupMode Specifies which types of duplications to compute. 
  * (note that when tReversed != 0, target duplications are not supported,
  * so when doing liftover use no dupes or query dupes only) 

@@ -46,6 +46,7 @@ static void checkGenomes(int halHandle,
 static AlignmentConstPtr getExistingAlignment(int handle,
                                               hal_size_t queryLength,
                                               bool needSequence);
+static bool isAlignmentLod0(int handle, hal_size_t queryLength);
 static char* copyCString(const string& inString);
 
 static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
@@ -243,6 +244,17 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     AlignmentConstPtr alignment = 
        getExistingAlignment(halHandle, hal_size_t(rangeLength), false);
     checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
+
+    // no longer want to provide sequence for lod-alignments.  reason:
+    // lod blocks were resulting in spurious snp's in some cases. so we 
+    // deactive sequence toggle if we're not dealing with original hal.
+    // (makes some of the below logic (seqAlingment etc.) redundant, but if 
+    // we ever want to revert back to having lod sequence, just need to erase
+    // the next three lines:)
+    if (isAlignmentLod0(halHandle, hal_size_t(rangeLength)) == false)
+    {
+      getSequenceString = 0;
+    }
 
     const Genome* qGenome = alignment->openGenome(qSpecies);
     const Genome* tGenome = alignment->openGenome(tSpecies);
@@ -616,6 +628,13 @@ AlignmentConstPtr getExistingAlignment(int handle, hal_size_t queryLength,
   checkHandle(handle);
   HandleMap::iterator mapIt = handleMap.find(handle);
   return mapIt->second.second->getAlignment(queryLength, needDNASequence);
+}
+
+bool isAlignmentLod0(int handle, hal_size_t queryLength)
+{
+  checkHandle(handle);
+  HandleMap::iterator mapIt = handleMap.find(handle);
+  return mapIt->second.second->isLod0(queryLength);
 }
 
 char* copyCString(const string& inString)
