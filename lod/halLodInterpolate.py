@@ -73,11 +73,12 @@ def getMinAvgBlockSize(halPath):
 # the maximum level of detail has at most maxBlock (expected) blocks
 # per genome, and each hal file has multFac (approx maxBlock) bigger
 # blocks than the previous
-def getSteps(halPath, maxBlock, scaleFactor):
+def getSteps(halPath, maxBlock, scaleFactor, minLod0):
     maxLen = getMaxGenomeLength(halPath)
     assert maxLen > 0
     maxStep = math.ceil(float(maxLen) / float(maxBlock))
-    baseStep = getMinAvgBlockSize(halPath)
+    lodBaseStep = math.ceil(float(minLod0) / float(maxBlock))
+    baseStep = max(lodBaseStep, getMinAvgBlockSize(halPath))
     outList = []
     step = baseStep
     while True:
@@ -96,10 +97,10 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
                maxDNA, absPath, trans, inMemory, probeFrac, minSeqFrac,
-               scaleCorFac, numProc, chunk):
+               scaleCorFac, numProc, chunk, minLod0):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
-    steps = getSteps(halPath, maxBlock, scale)
+    steps = getSteps(halPath, maxBlock, scale, minLod0)
     curStepFactor = scaleCorFac
     lodExtractCmds = []
     prevStep = None
@@ -197,6 +198,10 @@ def main(argv=None):
                         type=int, default=1)
     parser.add_argument("--chunk", help="Chunk size of output hal files.  ",
                         type=int, default=None)
+    parser.add_argument("--minLod0", help="Override other parameters to "
+                        "ensure that Lod0 (original hal) gets range from 0 "
+                        "to at least the specified value", type=int,
+                        default=0)
 
     args = parser.parse_args()
 
@@ -220,7 +225,8 @@ def main(argv=None):
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, args.overwrite, args.maxDNA,
                args.absPath, args.trans, args.inMemory, args.probeFrac,
-               args.minSeqFrac, args.scaleCorFac, args.numProc, args.chunk)
+               args.minSeqFrac, args.scaleCorFac, args.numProc, args.chunk,
+               args.minLod0)
     
 if __name__ == "__main__":
     sys.exit(main())
