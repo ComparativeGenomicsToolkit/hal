@@ -118,6 +118,8 @@ int main(int argc, char** argv)
   int ret = 0;
   if (handle >= 0)
   {
+    hal_seqmode_type_t sm = HAL_NO_SEQUENCE;
+    if (args.doSeq != 0) sm = HAL_LOD0_SEQUENCE;
     struct hal_block_results_t* results = 
        halGetBlocksInTargetRange(handle, 
                                  args.qSpecies,
@@ -126,7 +128,7 @@ int main(int argc, char** argv)
                                  args.tStart,
                                  args.tEnd,
                                  0,
-                                 args.doSeq, 
+                                 sm, 
                                  HAL_QUERY_AND_TARGET_DUPS,
                                  1);
 
