@@ -146,12 +146,12 @@ int main(int argc, char *argv[])
   // from each of siblings, outgroups. Otherwise deletions/insertions
   // shared in 2 of 3 children are not "clean".
   set <const Genome *> targets;
-  if (refGenome->getParent() != NULL &&
-      refGenome->getParent()->getParent() != NULL) {
-    const Genome *parentGenome = refGenome->getParent();
-    for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
-      targets.insert(parentGenome->getChild(i));
-    }
+  const Genome *parentGenome = refGenome->getParent();
+  for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
+    targets.insert(parentGenome->getChild(i));
+  }
+  if (refGenome->getParent()->getParent() != NULL) {
+    // Add outgroup if possible (not child of root).
     const Genome *gpGenome = parentGenome->getParent();
     for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
       if (gpGenome->getChild(i) != parentGenome) {
