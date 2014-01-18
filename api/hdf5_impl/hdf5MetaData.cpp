@@ -56,7 +56,7 @@ const map<string, string>& HDF5MetaData::getMap() const
   return _map;
 }
 
-static void attr_operator(H5Location& loc/*in*/,
+static void attr_operator(H5Object& loc/*in*/,
                           const H5std_string attr_name/*in*/,
                           void *operator_data/*in,out*/)
 {
@@ -89,7 +89,7 @@ void HDF5MetaData::open(CommonFG* parent, const string& name)
 
   if (_group.getNumAttrs() > 0)
   {
-    _group.iterateAttrs(attr_operator, NULL, (void*)&_map);
+    _group.iterateAttrs(attr_operator, NULL, &_map);
   }
   assert(_map.size() == (size_t)_group.getNumAttrs());
 }
