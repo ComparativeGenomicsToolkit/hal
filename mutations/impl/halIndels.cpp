@@ -18,8 +18,55 @@ static CLParserPtr initParser()
   return optionsParser;
 }
 
+// check (inclusive) interval startPos--endPos for Ns.
+static bool regionIsNotAmbiguous(const Genome* genome, hal_index_t startPos,
+                                 hal_index_t endPos)
+{
+  if (startPos > endPos) {
+    swap(startPos, endPos);
+  }
+  DNAIteratorConstPtr dnaIt = genome->getDNAIterator(startPos);
+  hal_index_t length = endPos - startPos;
+  for (hal_size_t i = 0; i < (hal_size_t) length; i++) {
+    if (dnaIt->getChar() == 'N') {
+      return false;
+    }
+    dnaIt->toRight();
+  }
+  return true;
+}
+
+static bool deletionIsNotAmbiguous(const ColumnIterator::ColumnMap *colMap,
+                                   map<const Genome *, hal_index_t> *prevPositions,
+                                   hal_size_t step, const Genome *refGenome)
+{
+  ColumnIterator::ColumnMap::const_iterator colMapIt;
+  for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
+    if (colMapIt->second->empty()) {
+      // The column map can contain empty entries.
+      continue;
+    }
+    const Genome *genome = colMapIt->first->getGenome();
+    if (genome == refGenome) {
+      continue;
+    }
+    const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+    assert(dnaSet->size() == 1);
+    DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+    hal_index_t currPos = dnaIt->getArrayIndex();
+    hal_index_t prevPos = (*prevPositions)[genome];
+    (*prevPositions)[genome] = currPos;
+    if (!regionIsNotAmbiguous(genome, currPos, prevPos)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Check for Ns in any of the (strict single copy) targets
-bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
+// FIXME: why are these named so that there end up being double- and
+// triple-negatives in if conditionals
+static bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
 {
   ColumnIterator::ColumnMap::const_iterator colMapIt;
   for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
@@ -40,7 +87,7 @@ bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
 // returns true if the column is consistent with the previous positions
 // Might crash if the column isn't strictly single copy.
 // Not obvious from the name, but a side effect is updating prevPos.
-bool isContiguous(const ColumnIterator::ColumnMap *colMap,
+static bool isContiguous(const ColumnIterator::ColumnMap *colMap,
                   map<const Genome *, hal_index_t> *prevPositions,
                   hal_size_t step, const Genome *refGenome)
 {
@@ -80,7 +127,7 @@ bool isContiguous(const ColumnIterator::ColumnMap *colMap,
 // returns true if the column has exactly one entry for each genome.
 //
 // TODO: Should eventually merge w/ the crap in findSingleCopyRegions...
-bool isStrictSingleCopy(const ColumnIterator::ColumnMap *colMap,
+static bool isStrictSingleCopy(const ColumnIterator::ColumnMap *colMap,
                         const set<const Genome *> *targets)
 {
   ColumnIterator::ColumnMap::const_iterator colMapIt;
@@ -186,6 +233,7 @@ int main(int argc, char *argv[])
       while(1) {
         hal_index_t refGenomePos = colIt->getReferenceSequencePosition() + 
           colIt->getReferenceSequence()->getStartPosition();
+        const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
         if (refGenomePos == breakStart) {
           // Fiddle with the prevPos map so we only enforce the
           // adjacencies we need (adjacency in the reference for a
@@ -200,6 +248,12 @@ int main(int argc, char *argv[])
               // just in case the condition is changed above
               assert(rearrangement->getID() == Rearrangement::Insertion);
               prevPos.erase(refGenome);
+              if (!regionIsNotAmbiguous(refGenome, refGenomePos, breakEnd)) {
+                // N in insertion. This could be a gap in a scaffold
+                // so it's not considered clean.
+                failedFiltering = true;
+                break;
+              }
               // Need to skip over the insertion.
               colIt->toSite(breakEnd + 1, end);
             }
@@ -207,11 +261,13 @@ int main(int argc, char *argv[])
             break;
           }
         }
-        const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
-
         if (!isStrictSingleCopy(colMap, &targets) ||
             !isContiguous(colMap, &prevPos, prevStep, refGenome) ||
-            !isNotAmbiguous(colMap)) {
+            !isNotAmbiguous(colMap) ||
+            // check that deleted regions don't have Ns (to keep
+            // reversibility of insertion/deletion definitions)
+            (prevStep != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
+                                                      prevStep, refGenome))) {
           failedFiltering = true;
           break;
         }
