@@ -34,8 +34,13 @@ class ContiguousRegions:
                 continue
             qStrand = pslLine[8][0]
             assert(qStrand == '+')
-            tStrand = pslLine[8][1]
+            if len(pslLine[8]) != 1:
+                assert(len(pslLine[8]) == 2)
+                tStrand = pslLine[8][1]
+            else:
+                tStrand = '+'
             tName = pslLine[13]
+            tSize = int(pslLine[14])
             blockSizes = [int(i) for i in pslLine[18].split(",") if i != '']
             qStarts = [int(i) for i in pslLine[19].split(",") if i != '']
             tStarts = [int(i) for i in pslLine[20].split(",") if i != '']
@@ -43,7 +48,11 @@ class ContiguousRegions:
                    len(qStarts) == len(tStarts))
             for blockLen, qStart, tStart in zip(blockSizes, qStarts, tStarts):
                 qBlocks[tName].append((qStart, qStart + blockLen))
-                tBlocks[tName].append((tStart, tStart + blockLen))
+                if tStrand == '+':
+                    tBlocks[tName].append((tStart, tStart + blockLen))
+                else:
+                    tBlocks[tName].append((tSize - tStart - blockLen,
+                                           tSize - tStart))
 
         # take only the blocks from the target sequence with the most mapped
         # bases
@@ -66,6 +75,7 @@ class ContiguousRegions:
         blocks.sort(key=itemgetter(0))
         merged = []
         prev = None
+        print blocks
         for block in blocks:
             if prev is not None:
                 # haven't thought it through yet so restrict to
