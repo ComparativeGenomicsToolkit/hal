@@ -359,6 +359,10 @@ ostream& BedLine::writePSL(ostream& os)
   for (size_t i = 0; i < _blocks.size(); ++i)
   {
     hal_index_t start = _blocks[i]._start + _start;
+    if (_strand == '-')
+    {
+      start = psl._tSeqSize - start - _blocks[i]._length;
+    }
     os << start << ',';
   }
 
