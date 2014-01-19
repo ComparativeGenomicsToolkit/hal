@@ -148,6 +148,14 @@ AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength,
   return alignment;
 }
 
+bool LodManager::isLod0(hal_size_t queryLength) const
+{
+  assert(_map.size() > 0);
+  AlignmentMap::const_iterator mapIt = _map.upper_bound(queryLength);
+  --mapIt;
+  return mapIt == _map.begin();
+}
+
 string LodManager::resolvePath(const string& lodPath,
                                const string& halPath)
 {
@@ -229,3 +237,4 @@ void LodManager::preloadAlignments()
      }
   }
 }
+

@@ -93,6 +93,18 @@ typedef enum
   HAL_QUERY_AND_TARGET_DUPS,
 } hal_dup_type_t;
 
+/** Sequence string mode toggler.  
+ * HAL_NO_SEQUENCE: Do not return DNA sequence
+ * HAL_LOD0_SEQUENCE: Only return sequence if query maps to Lod-0
+ * HAL_FORCE_LOD0_SEQUENCE: Return DNA sequence no matter what by forcing
+ * query to LOD0 */
+typedef enum
+{
+  HAL_NO_SEQUENCE = 0,
+  HAL_LOD0_SEQUENCE,
+  HAL_FORCE_LOD0_SEQUENCE,
+} hal_seqmode_type_t;
+
 /** Open a text file created by halLodInterpolate.py for viewing. 
  * This text file contains a list of paths to progressively coarser
  * levels of detail of a source HAL file.  For example, it may look like
@@ -155,8 +167,8 @@ void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
  * @param tReversed Input region is on the reverse strand (but still 
  * in forward coordinates like BED).  can only be used in liftOverMode
  * otherwise must be set to 0
- * @param getSequenceString copy DNA sequence (of query species) into 
- * output blocks if not 0. 
+ * @param seqMode Specify logic used to determine whether or not DNA 
+ * sequence is returned (details in hal_seqmode_type_t comments)  
  * @param dupMode Specifies which types of duplications to compute. 
  * (note that when tReversed != 0, target duplications are not supported,
  * so when doing liftover use no dupes or query dupes only) 
@@ -173,7 +185,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       hal_int_t tStart, 
                                                       hal_int_t tEnd,
                                                       hal_int_t tReversed,
-                                                      int getSequenceString,
+                                                      hal_seqmode_type_t seqMode,
                                                       hal_dup_type_t dupMode,
                                                       int mapBackAdjacencies);
 

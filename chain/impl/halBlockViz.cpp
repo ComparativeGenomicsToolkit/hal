@@ -46,6 +46,7 @@ static void checkGenomes(int halHandle,
 static AlignmentConstPtr getExistingAlignment(int handle,
                                               hal_size_t queryLength,
                                               bool needSequence);
+static bool isAlignmentLod0(int handle, hal_size_t queryLength);
 static char* copyCString(const string& inString);
 
 static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
@@ -215,7 +216,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       hal_int_t tStart, 
                                                       hal_int_t tEnd,
                                                       hal_int_t tReversed,
-                                                      int getSequenceString,
+                                                      hal_seqmode_type_t seqMode,
                                                       hal_dup_type_t dupMode,
                                                       int mapBackAdjacencies)
 {
@@ -240,8 +241,17 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
       throw hal_exception("tReversed cannot be set in conjunction with"
                           " dupMode=HAL_QUERY_AND_TARGET_DUPS");
     }
-    AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, hal_size_t(rangeLength), false);
+    bool getSequenceString;
+    switch (seqMode) 
+    {
+    case HAL_NO_SEQUENCE: getSequenceString = false; break;
+    case HAL_FORCE_LOD0_SEQUENCE: getSequenceString = true; break;           
+    case HAL_LOD0_SEQUENCE: default:
+      getSequenceString = isAlignmentLod0(halHandle, hal_size_t(rangeLength)); 
+    }
+      
+    AlignmentConstPtr alignment = getExistingAlignment(
+      halHandle, hal_size_t(rangeLength), getSequenceString);
     checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
 
     const Genome* qGenome = alignment->openGenome(qSpecies);
@@ -271,8 +281,13 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     }
 
     AlignmentConstPtr seqAlignment;
-    if (getSequenceString != 0)
+    if (getSequenceString == true)
     {
+      // note: this separate pointer no longer necessary since we will
+      // not get sequence unless alignment has sequence.  don't bother
+      // getting rid of it since it allows us to easily revert back to 
+      // the previous functionaly of allowing lod-blocks to acces lod-0
+      // sequence
       seqAlignment = getExistingAlignment(halHandle, absEnd - absStart, 
                                           true);
     }
@@ -280,7 +295,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     results = readBlocks(seqAlignment, tSequence, absStart, absEnd, 
                          tReversed != 0,
                          qGenome,
-                         getSequenceString != 0, dupMode != HAL_NO_DUPS, 
+                         getSequenceString, dupMode != HAL_NO_DUPS, 
                          dupMode == HAL_QUERY_AND_TARGET_DUPS,
                          mapBackAdjacencies != 0);
   }
@@ -616,6 +631,13 @@ AlignmentConstPtr getExistingAlignment(int handle, hal_size_t queryLength,
   checkHandle(handle);
   HandleMap::iterator mapIt = handleMap.find(handle);
   return mapIt->second.second->getAlignment(queryLength, needDNASequence);
+}
+
+bool isAlignmentLod0(int handle, hal_size_t queryLength)
+{
+  checkHandle(handle);
+  HandleMap::iterator mapIt = handleMap.find(handle);
+  return mapIt->second.second->isLod0(queryLength);
 }
 
 char* copyCString(const string& inString)
