@@ -75,7 +75,6 @@ class ContiguousRegions:
         blocks.sort(key=itemgetter(0))
         merged = []
         prev = None
-        print blocks
         for block in blocks:
             if prev is not None:
                 # haven't thought it through yet so restrict to
