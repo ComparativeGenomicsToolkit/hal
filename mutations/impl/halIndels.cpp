@@ -91,9 +91,31 @@ static bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
   return true;
 }
 
+static void updatePrevPos(const ColumnIterator::ColumnMap *colMap,
+                          map<const Genome *, hal_index_t> *prevPositions)
+{
+  ColumnIterator::ColumnMap::const_iterator colMapIt;
+  for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
+    if (colMapIt->second->empty()) {
+      // The column map can contain empty entries.
+      continue;
+    }
+    const Genome *genome = colMapIt->first->getGenome();
+    const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+    assert(dnaSet->size() == 1);
+    DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+    hal_index_t currPos = dnaIt->getArrayIndex();
+    if (!prevPositions->count(genome)) {
+      // initialize previous position map
+      (*prevPositions)[genome] = currPos;
+      continue;
+    }
+    (*prevPositions)[genome] = currPos;
+  }
+}
+
 // returns true if the column is consistent with the previous positions
 // Might crash if the column isn't strictly single copy.
-// Not obvious from the name, but a side effect is updating prevPos.
 static bool isContiguous(const ColumnIterator::ColumnMap *colMap,
                   map<const Genome *, hal_index_t> *prevPositions,
                   hal_size_t step, const Genome *refGenome)
@@ -115,7 +137,6 @@ static bool isContiguous(const ColumnIterator::ColumnMap *colMap,
       continue;
     }
     hal_index_t prevPos = (*prevPositions)[genome];
-    (*prevPositions)[genome] = currPos;
     // hacky. but the ref always steps by 1 even in deletions (obviously)
     hal_size_t myStep = (genome == refGenome) ? 1 : step;
     if (
@@ -166,8 +187,6 @@ static bool isStrictSingleCopy(const ColumnIterator::ColumnMap *colMap,
 // FIXME: a lot of duplication from printIndels--but tough to separate
 // out since there's a ton of insertion/deletion code we don't care
 // about here
-// FIXME: naive and wasteful way of doing things right now--there are
-// ways to reduce the number of columns we have to look at.
 static void printNumCandidateSites(AlignmentConstPtr alignment,
                                    const Genome *refGenome,
                                    const set<const Genome *> targets,
@@ -175,27 +194,33 @@ static void printNumCandidateSites(AlignmentConstPtr alignment,
 {
   hal_size_t refLength = refGenome->getSequenceLength();
   hal_size_t numSites = 0;
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator(&targets);
+  PositionCache knownGoodSites;
   for (hal_index_t refPos = adjacentBases; refPos < refLength - adjacentBases;
        refPos++) {
     hal_index_t start = refPos - adjacentBases;
     hal_index_t end = refPos + adjacentBases;
-    ColumnIteratorPtr colIt = refGenome->getColumnIterator(&targets, 0,
-                                                           start, end);
+    colIt->toSite(start, end, true);
     map <const Genome *, hal_index_t> prevPos;
     bool failedFiltering = false;
     while(1) {
       hal_index_t refColPos = colIt->getReferenceSequencePosition() + 
         colIt->getReferenceSequence()->getStartPosition();
       const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
-      if (!isStrictSingleCopy(colMap, &targets) ||
-          !isContiguous(colMap, &prevPos, 1, refGenome) ||
-          !isNotAmbiguous(colMap)) {
-        // we know this column doesn't pass filtering, so skip all
-        // positions that we know will fail
-        refPos = refColPos + adjacentBases; // 1 more will be added by for loop
-        failedFiltering = true;
-        break;
+      if (!knownGoodSites.find(refColPos)) {
+        if (!isStrictSingleCopy(colMap, &targets) ||
+            !isContiguous(colMap, &prevPos, 1, refGenome) ||
+            !isNotAmbiguous(colMap)) {
+          // we know this column doesn't pass filtering, so skip all
+          // positions that we know will fail
+          refPos = refColPos + adjacentBases; // 1 more will be added by for loop
+          failedFiltering = true;
+          break;
+        } else {
+          knownGoodSites.insert(refColPos);
+        }
       }
+      updatePrevPos(colMap, &prevPos);
       if (colIt->lastColumn()) {
         break;
       }
@@ -277,6 +302,7 @@ static void printIndels(AlignmentConstPtr alignment, const Genome *refGenome,
           failedFiltering = true;
           break;
         }
+        updatePrevPos(colMap, &prevPos);
         if (colIt->lastColumn()) {
           break;
         }
