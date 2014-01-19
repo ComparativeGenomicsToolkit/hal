@@ -15,6 +15,13 @@ static CLParserPtr initParser()
                            "while filtering", 5);
   optionsParser->setDescription("Count (filtered) insertions/deletions in the "
                                 "branch above the reference genome.");
+  // FIXME: pretty dumb way of asking for the normalization
+  // denominator
+  optionsParser->addOptionFlag("potentialSites",
+                               "Output the total number of sites"
+                               " that could be considered a clean indel if"
+                               " there were an insertion/deletion there",
+                               false);
   return optionsParser;
 }
 
@@ -156,57 +163,56 @@ static bool isStrictSingleCopy(const ColumnIterator::ColumnMap *colMap,
   return false;
 }
 
-int main(int argc, char *argv[])
+// FIXME: a lot of duplication from printIndels--but tough to separate
+// out since there's a ton of insertion/deletion code we don't care
+// about here
+// FIXME: naive and wasteful way of doing things right now--there are
+// ways to reduce the number of columns we have to look at.
+static void printNumCandidateSites(AlignmentConstPtr alignment,
+                                   const Genome *refGenome,
+                                   const set<const Genome *> targets,
+                                   hal_size_t adjacentBases)
 {
-  CLParserPtr optionsParser = initParser();
-  string halPath, refGenomeName;
-  hal_size_t adjacentBases;
-  try
-  {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    refGenomeName = optionsParser->getArgument<string>("refGenome");
-    adjacentBases = optionsParser->getOption<hal_size_t>("adjacentBases");
-  }
-  catch(exception& e)
-  {
-    cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
-    exit(1);
-  }
-
-  AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
-  const Genome *refGenome = alignment->openGenome(refGenomeName);
-  if (refGenome == NULL) {
-    throw hal_exception("Genome " + refGenomeName + " does not exist");
-  }
-  if (refGenome->getParent() == NULL) {
-    throw hal_exception("Cannot use the root genome as a reference.");
-  }
-  RearrangementPtr rearrangement = refGenome->getRearrangement(0, 0, 1.0);
-
-  // create target set: (ref, sibling(s), outgroup(s)).
-  //
-  // FIXME: In non-binary trees this will enforce the constraints on
-  // *all* siblings, outgroups. This isn't what we want at
-  // all--instead it should enforce the constraints on *at least* one
-  // from each of siblings, outgroups. Otherwise deletions/insertions
-  // shared in 2 of 3 children are not "clean".
-  set <const Genome *> targets;
-  const Genome *parentGenome = refGenome->getParent();
-  for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
-    targets.insert(parentGenome->getChild(i));
-  }
-  if (refGenome->getParent()->getParent() != NULL) {
-    // Add outgroup if possible (not child of root).
-    const Genome *gpGenome = parentGenome->getParent();
-    for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
-      if (gpGenome->getChild(i) != parentGenome) {
-        targets.insert(gpGenome->getChild(i));
+  hal_size_t refLength = refGenome->getSequenceLength();
+  hal_size_t numSites = 0;
+  for (hal_index_t refPos = adjacentBases; refPos < refLength - adjacentBases;
+       refPos++) {
+    hal_index_t start = refPos - adjacentBases;
+    hal_index_t end = refPos + adjacentBases;
+    ColumnIteratorPtr colIt = refGenome->getColumnIterator(&targets, 0,
+                                                           start, end);
+    map <const Genome *, hal_index_t> prevPos;
+    bool failedFiltering = false;
+    while(1) {
+      hal_index_t refColPos = colIt->getReferenceSequencePosition() + 
+        colIt->getReferenceSequence()->getStartPosition();
+      const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
+      if (!isStrictSingleCopy(colMap, &targets) ||
+          !isContiguous(colMap, &prevPos, 1, refGenome) ||
+          !isNotAmbiguous(colMap)) {
+        // we know this column doesn't pass filtering, so skip all
+        // positions that we know will fail
+        refPos = refColPos + adjacentBases; // 1 more will be added by for loop
+        failedFiltering = true;
+        break;
       }
+      if (colIt->lastColumn()) {
+        break;
+      }
+      colIt->toRight();
+    }
+    if (!failedFiltering) {
+      numSites++;
     }
   }
+  cout << numSites << endl;
+}
 
+static void printIndels(AlignmentConstPtr alignment, const Genome *refGenome,
+                        const set<const Genome *> targets,
+                        hal_size_t adjacentBases)
+{
+  RearrangementPtr rearrangement = refGenome->getRearrangement(0, 0, 1.0);
   do {
     if (rearrangement->getID() == Rearrangement::Insertion ||
         rearrangement->getID() == Rearrangement::Deletion) {
@@ -300,3 +306,61 @@ int main(int argc, char *argv[])
     }
   } while(rearrangement->identifyNext() == true);
 }
+
+int main(int argc, char *argv[])
+{
+  CLParserPtr optionsParser = initParser();
+  string halPath, refGenomeName;
+  hal_size_t adjacentBases;
+  bool potentialSites;
+  try
+  {
+    optionsParser->parseOptions(argc, argv);
+    halPath = optionsParser->getArgument<string>("halFile");
+    refGenomeName = optionsParser->getArgument<string>("refGenome");
+    adjacentBases = optionsParser->getOption<hal_size_t>("adjacentBases");
+    potentialSites = optionsParser->getFlag("potentialSites");
+  }
+  catch(exception& e)
+  {
+    cerr << e.what() << endl;
+    optionsParser->printUsage(cerr);
+    exit(1);
+  }
+
+  AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
+  const Genome *refGenome = alignment->openGenome(refGenomeName);
+  if (refGenome == NULL) {
+    throw hal_exception("Genome " + refGenomeName + " does not exist");
+  }
+  if (refGenome->getParent() == NULL) {
+    throw hal_exception("Cannot use the root genome as a reference.");
+  }
+
+  // create target set: (ref, sibling(s), outgroup(s)).
+  //
+  // FIXME: In non-binary trees this will enforce the constraints on
+  // *all* siblings, outgroups. This isn't what we want at
+  // all--instead it should enforce the constraints on *at least* one
+  // from each of siblings, outgroups. Otherwise deletions/insertions
+  // shared in 2 of 3 children are not "clean".
+  set <const Genome *> targets;
+  const Genome *parentGenome = refGenome->getParent();
+  for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
+    targets.insert(parentGenome->getChild(i));
+  }
+  if (refGenome->getParent()->getParent() != NULL) {
+    // Add outgroup if possible (not child of root).
+    const Genome *gpGenome = parentGenome->getParent();
+    for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
+      if (gpGenome->getChild(i) != parentGenome) {
+        targets.insert(gpGenome->getChild(i));
+      }
+    }
+  }
+  if (potentialSites) {
+    printNumCandidateSites(alignment, refGenome, targets, adjacentBases);
+  } else {
+    printIndels(alignment, refGenome, targets, adjacentBases);
+  }
+ }
