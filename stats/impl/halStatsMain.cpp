@@ -33,6 +33,8 @@ static void printNumSegments(ostream& os, AlignmentConstPtr alignment,
                              const string& genomeName); 
 static void printBaseComp(ostream& os, AlignmentConstPtr alignment, 
                           const string& baseCompPair);
+static void printGenomeMetaData(ostream &os, AlignmentConstPtr alignment,
+                          const string &genomeName);
 static void printChromSizes(ostream& os, AlignmentConstPtr alignment, 
                             const string& genomeName);
 static void printPercentID(ostream& os, AlignmentConstPtr alignment,
@@ -84,6 +86,8 @@ int main(int argc, char** argv)
                            "fraction_of_As fraction_of_Gs fraction_of_Cs "
                            "fraction_of_Ts.", 
                            "\"\"");
+  optionsParser->addOption("genomeMetaData", "print metadata for given genome, "
+                           "one entry per line, tab-seperated.", "\"\"");
   optionsParser->addOption("chromSizes", "print the name and length of each"
                            " sequence in a given genome.  This is a subset"
                            " of the"
@@ -112,6 +116,7 @@ int main(int argc, char** argv)
   string nameForBL;
   string numSegmentsGenome;
   string baseCompPair;
+  string genomeMetaData;
   string chromSizesFromGenome;
   string percentID;
   string coverage;
@@ -133,6 +138,7 @@ int main(int argc, char** argv)
     nameForBL = optionsParser->getOption<string>("branchLength");
     numSegmentsGenome = optionsParser->getOption<string>("numSegments");
     baseCompPair = optionsParser->getOption<string>("baseComp");
+    genomeMetaData = optionsParser->getOption<string>("genomeMetaData");
     chromSizesFromGenome = optionsParser->getOption<string>("chromSizes");
     percentID = optionsParser->getOption<string>("percentID");
     coverage = optionsParser->getOption<string>("coverage");
@@ -151,6 +157,7 @@ int main(int argc, char** argv)
     if (nameForBL != "\"\"") ++optCount;
     if (numSegmentsGenome != "\"\"") ++optCount;
     if (baseCompPair != "\"\"") ++optCount;
+    if (genomeMetaData != "\"\"") ++optCount;
     if (chromSizesFromGenome != "\"\"") ++optCount;
     if (percentID != "\"\"") ++optCount;
     if (coverage != "\"\"") ++optCount;
@@ -159,8 +166,9 @@ int main(int argc, char** argv)
       throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                           "--branches, --sequenceStats, --children, --parent, "
                           "--bedSequences, --root, --numSegments, --baseComp, "
-                          "--chromSizes, --percentID, --coverage, "
-                          "and --branchLength options are exclusive" );
+                          "--genomeMetaData, --chromSizes, --percentID, "
+                          "--coverage,  and --branchLength options are "
+                          "exclusive");
     }
   }
   catch(exception& e)
@@ -228,6 +236,10 @@ int main(int argc, char** argv)
     else if (baseCompPair != "\"\"")
     {
       printBaseComp(cout, alignment, baseCompPair);
+    }
+    else if (genomeMetaData != "\"\"")
+    {
+      printGenomeMetaData(cout, alignment, genomeMetaData);
     }
     else if (chromSizesFromGenome != "\"\"")
     {
@@ -569,6 +581,22 @@ void printBaseComp(ostream& os, AlignmentConstPtr alignment,
      << (double)numC / total << '\t'
      << (double)numG / total << '\t'
      << (double)numT / total << '\n';
+}
+
+void printGenomeMetaData(ostream &os, AlignmentConstPtr alignment,
+                         const string &genomeName)
+{
+  const Genome *genome = alignment->openGenome(genomeName);
+  if (genome == NULL) {
+    throw hal_exception("Genome not found: " + genomeName);
+  }
+  const MetaData *metaData = genome->getMetaData();
+  const map<string, string> metaDataMap = metaData->getMap();
+  map<string, string>::const_iterator mapIt = metaDataMap.begin();
+  for (; mapIt != metaDataMap.end(); mapIt++) {
+    os << mapIt->first << '\t' << mapIt->second << '\n';
+  }
+  alignment->closeGenome(genome);
 }
 
 void printChromSizes(ostream& os, AlignmentConstPtr alignment, 

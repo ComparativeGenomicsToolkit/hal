@@ -37,5 +37,11 @@ struct GenomeStringTest : public AlignmentTest
    std::string _string;
 };
 
-
+struct GenomeCopyTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   std::string _path;
+   hal::AlignmentPtr _secondAlignment;
+};
 #endif

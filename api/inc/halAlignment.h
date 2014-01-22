@@ -62,9 +62,20 @@ public:
    virtual Genome* addRootGenome(const std::string& name,
                                  double branchLength = 0) = 0;
 
-   /** Remove a genome from the alignment 
+   /** Remove a leaf genome from the alignment 
     * @param path Path of genome to remove */
    virtual void removeGenome(const std::string& name) = 0;
+
+   /** Insert a new genome between a node and its child
+    * @param name Name of new genome
+    * @param parentName Name of the existing parent genome
+    * @param child Name of the existing child genome
+    * @param upperBranchLength Length of parent-insert branch
+    * (length of insert-child branch will be inferred) */
+   virtual Genome* insertGenome(const std::string& name,
+                                const std::string& parentName,
+                                const std::string& childName,
+                                double upperBranchLength) = 0;
 
    /** Open an existing genome for reading and updating
     * @param name Name of genome to open */

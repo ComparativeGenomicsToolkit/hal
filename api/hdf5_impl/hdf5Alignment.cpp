@@ -243,6 +243,47 @@ void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
 #endif
 }
 
+Genome*  HDF5Alignment::insertGenome(const string& name,
+                                     const string& parentName,
+                                     const string& childName,
+                                     double upperBranchLength)
+{
+  if (name.empty() == true || parentName.empty() || childName.empty())
+  {
+    throw hal_exception("name can't be empty");
+  }
+  map<string, stTree*>::iterator findIt = _nodeMap.find(name);
+  if (findIt != _nodeMap.end())
+  {
+    throw hal_exception("node " + name + " already exists");
+  }
+  findIt = _nodeMap.find(childName);
+  if (findIt == _nodeMap.end())
+  {
+    throw hal_exception("child " + childName + " not found in tree");
+  }
+  stTree *child = findIt->second;
+  stTree *parent = stTree_getParent(child);
+  if (stTree_getLabel(parent) != parentName)
+  {
+    throw hal_exception("no edge between " + parentName + " and " + childName);
+  }
+  double existingBranchLength = getBranchLength(parentName, childName);
+  stTree* newNode = stTree_construct();
+  stTree_setLabel(newNode, name.c_str());
+  stTree_setParent(newNode, parent);
+  stTree_setBranchLength(newNode, upperBranchLength);
+  _nodeMap.insert(pair<string, stTree *>(name, newNode));
+  double lowerBranchLength = existingBranchLength - upperBranchLength;
+  stTree_setParent(child, newNode);
+  stTree_setBranchLength(child, lowerBranchLength);
+
+  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
+  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  _dirty = true;
+  return genome;
+}
+
 Genome*  HDF5Alignment::addLeafGenome(const string& name,
                                       const string& parentName,
                                       double branchLength)
@@ -302,10 +343,115 @@ Genome* HDF5Alignment::addRootGenome(const string& name,
   return genome;
 }
 
-
+// May only make sense to remove a leaf genome
+// (so that's what is done here right now)
 void HDF5Alignment::removeGenome(const string& name)
 {
-  
+  map<string, stTree*>::iterator findIt = _nodeMap.find(name);
+  if (findIt == _nodeMap.end())
+  {
+    throw hal_exception("node " + name + " does not exist");
+  }
+  stTree *node = findIt->second;
+  if (stTree_getChildNumber(node) != 0)
+  {
+    throw hal_exception("node " + name + " has a child");
+  }
+  if (stTree_getParent(node) != NULL)
+  {
+    // The parent will have to be updated to fix its bottom segments
+    Genome *parentGenome = openGenome(getParentName(name));
+    hal_size_t n = parentGenome->getNumBottomSegments();
+    vector<string> childNames = getChildNames(parentGenome->getName());
+    hal_index_t removedChildIndex = -1;
+    for (size_t i = 0; i < childNames.size(); i++)
+    {
+      if (childNames[i] == name)
+      {
+        removedChildIndex = i;
+        break;
+      }
+    }
+    assert(removedChildIndex != -1);
+    stTree_setParent(node, NULL);
+    // Copy the old bottom segments into memory. Necessary since it isn't
+    // possible to update the bottom array in-place
+    // Local typedefs
+    typedef struct {
+       hal_index_t childIndex;
+       bool reversed;
+    } ChildInfo_t;
+    typedef struct {
+       size_t start;
+       size_t length;
+       ChildInfo_t *children;
+       hal_index_t topParseIndex;
+    } BottomSegment_t;
+
+    BottomSegment_t *bottomSegments =(BottomSegment_t*)malloc(sizeof(BottomSegment_t)*n);
+    assert(bottomSegments != NULL);
+    BottomSegmentIteratorPtr oldBot = parentGenome->getBottomSegmentIterator();
+    for (size_t i = 0; (hal_size_t)oldBot->getArrayIndex() < n; oldBot->toRight(), i++)
+    {
+      bottomSegments[i].start = oldBot->getStartPosition();
+      bottomSegments[i].length = oldBot->getLength();
+      bottomSegments[i].children =(ChildInfo_t*)malloc(sizeof(ChildInfo_t) *
+                                                       (childNames.size() - 1));
+      assert(bottomSegments[i].children != NULL);
+      for (hal_index_t oldChild = 0, newChild = 0; oldChild < childNames.size();
+           oldChild++, newChild++)
+      {
+        if (oldChild == removedChildIndex)
+        {
+          newChild--;
+          continue;
+        }
+        bottomSegments[i].children[newChild].childIndex = oldBot->getChildIndex(oldChild);
+        bottomSegments[i].children[newChild].reversed = oldBot->getChildReversed(oldChild);
+      }
+      bottomSegments[i].topParseIndex = oldBot->getTopParseIndex();
+    }
+    // Reset the bottom segments. updateBottomDimensions will change the
+    // number of children in the bottom segment array to the correct value
+    vector<Sequence::UpdateInfo> newBottomDimensions;
+    SequenceIteratorConstPtr seqIt = parentGenome->getSequenceIterator();
+    SequenceIteratorConstPtr seqEndIt = parentGenome->getSequenceEndIterator();
+    for (; seqIt != seqEndIt; seqIt->toNext())
+    {
+      const Sequence* sequence = seqIt->getSequence();
+      Sequence::UpdateInfo info(sequence->getName(),
+                                sequence->getNumBottomSegments());
+      newBottomDimensions.push_back(info);
+    }
+    parentGenome->updateBottomDimensions(newBottomDimensions);
+    ((HDF5Genome *)parentGenome)->resetBranchCaches();
+    // Copy the bottom segments back
+    BottomSegmentIteratorPtr newBot = parentGenome->getBottomSegmentIterator();
+    for (size_t i = 0; (hal_size_t)newBot->getArrayIndex() < n;
+         newBot->toRight(), i++)
+    {
+      newBot->setCoordinates(bottomSegments[i].start, bottomSegments[i].length);
+      for (hal_index_t child = 0; child < childNames.size() - 1; child++)
+      {
+        newBot->setChildIndex(child,
+                              bottomSegments[i].children[child].childIndex);
+        newBot->setChildReversed(child,
+                                 bottomSegments[i].children[child].reversed);
+      }
+      free(bottomSegments[i].children);
+      newBot->setTopParseIndex(bottomSegments[i].topParseIndex);
+    }
+    free(bottomSegments);
+  }
+  map<string, HDF5Genome*>::iterator mapIt = _openGenomes.find(name);
+  if (mapIt != _openGenomes.end())
+  {
+    closeGenome(mapIt->second);
+  }
+  _file->unlink(name);
+  _nodeMap.erase(findIt);
+  stTree_destruct(node);
+  _dirty = true;
 }
 
 const Genome* HDF5Alignment::openGenome(const string& name) const
