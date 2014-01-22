@@ -24,11 +24,11 @@ ${libPath}/halLiftover.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${bas
 	rm *.o
 	mv halLiftover.a ${libPath}/
 
-${binPath}/halLiftover : impl/halLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halLiftover impl/halLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
+${binPath}/halLiftover : impl/halLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halLiftover impl/halLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/halWiggleLiftover : impl/halWiggleLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halWiggleLiftover impl/halWiggleLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
+${binPath}/halWiggleLiftover : impl/halWiggleLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halWiggleLiftover impl/halWiggleLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/halLiftoverTests : ${libTestSources} ${libTestHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halLiftoverTests  ${libTestSources} ${libTestsCommon} ${libPath}/halLib.a ${libPath}/halLiftover.a ${basicLibs}
+${binPath}/halLiftoverTests : ${libTestSources} ${libTestHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halChain.a ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halLiftoverTests  ${libTestSources} ${libTestsCommon}  ${libPath}/halLib.a ${libPath}/halLiftover.a ${libPath}/halChain.a ${basicLibs}

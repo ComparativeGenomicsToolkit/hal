@@ -13,6 +13,22 @@ extern "C" {
 #include "CuTest.h"
 }
 
+struct BedLiftoverTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void testOneBranchLifts(hal::AlignmentConstPtr alignment);
+   void testMultiBranchLifts(hal::AlignmentConstPtr alignment);
+};
+
+struct WiggleLiftoverTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void testOneBranchLifts(hal::AlignmentConstPtr alignment);
+   void testMultiBranchLifts(hal::AlignmentConstPtr alignment);
+};
+
 CuSuite *halLiftoverTestSuite();
 
 #endif
