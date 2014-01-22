@@ -160,18 +160,24 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
   _secondAlignment->createNew(_path);
 
   Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
-  alignment->addLeafGenome("stubLeafGenome1", "AncGenome", 0);
+  Genome *leafGenome = alignment->addLeafGenome("LeafGenome1",
+                                                "AncGenome", 0);
   // This genome will test copyDimensions, copyTopSegments,
   // copyBottomSegments, copySequence, copyMetadata
-  Genome* copyGenome = _secondAlignment->addRootGenome("copyGenome", 0);
-  _secondAlignment->addLeafGenome("stubLeafGenome1", "copyGenome", 0);
+  Genome* copyRootGenome = _secondAlignment->addRootGenome("copyRootGenome",
+                                                           0);
+  Genome *copyLeafGenome = _secondAlignment->addLeafGenome("LeafGenome1",
+                                                           "copyRootGenome",
+                                                           0);
 
   MetaData* ancMeta = ancGenome->getMetaData();
   ancMeta->set("Young", "Jeezy");
 
   vector<Sequence::Info> seqVec(1);
-  seqVec[0] =Sequence::Info("Sequence", 1000000, 5000, 700000);
+  seqVec[0] =Sequence::Info("Sequence", 1000000, 0, 700000);
   ancGenome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence", 1000000, 5000, 0);
+  leafGenome->setDimensions(seqVec);
   string ancSeq = "CAT";
   hal_index_t n = ancGenome->getSequenceLength();
   DNAIteratorPtr dnaIt = ancGenome->getDNAIterator();
@@ -179,12 +185,18 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     dnaIt->setChar(ancSeq[i]);
   }
+  n = leafGenome->getSequenceLength();
+  dnaIt = leafGenome->getDNAIterator();
+  for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
+    size_t i = dnaIt->getArrayIndex() % ancSeq.size();
+    dnaIt->setChar(ancSeq[i]);
+  }
 
-  TopSegmentIteratorPtr topIt = ancGenome->getTopSegmentIterator();
-  n = ancGenome->getNumTopSegments();
+  TopSegmentIteratorPtr topIt = leafGenome->getTopSegmentIterator();
+  n = leafGenome->getNumTopSegments();
   for (; topIt->getArrayIndex() < n; topIt->toRight())
   {
-    topIt->setCoordinates(1, 2);
+    topIt->setCoordinates(topIt->getArrayIndex(), 1);
     topIt->setParentIndex(3);
     topIt->setParentReversed(true);
     topIt->setBottomParseIndex(5);
@@ -198,23 +210,31 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
   n = ancGenome->getNumBottomSegments();
   for (; botIt->getArrayIndex() < n; botIt->toRight())
   {
-    botIt->setCoordinates(1, 2);
+    botIt->setCoordinates(botIt->getArrayIndex(), 1);
     botIt->setChildIndex(0, 3);
-    botIt->setChildReversed(0, 4);
+    botIt->setChildReversed(0, true);
     botIt->setTopParseIndex(5);
   }
 
-  seqVec[0] =Sequence::Info("Sequence", 3300, 2200, 1100);
-  copyGenome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence", 3300, 0, 1100);
+  copyRootGenome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence", 3300, 2200, 0);
+  copyLeafGenome->setDimensions(seqVec);
   string copySeq = "TAG";
-  dnaIt = copyGenome->getDNAIterator();
-  n = copyGenome->getSequenceLength();
+  dnaIt = copyRootGenome->getDNAIterator();
+  n = copyRootGenome->getSequenceLength();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % copySeq.size();
     dnaIt->setChar(copySeq[i]);
   }
-  topIt = copyGenome->getTopSegmentIterator();
-  n = copyGenome->getNumTopSegments();
+  dnaIt = copyLeafGenome->getDNAIterator();
+  n = copyLeafGenome->getSequenceLength();
+  for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
+    size_t i = dnaIt->getArrayIndex() % copySeq.size();
+    dnaIt->setChar(copySeq[i]);
+  }
+  topIt = copyLeafGenome->getTopSegmentIterator();
+  n = copyLeafGenome->getNumTopSegments();
   for (; topIt->getArrayIndex() < n; topIt->toRight())
   {
     topIt->setCoordinates(7, 8);
@@ -227,30 +247,37 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
       topIt->setNextParalogyIndex(7);
     }
   }
-  botIt = copyGenome->getBottomSegmentIterator();
-  n = copyGenome->getNumBottomSegments();
+  botIt = copyRootGenome->getBottomSegmentIterator();
+  n = copyRootGenome->getNumBottomSegments();
   for (; botIt->getArrayIndex() < n; botIt->toRight())
   {
     botIt->setCoordinates(6, 7);
     botIt->setChildIndex(0, 8);
-    botIt->setChildReversed(0, 9);
+    botIt->setChildReversed(0, false);
     botIt->setTopParseIndex(10);
   }
-
-  ancGenome->copy(copyGenome);
+  
+  ancGenome->copy(copyRootGenome);
+  leafGenome->copy(copyLeafGenome);
   _secondAlignment->close();
 }
 
 void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
 {
-  _secondAlignment->open(_path, true);
+  // FIXME: halAlignment->open() fails miserably but
+  // openHalAlignmentReadOnly works? Probably some state isn't cleared
+  // on close.
+  AlignmentPtr tmp = hdf5AlignmentInstance();
+  tmp->open(_path, true);
+  _secondAlignment = tmp;
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
   CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 1000000);
-  CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == 5000);
+  CuAssertTrue(_testCase, ancGenome->getNumTopSegments() == 0);
   CuAssertTrue(_testCase, ancGenome->getNumBottomSegments() == 700000);
   const MetaData* ancMeta = ancGenome->getMetaData();
   CuAssertTrue(_testCase, ancMeta->get("Young") == "Jeezy");
+  const Genome *leafGenome = alignment->openGenome("LeafGenome1");
   string ancSeq = "CAT";
   hal_index_t n = ancGenome->getSequenceLength();
   DNAIteratorConstPtr dnaIt = ancGenome->getDNAIterator();
@@ -258,12 +285,13 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     CuAssertTrue(_testCase, dnaIt->getChar() == ancSeq[i]);
   }
-  TopSegmentIteratorPtr topIt = ancGenome->getTopSegmentIterator();
-  n = ancGenome->getNumTopSegments();
+  TopSegmentIteratorPtr topIt = leafGenome->getTopSegmentIterator();
+  n = leafGenome->getNumTopSegments();
   for (; topIt->getArrayIndex() < n; topIt->toRight())
   {
-    CuAssertTrue(_testCase, topIt->getStartPosition() == 1);
-    CuAssertTrue(_testCase, topIt->getLength() == 2);
+    CuAssertTrue(_testCase,
+                 topIt->getStartPosition() == topIt->getArrayIndex());
+    CuAssertTrue(_testCase, topIt->getLength() == 1);
     CuAssertTrue(_testCase, topIt->getParentIndex() == 3);
     CuAssertTrue(_testCase, topIt->getParentReversed() == true);
     CuAssertTrue(_testCase, topIt->getBottomParseIndex() == 5);
@@ -277,32 +305,39 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
   n = ancGenome->getNumBottomSegments();
   for (; botIt->getArrayIndex() < n; botIt->toRight())
   {
-    CuAssertTrue(_testCase, botIt->getStartPosition() == 1);
-    CuAssertTrue(_testCase, botIt->getLength() == 2);
+    CuAssertTrue(_testCase,
+                 botIt->getStartPosition() == botIt->getArrayIndex());
+    CuAssertTrue(_testCase, botIt->getLength() == 1);
     CuAssertTrue(_testCase, botIt->getChildIndex(0) == 3);
-    CuAssertTrue(_testCase, botIt->getChildReversed(0) == 4);
+    CuAssertTrue(_testCase, botIt->getChildReversed(0) == true);
     CuAssertTrue(_testCase, botIt->getTopParseIndex() == 5);
   }
 
-  const Genome* copyGenome = _secondAlignment->openGenome("copyGenome");
-  CuAssertTrue(_testCase, copyGenome->getName() == "CopyGenome");
-  CuAssertTrue(_testCase, copyGenome->getSequenceLength() == 1000000);
-  CuAssertTrue(_testCase, copyGenome->getNumTopSegments() == 5000);
-  CuAssertTrue(_testCase, copyGenome->getNumBottomSegments() == 700000);
-  const MetaData* copyMeta = copyGenome->getMetaData();
+  const Genome* copyRootGenome = _secondAlignment->openGenome("copyRootGenome");
+  const Genome *copyLeafGenome = _secondAlignment->openGenome("LeafGenome1");
+  CuAssertTrue(_testCase, copyRootGenome->getName() == "copyRootGenome");
+  CuAssertTrue(_testCase, copyRootGenome->getSequenceLength() == 1000000);
+  CuAssertTrue(_testCase, copyRootGenome->getNumTopSegments() == 0);
+  CuAssertTrue(_testCase, copyRootGenome->getNumBottomSegments() == 700000);
+  CuAssertTrue(_testCase, copyLeafGenome->getName() == "LeafGenome1");
+  CuAssertTrue(_testCase, copyLeafGenome->getSequenceLength() == 1000000);
+  CuAssertTrue(_testCase, copyLeafGenome->getNumTopSegments() == 5000);
+  CuAssertTrue(_testCase, copyLeafGenome->getNumBottomSegments() == 0);
+  const MetaData* copyMeta = copyRootGenome->getMetaData();
   CuAssertTrue(_testCase, copyMeta->get("Young") == "Jeezy");
-  n = copyGenome->getSequenceLength();
-  dnaIt = copyGenome->getDNAIterator();
+  n = copyRootGenome->getSequenceLength();
+  dnaIt = copyRootGenome->getDNAIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     CuAssertTrue(_testCase, dnaIt->getChar() == ancSeq[i]);
   }
-  topIt = copyGenome->getTopSegmentIterator();
-  n = copyGenome->getNumTopSegments();
+  topIt = copyLeafGenome->getTopSegmentIterator();
+  n = copyLeafGenome->getNumTopSegments();
   for (; topIt->getArrayIndex() < n; topIt->toRight())
   {
-    CuAssertTrue(_testCase, topIt->getStartPosition() == 1);
-    CuAssertTrue(_testCase, topIt->getLength() == 2);
+    CuAssertTrue(_testCase,
+                 topIt->getStartPosition() == topIt->getArrayIndex());
+    CuAssertTrue(_testCase, topIt->getLength() == 1);
     CuAssertTrue(_testCase, topIt->getParentIndex() == 3);
     CuAssertTrue(_testCase, topIt->getParentReversed() == true);
     CuAssertTrue(_testCase, topIt->getBottomParseIndex() == 5);
@@ -312,14 +347,15 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
       CuAssertTrue(_testCase, topIt->getNextParalogyIndex() == 7);
     }
   }
-  botIt = copyGenome->getBottomSegmentIterator();
-  n = copyGenome->getNumBottomSegments();
+  botIt = copyRootGenome->getBottomSegmentIterator();
+  n = copyRootGenome->getNumBottomSegments();
   for (; botIt->getArrayIndex() < n; botIt->toRight())
   {
-    CuAssertTrue(_testCase, botIt->getStartPosition() == 1);
-    CuAssertTrue(_testCase, botIt->getLength() == 2);
+    CuAssertTrue(_testCase,
+                 botIt->getStartPosition() == botIt->getArrayIndex());
+    CuAssertTrue(_testCase, botIt->getLength() == 1);
     CuAssertTrue(_testCase, botIt->getChildIndex(0) == 3);
-    CuAssertTrue(_testCase, botIt->getChildReversed(0) == 4);
+    CuAssertTrue(_testCase, botIt->getChildReversed(0) == true);
     CuAssertTrue(_testCase, botIt->getTopParseIndex() == 5);
   }
 

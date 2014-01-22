@@ -139,8 +139,12 @@ public:
     * @param dest Genome to be copied to */
    void copyTopDimensions(Genome *dest) const;
 
-   /** Copy bottom dimensions from this genome to another (the genomes can be in
-    * different alignments)
+   /** Copy bottom dimensions from this genome to another (the genomes
+    * can be in different alignments). Only the segments corresponding
+    * to child genomes that share the same name in both alignments are
+    * copied. The segments for any other children of the destination
+    * genome will need to be filled in later to avoid an invalid hal
+    * file.
     * @param dest Genome to be copied to */
    void copyBottomDimensions(Genome *dest) const;
 
