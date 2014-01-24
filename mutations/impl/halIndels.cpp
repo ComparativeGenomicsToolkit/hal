@@ -15,6 +15,9 @@ static CLParserPtr initParser()
                            "while filtering", 5);
   optionsParser->setDescription("Count (filtered) insertions/deletions in the "
                                 "branch above the reference genome.");
+  optionsParser->addOptionFlag("onlyExtantTargets",
+                               "Use only extant genomes for 'sibling'/outgroup",
+                               false);
   // FIXME: pretty dumb way of asking for the normalization
   // denominator
   optionsParser->addOptionFlag("potentialSites",
@@ -333,12 +336,41 @@ static void printIndels(AlignmentConstPtr alignment, const Genome *refGenome,
   } while(rearrangement->identifyNext() == true);
 }
 
+static pair<hal_size_t, const Genome *>
+findMinPathUnder(const Genome *parent,
+                 const Genome *exclude,
+                 hal_size_t branchLengthSoFar = 0)
+{
+  if (parent->getNumChildren() == 0) {
+    return make_pair(branchLengthSoFar, parent);
+  }
+  double bestBranchLength = INFINITY;
+  const Genome *bestGenome = NULL;
+  for (hal_size_t i = 0; i < parent->getNumChildren(); i++) {
+    const Genome *child = parent->getChild(i);
+    if (child == exclude) {
+      continue;
+    }
+    const Alignment *alignment = parent->getAlignment();
+    hal_size_t branchLength = alignment->getBranchLength(parent->getName(),
+                                                         child->getName());
+    pair<hal_size_t, const Genome *> bestLocalPath = findMinPathUnder(child,
+                                                                      exclude,
+                                                                      branchLengthSoFar + branchLength);
+    if (bestLocalPath.first < bestBranchLength) {
+      bestGenome = bestLocalPath.second;
+      bestBranchLength = bestLocalPath.first;
+    }
+  }
+  return make_pair(bestBranchLength, bestGenome);
+}
+
 int main(int argc, char *argv[])
 {
   CLParserPtr optionsParser = initParser();
   string halPath, refGenomeName;
   hal_size_t adjacentBases;
-  bool potentialSites;
+  bool potentialSites, onlyExtantTargets;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -346,6 +378,7 @@ int main(int argc, char *argv[])
     refGenomeName = optionsParser->getArgument<string>("refGenome");
     adjacentBases = optionsParser->getOption<hal_size_t>("adjacentBases");
     potentialSites = optionsParser->getFlag("potentialSites");
+    onlyExtantTargets = optionsParser->getFlag("onlyExtantTargets");
   }
   catch(exception& e)
   {
@@ -363,24 +396,42 @@ int main(int argc, char *argv[])
     throw hal_exception("Cannot use the root genome as a reference.");
   }
 
-  // create target set: (ref, sibling(s), outgroup(s)).
-  //
-  // FIXME: In non-binary trees this will enforce the constraints on
-  // *all* siblings, outgroups. This isn't what we want at
-  // all--instead it should enforce the constraints on *at least* one
-  // from each of siblings, outgroups. Otherwise deletions/insertions
-  // shared in 2 of 3 children are not "clean".
   set <const Genome *> targets;
-  const Genome *parentGenome = refGenome->getParent();
-  for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
-    targets.insert(parentGenome->getChild(i));
-  }
-  if (refGenome->getParent()->getParent() != NULL) {
-    // Add outgroup if possible (not child of root).
-    const Genome *gpGenome = parentGenome->getParent();
+  // create target set: (ref, sibling(s), outgroup(s)).
+  if (onlyExtantTargets) {
+    // Potentially our ref could have been used to influence insertion/
+    // deletion calls in ancestral nodes. So we can use exclusively extant
+    // genomes to avoid that.
+    // FIXME: In non-binary trees it might be desirable to require agreement
+    // among *any* outgroup or *any* "sibling" rather than just the closest
+    // one.
+    const Genome *parentGenome = refGenome->getParent();
+    // Add closest "sibling" (actually closest extant genome under sibling)
+    targets.insert(findMinPathUnder(parentGenome, refGenome).second);
+    if (refGenome->getParent()->getParent() != NULL) {
+      const Genome *gpGenome = parentGenome->getParent();
+      // add closest outgroup.
+      targets.insert(findMinPathUnder(gpGenome, parentGenome).second);
+    }
+  } else {
+    // FIXME: In non-binary trees this will enforce the constraints on
+    // *all* siblings, outgroups. This isn't what we want at
+    // all--instead it should enforce the constraints on *at least*
+    // one, or maybe at least 2,3,...  from each of siblings,
+    // outgroups. Otherwise deletions/insertions shared in 2 of 3
+    // children are not "clean".
+    const Genome *parentGenome = refGenome->getParent();
+    // add siblings
     for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
-      if (gpGenome->getChild(i) != parentGenome) {
-        targets.insert(gpGenome->getChild(i));
+      targets.insert(parentGenome->getChild(i));
+    }
+    if (refGenome->getParent()->getParent() != NULL) {
+      // Add outgroup if possible (not child of root).
+      const Genome *gpGenome = parentGenome->getParent();
+      for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
+        if (gpGenome->getChild(i) != parentGenome) {
+          targets.insert(gpGenome->getChild(i));
+        }
       }
     }
   }
