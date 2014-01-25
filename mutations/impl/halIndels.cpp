@@ -413,6 +413,8 @@ int main(int argc, char *argv[])
       // add closest outgroup.
       targets.insert(findMinPathUnder(gpGenome, parentGenome).second);
     }
+    // Add reference (used elsewhere to check single-copy quickly)
+    targets.insert(refGenome);
   } else {
     // FIXME: In non-binary trees this will enforce the constraints on
     // *all* siblings, outgroups. This isn't what we want at
@@ -421,7 +423,7 @@ int main(int argc, char *argv[])
     // outgroups. Otherwise deletions/insertions shared in 2 of 3
     // children are not "clean".
     const Genome *parentGenome = refGenome->getParent();
-    // add siblings
+    // add siblings (and reference! This is needed elsewhere)
     for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
       targets.insert(parentGenome->getChild(i));
     }
@@ -440,4 +442,4 @@ int main(int argc, char *argv[])
   } else {
     printIndels(alignment, refGenome, targets, adjacentBases);
   }
- }
+}
