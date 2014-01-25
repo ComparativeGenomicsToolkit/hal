@@ -336,10 +336,10 @@ static void printIndels(AlignmentConstPtr alignment, const Genome *refGenome,
   } while(rearrangement->identifyNext() == true);
 }
 
-static pair<hal_size_t, const Genome *>
+static pair<double, const Genome *>
 findMinPathUnder(const Genome *parent,
                  const Genome *exclude,
-                 hal_size_t branchLengthSoFar = 0)
+                 double branchLengthSoFar = 0)
 {
   if (parent->getNumChildren() == 0) {
     return make_pair(branchLengthSoFar, parent);
@@ -352,11 +352,11 @@ findMinPathUnder(const Genome *parent,
       continue;
     }
     const Alignment *alignment = parent->getAlignment();
-    hal_size_t branchLength = alignment->getBranchLength(parent->getName(),
-                                                         child->getName());
-    pair<hal_size_t, const Genome *> bestLocalPath = findMinPathUnder(child,
-                                                                      exclude,
-                                                                      branchLengthSoFar + branchLength);
+    double branchLength = alignment->getBranchLength(parent->getName(),
+                                                     child->getName());
+    pair<double, const Genome *> bestLocalPath = findMinPathUnder(child,
+                                                                  exclude,
+                                                                  branchLengthSoFar + branchLength);
     if (bestLocalPath.first < bestBranchLength) {
       bestGenome = bestLocalPath.second;
       bestBranchLength = bestLocalPath.first;
