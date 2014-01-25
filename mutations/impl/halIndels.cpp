@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
     if (refGenome->getParent()->getParent() != NULL) {
       // Add outgroup if possible (not child of root).
       const Genome *gpGenome = parentGenome->getParent();
-      for (hal_size_t i = 0; i < parentGenome->getNumChildren(); i++) {
+      for (hal_size_t i = 0; i < gpGenome->getNumChildren(); i++) {
         if (gpGenome->getChild(i) != parentGenome) {
           targets.insert(gpGenome->getChild(i));
         }
