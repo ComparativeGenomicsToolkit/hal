@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # won't work in the general case right now
-# (i.e. inputs need to be single copy & positive query strand)
+# (i.e. needs to be positive query strand)
 import sys
 import os
 import argparse
@@ -30,7 +30,7 @@ class Setup(Target):
             slices[-1] = (slices[-1][0], slices[-1][1] + numLines % self.args.sliceNum)
         else:
             sliceNum = numLines
-            slices = [1]*sliceNum
+            slices = [[0, numLines]]
 
         sliceOutputs = []
         for i in xrange(sliceNum):
@@ -59,7 +59,10 @@ class RunContiguousRegions(Target):
                                               self.args.srcGenome,
                                               self.args.destGenome,
                                               self.args.maxGap,
-                                              self.getGlobalTempDir())
+                                              self.getGlobalTempDir(),
+                                              self.args.maxIntronDiff,
+                                              self.args.noDeletions,
+                                              self.args.requiredMapFraction)
         startLineNum = self.slice[0]
         endLineNum = self.slice[1]
         outFile = open(self.sliceOut, 'w')
@@ -81,12 +84,15 @@ class WriteToOutput(Target):
                 outFile.write(line)
 
 class ContiguousRegions:
-    def __init__(self, alignment, srcGenome, destGenome, maxGap, tempRoot):
+    def __init__(self, alignment, srcGenome, destGenome, maxGap, tempRoot, maxIntronDiff, noDeletions, requiredMapFraction):
         self.alignment = alignment
         self.srcGenome = srcGenome
         self.destGenome = destGenome
         self.maxGap = maxGap
         self.tempRoot = tempRoot
+        self.maxIntronDiff = maxIntronDiff
+        self.noDeletions = noDeletions
+        self.requiredMapFraction = requiredMapFraction
 
     def liftover(self, bedLine):
         tempSrc = getTempFile("ContiguousRegions.tempSrc.bed",
@@ -103,10 +109,11 @@ class ContiguousRegions:
         pslLines = open(tempDest).read().split("\n")
         os.remove(tempSrc)
         os.remove(tempDest)
+        f = open('log', 'a')
         pslLines = map(lambda x: x.split(), pslLines)
+        tStrands = dict()
         # dict is to keep blocks separated by target sequence
-        qBlocks = defaultdict(list)
-        tBlocks = defaultdict(list)
+        blocks = defaultdict(list)
         for pslLine in pslLines:
             if pslLine == []:
                 continue
@@ -124,77 +131,139 @@ class ContiguousRegions:
             tStarts = [int(i) for i in pslLine[20].split(",") if i != '']
             assert(len(blockSizes) == len(qStarts) and
                    len(qStarts) == len(tStarts))
+            if tName in tStrands and tStrands[tName] != tStrand:
+                # does not preserve orientation
+                if tName in blocks: # there could be a duplication as well (3 lines)
+                    del blocks[tName]
+                continue
+            tStrands[tName] = tStrand
             for blockLen, qStart, tStart in zip(blockSizes, qStarts, tStarts):
-                qBlocks[tName].append((qStart, qStart + blockLen))
-                if tStrand == '+':
-                    tBlocks[tName].append((tStart, tStart + blockLen))
-                else:
-                    tBlocks[tName].append((tSize - tStart - blockLen,
-                                           tSize - tStart))
+                qBlock = (qStart, qStart + blockLen)
+                tBlock = (tStart, tStart + blockLen) if tStrand == '+' else (tSize - tStart - blockLen, tSize - tStart)
+                blocks[tName].append((qBlock, tBlock))
+
+        # Filter out seqs that don't preserve order in their map
+        seqsToRemove = []
+        for seq, block in blocks.items():
+            if not self.isOrdered(block):
+                f.write("seq %s is out of order\n" % seq)
+            if self.isDuplicated(block):
+                f.write("seq %s has self alignment\n" % seq)
+            if not self.isOrdered(block) or self.isDuplicated(block):
+                f.write("removing seq %s\n" % seq)
+                seqsToRemove.append(seq)
+        for seq in seqsToRemove:
+            del blocks[seq]
 
         # take only the blocks from the target sequence with the most mapped
         # bases
         tSeqMapped = []
-        for seq, blocks in tBlocks.items():
-            mappedBlocks = reduce(lambda r, v: r + (v[1] - v[0]), blocks, 0)
+        for seq, value in blocks.items():
+            tBlocks = map(itemgetter(1), value)
+            mappedBlocks = reduce(lambda r, v: r + (v[1] - v[0]), tBlocks, 0)
             tSeqMapped.append((seq, mappedBlocks))
         if len(tSeqMapped) == 0:
             # can happen if the sequence doesn't map to the target at all
             return (None, None)
         tSeqName = max(tSeqMapped, key=itemgetter(1))[0]
-        qBlocks = qBlocks[tSeqName]
-        tBlocks = tBlocks[tSeqName]
-        
-        qBlocks = self.mergeBlocks(qBlocks)
-        tBlocks = self.mergeBlocks(tBlocks)
-        return (qBlocks, tBlocks)
+        blocks = blocks[tSeqName]
+        return (blocks, tStrands[tSeqName])
 
-    def mergeBlocks(self, blocks):
+    def isOrdered(self, blocks):
+        prev = None
+        tBlocks = sorted(map(itemgetter(1), blocks), key=itemgetter(0))
+        for block in tBlocks:
+            if prev is not None:
+                # Blocks are always in increasing order (if they
+                # preserve order) since the query strand is always
+                # positive and PSL blocks follow query order
+                if prev[1] > block[0]:
+                    return False
+            prev = block
+        return True
+
+    def isDuplicated(self, blocks):
+        """Checks query blocks for duplications"""
         blocks.sort(key=itemgetter(0))
         merged = []
         prev = None
-        for block in blocks:
+        for (qBlock, _) in blocks:
             if prev is not None:
-                # haven't thought it through yet so restrict to
-                # single-copy to be safe
-                assert(prev[1] <= block[0])
-                if prev[1] == block[0]:
-                    prev = (prev[0], block[1])
-                    continue # avoid prev getting overwritten
-                else:
-                    merged.append(prev)
-            prev = block
-        
-        merged.append(prev)
-        return merged
+                if prev[1] > qBlock[0]:
+                    return True
+            prev = qBlock
+        return False
 
     def isContiguousInTarget(self, bedLine):
-        (qBlocks, tBlocks) = self.liftover(bedLine)
-        if qBlocks is None or tBlocks is None:
+        (blocks, tStrand) = self.liftover(bedLine)
+        if blocks is None or tStrand is None:
             return False
-        bedStart = int(bedLine.split()[1])
-        bedEnd = int(bedLine.split()[2])
+        bedFields = bedLine.split()
+        bedStart = int(bedFields[1])
+        bedEnd = int(bedFields[2])
+
+        bedIntrons = []
+        if len(bedFields) == 12:
+            blockStarts = map(int, bedFields[11].split(","))
+            blockSizes = map(int, bedFields[10].split(","))
+            assert(len(blockStarts) == len(blockSizes))
+            bedBlocks = [(bedStart + start, bedStart + start + size)
+                         for start, size in zip(blockStarts, blockSizes)]
+            prevEnd = None
+            for block in bedBlocks:
+                if prevEnd is not None:
+                    gap = block[0] - prevEnd
+                    assert(gap >= 0)
+                    bedIntrons.append((prevEnd, block[0]))
+                prevEnd = block[1]
 
         qGaps = []
-        prevqEnd = bedStart
-        for block in qBlocks:
-            gap = block[0] - prevqEnd
-            assert(gap >= 0)
-            qGaps.append(gap)
-            prevqEnd = block[1]
-        if bedEnd > prevqEnd:
-            qGaps.append(bedEnd - prevqEnd)
-        
         tGaps = []
+        prevqEnd = bedStart
         prevtEnd = None
-        for block in tBlocks:
+        f = open('log', 'a')
+        for (qBlock, tBlock) in blocks:
+            qGap = qBlock[0] - prevqEnd
+            tGap = 0
             if prevtEnd is not None:
-                gap = block[0] - prevtEnd
-                assert(gap >= 0)
-                tGaps.append(gap)
-            prevtEnd = block[1]
+                tGap = tBlock[0] - prevtEnd if tStrand == '+' else prevtEnd - tBlock[1]
+            # Ignore any overlap of bed12 gaps (introns) and q/tGaps
+            isIntron = False
+            for intron in bedIntrons:
+                f.write("%d %d\n" % (intron[0], intron[1]))
+                # Bit hacky since this will still apply during exon skipping etc.
+                if qBlock[0] >= intron[1] and prevqEnd <= intron[0]:
+                    if tGap < qGap - self.maxIntronDiff or tGap > qGap + self.maxIntronDiff:
+                        f.write("bad intron: %d %d\n" % (qGap, tGap))
+                        return False
+                    else:
+                        qGaps.append(qGap - (intron[1] - intron[0]))
+                        isIntron = True
+            if not isIntron:
+                qGaps.append(qGap)
+                tGaps.append(tGap)
+            prevqEnd = qBlock[1]
+            prevtEnd = tBlock[1] if tStrand == '+' else tBlock[0]
 
-        if len([i for i in qGaps if i > self.maxGap]) > 0 or len([i for i in tGaps if i > self.maxGap]) > 0:
+        f.write("%s\n" % qGaps)
+        f.write("%s\n" % tGaps)
+
+        # Add up blocks and see if they are the required fraction of
+        # the query sequence
+        totalInBed = bedEnd - bedStart
+        if len(bedFields) == 12:
+            for intron in bedIntrons:
+                totalInBed -= intron[1] - intron[0]
+        total = 0
+        for (qBlock, tBlock) in blocks:
+            total += qBlock[1] - qBlock[0]
+        if float(total)/totalInBed < self.requiredMapFraction:
+            return False
+
+        if self.noDeletions and len([i for i in qGaps if i > self.maxGap]) > 0:
+            return False
+
+        if len([i for i in tGaps if i > self.maxGap]) > 0:
             return False
 
         return True
@@ -205,8 +274,7 @@ class ContiguousRegions:
                 continue
             elif lineNum >= endLineNum:
                 break
-            # can't handle bed12
-            assert(len(line.split()) >= 3 and len(line.split()) < 12)
+
             if self.isContiguousInTarget(line):
                 yield line
             
@@ -218,9 +286,22 @@ def main():
     parser.add_argument("destGenome", help="Genome to check contiguity in")
     parser.add_argument("outFile", help="Output BED file")
     parser.add_argument("--maxGap", help="maximum gap size to accept", 
-                        default=10, type=int)
+                        default=100, type=int)
+    parser.add_argument("--noDeletions", help="care about deletion gaps",
+                        default=False, action='store_true')
     parser.add_argument("--sliceNum", help="number of slices to create",
                         type=int, default=1)
+    parser.add_argument("--maxIntronDiff", help="Maximum amount that intron "
+                        "gaps are allowed to change by", type=int,
+                        default=10000)
+    parser.add_argument("--requiredMapFraction", help="Fraction of bases in "
+                        "the query that need to map to the target to be "
+                        "accepted", type=float, default=0.0)
+    parser.add_argument("--printNumBases", help="instead of printing the "
+                        "passing BED lines, print the number of bases that "
+                        "passed if the line as a whole passed",
+                        action='store_true', default=False)
+    # TODO: option to allow dupes in the target
     Stack.addJobTreeOptions(parser)
     args = parser.parse_args()
     setLoggingFromOptions(args)
