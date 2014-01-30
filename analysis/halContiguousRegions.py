@@ -66,10 +66,13 @@ class RunContiguousRegions(Target):
         startLineNum = self.slice[0]
         endLineNum = self.slice[1]
         outFile = open(self.sliceOut, 'w')
-        for line in contiguousRegions.getContiguousLines(self.args.bedFile,
+        for (line, numBases) in contiguousRegions.getContiguousLines(self.args.bedFile,
                                                          startLineNum,
                                                          endLineNum):
-            outFile.write(line)
+            if self.args.printNumBases:
+                outFile.write("%d\n" % numBases)
+            else:
+                outFile.write(line)
 
 class WriteToOutput(Target):
     def __init__(self, args, sliceFiles):
@@ -109,7 +112,6 @@ class ContiguousRegions:
         pslLines = open(tempDest).read().split("\n")
         os.remove(tempSrc)
         os.remove(tempDest)
-        f = open('log', 'a')
         pslLines = map(lambda x: x.split(), pslLines)
         tStrands = dict()
         # dict is to keep blocks separated by target sequence
@@ -145,12 +147,7 @@ class ContiguousRegions:
         # Filter out seqs that don't preserve order in their map
         seqsToRemove = []
         for seq, block in blocks.items():
-            if not self.isOrdered(block):
-                f.write("seq %s is out of order\n" % seq)
-            if self.isDuplicated(block):
-                f.write("seq %s has self alignment\n" % seq)
             if not self.isOrdered(block) or self.isDuplicated(block):
-                f.write("removing seq %s\n" % seq)
                 seqsToRemove.append(seq)
         for seq in seqsToRemove:
             del blocks[seq]
@@ -197,7 +194,7 @@ class ContiguousRegions:
     def isContiguousInTarget(self, bedLine):
         (blocks, tStrand) = self.liftover(bedLine)
         if blocks is None or tStrand is None:
-            return False
+            return (False, 0)
         bedFields = bedLine.split()
         bedStart = int(bedFields[1])
         bedEnd = int(bedFields[2])
@@ -221,7 +218,6 @@ class ContiguousRegions:
         tGaps = []
         prevqEnd = bedStart
         prevtEnd = None
-        f = open('log', 'a')
         for (qBlock, tBlock) in blocks:
             qGap = qBlock[0] - prevqEnd
             tGap = 0
@@ -230,12 +226,10 @@ class ContiguousRegions:
             # Ignore any overlap of bed12 gaps (introns) and q/tGaps
             isIntron = False
             for intron in bedIntrons:
-                f.write("%d %d\n" % (intron[0], intron[1]))
                 # Bit hacky since this will still apply during exon skipping etc.
                 if qBlock[0] >= intron[1] and prevqEnd <= intron[0]:
                     if tGap < qGap - self.maxIntronDiff or tGap > qGap + self.maxIntronDiff:
-                        f.write("bad intron: %d %d\n" % (qGap, tGap))
-                        return False
+                        return (False, 0)
                     else:
                         qGaps.append(qGap - (intron[1] - intron[0]))
                         isIntron = True
@@ -244,9 +238,6 @@ class ContiguousRegions:
                 tGaps.append(tGap)
             prevqEnd = qBlock[1]
             prevtEnd = tBlock[1] if tStrand == '+' else tBlock[0]
-
-        f.write("%s\n" % qGaps)
-        f.write("%s\n" % tGaps)
 
         # Add up blocks and see if they are the required fraction of
         # the query sequence
@@ -258,15 +249,15 @@ class ContiguousRegions:
         for (qBlock, tBlock) in blocks:
             total += qBlock[1] - qBlock[0]
         if float(total)/totalInBed < self.requiredMapFraction:
-            return False
+            return (False, 0)
 
         if self.noDeletions and len([i for i in qGaps if i > self.maxGap]) > 0:
-            return False
+            return (False, 0)
 
         if len([i for i in tGaps if i > self.maxGap]) > 0:
-            return False
+            return (False, 0)
 
-        return True
+        return (True, total)
 
     def getContiguousLines(self, bedPath, startLineNum=0, endLineNum=-1):
         for lineNum, line in enumerate(open(bedPath)):
@@ -275,8 +266,9 @@ class ContiguousRegions:
             elif lineNum >= endLineNum:
                 break
 
-            if self.isContiguousInTarget(line):
-                yield line
+            (metCriteria, numBases) = self.isContiguousInTarget(line)
+            if metCriteria:
+                yield (line, numBases)
             
 def main():
     parser = argparse.ArgumentParser()
