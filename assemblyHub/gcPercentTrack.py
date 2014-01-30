@@ -45,6 +45,7 @@ def writeTrackDb_gcPercent(f, genome):
     f.write("color 0,0,0\n")
     f.write("altColor 128,128,128\n")
     f.write("viewLimits 30:70\n")
+    f.write("html ../documentation/gcPercent\n")
     f.write("\n")
 
 def addGcOptions(parser):

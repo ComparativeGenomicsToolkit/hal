@@ -54,7 +54,8 @@ class GetConservationFiles2( Target ):
 
 def writeTrackDb_conservation(f, genome, conservationDir):
     wigfile = os.path.join(conservationDir, "%s_phyloP.bw" %genome)
-    if os.path.exists(wigfile):
+    #if os.path.exists(wigfile):
+    if True:#HACK
         f.write("track conservation\n")
         f.write("longLabel Conservation\n")
         f.write("shortLabel Conservation\n")
@@ -72,6 +73,7 @@ def writeTrackDb_conservation(f, genome, conservationDir):
         f.write("color 0,0,0\n")
         f.write("altColor 128,128,128\n")
         f.write("viewLimits -1:1\n")
+        f.write("html ../documentation/conservation\n")
         f.write("\n")
 
 def addConservationOptions(parser):
