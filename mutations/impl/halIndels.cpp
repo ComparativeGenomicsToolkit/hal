@@ -316,11 +316,11 @@ static void printIndels(AlignmentConstPtr alignment, const Genome *refGenome,
         if (rearrangement->getID() == Rearrangement::Deletion) {
           pair<hal_index_t, hal_index_t> deletedRange = rearrangement->getDeletedRange();
           const Genome *parent = refGenome->getParent();
-          const Sequence *seq = parent->getSequenceBySite(deletedRange.first);
-          assert(seq == parent->getSequenceBySite(deletedRange.second));
+          const Sequence *seq = refGenome->getSequenceBySite(start);
+          assert(seq == refGenome->getSequenceBySite(end));
           cout << seq->getName() << "\t"
-               << deletedRange.first - seq->getStartPosition() << "\t"
-               << deletedRange.second - seq->getStartPosition() + 1 << "\tD\t"
+               << breakStart - seq->getStartPosition() << "\t"
+               << breakStart - seq->getStartPosition() << "\tD\t"
                << parent->getName() << "\t" << refGenome->getName() << endl;
         } else {
           const Genome *parent = refGenome->getParent();
