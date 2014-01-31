@@ -5,6 +5,7 @@
  */
 #include <string>
 #include <iostream>
+#include <stdio.h>
 #include "halGenomeTest.h"
 #include "halAlignment.h"
 #include "halAlignmentInstanceTest.h"
@@ -360,7 +361,7 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
   }
 
   _secondAlignment->close();
-  removeTempFile((char *)_path.c_str());
+  remove(_path.c_str());
 }
 void halGenomeMetaTest(CuTest *testCase)
 {
