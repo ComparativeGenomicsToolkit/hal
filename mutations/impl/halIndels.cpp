@@ -49,7 +49,7 @@ static bool regionIsNotAmbiguous(const Genome* genome, hal_index_t startPos,
 
 static bool deletionIsNotAmbiguous(const ColumnIterator::ColumnMap *colMap,
                                    map<const Genome *, hal_index_t> *prevPositions,
-                                   hal_size_t step, const Genome *refGenome)
+                                   const Genome *refGenome)
 {
   ColumnIterator::ColumnMap::const_iterator colMapIt;
   for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
@@ -159,7 +159,7 @@ static bool isContiguous(const ColumnIterator::ColumnMap *colMap,
 //
 // TODO: Should eventually merge w/ the crap in findSingleCopyRegions...
 static bool isStrictSingleCopy(const ColumnIterator::ColumnMap *colMap,
-                        const set<const Genome *> *targets)
+                               const set<const Genome *> *targets)
 {
   ColumnIterator::ColumnMap::const_iterator colMapIt;
   set <const Genome *> seenGenomes;
@@ -250,15 +250,21 @@ static hal_size_t getDeletedSize(const ColumnIterator::ColumnMap *colMap,
       if (delSize != 0) {
         // There has already been a deletion in another target, check
         // that they are the same length
-        hal_size_t myDelSize = llabs(currPos - prevPos);
+        hal_size_t myDelSize = llabs(currPos - prevPos) - 1;
+        assert(myDelSize > 0);
         if (delSize != myDelSize) {
+          cout << "disagreement on deletion length at "
+               << colGenome->getName() << ": " << currPos
+               << " (prevPos " << prevPos << ")" << endl;
           // Disagreement on deletion length between sister &
           // outgroup, so this can never be a clean deletion
           return 0;
         }
       } else {
-        // initialize deletion length
-        delSize = llabs(currPos - prevPos);
+        // initialize deletion length -- -1 because currPos is 1 past
+        // the deletion
+        delSize = llabs(currPos - prevPos) - 1;
+        assert(delSize > 0);
       }
     } else {
       // Not deleted
@@ -281,8 +287,13 @@ getIndel(hal_index_t refPos,
   if (refPos == 0) {
     return make_pair(NONE, 0);
   }
-  ColumnIteratorPtr colIt = refGenome->getColumnIterator(targets, 0, refPos - 1);
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator(targets, 0,
+                                                         refPos - 1);
   const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
+  if (!isStrictSingleCopy(colMap, targets)) {
+    // Make sure our assumptions hold about prevPos maps
+    return make_pair(NONE, 0);
+  }
   map<const Genome *, hal_index_t> prevPos;
   updatePrevPos(colMap, &prevPos);
   colIt->toRight();
@@ -308,7 +319,11 @@ getIndel(hal_index_t refPos,
       const Genome *colGenome = colMapIt->first->getGenome();
       if (colGenome == refGenome) {
         const ColumnIterator::DNASet *dnaSet = colMapIt->second;
-        assert(dnaSet->size() == 1);
+        if (dnaSet->size() > 1) {
+          // duplicated insertion
+          cout << "duplicated insertion at " << refPos << endl;
+          return make_pair(NONE, 0);
+        }
         DNAIteratorConstPtr dnaIt = dnaSet->at(0);
         currPos = dnaIt->getArrayIndex();
         break;
@@ -318,6 +333,7 @@ getIndel(hal_index_t refPos,
     if (!regionIsNotAmbiguous(refGenome, refPos, refPos + insertedSize)) {
       // N in insertion. This could be a gap in a scaffold so it's not
       // considered clean.
+      cout << "insertion at " << refPos << " is ambiguous: 1" << endl;
       return make_pair(NONE, 0);
     }
     return make_pair(INSERTION, insertedSize);
@@ -325,16 +341,20 @@ getIndel(hal_index_t refPos,
 
   // if this base skips X bases in both the other targets call an
   // unclean deletion of length X
+  if (!isStrictSingleCopy(colMap, targets)) {
+    // Make sure our assumptions in getDeletedSize hold for this
+    // column
+    return make_pair(NONE, 0);
+  }
   hal_size_t deletedSize = getDeletedSize(colMap, &prevPos, refGenome);
   if (deletedSize) {
     return make_pair(DELETION, deletedSize);
   }
-  
+
   return make_pair(NONE, 0);
 }
 
-static void printIndels(AlignmentConstPtr alignment,
-                        const Genome *refGenome,
+static void printIndels(const Genome *refGenome,
                         const set<const Genome *> targets,
                         hal_size_t adjacentBases)
 {
@@ -365,8 +385,8 @@ static void printIndels(AlignmentConstPtr alignment,
       hal_index_t refColPos = colIt->getReferenceSequencePosition() + 
         colIt->getReferenceSequence()->getStartPosition();
       if (refColPos == refPos && indel.first == DELETION) {
-        // jump "step" bases in deleted region
-        step = indel.second;
+        // jump "step" bases -- i.e. past the deleted region
+        step = indel.second + 1;
       } else if (refColPos == refPos && indel.first == INSERTION) {
         // don't enforce adjacency on insertion since we're skipping it
         prevPos.erase(refGenome);
@@ -381,20 +401,20 @@ static void printIndels(AlignmentConstPtr alignment,
             !isContiguous(colMap, &prevPos, step, refGenome) ||
             !isNotAmbiguous(colMap) ||
             (step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
-                                                  step, refGenome))) {
-          if (indel.first != NONE) {
-            cout << "failed filtering at pos: " << refColPos
-                 << " !isStrictSingleCopy(colMap, &targets):"
-                 << !isStrictSingleCopy(colMap, &targets)
-                 << " !isContiguous(colMap, &prevPos, step, refGenome): "
-                 << !isContiguous(colMap, &prevPos, step, refGenome)
-                 << " !isNotAmbiguous(colMap): " << !isNotAmbiguous(colMap)
-                 << " deletion is not ambiguous: "
+                                                  refGenome))) {
+          if (indel.first != NONE && ((step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
+                                                                            refGenome)))) {
+            cout << " deletion is not ambiguous: "
                  << (step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
-                                                          step, refGenome))
+                                                          refGenome))
                  << endl;
           }
           failedFiltering = true;
+          if (indel.first == INSERTION) {
+            // failed indel means that we don't have to check anywhere
+            // inside the insertion, it will automatically fail
+            refPos += indel.second;
+          }
           break;
         } else {
           knownGoodSites.insert(refColPos);
@@ -499,10 +519,12 @@ int main(int argc, char *argv[])
     // one.
     const Genome *parentGenome = refGenome->getParent();
     // Add closest "sibling" (actually closest extant genome under sibling)
+    cout << "chose sibling " << findMinPathUnder(parentGenome, refGenome).second->getName() << endl;
     targets.insert(findMinPathUnder(parentGenome, refGenome).second);
     if (refGenome->getParent()->getParent() != NULL) {
       const Genome *gpGenome = parentGenome->getParent();
       // add closest outgroup.
+      cout << "chose outgroup " << findMinPathUnder(gpGenome, parentGenome).second->getName() << endl;
       targets.insert(findMinPathUnder(gpGenome, parentGenome).second);
     }
     // Add reference (used elsewhere to check single-copy quickly)
@@ -529,5 +551,5 @@ int main(int argc, char *argv[])
       }
     }
   }
-  printIndels(alignment, refGenome, targets, adjacentBases);
+  printIndels(refGenome, targets, adjacentBases);
 }
