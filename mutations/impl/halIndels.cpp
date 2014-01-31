@@ -294,6 +294,7 @@ getIndel(hal_index_t refPos,
       colIt->toRight();
       colMap = colIt->getColumnMap();
       if (colIt->lastColumn()) {
+        // impossible to call clean insertion at end of genome.
         return make_pair(NONE, 0);
       }
     }
@@ -313,7 +314,12 @@ getIndel(hal_index_t refPos,
         break;
       }
     }
-    hal_size_t insertedSize = currPos - prevPos[refGenome];
+    hal_size_t insertedSize = currPos - refPos;
+    if (!regionIsNotAmbiguous(refGenome, refPos, refPos + insertedSize)) {
+      // N in insertion. This could be a gap in a scaffold so it's not
+      // considered clean.
+      return make_pair(NONE, 0);
+    }
     return make_pair(INSERTION, insertedSize);
   }
 
@@ -344,28 +350,50 @@ static void printIndels(AlignmentConstPtr alignment,
     hal_index_t start = refPos - adjacentBases;
     hal_index_t end = refPos + adjacentBases;
     if (indel.first == INSERTION) {
-      cout << "found insertion at " << refPos << endl;
+      cout << "found insertion at " << refPos << " len " << indel.second
+           << endl;
       end += indel.second;
     }
     colIt->toSite(start, end, true);
     map <const Genome *, hal_index_t> prevPos;
     bool failedFiltering = false;
-    hal_index_t refColPos = colIt->getReferenceSequencePosition() + 
-      colIt->getReferenceSequence()->getStartPosition();
     hal_size_t step = 1;
     if (indel.first == DELETION) {
-      cout << "found deletion at " << refPos << endl;
-      step = indel.second;
+      cout << "found deletion at " << refPos << " len" << indel.second << endl;
     }
     while(1) {
+      hal_index_t refColPos = colIt->getReferenceSequencePosition() + 
+        colIt->getReferenceSequence()->getStartPosition();
+      if (refColPos == refPos && indel.first == DELETION) {
+        // jump "step" bases in deleted region
+        step = indel.second;
+      } else if (refColPos == refPos && indel.first == INSERTION) {
+        // don't enforce adjacency on insertion since we're skipping it
+        prevPos.erase(refGenome);
+        colIt->toSite(refPos + indel.second, end);
+        continue;
+      } else {
+        step = 1;
+      }
       const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
       if (!knownGoodSites.find(refColPos)) {
         if (!isStrictSingleCopy(colMap, &targets) ||
             !isContiguous(colMap, &prevPos, step, refGenome) ||
-            !isNotAmbiguous(colMap)) {
-          // we know this column doesn't pass filtering, so skip all
-          // positions that we know will fail
-          refPos = refColPos + adjacentBases; // 1 more will be added by for loop
+            !isNotAmbiguous(colMap) ||
+            (step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
+                                                  step, refGenome))) {
+          if (indel.first != NONE) {
+            cout << "failed filtering at pos: " << refColPos
+                 << " !isStrictSingleCopy(colMap, &targets):"
+                 << !isStrictSingleCopy(colMap, &targets)
+                 << " !isContiguous(colMap, &prevPos, step, refGenome): "
+                 << !isContiguous(colMap, &prevPos, step, refGenome)
+                 << " !isNotAmbiguous(colMap): " << !isNotAmbiguous(colMap)
+                 << " deletion is not ambiguous: "
+                 << (step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
+                                                          step, refGenome))
+                 << endl;
+          }
           failedFiltering = true;
           break;
         } else {
@@ -380,13 +408,13 @@ static void printIndels(AlignmentConstPtr alignment,
     }
     if (indel.first != NONE && !failedFiltering) {
       if (indel.first == DELETION) {
-        const Sequence *seq = refGenome->getSequenceBySite(refColPos);
+        const Sequence *seq = refGenome->getSequenceBySite(refPos);
         cout << seq->getName() << "\t"
-             << refPos << "\t"
-             << refPos << "\tD\t" << endl;
+             << refPos - seq->getStartPosition() << "\t"
+             << refPos - seq->getStartPosition()<< "\tD\t" << endl;
       } else {
-        const Sequence *seq = refGenome->getSequenceBySite(start);
-        assert(seq == refGenome->getSequenceBySite(refColPos - indel.second));
+        const Sequence *seq = refGenome->getSequenceBySite(refPos);
+        assert(seq == refGenome->getSequenceBySite(refPos + indel.second));
         cout << seq->getName() << "\t"
              << refPos - seq->getStartPosition() << "\t"
              << refPos + indel.second - seq->getStartPosition() << "\tI\t"
