@@ -5,6 +5,14 @@
 using namespace std;
 using namespace hal;
 
+// TODO: sloppy, but whatever -- this is all going to be rearranged to
+// fit in halBranchMutations soon anyway
+enum indelType {
+  NONE,
+  INSERTION,
+  DELETION
+};
+
 static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
@@ -17,13 +25,6 @@ static CLParserPtr initParser()
                                 "branch above the reference genome.");
   optionsParser->addOptionFlag("onlyExtantTargets",
                                "Use only extant genomes for 'sibling'/outgroup",
-                               false);
-  // FIXME: pretty dumb way of asking for the normalization
-  // denominator
-  optionsParser->addOptionFlag("potentialSites",
-                               "Output the total number of sites"
-                               " that could be considered a clean indel if"
-                               " there were an insertion/deletion there",
                                false);
   return optionsParser;
 }
@@ -48,7 +49,7 @@ static bool regionIsNotAmbiguous(const Genome* genome, hal_index_t startPos,
 
 static bool deletionIsNotAmbiguous(const ColumnIterator::ColumnMap *colMap,
                                    map<const Genome *, hal_index_t> *prevPositions,
-                                   hal_size_t step, const Genome *refGenome)
+                                   const Genome *refGenome)
 {
   ColumnIterator::ColumnMap::const_iterator colMapIt;
   for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
@@ -65,7 +66,6 @@ static bool deletionIsNotAmbiguous(const ColumnIterator::ColumnMap *colMap,
     DNAIteratorConstPtr dnaIt = dnaSet->at(0);
     hal_index_t currPos = dnaIt->getArrayIndex();
     hal_index_t prevPos = (*prevPositions)[genome];
-    (*prevPositions)[genome] = currPos;
     if (!regionIsNotAmbiguous(genome, currPos, prevPos)) {
       return false;
     }
@@ -159,7 +159,7 @@ static bool isContiguous(const ColumnIterator::ColumnMap *colMap,
 //
 // TODO: Should eventually merge w/ the crap in findSingleCopyRegions...
 static bool isStrictSingleCopy(const ColumnIterator::ColumnMap *colMap,
-                        const set<const Genome *> *targets)
+                               const set<const Genome *> *targets)
 {
   ColumnIterator::ColumnMap::const_iterator colMapIt;
   set <const Genome *> seenGenomes;
@@ -187,37 +187,217 @@ static bool isStrictSingleCopy(const ColumnIterator::ColumnMap *colMap,
   return false;
 }
 
-// FIXME: a lot of duplication from printIndels--but tough to separate
-// out since there's a ton of insertion/deletion code we don't care
-// about here
-static void printNumCandidateSites(AlignmentConstPtr alignment,
-                                   const Genome *refGenome,
-                                   const set<const Genome *> targets,
-                                   hal_size_t adjacentBases)
+// report if this is a (potentially unclean) insertion in the
+// reference relative to the other targets
+static bool isInsertion(const ColumnIterator::ColumnMap *colMap,
+                        const Genome *refGenome)
+{
+  ColumnIterator::ColumnMap::const_iterator colMapIt;
+  hal_size_t numCopies = 0;
+  for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
+    if (colMapIt->second->empty()) {
+      // The column map can contain empty entries.
+      continue;
+    }
+    const Genome *colGenome = colMapIt->first->getGenome();
+    if (colGenome != refGenome) {
+      // since we are only traversing the targets this is OK to do, if
+      // we are traversing ancestors or something like that it could
+      // be problematic
+      return false;
+    }
+    numCopies++;
+  }
+  if (numCopies > 1) {
+    return false;
+  }
+  return true;
+}
+
+// report deletion size if this is a (potentially unclean) deletion
+// relative to the other targets
+// otherwise 0
+static hal_size_t getDeletedSize(const ColumnIterator::ColumnMap *colMap,
+                                 map<const Genome *, hal_index_t> *prevPositions,
+                                 const Genome *refGenome)
+{
+  ColumnIterator::ColumnMap::const_iterator colMapIt;
+  hal_size_t delSize = 0;
+  for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
+    if (colMapIt->second->empty()) {
+      // The column map can contain empty entries.
+      continue;
+    }
+    const Genome *colGenome = colMapIt->first->getGenome();
+    const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+    assert(dnaSet->size() == 1);
+    DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+    hal_index_t currPos = dnaIt->getArrayIndex();
+    if (!prevPositions->count(colGenome)) {
+      // initialize previous position map
+      (*prevPositions)[colGenome] = currPos;
+      continue;
+    }
+    hal_index_t prevPos = (*prevPositions)[colGenome];
+    if (colGenome == refGenome) {
+      assert(currPos = prevPos + 1);
+    }
+    if (
+      ((dnaIt->getReversed() && currPos != prevPos - 1) ||
+       (!dnaIt->getReversed() && currPos != prevPos + 1)) &&
+      (colGenome->getSequenceBySite(currPos) == colGenome->getSequenceBySite(prevPos))
+      ) {
+      if (delSize != 0) {
+        // There has already been a deletion in another target, check
+        // that they are the same length
+        hal_size_t myDelSize = llabs(currPos - prevPos) - 1;
+        assert(myDelSize > 0);
+        if (delSize != myDelSize) {
+          // Disagreement on deletion length between sister &
+          // outgroup, so this can never be a clean deletion
+          return 0;
+        }
+      } else {
+        // initialize deletion length -- -1 because currPos is 1 past
+        // the deletion
+        delSize = llabs(currPos - prevPos) - 1;
+        assert(delSize > 0);
+      }
+    } else {
+      // Not deleted
+      if (colGenome != refGenome) {
+        // Not deleted in all the other targets, so for our purposes
+        // not deleted at all.
+        return 0;
+      }
+    }
+  }
+  return delSize;
+}
+
+// get information about an indel, which starts at refPos, if one is present.
+static pair<indelType, hal_size_t>
+getIndel(hal_index_t refPos,
+         const Genome *refGenome,
+         const set<const Genome *> *targets)
+{
+  if (refPos == 0) {
+    return make_pair(NONE, 0);
+  }
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator(targets, 0,
+                                                         refPos - 1);
+  const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
+  if (!isStrictSingleCopy(colMap, targets)) {
+    // Make sure our assumptions hold about prevPos maps
+    return make_pair(NONE, 0);
+  }
+  map<const Genome *, hal_index_t> prevPos;
+  updatePrevPos(colMap, &prevPos);
+  colIt->toRight();
+  colMap = colIt->getColumnMap();
+  // if current base is not present in the other targets eat up sequence
+  // until end of insertion, call unclean insertion of length X
+  if (isInsertion(colMap, refGenome)) {
+    while (isInsertion(colMap, refGenome)) {
+      colIt->toRight();
+      colMap = colIt->getColumnMap();
+      if (colIt->lastColumn()) {
+        // impossible to call clean insertion at end of genome.
+        return make_pair(NONE, 0);
+      }
+    }
+    hal_index_t currPos = -1; // to catch bugs: this should be overwritten
+    ColumnIterator::ColumnMap::const_iterator colMapIt;
+    for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
+      if (colMapIt->second->empty()) {
+        // The column map can contain empty entries.
+        continue;
+      }
+      const Genome *colGenome = colMapIt->first->getGenome();
+      if (colGenome == refGenome) {
+        const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+        if (dnaSet->size() > 1) {
+          // duplicated insertion
+          return make_pair(NONE, 0);
+        }
+        DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+        currPos = dnaIt->getArrayIndex();
+        break;
+      }
+    }
+    hal_size_t insertedSize = currPos - refPos;
+    if (!regionIsNotAmbiguous(refGenome, refPos, refPos + insertedSize)) {
+      // N in insertion. This could be a gap in a scaffold so it's not
+      // considered clean.
+      return make_pair(NONE, 0);
+    }
+    return make_pair(INSERTION, insertedSize);
+  }
+
+  // if this base skips X bases in both the other targets call an
+  // unclean deletion of length X
+  if (!isStrictSingleCopy(colMap, targets)) {
+    // Make sure our assumptions in getDeletedSize hold for this
+    // column
+    return make_pair(NONE, 0);
+  }
+  hal_size_t deletedSize = getDeletedSize(colMap, &prevPos, refGenome);
+  if (deletedSize) {
+    return make_pair(DELETION, deletedSize);
+  }
+
+  return make_pair(NONE, 0);
+}
+
+static void printIndels(const Genome *refGenome,
+                        const set<const Genome *> targets,
+                        hal_size_t adjacentBases)
 {
   hal_size_t refLength = refGenome->getSequenceLength();
   hal_size_t numSites = 0;
   ColumnIteratorPtr colIt = refGenome->getColumnIterator(&targets);
+  // good flanking site
   PositionCache knownGoodSites;
   for (hal_index_t refPos = adjacentBases; refPos < refLength - adjacentBases;
        refPos++) {
+    pair<indelType, hal_size_t> indel;
+    indel = getIndel(refPos, refGenome, &targets);
     hal_index_t start = refPos - adjacentBases;
     hal_index_t end = refPos + adjacentBases;
+    if (indel.first == INSERTION) {
+      end += indel.second;
+    }
     colIt->toSite(start, end, true);
     map <const Genome *, hal_index_t> prevPos;
     bool failedFiltering = false;
+    hal_size_t step = 1;
     while(1) {
       hal_index_t refColPos = colIt->getReferenceSequencePosition() + 
         colIt->getReferenceSequence()->getStartPosition();
+      if (refColPos == refPos && indel.first == DELETION) {
+        // jump "step" bases -- i.e. past the deleted region
+        step = indel.second + 1;
+      } else if (refColPos == refPos && indel.first == INSERTION) {
+        // don't enforce adjacency on insertion since we're skipping it
+        prevPos.erase(refGenome);
+        colIt->toSite(refPos + indel.second, end);
+        continue;
+      } else {
+        step = 1;
+      }
       const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
       if (!knownGoodSites.find(refColPos)) {
         if (!isStrictSingleCopy(colMap, &targets) ||
-            !isContiguous(colMap, &prevPos, 1, refGenome) ||
-            !isNotAmbiguous(colMap)) {
-          // we know this column doesn't pass filtering, so skip all
-          // positions that we know will fail
-          refPos = refColPos + adjacentBases; // 1 more will be added by for loop
+            !isContiguous(colMap, &prevPos, step, refGenome) ||
+            !isNotAmbiguous(colMap) ||
+            (step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
+                                                  refGenome))) {
           failedFiltering = true;
+          if (indel.first == INSERTION) {
+            // failed indel means that we don't have to check anywhere
+            // inside the insertion, it will automatically fail
+            refPos += indel.second;
+          }
           break;
         } else {
           knownGoodSites.insert(refColPos);
@@ -229,111 +409,28 @@ static void printNumCandidateSites(AlignmentConstPtr alignment,
       }
       colIt->toRight();
     }
+    if (indel.first != NONE && !failedFiltering) {
+      if (indel.first == DELETION) {
+        const Sequence *seq = refGenome->getSequenceBySite(refPos);
+        cout << seq->getName() << "\t"
+             << refPos - seq->getStartPosition() << "\t"
+             << refPos - seq->getStartPosition()<< "\tD\t" 
+             << indel.second << endl;
+      } else {
+        const Sequence *seq = refGenome->getSequenceBySite(refPos);
+        assert(seq == refGenome->getSequenceBySite(refPos + indel.second));
+        cout << seq->getName() << "\t"
+             << refPos - seq->getStartPosition() << "\t"
+             << refPos + indel.second - seq->getStartPosition() << "\tI\t"
+             << endl;
+        refPos += indel.second;
+      }
+    }
     if (!failedFiltering) {
       numSites++;
     }
   }
-  cout << numSites << endl;
-}
-
-static void printIndels(AlignmentConstPtr alignment, const Genome *refGenome,
-                        const set<const Genome *> targets,
-                        hal_size_t adjacentBases)
-{
-  RearrangementPtr rearrangement = refGenome->getRearrangement(0, 0, 1.0);
-  do {
-    if (rearrangement->getID() == Rearrangement::Insertion ||
-        rearrangement->getID() == Rearrangement::Deletion) {
-      hal_index_t breakStart = rearrangement->getLeftBreakpoint()->getStartPosition();
-      hal_index_t breakEnd = rearrangement->getRightBreakpoint()->getEndPosition();
-      if (rearrangement->getID() == Rearrangement::Deletion) {
-        // The right breakpoint seems to not be set or something in deletions.
-        // Since the left breakpoint = right breakpoint in deletions,
-        // set it manually
-        // TODO: fix rearrangement class
-        breakEnd = breakStart;
-      }
-      hal_index_t start = breakStart - adjacentBases;
-      hal_index_t end = breakEnd + adjacentBases;
-      if (start < 0 || end >= (hal_index_t) refGenome->getSequenceLength()) {
-        // Indels very close to the end of sequences can't be "clean."
-        continue;
-      }
-      ColumnIteratorPtr colIt = refGenome->getColumnIterator(&targets, 0,
-                                                             start, end);
-      map <const Genome *, hal_index_t> prevPos;
-      bool failedFiltering = false;
-      hal_size_t prevStep = 32432432423; // just to catch bugs...
-      while(1) {
-        hal_index_t refGenomePos = colIt->getReferenceSequencePosition() + 
-          colIt->getReferenceSequence()->getStartPosition();
-        const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
-        if (refGenomePos == breakStart) {
-          // Fiddle with the prevPos map so we only enforce the
-          // adjacencies we need (adjacency in the reference for a
-          // deletion, adjacencies in all other genomes for an
-          // insertion.)
-          if (breakEnd + 1 < end) {
-            if (rearrangement->getID() == Rearrangement::Deletion) {
-              rearrangement->identifyDeletionFromLeftBreakpoint(rearrangement->getLeftBreakpoint());
-              pair<hal_index_t, hal_index_t> deletedRange = rearrangement->getDeletedRange();
-              prevStep = llabs(deletedRange.first - deletedRange.second) + 2;
-            } else {
-              // just in case the condition is changed above
-              assert(rearrangement->getID() == Rearrangement::Insertion);
-              prevPos.erase(refGenome);
-              if (!regionIsNotAmbiguous(refGenome, refGenomePos, breakEnd)) {
-                // N in insertion. This could be a gap in a scaffold
-                // so it's not considered clean.
-                failedFiltering = true;
-                break;
-              }
-              // Need to skip over the insertion.
-              colIt->toSite(breakEnd + 1, end);
-            }
-          } else {
-            break;
-          }
-        }
-        if (!isStrictSingleCopy(colMap, &targets) ||
-            !isContiguous(colMap, &prevPos, prevStep, refGenome) ||
-            !isNotAmbiguous(colMap) ||
-            // check that deleted regions don't have Ns (to keep
-            // reversibility of insertion/deletion definitions)
-            (prevStep != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
-                                                      prevStep, refGenome))) {
-          failedFiltering = true;
-          break;
-        }
-        updatePrevPos(colMap, &prevPos);
-        if (colIt->lastColumn()) {
-          break;
-        }
-        colIt->toRight();
-        prevStep = 1;
-      }
-      if (!failedFiltering) {
-        if (rearrangement->getID() == Rearrangement::Deletion) {
-          pair<hal_index_t, hal_index_t> deletedRange = rearrangement->getDeletedRange();
-          const Genome *parent = refGenome->getParent();
-          const Sequence *seq = refGenome->getSequenceBySite(start);
-          assert(seq == refGenome->getSequenceBySite(end));
-          cout << seq->getName() << "\t"
-               << breakStart - seq->getStartPosition() << "\t"
-               << breakStart - seq->getStartPosition() << "\tD\t"
-               << parent->getName() << "\t" << refGenome->getName() << endl;
-        } else {
-          const Genome *parent = refGenome->getParent();
-          const Sequence *seq = refGenome->getSequenceBySite(start);
-          assert(seq == refGenome->getSequenceBySite(end));
-          cout << seq->getName() << "\t"
-               << breakStart - seq->getStartPosition() << "\t"
-               << breakEnd - seq->getStartPosition() + 1 << "\tI\t"
-               << parent->getName() << "\t" << refGenome->getName() << endl;
-        }
-      }
-    }
-  } while(rearrangement->identifyNext() == true);
+  cout << "# num sites possible: " << numSites << endl;
 }
 
 static pair<double, const Genome *>
@@ -370,14 +467,13 @@ int main(int argc, char *argv[])
   CLParserPtr optionsParser = initParser();
   string halPath, refGenomeName;
   hal_size_t adjacentBases;
-  bool potentialSites, onlyExtantTargets;
+  bool onlyExtantTargets;
   try
   {
     optionsParser->parseOptions(argc, argv);
     halPath = optionsParser->getArgument<string>("halFile");
     refGenomeName = optionsParser->getArgument<string>("refGenome");
     adjacentBases = optionsParser->getOption<hal_size_t>("adjacentBases");
-    potentialSites = optionsParser->getFlag("potentialSites");
     onlyExtantTargets = optionsParser->getFlag("onlyExtantTargets");
   }
   catch(exception& e)
@@ -437,9 +533,5 @@ int main(int argc, char *argv[])
       }
     }
   }
-  if (potentialSites) {
-    printNumCandidateSites(alignment, refGenome, targets, adjacentBases);
-  } else {
-    printIndels(alignment, refGenome, targets, adjacentBases);
-  }
+  printIndels(refGenome, targets, adjacentBases);
 }
