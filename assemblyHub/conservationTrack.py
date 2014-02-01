@@ -66,7 +66,7 @@ def writeTrackDb_conservation(f, genome, conservationDir):
         f.write("bigDataUrl ../conservation/%s_phyloP.bw\n" %genome)
         
         f.write("priority 2\n")
-        f.write("autoScale Off\n")
+        f.write("autoScale On\n")
         f.write("maxHeightPixels 128:36:16\n")
         f.write("graphTypeDefault Bar\n")
         f.write("gridDefault OFF\n")
