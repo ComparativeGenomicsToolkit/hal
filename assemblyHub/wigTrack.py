@@ -120,7 +120,7 @@ def writeTrackDb_bigwigs(f, bigwigdir, genomes, currgenome, properName):
             f.write("\t\tvisibility hide\n")
             f.write("\t\tparent hubCentral%s off\n"%annotation)
         f.write("\t\twindowingFunction Mean\n")
-        f.write("\t\tautoScale Off\n")
+        f.write("\t\tautoScale On\n")
         f.write("\t\tmaxHeightPixels 128:36:16\n")
         f.write("\t\tgraphTypeDefault Bar\n")
         f.write("\t\tgridDefault OFF\n")
