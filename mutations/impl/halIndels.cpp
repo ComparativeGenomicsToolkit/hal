@@ -253,9 +253,6 @@ static hal_size_t getDeletedSize(const ColumnIterator::ColumnMap *colMap,
         hal_size_t myDelSize = llabs(currPos - prevPos) - 1;
         assert(myDelSize > 0);
         if (delSize != myDelSize) {
-          cout << "disagreement on deletion length at "
-               << colGenome->getName() << ": " << currPos
-               << " (prevPos " << prevPos << ")" << endl;
           // Disagreement on deletion length between sister &
           // outgroup, so this can never be a clean deletion
           return 0;
@@ -321,7 +318,6 @@ getIndel(hal_index_t refPos,
         const ColumnIterator::DNASet *dnaSet = colMapIt->second;
         if (dnaSet->size() > 1) {
           // duplicated insertion
-          cout << "duplicated insertion at " << refPos << endl;
           return make_pair(NONE, 0);
         }
         DNAIteratorConstPtr dnaIt = dnaSet->at(0);
@@ -333,7 +329,6 @@ getIndel(hal_index_t refPos,
     if (!regionIsNotAmbiguous(refGenome, refPos, refPos + insertedSize)) {
       // N in insertion. This could be a gap in a scaffold so it's not
       // considered clean.
-      cout << "insertion at " << refPos << " is ambiguous: 1" << endl;
       return make_pair(NONE, 0);
     }
     return make_pair(INSERTION, insertedSize);
@@ -370,17 +365,12 @@ static void printIndels(const Genome *refGenome,
     hal_index_t start = refPos - adjacentBases;
     hal_index_t end = refPos + adjacentBases;
     if (indel.first == INSERTION) {
-      cout << "found insertion at " << refPos << " len " << indel.second
-           << endl;
       end += indel.second;
     }
     colIt->toSite(start, end, true);
     map <const Genome *, hal_index_t> prevPos;
     bool failedFiltering = false;
     hal_size_t step = 1;
-    if (indel.first == DELETION) {
-      cout << "found deletion at " << refPos << " len" << indel.second << endl;
-    }
     while(1) {
       hal_index_t refColPos = colIt->getReferenceSequencePosition() + 
         colIt->getReferenceSequence()->getStartPosition();
@@ -402,13 +392,6 @@ static void printIndels(const Genome *refGenome,
             !isNotAmbiguous(colMap) ||
             (step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
                                                   refGenome))) {
-          if (indel.first != NONE && ((step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
-                                                                            refGenome)))) {
-            cout << " deletion is not ambiguous: "
-                 << (step != 1 && !deletionIsNotAmbiguous(colMap, &prevPos,
-                                                          refGenome))
-                 << endl;
-          }
           failedFiltering = true;
           if (indel.first == INSERTION) {
             // failed indel means that we don't have to check anywhere
@@ -431,7 +414,8 @@ static void printIndels(const Genome *refGenome,
         const Sequence *seq = refGenome->getSequenceBySite(refPos);
         cout << seq->getName() << "\t"
              << refPos - seq->getStartPosition() << "\t"
-             << refPos - seq->getStartPosition()<< "\tD\t" << endl;
+             << refPos - seq->getStartPosition()<< "\tD\t" 
+             << indel.second << endl;
       } else {
         const Sequence *seq = refGenome->getSequenceBySite(refPos);
         assert(seq == refGenome->getSequenceBySite(refPos + indel.second));
@@ -519,12 +503,10 @@ int main(int argc, char *argv[])
     // one.
     const Genome *parentGenome = refGenome->getParent();
     // Add closest "sibling" (actually closest extant genome under sibling)
-    cout << "chose sibling " << findMinPathUnder(parentGenome, refGenome).second->getName() << endl;
     targets.insert(findMinPathUnder(parentGenome, refGenome).second);
     if (refGenome->getParent()->getParent() != NULL) {
       const Genome *gpGenome = parentGenome->getParent();
       // add closest outgroup.
-      cout << "chose outgroup " << findMinPathUnder(gpGenome, parentGenome).second->getName() << endl;
       targets.insert(findMinPathUnder(gpGenome, parentGenome).second);
     }
     // Add reference (used elsewhere to check single-copy quickly)
