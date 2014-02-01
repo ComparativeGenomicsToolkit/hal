@@ -184,7 +184,13 @@ class WriteGenomesFile(Target):
 
         #Create lod files if useLod is specified
         lodtxtfile, loddir = getLod(options, localHalfile, self.outdir)
-       
+        
+        #Get the maximum window size to display SNPs
+        if lodtxtfile:
+            snpwidth = getLodLowestLevel(lodtxtfile) - 1
+            if snpwidth > -1:
+                options.snpwidth = snpwidth
+
         genomes = sortByProperName(self.genomes, self.options.properName)
 
         #Create documentation files:
@@ -287,7 +293,7 @@ class WriteTrackDbFile( Target ):
                 #writeTrackDb_bigwigs(f, bigwigdir, genomes, subgenomes, currgenome, self.options.properName)
 
         writeTrackDb_compositeSubTrack(f, "Alignments", "full")
-        writeTrackDb_snakes(f, self.halfile, genomes, subgenomes, currgenome, self.options.properName)
+        writeTrackDb_snakes(f, self.halfile, genomes, subgenomes, currgenome, self.options.properName, self.options.snpwidth)
         f.close()
 
 ############################ UTILITIES FUNCTIONS ###################
@@ -397,6 +403,7 @@ def checkOptions(parser, args, options):
     
     if not options.jobTree:
         options.jobTree = os.path.join(args[1], "jobTree")
+    options.snpwidth = None
     checkHubOptions(parser, options)
     checkBedOptions(parser, options)
     checkWigOptions(parser, options)
