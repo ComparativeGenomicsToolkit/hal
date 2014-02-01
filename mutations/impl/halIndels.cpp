@@ -306,25 +306,9 @@ getIndel(hal_index_t refPos,
         return make_pair(NONE, 0);
       }
     }
-    hal_index_t currPos = -1; // to catch bugs: this should be overwritten
-    ColumnIterator::ColumnMap::const_iterator colMapIt;
-    for (colMapIt = colMap->begin(); colMapIt != colMap->end(); colMapIt++) {
-      if (colMapIt->second->empty()) {
-        // The column map can contain empty entries.
-        continue;
-      }
-      const Genome *colGenome = colMapIt->first->getGenome();
-      if (colGenome == refGenome) {
-        const ColumnIterator::DNASet *dnaSet = colMapIt->second;
-        if (dnaSet->size() > 1) {
-          // duplicated insertion
-          return make_pair(NONE, 0);
-        }
-        DNAIteratorConstPtr dnaIt = dnaSet->at(0);
-        currPos = dnaIt->getArrayIndex();
-        break;
-      }
-    }
+    hal_index_t currPos = colIt->getReferenceSequencePosition()
+      + colIt->getReferenceSequence()->getStartPosition();
+    assert(currPos > refPos);
     hal_size_t insertedSize = currPos - refPos;
     if (!regionIsNotAmbiguous(refGenome, refPos, refPos + insertedSize)) {
       // N in insertion. This could be a gap in a scaffold so it's not
@@ -380,6 +364,12 @@ static void printIndels(const Genome *refGenome,
       } else if (refColPos == refPos && indel.first == INSERTION) {
         // don't enforce adjacency on insertion since we're skipping it
         prevPos.erase(refGenome);
+        if (refGenome->getSequenceBySite(refPos) !=
+            refGenome->getSequenceBySite(refPos + indel.second)) {
+          // Insertion crosses sequence end
+          failedFiltering = true;
+          break;
+        }
         colIt->toSite(refPos + indel.second, end);
         continue;
       } else {
