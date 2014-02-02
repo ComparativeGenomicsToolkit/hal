@@ -76,6 +76,16 @@ def getLod(options, localHalfile, outdir):
         lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
     return lodtxtfile, loddir
 
+def getLodLowestLevel(lodtxtfile):
+    f = open(lodtxtfile, 'r')
+    line = f.readline()
+    level = int(line.split()[0])
+    while line and level == 0:
+        line = f.readline()
+        level = int(line.split()[0])
+    f.close()
+    return level
+
 def addLodOptions(parser):
     group = OptionGroup(parser, "LEVEL OF DETAILS", "Level-of-detail (LOD) options.")
     group.add_option('--lod', dest='lod', action="store_true", default=False, help='If specified, create "level of detail" (lod) hal files and will put the lod.txt at the bigUrl instead of the original hal file. Default=%default')
@@ -88,5 +98,6 @@ def addLodOptions(parser):
     group.add_option('--lodNumProc', dest='lodNumProc', type='int', help='Number of levels of detail to generate concurrently in parallel processes', default=None)
     group.add_option('--lodMinSeqFrac', dest='lodMinSeqFrac', type='float', help='Minumum sequence length to sample as fraction of step size for level of detail generation: ie sequences with length <= floor(minSeqFrac * step) are ignored. Use default from halLodExtract if not set.', default=None)
     group.add_option('--lodChunk', dest='lodChunk', type='int', help='HDF5 chunk size for generated levels of detail.', default=None)
+    #group.add_option('--snpwidth', dest='snpwidth', type='int', default=5000, help='Maximum window size to display SNPs. Default=%default')
     parser.add_option_group(group)
 
