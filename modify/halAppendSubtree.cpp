@@ -87,7 +87,10 @@ int main(int argc, char *argv[])
     // (the append alignment will contain at least all the information that
     // the bridge alignment would)
     bridgeAlignment = appendAlignment;
-    assert(parentName == rootName);
+    if (parentName != rootName) {
+      throw hal_exception("parent name must be equal to root name if "
+                          "--merge option is given");
+    }
     assert(branchLength == 0.0);
   }
   addSubtree(mainAlignment, appendAlignment, rootName);

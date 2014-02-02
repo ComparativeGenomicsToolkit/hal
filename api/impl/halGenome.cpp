@@ -51,6 +51,12 @@ void Genome::copyTopDimensions(Genome *dest) const
   for (; seqIt != seqEndIt; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
+    if (sequence->getSequenceLength() == 0 &&
+        dest->getSequence(sequence->getName()) == NULL) {
+      // progressiveCactus creates 0-length sequences in ancestors,
+      // which are not usually extractable and aren't important
+      continue;
+    }
     Sequence::UpdateInfo info(sequence->getName(),
                               sequence->getNumTopSegments());
     dimensions.push_back(info);
@@ -67,6 +73,12 @@ void Genome::copyBottomDimensions(Genome *dest) const
   for (; seqIt != seqEndIt; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
+    if (sequence->getSequenceLength() == 0 &&
+        dest->getSequence(sequence->getName()) == NULL) {
+      // progressiveCactus creates 0-length sequences in ancestors,
+      // which are not usually extractable and aren't important
+      continue;
+    }
     Sequence::UpdateInfo info(sequence->getName(),
                               sequence->getNumBottomSegments());
     dimensions.push_back(info);
