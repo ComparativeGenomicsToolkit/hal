@@ -4,6 +4,7 @@
 import sys
 import os
 import argparse
+import itertools
 from sonLib import bioio
 from sonLib.bioio import getTempFile
 from operator import itemgetter
@@ -12,6 +13,14 @@ from jobTree.scriptTree.target import Target
 from jobTree.scriptTree.stack import Stack
 from sonLib.bioio import logger
 from sonLib.bioio import setLoggingFromOptions
+
+# Useful itertools recipe
+def pairwise(iterable):
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return itertools.izip(a, b)
+
 class Setup(Target):
     def __init__(self, args):
         Target.__init__(self)
@@ -61,7 +70,7 @@ class RunContiguousRegions(Target):
                                               self.args.maxGap,
                                               self.getGlobalTempDir(),
                                               self.args.maxIntronDiff,
-                                              self.args.noDeletions,
+                                              self.args.deletionGaps,
                                               self.args.requiredMapFraction)
         startLineNum = self.slice[0]
         endLineNum = self.slice[1]
@@ -69,7 +78,7 @@ class RunContiguousRegions(Target):
         for (line, numBases) in contiguousRegions.getContiguousLines(self.args.bedFile,
                                                          startLineNum,
                                                          endLineNum):
-            if self.args.printNumBases:
+            if self.args.printNumAdjacencies:
                 outFile.write("%d\n" % numBases)
             else:
                 outFile.write(line)
@@ -87,7 +96,8 @@ class WriteToOutput(Target):
                 outFile.write(line)
 
 class ContiguousRegions:
-    def __init__(self, alignment, srcGenome, destGenome, maxGap, tempRoot, maxIntronDiff, noDeletions, requiredMapFraction):
+    def __init__(self, alignment, srcGenome, destGenome, maxGap, tempRoot,
+                 maxIntronDiff, noDeletions, requiredMapFraction):
         self.alignment = alignment
         self.srcGenome = srcGenome
         self.destGenome = destGenome
@@ -98,6 +108,13 @@ class ContiguousRegions:
         self.requiredMapFraction = requiredMapFraction
 
     def liftover(self, bedLine):
+        """Lift a bedLine over to the target genome, parse the PSL output, and
+        return a map from target sequence -> [(query block, [target
+        block(s)])]
+
+        Blocks are (start, end, strand) where start < end
+
+        """
         tempSrc = getTempFile("ContiguousRegions.tempSrc.bed",
                                     rootDir=self.tempRoot)
         tempDest = getTempFile("ContiguousRegions.tempDest.psl",
@@ -113,8 +130,11 @@ class ContiguousRegions:
         os.remove(tempSrc)
         os.remove(tempDest)
         pslLines = map(lambda x: x.split(), pslLines)
-        tStrands = dict()
-        # dict is to keep blocks separated by target sequence
+        # Get target blocks for every query block. All adjacencies
+        # within a block are by definition preserved. Adjacencies
+        # between target blocks (and query blocks with the commandline
+        # option) are what determine if the structure is preserved.
+        # dict is to keep blocks separated by target sequence & strand
         blocks = defaultdict(list)
         for pslLine in pslLines:
             if pslLine == []:
@@ -133,73 +153,112 @@ class ContiguousRegions:
             tStarts = [int(i) for i in pslLine[20].split(",") if i != '']
             assert(len(blockSizes) == len(qStarts) and
                    len(qStarts) == len(tStarts))
-            if tName in tStrands and tStrands[tName] != tStrand:
-                # does not preserve orientation
-                if tName in blocks: # there could be a duplication as well (3 lines)
-                    del blocks[tName]
-                continue
-            tStrands[tName] = tStrand
             for blockLen, qStart, tStart in zip(blockSizes, qStarts, tStarts):
-                qBlock = (qStart, qStart + blockLen)
-                tBlock = (tStart, tStart + blockLen) if tStrand == '+' else (tSize - tStart - blockLen, tSize - tStart)
+                qBlock = (qStart, qStart + blockLen, qStrand)
+                tBlock = (tStart, tStart + blockLen, tStrand) if tStrand == '+' else (tSize - tStart - blockLen, tSize - tStart, tStrand)
                 blocks[tName].append((qBlock, tBlock))
 
-        # Filter out seqs that don't preserve order in their map
-        seqsToRemove = []
-        for seq, block in blocks.items():
-            if not self.isOrdered(block) or self.isDuplicated(block):
-                seqsToRemove.append(seq)
-        for seq in seqsToRemove:
-            del blocks[seq]
+        # Sort & merge query blocks in cases of duplication
+        return self.mergeBlocks(blocks)
 
-        # take only the blocks from the target sequence with the most mapped
-        # bases
-        tSeqMapped = []
-        for seq, value in blocks.items():
-            tBlocks = map(itemgetter(1), value)
-            mappedBlocks = reduce(lambda r, v: r + (v[1] - v[0]), tBlocks, 0)
-            tSeqMapped.append((seq, mappedBlocks))
-        if len(tSeqMapped) == 0:
-            # can happen if the sequence doesn't map to the target at all
-            return (None, None)
-        tSeqName = max(tSeqMapped, key=itemgetter(1))[0]
-        blocks = blocks[tSeqName]
-        return (blocks, tStrands[tSeqName])
+    def mergeBlocks(self, blockDict):
+        """Take a dict of lists of (query block, target block) and turn it
+        into a dict of lists of (query block, [target block(s)]),
+        sorted by query block start.
+        """
+        def takeFirst(len, block):
+            if block[2] == '+':
+                return (block[0], block[0] + len, block[2])
+            else:
+                return (block[1] - len, block[1], block[2])
+        def takeLast(len, block):
+            if block[2] == '+':
+                return (block[1] - len, block[1], block[2])
+            else:
+                return (block[0], block[0] + len, block[2])
 
-    def isOrdered(self, blocks):
-        prev = None
-        tBlocks = sorted(map(itemgetter(1), blocks), key=itemgetter(0))
-        for block in tBlocks:
-            if prev is not None:
-                # Blocks are always in increasing order (if they
-                # preserve order) since the query strand is always
-                # positive and PSL blocks follow query order
-                if prev[1] > block[0]:
-                    return False
-            prev = block
-        return True
+        ret = {}
+        for seq, blockList in blockDict.items():
+            blockList.sort(key=itemgetter(0))
+            newBlockList = []
+            prev = None
+            for blocks in blockList:
+                if prev is not None:
+                    qBlock = blocks[0]
+                    qStrand = qBlock[2]
+                    assert(qStrand == '+')
+                    tBlock = blocks[1]
+                    tStrand = tBlock[2]
+                    prevqBlock = prev[0]
+                    prevqStrand = prevqBlock[2]
+                    assert(prevqStrand == '+')
+                    prevtBlocks = prev[1]
+                    if qBlock[0] < prevqBlock[1]:
+                        # overlapping query block
+                        assert(qBlock[0] >= prevqBlock[0])
+                        preOverlapSize = qBlock[0] - prevqBlock[0]
+                        postOverlapSize = abs(qBlock[1] - prevqBlock[1])
+                        if qBlock[0] > prevqBlock[0]:
+                            # block before overlap
+                            preOverlapqBlock = (prevqBlock[0], qBlock[0], prevqStrand)
+                            preOverlaptBlocks = [takeFirst(preOverlapSize, x) for x in prevtBlocks]
+                            newBlockList[-1] = (preOverlapqBlock, preOverlaptBlocks)
+                        elif qBlock[0] == prevqBlock[0]:
+                            newBlockList = newBlockList[:-1]
+                        # overlapping block
+                        overlapSize = abs(min(qBlock[1], prevqBlock[1]) - qBlock[0])
+                        if qBlock[1] > prevqBlock[1]:
+                            overlapqBlock = (qBlock[0], qBlock[1] - postOverlapSize, qStrand)
+                            overlaptBlocks = [takeLast(overlapSize, x) for x in prevtBlocks] + [takeLast(overlapSize, takeFirst(overlapSize, tBlock))]
+                            newBlockList.append((overlapqBlock, overlaptBlocks))
+                        else:
+                            overlapqBlock = (qBlock[0], prevqBlock[1] - postOverlapSize, qStrand)
+                            overlaptBlocks = [takeLast(overlapSize, takeFirst(preOverlapSize + overlapSize, x)) for x in prevtBlocks] + [tBlock]
+                            newBlockList.append((overlapqBlock, overlaptBlocks))
+                        if qBlock[1] > prevqBlock[1]:
+                            # block after overlap
+                            postOverlapqBlock = (prevqBlock[1], qBlock[1], qStrand)
+                            postOverlaptBlocks = [takeLast(postOverlapSize, tBlock)]
+                            newBlockList.append((postOverlapqBlock, postOverlaptBlocks))
+                        elif qBlock[1] < prevqBlock[1]:
+                            # block after overlap
+                            postOverlapqBlock = (qBlock[1], prevqBlock[1], qStrand)
+                            postOverlaptBlocks = [takeLast(postOverlapSize, x) for x in prevtBlocks]
+                            newBlockList.append((postOverlapqBlock, postOverlaptBlocks))
+                    else:
+                        # No overlap
+                        newBlockList.append((qBlock, [tBlock]))
+                else:
+                    # sloppy
+                    newBlockList.append((blocks[0], [blocks[1]]))
+                prev = newBlockList[-1]
+            ret[seq] = newBlockList
+        return ret
 
-    def isDuplicated(self, blocks):
-        """Checks query blocks for duplications"""
-        blocks.sort(key=itemgetter(0))
-        merged = []
-        prev = None
-        for (qBlock, _) in blocks:
-            if prev is not None:
-                if prev[1] > qBlock[0]:
+    def isPreserved(self, blocks1, blocks2):
+        """Check if any possible adjacency between the target blocks is
+           preserved. Query start for blocks1 should be less than or
+           equal to query start for blocks2.
+        """
+        for x, y in itertools.product(blocks1, blocks2):
+            if x[2] == y[2]: # orientation preserved
+                if x[2] == '+' and y[0] - x[1] in xrange(0, 100):
                     return True
-            prev = qBlock
+                elif x[2] == '-' and x[0] - y[1] in xrange(0, 100):
+                    return True
         return False
 
     def isContiguousInTarget(self, bedLine):
-        (blocks, tStrand) = self.liftover(bedLine)
-        if blocks is None or tStrand is None:
+        elementIsPreserved = False
+        blockDict = self.liftover(bedLine)
+        if blockDict is None:
             return (False, 0)
+
         bedFields = bedLine.split()
         bedStart = int(bedFields[1])
         bedEnd = int(bedFields[2])
-
         bedIntrons = []
+        bedLength = 0
         if len(bedFields) == 12:
             blockStarts = map(int, bedFields[11].split(","))
             blockSizes = map(int, bedFields[10].split(","))
@@ -213,51 +272,42 @@ class ContiguousRegions:
                     assert(gap >= 0)
                     bedIntrons.append((prevEnd, block[0]))
                 prevEnd = block[1]
+            bedLength = sum(blockSizes)
+        else:
+            bedLength = bedEnd - bedStart
 
-        qGaps = []
-        tGaps = []
-        prevqEnd = bedStart
-        prevtEnd = None
-        for (qBlock, tBlock) in blocks:
-            qGap = qBlock[0] - prevqEnd
-            tGap = 0
-            if prevtEnd is not None:
-                tGap = tBlock[0] - prevtEnd if tStrand == '+' else prevtEnd - tBlock[1]
-            # Ignore any overlap of bed12 gaps (introns) and q/tGaps
-            isIntron = False
-            for intron in bedIntrons:
-                # Bit hacky since this will still apply during exon skipping etc.
-                if qBlock[0] >= intron[1] and prevqEnd <= intron[0]:
-                    if tGap < qGap - self.maxIntronDiff or tGap > qGap + self.maxIntronDiff:
-                        return (False, 0)
-                    else:
-                        qGaps.append(qGap - (intron[1] - intron[0]))
-                        isIntron = True
-            if not isIntron:
-                qGaps.append(qGap)
-                tGaps.append(tGap)
-            prevqEnd = qBlock[1]
-            prevtEnd = tBlock[1] if tStrand == '+' else tBlock[0]
+        numPreservedAdjacencies = 0
 
-        # Add up blocks and see if they are the required fraction of
-        # the query sequence
-        totalInBed = bedEnd - bedStart
-        if len(bedFields) == 12:
-            for intron in bedIntrons:
-                totalInBed -= intron[1] - intron[0]
-        total = 0
-        for (qBlock, tBlock) in blocks:
-            total += qBlock[1] - qBlock[0]
-        if float(total)/totalInBed < self.requiredMapFraction:
+        # take only the blocks from the target sequence with the most mapped
+        # bases
+        tSeqMapped = {}
+        for seq, value in blockDict.items():
+            qBlocks = map(itemgetter(0), value)
+            mappedBases = reduce(lambda r, v: r + (v[1] - v[0]), qBlocks, 0)
+            # Adjacencies within blocks are always preserved.
+            numPreservedAdjacencies += mappedBases - len(qBlocks)
+            mappedFraction = float(mappedBases)/bedLength
+            tSeqMapped[seq] = mappedFraction
+        if len(tSeqMapped) == 0:
+            # can happen if the sequence doesn't map to the target at all
             return (False, 0)
 
-        if self.noDeletions and len([i for i in qGaps if i > self.maxGap]) > 0:
-            return (False, 0)
+        for seq, blocks in blockDict.items():
+            # FIXME: Need to account for introns again
+            # And qGaps if option is given
+            preservedForSeq = True
+            if tSeqMapped[seq] < self.requiredMapFraction:
+                preservedForSeq = False
+            tBlocks = map(itemgetter(1), blocks)
+            for x, y in pairwise(tBlocks):
+                if self.isPreserved(x, y):
+                    numPreservedAdjacencies += 1
+                else:
+                    preservedForSeq = False
+            if preservedForSeq:
+                elementIsPreserved = True
 
-        if len([i for i in tGaps if i > self.maxGap]) > 0:
-            return (False, 0)
-
-        return (True, total)
+        return (elementIsPreserved, numPreservedAdjacencies)
 
     def getContiguousLines(self, bedPath, startLineNum=0, endLineNum=-1):
         for lineNum, line in enumerate(open(bedPath)):
@@ -266,9 +316,9 @@ class ContiguousRegions:
             elif lineNum >= endLineNum:
                 break
 
-            (metCriteria, numBases) = self.isContiguousInTarget(line)
+            (metCriteria, numAdjacencies) = self.isContiguousInTarget(line)
             if metCriteria:
-                yield (line, numBases)
+                yield (line, numAdjacencies)
             
 def main():
     parser = argparse.ArgumentParser()
@@ -279,20 +329,19 @@ def main():
     parser.add_argument("outFile", help="Output BED file")
     parser.add_argument("--maxGap", help="maximum gap size to accept", 
                         default=100, type=int)
-    parser.add_argument("--noDeletions", help="care about deletion gaps",
+    parser.add_argument("--deletionGaps", help="care about deletion gaps",
                         default=False, action='store_true')
     parser.add_argument("--sliceNum", help="number of slices to create",
                         type=int, default=1)
-    parser.add_argument("--maxIntronDiff", help="Maximum amount that intron "
-                        "gaps are allowed to change by", type=int,
+    parser.add_argument("--maxIntronDiff", help="Maximum number of bases "
+                        "that intron gaps are allowed to change by", type=int,
                         default=10000)
     parser.add_argument("--requiredMapFraction", help="Fraction of bases in "
                         "the query that need to map to the target to be "
                         "accepted", type=float, default=0.0)
-    parser.add_argument("--printNumBases", help="instead of printing the "
-                        "passing BED lines, print the number of bases that "
-                        "passed if the line as a whole passed",
-                        action='store_true', default=False)
+    parser.add_argument("--printNumAdjacencies", help="instead of printing the "
+                        "passing BED lines, print the number of adjacencies "
+                        "that passed", action='store_true', default=False)
     # TODO: option to allow dupes in the target
     Stack.addJobTreeOptions(parser)
     args = parser.parse_args()
