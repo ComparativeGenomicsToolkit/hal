@@ -75,12 +75,12 @@ class RunContiguousRegions(Target):
         startLineNum = self.slice[0]
         endLineNum = self.slice[1]
         outFile = open(self.sliceOut, 'w')
-        for (line, numBases) in contiguousRegions.getContiguousLines(self.args.bedFile,
+        for (metCriteria, line, numPreservedBases, numMapping, length) in contiguousRegions.getContiguousLines(self.args.bedFile,
                                                          startLineNum,
                                                          endLineNum):
-            if self.args.printNumAdjacencies:
-                outFile.write("%d\n" % numBases)
-            else:
+            if self.args.printStats:
+                outFile.write("%d\t%d\t%d\n" % (numPreservedBases, numMapping, length))
+            elif metCriteria:
                 outFile.write(line)
 
 class WriteToOutput(Target):
@@ -235,16 +235,18 @@ class ContiguousRegions:
             ret[seq] = newBlockList
         return ret
 
-    def isPreserved(self, blocks1, blocks2):
+    def isPreserved(self, blocks1, blocks2, maxGap=None, minGap=0):
         """Check if any possible adjacency between the target blocks is
            preserved. Query start for blocks1 should be less than or
            equal to query start for blocks2.
         """
+        if maxGap is None:
+            maxGap = self.maxGap
         for x, y in itertools.product(blocks1, blocks2):
             if x[2] == y[2]: # orientation preserved
-                if x[2] == '+' and y[0] - x[1] in xrange(0, 100):
+                if x[2] == '+' and y[0] - x[1] in xrange(minGap, maxGap):
                     return True
-                elif x[2] == '-' and x[0] - y[1] in xrange(0, 100):
+                elif x[2] == '-' and x[0] - y[1] in xrange(minGap, maxGap):
                     return True
         return False
 
@@ -280,17 +282,19 @@ class ContiguousRegions:
 
         # take only the blocks from the target sequence with the most mapped
         # bases
+        totalMappedBases = 0
         tSeqMapped = {}
         for seq, value in blockDict.items():
             qBlocks = map(itemgetter(0), value)
             mappedBases = reduce(lambda r, v: r + (v[1] - v[0]), qBlocks, 0)
+            totalMappedBases += mappedBases
             # Adjacencies within blocks are always preserved.
             numPreservedAdjacencies += mappedBases - len(qBlocks)
             mappedFraction = float(mappedBases)/bedLength
             tSeqMapped[seq] = mappedFraction
         if len(tSeqMapped) == 0:
             # can happen if the sequence doesn't map to the target at all
-            return (False, 0)
+            return (False, 0, 0, bedLength)
 
         for seq, blocks in blockDict.items():
             # FIXME: Need to account for introns again
@@ -298,16 +302,25 @@ class ContiguousRegions:
             preservedForSeq = True
             if tSeqMapped[seq] < self.requiredMapFraction:
                 preservedForSeq = False
-            tBlocks = map(itemgetter(1), blocks)
-            for x, y in pairwise(tBlocks):
-                if self.isPreserved(x, y):
+            for (qBlock1, tBlocks1), (qBlock2, tBlocks2) in pairwise(blocks):
+                maxGap = self.maxGap
+                minGap = 0
+                for intron in bedIntrons:
+                    assert(qBlock2[0] >= qBlock1[1])
+                    qGap = qBlock2[0] - qBlock1[1]
+                    if qBlock2[0] >= intron[1] and qBlock1[1] <= intron[0]:
+                        # query gap is from this intron
+                        maxGap = qGap + self.maxIntronDiff
+                        minGap = qGap - self.maxIntronDiff
+                if self.isPreserved(tBlocks1, tBlocks2, minGap=minGap,
+                                    maxGap=maxGap):
                     numPreservedAdjacencies += 1
                 else:
                     preservedForSeq = False
             if preservedForSeq:
                 elementIsPreserved = True
 
-        return (elementIsPreserved, numPreservedAdjacencies)
+        return (elementIsPreserved, numPreservedAdjacencies, totalMappedBases, bedLength)
 
     def getContiguousLines(self, bedPath, startLineNum=0, endLineNum=-1):
         for lineNum, line in enumerate(open(bedPath)):
@@ -316,9 +329,8 @@ class ContiguousRegions:
             elif lineNum >= endLineNum:
                 break
 
-            (metCriteria, numAdjacencies) = self.isContiguousInTarget(line)
-            if metCriteria:
-                yield (line, numAdjacencies)
+            (metCriteria, numAdjacencies, numMapped, length) = self.isContiguousInTarget(line)
+            yield (metCriteria, line, numAdjacencies, numMapped, length)
             
 def main():
     parser = argparse.ArgumentParser()
@@ -339,10 +351,9 @@ def main():
     parser.add_argument("--requiredMapFraction", help="Fraction of bases in "
                         "the query that need to map to the target to be "
                         "accepted", type=float, default=0.0)
-    parser.add_argument("--printNumAdjacencies", help="instead of printing the "
-                        "passing BED lines, print the number of adjacencies "
-                        "that passed", action='store_true', default=False)
-    # TODO: option to allow dupes in the target
+    parser.add_argument("--printStats", help="instead of printing the "
+                        "passing BED lines, print statistics",
+                        action='store_true', default=False)
     Stack.addJobTreeOptions(parser)
     args = parser.parse_args()
     setLoggingFromOptions(args)
