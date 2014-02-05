@@ -287,7 +287,7 @@ class ContiguousRegions:
         for seq, value in blockDict.items():
             qBlocks = map(itemgetter(0), value)
             mappedBases = reduce(lambda r, v: r + (v[1] - v[0]), qBlocks, 0)
-            totalMappedAdjacencies += mappedBases - len(qBlocks)
+            totalMappedAdjacencies += mappedBases - 1
             # Adjacencies within blocks are always preserved.
             numPreservedAdjacencies += mappedBases - len(qBlocks)
             mappedFraction = float(mappedBases)/bedLength
