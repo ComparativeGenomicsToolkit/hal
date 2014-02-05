@@ -282,12 +282,12 @@ class ContiguousRegions:
 
         # take only the blocks from the target sequence with the most mapped
         # bases
-        totalMappedBases = 0
+        totalMappedAdjacencies = 0
         tSeqMapped = {}
         for seq, value in blockDict.items():
             qBlocks = map(itemgetter(0), value)
             mappedBases = reduce(lambda r, v: r + (v[1] - v[0]), qBlocks, 0)
-            totalMappedBases += mappedBases
+            totalMappedAdjacencies += mappedBases - len(qBlocks)
             # Adjacencies within blocks are always preserved.
             numPreservedAdjacencies += mappedBases - len(qBlocks)
             mappedFraction = float(mappedBases)/bedLength
@@ -320,7 +320,7 @@ class ContiguousRegions:
             if preservedForSeq:
                 elementIsPreserved = True
 
-        return (elementIsPreserved, numPreservedAdjacencies, totalMappedBases, bedLength)
+        return (elementIsPreserved, numPreservedAdjacencies, totalMappedAdjacencies, bedLength)
 
     def getContiguousLines(self, bedPath, startLineNum=0, endLineNum=-1):
         for lineNum, line in enumerate(open(bedPath)):
