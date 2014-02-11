@@ -190,8 +190,10 @@ class ContiguousRegions:
         tBlocks2 = block2[1]
         for tBlock in tBlocks2:
             assert((tBlock[1] - tBlock[0]) == (qBlock2[1] - qBlock2[0]))
-        if qBlock1[0] < qBlock2[1] and not qBlock1[1] < qBlock2[0]:
+        if qBlock1[0] < qBlock2[1] and not qBlock1[1] <= qBlock2[0]:
             # overlapping query block
+            if qBlock1[0] < qBlock2[0]:
+                sys.stderr.write("merging {} with {} failed\n".format(block1, block2))
             assert(qBlock1[0] >= qBlock2[0])
             preOverlapSize = qBlock1[0] - qBlock2[0]
             postOverlapSize = abs(qBlock1[1] - qBlock2[1])
