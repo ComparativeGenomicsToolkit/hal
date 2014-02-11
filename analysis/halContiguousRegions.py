@@ -161,10 +161,9 @@ class ContiguousRegions:
         # Sort & merge query blocks in cases of duplication
         return self.mergeBlocks(blocks)
 
-    def mergeBlocks(self, blockDict):
-        """Take a dict of lists of (query block, target block) and turn it
-        into a dict of lists of (query block, [target block(s)]),
-        sorted by query block start.
+    def mergeBlock(self, block1, block2):
+        """block1 is (qBlock, [tBlock1, tBlock2, ...]), block2 is (qBlock,
+        [tBlock1, tBlock2, ...]
         """
         def takeFirst(len, block):
             if block[2] == '+':
@@ -176,6 +175,86 @@ class ContiguousRegions:
                 return (block[1] - len, block[1], block[2])
             else:
                 return (block[0], block[0] + len, block[2])
+        preOverlapBlock = None
+        overlapBlock = None
+        postOverlapBlock = None
+        qBlock1 = block1[0]
+        qBlock2 = block2[0]
+        assert(qBlock1[2] == '+')
+        assert(qBlock2[2] == '+')
+        tBlocks1 = block1[1]
+        if not isinstance(tBlocks1, list):
+            tBlocks1 = [tBlocks1]
+        for tBlock in tBlocks1:
+            assert((tBlock[1] - tBlock[0]) == (qBlock1[1] - qBlock1[0]))
+        tBlocks2 = block2[1]
+        for tBlock in tBlocks2:
+            assert((tBlock[1] - tBlock[0]) == (qBlock2[1] - qBlock2[0]))
+        if qBlock1[0] < qBlock2[1] and not qBlock1[1] < qBlock2[0]:
+            # overlapping query block
+            assert(qBlock1[0] >= qBlock2[0])
+            preOverlapSize = qBlock1[0] - qBlock2[0]
+            postOverlapSize = abs(qBlock1[1] - qBlock2[1])
+            if qBlock1[0] > qBlock2[0]:
+                # block before overlap
+                preOverlapqBlock = (qBlock2[0], qBlock1[0], qBlock2[2])
+                preOverlaptBlocks = [takeFirst(preOverlapSize, x) for x in tBlocks2]
+                preOverlapBlock = (preOverlapqBlock, preOverlaptBlocks)
+            # overlapping block
+            overlapSize = abs(min(qBlock1[1], qBlock2[1]) - qBlock1[0])
+            if qBlock1[1] > qBlock2[1]:
+                overlapqBlock = (qBlock1[0], qBlock1[1] - postOverlapSize, qBlock1[2])
+                overlaptBlocks = [takeLast(overlapSize, x) for x in tBlocks2] + [takeLast(overlapSize, takeFirst(overlapSize, x)) for x in tBlocks1]
+                overlapBlock = (overlapqBlock, overlaptBlocks)
+            else:
+                overlapqBlock = (qBlock1[0], qBlock2[1] - postOverlapSize, qBlock1[2])
+                overlaptBlocks = [takeLast(overlapSize, takeFirst(preOverlapSize + overlapSize, x)) for x in tBlocks2] + tBlocks1
+                overlapBlock = (overlapqBlock, overlaptBlocks)
+            if qBlock1[1] > qBlock2[1]:
+                # block after overlap
+                postOverlapqBlock = (qBlock2[1], qBlock1[1], qBlock1[2])
+                postOverlaptBlocks = [takeLast(postOverlapSize, x) for x in tBlocks1]
+                postOverlapBlock = (postOverlapqBlock, postOverlaptBlocks)
+            elif qBlock1[1] < qBlock2[1]:
+                # block after overlap
+                postOverlapqBlock = (qBlock1[1], qBlock2[1], qBlock1[2])
+                postOverlaptBlocks = [takeLast(postOverlapSize, x) for x in tBlocks2]
+                postOverlapBlock = (postOverlapqBlock, postOverlaptBlocks)
+        else:
+            preOverlapBlock = block2
+            postOverlapBlock = (qBlock1, tBlocks1)
+        return (preOverlapBlock, overlapBlock, postOverlapBlock)
+
+    def insertIntoBlockList(self, blocks, blockList):
+        retList = []
+        if not isinstance(blocks[1], list):
+            blocks = (blocks[0], [blocks[1]])
+        for i, listBlock in enumerate(blockList):
+            listqBlock = listBlock[0]
+            qBlock = blocks[0]
+            if listqBlock[1] < qBlock[0]:
+                retList.append(listBlock)
+                continue
+            preOverlap, overlap, postOverlap = self.mergeBlock(blocks, listBlock)
+            restOfList = blockList[:i] + blockList[i+1:]
+            if len(restOfList) >= 1 and postOverlap is not None:
+                retList = self.insertIntoBlockList(postOverlap, restOfList)
+            elif postOverlap is not None:
+                retList.append(postOverlap)
+            if preOverlap is not None:
+                retList.append(preOverlap)
+            if overlap is not None:
+                retList.append(overlap)
+            return sorted(retList, key=itemgetter(0))
+        # if we've gotten here there is no block to merge with
+        retList.append((blocks[0], blocks[1]))
+        return sorted(retList, key=itemgetter(0))
+
+    def mergeBlocks(self, blockDict):
+        """Take a dict of lists of (query block, target block) and turn it
+        into a dict of lists of (query block, [target block(s)]),
+        sorted by query block start.
+        """
 
         ret = {}
         for seq, blockList in blockDict.items():
@@ -184,50 +263,7 @@ class ContiguousRegions:
             prev = None
             for blocks in blockList:
                 if prev is not None:
-                    qBlock = blocks[0]
-                    qStrand = qBlock[2]
-                    assert(qStrand == '+')
-                    tBlock = blocks[1]
-                    tStrand = tBlock[2]
-                    prevqBlock = prev[0]
-                    prevqStrand = prevqBlock[2]
-                    assert(prevqStrand == '+')
-                    prevtBlocks = prev[1]
-                    if qBlock[0] < prevqBlock[1]:
-                        # overlapping query block
-                        assert(qBlock[0] >= prevqBlock[0])
-                        preOverlapSize = qBlock[0] - prevqBlock[0]
-                        postOverlapSize = abs(qBlock[1] - prevqBlock[1])
-                        if qBlock[0] > prevqBlock[0]:
-                            # block before overlap
-                            preOverlapqBlock = (prevqBlock[0], qBlock[0], prevqStrand)
-                            preOverlaptBlocks = [takeFirst(preOverlapSize, x) for x in prevtBlocks]
-                            newBlockList[-1] = (preOverlapqBlock, preOverlaptBlocks)
-                        elif qBlock[0] == prevqBlock[0]:
-                            newBlockList = newBlockList[:-1]
-                        # overlapping block
-                        overlapSize = abs(min(qBlock[1], prevqBlock[1]) - qBlock[0])
-                        if qBlock[1] > prevqBlock[1]:
-                            overlapqBlock = (qBlock[0], qBlock[1] - postOverlapSize, qStrand)
-                            overlaptBlocks = [takeLast(overlapSize, x) for x in prevtBlocks] + [takeLast(overlapSize, takeFirst(overlapSize, tBlock))]
-                            newBlockList.append((overlapqBlock, overlaptBlocks))
-                        else:
-                            overlapqBlock = (qBlock[0], prevqBlock[1] - postOverlapSize, qStrand)
-                            overlaptBlocks = [takeLast(overlapSize, takeFirst(preOverlapSize + overlapSize, x)) for x in prevtBlocks] + [tBlock]
-                            newBlockList.append((overlapqBlock, overlaptBlocks))
-                        if qBlock[1] > prevqBlock[1]:
-                            # block after overlap
-                            postOverlapqBlock = (prevqBlock[1], qBlock[1], qStrand)
-                            postOverlaptBlocks = [takeLast(postOverlapSize, tBlock)]
-                            newBlockList.append((postOverlapqBlock, postOverlaptBlocks))
-                        elif qBlock[1] < prevqBlock[1]:
-                            # block after overlap
-                            postOverlapqBlock = (qBlock[1], prevqBlock[1], qStrand)
-                            postOverlaptBlocks = [takeLast(postOverlapSize, x) for x in prevtBlocks]
-                            newBlockList.append((postOverlapqBlock, postOverlaptBlocks))
-                    else:
-                        # No overlap
-                        newBlockList.append((qBlock, [tBlock]))
+                    newBlockList = self.insertIntoBlockList(blocks, newBlockList)
                 else:
                     # sloppy
                     newBlockList.append((blocks[0], [blocks[1]]))
