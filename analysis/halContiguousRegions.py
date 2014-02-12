@@ -192,8 +192,6 @@ class ContiguousRegions:
             assert((tBlock[1] - tBlock[0]) == (qBlock2[1] - qBlock2[0]))
         if qBlock1[0] < qBlock2[1] and not qBlock1[1] <= qBlock2[0]:
             # overlapping query block
-            if qBlock1[0] < qBlock2[0]:
-                sys.stderr.write("merging {} with {} failed\n".format(block1, block2))
             assert(qBlock1[0] >= qBlock2[0])
             preOverlapSize = qBlock1[0] - qBlock2[0]
             postOverlapSize = abs(qBlock1[1] - qBlock2[1])
@@ -300,8 +298,8 @@ class ContiguousRegions:
         bedIntrons = []
         bedLength = 0
         if len(bedFields) == 12:
-            blockStarts = map(int, bedFields[11].split(","))
-            blockSizes = map(int, bedFields[10].split(","))
+            blockStarts = map(int, filter(lambda x: x != "", bedFields[11].split(",")))
+            blockSizes = map(int, filter(lambda x: x != "", bedFields[10].split(",")))
             assert(len(blockStarts) == len(blockSizes))
             bedBlocks = [(bedStart + start, bedStart + start + size)
                          for start, size in zip(blockStarts, blockSizes)]
