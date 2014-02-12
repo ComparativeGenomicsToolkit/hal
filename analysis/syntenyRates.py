@@ -79,9 +79,9 @@ def liftover(bedLine, opts):
                 print "POSSIBLYBAD: maps to two different strands on chr"
             else:
                 # merge bed lines into 1 larger bed line enclosing them
-                minStart = min(map(lambda x: int(x[1]), outBedLines))
-                maxEnd = max(map(lambda x: int(x[2]), outBedLines))
-                print "MERGED -- distance %d" % (maxEnd - minStart)
+                minStart = min(map(lambda x: int(x[1]), lines))
+                maxEnd = max(map(lambda x: int(x[2]), lines))
+                print "MERGED on chr %s -- distance %d" % (chr, maxEnd - minStart)
                 outBedDict[chr] = [lines[0][0], minStart, maxEnd,
                                    lines[0][3], lines[0][4],
                                    lines[0][5]]
@@ -112,6 +112,7 @@ def compareLines(i, iLifted, j, jLifted):
 
     assert(i[0] == j[0])
     assert(iLifted[0] == jLifted[0])
+    assert(i[1] <= j[1])
     sameOrientation = i[5] == j[5]
     sameOrientationInTarget = iLifted[5] == jLifted[5]
     if sameOrientation != sameOrientationInTarget:
