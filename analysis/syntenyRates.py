@@ -77,7 +77,7 @@ def liftover(bedLine, opts):
             if len(set(strands)) != 1:
                 # maps to two different strands, ignore this chr
                 print "POSSIBLYBAD: maps to two different strands on chr"
-            else:
+            elif opts.mergeBedLines:
                 # merge bed lines into 1 larger bed line enclosing them
                 minStart = min(map(lambda x: int(x[1]), lines))
                 maxEnd = max(map(lambda x: int(x[2]), lines))
@@ -176,10 +176,13 @@ def main():
     parser.add_argument("srcGenome", help="Query genome")
     parser.add_argument("bedFile", help="Bed file of genes on query genome")
     parser.add_argument("destGenome", help="Target genome")
+    parser.add_argument("--mergeBedLines", action='store_true',
+                        help="Merge lifted-over bed lines into a larger bed "
+                        "line containing them", default=False)
     opts = parser.parse_args()
     bedLines = sortBed(open(opts.bedFile))
     (numSyntenies, numValidPairs) = getNumSyntenies(bedLines, opts)
-    print "gene pair synteny rate: %d, num syntenies: %d, num pairs: %d" % (float(numSyntenies)/numValidPairs, numSyntenies, numValidPairs)
+    print "gene pair synteny rate: %f, num syntenies: %d, num pairs: %d" % (float(numSyntenies)/numValidPairs, numSyntenies, numValidPairs)
     return 0
 
 if __name__ == '__main__':
