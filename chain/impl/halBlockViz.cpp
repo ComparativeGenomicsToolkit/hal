@@ -875,7 +875,7 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
       // DupeIdLess sorting comparator should ensure that these 
       // elemens are added in the proper order so that trange list
       // stays sorted here
-      assert((*i)->tRange->tStart < (*i)->tRange->next->tStart);
+      assert((*i)->tRange->tStart <= (*i)->tRange->next->tStart);
       halFreeTargetDupeLists(*j);
       *j = NULL;
       j = k;
@@ -1032,11 +1032,11 @@ void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList)
   
   for (i = dupeList.begin(); i != dupeList.end() && *i != NULL; i = j)
   {
-    hal_target_range_t* range1 = (*i)->tRange;
     j = i;
     bool compatible = true;
     for (++j; j != dupeList.end() && *j != NULL && compatible; ++j)
     {
+      hal_target_range_t* range1 = (*i)->tRange;
       hal_target_range_t* range2 = (*j)->tRange;
       compatible = areRangesCompatible(range1, range2);
       if (compatible == true)
