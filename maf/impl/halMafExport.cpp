@@ -51,6 +51,11 @@ void MafExport::setAppend(bool append)
   _append = append;
 }
 
+void MafExport::setMaxBlockLength(hal_index_t maxLength)
+{
+  _mafBlock.setMaxLength(maxLength);
+}
+
 void MafExport::writeHeader()
 {
   assert(_mafStream != NULL);

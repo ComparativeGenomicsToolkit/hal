@@ -63,6 +63,7 @@ public:
    void initBlock(ColumnIteratorConstPtr col, bool fullNames);
    void appendColumn(ColumnIteratorConstPtr col);
    bool canAppendColumn(hal::ColumnIteratorConstPtr col);
+   void setMaxLength(hal_index_t maxLen);
    
 protected:
    
@@ -168,6 +169,11 @@ inline MafBlockEntry::~MafBlockEntry()
 inline std::string MafBlock::getName(const Sequence* sequence) const
 {
   return _fullNames ? sequence->getFullName() : sequence->getName();
+}
+
+inline void MafBlock::setMaxLength(hal_index_t maxLen) 
+{
+  _maxLength = maxLen;
 }
 
 }
