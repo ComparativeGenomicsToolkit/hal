@@ -141,6 +141,12 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
       ++appendCount;
     }
   }
-  mafStream << _mafBlock << endl;
+  // if nothing was ever added (seems to happen in corner case where
+  // all columns violate unique), mafBlock ostream operator will crash
+  // so we do following check
+  if (appendCount > 0)
+  {
+    mafStream << _mafBlock << endl;
+  }
 }
 
