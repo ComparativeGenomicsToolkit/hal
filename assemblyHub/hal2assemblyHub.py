@@ -105,10 +105,27 @@ class GetBasicFiles( Target ):
         genomedir = os.path.join(self.outdir, self.genome)
         system("mkdir -p %s" % genomedir)
         if not self.options.twobitdir:
-            makeTwoBitSeqFile(self.genome, self.halfile, genomedir) #genomedir/genome.2bit
+            self.makeTwoBitSeqFile(genomedir) #genomedir/genome.2bit
         else:
             linkTwoBitSeqFile(self.genome, self.options.twobitdir, genomedir) #genomedir/genome.2bit
         getChromSizes(self.halfile, self.seq2len, os.path.join(genomedir, "chrom.sizes")) #genomedir/chrom.sizes
+
+    def makeTwoBitSeqFile(self, outdir):
+        fafile = os.path.join(outdir, "%s.fa" %self.genome)
+        system("hal2fasta --outFaPath %s %s %s" %(fafile, self.halfile, self.genome))
+        fafile2 = fafile
+        if self.options.ucscNames:
+            #if sequence headers have "." (e.g genome.chr), reformat
+            #the header to only have "chr"
+            fafile2 = "%s2" %fafile
+            cmd = "awk '{ if($0 ~/>/){split($1, arr, \".\"); if(length(arr) > 1 ){print \">\" arr[2]}else{print $0} }else{ print $0} }' %s > %s" %(fafile, fafile2)
+            system(cmd)
+            system("rm %s" %fafile)
+
+        #convert to 2bit files
+        twobitfile = os.path.join(outdir, "%s.2bit" %self.genome)
+        system("faToTwoBit %s %s" %(fafile2, twobitfile))
+        system("rm %s" %fafile2)
 
 class MakeTracks( Target ):
     def __init__(self, genomes, genome2seq2len, halfile, outdir, options):
@@ -358,21 +375,6 @@ def getGenomesFromHal(halfile):
     
     return genomes
 
-def makeTwoBitSeqFile(genome, halfile, outdir):
-    fafile = os.path.join(outdir, "%s.fa" %genome)
-    system("hal2fasta --outFaPath %s %s %s" %(fafile, halfile, genome))
-    
-    #if sequence headers have "." (e.g genome.chr), reformat the header to only have "chr"
-    fafile2 = "%s2" %fafile
-    cmd = "awk '{ if($0 ~/>/){split($1, arr, \".\"); if(length(arr) > 1 ){print \">\" arr[2]}else{print $0} }else{ print $0} }' %s > %s" %(fafile, fafile2)
-    system(cmd)
-    system("rm %s" %fafile)
-
-    #convert to 2bit files
-    twobitfile = os.path.join(outdir, "%s.2bit" %genome)
-    system("faToTwoBit %s %s" %(fafile2, twobitfile))
-    system("rm %s" %fafile2)
-
 def linkTwoBitSeqFile(genome, twobitdir, outdir):
     twobitfile = os.path.join(outdir, "%s.2bit" %genome)
     intwobitfile = os.path.abspath( os.path.join(twobitdir, "%s.2bit" %genome) )
@@ -381,6 +383,12 @@ def linkTwoBitSeqFile(genome, twobitdir, outdir):
 
 def addOptions(parser):
     parser.add_option('--cpHalFileToOut', dest='cpHal', action='store_true', default=False, help='If specified, copy the input halfile to the output directory (instead of just make a softlink). Default=%default')
+    parser.add_option('--noUcscNames', dest='ucscNames', action='store_false',
+                      default=True,
+                      help='Assume that sequence headers don\'t use the UCSC '
+                      'naming convention, (i.e. "genome.chr"), and don\'t '
+                      'attempt to rename the sequences so that their names '
+                      'will end up as "chr"')
     addHubOptions(parser)
     addLodOptions(parser)
     addBedOptions(parser)
