@@ -36,6 +36,7 @@ public:
    void setUcscNames(bool ucscNames);
    void setUnique(bool unique);
    void setAppend(bool append);
+   void setMaxBlockLength(hal_index_t maxLength);
 
 
 protected:

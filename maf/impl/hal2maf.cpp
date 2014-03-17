@@ -75,6 +75,9 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("append",
                                "append to instead of overwrite output file.",
                                false);
+  optionsParser->addOption("maxBlockLen",
+                           "maximum length of MAF block in output",
+                           MafBlock::defaultMaxLength);
 
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
@@ -98,6 +101,7 @@ int main(int argc, char** argv)
   bool ucscNames;
   bool unique;
   bool append;
+  hal_index_t maxBlockLen;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -116,6 +120,7 @@ int main(int argc, char** argv)
     ucscNames = optionsParser->getFlag("ucscNames");
     unique = optionsParser->getFlag("unique");
     append = optionsParser->getFlag("append");
+    maxBlockLen = optionsParser->getOption<hal_index_t>("maxBlockLen");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -230,6 +235,7 @@ int main(int argc, char** argv)
     mafExport.setUcscNames(ucscNames);
     mafExport.setUnique(unique);
     mafExport.setAppend(append);
+    mafExport.setMaxBlockLength(maxBlockLen);
 
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")
