@@ -108,7 +108,11 @@ class GetBasicFiles( Target ):
             self.makeTwoBitSeqFile(genomedir) #genomedir/genome.2bit
         else:
             linkTwoBitSeqFile(self.genome, self.options.twobitdir, genomedir) #genomedir/genome.2bit
-        getChromSizes(self.halfile, self.seq2len, os.path.join(genomedir, "chrom.sizes")) #genomedir/chrom.sizes
+        if self.options.ucscNames:
+            # allows renaming of sequences
+            getChromSizes(self.halfile, self.seq2len, os.path.join(genomedir, "chrom.sizes")) #genomedir/chrom.sizes
+        else:
+            getChromSizesFromHal(self.halfile, self.genome, os.path.join(genomedir, "chrom.sizes"))
 
     def makeTwoBitSeqFile(self, outdir):
         fafile = os.path.join(outdir, "%s.fa" %self.genome)
@@ -353,6 +357,9 @@ def getGenomeSequences(halfile, genomes):
         else:
             genome2seq2len[genome] = seq2len
     return genome2seq2len
+
+def getChromSizesFromHal(halfile, genome, outfile):
+    system("halStats --chromSizes %s %s > %s" % (genome, halfile, outfile))
 
 def getChromSizes(halfile, seq2len, outfile):
     f = open(outfile, 'w')

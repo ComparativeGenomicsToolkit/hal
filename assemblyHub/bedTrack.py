@@ -44,7 +44,7 @@ class LiftoverBedFiles( Target ):
             system("mkdir -p %s" %genomeoutdir)
         
             #get all the bed files (".bed" ext) and as files if available (".as" ext) 
-            bedfiles, asfile, extrafields, numfield = readBedDir(genomeindir, self.tab, self.options.ucscNames)
+            bedfiles, asfile, extrafields, numfield = readBedDir(genomeindir, self.tab)
 
             #Copy as file to bigbed dir:
             if asfile:
@@ -64,7 +64,7 @@ class LiftoverBedFiles( Target ):
             outbigbed = os.path.join(genomeoutdir, "%s.bb" %genome) 
             chrsizefile = os.path.join(self.outdir, genome, "chrom.sizes")
             if not asfile:
-                cmd = "bedToBigBed -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed) 
+                cmd = "bedToBigBed -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed)
                 if self.tab:
                     cmd = "bedToBigBed -tab -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed) 
                 system( cmd )
@@ -86,13 +86,13 @@ class LiftoverBedFiles( Target ):
                 for othergenome in genomes:
                     if othergenome == genome:
                         continue
-                    self.addChildTarget( LiftoverBed(genomeoutdir, tempbed, self.tab, asfile, extrafields, numfield, genome, othergenome, self.halfile, self.outdir) )
+                    self.addChildTarget( LiftoverBed(genomeoutdir, tempbed, self.tab, asfile, extrafields, numfield, genome, othergenome, self.halfile, self.outdir, self.options) )
             tempbeds.append( tempbed )
             tempbeds.append( filterbed )
         self.setFollowOnTarget( CleanupFiles(tempbeds) )
 
 class LiftoverBed( Target ):
-    def __init__(self, genomeoutdir, bed, tab, asfile, extrafields, numfield, genome, othergenome, halfile, outdir):
+    def __init__(self, genomeoutdir, bed, tab, asfile, extrafields, numfield, genome, othergenome, halfile, outdir, options):
         Target.__init__(self)
         self.genomeoutdir = genomeoutdir
         self.bed = bed
@@ -104,6 +104,7 @@ class LiftoverBed( Target ):
         self.othergenome = othergenome
         self.halfile = halfile
         self.outdir = outdir
+        self.options = options
 
     def run(self):
         liftovertempbed = "%s.bed" % os.path.join(self.genomeoutdir, self.othergenome)
@@ -118,7 +119,7 @@ class LiftoverBed( Target ):
         #system("bedSort %s %s" %(liftovertempbed, liftovertempbed))
             
         filterbed = "%s-filtered.bed" %os.path.join(self.genomeoutdir, self.othergenome)
-        filterLongIntrons(liftovertempbed, filterbed, 100000, self.tab)
+        filterLongIntrons(liftovertempbed, filterbed, 100000, self.tab, self.options.ucscNames)
         system( "bedSort %s %s" % (filterbed, liftovertempbed) )
         
         outbigbed = os.path.join(self.genomeoutdir, "%s.bb" %self.othergenome)
