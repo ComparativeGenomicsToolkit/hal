@@ -12,7 +12,7 @@ from sonLib.bioio import system
 class Bed():
     '''Bed record
     '''
-    def __init__(self, line, tab):
+    def __init__(self, line, tab, ucscNames):
         if tab:
             items = line.strip().split('\t')
         else:
@@ -20,7 +20,10 @@ class Bed():
         if len(items) < 3: 
             raise BedFormatError("Bed format for this program requires a minimum of 3 fields, line \n%s\n only has %d fields.\n" %(line, len(items)))
         self.tab = tab
-        self.chrom = items[0].split('.')[-1]
+        if ucscNames:
+            self.chrom = items[0].split('.')[-1]
+        else:
+            self.chrom = items[0]
         self.chromStart = int(items[1]) #base 0
         self.chromEnd = int(items[2]) #exclusive
         if len(items) >= 4:
@@ -60,14 +63,14 @@ class Bed():
             s = s.replace("\t", " ")
         return s
 
-def readBedFile(file, tab):
+def readBedFile(file, tab, ucscNames=True):
     beds = []
     f = open(file, 'r')
     for line in f:
         line = line.strip()
         if len(line) == 0 or line[0] == "#":
             continue
-        bed = Bed(line, tab)
+        bed = Bed(line, tab, ucscNames)
         beds.append(bed)
     f.close()
     return beds
@@ -111,9 +114,9 @@ def writeBeds12(f, beds):
     for b in beds:
         f.write("%s\n" %b.getStr12())
 
-def filterLongIntrons(infile, outfile, maxIntron, tab):
+def filterLongIntrons(infile, outfile, maxIntron, tab, ucscNames=True):
     #If a "gene" contains long intron(s), break the bed entry into separate entries
-    beds = readBedFile(infile, tab)
+    beds = readBedFile(infile, tab, ucscNames)
     if len(beds) == 0 or not beds[0].bed12:
         system("cp %s %s" %(infile, outfile))
     else:

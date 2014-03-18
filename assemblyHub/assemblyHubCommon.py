@@ -38,7 +38,7 @@ class MakeAnnotationTracks( Target ):
                     self.addChildTarget( LiftoverWigFiles(indir, self.halfile, self.genome2seq2len, bigdir, self.options.noWigLiftover, self.outdir) )
                 else:
                     from hal.assemblyHub.bedTrack import LiftoverBedFiles
-                    self.addChildTarget( LiftoverBedFiles(indir, self.halfile, self.genome2seq2len, bigdir, self.options.noBedLiftover, self.options.tabbed, self.outdir) )
+                    self.addChildTarget( LiftoverBedFiles(indir, self.halfile, self.genome2seq2len, bigdir, self.options.noBedLiftover, self.options.tabbed, self.outdir, self.options) )
 
 class CleanupFiles(Target):
     def __init__(self, files):

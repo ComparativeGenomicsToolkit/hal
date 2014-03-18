@@ -14,7 +14,7 @@ from hal.assemblyHub.assemblyHubCommon import CleanupFiles, getProperName
 from hal.assemblyHub.bedCommon import filterLongIntrons 
 
 class LiftoverBedFiles( Target ):
-    def __init__(self, indir, halfile, genome2seq2len, bigbeddir, noLiftover, tab, outdir):
+    def __init__(self, indir, halfile, genome2seq2len, bigbeddir, noLiftover, tab, outdir, options):
         Target.__init__(self)
         self.indir = indir
         self.halfile = halfile
@@ -23,6 +23,7 @@ class LiftoverBedFiles( Target ):
         self.noLiftover = noLiftover
         self.tab = tab
         self.outdir = outdir
+        self.options = options
 
     def run(self):
         #beddir has the hierachy: indir/genome/chr1.bed, chr2.bed...
@@ -43,7 +44,7 @@ class LiftoverBedFiles( Target ):
             system("mkdir -p %s" %genomeoutdir)
         
             #get all the bed files (".bed" ext) and as files if available (".as" ext) 
-            bedfiles, asfile, extrafields, numfield = readBedDir(genomeindir, self.tab)
+            bedfiles, asfile, extrafields, numfield = readBedDir(genomeindir, self.tab, self.options.ucscNames)
 
             #Copy as file to bigbed dir:
             if asfile:
@@ -56,7 +57,8 @@ class LiftoverBedFiles( Target ):
             system( "cat %s/*bed | cut -f-%d > %s" %(genomeindir, numfield, tempbed) )
             #system( "bedSort %s %s" % (tempbed, tempbed) )
             filterbed = "%s-temp-filtered.bed" %os.path.join(genomeoutdir, genome)
-            filterLongIntrons(tempbed, filterbed, 100000, self.tab)
+            filterLongIntrons(tempbed, filterbed, 100000, self.tab,
+                              self.options.ucscNames)
             system( "bedSort %s %s" % (filterbed, tempbed) )
 
             outbigbed = os.path.join(genomeoutdir, "%s.bb" %genome) 
