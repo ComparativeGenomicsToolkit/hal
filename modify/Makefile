@@ -11,7 +11,7 @@ libTestsHeaders = $(wildcard tests/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
 
-all : ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree ${binPath}/findRegionsExclusivelyInGroup ${binPath}/halUpdateBranchLengths
+all : ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree ${binPath}/findRegionsExclusivelyInGroup ${binPath}/halUpdateBranchLengths ${binPath}/ancestorsML
 
 clean : 
 	rm -f ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome
@@ -36,14 +36,14 @@ ${binPath}/findRegionsExclusivelyInGroup: findRegionsExclusivelyInGroup.cpp ${li
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/findRegionsExclusivelyInGroup findRegionsExclusivelyInGroup.cpp ${libPath}/halLib.a ${libPath}/halLiftover.a ${basicLibs}
 
 ${binPath}/ancestorsML: ancestorsML.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} ${phastCflags} ancestorsML.cpp ${basicLibs} ${libPath}/halLib.a ${phastLinkflags}
+	${cpp} ${cppflags} -I ${libPath} ${phastCflags} -c ancestorsMLBed.cpp -o ancestorsMLBed.o ${basicLibs} ${libPath}/halLib.a ${phastLinkflags}
+	${cpp} ${cppflags} -I ${libPath} ${phastCflags} -o ${binPath}/ancestorsML ancestorsML.cpp ${basicLibs} ancestorsMLBed.o ${libPath}/halLib.a ${libPath}/halLiftover.a ${phastLinkflags}
 
 ${binPath}/adjacenciesParsimony: adjacenciesParsimony.cpp ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/adjacenciesParsimony adjacenciesParsimony.cpp ${libPath}/halLib.a ${basicLibs}
 
 ${binPath}/halUpdateBranchLengths: halUpdateBranchLengths.cpp ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halUpdateBranchLengths halUpdateBranchLengths.cpp ${libPath}/halLib.a ${basicLibs}
-
 
 markAncestors.o: markAncestors.cpp
 	${cpp} ${cppflags} -I ${libPath} -c -o markAncestors.o markAncestors.cpp
