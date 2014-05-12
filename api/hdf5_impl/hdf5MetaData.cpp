@@ -56,7 +56,14 @@ const map<string, string>& HDF5MetaData::getMap() const
   return _map;
 }
 
-static void attr_operator(H5Object& loc/*in*/,
+// hack this in for compatibility for newer hdf5 which seems to have changed
+// interface from object to location here. 
+#if H5_VERSION_GE(1, 8, 12)
+#define ATTR_OP_PARAM__ H5Location
+#else
+#define ATTR_OP_PARAM__ H5Object
+#endif
+static void attr_operator(ATTR_OP_PARAM__& loc/*in*/,
                           const H5std_string attr_name/*in*/,
                           void *operator_data/*in,out*/)
 {
@@ -89,7 +96,7 @@ void HDF5MetaData::open(CommonFG* parent, const string& name)
 
   if (_group.getNumAttrs() > 0)
   {
-    _group.iterateAttrs(attr_operator, NULL, &_map);
+    _group.iterateAttrs(attr_operator, NULL, (void*)&_map);
   }
   assert(_map.size() == (size_t)_group.getNumAttrs());
 }
