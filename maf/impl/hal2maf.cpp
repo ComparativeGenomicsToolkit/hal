@@ -78,6 +78,9 @@ static CLParserPtr initParser()
   optionsParser->addOption("maxBlockLen",
                            "maximum length of MAF block in output",
                            MafBlock::defaultMaxLength);
+  optionsParser->addOptionFlag("global", "output all columns in alignment, "
+                               "ignoring refGenome, refSequence, etc. flags",
+                               false);
 
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
@@ -101,6 +104,7 @@ int main(int argc, char** argv)
   bool ucscNames;
   bool unique;
   bool append;
+  bool global;
   hal_index_t maxBlockLen;
   try
   {
@@ -120,6 +124,7 @@ int main(int argc, char** argv)
     ucscNames = optionsParser->getFlag("ucscNames");
     unique = optionsParser->getFlag("unique");
     append = optionsParser->getFlag("append");
+    global = optionsParser->getFlag("global");
     maxBlockLen = optionsParser->getOption<hal_index_t>("maxBlockLen");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
@@ -262,6 +267,10 @@ int main(int argc, char** argv)
            refSequence != NULL ? refSequence->getName() : refGenome->getName();
         cerr << "hal2maf: Warning reference sequence " << refSeqName
              << " has zero length.  MAF output will be empty" << endl;
+      }
+      else if(global)
+      {
+        mafExport.convertEntireAlignment(mafStream, alignment);
       }
       else
       {

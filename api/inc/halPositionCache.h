@@ -8,11 +8,10 @@
 #define _HALPOSITIONCACHE_H
 
 #include <map>
-#include <map>
 #include <string>
 #include <vector>
 #include <cassert>
-#include "hal.h"
+#include "halDefs.h"
 
 namespace hal {
 
@@ -24,7 +23,7 @@ class PositionCache
 {
 public:
    PositionCache() : _size(0), _prev(_set.begin()) {}
-
+   PositionCache(const PositionCache &positionCache) : _set(*positionCache.getIntervalSet()), _size(positionCache.size()), _prev(_set.begin()) {}
   // sorted by last index, so each interval is (last, first)
    typedef std::map<hal_index_t, hal_index_t> IntervalSet;
  
@@ -35,7 +34,7 @@ public:
    hal_size_t size() const { return _size; }
    hal_size_t numIntervals() const { return _set.size(); }
 
-   const IntervalSet* getIntervalSet() { return &_set; }
+   const IntervalSet* getIntervalSet() const { return &_set; }
 
 protected:
 

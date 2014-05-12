@@ -10,6 +10,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include "hal.h"
 #include "halDefs.h"
 #include "halDNAIterator.h"
 #include "halSequence.h"
@@ -101,7 +102,14 @@ public:
 
    /** Print contents of column iterator */
    virtual void print(std::ostream& os) const = 0;
-   
+
+   // temp -- probably want to have a "global column iterator" object
+   // instead
+   typedef std::map<const Genome*, PositionCache*> VisitCache;
+   virtual VisitCache *getVisitCache() const = 0;
+   virtual void setVisitCache(VisitCache *visitCache) const = 0;
+   virtual void clearVisitCache() const = 0;
+
 protected:
    friend class counted_ptr<ColumnIterator>;
    friend class counted_ptr<const ColumnIterator>;

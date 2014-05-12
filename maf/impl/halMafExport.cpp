@@ -150,3 +150,81 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
   }
 }
 
+void MafExport::convertEntireAlignment(ostream& mafStream,
+                                       AlignmentConstPtr alignment)
+{
+    hal_size_t appendCount = 0;
+    size_t numBlocks = 0;
+
+    _mafStream = &mafStream;
+    _alignment = alignment;
+
+    // Load in all leaves from alignment
+    vector<string> leafNames = alignment->getLeafNamesBelow(alignment->getRootName());
+    vector<const Genome *> leafGenomes;
+    for (hal_size_t i = 0; i < leafNames.size(); i++) {
+        const Genome *genome = alignment->openGenome(leafNames[i]);
+        assert(genome != NULL);
+        leafGenomes.push_back(genome);
+    }
+    ColumnIterator::VisitCache visitCache;
+    // Go through all the genomes one by one, and spit out any columns
+    // they participate in that we haven't seen.
+    for (hal_size_t i = 0; i < leafGenomes.size(); i++) {
+        const Genome *genome = leafGenomes[i];
+        ColumnIteratorConstPtr colIt = genome->getColumnIterator(NULL,
+                                                                 0,
+                                                                 0,
+                                                                 NULL_INDEX,
+                                                                 _noDupes,
+                                                                 _noAncestors);
+        colIt->setVisitCache(&visitCache);
+        for (;;) {
+            if (appendCount == 0) {
+                _mafBlock.initBlock(colIt, _ucscNames);
+                assert(_mafBlock.canAppendColumn(colIt) == true);
+            }
+            if (_mafBlock.canAppendColumn(colIt) == false)
+            {
+                // erase empty entries from the column.  helps when there are 
+                // millions of sequences (ie from fastas with lots of scaffolds)
+                if (numBlocks++ % 1000 == 0)
+                {
+                    colIt->defragment();
+                }
+                if (appendCount > 0)
+                {
+                    mafStream << _mafBlock << '\n';
+                }
+                _mafBlock.initBlock(colIt, _ucscNames);
+                assert(_mafBlock.canAppendColumn(colIt) == true);
+            }
+            _mafBlock.appendColumn(colIt);
+            appendCount++;
+
+            if (colIt->lastColumn()) {
+                // Have to break here because otherwise
+                // colIt->toRight() will crash.
+                break;
+            }
+            colIt->toRight();
+        }
+        // Copy over the updated visit cache information. This is a
+        // deep copy, so it's slow, but necessary to preserve the
+        // column iterator ownership of the visit cache
+        visitCache.clear();
+        ColumnIterator::VisitCache *newVisitCache = colIt->getVisitCache();
+        for(ColumnIterator::VisitCache::iterator it = newVisitCache->begin();
+            it != newVisitCache->end(); it++) {
+            visitCache[it->first] = new PositionCache(*it->second);
+        }
+    }
+
+    // if nothing was ever added (seems to happen in corner case where
+    // all columns violate unique), mafBlock ostream operator will crash
+    // so we do following check
+    if (appendCount > 0)
+    {
+        mafStream << _mafBlock << endl;
+    }
+}

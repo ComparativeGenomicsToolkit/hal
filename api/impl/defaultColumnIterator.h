@@ -21,7 +21,6 @@ namespace hal {
 class DefaultColumnIterator : public ColumnIterator
 {
 public:
-
    DefaultColumnIterator(const hal::Genome* reference, 
                          const std::set<const Genome*>* targets,
                          hal_index_t columnIndex,
@@ -46,15 +45,15 @@ public:
    virtual void defragment() const;
    virtual bool isCanonicalOnRef() const;
    virtual void print(std::ostream& os) const;
-
+   virtual VisitCache *getVisitCache() const;
+   virtual void setVisitCache(VisitCache *visitCache) const;
+   virtual void clearVisitCache() const;
 protected:
 
    typedef ColumnIteratorStack::LinkedBottomIterator LinkedBottomIterator;
    typedef ColumnIteratorStack::LinkedTopIterator LinkedTopIterator;
    typedef ColumnIteratorStack::Entry StackEntry;
    
-   typedef std::map<const Genome*, PositionCache*> VisitCache;
-
 protected:
 
    void recursiveUpdate(bool init) const;

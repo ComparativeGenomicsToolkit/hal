@@ -30,6 +30,13 @@ public:
                                  hal_size_t length,
                                  const std::set<const Genome*>& targets);
 
+   // Convert all columns in the leaf genomes to MAF. Each column is
+   // reported exactly once regardless of the unique setting, although
+   // this may change in the future. Likewise, maxRefGap has no
+   // effect, although noDupes will work.
+   void convertEntireAlignment(std::ostream& mafStream,
+                               AlignmentConstPtr alignment);
+
    void setMaxRefGap(hal_size_t maxRefGap);
    void setNoDupes(bool noDupes);
    void setNoAncestors(bool noAncestors);
