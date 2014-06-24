@@ -225,7 +225,7 @@ HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To crea
 
 Larger alignments require the use of the `--lod` option to generate precomputed levels of detail.  
 
-Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. 
+Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. More details are available at [hal2assemblyHub Manual](https://github.com/glennhickey/hal/tree/master/assemblyHub/hal2assemblyHubDoc.pdf). 
 
 ### Summary Information
 
@@ -328,6 +328,11 @@ PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), a
 * Detect constrained elements
 
      See `halPhyloPMP.py`
+
+* Examples:
+
+	 halPhyloPTrain.py mammals.hal human neutralRegions.bed neutralModel.mod --numProc 12
+	 halTreePhyloP.py mammals.hal neutralModel.mod outdir --bigWig --numProc 12
 
 Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for their work on extending their tools to work with HAL.
 
