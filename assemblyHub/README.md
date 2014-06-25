@@ -36,11 +36,11 @@ To improve browsing speed, especially for browsing at all levels of resolution (
 
 *hal2assemblyHub* takes care of generating levels of detail for the alignment if option `--lod` is specified. Example:
 
-`hal2assemblyHub.py alignment.hal outdir –lod`
+```hal2assemblyHub.py alignment.hal outdir –lod```
 
 By default, no level of detail is generated. Users can independently generate them using the HAL Tools’ `halLodInterpolate.py`. Generating levels of detail can be time-consuming. Users can provide *hal2assemblyHub* with pre-computed levels of detail (and avoid re-computing them) by the options `--lodTxtFile` and `--lodDir`:
 
-`hal2assemblyHub.py alignment.hal outdir --lod --lodTxtFile lod.txt --lodDir loddir/`
+```hal2assemblyHub.py alignment.hal outdir --lod --lodTxtFile lod.txt --lodDir loddir/```
 
 *lod.txt* and *loddir* are output files of `halLodInterpolate.py`. See `halLodInterpolate.py -h` for explanations of more options.
 * *lod.txt* is output text file with links to interpolated hal files, with each file is associated a value stating its minimum suggested query range (in bases).
@@ -54,7 +54,7 @@ Browsers With Annotation Tracks
 
 *Examples:*
 
-`hal2assemblyHub.py alignment.hal outdir --lod --cladeExclusiveRegions --alignability --gcContent --conservation conservationRegions.bed --conservationGenomeName hg19`
+```hal2assemblyHub.py alignment.hal outdir --lod --cladeExclusiveRegions --alignability --gcContent --conservation conservationRegions.bed --conservationGenomeName hg19```
 
 * `--cladeExclusiveRegions`: for each node in the phylogenetic tree of the genomes in the alignment, regions that are genome-specific (leaf-node) or clade-specific (internal node), i.e. present only in genomes within the clade and absent in other genomes, are printed out in bigbed-formatted files. These files will be located at *outdir/liftoverbed/CladeExclusive*. The resulting comparative assembly hub contains one track for each genome. See `--maxOutgroupGenomes` and `--minIngroupGenomes` options (see `hal2assemblyHub.py --help`) for adjusting the definition of “clade exclusive”.
 
@@ -89,10 +89,10 @@ myConservationDir/
 
 ### Annotations provided by users
 
-Currently, `hal2assemblyHub.py` supports two annotation formats: bed (or big bed) and wiggle (or bigwig), see [http://genome.ucsc.edu/FAQ/FAQformat.html]. Example annotations are genes, transcription levels, histone modifications, etc.
+Currently, `hal2assemblyHub.py` supports two annotation formats: bed (or big bed) and wiggle (or bigwig), see http://genome.ucsc.edu/FAQ/FAQformat.html. Example annotations are genes, transcription levels, histone modifications, etc.
 
 #####Example 1:
-`hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes --tabBed`
+```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes --tabBed```
 
 * `--bedDirs`: comma separated list of paths to different annotation directories, one directory per annotation type. In this example, there is only one annotation type, which is Genes. The format of each annotation directory is:
 
@@ -112,17 +112,17 @@ Genes/
 * `--tabBed`: if the input bed files are tab-separated (recommended), this option must be specified. The default settings assume space-delimited. If the bed files are space-delimited, the field values must not contain any space.
 
 #####Example 2:
-`hal2assemblyHub.py alignment.hal outdir --lod --bedDirs allAnnotations/Genes,allAnnotations/CpG-Islands,allAnnotations/Variations --tabBed`
+```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs allAnnotations/Genes,allAnnotations/CpG-Islands,allAnnotations/Variations --tabBed```
 
 In this example, there are three different annotation types: *Genes*, *CpG-Islands*, and *Variations*, all located within the directory *allAnnotations/*.
 
 #####Example 3:
-`hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands,Variations --tabBed --noBedLiftover`
+```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands,Variations --tabBed --noBedLiftover```
 
 * `--noBedLiftover`: if specified, the lift−over step is disable, i.e. only creates track for the input annotations and does not lift/map these annotations to other genomes.
 
 #####Example 4:
-`hal2assemblyHub.py alignment.hal outdir --lod --finalBigBedDirs Genes,CpG-Islands,Variations --tabBed`
+```hal2assemblyHub.py alignment.hal outdir --lod --finalBigBedDirs Genes,CpG-Islands,Variations --tabBed```
 
 * `--finalBigBedDirs`: comma separated list of directories containing final big bed files to be displayed. No liftover will be done for these files. Each directory represents a type of annotation. This option is useful when annotations have been previous lifted-over and can just be fed to the pipeline, to avoid rerunning the lift-over processes. Format of each directory:
 ```
@@ -139,31 +139,32 @@ Annotations of queryGenome have been lifted-over (mapped) to targetGenomes and w
 Note: it is not required that each annotation must be lifted over to all other genomes. The pipeline prepares one track for each bigBed file - users can choose which tracks to include.
 
 #####Example 5:
-`hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes --finalBigBedDirs CpG-Islands,Variations --tabBed`
+```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes --finalBigBedDirs CpG-Islands,Variations --tabBed```
 
 In this example, the pipeline will not perform lifting-over for the *CpG-Islands* and *Variations* annotations (in bigBed format) - the corresponding tracks will be displayed on the resulting comparative hubs “as is”, while the *Genes* annotations (in bed format) will be lifted-over. This is applicable when users wish to include new annotations into their comparative assembly hubs, or to update some annotations while keeping the rest intact.
 
 #####Example 6:
-`hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands --bedDirs2 Variations --tabBed`
+```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands --bedDirs2 Variations --tabBed```
 
 * `--bedDirs2`: Similar to `--bedDirs`, except the tracks for the annotations specified here will be kept separately and out of the composite track. In this case, the Genes and CpG-Islands tracks will be included in the composite track (hubCentral) while the V ariations tracks will be on its own.
 
 #####Example 7:
-`hal2assemblyHub.py alignment.hal outdir --lod --finalBigBedDirs Genes,CpG-Islands --finalBigBedDirs2 Variations --tabBed`
+```hal2assemblyHub.py alignment.hal outdir --lod --finalBigBedDirs Genes,CpG-Islands --finalBigBedDirs2 Variations --tabBed```
 
 * `--finalBigBedDirs2`: Similar to `--finalBigBedDirs`, except these tracks will be kept separately and out of the composite track.
 
 #####Example 8:
-`hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands --tabBed --wigDirs Transcription,Methylation`
+```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands --tabBed --wigDirs Transcription,Methylation```
 
 * `--wigDirs`: similar to `--bedDirs`, but for wiggle format files.
 
 #### Item Searching of Annotation Tracks
 
-By default, `hal2assemblyHub.py` index the name column of the input bed files so that when browsing the hubs, users can quickly search for specific items using their names. Additional fields can be added to the bed files and the pipeline will index them for searching. When there are additional fields in the bed files, an “.as” (AutoSQL) format file is required for each input bed directory. See [http://genome.ucsc.edu/goldenPath/help/bigBed.html#Ex3] for the format of the “.as” file.
+By default, `hal2assemblyHub.py` index the name column of the input bed files so that when browsing the hubs, users can quickly search for specific items using their names. Additional fields can be added to the bed files and the pipeline will index them for searching. When there are additional fields in the bed files, an “.as” (AutoSQL) format file is required for each input bed directory. See http://genome.ucsc.edu/goldenPath/help/bigBed.html#Ex3 for the format of the “.as” file.
 
 This is applicable when users want to be able to search genes by various IDs, such as accession numbers and common names. If the name column in the bed file is the accession number, add an additional field common-name to the bed file, and use the .as file to specify this additional field. In Example1, the input Genes directory will be as followed:
 
+```
 Genes/
    Genome1/
       myAsFile.as
@@ -174,6 +175,7 @@ Genes/
       anotherAsFile.as
       ...
    ...
+```
 
 Example of an .as file:
 
@@ -203,13 +205,13 @@ In this case, there are three extra fields: commonName, synonym and product, and
 Update Comparative Assembly Hubs
 -----
 
-The simplest way to update comparative assembly hubs is to rerun hal2assemblyHub.py and utilize the following options:
-   `--twobitdir`
-   `--lodTxtFile`
-   `--lodDir`
-   `--finalBigBedDirs`
-   `--finalBigBedDirs2`
-   `--conservationDir`
+The simplest way to update comparative assembly hubs is to rerun hal2assemblyHub.py and utilize the following options:  
+   `--twobitdir`  
+   `--lodTxtFile`  
+   `--lodDir`  
+   `--finalBigBedDirs`  
+   `--finalBigBedDirs2`  
+   `--conservationDir`  
 
 See the above sections and `hal2assemblyHub.py --help` for more details.
 
@@ -219,53 +221,61 @@ Manipulate Hub Display
 
 To manipulate the hub displays, see the following options:
 
-   `--hub`
-   `--shortLabel`
-   `--longLabel`
-   `--email`
-   `--genomes`
-   `--renames`
-   `--tree`
-   `--url`
+   `--hub`  
+   `--shortLabel`  
+   `--longLabel`  
+   `--email`  
+   `--genomes`  
+   `--renames`  
+   `--tree`  
+   `--url`  
 
 Outputs
 -----
 
-Comparative Assembly Hubs are built utilizing the Assembly Hub function of the UCSC Genome Browser. Many of the output files produced by the Comparative Assembly Hub Pipeline are explained in details here: [http://genomewiki.ucsc.edu/index.php/Assembly_Hubs]. To avoid potential problems, we recommend users to provide an empty outdir when running `hal2assemblyHub.py`.
+Comparative Assembly Hubs are built utilizing the Assembly Hub function of the UCSC Genome Browser. Many of the output files produced by the Comparative Assembly Hub Pipeline are explained in details here: http://genomewiki.ucsc.edu/index.php/Assembly_Hubs. To avoid potential problems, we recommend users to provide an empty outdir when running `hal2assemblyHub.py`.
 
 The output directory may contain:
 
-1. *hub.txt*: The primary URL reference for the constructed comparative assembly hubs. Please paste the URL of the location of this file to the UCSC genome browser to load the hubs. This is similar to how a track hub is created, please see [http://genome. ucsc.edu/goldenPath/help/hgTrackHubHelp.html] for more instructions. This file contains a short description of the hub properties, including the hub name, short label, long label and contact email.
-2. *genomes.txt*: list of genome assemblies included in the hub.
-3. *groups.txt*: definitions of track groups. Track groups are the sections of related tracks grouped together under the primary genome browser graphics display image.
-4. Genome assembly directories: one directory is created for each genome assembly, one directory for each ancestral genome, and one for the pangenome, if appropriate. Example:
-   *GenomeAssembly1/*
-      *GenomeAssembly1.2bit*
-      *chrom.sizes*
-      *trackDb.txt*
-      *description.html*
-      *GenomeAssembly1.alignability.bw*: Bigwig file for the alignability track of GenomeAssembly1, generated if option `--alignability` is specified when running `hal2assemblyHub.py`. Alignability is the number of genome assemblies that have bases aligned with each base of the current assembly (mappability).
-      *GenomeAssembly1.gc.bw*: Bigwig file for the GC Content track of GenomeAssembly1, generated if options `--gcContent` is specified when running `hal2assemblyHub.py`.
-      *repeatMasker/*: subdirectory containing repeatMasker files of the GenomeAssembly1, present if option `--rmskDir` is specified when running `hal2asssemblyHub.py`.
+1. *hub.txt*: The primary URL reference for the constructed comparative assembly hubs. Please paste the URL of the location of this file to the UCSC genome browser to load the hubs. This is similar to how a track hub is created, please see http://genome.ucsc.edu/goldenPath/help/hgTrackHubHelp.html for more instructions. This file contains a short description of the hub properties, including the hub name, short label, long label and contact email.
 
-*** For more details on items (1) to (4), see: [http://genome.ucsc.edu/goldenPath/help/hgTrackHubHelp.htmlSetup] ***
+2. *genomes.txt*: list of genome assemblies included in the hub.
+
+3. *groups.txt*: definitions of track groups. Track groups are the sections of related tracks grouped together under the primary genome browser graphics display image.
+
+4. Genome assembly directories: one directory is created for each genome assembly, one directory for each ancestral genome, and one for the pangenome, if appropriate. Example:  
+   *GenomeAssembly1/*  
+      *GenomeAssembly1.2bit*  
+      *chrom.sizes*  
+      *trackDb.txt*  
+      *description.html*  
+      *GenomeAssembly1.alignability.bw*: Bigwig file for the alignability track of GenomeAssembly1, generated if option `--alignability` is specified when running `hal2assemblyHub.py`. Alignability is the number of genome assemblies that have bases aligned with each base of the current assembly (mappability).  
+      *GenomeAssembly1.gc.bw*: Bigwig file for the GC Content track of GenomeAssembly1, generated if options `--gcContent` is specified when running `hal2assemblyHub.py`.  
+      *repeatMasker/*: subdirectory containing repeatMasker files of the GenomeAssembly1, present if option `--rmskDir` is specified when running `hal2asssemblyHub.py`.  
+
+*** For more details on items (1) to (4), see: http://genome.ucsc.edu/goldenPath/help/hgTrackHubHelp.htmlSetup ***
 
 5. *conservation/*: Files necessary for the Conservation Track of each GenomeAssembly Browser, generated if option `--conservation` is used.
+
 6. *hubTree.png*: Phylogenetic tree image of the genome assemblies that is displayed in the configuration page of each genome assembly’s hub browser.
-7. *liftoverbed/*: All bed annotation files, including both input bed files and lifted-over bed files. Example:
-   *Annotation1/*
-      *GenomeAssembly1/*
-         *GenomeAssembly1.bb* : annotation1 of GenomeAssembly1
-         *GenomeAssembly2.bb* : annotation1 of GenomeAssembly2 mapped onto GenomeAssembly1
-         ...
-      *GenomeAssembly2/*
-         ...
-      ... 
-   *Annotation#/*
+
+7. *liftoverbed/*: All bed annotation files, including both input bed files and lifted-over bed files. Example:  
+   *Annotation1/*  
+      *GenomeAssembly1/*  
+         *GenomeAssembly1.bb* : annotation1 of GenomeAssembly1  
+         *GenomeAssembly2.bb* : annotation1 of GenomeAssembly2 mapped onto GenomeAssembly1  
+         ...  
+      *GenomeAssembly2/*  
+         ...  
+      ...   
+   *Annotation#/*  
 
 8. *documentation/*: documentation files automatically generated by `hal2assemblyHub.py`. These files are used for documentation of the various tracks on the hub browsers (see Section Track Documentation).
+
 9. *lod.txt*: (Level of details) the lod text file generated by halLodInterpolate.py, or by the pipeline (which calls `halLodInterpolate.py`) if option `--lod` is specified. The text file contains links to interpolated hal files, with each file is associated a value stating its minimum suggested query range (in bases).
+
 10. *lod/*: the output directory of `halLodInterpolate.py`, containing the interpolated lod files
+
 11. *alignment.hal*: the multiple sequence alignment of the input genome assemblies, in HAL format.
 
 Track Documentation
@@ -275,7 +285,7 @@ The following track documentation are automatically generated by `hal2assemblyHu
 ####Alignability
 The documentation for the Alignability track of all genomes is located at *outdir/documentation/alignability.html*. To edit the track documentation, please edit the *alignability.html* file.
 
-```
+___
 ####Description
 
 This track shows the number of genomes aligned to each position of the ref- erence. The values range from 0 to the total number of input genomes and imputed ancestral genomes.
@@ -286,12 +296,12 @@ Alignability was generated using the halAlignability script of the HAL tools pac
 
 ####References
 Hickey *et al.* HAL: a hierarchical format for storing and analyzing multiple genome alignments. *Bioinformatics*. 2013 May;29(10):1341-1342
-``` 
+___
 
 ####GC Percent
 The documentation for the gcPercent track of all genomes is located at *outdir/documentation/gcPercent.html*. To edit the track documentation, please edit the *gcPercent.html* file.
 
-```
+___
 ####Description
 
 The GC percent track shows the percentage of G (guanine) and C (cytosine) bases in 5-base windows. High GC content is typically associated with gene-rich areas.
@@ -305,8 +315,7 @@ This track was generated following the [UCSC GC Percent Track Construction instr
 ####References
 
 The GC Percent graph presentation is by Hiram Clawson. The data was automatically generated using the HAL tools package.
-
-```
+___
 
 ####Conservation
 
@@ -434,7 +443,7 @@ Thanks to Arian Smit, Robert Hubley and GIRI for providing the tools and repeat 
 
 ####References
 
-Smit AFA, Hubley R, Green P. RepeatMasker Open-3.0. [http://www.repeatmasker.org]. 1996-2010.
+Smit AFA, Hubley R, Green P. RepeatMasker Open-3.0. http://www.repeatmasker.org. 1996-2010.
 
 Repbase Update is described in:
 Jurka J. Repbase Update: a database and an electronic journal of repetitive
