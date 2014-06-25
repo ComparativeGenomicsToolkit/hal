@@ -225,7 +225,7 @@ HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To crea
 
 Larger alignments require the use of the `--lod` option to generate precomputed levels of detail.  
 
-Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. More details are available at [hal2assemblyHub Manual](assemblyHub/hal2assemblyHubDoc.pdf). 
+Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. More details are available at [hal2assemblyHub Manual](assemblyHub#comparative-assembly-hub-manual). 
 
 ### Summary Information
 
