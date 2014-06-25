@@ -1,6 +1,6 @@
 Hierarchical Alignment (HAL) Format API (v2.1)
 =====
-Copyright (C) 2012 - 2013 by Glenn Hickey (hickey@soe.ucsc.edu)
+Copyright (C) 2012 - 2014 by Glenn Hickey (hickey@soe.ucsc.edu)
 Released under the MIT license, see LICENSE.txt
 
 HAL is a structure to efficiently store and index multiple genome alignments and ancestral reconstructions.  HAL is a graph-based representation which provides several advantages over matrix/block-based formats such as MAF, such as improved scalability and the ability to perform queries with respect to an arbitrary reference or subtree. 
@@ -217,7 +217,7 @@ Mafs can be generated in parallel using the hal2mafMP.py wrapper
 
 DNA sequences (without any alignment information) can be extracted from HAL files in FASTA format using `hal2fasta`. 
 
-### Displaying in the UCSC Genome Browser
+### Displaying in the UCSC Genome Browser using Assembly Hubs
 
 HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To create an assembly hub, run
 
