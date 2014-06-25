@@ -219,32 +219,7 @@ DNA sequences (without any alignment information) can be extracted from HAL file
 
 ### Displaying in the UCSC Genome Browser using Assembly Hubs
 
-HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To create a comparative assembly hub, run:
-
-    hal2assemblyHub.py mammals.hal outputDirectory
-
-Larger alignments require the use of the `--lod` option to generate precomputed procedural levels of detail for display.
-
- The outputDirectory directory is where all the generated files are written. Please see \url{http://compbio.soe.ucsc.edu/reconstruction/ecoliComparativeHubs/pangenome/README.txt} for explanations of the files. 
- 
- Among the output files is a file named ``hub.txt'', which the user uploads to the UCSC genome browser (similarly to how a track hub is created, see \url{http://genome.ucsc.edu/goldenPath/help/hgTrackHubHelp.html} for more details) to register the assembly hub. 
- 
- The hal2assemblyHub.py script has many command-line options to generate tracks, details can be found by running:
- 
-    hal2assemblyHub.py --help
- 
-To display precomputed annotations run:
- 
-     hal2assemblyHub.py mammals.hal outputDirectory --bedDirs annotationDirs
- 
- Where annotationDirs is a comma separated list of directories containing the annotation files (in BED, BIGBED, WIG or BIGWIG formats), one directory per annotation type. 
- 
- The option --lod is specified to compute the levels of detail, which is recommended for large datasets. 
- 
- For parallelism and job management, hal2assemblyHub.py uses [jobTree](https://github.com/benedictpaten/jobTree), which is installed as part of the Progressive Cactus installation process. Users can specify different jobTree options to speed up the running time, instructions are contained [here](https://github.com/benedictpaten/jobTree/readme.md).
-
-Note that this script is presently dependent on having UCSC's faToTwoBit installed.  The installation of hal2assemblyHub.py is part of the progressive cactus installation, which includes this binary.
-
+HAL alignments can be displayed as Comparative Assembly Hubs in the Genome Browser.  See the detailed manual on this [here](https://github.com/glennhickey/hal/tree/development/assemblyHub#comparative-assembly-hub-manual).
 
 ### Summary Information
 
