@@ -70,8 +70,12 @@ class Setup( Target ):
         #Get tree
         if not self.options.tree:
             checkHalTree(self.halfile, self.outdir, self.options)
-        if self.options.tree: #get the png of the tree
+        assert self.options.tree is not None # if this goes wrong yell at joel
+        if isBinaryTree(self.options.tree): #get the png of the tree
             self.options.treeFig, self.options.leaves = drawTreeWtInternalNodesAligned(self.options.tree, self.outdir, self.options.properName)
+        else:
+            # Can't get tree png
+            self.options.leaves = getLeaves(self.options.tree)
 
         #Get the ordering of the tracks
         #getOrderFromTree(self.options)
