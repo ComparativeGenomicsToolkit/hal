@@ -14,6 +14,7 @@
 #include <map>
 #include <string>
 #include "hal.h"
+#include "sonLib.h"
 
 namespace hal {
 
@@ -50,6 +51,8 @@ struct MafBlockEntry
    // add this because _sequence is no longer assumed to 
    // be unique
    const Genome* _genome;
+   // The node corresponding to this entry (if we are printing trees)
+   stTree *_tree;
 };
 
 class MafBlock
@@ -73,6 +76,9 @@ protected:
    void updateEntry(MafBlockEntry* entry, const Sequence* sequence,
                     DNAIteratorConstPtr dna);
    std::string getName(const Sequence* sequence) const;
+   stTree *buildTree();
+   void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree);
+   stTree *getTreeNode(SegmentIteratorConstPtr segIt);
 
    typedef std::multimap<const Sequence*, MafBlockEntry*, 
                          ColumnIterator::SequenceLess> Entries;
@@ -81,7 +87,9 @@ protected:
    std::vector<MafBlockString*> _stringBuffers;
    hal_index_t _maxLength;
    hal_index_t _refIndex;
-   bool _fullNames; 
+   bool _fullNames;
+   bool _printTree;
+   stTree *_tree;
 
    typedef hal::ColumnIterator::ColumnMap ColumnMap;
    typedef hal::ColumnIterator::DNASet DNASet;

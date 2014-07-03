@@ -123,6 +123,7 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
   {
     entry->_sequence->clear();
   }
+  entry->_tree = NULL;
 }
 
 inline void MafBlock::updateEntry(MafBlockEntry* entry, 
@@ -158,6 +159,101 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
   {
     entry->_sequence->append('-');
   }
+}
+
+stTree *MafBlock::getTreeNode(SegmentIteratorConstPtr segIt)
+{
+  // Make sure the segment is sliced to only 1 base.
+  assert(segIt->getStartPosition() == segIt->getEndPosition());
+  stTree *ret = stTree_construct();
+  const Genome *genome = segIt->getGenome();
+  const Sequence *seq = genome->getSequenceBySite(segIt->getStartPosition());
+  Entries::const_iterator entryIt = _entries.lower_bound(seq);
+  if(entryIt != _entries.end()) {
+    MafBlockEntry *entry = NULL;
+    for(; entryIt != _entries.end() && entryIt->first == seq; entryIt++) {
+      MafBlockEntry *curEntry = entryIt->second;
+      if(curEntry->_start == segIt->getStartPosition() - seq->getStartPosition()) {
+        entry = curEntry;
+        break;
+      }
+    }
+    assert(entry != NULL);
+    stTree_setClientData(ret, entry);
+    stTree_setLabel(stString_copy(entry->_name));
+    entry->_tree = ret;
+  } else {
+    // No entry for this sequence. Can happen if this is an ancestor
+    // and we aren't including ancestral sequence.
+    assert(genome->getNumChildren() != 0);
+    // Isn't handled correctly right now
+    assert(false);
+  }
+  
+  return ret;
+}
+
+// tree parameter represents node corresponding to the genome with
+// bottom segment botIt
+void MafBlock::buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree)
+{
+  const Genome *genome = botIt->getGenome();
+
+  // attach a node and recurse for each of this segment's children
+  // (and paralogous segments)
+  for (hal_size_t i = 0; i < botIt->getNumChildren(); i++) {
+    if (botIt->hasChild(i)) {
+      TopSegmentIteratorConstPtr topIt = botIt->getGenome()->getChild(i)->getTopSegmentIterator();
+      topIt->toChild(botIt, i);
+      stTree *canonicalParalog = getTreeNode(topIt);
+      stTree_setParent(canonicalParalog, tree);
+      if(topIt->hasParseDown()) {
+        BottomSegmentIteratorConstPtr botIt = genome->getBottomSegmentIterator();
+        botIt->toParseDown(topIt);
+        buildTreeR(botIt, canonicalParalog);
+      }
+      // Traverse the paralogous segments cycle and add those segments as well
+      if (topIt->hasNextParalogy()) {
+        topIt->toNextParalogy();
+        while(!topIt->isCanonicalParalog()) {
+          stTree *paralog = getTreeNode(topIt);
+          stTree_setParent(paralog, tree);
+          if(topIt->hasParseDown()) {
+            BottomSegmentIteratorConstPtr botIt = genome->getBottomSegmentIterator();
+            botIt->toParseDown(topIt);
+            buildTreeR(botIt, paralog);
+          }
+          topIt->toNextParalogy();
+        }
+      }
+    }
+  }
+}
+
+stTree *MafBlock::buildTree(void)
+{
+  MafBlockEntry *refEntry = _reference->second;
+  const Genome *genome = refEntry->_genome;
+  hal_index_t refStart = refEntry->_start + genome->getSequence(refEntry->_sequence->str())->getStartPosition();
+
+  // Get the bottom segment that is the common ancestor of all entries
+  TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator(refStart);
+  BottomSegmentIteratorConstPtr botIt;
+  while (topIt->hasParent()) {
+    const Genome *parent = genome->getParent();
+    botIt = parent->getBottomSegmentIterator();
+    botIt->toParent(topIt);
+    if(!botIt->hasParseUp()) {
+      // Reached root genome
+      break;
+    }
+    topIt = parent->getTopSegmentIterator();
+    topIt->toParseUp(botIt);
+  }
+
+  stTree *tree = getTreeNode(botIt);
+  buildTreeR(botIt, tree);
+  return tree;
 }
 
 void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames)
@@ -229,6 +325,10 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames)
         ++e;
       }
     }
+  }
+
+  if (_printTree) {
+      _tree = buildTree();
   }
 
   if (_reference == _entries.end())
@@ -339,6 +439,10 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
       }
     }
   }
+  if (_printTree) {
+    // TODO: Need to check that the two induced trees are exactly equal.
+    return false;
+  }
   return true;
 }
 
@@ -368,8 +472,61 @@ istream& hal::operator>>(istream& is, MafBlockEntry& mafBlockEntry)
   return is;
 }
 
+// Puts the given node and its parents at the start of all their
+// children lists. This has the effect of making the node first in a
+// post-order traversal.
+static void prioritizeNodeInTree(stTree *node)
+{
+  stTree *parent = stTree_getParent(node);
+  if(parent == NULL) {
+    // Nothing to do.
+    return;
+  }
+
+  // Swap the first node and this node.
+  int64_t nodeIndex = -1;
+  for (int64_t i = 0; i < stList_length(parent->nodes); i++) {
+    if (stList_get(parent->nodes, i) == node) {
+      nodeIndex = i;
+      break;
+    }
+  }
+  assert(nodeIndex != -1);
+
+  stTree *tmp = stList_get(parent->nodes, 0);
+  stList_set(parent->nodes, 0, node);
+  stList_set(parent->nodes, nodeIndex, tmp);
+  prioritizeNodeInTree(parent);
+}
+
+static void printTreeEntries(stTree *tree, ostream& os)
+{
+  for(int64_t i = 0; i < stTree_getChildNumber(tree); i++) {    
+    stTree *child = stTree_getChild(tree, i);
+    printTreeEntries(tree, os);
+  }
+  MafBlockEntry *entry = stTree_getClientData(tree);
+  os << *entry;
+}
+
+static ostream& printBlockWithTree(ostream& os, const MafBlock& mafBlock)
+{
+  // Sort tree so that the reference comes first.
+  MafBlockEntry *refEntry = _reference->second;
+  prioritizeNodeInTree(refEntry->_tree);
+
+  // Print tree as a block comment.
+  char *treeString = stTree_getNewickTreeString(_tree);
+  os << "a tree=" << treeString << "\n";
+
+  // Print entries in post order.
+  printTreeEntries(_tree);
+
+  return os;
+}
+
 // todo: fast way of reference first. 
-ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
+static ostream& printBlock(ostream& os, const MafBlock& mafBlock)
 {
   os << "a\n";
 
@@ -398,6 +555,15 @@ ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
     }
   }
   return os;
+}
+
+ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
+{
+  if (_printTree) {
+    return printBlockWithTree(os, mafBlock);
+  } else {
+    return printBlock(os, mafBlock);
+  }
 }
 
 istream& hal::operator>>(istream& is, MafBlock& mafBlock)
