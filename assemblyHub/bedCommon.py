@@ -9,6 +9,9 @@ from optparse import OptionParser
 from sonLib.bioio import system  
 
 #========= FILTER LONG INTRONS ==========
+class BedFormatError(Exception):
+    pass
+
 class Bed():
     '''Bed record
     '''
