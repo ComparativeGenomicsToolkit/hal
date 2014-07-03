@@ -44,7 +44,7 @@ public:
    void setUnique(bool unique);
    void setAppend(bool append);
    void setMaxBlockLength(hal_index_t maxLength);
-
+   void setPrintTree(bool printTree);
 
 protected:
 
@@ -61,6 +61,7 @@ protected:
    bool _ucscNames;
    bool _unique;
    bool _append;
+   bool _printTree;
 };
 
 }

@@ -63,7 +63,7 @@ public:
    MafBlock(hal_index_t maxLength = defaultMaxLength);
    ~MafBlock();
 
-   void initBlock(ColumnIteratorConstPtr col, bool fullNames);
+   void initBlock(ColumnIteratorConstPtr col, bool fullNames, bool printTree);
    void appendColumn(ColumnIteratorConstPtr col);
    bool canAppendColumn(hal::ColumnIteratorConstPtr col);
    void setMaxLength(hal_index_t maxLen);
@@ -76,9 +76,12 @@ protected:
    void updateEntry(MafBlockEntry* entry, const Sequence* sequence,
                     DNAIteratorConstPtr dna);
    std::string getName(const Sequence* sequence) const;
-   stTree *buildTree();
-   void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree);
-   stTree *getTreeNode(SegmentIteratorConstPtr segIt);
+   stTree *buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries);
+   void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, bool modifyEntries);
+   stTree *getTreeNode(SegmentIteratorConstPtr segIt, bool modifyEntries);
+
+   std::ostream& printBlock(std::ostream& os) const;
+   std::ostream& printBlockWithTree(std::ostream& os) const;
 
    typedef std::multimap<const Sequence*, MafBlockEntry*, 
                          ColumnIterator::SequenceLess> Entries;
