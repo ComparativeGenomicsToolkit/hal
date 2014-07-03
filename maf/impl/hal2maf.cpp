@@ -81,6 +81,8 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("global", "output all columns in alignment, "
                                "ignoring refGenome, refSequence, etc. flags",
                                false);
+  optionsParser->addOptionFlag("printTree", "print a gene tree for every block",
+                               false);
 
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
@@ -105,6 +107,7 @@ int main(int argc, char** argv)
   bool unique;
   bool append;
   bool global;
+  bool printTree;
   hal_index_t maxBlockLen;
   try
   {
@@ -125,6 +128,7 @@ int main(int argc, char** argv)
     unique = optionsParser->getFlag("unique");
     append = optionsParser->getFlag("append");
     global = optionsParser->getFlag("global");
+    printTree = optionsParser->getFlag("printTree");
     maxBlockLen = optionsParser->getOption<hal_index_t>("maxBlockLen");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
@@ -241,6 +245,7 @@ int main(int argc, char** argv)
     mafExport.setUnique(unique);
     mafExport.setAppend(append);
     mafExport.setMaxBlockLength(maxBlockLen);
+    mafExport.setPrintTree(printTree);
 
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")

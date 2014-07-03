@@ -15,7 +15,8 @@ using namespace hal;
 const hal_index_t MafBlock::defaultMaxLength = 1000;
 
 MafBlock::MafBlock(hal_index_t maxLength) : _maxLength(maxLength),
-                                            _fullNames(false)
+                                            _fullNames(false),
+                                            _tree(NULL)
 {
   if (_maxLength <= 0)
   {
@@ -32,6 +33,9 @@ MafBlock::~MafBlock()
   for (size_t j = 0; j < _stringBuffers.size(); ++j)
   {
     delete _stringBuffers[j];
+  }
+  if (_printTree && _tree != NULL) {
+    stTree_destruct(_tree);
   }
 }
 
@@ -123,6 +127,7 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
   {
     entry->_sequence->clear();
   }
+  entry->_tree = NULL;
 }
 
 inline void MafBlock::updateEntry(MafBlockEntry* entry, 
@@ -160,10 +165,171 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
   }
 }
 
-void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames)
+// Puts the given node and its parents at the start of all their
+// children lists. This has the effect of making the node first in a
+// post-order traversal.
+static void prioritizeNodeInTree(stTree *node)
 {
+  stTree *parent = stTree_getParent(node);
+  if(parent == NULL) {
+    // Nothing to do.
+    return;
+  }
+
+  // Swap the first node and this node.
+  int64_t nodeIndex = -1;
+  for (int64_t i = 0; i < stTree_getChildNumber(parent); i++) {
+    if (stTree_getChild(parent, i) == node) {
+      nodeIndex = i;
+      break;
+    }
+  }
+  assert(nodeIndex != -1);
+
+  stTree *tmp = stTree_getChild(parent, 0);
+  stTree_setChild(parent, 0, node);
+  stTree_setChild(parent, nodeIndex, tmp);
+  prioritizeNodeInTree(parent);
+}
+
+stTree *MafBlock::getTreeNode(SegmentIteratorConstPtr segIt, bool modifyEntries)
+{
+  // Make sure the segment is sliced to only 1 base.
+  assert(segIt->getStartPosition() == segIt->getEndPosition());
+  stTree *ret = stTree_construct();
+  const Genome *genome = segIt->getGenome();
+  const Sequence *seq = genome->getSequenceBySite(segIt->getStartPosition());
+  Entries::const_iterator entryIt = _entries.lower_bound(seq);
+  if (entryIt != _entries.end() && entryIt->first == seq) {
+    MafBlockEntry *entry = NULL;
+    for (; entryIt != _entries.end() && entryIt->first == seq; entryIt++) {
+      MafBlockEntry *curEntry = entryIt->second;
+      hal_index_t curEntryPos = curEntry->_start + curEntry->_length;
+      if (curEntry->_strand == '-') {
+        curEntryPos = curEntry->_srcLength - 1 - curEntryPos;
+      }
+      if (curEntryPos == segIt->getStartPosition() - seq->getStartPosition() || curEntry->_start == NULL_INDEX) {
+        entry = curEntry;
+        break;
+      }
+    }
+    assert(entry != NULL);
+    stTree_setClientData(ret, entry);
+    stTree_setLabel(ret, stString_copy(entry->_name.c_str()));
+    if (modifyEntries) {
+      entry->_tree = ret;
+    }
+  } else {
+    // No entry for this sequence. Can happen if this is an ancestor
+    // and we aren't including ancestral sequence.
+    entryIt = _entries.begin();
+    while(entryIt != _entries.end()) {
+      entryIt++;
+    }
+    assert(genome->getNumChildren() != 0);
+    // Isn't handled correctly right now
+    assert(false);
+  }
+  
+  return ret;
+}
+
+// tree parameter represents node corresponding to the genome with
+// bottom segment botIt
+void MafBlock::buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, bool modifyEntries)
+{
+  const Genome *genome = botIt->getGenome();
+
+  // attach a node and recurse for each of this segment's children
+  // (and paralogous segments)
+  for (hal_size_t i = 0; i < botIt->getNumChildren(); i++) {
+    if (botIt->hasChild(i)) {
+      const Genome *child = genome->getChild(i);
+      TopSegmentIteratorConstPtr topIt = child->getTopSegmentIterator();
+      topIt->toChild(botIt, i);
+      stTree *canonicalParalog = getTreeNode(topIt, modifyEntries);
+      stTree_setParent(canonicalParalog, tree);
+      if (topIt->hasParseDown()) {
+        BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
+        childBotIt->toParseDown(topIt);
+        buildTreeR(childBotIt, canonicalParalog, modifyEntries);
+      }
+      // Traverse the paralogous segments cycle and add those segments as well
+      if (topIt->hasNextParalogy()) {
+        topIt->toNextParalogy();
+        while(!topIt->isCanonicalParalog()) {
+          stTree *paralog = getTreeNode(topIt, modifyEntries);
+          stTree_setParent(paralog, tree);
+          if(topIt->hasParseDown()) {
+            BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
+            childBotIt->toParseDown(topIt);
+            buildTreeR(childBotIt, canonicalParalog, modifyEntries);
+          }
+          topIt->toNextParalogy();
+        }
+      }
+    }
+  }
+}
+
+stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
+{
+  // Get any base from the column to begin building the tree
+  const ColumnMap *colMap = colIt->getColumnMap();
+  ColumnMap::const_iterator colMapIt = colMap->begin();
+  const Sequence *sequence = NULL;
+  hal_index_t index = NULL_INDEX;
+  while (colMapIt != colMap->end()) {
+    if (!colMapIt->second->empty()) {
+      // Found a non-empty column map entry, just take the index and
+      // sequence of the first base found
+      sequence = colMapIt->first;
+      index = colMapIt->second->at(0)->getArrayIndex();
+      break;
+    }
+    colMapIt++;
+  }
+  assert(sequence != NULL && index != NULL_INDEX);
+  const Genome *genome = sequence->getGenome();
+  
+
+  // Get the bottom segment that is the common ancestor of all entries
+  TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
+  BottomSegmentIteratorConstPtr botIt;
+  if (genome->getNumTopSegments() == 0) {
+    // The reference is the root genome.
+    botIt = genome->getBottomSegmentIterator();
+    botIt->toSite(index);
+  } else {
+    // Keep heading up the tree until we hit the root segment.
+    topIt->toSite(index);
+    while (topIt->hasParent()) {
+      genome = topIt->getGenome();
+      const Genome *parent = genome->getParent();
+      botIt = parent->getBottomSegmentIterator();
+      botIt->toParent(topIt);
+      if(parent->getParent() == NULL || !botIt->hasParseUp()) {
+        // Reached root genome
+        break;
+      }
+      topIt = parent->getTopSegmentIterator();
+      topIt->toParseUp(botIt);
+    }
+  }
+
+  stTree *tree = getTreeNode(botIt, modifyEntries);
+  buildTreeR(botIt, tree, modifyEntries);
+  return tree;
+}
+
+void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames, bool printTree)
+{
+  if (printTree && _tree != NULL) {
+    stTree_destruct(_tree);
+  }
   resetEntries();
   _fullNames = fullNames;
+  _printTree = printTree;
   const ColumnMap* colMap = col->getColumnMap();
   Entries::iterator e = _entries.begin();
   ColumnMap::const_iterator c = colMap->begin();
@@ -245,7 +411,14 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames)
       _refIndex = col->getReferenceSequencePosition();
     }
   }
-}    
+
+  if (_printTree) {
+    _tree = buildTree(col, true);
+    //Sort tree so that the reference comes first.
+    MafBlockEntry *refEntry = _reference->second;
+    prioritizeNodeInTree(refEntry->_tree);
+  }
+}
 
 void MafBlock::appendColumn(ColumnIteratorConstPtr col)
 {
@@ -339,6 +512,12 @@ bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
       }
     }
   }
+  if (_printTree) {
+    stTree *tree = buildTree(col, false);
+    bool ret = stTree_equals(tree, _tree);
+    stTree_destruct(tree);
+    return ret;
+  }
   return true;
 }
 
@@ -368,18 +547,43 @@ istream& hal::operator>>(istream& is, MafBlockEntry& mafBlockEntry)
   return is;
 }
 
+static void printTreeEntries(stTree *tree, ostream& os)
+{
+  for(int64_t i = 0; i < stTree_getChildNumber(tree); i++) {    
+    stTree *child = stTree_getChild(tree, i);
+    printTreeEntries(child, os);
+  }
+  MafBlockEntry *entry = (MafBlockEntry *) stTree_getClientData(tree);
+  os << *entry;
+}
+
+ostream& MafBlock::printBlockWithTree(ostream& os) const
+{
+  // The tree must be sorted so that the reference comes first! But
+  // this should have been done already when building the tree.
+
+  // Print tree as a block comment.
+  char *treeString = stTree_getNewickTreeString(_tree);
+  os << "a tree=" << treeString << "\n";
+
+  // Print entries in post order.
+  printTreeEntries(_tree, os);
+
+  return os;
+}
+
 // todo: fast way of reference first. 
-ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
+ostream& MafBlock::printBlock(ostream& os) const
 {
   os << "a\n";
 
-  MafBlock::Entries::const_iterator ref = mafBlock._reference;
-  assert(mafBlock._reference != mafBlock._entries.end());
+  Entries::const_iterator ref = _reference;
+  assert(_reference != _entries.end());
   if (ref->second->_start == NULL_INDEX)
   {
-    if (mafBlock._refIndex != NULL_INDEX)
+    if (_refIndex != NULL_INDEX)
     {
-      ref->second->_start = mafBlock._refIndex;
+      ref->second->_start = _refIndex;
       os << *ref->second;
       ref->second->_start = NULL_INDEX;
     }    
@@ -389,8 +593,8 @@ ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
     os << *ref->second;
   }
 
-  for (MafBlock::Entries::const_iterator e = mafBlock._entries.begin();
-       e != mafBlock._entries.end(); ++e)
+  for (Entries::const_iterator e = _entries.begin();
+       e != _entries.end(); ++e)
   {
     if (e->second->_start != NULL_INDEX && e != ref)
     {
@@ -398,6 +602,15 @@ ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
     }
   }
   return os;
+}
+
+ostream& hal::operator<<(ostream& os, const MafBlock& mafBlock)
+{
+  if (mafBlock._printTree) {
+    return mafBlock.printBlockWithTree(os);
+  } else {
+    return mafBlock.printBlock(os);
+  }
 }
 
 istream& hal::operator>>(istream& is, MafBlock& mafBlock)
