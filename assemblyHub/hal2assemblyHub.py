@@ -243,11 +243,11 @@ class WriteGenomesFile(Target):
             f.write("groups groups.txt\n")
 
             writeDescriptionFile(genome, genomedir)
-            f.write("htmlPath %s/description.html\n" %genome)
-            #f.write("description %s\n" % getProperName(genome, self.options.properName))
+            f.write("htmlPath %s/description.html\n" % genome)
+            f.write("description %s\n" % getProperName(genome, self.options.properName))
             f.write("organism %s\n" % getProperName(genome, self.options.properName))
             f.write("orderKey 4800\n")
-            f.write("scientificName %s\n" %genome)
+            f.write("scientificName %s\n" % genome)
             
             seq2len = self.genome2seq2len[genome]
             (seq, l) = getLongestSeq(seq2len)
