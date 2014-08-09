@@ -665,7 +665,7 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   BlockMapper::MSSet paraSet;
   hal_size_t totalLength = 0;
   hal_size_t reversedLength = 0;
-  if (doDupes == true)
+  if (doDupes == true && qGenome != tGenome())
   {
     blockMapper.extractReferenceParalogies(paraSet);
   }

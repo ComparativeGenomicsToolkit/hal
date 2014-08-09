@@ -65,7 +65,7 @@ void BlockMapper::map()
   set<const Genome*>  inputSet;
   inputSet.insert(_refGenome);
   inputSet.insert(_queryGenome);
-  if (getLowestCommonAncestor(inputSet) == _refGenome)
+  if ((getLowestCommonAncestor(inputSet) == _refGenome) && (_refGenome != _queryGenome))
   {
     refSeg = _refGenome->getBottomSegmentIterator();
     lastIndex = _refGenome->getNumBottomSegments();
@@ -89,11 +89,11 @@ void BlockMapper::map()
   assert(refSeg->getEndPosition() <= _absRefLast);
 
   while (refSeg->getArrayIndex() < lastIndex &&
-         refSeg->getStartPosition() <= _absRefLast)  
+         refSeg->getStartPosition() <= _absRefLast)
   {
     if (_targetReversed == true)
     {
-      refSeg->toReverseInPlace();            
+      refSeg->toReverseInPlace();
     }
     refSeg->getMappedSegments(_segSet, _queryGenome, &_spanningTree,
                               _doDupes, _minLength);
