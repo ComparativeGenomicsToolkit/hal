@@ -417,8 +417,16 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
   {
     namesOnPath.insert((*i)->getName());
   }
-  mapRecursive(NULL, input, output, tgtGenome, namesOnPath, doDupes, 
-               minLength);
+
+  // Find the MRCA.
+  const Genome *sourceGenome = source->getGenome();
+  set<const Genome *> genomeSet;
+  genomeSet.insert(sourceGenome);
+  genomeSet.insert(tgtGenome);
+  const Genome *mrca = getLowestCommonAncestor(genomeSet);
+
+  mapIncludingExtraParalogs(sourceGenome, input, output, namesOnPath, tgtGenome, mrca, mrca, doDupes,
+                            minLength);
 
   list<DefaultMappedSegmentConstPtr>::iterator outIt = output.begin();
   for (; outIt != output.end(); ++outIt)
@@ -440,33 +448,39 @@ hal_size_t DefaultMappedSegment::mapIncludingExtraParalogs(
   const Genome* tgtGenome,
   const Genome* mrca,
   const Genome *coalescenceLimit,
+  bool doDupes,
   hal_size_t minLength)
 {
+  cout << "mapping from " << srcGenome->getName() << " to " << tgtGenome->getName() << " with mrca: " << mrca->getName() << endl;
+  list<DefaultMappedSegmentConstPtr>* outputPtr = &results;
+
   // FIXME: using multiple lists is probably much slower than just
   // reusing the results list over and over.
   list<DefaultMappedSegmentConstPtr> upResults;
   // Map all segments up to the MRCA of src and tgt.
   if (srcGenome != tgtGenome)
   {
-    mapRecursiveUp(input, upResults, srcGenome, mrca, minLength);
+    cout << "recursive up: " << mapRecursiveUp(input, upResults, mrca, minLength) << endl;
   } else {
     upResults = input;
   }
 
   list<DefaultMappedSegmentConstPtr> paralogResults;
-  // Map to all paralogs that coalesce in or below the root.
-  if (mrca != root && doDupes) {
-    mapRecursiveParalogies(mrca, upResults, paralogResults, mrca, root);
+  // Map to all paralogs that coalesce in or below the coalescenceLimit.
+  if (mrca != coalescenceLimit && doDupes) {
+    cout << "paralogs: " << mapRecursiveParalogies(mrca, upResults, paralogResults, namesOnPath, coalescenceLimit, minLength) << endl;
   } else {
     paralogResults = upResults;
   }
 
   // Finally, map back down to the target genome.
   if (tgtGenome != mrca) {
-    mapRecursiveDown(paralogResults, results, mrca, tgtGenome);
+    cout << "recursive down: " << mapRecursiveDown(paralogResults, results, tgtGenome, namesOnPath, doDupes, minLength) << endl;
   } else {
-    results = paralogResults;
+    *outputPtr = paralogResults;
   }
+
+  return results.size();
 }
 
 // Map all segments from the input to any segments in the same genome
@@ -480,9 +494,9 @@ hal_size_t DefaultMappedSegment::mapRecursiveParalogies(
   const Genome* coalescenceLimit,
   hal_size_t minLength)
 {
-  const Genome *curGenome = (input.begin())->getGenome();
+  const Genome *curGenome = (*input.begin())->getGenome();
   assert(curGenome != NULL);
-  if (curGenome == root) {
+  if (curGenome == coalescenceLimit) {
     results = input;
     return 0;
   }
@@ -502,24 +516,26 @@ hal_size_t DefaultMappedSegment::mapRecursiveParalogies(
     mapSelf((*i), paralogs, minLength);
   }
 
-  if (nextGenome != root) {
+  if (nextGenome != coalescenceLimit) {
+    list<DefaultMappedSegmentConstPtr> nextSegments;
     // Map all of the original segments (not the paralogs, which is a
     // waste) up to the next genome.
     i = input.begin();
     for (; i != input.end(); ++i)
     {
       assert((*i)->getGenome() == curGenome);
-      mapUp((*i), nextSegments, minLength);
+      mapUp((*i), nextSegments, true, minLength);
     }
 
     // Recurse on the mapped segments.
-    mapRecursiveParalogies(srcGenome, nextSegments, results, namesOnPath, root, minLength);
+    mapRecursiveParalogies(srcGenome, nextSegments, results, namesOnPath, coalescenceLimit, minLength);
   }
 
   // Map all the paralogs we found in this genome back to the source.
   list<DefaultMappedSegmentConstPtr> paralogsMappedToSrc;
   mapRecursiveDown(paralogs, paralogsMappedToSrc, srcGenome, namesOnPath, false, minLength);
-  results.splice(paralogsMappedToSrc);
+
+  results.splice(results.begin(), paralogsMappedToSrc);
   results.sort(DefaultMappedSegment::LessSource());
   results.unique(DefaultMappedSegment::EqualTo());
   return results.size();
@@ -537,7 +553,7 @@ hal_size_t DefaultMappedSegment::mapRecursiveUp(
   list<DefaultMappedSegmentConstPtr>* inputPtr = &input;
   list<DefaultMappedSegmentConstPtr>* outputPtr = &results;
 
-  if (input->empty() || curGenome == tgtGenome)
+  if (inputPtr->empty() || (*inputPtr->begin())->getGenome() == tgtGenome)
   {
     results = *inputPtr;
     return 0;
@@ -559,8 +575,8 @@ hal_size_t DefaultMappedSegment::mapRecursiveUp(
   list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
   for (; i != inputPtr->end(); ++i)
   {
-    assert((*i)->getGenome() == genome);
-    mapUp((*i), *outputPtr, doDupes, minLength);
+    assert((*i)->getGenome() == curGenome);
+    mapUp((*i), *outputPtr, true, minLength);
   }
   
   if (nextGenome != tgtGenome)
@@ -568,7 +584,7 @@ hal_size_t DefaultMappedSegment::mapRecursiveUp(
     // Continue the recursion.
     swap(inputPtr, outputPtr);
     outputPtr->clear();
-    mapRecursiveUp(*inputPtr, *outputPtr, results, tgtGenome, doDupes, minLength);
+    mapRecursiveUp(*inputPtr, *outputPtr, tgtGenome, minLength);
   }
 
   if (outputPtr != &results)
@@ -595,7 +611,7 @@ hal_size_t DefaultMappedSegment::mapRecursiveDown(
   list<DefaultMappedSegmentConstPtr>* inputPtr = &input;
   list<DefaultMappedSegmentConstPtr>* outputPtr = &results;
 
-  if (input->empty())
+  if (inputPtr->empty())
   {
     results = *inputPtr;
     return 0;
@@ -607,19 +623,17 @@ hal_size_t DefaultMappedSegment::mapRecursiveDown(
   // Find the correct child to move down into.
   const Genome *nextGenome = NULL;
   hal_size_t nextChildIndex = numeric_limits<hal_size_t>::max();
-  vector<string> childNames = alignment->getChildNames(genome->getName());
+  const Alignment *alignment = curGenome->getAlignment();
+  vector<string> childNames = alignment->getChildNames(curGenome->getName());
   for (hal_size_t child = 0; 
        nextGenome == NULL && child < childNames.size(); ++child)
   {
     if (childNames[child] == tgtGenome->getName() ||
         namesOnPath.find(childNames[child]) != namesOnPath.end())
     {
-      const Genome* childGenome = genome->getChild(child);
-      if (childGenome != prevGenome)
-      {
-        nextGenome = childGenome;
-        nextChildIndex = child;
-      }
+      const Genome* childGenome = curGenome->getChild(child);
+      nextGenome = childGenome;
+      nextChildIndex = child;
     }
   }
 
@@ -637,7 +651,7 @@ hal_size_t DefaultMappedSegment::mapRecursiveDown(
   list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
   for (; i != inputPtr->end(); ++i)
   {
-    assert((*i)->getGenome() == genome);
+    assert((*i)->getGenome() == curGenome);
     mapDown((*i), nextChildIndex, *outputPtr, minLength);
   }
 
@@ -652,12 +666,9 @@ hal_size_t DefaultMappedSegment::mapRecursiveDown(
     list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
     for (; i != inputPtr->end(); ++i)
     {
-      assert((*i)->getGenome() == genome);
+      assert((*i)->getGenome() == curGenome);
       mapSelf((*i), *outputPtr, minLength);
     }
-
-    swap(inputPtr, outputPtr);
-    outputPtr->clear();
   }
 
   if (nextGenome != tgtGenome)
@@ -665,7 +676,7 @@ hal_size_t DefaultMappedSegment::mapRecursiveDown(
     // Continue the recursion.
     swap(inputPtr, outputPtr);
     outputPtr->clear();
-    mapRecursiveDown(*inputPtr, *outputPtr, results, tgtGenome, namesOnPath, doDupes, minLength);
+    mapRecursiveDown(*inputPtr, *outputPtr, tgtGenome, namesOnPath, doDupes, minLength);
   }
 
   results.sort(DefaultMappedSegment::LessSource());

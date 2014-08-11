@@ -186,11 +186,14 @@ hal_size_t DefaultSegmentIterator::getMappedSegments(
     set<const Genome*> inputSet;
     inputSet.insert(getGenome());
     inputSet.insert(tgtGenome);
+    const Genome *mrca = getLowestCommonAncestor(inputSet);
+    inputSet.erase(getGenome());
+    inputSet.insert(mrca);
     getGenomesInSpanningTree(inputSet, pathSet);
     genomesOnPath = &pathSet;
   }
 
-  hal_size_t numResults = DefaultMappedSegment::map(this, outSegments, 
+  hal_size_t numResults = DefaultMappedSegment::map(this, outSegments,
                                                     tgtGenome,
                                                     genomesOnPath, doDupes,
                                                     minLength);
