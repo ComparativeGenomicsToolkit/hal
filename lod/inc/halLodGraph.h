@@ -41,6 +41,7 @@ public:
     * is:  every step bases are sampled.  */
    void build(AlignmentConstPtr alignment, const Genome* parent,
               const std::vector<const Genome*>& children, 
+              const Genome* grandParent,
               hal_size_t step, bool allSequences, double probeFrac,
               double minSeqFrac);
 
@@ -105,6 +106,7 @@ protected:
    AlignmentConstPtr _alignment;
    const Genome* _parent;
    std::set<const Genome*> _genomes;
+   const Genome* _grandParent;
 
    // step size for interpolation
    hal_size_t _step;

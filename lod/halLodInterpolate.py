@@ -73,7 +73,7 @@ def getMinAvgBlockSize(halPath):
 # the maximum level of detail has at most maxBlock (expected) blocks
 # per genome, and each hal file has multFac (approx maxBlock) bigger
 # blocks than the previous
-def getSteps(halPath, maxBlock, scaleFactor, minLod0):
+def getSteps(halPath, maxBlock, scaleFactor, minLod0, cutOffFrac):
     maxLen = getMaxGenomeLength(halPath)
     assert maxLen > 0
     maxStep = math.ceil(float(maxLen) / float(maxBlock))
@@ -83,7 +83,7 @@ def getSteps(halPath, maxBlock, scaleFactor, minLod0):
     step = baseStep
     while True:
         outList.append(step)
-        if step > maxStep:
+        if step > maxStep * cutOffFrac:
             break
         step *= scaleFactor
     return [int(x) for x in outList]
@@ -97,10 +97,10 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
                maxDNA, absPath, trans, inMemory, probeFrac, minSeqFrac,
-               scaleCorFac, numProc, chunk, minLod0):
+               scaleCorFac, numProc, chunk, minLod0, cutOff):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
-    steps = getSteps(halPath, maxBlock, scale, minLod0)
+    steps = getSteps(halPath, maxBlock, scale, minLod0, cutOff)
     curStepFactor = scaleCorFac
     lodExtractCmds = []
     prevStep = None
@@ -149,11 +149,11 @@ def main(argv=None):
     parser.add_argument("--maxBlock",
                         help="maximum desired number of blocks to ever " 
                         "display at once.", type=int,
-                        default=123)
+                        default=223)
     parser.add_argument("--scale",
                         help="scaling factor between two successive levels"
                         " of detail", type=float,
-                        default=3.0)
+                        default=2.5)
     parser.add_argument("--outHalDir", help="path of directory where "
                         "interpolated hal files are stored.  By default "
                         "they will be stored in the same directory as the "
@@ -183,17 +183,19 @@ def main(argv=None):
                         action="store_true", default=False)
     parser.add_argument("--probeFrac", help="Fraction of bases in step-interval"
                         " to sample while looking for most aligned column. "
-                        "Use default from halLodExtract if not set.",                
+                        "Use default from halLodExtract if not set.  To see"
+                        " default value, use halLodExtract --help",                
                         type=float, default=None)
     parser.add_argument("--minSeqFrac", help="Minumum sequence length to sample "
                         "as fraction of step size: ie sequences with "
                         "length <= floor(minSeqFrac * step) are ignored."
-                        "Use default from halLodExtract if not set.",                
+                        "Use default from halLodExtract if not set. To see"
+                        " default value, use halLodExtract --help",                  
                         type=float, default=None)
     parser.add_argument("--scaleCorFac", help="Correction factor for scaling. "
                         " Assume that scaling by (X * scaleCorFactor) is "
                         " required to reduce the number of blocks by X.",
-                        type=float, default=1.3)
+                        type=float, default=1.0)
     parser.add_argument("--numProc", help="Number of concurrent processes",
                         type=int, default=1)
     parser.add_argument("--chunk", help="Chunk size of output hal files.  ",
@@ -202,6 +204,15 @@ def main(argv=None):
                         "ensure that Lod0 (original hal) gets range from 0 "
                         "to at least the specified value", type=int,
                         default=0)
+    parser.add_argument("--cutOff", help="Cut-off fraction for determining "
+                        "highest level of detail.  Normally, --maxBlocks is"
+                        " used to determine the step-size for each LOD, but "
+                        "the exponential scaling can cause this to create"
+                        " final (highest) LODs that are too sparse.  The lower"
+                        "this parameter is (must stay > 0), the sooner "
+                        "the LOD generation process will be cut off, and the"
+                        " more fine-grained the highest LOD will be",
+                        default=0.75, type=float)
 
     args = parser.parse_args()
 
@@ -226,7 +237,7 @@ def main(argv=None):
                args.maxBlock, args.scale, args.overwrite, args.maxDNA,
                args.absPath, args.trans, args.inMemory, args.probeFrac,
                args.minSeqFrac, args.scaleCorFac, args.numProc, args.chunk,
-               args.minLod0)
+               args.minLod0, args.cutOff)
     
 if __name__ == "__main__":
     sys.exit(main())
