@@ -171,7 +171,7 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
 static void prioritizeNodeInTree(stTree *node)
 {
   stTree *parent = stTree_getParent(node);
-  if(parent == NULL) {
+  if (parent == NULL) {
     // Nothing to do.
     return;
   }
@@ -324,6 +324,7 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
     tree = getTreeNode(botIt, modifyEntries);
     buildTreeR(botIt, tree, modifyEntries);
   }
+  assert(tree != NULL);
   return tree;
 }
 
@@ -419,9 +420,6 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames, bool printT
 
   if (_printTree) {
     _tree = buildTree(col, true);
-    //Sort tree so that the reference comes first.
-    MafBlockEntry *refEntry = _reference->second;
-    prioritizeNodeInTree(refEntry->_tree);
   }
 }
 
@@ -564,8 +562,9 @@ static void printTreeEntries(stTree *tree, ostream& os)
 
 ostream& MafBlock::printBlockWithTree(ostream& os) const
 {
-  // The tree must be sorted so that the reference comes first! But
-  // this should have been done already when building the tree.
+  //Sort tree so that the reference comes first.
+  MafBlockEntry *refEntry = _reference->second;
+  prioritizeNodeInTree(refEntry->_tree);
 
   // Print tree as a block comment.
   char *treeString = stTree_getNewickTreeString(_tree);
