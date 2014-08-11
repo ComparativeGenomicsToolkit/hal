@@ -292,7 +292,6 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
   assert(sequence != NULL && index != NULL_INDEX);
   const Genome *genome = sequence->getGenome();
   
-
   // Get the bottom segment that is the common ancestor of all entries
   TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
   BottomSegmentIteratorConstPtr botIt;
@@ -304,8 +303,7 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
     // Keep heading up the tree until we hit the root segment.
     topIt->toSite(index);
     while (topIt->hasParent()) {
-      genome = topIt->getGenome();
-      const Genome *parent = genome->getParent();
+      const Genome *parent = topIt->getGenome()->getParent();
       botIt = parent->getBottomSegmentIterator();
       botIt->toParent(topIt);
       if(parent->getParent() == NULL || !botIt->hasParseUp()) {
@@ -317,8 +315,15 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
     }
   }
 
-  stTree *tree = getTreeNode(botIt, modifyEntries);
-  buildTreeR(botIt, tree, modifyEntries);
+  stTree *tree = NULL;
+  if(topIt->hasParent() == false && topIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
+    // Handle insertions in leaves. botIt doesn't point anywhere since
+    // there are no bottom segments.
+    tree = getTreeNode(topIt, modifyEntries);
+  } else {
+    tree = getTreeNode(botIt, modifyEntries);
+    buildTreeR(botIt, tree, modifyEntries);
+  }
   return tree;
 }
 
