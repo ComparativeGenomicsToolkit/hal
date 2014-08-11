@@ -131,6 +131,50 @@ protected:
    void insertAndBreakOverlaps(DefaultMappedSegmentConstPtr seg,
                                std::set<MappedSegmentConstPtr>& results);
    
+   // Map a segment to all segments that share any homology in or below
+   // the given "coalescence limit" genome (not just those that share
+   // homology in the MRCA of the source and target genomes).
+   static hal_size_t DefaultMappedSegment::mapIncludingExtraParalogs(
+     const Genome* srcGenome,
+     std::list<DefaultMappedSegmentConstPtr>& input,
+     std::list<DefaultMappedSegmentConstPtr>& results,
+     const std::set<std::string>& namesOnPath,
+     const Genome* tgtGenome,
+     const Genome* mrca,
+     const Genome *coalescenceLimit,
+     hal_size_t minLength);
+
+   // Map all segments from the input to any segments in the same genome
+   // that coalesce in or before the given "coalescence limit" genome.
+   // Destructive to any data in the input list.
+   hal_size_t DefaultMappedSegment::mapRecursiveParalogies(
+     const Genome *srcGenome,
+     std::list<DefaultMappedSegmentConstPtr>& input,
+     std::list<DefaultMappedSegmentConstPtr>& results,
+     const std::set<std::string>& namesOnPath,
+     const Genome* coalescenceLimit,
+     hal_size_t minLength);
+
+   // Map the input segments up until reaching the target genome. If the
+   // target genome is below the source genome, fail miserably.
+   // Destructive to any data in the input or results list.
+   hal_size_t DefaultMappedSegment::mapRecursiveUp(
+     std::list<DefaultMappedSegmentConstPtr>& input,
+     std::list<DefaultMappedSegmentConstPtr>& results,
+     const Genome* tgtGenome,
+     hal_size_t minLength);
+
+   // Map the input segments down until reaching the target genome. If the
+   // target genome is above the source genome, fail miserably.
+   // Destructive to any data in the input or results list.
+   hal_size_t DefaultMappedSegment::mapRecursiveDown(
+     std::list<DefaultMappedSegmentConstPtr>& input,
+     std::list<DefaultMappedSegmentConstPtr>& results,
+     const Genome* tgtGenome,
+     const std::set<std::string>& namesOnPath,
+     bool doDupes,
+     hal_size_t minLength);
+
    static 
    hal_size_t mapRecursive(const Genome* prevGenome,
                            std::list<DefaultMappedSegmentConstPtr>& input,
