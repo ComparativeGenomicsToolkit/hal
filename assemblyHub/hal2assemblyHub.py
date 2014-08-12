@@ -400,10 +400,6 @@ def addOptions(parser):
                       'naming convention, (i.e. "genome.chr"), and don\'t '
                       'attempt to rename the sequences so that their names '
                       'will end up as "chr"')
-    parser.add_option('--resume', dest='resume', action='store_true', default=False,
-                      help='Resume from jobTree directory (--jobTree) if possible. '
-                      'By default, the jobTree directory will be erased at beginning'
-                      ' of this script.')
     addHubOptions(parser)
     addLodOptions(parser)
     addBedOptions(parser)
@@ -444,8 +440,6 @@ def main():
     halfile = args[0]
     outdir = args[1]
 
-    if options.resume is False:
-        system("rm -rf %s" % options.jobTree)
     i = Stack( Setup(halfile, outdir, options) ).startJobTree(options)
     if i:
         raise RuntimeError("The jobtree contains %d failed jobs.\n" %i)
