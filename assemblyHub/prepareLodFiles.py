@@ -64,14 +64,16 @@ def getLod(options, localHalfile, outdir):
         options.lodOpts += '--maxDNA %d ' % options.lodMaxDNA
     if options.lodInMemory is True:
         options.lodOpts += '--inMemory '
-    if options.maxThreads > 1:
-        options.lodOpts += '--numProc %d ' % options.maxThreads
+    if int(options.maxThreads) > 1:
+        options.lodOpts += '--numProc %d ' % int(options.maxThreads)
     if options.lodMinSeqFrac is not None:
         options.lodOpts += '--minSeqFrac %f ' % options.lodMinSeqFrac
     if options.lodChunk is not None:
         options.lodOpts += '--chunk %d ' % options.lodChunk
     if len(options.lodOpts) > 0:
         options.lod = True
+        if options.resume is False:
+            options.lodOpts += '--overwrite '
     if options.lod:
         lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
     return lodtxtfile, loddir

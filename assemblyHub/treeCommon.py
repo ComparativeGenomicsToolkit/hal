@@ -197,9 +197,9 @@ def drawTreeWtInternalNodesAligned(tree, outdir, properName):
     Phylo.write(modifiedTree, modifiedTreeFile, 'newick')
     treeFig = os.path.join(outdir, "hubTree.png")
     try:
-        drawTree(modifiedTreeFile, treeFig)
+        #drawTree(modifiedTreeFile, treeFig) #HACK
         return treeFig, leaves
-    except:
+    except RuntimeError:
         sys.stderr.write("Cannot draw the tree, so the tree will be missing on the config page. Perhaps ETE2 was not installed?\n")
         return None, None
 
