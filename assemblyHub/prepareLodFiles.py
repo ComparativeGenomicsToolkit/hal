@@ -72,8 +72,6 @@ def getLod(options, localHalfile, outdir):
         options.lodOpts += '--chunk %d ' % options.lodChunk
     if len(options.lodOpts) > 0:
         options.lod = True
-        if options.resume is False:
-            options.lodOpts += '--overwrite '
     if options.lod:
         lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)
     return lodtxtfile, loddir

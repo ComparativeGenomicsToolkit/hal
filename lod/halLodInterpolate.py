@@ -159,8 +159,9 @@ def main(argv=None):
                         "they will be stored in the same directory as the "
                         "input file",
                         default=None)
-    parser.add_argument("--overwrite",
-                        help="overwrite existing hal files if they exist.",
+    parser.add_argument("--resume",
+                        help="do not overwrite existing hal lod files if they "
+                        "exist.",
                         action="store_true", default=False)
     parser.add_argument("--maxDNA",
                         help="maximum DNA sequence query.  Generated levels of"
@@ -234,7 +235,7 @@ def main(argv=None):
         args.maxDNA = sys.maxint
 
     createLods(args.hal, args.outLodFile, args.outHalDir,
-               args.maxBlock, args.scale, args.overwrite, args.maxDNA,
+               args.maxBlock, args.scale, not args.resume, args.maxDNA,
                args.absPath, args.trans, args.inMemory, args.probeFrac,
                args.minSeqFrac, args.scaleCorFac, args.numProc, args.chunk,
                args.minLod0, args.cutOff)
