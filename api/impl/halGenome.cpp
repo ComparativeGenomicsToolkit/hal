@@ -1,3 +1,4 @@
+#include <sstream>
 #include <assert.h>
 #include <map>
 #include <iostream>
@@ -88,29 +89,62 @@ void Genome::copyBottomDimensions(Genome *dest) const
 
 void Genome::copyTopSegments(Genome *dest) const
 {
+  const Genome *inParent = getParent();
+  const Genome *outParent = dest->getParent();
+
   TopSegmentIteratorConstPtr inTop = getTopSegmentIterator();
   TopSegmentIteratorPtr outTop = dest->getTopSegmentIterator();
   hal_size_t n = dest->getNumTopSegments();
   assert(n == 0 || n == getNumTopSegments());
+
+  if (n == 0) {
+    // Nothing to do if there are no top segments.
+    return;
+  }
+
+  BottomSegmentIteratorConstPtr inParentBottomSegIt = inParent->getBottomSegmentIterator();
+  BottomSegmentIteratorConstPtr outParentBottomSegIt = outParent->getBottomSegmentIterator();
+
   for (; (hal_size_t)inTop->getArrayIndex() < n; inTop->toRight(),
          outTop->toRight())
   {
+    hal_index_t genomePos = inTop->getStartPosition();
+    assert(genomePos != NULL_INDEX);
+    string inSeqName = getSequenceBySite(genomePos)->getName();
+    string outSeqName = dest->getSequenceBySite(genomePos)->getName();
+    // if (inSeqName != outSeqName) {
+    //   stringstream ss;
+    //   ss << "When copying top segments from " << getName() << " to " << dest->getName() << ": sequence " << inSeqName << " != " << outSeqName << " at site " << genomePos;
+    //   throw hal_exception(ss.str());
+    // }
+
     outTop->setCoordinates(inTop->getStartPosition(), inTop->getLength());
     outTop->setParentIndex(inTop->getParentIndex());
     outTop->setParentReversed(inTop->getParentReversed());
     outTop->setBottomParseIndex(inTop->getBottomParseIndex());
     outTop->setNextParalogyIndex(inTop->getNextParalogyIndex());
+
+    // Check that the sequences from the bottom segments we point to are the same. If not, correct the indices so that they are.
+    if (inTop->getParentIndex() != NULL_INDEX) {
+      inParentBottomSegIt->toParent(inTop);
+
+      const Sequence *inParentSequence = inParentBottomSegIt->getSequence();
+
+      const Sequence *outParentSequence = outParent->getSequence(inParentSequence->getName());
+
+      hal_index_t inParentSegmentOffset = inTop->getParentIndex() - inParentSequence->getBottomSegmentArrayIndex();
+      hal_index_t outParentSegmentIndex = inParentSegmentOffset + outParentSequence->getBottomSegmentArrayIndex();
+
+      outTop->setParentIndex(outParentSegmentIndex);
+    }
   }
 }
 
 void Genome::copyBottomSegments(Genome *dest) const
 {
-  BottomSegmentIteratorPtr inBot = getBottomSegmentIterator();
-  BottomSegmentIteratorPtr outBot = dest->getBottomSegmentIterator();
-  hal_size_t n = getNumBottomSegments();
+  assert(getNumBottomSegments() == dest->getNumBottomSegments());
   hal_size_t inNc = getNumChildren();
   hal_size_t outNc = dest->getNumChildren();
-  assert(n == dest->getNumBottomSegments());
   // The child indices aren't consistent across files--make sure each bottom
   // segment points to the correct children
   vector<string> inChildNames;
@@ -140,20 +174,63 @@ void Genome::copyBottomSegments(Genome *dest) const
       inChildToOutChild[inChild] = outNc;
     }
   }
-  for (; (hal_size_t)inBot->getArrayIndex() < n; inBot->toRight(),
-         outBot->toRight())
+
+  // Go through each sequence in this genome, find the matching
+  // sequence in the dest genome, then copy over the segments for each
+  // sequence.
+  SequenceIteratorConstPtr seqIt = getSequenceIterator();
+  SequenceIteratorConstPtr seqEndIt = getSequenceEndIterator();
+
+  for (; seqIt != seqEndIt; seqIt->toNext())
   {
-    outBot->setCoordinates(inBot->getStartPosition(), inBot->getLength());
-    for(hal_size_t inChild = 0; inChild < inNc; inChild++) {
-      hal_size_t outChild = inChildToOutChild[inChild];
-      if(outChild != outNc) {
-        outBot->setChildIndex(outChild, inBot->getChildIndex(inChild));
-        outBot->setChildReversed(outChild, inBot->getChildReversed(inChild));
-      }
+    const Sequence *inSeq = seqIt->getSequence();
+    const Sequence *outSeq = dest->getSequence(inSeq->getName());
+    BottomSegmentIteratorPtr inBot = inSeq->getBottomSegmentIterator();
+    BottomSegmentIteratorPtr outBot = outSeq->getBottomSegmentIterator();
+
+    cout << "DEBUG: inSeq name: " << inSeq->getName() << ", outSeq name: " << outSeq->getName() << endl;
+
+    if (inSeq->getName() != outSeq->getName()) {
+      // This check is important enough that it can't be an assert.
+      stringstream ss;
+      ss << "When copying bottom segments: segment #" << inBot->getArrayIndex() << " of source genome is from sequence " << inBot->getSequence()->getName() << ", but segment #" << outBot->getArrayIndex() << " is from sequence " << outBot->getSequence()->getName();
+      throw hal_exception(ss.str());
     }
-    outBot->setTopParseIndex(inBot->getTopParseIndex());
+
+    if (inSeq->getNumBottomSegments() != outSeq->getNumBottomSegments()) {
+      stringstream ss;
+      ss << "When copying bottom segments: sequence " << inSeq->getName() << " has " << inSeq->getNumBottomSegments() << " in genome " << getName() << ", while it has " << outSeq->getNumBottomSegments() << " in genome " << dest->getName();
+      throw hal_exception(ss.str());      
+    }
+
+    hal_index_t inSegmentEnd = inSeq->getBottomSegmentArrayIndex() + inSeq->getNumBottomSegments();
+    cout << "DEBUG: inSegmentStart: " << inSeq->getBottomSegmentArrayIndex() << " inSegmentEnd: " << inSegmentEnd << " num bottom segments: " << inSeq->getNumBottomSegments() << endl;
+    for (; inBot->getArrayIndex() < inSegmentEnd; inBot->toRight(),
+           outBot->toRight())
+    {
+      hal_index_t outStartPosition = inBot->getStartPosition() - inSeq->getStartPosition() + outSeq->getStartPosition();
+
+      cout << "Decided on outStartPosition " << outStartPosition << " for seg index " << outBot->getArrayIndex() << " (src index " << inBot->getArrayIndex() << ")" << endl;
+
+      if (dest->getSequenceBySite(outStartPosition) != outSeq) {
+        stringstream ss;
+        ss << "When copying bottom segments from " << getName() << " to " << dest->getName() << ": expected destination sequence " << outSeq->getName() << " for segment # " << inBot->getArrayIndex() << " but got " << dest->getSequenceBySite(outStartPosition)->getName();
+        throw hal_exception(ss.str());
+      }
+      outBot->setCoordinates(outStartPosition, inBot->getLength());
+      for(hal_size_t inChild = 0; inChild < inNc; inChild++) {
+        hal_size_t outChild = inChildToOutChild[inChild];
+        if (outChild != outNc) {
+          outBot->setChildIndex(outChild, inBot->getChildIndex(inChild));
+          cout << "genome " << getName() << ": Set child index " << inChild << " to " << inBot->getChildIndex(inChild) << endl;
+          outBot->setChildReversed(outChild, inBot->getChildReversed(inChild));
+        }
+      }
+      outBot->setTopParseIndex(inBot->getTopParseIndex());
+    }
   }
 }
+
 
 void Genome::copySequence(Genome *dest) const
 {

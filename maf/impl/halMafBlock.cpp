@@ -171,7 +171,7 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
 static void prioritizeNodeInTree(stTree *node)
 {
   stTree *parent = stTree_getParent(node);
-  if(parent == NULL) {
+  if (parent == NULL) {
     // Nothing to do.
     return;
   }
@@ -292,7 +292,6 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
   assert(sequence != NULL && index != NULL_INDEX);
   const Genome *genome = sequence->getGenome();
   
-
   // Get the bottom segment that is the common ancestor of all entries
   TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
   BottomSegmentIteratorConstPtr botIt;
@@ -304,8 +303,7 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
     // Keep heading up the tree until we hit the root segment.
     topIt->toSite(index);
     while (topIt->hasParent()) {
-      genome = topIt->getGenome();
-      const Genome *parent = genome->getParent();
+      const Genome *parent = topIt->getGenome()->getParent();
       botIt = parent->getBottomSegmentIterator();
       botIt->toParent(topIt);
       if(parent->getParent() == NULL || !botIt->hasParseUp()) {
@@ -317,8 +315,16 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
     }
   }
 
-  stTree *tree = getTreeNode(botIt, modifyEntries);
-  buildTreeR(botIt, tree, modifyEntries);
+  stTree *tree = NULL;
+  if(topIt->hasParent() == false && topIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
+    // Handle insertions in leaves. botIt doesn't point anywhere since
+    // there are no bottom segments.
+    tree = getTreeNode(topIt, modifyEntries);
+  } else {
+    tree = getTreeNode(botIt, modifyEntries);
+    buildTreeR(botIt, tree, modifyEntries);
+  }
+  assert(tree != NULL);
   return tree;
 }
 
@@ -414,9 +420,6 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames, bool printT
 
   if (_printTree) {
     _tree = buildTree(col, true);
-    //Sort tree so that the reference comes first.
-    MafBlockEntry *refEntry = _reference->second;
-    prioritizeNodeInTree(refEntry->_tree);
   }
 }
 
@@ -559,8 +562,9 @@ static void printTreeEntries(stTree *tree, ostream& os)
 
 ostream& MafBlock::printBlockWithTree(ostream& os) const
 {
-  // The tree must be sorted so that the reference comes first! But
-  // this should have been done already when building the tree.
+  //Sort tree so that the reference comes first.
+  MafBlockEntry *refEntry = _reference->second;
+  prioritizeNodeInTree(refEntry->_tree);
 
   // Print tree as a block comment.
   char *treeString = stTree_getNewickTreeString(_tree);
