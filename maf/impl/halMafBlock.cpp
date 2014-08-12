@@ -227,8 +227,8 @@ stTree *MafBlock::getTreeNode(SegmentIteratorConstPtr segIt, bool modifyEntries)
       entryIt++;
     }
     assert(genome->getNumChildren() != 0);
-    // Isn't handled correctly right now
-    assert(false);
+    stTree_setLabel(ret, stString_copy(segIt->getGenome()->getName().c_str()));
+    stTree_setClientData(ret, NULL);
   }
   
   return ret;
@@ -557,7 +557,10 @@ static void printTreeEntries(stTree *tree, ostream& os)
     printTreeEntries(child, os);
   }
   MafBlockEntry *entry = (MafBlockEntry *) stTree_getClientData(tree);
-  os << *entry;
+  if (entry != NULL) {
+    // The entry can be null if --noAncestors is enabled.
+    os << *entry;
+  }
 }
 
 ostream& MafBlock::printBlockWithTree(ostream& os) const
@@ -568,7 +571,7 @@ ostream& MafBlock::printBlockWithTree(ostream& os) const
 
   // Print tree as a block comment.
   char *treeString = stTree_getNewickTreeString(_tree);
-  os << "a tree=" << treeString << "\n";
+  os << "a tree=\"" << treeString << "\"\n";
 
   // Print entries in post order.
   printTreeEntries(_tree, os);
