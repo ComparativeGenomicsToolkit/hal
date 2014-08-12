@@ -541,6 +541,161 @@ void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, found[2] == true);
 }
 
+void MappedSegmentMapExtraParalogsTest::createCallBack(AlignmentPtr alignment)
+{
+  vector<Sequence::Info> seqVec(1);
+
+  BottomSegmentIteratorPtr bi;
+  BottomSegmentStruct bs;
+  TopSegmentIteratorPtr ti;
+  TopSegmentStruct ts;
+
+  // Set up a case where all the segments of grandChild1 coalesce with
+  // the first segment of grandChild2, but only if using the root as
+  // the coalescence limit. Otherwise only the first segments map to
+  // each other.
+  Genome* root = alignment->addRootGenome("root");
+  Genome* parent = alignment->addLeafGenome("parent", "root", 1);
+  Genome* grandChild1 = alignment->addLeafGenome("grandChild1", "parent", 1);
+  Genome* grandChild2 = alignment->addLeafGenome("grandChild2", "parent", 1);
+  seqVec[0] = Sequence::Info("Sequence", 3, 0, 1);
+  root->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 9, 3, 3);
+  parent->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 9, 3, 0);
+  grandChild1->setDimensions(seqVec);
+  seqVec[0] = Sequence::Info("Sequence", 9, 3, 0);
+  grandChild2->setDimensions(seqVec);
+
+  root->setString("CCC");
+  parent->setString("CCCTACGTG");
+  grandChild1->setString("CCCTACGTG");
+  grandChild2->setString("CCCTACGTG");
+
+  bi = root->getBottomSegmentIterator();
+  bs.set(0, 3);
+  bs._children.push_back(pair<hal_size_t, bool>(0, false));
+  bs.applyTo(bi);
+
+  ti = parent->getTopSegmentIterator();
+  ts.set(0, 3, 0, false, NULL_INDEX, 1);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(3, 3, 0, false, NULL_INDEX, 2);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(6, 3, 0, false, NULL_INDEX, 0);
+  ts.applyTo(ti);
+
+  bi = parent->getBottomSegmentIterator();
+  bs.set(0, 3);
+  bs._children.clear();
+  bs._children.push_back(pair<hal_size_t, bool>(0, true));
+  bs._children.push_back(pair<hal_size_t, bool>(0, false));
+  bs.applyTo(bi);
+  bi->toRight();
+  bs.set(3, 3);
+  bs._children.clear();
+  bs._children.push_back(pair<hal_size_t, bool>(1, true));
+  bs._children.push_back(pair<hal_size_t, bool>(NULL_INDEX, true));
+  bs.applyTo(bi);
+  bi->toRight();
+  bs.set(6, 3);
+  bs._children.clear();
+  bs._children.push_back(pair<hal_size_t, bool>(2, true));
+  bs._children.push_back(pair<hal_size_t, bool>(NULL_INDEX, false));
+  bs.applyTo(bi);
+
+  ti = grandChild1->getTopSegmentIterator();
+  ts.set(0, 3, 0, true);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(3, 3, 1, true);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(6, 3, 2, true);
+  ts.applyTo(ti);
+
+  ti = grandChild2->getTopSegmentIterator();
+  ts.set(0, 3, 0, false);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(3, 3, NULL_INDEX, true);
+  ts.applyTo(ti);
+  ti->toRight();
+  ts.set(6, 3, NULL_INDEX, false);
+  ts.applyTo(ti);
+
+  parent->fixParseInfo();
+}
+
+void MappedSegmentMapExtraParalogsTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  validateAlignment(alignment);
+
+  const Genome *grandChild1 = alignment->openGenome("grandChild1");
+  const Genome *grandChild2 = alignment->openGenome("grandChild2");
+  const Genome *root = alignment->openGenome("root");
+
+  TopSegmentIteratorConstPtr top = grandChild2->getTopSegmentIterator();
+  set<MappedSegmentConstPtr> results;
+
+  // First, check that by default we will only get the homologies in
+  // or before the MRCA. (in this case, just seg 0 of grandChild1).
+  top->getMappedSegments(results, grandChild1, NULL, true);
+  CuAssertTrue(_testCase, results.size() == 1);
+  MappedSegmentConstPtr mseg = *results.begin();
+  // Source information should be preserved
+  CuAssertTrue(_testCase, mseg->getSource()->getGenome() == top->getGenome());
+  CuAssertTrue(_testCase, mseg->getSource()->getStartPosition() == 
+               top->getStartPosition());
+  CuAssertTrue(_testCase, 
+               mseg->getSource()->getLength() == top->getLength());
+  CuAssertTrue(_testCase, 
+               mseg->getSource()->getReversed() == top->getReversed());
+
+  // Check target information is correct
+  CuAssertTrue(_testCase,
+               mseg->getGenome() == grandChild1);
+  CuAssertTrue(_testCase,
+               mseg->getStartPosition() == 2);
+  CuAssertTrue(_testCase,
+               mseg->getLength() == 3);
+  CuAssertTrue(_testCase,
+               mseg->getReversed() == true);
+
+  // Check that by using the grandparent as the coalescence limit we
+  // will get all the paralogs.
+  top->getMappedSegments(results, grandChild1, NULL, true, 0, root);
+  CuAssertTrue(_testCase, results.size() == 3);
+  set<MappedSegmentConstPtr>::iterator i = results.begin();
+  bool found[3] = {false, false, false};
+  for (; i != results.end(); ++i)
+  {
+      // Source information should be preserved
+    CuAssertTrue(_testCase, mseg->getSource()->getGenome() == top->getGenome());
+    CuAssertTrue(_testCase, mseg->getSource()->getStartPosition() == 
+                 top->getStartPosition());
+    CuAssertTrue(_testCase, 
+                 mseg->getSource()->getLength() == top->getLength());
+    CuAssertTrue(_testCase, 
+                 mseg->getSource()->getReversed() == top->getReversed());
+    
+    // Check target information is correct
+    CuAssertTrue(_testCase,
+                 mseg->getGenome() == grandChild1);
+    CuAssertTrue(_testCase,
+                 mseg->getStartPosition() == 2
+                 || mseg->getStartPosition() == 5
+                 || mseg->getStartPosition() == 8);
+    CuAssertTrue(_testCase,
+                 mseg->getLength() == 3);
+    CuAssertTrue(_testCase,
+                 mseg->getReversed() == true);
+    found[mseg->getArrayIndex()] = true;
+  }
+}
+
 void  MappedSegmentColCompareTest::checkCallBack(AlignmentConstPtr alignment)
 {
   if (alignment->getNumGenomes() == 0)
@@ -846,6 +1001,19 @@ void halMappedSegmentMapDupeTest(CuTest *testCase)
   } 
 }
 
+void halMappedSegmentMapExtraParalogsTest(CuTest *testCase)
+{
+/*  try 
+  {*/
+    MappedSegmentMapExtraParalogsTest tester;
+    tester.check(testCase);
+/*  }
+  catch (...) 
+  {
+    CuAssertTrue(testCase, false);
+  } */
+}
+
 void haMappedSegmentColCompareTestCheck1(CuTest *testCase)
 {
   try 
@@ -914,6 +1082,7 @@ void halMappedSegmentColCompareTest3(CuTest *testCase)
 CuSuite* halMappedSegmentTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
+  SUITE_ADD_TEST(suite, halMappedSegmentMapExtraParalogsTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapUpTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapDownTest);
   SUITE_ADD_TEST(suite, halMappedSegmentParseTest);
@@ -922,8 +1091,8 @@ CuSuite* halMappedSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck1);
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck2);
   SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
-  // SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
-  // SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
+//  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
+//  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
   return suite;
 }
 

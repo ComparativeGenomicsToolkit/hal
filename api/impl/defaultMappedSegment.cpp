@@ -382,7 +382,9 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
                                      const Genome* tgtGenome,
                                      const set<const Genome*>* genomesOnPath,
                                      bool doDupes,
-                                     hal_size_t minLength)
+                                     hal_size_t minLength,
+                                     const Genome *coalescenceLimit,
+                                     const Genome *mrca)
 {
   assert(source != NULL);
  
@@ -418,47 +420,11 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
     namesOnPath.insert((*i)->getName());
   }
 
-  // Find the MRCA.
-  const Genome *sourceGenome = source->getGenome();
-  set<const Genome *> genomeSet;
-  genomeSet.insert(sourceGenome);
-  genomeSet.insert(tgtGenome);
-  const Genome *mrca = getLowestCommonAncestor(genomeSet);
-
-  mapIncludingExtraParalogs(sourceGenome, input, output, namesOnPath, tgtGenome, mrca, mrca, doDupes,
-                            minLength);
-
-  list<DefaultMappedSegmentConstPtr>::iterator outIt = output.begin();
-  for (; outIt != output.end(); ++outIt)
-  {
-    insertAndBreakOverlaps(*outIt, results);
-  }
-
-  return output.size();
-}
-
-// Map a segment to all segments that share any homology in or below
-// the given "coalescence limit" genome (not just those that share
-// homology in the MRCA of the source and target genomes).
-hal_size_t DefaultMappedSegment::mapIncludingExtraParalogs(
-  const Genome* srcGenome,
-  list<DefaultMappedSegmentConstPtr>& input,
-  list<DefaultMappedSegmentConstPtr>& results,
-  const set<string>& namesOnPath,
-  const Genome* tgtGenome,
-  const Genome* mrca,
-  const Genome *coalescenceLimit,
-  bool doDupes,
-  hal_size_t minLength)
-{
-  cout << "mapping from " << srcGenome->getName() << " to " << tgtGenome->getName() << " with mrca: " << mrca->getName() << endl;
-  list<DefaultMappedSegmentConstPtr>* outputPtr = &results;
-
   // FIXME: using multiple lists is probably much slower than just
   // reusing the results list over and over.
   list<DefaultMappedSegmentConstPtr> upResults;
   // Map all segments up to the MRCA of src and tgt.
-  if (srcGenome != tgtGenome)
+  if (source->getGenome() != mrca)
   {
     cout << "recursive up: " << mapRecursiveUp(input, upResults, mrca, minLength) << endl;
   } else {
@@ -475,12 +441,18 @@ hal_size_t DefaultMappedSegment::mapIncludingExtraParalogs(
 
   // Finally, map back down to the target genome.
   if (tgtGenome != mrca) {
-    cout << "recursive down got : " << mapRecursiveDown(paralogResults, results, tgtGenome, namesOnPath, doDupes, minLength) << endl;
+    cout << "recursive down got : " << mapRecursiveDown(paralogResults, output, tgtGenome, namesOnPath, doDupes, minLength) << endl;
   } else {
-    *outputPtr = paralogResults;
+    output = paralogResults;
   }
 
-  return results.size();
+  list<DefaultMappedSegmentConstPtr>::iterator outIt = output.begin();
+  for (; outIt != output.end(); ++outIt)
+  {
+    insertAndBreakOverlaps(*outIt, results);
+  }
+
+  return output.size();
 }
 
 // Map all segments from the input to any segments in the same genome
@@ -619,7 +591,10 @@ hal_size_t DefaultMappedSegment::mapRecursiveDown(
 
   const Genome *curGenome = (*inputPtr->begin())->getGenome();
   assert(curGenome != NULL);
-  cout << curGenome->getName() << endl;
+  if (curGenome == tgtGenome) {
+    results = *inputPtr;
+    return 0;
+  }
 
   // Find the correct child to move down into.
   const Genome *nextGenome = NULL;
@@ -1404,10 +1379,13 @@ hal_size_t DefaultMappedSegment::getMappedSegments(
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes,
-  hal_size_t minLength) const
+  hal_size_t minLength,
+  const Genome *coalescenceLimit,
+  const Genome *mrca) const
 {
   return _target->getMappedSegments(outSegments, tgtGenome, genomesOnPath,
-                                    doDupes, minLength);
+                                    doDupes, minLength, coalescenceLimit,
+                                    mrca);
 }
 
 void DefaultMappedSegment::print(ostream& os) const

@@ -130,7 +130,9 @@ public:
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath = NULL,
      bool doDupes = true,
-     hal_size_t minLength = 0) const = 0;
+     hal_size_t minLength = 0,
+     const Genome *coalescenceLimit = NULL,
+     const Genome *mrca = NULL) const = 0;
 
    /** Print contents of segment */
    virtual void print(std::ostream& os) const = 0;

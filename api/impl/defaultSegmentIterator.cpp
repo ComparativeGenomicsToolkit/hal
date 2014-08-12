@@ -177,17 +177,33 @@ hal_size_t DefaultSegmentIterator::getMappedSegments(
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes,
-  hal_size_t minLength) const
+  hal_size_t minLength,
+  const Genome *coalescenceLimit,
+  const Genome *mrca) const
 {
   assert(tgtGenome != NULL);
-  set<const Genome*> pathSet;
-  if (genomesOnPath == NULL)
+
+  if (mrca == NULL)
   {
     set<const Genome*> inputSet;
     inputSet.insert(getGenome());
     inputSet.insert(tgtGenome);
-    const Genome *mrca = getLowestCommonAncestor(inputSet);
-    inputSet.erase(getGenome());
+    mrca = getLowestCommonAncestor(inputSet);
+  }
+
+  if (coalescenceLimit == NULL)
+  {
+    coalescenceLimit = mrca;
+  }
+
+  // Get the path from the coalescence limit to the target (necessary
+  // for choosing which children to move through to get to the
+  // target).
+  set<const Genome*> pathSet;
+  if (genomesOnPath == NULL)
+  {
+    set<const Genome*> inputSet;
+    inputSet.insert(tgtGenome);
     inputSet.insert(mrca);
     getGenomesInSpanningTree(inputSet, pathSet);
     genomesOnPath = &pathSet;
@@ -196,7 +212,9 @@ hal_size_t DefaultSegmentIterator::getMappedSegments(
   hal_size_t numResults = DefaultMappedSegment::map(this, outSegments,
                                                     tgtGenome,
                                                     genomesOnPath, doDupes,
-                                                    minLength);
+                                                    minLength,
+                                                    coalescenceLimit,
+                                                    mrca);
   return numResults;
 }
 
