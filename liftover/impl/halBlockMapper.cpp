@@ -38,7 +38,8 @@ void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
                        hal_index_t absRefFirst, hal_index_t absRefLast,
                        bool targetReversed,
                        bool doDupes, hal_size_t minLength,
-                       bool mapTargetAdjacencies)
+                       bool mapTargetAdjacencies,
+                       const Genome* coalescenceLimit)
 {
   erase();
   _absRefFirst = absRefFirst;
@@ -55,6 +56,23 @@ void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
   set<const Genome*> inputSet;
   inputSet.insert(_refGenome);
   inputSet.insert(_queryGenome);
+  _mrca = getLowestCommonAncestor(inputSet);
+
+  if (coalescenceLimit == NULL)
+  {
+    _coalescenceLimit = _mrca;
+  }
+  else
+  {
+    _coalescenceLimit = coalescenceLimit;
+  }
+
+  // The path between the coalescence limit (the highest point in the
+  // tree) and the query genome is needed to traverse down into the
+  // correct children.
+  inputSet.clear();
+  inputSet.insert(_queryGenome);
+  inputSet.insert(_coalescenceLimit);
   getGenomesInSpanningTree(inputSet, _spanningTree);
 }
 
@@ -62,10 +80,7 @@ void BlockMapper::map()
 {
   SegmentIteratorConstPtr refSeg;
   hal_index_t lastIndex;
-  set<const Genome*>  inputSet;
-  inputSet.insert(_refGenome);
-  inputSet.insert(_queryGenome);
-  if ((getLowestCommonAncestor(inputSet) == _refGenome) && (_refGenome != _queryGenome))
+  if ((_mrca == _refGenome) && (_refGenome != _queryGenome))
   {
     refSeg = _refGenome->getBottomSegmentIterator();
     lastIndex = _refGenome->getNumBottomSegments();
@@ -96,7 +111,7 @@ void BlockMapper::map()
       refSeg->toReverseInPlace();
     }
     refSeg->getMappedSegments(_segSet, _queryGenome, &_spanningTree,
-                              _doDupes, _minLength);
+                              _doDupes, _minLength, _coalescenceLimit, _mrca);
     if (_targetReversed == true)
     {
       refSeg->toReverseInPlace();            
@@ -132,9 +147,9 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
   {
     // we divide list sorted on query segments into equivalence
     // classes based on their query coordinates.  these classes
-    // are orderdered by their reference coordinates.  we keep
+    // are ordered by their reference coordinates.  we keep
     // the lowest entry in each class (by ref coordinates) and 
-    // extract all the others into outParalgoies
+    // extract all the others into outParalogies
     if (iStart == NULL_INDEX)
     {
       iIns = false;

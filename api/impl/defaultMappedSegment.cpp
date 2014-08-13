@@ -466,6 +466,11 @@ hal_size_t DefaultMappedSegment::mapRecursiveParalogies(
   const Genome* coalescenceLimit,
   hal_size_t minLength)
 {
+  if (input.empty()) {
+    results = input;
+    return 0;
+  }
+
   const Genome *curGenome = (*input.begin())->getGenome();
   assert(curGenome != NULL);
   if (curGenome == coalescenceLimit) {
@@ -657,114 +662,6 @@ hal_size_t DefaultMappedSegment::mapRecursiveDown(
     results = *outputPtr;
   }
 
-  results.sort(DefaultMappedSegment::LessSource());
-  results.unique(DefaultMappedSegment::EqualTo());
-  return results.size();
-}
-
-hal_size_t DefaultMappedSegment::mapRecursive(
-  const Genome* prevGenome,
-  list<DefaultMappedSegmentConstPtr>& input,
-  list<DefaultMappedSegmentConstPtr>& results,
-  const Genome* tgtGenome,
-  const set<string>& namesOnPath,
-  bool doDupes,
-  hal_size_t minLength)
-{
-  list<DefaultMappedSegmentConstPtr>* inputPtr = &input;
-  list<DefaultMappedSegmentConstPtr>* outputPtr = &results;
-  
-  const Genome* srcGenome = NULL;
-  const Genome* genome = NULL;
-  const Genome* nextGenome = NULL;
-  hal_size_t nextChildIndex = numeric_limits<hal_size_t>::max();
-
-  if (!inputPtr->empty())
-  {
-    srcGenome = (*inputPtr->begin())->getSource()->getGenome();
-    genome = (*inputPtr->begin())->getGenome();
-
-    const Alignment* alignment = genome->getAlignment();
-    string parentName = alignment->getParentName(genome->getName());
-    if (parentName == tgtGenome->getName() ||
-        namesOnPath.find(parentName) != namesOnPath.end())
-    {
-      const Genome* parentGenome = genome->getParent();
-      if (parentGenome != NULL &&
-          parentGenome != prevGenome)
-      {
-        nextGenome = parentGenome;
-      }
-    }
-    vector<string> childNames = alignment->getChildNames(genome->getName());
-    for (hal_size_t child = 0; 
-         nextGenome == NULL && child < childNames.size(); ++child)
-    {
-      if (childNames[child] == tgtGenome->getName() ||
-          namesOnPath.find(childNames[child]) != namesOnPath.end())
-      {
-        const Genome* childGenome = genome->getChild(child);
-        if (childGenome != prevGenome)
-        {
-          nextGenome = childGenome;
-          nextChildIndex = child;
-        }
-      }
-    }
-    
-    if (doDupes == true && genome->getParent() != NULL &&
-        (!nextGenome || nextGenome != genome->getParent())
-        && namesOnPath.find(parentName) != namesOnPath.end())
-    {   
-      outputPtr->clear();
-      list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
-      for (; i != inputPtr->end(); ++i)
-      {
-        assert((*i)->getGenome() == genome);
-        mapSelf((*i), *outputPtr, minLength);
-      }
-      swap(inputPtr, outputPtr);
-    }
-  }
-  if (nextGenome != NULL)
-  {
-    outputPtr->clear();
-
-    if (nextGenome == genome->getParent())
-    {
-      list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
-      for (; i != inputPtr->end(); ++i)
-      {
-        assert((*i)->getGenome() == genome);
-        mapUp((*i), *outputPtr, doDupes, minLength);
-      }
-    }
-    else
-    {
-      assert(nextGenome->getParent() == genome);
-      list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
-      for (; i != inputPtr->end(); ++i)
-      {
-        assert((*i)->getGenome() == genome);
-        mapDown((*i), nextChildIndex, *outputPtr, minLength);
-      }
-    }
-    swap(inputPtr, outputPtr);
-    assert(genome != NULL);
-    
-    mapRecursive(genome, *inputPtr, *outputPtr, tgtGenome, namesOnPath, 
-                 doDupes, minLength);
-  }
-  else
-  {
-    swap(inputPtr, outputPtr);
-  }
-  
-  // could potentially save this copy but dont care for now
-  if (outputPtr != &results)
-  {
-    results = *outputPtr;
-  }
   results.sort(DefaultMappedSegment::LessSource());
   results.unique(DefaultMappedSegment::EqualTo());
   return results.size();

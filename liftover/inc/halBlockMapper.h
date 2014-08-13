@@ -33,7 +33,8 @@ public:
              hal_index_t absRefFirst, hal_index_t absRefLast,
              bool targetReversed,
              bool doDupes, hal_size_t minLength,
-             bool mapTargetAdjacencies);
+             bool mapTargetAdjacencies,
+             const Genome *coalescenceLimit = NULL);
    void map();
    void extractReferenceParalogies(MSSet& outParalogies);
 
@@ -84,6 +85,8 @@ protected:
    hal_index_t _absRefLast;
    bool _mapAdj;
    bool _targetReversed;
+   const Genome *_mrca;
+   const Genome *_coalescenceLimit;
 
    static hal_size_t _maxAdjScan;
 };
