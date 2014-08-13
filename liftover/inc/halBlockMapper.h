@@ -73,7 +73,7 @@ protected:
 
    MSSet _segSet;
    MSSet _adjSet;
-   std::set<const Genome*> _spanningTree;
+   std::set<const Genome*> _downwardPath;
    const Genome* _refGenome;
    const Sequence* _refSequence;
    const Genome* _queryGenome;

@@ -37,7 +37,9 @@ protected:
    std::set<MappedSegmentConstPtr> _mappedSegments;
    SegmentIteratorConstPtr _refSeg;
    hal_index_t _lastIndex;
-   std::set<const Genome*> _spanningTree;
+   std::set<const Genome*> _downwardPath;
+   const Genome *_mrca;
+   const Genome *_coalescenceLimit;
 };
 
 }

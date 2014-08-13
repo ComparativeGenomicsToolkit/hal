@@ -31,7 +31,7 @@ void BlockMapper::erase()
 {
   _segSet.clear();
   _adjSet.clear();
-  _spanningTree.clear();
+  _downwardPath.clear();
 }
 
 void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
@@ -73,7 +73,7 @@ void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
   inputSet.clear();
   inputSet.insert(_queryGenome);
   inputSet.insert(_coalescenceLimit);
-  getGenomesInSpanningTree(inputSet, _spanningTree);
+  getGenomesInSpanningTree(inputSet, _downwardPath);
 }
 
 void BlockMapper::map()
@@ -110,7 +110,7 @@ void BlockMapper::map()
     {
       refSeg->toReverseInPlace();
     }
-    refSeg->getMappedSegments(_segSet, _queryGenome, &_spanningTree,
+    refSeg->getMappedSegments(_segSet, _queryGenome, &_downwardPath,
                               _doDupes, _minLength, _coalescenceLimit, _mrca);
     if (_targetReversed == true)
     {
@@ -254,7 +254,7 @@ void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
     }
     size_t backSize = backResults.size();
     assert(queryIt->getArrayIndex() >= 0);
-    queryIt->getMappedSegments(backResults, _refGenome, &_spanningTree,
+    queryIt->getMappedSegments(backResults, _refGenome, &_downwardPath,
                                _doDupes, _minLength);
     // something was found, that's good enough.
     if (backResults.size() > backSize)
@@ -295,7 +295,7 @@ void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
       break;
     }
     size_t backSize = backResults.size();
-    queryIt->getMappedSegments(backResults, _refGenome, &_spanningTree,
+    queryIt->getMappedSegments(backResults, _refGenome, &_downwardPath,
                                _doDupes, _minLength);
     // something was found, that's good enough.
     if (backResults.size() > backSize)
