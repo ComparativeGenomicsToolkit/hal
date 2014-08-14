@@ -31,7 +31,7 @@ static CLParserPtr initParser()
                            "Minumum sequence length to sample as fraction of "
                            "step size: ie sequences with length <= floor("
                            "minSeqFrac * step) are ignored.",
-                           0.1);
+                           0.005);
   optionsParser->addOptionFlag("keepSequences",
                                "Write the sequence strings to the output "
                                "file.", false);
