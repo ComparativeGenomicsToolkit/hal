@@ -84,9 +84,11 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
       if (childSegment->getParentReversed() != 
           bottomSegment->getChildReversed(child))
       {
-        throw hal_exception("parent / child reversal mismatch (parent=" +
-                            genome->getName() + " child=" +
-                            childGenome->getName());
+        stringstream ss;
+        ss << "parent / child reversal mismatch (parent=" <<
+          genome->getName() << " parentSegNum=" << bottomSegment->getArrayIndex() << " child=" <<
+          childGenome->getName() << " childSegNum=" << childSegment->getArrayIndex() << ")";
+          throw hal_exception(ss.str());
       }
     }
   }

@@ -659,13 +659,23 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   string qGenomeName = qGenome->getName();
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  blockMapper.init(tGenome, qGenome, absStart, absEnd,
-                   tReversed, doDupes, 0, doAdjes);
+  if (qGenome == tGenome)
+  {
+    const Alignment *alignment = tGenome->getAlignment();
+    const Genome *root = alignment->openGenome(alignment->getRootName());
+    blockMapper.init(tGenome, qGenome, absStart, absEnd,
+                     tReversed, doDupes, 0, doAdjes, root);
+  }
+  else
+  {
+    blockMapper.init(tGenome, qGenome, absStart, absEnd,
+                     tReversed, doDupes, 0, doAdjes);
+  }
   blockMapper.map();
   BlockMapper::MSSet paraSet;
   hal_size_t totalLength = 0;
   hal_size_t reversedLength = 0;
-  if (doDupes == true)
+  if (doDupes == true && qGenome != tGenome)
   {
     blockMapper.extractReferenceParalogies(paraSet);
   }

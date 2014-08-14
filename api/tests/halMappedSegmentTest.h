@@ -50,6 +50,12 @@ struct MappedSegmentMapDupeTest : virtual public AlignmentTest
    virtual void checkCallBack(hal::AlignmentConstPtr alignment);
 };
 
+struct MappedSegmentMapExtraParalogsTest : virtual public AlignmentTest
+{
+  virtual void createCallBack(hal::AlignmentPtr alignment);
+  virtual void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
 struct MappedSegmentColCompareTest : virtual public AlignmentTest
 {
    virtual void createCallBack(hal::AlignmentPtr alignment) = 0;
