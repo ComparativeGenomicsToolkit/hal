@@ -644,7 +644,7 @@ hal_size_t DefaultMappedSegment::mapRecursiveDown(
     list<DefaultMappedSegmentConstPtr>::iterator i = inputPtr->begin();
     for (; i != inputPtr->end(); ++i)
     {
-      assert((*i)->getGenome() == curGenome);
+      assert((*i)->getGenome() == nextGenome);
       mapSelf((*i), *outputPtr, minLength);
     }
   }
