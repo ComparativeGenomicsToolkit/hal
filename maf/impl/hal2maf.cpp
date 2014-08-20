@@ -60,10 +60,10 @@ static CLParserPtr initParser()
                                " to set a non-ancestral genome as the reference"
                                " because the default reference is the root.", 
                                false);
-  optionsParser->addOptionFlag("ucscNames",
-                               "use UCSC convention of Genome.Seqeunce "
-                               "for output names.  By default, only sequence "
-                               "names are used",
+  optionsParser->addOptionFlag("onlySequenceNames",
+                               "use only sequence names "
+                               "for output names.  By default, the UCSC convention of Genome.Sequence "
+                               "is used",
                                false);
   optionsParser->addOptionFlag("unique",
                                "only write column whose left-most reference "
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
     maxRefGap = optionsParser->getOption<hal_size_t>("maxRefGap");
     noDupes = optionsParser->getFlag("noDupes");
     noAncestors = optionsParser->getFlag("noAncestors");
-    ucscNames = optionsParser->getFlag("ucscNames");
+    ucscNames = !optionsParser->getFlag("onlySequenceNames");
     unique = optionsParser->getFlag("unique");
     append = optionsParser->getFlag("append");
     global = optionsParser->getFlag("global");
