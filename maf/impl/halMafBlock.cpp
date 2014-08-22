@@ -255,6 +255,7 @@ void MafBlock::buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, boo
         buildTreeR(childBotIt, canonicalParalog, modifyEntries);
       }
       // Traverse the paralogous segments cycle and add those segments as well
+      assert(topIt->isCanonicalParalog());
       if (topIt->hasNextParalogy()) {
         topIt->toNextParalogy();
         while(!topIt->isCanonicalParalog()) {
@@ -263,7 +264,7 @@ void MafBlock::buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, boo
           if(topIt->hasParseDown()) {
             BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
             childBotIt->toParseDown(topIt);
-            buildTreeR(childBotIt, canonicalParalog, modifyEntries);
+            buildTreeR(childBotIt, paralog, modifyEntries);
           }
           topIt->toNextParalogy();
         }
