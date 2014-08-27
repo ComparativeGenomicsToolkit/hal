@@ -801,14 +801,31 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
     // column, we should count them both separately.
     colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, refGenome->getSequenceLength() - 1, true);
   }
-  os << "Genome, # of sites mapping at least once, twice, thrice, ..." << endl;
+  hal_size_t maxHistLength = 0;
+  for (map<const Genome *, vector<hal_size_t> *>::iterator histIt = histograms.begin();
+       histIt != histograms.end(); histIt++) {
+    vector <hal_size_t> *histogram = histIt->second;
+    if (histogram->size() > maxHistLength) {
+      maxHistLength = histogram->size();
+    }
+  }
+
+  os << "Genome";
+  for (hal_size_t i = 0; i < maxHistLength; i++) {
+    os << ", sitesMapping" << i + 1 << "Times";
+  }
+  os << endl;
   for (map<const Genome *, vector<hal_size_t> *>::iterator histIt = histograms.begin();
        histIt != histograms.end(); histIt++) {
     string name = histIt->first->getName();
     os << name;
     vector <hal_size_t> *histogram = histIt->second;
-    for(hal_size_t i = 0; i < histogram->size(); i++) {
-      os << ", " << (double) histogram->at(i);
+    for(hal_size_t i = 0; i < maxHistLength; i++) {
+      if (i < histogram->size()) {
+        os << ", " << (double) histogram->at(i);
+      } else {
+        os << ", " << 0;
+      }
     }
     os << endl;
   }
