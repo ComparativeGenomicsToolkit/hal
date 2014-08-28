@@ -238,6 +238,14 @@ char *halGetDna(int halHandle,
                 char* chromName, 
                 hal_int_t start, hal_int_t end);
 
+/** Get the maximum query size supported by the lod.txt file.  Queries > than
+ * this length will return an error. 
+ * @param  halHandle handle for the HAL LOD.txt obtained from halOpenLOD 
+ * @return Maximum query length.  Any query > than this value will be invalid.
+ *         In the event of an error, -1 will be returned. */
+hal_int_t halGetMaxLODQueryLength(int halHandle);
+
+
 #ifdef __cplusplus
 }
 #endif

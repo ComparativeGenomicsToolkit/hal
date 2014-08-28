@@ -31,14 +31,16 @@ void BlockMapper::erase()
 {
   _segSet.clear();
   _adjSet.clear();
-  _spanningTree.clear();
+  _downwardPath.clear();
+  _upwardPath.clear();
 }
 
 void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
                        hal_index_t absRefFirst, hal_index_t absRefLast,
                        bool targetReversed,
                        bool doDupes, hal_size_t minLength,
-                       bool mapTargetAdjacencies)
+                       bool mapTargetAdjacencies,
+                       const Genome* coalescenceLimit)
 {
   erase();
   _absRefFirst = absRefFirst;
@@ -55,17 +57,37 @@ void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
   set<const Genome*> inputSet;
   inputSet.insert(_refGenome);
   inputSet.insert(_queryGenome);
-  getGenomesInSpanningTree(inputSet, _spanningTree);
+  _mrca = getLowestCommonAncestor(inputSet);
+
+  if (coalescenceLimit == NULL)
+  {
+    _coalescenceLimit = _mrca;
+  }
+  else
+  {
+    _coalescenceLimit = coalescenceLimit;
+  }
+
+  // The path between the coalescence limit (the highest point in the
+  // tree) and the query genome is needed to traverse down into the
+  // correct children.
+  inputSet.clear();
+  inputSet.insert(_queryGenome);
+  inputSet.insert(_coalescenceLimit);
+  getGenomesInSpanningTree(inputSet, _downwardPath);
+
+  // similarly, the upward path is needed to get the adjacencies properly.
+  inputSet.clear();
+  inputSet.insert(_refGenome);
+  inputSet.insert(_coalescenceLimit);
+  getGenomesInSpanningTree(inputSet, _upwardPath);
 }
 
 void BlockMapper::map()
 {
   SegmentIteratorConstPtr refSeg;
   hal_index_t lastIndex;
-  set<const Genome*>  inputSet;
-  inputSet.insert(_refGenome);
-  inputSet.insert(_queryGenome);
-  if (getLowestCommonAncestor(inputSet) == _refGenome)
+  if ((_mrca == _refGenome) && (_refGenome != _queryGenome))
   {
     refSeg = _refGenome->getBottomSegmentIterator();
     lastIndex = _refGenome->getNumBottomSegments();
@@ -89,14 +111,14 @@ void BlockMapper::map()
   assert(refSeg->getEndPosition() <= _absRefLast);
 
   while (refSeg->getArrayIndex() < lastIndex &&
-         refSeg->getStartPosition() <= _absRefLast)  
+         refSeg->getStartPosition() <= _absRefLast)
   {
     if (_targetReversed == true)
     {
-      refSeg->toReverseInPlace();            
+      refSeg->toReverseInPlace();
     }
-    refSeg->getMappedSegments(_segSet, _queryGenome, &_spanningTree,
-                              _doDupes, _minLength);
+    refSeg->getMappedSegments(_segSet, _queryGenome, &_downwardPath,
+                              _doDupes, _minLength, _coalescenceLimit, _mrca);
     if (_targetReversed == true)
     {
       refSeg->toReverseInPlace();            
@@ -132,9 +154,9 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
   {
     // we divide list sorted on query segments into equivalence
     // classes based on their query coordinates.  these classes
-    // are orderdered by their reference coordinates.  we keep
+    // are ordered by their reference coordinates.  we keep
     // the lowest entry in each class (by ref coordinates) and 
-    // extract all the others into outParalgoies
+    // extract all the others into outParalogies
     if (iStart == NULL_INDEX)
     {
       iIns = false;
@@ -239,7 +261,7 @@ void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
     }
     size_t backSize = backResults.size();
     assert(queryIt->getArrayIndex() >= 0);
-    queryIt->getMappedSegments(backResults, _refGenome, &_spanningTree,
+    queryIt->getMappedSegments(backResults, _refGenome, &_upwardPath,
                                _doDupes, _minLength);
     // something was found, that's good enough.
     if (backResults.size() > backSize)
@@ -280,7 +302,7 @@ void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
       break;
     }
     size_t backSize = backResults.size();
-    queryIt->getMappedSegments(backResults, _refGenome, &_spanningTree,
+    queryIt->getMappedSegments(backResults, _refGenome, &_upwardPath,
                                _doDupes, _minLength);
     // something was found, that's good enough.
     if (backResults.size() > backSize)

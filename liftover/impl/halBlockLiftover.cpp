@@ -38,7 +38,13 @@ void BlockLiftover::visitBegin()
   set<const Genome*> inputSet;
   inputSet.insert(_srcGenome);
   inputSet.insert(_tgtGenome);
-  getGenomesInSpanningTree(inputSet, _spanningTree);
+  _mrca = getLowestCommonAncestor(inputSet);
+  _coalescenceLimit = _mrca;
+
+  inputSet.clear();
+  inputSet.insert(_coalescenceLimit);
+  inputSet.insert(_tgtGenome);
+  getGenomesInSpanningTree(inputSet, _downwardPath);
 }
 
 void BlockLiftover::liftInterval(BedList& mappedBedLines)
@@ -67,8 +73,8 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     {
       _refSeg->toReverseInPlace();
     }
-    _refSeg->getMappedSegments(_mappedSegments, _tgtGenome, &_spanningTree,
-                              _traverseDupes);
+    _refSeg->getMappedSegments(_mappedSegments, _tgtGenome, &_downwardPath,
+                               _traverseDupes, 0, _coalescenceLimit, _mrca);
     if (flip == true)
     {
       _refSeg->toReverseInPlace();

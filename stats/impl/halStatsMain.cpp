@@ -41,6 +41,8 @@ static void printPercentID(ostream& os, AlignmentConstPtr alignment,
                            const string& genomeName);
 static void printCoverage(ostream& os, AlignmentConstPtr alignment,
                                  const string& genomeName);
+static void printSegments(ostream& os, AlignmentConstPtr alignment,
+                          const string& genomeName, bool top);
 
 int main(int argc, char** argv)
 {
@@ -101,6 +103,14 @@ int main(int argc, char** argv)
   optionsParser->addOption("coverage",
                            "print histogram of coverage of a genome with"
                            " all other genomes", "\"\"");
+  optionsParser->addOption("topSegments",
+                           "print coordinates of all top segments of given"
+                           " genome in BED format.", "\"\"");
+  optionsParser->addOption("bottomSegments",
+                           "print coordinates of all bottom segments of given"
+                           " genome in BED format.", "\"\"");
+
+
   string path;
   bool listGenomes;
   string sequencesFromGenome;
@@ -120,6 +130,8 @@ int main(int argc, char** argv)
   string chromSizesFromGenome;
   string percentID;
   string coverage;
+  string topSegments;
+  string bottomSegments;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -142,6 +154,8 @@ int main(int argc, char** argv)
     chromSizesFromGenome = optionsParser->getOption<string>("chromSizes");
     percentID = optionsParser->getOption<string>("percentID");
     coverage = optionsParser->getOption<string>("coverage");
+    topSegments = optionsParser->getOption<string>("topSegments");
+    bottomSegments = optionsParser->getOption<string>("bottomSegments");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -161,14 +175,16 @@ int main(int argc, char** argv)
     if (chromSizesFromGenome != "\"\"") ++optCount;
     if (percentID != "\"\"") ++optCount;
     if (coverage != "\"\"") ++optCount;
+    if (topSegments != "\"\"") ++optCount;
+    if (bottomSegments != "\"\"") ++optCount;
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                           "--branches, --sequenceStats, --children, --parent, "
                           "--bedSequences, --root, --numSegments, --baseComp, "
                           "--genomeMetaData, --chromSizes, --percentID, "
-                          "--coverage,  and --branchLength options are "
-                          "exclusive");
+                          "--coverage,  --topSegments, --bottomSegments "
+                          "and --branchLength options are exclusive");
     }
   }
   catch(exception& e)
@@ -251,6 +267,12 @@ int main(int argc, char** argv)
     }
     else if (coverage != "\"\"") {
       printCoverage(cout, alignment, coverage);
+    }
+    else if (topSegments != "\"\"") {
+      printSegments(cout, alignment, topSegments, true);
+    }
+    else if (bottomSegments != "\"\"") {
+      printSegments(cout, alignment, bottomSegments, false);
     }
     else
     {
@@ -779,15 +801,68 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
     // column, we should count them both separately.
     colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, refGenome->getSequenceLength() - 1, true);
   }
-  os << "Genome, # of sites mapping at least once, twice, thrice, ..." << endl;
+  hal_size_t maxHistLength = 0;
+  for (map<const Genome *, vector<hal_size_t> *>::iterator histIt = histograms.begin();
+       histIt != histograms.end(); histIt++) {
+    vector <hal_size_t> *histogram = histIt->second;
+    if (histogram->size() > maxHistLength) {
+      maxHistLength = histogram->size();
+    }
+  }
+
+  os << "Genome";
+  for (hal_size_t i = 0; i < maxHistLength; i++) {
+    os << ", sitesMapping" << i + 1 << "Times";
+  }
+  os << endl;
   for (map<const Genome *, vector<hal_size_t> *>::iterator histIt = histograms.begin();
        histIt != histograms.end(); histIt++) {
     string name = histIt->first->getName();
     os << name;
     vector <hal_size_t> *histogram = histIt->second;
-    for(hal_size_t i = 0; i < histogram->size(); i++) {
-      os << ", " << (double) histogram->at(i);
+    for(hal_size_t i = 0; i < maxHistLength; i++) {
+      if (i < histogram->size()) {
+        os << ", " << (double) histogram->at(i);
+      } else {
+        os << ", " << 0;
+      }
     }
     os << endl;
+  }
+}
+
+static void printSegments(ostream& os, AlignmentConstPtr alignment,
+                          const string& genomeName, bool top)
+{
+  const Genome* genome = alignment->openGenome(genomeName);
+  if (genome == NULL) 
+  {
+    throw hal_exception("Genome " + genomeName + " does not exist.");
+  }
+  hal_size_t numSegments = 0;
+  SegmentIteratorConstPtr segment;
+  if (top == true)
+  {
+    numSegments = genome->getNumTopSegments();
+    if (numSegments > 0)
+    {
+      segment = genome->getTopSegmentIterator();
+    }
+  }
+  else
+  {
+    numSegments = genome->getNumBottomSegments();
+    if (numSegments > 0)
+    {
+      segment = genome->getBottomSegmentIterator();
+    }
+  }
+  for (hal_size_t i = 0; i < numSegments; ++i)
+  {
+    const Sequence* sequence = segment->getSequence();
+    os << sequence->getName() << '\t'
+       << (segment->getStartPosition() - sequence->getStartPosition()) << '\t'
+       << (segment->getEndPosition() + 1 - sequence->getStartPosition()) << '\n';
+    segment->toRight();
   }
 }

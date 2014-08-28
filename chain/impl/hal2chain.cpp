@@ -12,11 +12,20 @@
 using namespace std;
 using namespace hal;
 
+/**
+ * WARNING: THIS TOOL WAS NEVER FINISHED OR TESTED. USE AT OWN RISK. PLEASE 
+ * CONSIDER halLiftover --outPSL INSTEAD.  
+ *
+ */
+
 int main(int argc, char** argv)
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->setDescription("Rertrieve chain (pairwise alignment) "
-                                "information from a hal database");
+                                "information from a hal database.\n"
+                                "WARNING: THIS TOOL WAS NEVER FINISHED OR"
+                                " TESTED. USE AT OWN RISK. PLEASE "
+                                "CONSIDER halLiftover --outPSL INSTEAD.");
   optionsParser->addArgument("halFile", "path to hal file to analyze");
   optionsParser->addArgument("genome", "(query) genome to process");
   optionsParser->addOption("sequence", "sequence name in query genome ("
@@ -57,6 +66,9 @@ int main(int argc, char** argv)
   }
   try
   {
+    cerr << "WARNING: THIS TOOL WAS NEVER FINISHED OR TESTED. USE AT OWN RISK."
+         << " PLEASE CONSIDER halLiftover --outPSL INSTEAD." <<endl;  
+
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath,
                                                            optionsParser);
     

@@ -48,9 +48,15 @@ public:
    /** Check if query length corresponds to LOD 0 (ie original HAL) */
    bool isLod0(hal_size_t queryLenth) const;
 
+   /** Any query greater than this is disabled */
+   hal_size_t getMaxQueryLength() const;
+
    /** Maximum age of a URL in seconds such that we dont try to 
     * preload headers for all the HAL files */
    static const unsigned long MaxAgeSec;
+
+   /** Token that specifies upper limit for LODs, that sits in path field */
+   static const std::string MaxLodToken;
    
 protected:
 
@@ -66,7 +72,13 @@ protected:
 
    CLParserConstPtr _options;
    AlignmentMap _map;
+   hal_size_t _maxLodLowerBound;
 };
+
+inline hal_size_t LodManager::getMaxQueryLength() const 
+{
+  return _maxLodLowerBound - 1;
+}
 
 HAL_FORWARD_DEC_CLASS(LodManager)
 

@@ -79,7 +79,7 @@ def extractGeneMAFs(options):
         for sBedFile in splitBed(bedFile4d, options):
             outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
             os.path.splitext(os.path.basename(sBedFile))[0] + ".maf")
-            h2mFlags = "--ucscNames --splitBySequence --noDupes"
+            h2mFlags = "--splitBySequence --noDupes"
             if options.noAncestors is True:
                 h2mFlags += " --noAncestors"
             if options.sliceSize is not None:

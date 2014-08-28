@@ -78,11 +78,7 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
 DefaultColumnIterator::~DefaultColumnIterator()
 {
   eraseColMap();
-  for (VisitCache::iterator i = _visitCache.begin();
-       i != _visitCache.end(); ++i)
-  {
-    delete i->second;
-  }
+  clearVisitCache();
 }
 
 void DefaultColumnIterator::toRight() const
@@ -186,12 +182,7 @@ void DefaultColumnIterator::toSite(hal_index_t columnIndex,
   _indelStack.clear();
   if (clearCache == true)
   {
-    for (VisitCache::iterator i = _visitCache.begin();
-         i != _visitCache.end(); ++i)
-    {
-      delete i->second;
-    }
-    _visitCache.clear();
+      clearVisitCache();
   }
   defragment();
   // note columnIndex in genome (not sequence) coordinates
@@ -260,6 +251,27 @@ bool DefaultColumnIterator::isCanonicalOnRef() const
          _stack[0]->_sequence->getGenome()->getSequenceLength());
   return _leftmostRefPos >= _stack[0]->_firstIndex &&
      _leftmostRefPos <= _stack[0]->_lastIndex;
+}
+
+ColumnIterator::VisitCache *DefaultColumnIterator::getVisitCache() const
+{
+    return &_visitCache;
+}
+
+void DefaultColumnIterator::clearVisitCache() const
+{
+    for (VisitCache::iterator i = _visitCache.begin();
+         i != _visitCache.end(); ++i)
+    {
+        delete i->second;
+    }
+    _visitCache.clear();
+}
+
+void DefaultColumnIterator::setVisitCache(ColumnIterator::VisitCache *visitCache) const
+{
+    clearVisitCache();
+    _visitCache = *visitCache;
 }
 
 void DefaultColumnIterator::print(ostream& os) const

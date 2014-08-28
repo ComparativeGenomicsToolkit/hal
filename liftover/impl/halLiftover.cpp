@@ -457,14 +457,14 @@ void Liftover::cleanResults()
       {
         i->_thickStart = i->_start;
         i->_thickEnd = i->_end;
-        if (_bedLine._thickStart != _bedLine._start ||
-            _bedLine._thickEnd != _bedLine._end)
+/*        if ((_bedLine._thickStart != _bedLine._start ||
+            _bedLine._thickEnd != _bedLine._end) && !_warnedThickStart)
         {
           cerr << "Input BED line " << _lineNumber << " warning: "
                << "thickStart different from chromStart or thickEnd "
                << "different from chromEnd not supported.  Assuming they"
                << " are the same." << endl;
-        }
+               }*/
       }
       else
       {

@@ -110,7 +110,10 @@ static int openWrapper(char* path)
   {
     return halOpen(path);
   }
-  return halOpenLOD(path);
+  int handle = halOpenLOD(path);
+  hal_int_t maxQuery = halGetMaxLODQueryLength(handle);
+  printf("Max LOD query: %lu\n", maxQuery);
+  return handle;
 }
 
 #ifdef ENABLE_UDC
@@ -155,7 +158,6 @@ int main(int argc, char** argv)
     udcSetDefaultDir(args.udcPath);
   }
 #endif
-     
   int handle = openWrapper(args.path);
   int ret = 0;
   if (handle >= 0)
@@ -174,25 +176,27 @@ int main(int argc, char** argv)
                                  sm, 
                                  HAL_QUERY_AND_TARGET_DUPS,
                                  1);
-
     if (results == NULL)
     {
+      fprintf(stderr, "halGetBlocksInTargetRange returned NULL\n");
       ret = -1;
     }
-    struct hal_block_t* cur = results->mappedBlocks;
-    while (cur)
+    else
     {
-      printBlock(stdout, cur);
-      cur = cur->next;
+      struct hal_block_t* cur = results->mappedBlocks;
+      while (cur)
+      {
+        printBlock(stdout, cur);
+        cur = cur->next;
+      }
+      struct hal_target_dupe_list_t* dupeList = results->targetDupeBlocks;
+      while (dupeList)
+      {
+        printDupeList(stdout, dupeList);
+        dupeList = dupeList->next;
+      }
+      halFreeBlockResults(results);
     }
-    struct hal_target_dupe_list_t* dupeList = results->targetDupeBlocks;
-    while (dupeList)
-    {
-      printDupeList(stdout, dupeList);
-      dupeList = dupeList->next;
-    }
-    halFreeBlockResults(results);
-
 #ifdef ENABLE_UDC
     #define NUM_THREADS 10
     pthread_t threads[NUM_THREADS];

@@ -44,4 +44,13 @@ struct GenomeCopyTest : public AlignmentTest
    std::string _path;
    hal::AlignmentPtr _secondAlignment;
 };
+
+struct GenomeCopySegmentsWhenSequencesOutOfOrderTest : public AlignmentTest
+{
+   void createCallBack(hal::AlignmentPtr alignment);
+   void checkCallBack(hal::AlignmentConstPtr alignment);
+   std::string _path;
+   hal::AlignmentPtr _secondAlignment;
+};
+
 #endif

@@ -203,8 +203,12 @@ countSnps(const Genome* refGenome, const Genome* queryGenome,
   set<const Genome*> inputSet;
   inputSet.insert(refGenome);
   inputSet.insert(queryGenome);
-  set<const Genome*> spanningTree;
-  getGenomesInSpanningTree(inputSet, spanningTree);
+  const Genome *mrca = getLowestCommonAncestor(inputSet);
+  inputSet.clear();
+  inputSet.insert(queryGenome);
+  inputSet.insert(mrca);
+  set<const Genome*> downwardPath;
+  getGenomesInSpanningTree(inputSet, downwardPath);
   string refString;
   string queryString;
   hal_size_t subCount = 0;
@@ -215,7 +219,7 @@ countSnps(const Genome* refGenome, const Genome* queryGenome,
   while (refIt->getArrayIndex() < lastIndex &&
          refIt->getStartPosition() <= lastPos)  
   {
-    refIt->getMappedSegments(mappedSet, queryGenome, &spanningTree,
+    refIt->getMappedSegments(mappedSet, queryGenome, &downwardPath,
                               doDupes, 0);
     refIt->toRight(lastPos);
   }

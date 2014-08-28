@@ -577,6 +577,36 @@ extern "C" char *halGetDna(int halHandle,
   return dna;
 }
 
+extern "C" hal_int_t halGetMaxLODQueryLength(int halHandle)
+{
+  HAL_LOCK
+  hal_int_t ret = 0;
+  try
+  {
+    HandleMap::iterator mapIt = handleMap.find(halHandle);
+    if (mapIt == handleMap.end())
+    {
+      stringstream ss;
+      ss << "error getting Max LOD Query Length.  handle " 
+         << halHandle << ": not found";
+      throw hal_exception(ss.str());
+    }
+    ret = (hal_int_t)mapIt->second.second->getMaxQueryLength();
+  }
+  catch(exception& e)
+  {
+    cerr << "Exception caught: " << e.what() << endl;
+    ret = -1;
+  }
+  catch(...)
+  {
+    cerr << "Error getting Max LOD Query from handle " << halHandle << endl;
+    ret = -1;
+  }
+  HAL_UNLOCK
+  return ret;
+}
+
 void checkHandle(int handle)
 {
   HandleMap::iterator mapIt = handleMap.find(handle);
@@ -659,13 +689,23 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   string qGenomeName = qGenome->getName();
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  blockMapper.init(tGenome, qGenome, absStart, absEnd,
-                   tReversed, doDupes, 0, doAdjes);
+  if (qGenome == tGenome)
+  {
+    const Alignment *alignment = tGenome->getAlignment();
+    const Genome *root = alignment->openGenome(alignment->getRootName());
+    blockMapper.init(tGenome, qGenome, absStart, absEnd,
+                     tReversed, doDupes, 0, doAdjes, root);
+  }
+  else
+  {
+    blockMapper.init(tGenome, qGenome, absStart, absEnd,
+                     tReversed, doDupes, 0, doAdjes);
+  }
   blockMapper.map();
   BlockMapper::MSSet paraSet;
   hal_size_t totalLength = 0;
   hal_size_t reversedLength = 0;
-  if (doDupes == true)
+  if (doDupes == true && qGenome != tGenome)
   {
     blockMapper.extractReferenceParalogies(paraSet);
   }

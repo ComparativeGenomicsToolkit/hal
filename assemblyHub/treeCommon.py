@@ -173,9 +173,8 @@ def checkHalTree(halfile, outdir, options):
     treefile = os.path.join(outdir, "haltree.nw")
     system("halStats --tree %s > %s" %(halfile, treefile))
     tree = Phylo.read(treefile, "newick")
-    if isBinaryTree(tree):
-        options.treeFile = treefile
-        options.tree = tree
+    options.treeFile = treefile
+    options.tree = tree
 
 #def getOrderFromTree(options):
 #    if options.tree:

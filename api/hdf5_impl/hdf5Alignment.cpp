@@ -398,11 +398,13 @@ void HDF5Alignment::removeGenome(const string& name)
       bottomSegments[i].children =(ChildInfo_t*)malloc(sizeof(ChildInfo_t) *
                                                        (childNames.size() - 1));
       assert(bottomSegments[i].children != NULL);
-      for (hal_index_t oldChild = 0, newChild = 0; oldChild < childNames.size();
+      for (hal_index_t oldChild = 0, newChild = 0;
+           oldChild < (hal_index_t) childNames.size();
            oldChild++, newChild++)
       {
         if (oldChild == removedChildIndex)
         {
+          // Compensate for the increment that will follow
           newChild--;
           continue;
         }

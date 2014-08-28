@@ -1,7 +1,7 @@
 rootPath = ../
 include ../include.mk
 
-phastCflags = -I../../phast/include -I../../clapack/INCLUDE
+phastCflags = -I../../phast/include -I../../clapack/INCLUDE -I../../phast/src/lib/pcre
 phastLinkflags = ../../phast/lib/libphast.a ../../phast/lib/liblapack.a ../../phast/lib/libblaswr.a ../../clapack/F2CLIBS/libf2c.a
 libHeaders = $(wildcard inc/*.h )
 libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp

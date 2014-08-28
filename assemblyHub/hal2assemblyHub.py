@@ -70,8 +70,12 @@ class Setup( Target ):
         #Get tree
         if not self.options.tree:
             checkHalTree(self.halfile, self.outdir, self.options)
-        if self.options.tree: #get the png of the tree
+        assert self.options.tree is not None # if this goes wrong yell at joel
+        if isBinaryTree(self.options.tree): #get the png of the tree
             self.options.treeFig, self.options.leaves = drawTreeWtInternalNodesAligned(self.options.tree, self.outdir, self.options.properName)
+        else:
+            # Can't get tree png
+            self.options.leaves = getLeaves(self.options.tree)
 
         #Get the ordering of the tracks
         #getOrderFromTree(self.options)
@@ -239,11 +243,11 @@ class WriteGenomesFile(Target):
             f.write("groups groups.txt\n")
 
             writeDescriptionFile(genome, genomedir)
-            f.write("htmlPath %s/description.html\n" %genome)
-            #f.write("description %s\n" % getProperName(genome, self.options.properName))
+            f.write("htmlPath %s/description.html\n" % genome)
+            f.write("description %s\n" % getProperName(genome, self.options.properName))
             f.write("organism %s\n" % getProperName(genome, self.options.properName))
             f.write("orderKey 4800\n")
-            f.write("scientificName %s\n" %genome)
+            f.write("scientificName %s\n" % genome)
             
             seq2len = self.genome2seq2len[genome]
             (seq, l) = getLongestSeq(seq2len)
@@ -430,7 +434,6 @@ def main():
     parser = OptionParser(usage = usage)
     addOptions(parser)
     Stack.addJobTreeOptions(parser)
-
     options, args = parser.parse_args()
     checkOptions(parser, args, options)
     
