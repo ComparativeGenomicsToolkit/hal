@@ -307,7 +307,7 @@ bool BedLineSrcLess::operator()(const BedLine& b1, const BedLine& b2) const
 }
 
 
-ostream& BedLine::writePSL(ostream& os)
+ostream& BedLine::writePSL(ostream& os, bool prefixWithName)
 {
   assert(_psl.size() == 1);
   const PSLInfo& psl = _psl[0];
@@ -319,6 +319,10 @@ ostream& BedLine::writePSL(ostream& os)
     throw hal_exception("Internal error: PSL does not validate");
   }
 
+  if (prefixWithName == true)
+  {
+    os << _name << '\t';
+  }
   os << psl._matches << '\t'
      << psl._misMatches << '\t'
      << psl._repMatches << '\t'

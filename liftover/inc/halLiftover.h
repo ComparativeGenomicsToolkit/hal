@@ -33,6 +33,7 @@ public:
                 bool addExtraColumns = false,
                 bool traverseDupes = true,
                 bool outPSL = false,
+                bool outPSLWithName = false,
                 const std::locale* inLocale = NULL);
                    
 protected:
@@ -62,6 +63,7 @@ protected:
    int _inBedVersion;
    int _outBedVersion;
    bool _outPSL;
+   bool _outPSLWithName;
    const std::locale* _inLocale;
    
    BedList _mappedBlocks;

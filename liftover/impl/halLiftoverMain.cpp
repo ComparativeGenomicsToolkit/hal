@@ -40,6 +40,9 @@ static CLParserPtr initParser()
   optionsParser->addOptionFlag("outPSL", "write output in PSL instead of "
                                "bed format. overrides --outBedVersion when "
                                "specified.", false);
+  optionsParser->addOptionFlag("outPSLWithName", "write output as input BED name followed by PSL line instead of "
+                               "bed format. overrides --outBedVersion when "
+                               "specified.", false);
   optionsParser->addOptionFlag("keepExtra", "keep extra columns. these are "
                                "columns in the input beyond the specified or "
                                "detected bed version, and which are cut by "
@@ -68,6 +71,7 @@ int main(int argc, char** argv)
   int outBedVersion;
   bool keepExtra;
   bool outPSL;
+  bool outPSLWithName;
   bool tab;
   try
   {
@@ -83,6 +87,7 @@ int main(int argc, char** argv)
     outBedVersion = optionsParser->getOption<int>("outBedVersion");
     keepExtra = optionsParser->getFlag("keepExtra");
     outPSL = optionsParser->getFlag("outPSL");
+    outPSLWithName = optionsParser->getFlag("outPSLWithName");
     tab = optionsParser->getFlag("tab");
   }
   catch(exception& e)
@@ -94,6 +99,10 @@ int main(int argc, char** argv)
 
   try
   {
+    if (outPSLWithName == true)
+    {
+      outPSL = true;
+    }
     if (outPSL == true)
     {
       outBedVersion = 12;
@@ -163,7 +172,7 @@ int main(int argc, char** argv)
     BlockLiftover liftover;
     liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
                      inBedVersion, outBedVersion, keepExtra, !noDupes,
-                     outPSL, inLocale);
+                     outPSL, outPSLWithName, inLocale);
     
     delete inLocale;
 

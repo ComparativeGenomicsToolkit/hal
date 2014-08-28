@@ -13,7 +13,7 @@ using namespace hal;
 
 Liftover::Liftover() : _outBedStream(NULL),                       
                        _inBedVersion(-1), _outBedVersion(-1),
-                       _outPSL(false),
+                       _outPSL(false), _outPSLWithName(false),
                        _srcGenome(NULL), _tgtGenome(NULL)
 {
 
@@ -34,6 +34,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
                        bool addExtraColumns,
                        bool traverseDupes,
                        bool outPSL,
+                       bool outPSLWithName,
                        const locale* inLocale)
 {
   _srcGenome = srcGenome;
@@ -44,6 +45,7 @@ void Liftover::convert(AlignmentConstPtr alignment,
   _outBedVersion = outBedVersion;
   _traverseDupes = traverseDupes;
   _outPSL = outPSL;
+  _outPSLWithName = outPSLWithName;
   _inLocale = inLocale;
   _missedSet.clear();
   _tgtSet.clear();
@@ -163,7 +165,7 @@ void Liftover::writeLineResults()
     }
     else
     {
-      i->writePSL(*_outBedStream);
+      i->writePSL(*_outBedStream, _outPSLWithName);
     }
   }
 }
