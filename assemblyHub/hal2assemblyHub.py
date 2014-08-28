@@ -20,7 +20,7 @@
 import os, sys, re, time
 from optparse import OptionParser
 
-from sonLib.bioio import system  
+from sonLib.bioio import system, getTempFile
 from jobTree.scriptTree.target import Target
 from jobTree.scriptTree.stack import Stack
 
@@ -334,7 +334,7 @@ def getLongestSeq(seq2len):
     return seqs[0]
 
 def getGenomeSequencesFromHal(halfile, genome):
-    statsfile = "%s-seqStats.txt" %genome
+    statsfile = getTempFile("%s-seqStats.txt" %genome)
     system("halStats --sequenceStats %s %s > %s" %(genome, halfile, statsfile))
     
     seq2len = {}
