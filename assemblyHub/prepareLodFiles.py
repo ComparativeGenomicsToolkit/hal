@@ -77,12 +77,18 @@ def getLod(options, localHalfile, outdir):
     return lodtxtfile, loddir
 
 def getLodLowestLevel(lodtxtfile):
+    """Gets the lowest level at which an LOD hal is used instead of the
+    base-level hal file."""
     f = open(lodtxtfile, 'r')
     line = f.readline()
     level = int(line.split()[0])
     while line and level == 0:
         line = f.readline()
-        level = int(line.split()[0])
+        if len(line.strip()) == 0:
+            continue
+        fields = line.strip().split()
+        if len(fields) == 2 and fields[1] != "max":
+            level = int(line.split()[0])
     f.close()
     return level
 
