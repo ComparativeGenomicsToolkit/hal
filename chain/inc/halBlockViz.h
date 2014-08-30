@@ -126,21 +126,24 @@ typedef enum
  * entry (0)
  *
  * @param lodFilePath path to location of HAL LOD file on disk 
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return new handle or -1 of open failed.
 */
 int halOpenLOD(char *lodFilePath, char **errStr);
 
 /** Open a HAL alignment file read-only.  
  * @param halFilePath path to location of HAL file on disk 
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return new handle or -1 of open failed.
 */
 int halOpen(char *halFilePath, char **errStr);
 
 /** Close a HAL alignment, given its handle
  * @param halHandle previously obtained from halOpen
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return 0: success -1: failure
  */
 int halClose(int halHandle, char **errStr);
@@ -179,7 +182,8 @@ void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
  * in the alignment are mapped back ot the target (producing offscreen 
  * results). Must be set to 0 it tReversed is not 0 (so set to 0 when doing 
  * liftover).
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return  block structure -- must be freed by halFreeBlockResults().
  * NULL on failure.
  */
@@ -209,7 +213,8 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
  * chromosome is used). 
  * @param doDupes create blocks for duplications if not 0.  When this 
  * option is enabled, the same region can appear in more than one block.
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return  number of bytes written. -1 on failure.
  */
 hal_int_t halGetMAF(FILE* outFile,
@@ -224,14 +229,16 @@ hal_int_t halGetMAF(FILE* outFile,
 
 /** Create a linked list of the species in the hal file.
  * @param halHandle handle for the HAL alignment obtained from halOpen
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return  species structure -- must be freed by client. NULL on failure. */
 struct hal_species_t *halGetSpecies(int halHandle, char **errStr);
 
 /** Create a linked list of the chromosomes in the
  * @param halHandle handle for the HAL alignment obtained from halOpen
  * @param speciesName The name of the species whose chromomsomes you want
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return chromosome structure -- must be freed by client. NULL on failure */
 struct hal_chromosome_t *halGetChroms(int halHandle,
                                       char* speciesName,
@@ -243,7 +250,8 @@ struct hal_chromosome_t *halGetChroms(int halHandle,
  * @param chromName The name of the chromosome within the species
  * @param start The first position of the chromosome
  * @param end The last + 1 position of the chromosome 
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return dna string -- must be freed by client. NULL on failure. */
 char *halGetDna(int halHandle,
                 char* speciesName,
@@ -254,7 +262,8 @@ char *halGetDna(int halHandle,
 /** Get the maximum query size supported by the lod.txt file.  Queries > than
  * this length will return an error. 
  * @param  halHandle handle for the HAL LOD.txt obtained from halOpenLOD 
- * @param errStr pointer to a string that contains an error message on failure
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
  * @return Maximum query length.  Any query > than this value will be invalid.
  *         In the event of an error, -1 will be returned. */
 hal_int_t halGetMaxLODQueryLength(int halHandle, char **errStr);

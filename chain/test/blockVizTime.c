@@ -73,9 +73,9 @@ static int openWrapper(char* path)
 {
   if (strcmp(path + strlen(path) - 3, "hal") == 0)
   {
-    return halOpen(path);
+    return halOpen(path, NULL);
   }
-  return halOpenLOD(path);
+  return halOpenLOD(path, NULL);
 }
 
 int main(int argc, char** argv)
@@ -111,7 +111,8 @@ int main(int argc, char** argv)
                                  0,
                                  sm, 
                                  HAL_QUERY_AND_TARGET_DUPS,
-                                 1);
+                                 1,
+                                 NULL);
     if (results == NULL)
     {
       ret = -1;
