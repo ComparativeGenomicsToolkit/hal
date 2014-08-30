@@ -37,7 +37,7 @@ using namespace hal;
 typedef map<int, pair<string, LodManagerPtr> > HandleMap;
 static HandleMap handleMap;
 
-static int halOpenLodOrHal(char* inputPath, bool isLod);
+static int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr);
 static void checkHandle(int handle);
 static void checkGenomes(int halHandle, 
                          AlignmentConstPtr alignment, const string& qSpecies,
@@ -73,20 +73,20 @@ static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
 
 static void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList);
 
-extern "C" int halOpenLOD(char *lodFilePath)
+extern "C" int halOpenLOD(char *lodFilePath, char **errStr)
 {
   bool isHal = lodFilePath && strlen(lodFilePath) > 4 &&
      strcmp(lodFilePath + strlen(lodFilePath) - 4, ".hal") == 0;
 
-  return halOpenLodOrHal(lodFilePath, !isHal);
+  return halOpenLodOrHal(lodFilePath, !isHal, errStr);
 }
 
-extern "C" int halOpen(char* halFilePath)
+extern "C" int halOpen(char* halFilePath, char **errStr)
 {
-  return halOpenLodOrHal(halFilePath, false);
+  return halOpenLodOrHal(halFilePath, false, errStr);
 }
 
-int halOpenLodOrHal(char* inputPath, bool isLod)
+int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr)
 {
   HAL_LOCK
   int handle = -1;
@@ -127,19 +127,31 @@ int halOpenLodOrHal(char* inputPath, bool isLod)
   }
   catch(exception& e)
   {
-    cerr << "Exception caught: " << e.what() << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
     handle = -1;
   }
   catch(...)
   {
-    cerr << "Error opening " << inputPath << endl;
+    stringstream ss;
+    ss << "Error opening " << inputPath << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
     handle = -1;
   }
   HAL_UNLOCK
   return handle;
 }
 
-extern "C" int halClose(int handle)
+extern "C" int halClose(int handle, char **errStr)
 {
   HAL_LOCK
   int ret = 0;
@@ -156,12 +168,24 @@ extern "C" int halClose(int handle)
   }
   catch(exception& e)
   {
-    cerr << "Exception caught: " << e.what() << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
     ret = -1;
   }
   catch(...)
   {
-    cerr << "Error closing " << handle << endl;
+    stringstream ss;
+    ss << "Error closing " << handle << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
     ret = -1;
   }
   HAL_UNLOCK
@@ -218,7 +242,8 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       hal_int_t tReversed,
                                                       hal_seqmode_type_t seqMode,
                                                       hal_dup_type_t dupMode,
-                                                      int mapBackAdjacencies)
+                                                      int mapBackAdjacencies,
+                                                      char **errStr)
 {
   HAL_LOCK
   hal_block_results_t* results = NULL;
@@ -301,12 +326,24 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
   }
   catch(exception& e)
   {
-    cerr << "Exception caught: " << e.what() << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
     results = NULL;
   }
   catch(...)
   {
-    cerr << "Error in hal block query";
+    stringstream ss;
+    ss << "Error in hal block query";
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
     results = NULL;
   }
   HAL_UNLOCK
@@ -320,7 +357,8 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
                                char* tChrom,
                                hal_int_t tStart, 
                                hal_int_t tEnd,
-                               int doDupes)
+                               int doDupes,
+                               char **errStr)
 {
   HAL_LOCK
   hal_int_t numBytes = 0;
@@ -381,19 +419,31 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
   }
   catch(exception& e)
   {
-    cerr << "Exception caught: " << e.what() << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
     numBytes = -1;
   }
   catch(...)
   {
-    cerr << "Error in hal maf query";
+    stringstream ss;
+    ss << "Error in hal maf query";
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
     numBytes = -1;
   }
   HAL_UNLOCK
   return numBytes;
 }
 
-extern "C" struct hal_species_t *halGetSpecies(int halHandle)
+extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
 {
   HAL_LOCK
   hal_species_t* head = NULL;
@@ -451,12 +501,24 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle)
   }
   catch(exception& e)
   {
-    cerr << "Exception caught: " << e.what() << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
     head = NULL;
   }
   catch(...)
   {
-    cerr << "Error in hal get species";
+    stringstream ss;
+    ss << "Error in hal get species";
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
     head = NULL;
   }
   HAL_UNLOCK
@@ -464,7 +526,8 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle)
 }
 
 extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
-                                                 char* speciesName)
+                                                 char* speciesName,
+                                                 char **errStr)
 {
   HAL_LOCK
   hal_chromosome_t* head = NULL;
@@ -513,12 +576,24 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
   }
   catch(exception& e)
   {
-    cerr << "Exception caught: " << e.what() << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
     head = NULL;
   }
   catch(...)
   {
-    cerr << "Error in hal get chroms";
+    stringstream ss;
+    ss << "Error in hal get chroms";
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
     head = NULL;
   }
   HAL_UNLOCK
@@ -527,7 +602,8 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
 
 extern "C" char *halGetDna(int halHandle,
                            char* speciesName, char* chromName, 
-                           hal_int_t start, hal_int_t end)
+                           hal_int_t start, hal_int_t end,
+                           char **errStr)
 {
   HAL_LOCK
   char* dna = NULL;
@@ -565,19 +641,31 @@ extern "C" char *halGetDna(int halHandle,
   }
   catch(exception& e)
   {
-    cerr << "Exception caught: " << e.what() << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
     dna = NULL;
   }
   catch(...)
   {
-    cerr << "Error in hal get dna";
+    stringstream ss;
+    ss << "Error in hal get dna";
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
     dna = NULL;
   }
   HAL_UNLOCK
   return dna;
 }
 
-extern "C" hal_int_t halGetMaxLODQueryLength(int halHandle)
+extern "C" hal_int_t halGetMaxLODQueryLength(int halHandle, char **errStr)
 {
   HAL_LOCK
   hal_int_t ret = 0;
@@ -595,12 +683,25 @@ extern "C" hal_int_t halGetMaxLODQueryLength(int halHandle)
   }
   catch(exception& e)
   {
-    cerr << "Exception caught: " << e.what() << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
     ret = -1;
   }
   catch(...)
   {
-    cerr << "Error getting Max LOD Query from handle " << halHandle << endl;
+
+    stringstream ss;
+    ss << "Error getting Max LOD Query from handle " << halHandle << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
     ret = -1;
   }
   HAL_UNLOCK
