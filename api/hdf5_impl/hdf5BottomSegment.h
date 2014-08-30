@@ -61,7 +61,9 @@ public:
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
-     hal_size_t minLength) const;
+     hal_size_t minLength,
+     const Genome *coalescenceLimit,
+     const Genome *mrca) const;
    void print(std::ostream& os) const;
    
    // BOTTOM SEGMENT INTERFACE
@@ -278,7 +280,9 @@ inline hal_size_t HDF5BottomSegment::getMappedSegments(
   const Genome* tgtGenome,
   const std::set<const Genome*>* genomesOnPath,
   bool doDupes,
-  hal_size_t minLength) const
+  hal_size_t minLength,
+  const Genome *coalescenceLimit,
+  const Genome *mrca) const
 {
   throw hal_exception("Internal error.   HDF5 Segment interface should "
                       "at some point go through the sliced segment");

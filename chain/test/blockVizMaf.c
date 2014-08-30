@@ -65,9 +65,9 @@ static int openWrapper(char* path)
 {
   if (strcmp(path + strlen(path) - 3, "hal") == 0)
   {
-    return halOpen(path);
+    return halOpen(path, NULL);
   }
-  return halOpenLOD(path);
+  return halOpenLOD(path, NULL);
 }
 
 int main(int argc, char** argv)
@@ -103,7 +103,8 @@ int main(int argc, char** argv)
                               args.tChrom, 
                               args.tStart,
                               args.tEnd, 
-                              args.doDupes);
+                              args.doDupes,
+                              NULL);
 
     if (numBytes >= 0)
     {

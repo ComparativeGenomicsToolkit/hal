@@ -54,7 +54,9 @@ public:
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
-     hal_size_t minLength) const;
+     hal_size_t minLength,
+     const Genome *coalescenceLimit,
+     const Genome *mrca) const;
    virtual void print(std::ostream& os) const;
 
    // SEGMENT ITERATOR IrNTERFACE

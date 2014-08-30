@@ -46,6 +46,23 @@ By default, no level of detail is generated. Users can independently generate th
 * *lod.txt* is output text file with links to interpolated hal files, with each file is associated a value stating its minimum suggested query range (in bases).
 * *loddir* is the path of the directory where interpolated hal files are stored.
 
+###Level of Detail Frequently Asked Questions (LODFAQ)
+
+1. **LOD generation is too slow.  What can I do to speed it up?**  Try using the `--maxThreads` option to generate each LOD in parallel.  If system memory is not an issue, use the `--lodInMemory` option to disable HAL's disk cache.
+
+2. **Why does my comparative hub looks to "gappy" when I zoom out?**  The LODs are precomputed using a sampling approach.  The more finely the alignment is sampled, the more accurate the LOD will be.  But this comes at the cost of an increased number of blocks accessed for each browser query.   To increase the number of samples taken per LOD, increase the value of `--lodMaxBlock`.  This should reduce the number of missing blocks at the cost of load time.
+
+3. **My alignment still seems to be missing lots of stuff when I zoom out** Maybe your sequences are broken into many small scaffolds or contigs that are getting filtered out by the LOD generation algorithm.  In this case, you may be able to resolve this by decreasing `--lodMinSeqFrac` to adjust the filter. 
+
+4. **Why does so much pop in and out when I zoom in and out?**   Perhaps too few levels of detail are being generated.  You can decrease the scale factor between consecutive LODs using the `--lodScale` option.  Increasing `--lodMaxBlock` may also help (see above).
+
+5. **Why is my comparative hub so slow?**  Rendering large datasets remotely is a tricky proposition.  Apart from finding a faster server to host your data, your only option is probably to decrease the granularity of each LOD.  This is best accomplished by lowering `--lodMaxBlock`.   Also, if rendering many contigs/scaffolds is an issue, try increasing `--lodMinSeqFraq`.  Increasing `--lodScale` will also reduce the number of network queries by decreasing the number of files generated.  Basically following the advice from the three previous questions about increasing accuracy in reverse will help increase speed. 
+
+6. **When I zoom out, I see too many tiny blocks for millions of different contigs or scaffolds.  Can I reduce this?**  Yes, increase the `--lodMinSeqFrac` parameter.  This will increase the minimum length of a contig in relation to the step size for it to be included in the LOD.
+
+7. **I am a power user.   Are the more options available for fine-tuning LOD generation?** Yes, you can regenerate your LODs separately using `halLodInterpolate.py` which provides a number of additional options to those available during hub generation.  You can also easily edit the output `lod.txt` file by hand to, for example, remove a level of detail or adjust its query range. 
+
+
 Browsers With Annotation Tracks
 -----
 

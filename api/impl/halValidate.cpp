@@ -84,9 +84,11 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
       if (childSegment->getParentReversed() != 
           bottomSegment->getChildReversed(child))
       {
-        throw hal_exception("parent / child reversal mismatch (parent=" +
-                            genome->getName() + " child=" +
-                            childGenome->getName());
+        stringstream ss;
+        ss << "parent / child reversal mismatch (parent=" <<
+          genome->getName() << " parentSegNum=" << bottomSegment->getArrayIndex() << " child=" <<
+          childGenome->getName() << " childSegNum=" << childSegment->getArrayIndex() << ")";
+          throw hal_exception(ss.str());
       }
     }
   }
@@ -258,18 +260,21 @@ void hal::validateSequence(const Sequence* sequence)
   // Verify that the DNA sequence doesn't contain funny characters
   DNAIteratorConstPtr dnaIt = sequence->getDNAIterator();
   hal_size_t length = sequence->getSequenceLength();
-  for (hal_size_t i = 0; i < length; ++i)
+  if (sequence->getGenome()->containsDNAArray() == true)
   {
-    char c = dnaIt->getChar();
-    if (isNucleotide(c) == false)
+    for (hal_size_t i = 0; i < length; ++i)
     {
-      stringstream ss;
-      ss << "Non-nucleotide character discoverd at position " 
-         << i << " of sequence " << sequence->getName() << ": " << c;
-      throw hal_exception(ss.str());
+      char c = dnaIt->getChar();
+      if (isNucleotide(c) == false)
+      {
+        stringstream ss;
+        ss << "Non-nucleotide character discoverd at position " 
+           << i << " of sequence " << sequence->getName() << ": " << c;
+        throw hal_exception(ss.str());
+      }
     }
   }
-  
+
   // Check the top segments
   if (sequence->getGenome()->getParent() != NULL)
   {

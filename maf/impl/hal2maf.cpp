@@ -60,10 +60,10 @@ static CLParserPtr initParser()
                                " to set a non-ancestral genome as the reference"
                                " because the default reference is the root.", 
                                false);
-  optionsParser->addOptionFlag("ucscNames",
-                               "use UCSC convention of Genome.Seqeunce "
-                               "for output names.  By default, only sequence "
-                               "names are used",
+  optionsParser->addOptionFlag("onlySequenceNames",
+                               "use only sequence names "
+                               "for output names.  By default, the UCSC convention of Genome.Sequence "
+                               "is used",
                                false);
   optionsParser->addOptionFlag("unique",
                                "only write column whose left-most reference "
@@ -80,6 +80,8 @@ static CLParserPtr initParser()
                            MafBlock::defaultMaxLength);
   optionsParser->addOptionFlag("global", "output all columns in alignment, "
                                "ignoring refGenome, refSequence, etc. flags",
+                               false);
+  optionsParser->addOptionFlag("printTree", "print a gene tree for every block",
                                false);
 
   optionsParser->setDescription("Convert hal database to maf.");
@@ -105,6 +107,7 @@ int main(int argc, char** argv)
   bool unique;
   bool append;
   bool global;
+  bool printTree;
   hal_index_t maxBlockLen;
   try
   {
@@ -121,10 +124,11 @@ int main(int argc, char** argv)
     maxRefGap = optionsParser->getOption<hal_size_t>("maxRefGap");
     noDupes = optionsParser->getFlag("noDupes");
     noAncestors = optionsParser->getFlag("noAncestors");
-    ucscNames = optionsParser->getFlag("ucscNames");
+    ucscNames = !optionsParser->getFlag("onlySequenceNames");
     unique = optionsParser->getFlag("unique");
     append = optionsParser->getFlag("append");
     global = optionsParser->getFlag("global");
+    printTree = optionsParser->getFlag("printTree");
     maxBlockLen = optionsParser->getOption<hal_index_t>("maxBlockLen");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
@@ -241,6 +245,7 @@ int main(int argc, char** argv)
     mafExport.setUnique(unique);
     mafExport.setAppend(append);
     mafExport.setMaxBlockLength(maxBlockLen);
+    mafExport.setPrintTree(printTree);
 
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")

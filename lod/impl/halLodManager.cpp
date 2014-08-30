@@ -7,6 +7,7 @@
 #include <cassert>
 #include <deque>
 #include <sstream>
+#include <limits>
 #include <fstream>
 #include <algorithm>
 #include "halLodManager.h"
@@ -27,6 +28,9 @@ using namespace hal;
 
 // default to 5 days for now
 const unsigned long LodManager::MaxAgeSec = 432000;
+
+// specify upper limit of lods.
+const string LodManager::MaxLodToken = "max";
 
 LodManager::LodManager()
 {
@@ -85,6 +89,8 @@ void LodManager::loadLODFile(const string& lodPath,
   hal_size_t minLen;
   string path;
   hal_size_t lineNum = 1;
+  bool foundMax = false;
+  _maxLodLowerBound = (hal_size_t)numeric_limits<hal_index_t>::max();
   while (ifile.good())
   {
     getline(ifile, lineBuffer);
@@ -96,7 +102,29 @@ void LodManager::loadLODFile(const string& lodPath,
       emes << "Error parsing line " << lineNum << " of " << lodPath;
       throw hal_exception(emes.str());
     }
-    string fullHalPath = resolvePath(lodPath, path);
+    if (lineBuffer.length() == 0)
+    {
+      continue;
+    }
+    string fullHalPath;
+    if (foundMax == true)
+    {
+      stringstream emes;
+      emes << "Error on line " << lineNum << " of " << lodPath 
+           << ": Limit token (" << MaxLodToken << ") can only appear on"
+           << " final line.";
+        throw hal_exception(emes.str());
+    }
+    if (path == MaxLodToken)
+    {
+      foundMax = true;
+      _maxLodLowerBound = minLen;
+      fullHalPath = MaxLodToken;
+    }
+    else
+    {
+      fullHalPath = resolvePath(lodPath, path);
+    }
     _map.insert(pair<hal_size_t, PathAlign>(
                   minLen, PathAlign(fullHalPath, AlignmentConstPtr())));
     ++lineNum;
@@ -115,6 +143,7 @@ void LodManager::loadSingeHALFile(const string& halPath,
   _map.clear();
   _map.insert(pair<hal_size_t, PathAlign>(
                 0, PathAlign(halPath, AlignmentConstPtr())));
+  _maxLodLowerBound = (hal_size_t)numeric_limits<hal_index_t>::max();
   checkMap(halPath);
 }
 
@@ -134,6 +163,13 @@ AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength,
   }
   assert(mapIt->first <= queryLength);
   AlignmentConstPtr& alignment = mapIt->second.second;
+  if (mapIt->first == _maxLodLowerBound)
+  {
+    stringstream ss;
+    ss << "Query length " << queryLength << " above maximum LOD size of "
+       << getMaxQueryLength();
+    throw hal_exception(ss.str());
+  }
   if (alignment.get() == NULL)
   {
     alignment = hdf5AlignmentInstanceReadOnly();
@@ -188,7 +224,10 @@ void LodManager::checkMap(const string& lodPath)
        << "A record of the form \"0 pathToOriginalHALFile\" must be present";
     throw hal_exception(ss.str());
   }
- 
+  if (_maxLodLowerBound == 0)
+  {
+    throw hal_exception("Maximum LOD query length must be > 0");
+  }
 }
 
 void LodManager::checkAlignment(hal_size_t minQuery,

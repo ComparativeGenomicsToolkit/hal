@@ -16,6 +16,7 @@
 #include "halGenome.h"
 #include "halMetaData.h"
 #include "halTopSegmentIterator.h"
+#include "halColumnIterator.h"
 extern "C" {
 #include "commonC.h"
 }
@@ -363,6 +364,191 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
   _secondAlignment->close();
   remove(_path.c_str());
 }
+
+// Set top segments to be equal width and so that segment 1, 2, 3,
+// etc. corresponds to parent segment 1, 2, 3, etc.
+void setTopSegments(Genome *genome, hal_size_t width) {
+  TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator();
+  hal_size_t n = genome->getNumTopSegments();
+  hal_index_t startPos = 0;
+  for (; topIt->getArrayIndex() < n; topIt->toRight(), startPos += width)
+  {
+    topIt->setCoordinates(startPos, width);
+    topIt->setParentIndex(topIt->getArrayIndex());
+    topIt->setParentReversed(false);
+    topIt->setBottomParseIndex(NULL_INDEX);
+    topIt->setNextParalogyIndex(NULL_INDEX);
+  }
+}
+
+// Set bottom segments to be equal width and so that segment 1, 2, 3,
+// etc. corresponds to child segment 1, 2, 3, etc.
+void setBottomSegments(Genome *genome, hal_size_t width) {
+  hal_size_t numChildren = genome->getNumChildren();
+  BottomSegmentIteratorPtr bottomIt = genome->getBottomSegmentIterator();
+  hal_size_t n = genome->getNumBottomSegments();
+  hal_index_t startPos = 0;
+  for (; bottomIt->getArrayIndex() < n; bottomIt->toRight(), startPos += width)
+  {
+    for(hal_size_t i = 0; i < numChildren; i++) {
+      bottomIt->setCoordinates(startPos, width);
+      bottomIt->setChildIndex(i, bottomIt->getArrayIndex());
+      bottomIt->setChildReversed(i, false);
+      bottomIt->setTopParseIndex(NULL_INDEX);
+    }
+  }
+}
+
+// Test copying when the sequences aren't in the same order.
+//
+// Create an alignment with "Sequence1" positions aligned to
+// "Sequence1" positions, and "Sequence2" to "Sequence2", but try
+// copying the segments to an alignment with "Sequence2" before
+// "Sequence1" in the ordering.
+void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(AlignmentPtr alignment)
+{
+  hal_size_t alignmentSize = alignment->getNumGenomes();
+  CuAssertTrue(_testCase, alignmentSize == 0);
+
+  // Hacky: Need a different alignment to test copying the bottom
+  // segments correctly.  (the names of a node's children are used
+  // when copying bottom segments, and two genomes can't have the same
+  // name in the same alignment)
+  vector<AlignmentPtr> createInstances = getTestAlignmentInstances();
+  _secondAlignment = createInstances[0];
+  _path = getTempFile();
+  _secondAlignment->createNew(_path);
+
+  Genome *rootGenome = alignment->addRootGenome("root", 0);
+  Genome *internalGenome = alignment->addLeafGenome("internal",
+                                                    "root", 0);
+  Genome *leaf1Genome = alignment->addLeafGenome("leaf1", "root", 0);
+  Genome *leaf2Genome = alignment->addLeafGenome("leaf2", "internal", 0);
+  Genome* copyRootGenome = _secondAlignment->addRootGenome("root",
+                                                           0);
+  Genome *copyInternalGenome = _secondAlignment->addLeafGenome("internal",
+                                                               "root",
+                                                               0);
+  Genome *copyLeaf1Genome = _secondAlignment->addLeafGenome("leaf1", "root", 0);
+  Genome *copyLeaf2Genome = _secondAlignment->addLeafGenome("leaf2", "internal", 0);
+
+  vector<Sequence::Info> seqVec(2);
+  seqVec[0] =Sequence::Info("Sequence1", 130, 0, 13);
+  seqVec[1] =Sequence::Info("Sequence2", 170, 0, 17);
+  rootGenome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence1", 130, 13, 13);
+  seqVec[1] =Sequence::Info("Sequence2", 170, 17, 17);
+  internalGenome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence1", 130, 13, 0);
+  seqVec[1] =Sequence::Info("Sequence2", 170, 17, 0);
+  leaf1Genome->setDimensions(seqVec);
+  leaf2Genome->setDimensions(seqVec);
+
+  setTopSegments(internalGenome, 10);
+  setTopSegments(leaf1Genome, 10);
+  setTopSegments(leaf2Genome, 10);
+
+  setBottomSegments(rootGenome, 10);
+  setBottomSegments(internalGenome, 10);
+  
+  rootGenome->fixParseInfo();
+  internalGenome->fixParseInfo();
+  leaf1Genome->fixParseInfo();
+  leaf2Genome->fixParseInfo();
+
+  seqVec[0] =Sequence::Info("Sequence1", 130, 0, 13);
+  seqVec[1] =Sequence::Info("Sequence2", 170, 0, 17);
+  copyRootGenome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence1", 130, 13, 0);
+  seqVec[1] =Sequence::Info("Sequence2", 170, 17, 0);
+  copyLeaf1Genome->setDimensions(seqVec);
+  copyLeaf2Genome->setDimensions(seqVec);
+  seqVec[0] =Sequence::Info("Sequence2", 170, 17, 17);
+  seqVec[1] =Sequence::Info("Sequence1", 130, 13, 13);
+  copyInternalGenome->setDimensions(seqVec);
+
+  rootGenome->copyBottomDimensions(copyRootGenome);
+  rootGenome->copyBottomSegments(copyRootGenome);
+  copyRootGenome->fixParseInfo();
+
+  internalGenome->copyBottomDimensions(copyInternalGenome);
+  internalGenome->copyBottomSegments(copyInternalGenome);
+  internalGenome->copyTopDimensions(copyInternalGenome);
+  setTopSegments(copyInternalGenome, 10);
+  copyInternalGenome->fixParseInfo();
+
+  leaf1Genome->copyTopDimensions(copyLeaf1Genome);
+  leaf1Genome->copyTopSegments(copyLeaf1Genome);
+  copyLeaf1Genome->fixParseInfo();
+
+  leaf2Genome->copyTopDimensions(copyLeaf2Genome);
+  leaf2Genome->copyTopSegments(copyLeaf2Genome);
+  copyLeaf2Genome->fixParseInfo();
+
+  _secondAlignment->close();
+}
+
+void checkBottomSegments(Genome *genome, hal_size_t width, CuTest *testCase) {
+   hal_size_t numChildren = genome->getNumChildren();
+   BottomSegmentIteratorPtr bottomIt = genome->getBottomSegmentIterator();
+   hal_size_t n = genome->getNumBottomSegments();
+   hal_index_t startPos = 0;
+   for (; bottomIt->getArrayIndex() < n; bottomIt->toRight(), startPos += width)
+   {
+     cout << "bot start: " << bottomIt->getStartPosition() << " startPos: " << startPos << endl;
+     CuAssertTrue(testCase, bottomIt->getStartPosition() == startPos);
+
+     for(hal_size_t i = 0; i < numChildren; i++) {
+       if (startPos < 170) {
+         CuAssertStrEquals(testCase, "Sequence2", genome->getSequenceBySite(startPos)->getName().c_str());
+         CuAssertTrue(testCase, bottomIt->getChildIndex(i) == 13 + bottomIt->getArrayIndex());
+       } else {
+         CuAssertStrEquals(testCase, "Sequence1", genome->getSequenceBySite(startPos)->getName().c_str());
+         CuAssertTrue(testCase, bottomIt->getChildIndex(i) == bottomIt->getArrayIndex() - 17);
+       }
+     }
+   }
+}
+
+void checkTopSegments(Genome *genome, hal_size_t width, CuTest *testCase) {
+  
+}
+
+void GenomeCopySegmentsWhenSequencesOutOfOrderTest::checkCallBack(hal::AlignmentConstPtr alignment)
+{
+  // FIXME: halAlignment->open() fails miserably but
+  // openHalAlignmentReadOnly works? Probably some state isn't cleared
+  // on close.
+  AlignmentPtr tmp = hdf5AlignmentInstance();
+  tmp->open(_path, true);
+  _secondAlignment = tmp;
+
+  Genome *copyRootGenome = _secondAlignment->openGenome("root");
+  Sequence *sequence2 = copyRootGenome->getSequenceBySite(0);
+  CuAssertStrEquals(_testCase, sequence2->getName().c_str(), "Sequence1");
+  Sequence *sequence1 = copyRootGenome->getSequenceBySite(170);
+  CuAssertStrEquals(_testCase, sequence1->getName().c_str(), "Sequence2");
+
+  Genome *copyInternalGenome = _secondAlignment->openGenome("internal");
+  sequence2 = copyInternalGenome->getSequenceBySite(0);
+  CuAssertStrEquals(_testCase, sequence2->getName().c_str(), "Sequence2");
+  sequence1 = copyInternalGenome->getSequenceBySite(170);
+  CuAssertStrEquals(_testCase, sequence1->getName().c_str(), "Sequence1");
+
+  checkBottomSegments(copyInternalGenome, 10, _testCase);
+
+  validateAlignment(_secondAlignment);
+
+  _secondAlignment->close();
+  remove(_path.c_str());
+}
+
+void halGenomeCopySegmentsWhenSequencesOutOfOrderTest(CuTest *testCase)
+{
+    GenomeCopySegmentsWhenSequencesOutOfOrderTest tester;
+    tester.check(testCase);
+}
+
 void halGenomeMetaTest(CuTest *testCase)
 {
   GenomeMetaTest tester;
@@ -424,11 +610,12 @@ void halGenomeCopyTest(CuTest *testCase)
 CuSuite* halGenomeTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
-  SUITE_ADD_TEST(suite, halGenomeMetaTest);
-  SUITE_ADD_TEST(suite, halGenomeCreateTest);
-  SUITE_ADD_TEST(suite, halGenomeUpdateTest);
-  SUITE_ADD_TEST(suite, halGenomeStringTest);
-  SUITE_ADD_TEST(suite, halGenomeCopyTest);
+  // SUITE_ADD_TEST(suite, halGenomeMetaTest);
+  // SUITE_ADD_TEST(suite, halGenomeCreateTest);
+  // SUITE_ADD_TEST(suite, halGenomeUpdateTest);
+  // SUITE_ADD_TEST(suite, halGenomeStringTest);
+//  SUITE_ADD_TEST(suite, halGenomeCopyTest);
+  SUITE_ADD_TEST(suite, halGenomeCopySegmentsWhenSequencesOutOfOrderTest);
   return suite;
 }
 

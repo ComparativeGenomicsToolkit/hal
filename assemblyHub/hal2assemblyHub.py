@@ -20,7 +20,7 @@
 import os, sys, re, time
 from optparse import OptionParser
 
-from sonLib.bioio import system  
+from sonLib.bioio import system, getTempFile
 from jobTree.scriptTree.target import Target
 from jobTree.scriptTree.stack import Stack
 
@@ -243,11 +243,11 @@ class WriteGenomesFile(Target):
             f.write("groups groups.txt\n")
 
             writeDescriptionFile(genome, genomedir)
-            f.write("htmlPath %s/description.html\n" %genome)
-            #f.write("description %s\n" % getProperName(genome, self.options.properName))
+            f.write("htmlPath %s/description.html\n" % genome)
+            f.write("description %s\n" % getProperName(genome, self.options.properName))
             f.write("organism %s\n" % getProperName(genome, self.options.properName))
             f.write("orderKey 4800\n")
-            f.write("scientificName %s\n" %genome)
+            f.write("scientificName %s\n" % genome)
             
             seq2len = self.genome2seq2len[genome]
             (seq, l) = getLongestSeq(seq2len)
@@ -334,7 +334,7 @@ def getLongestSeq(seq2len):
     return seqs[0]
 
 def getGenomeSequencesFromHal(halfile, genome):
-    statsfile = "%s-seqStats.txt" %genome
+    statsfile = getTempFile("%s-seqStats.txt" %genome)
     system("halStats --sequenceStats %s %s > %s" %(genome, halfile, statsfile))
     
     seq2len = {}
@@ -434,7 +434,6 @@ def main():
     parser = OptionParser(usage = usage)
     addOptions(parser)
     Stack.addJobTreeOptions(parser)
-
     options, args = parser.parse_args()
     checkOptions(parser, args, options)
     

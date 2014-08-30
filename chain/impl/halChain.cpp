@@ -35,12 +35,20 @@ ostream& hal::operator<<(ostream& os, const Chain& c)
      << c._qStart << ' '
      << c._qEnd << ' '
      << c._id << '\n';
-  
-  for (size_t i = 0; i < c._blocks.size(); ++i)
-  {
-    os << c._blocks[i] << '\n';
+
+  size_t i = 0;
+  if (c._blocks.size() > 1) {
+    for (i = 0; i < c._blocks.size() - 1; ++i)
+    {
+      os << c._blocks[i] << '\n';
+    }
   }
-  
+  if (c._blocks.size() > 0) {
+    // Last block line should contain only the aligned size according to
+    // https://genome.ucsc.edu/goldenPath/help/chain.html.
+    os << c._blocks[i]._size << '\n';
+  }
+
   return os;
 }
 
@@ -159,9 +167,9 @@ void convertBlocks(TopSegmentIteratorConstPtr firstIt,
  
       if (tPrev != NULL_INDEX)
       {
-        blocks[blocks.size() - 2]._tGap = topIt->getStartPosition() - tPrev;
+        blocks[blocks.size() - 2]._tGap = topIt->getStartPosition() - tPrev - 1;
         blocks[blocks.size() - 2]._qGap = std::abs(botIt->getStartPosition() -
-                                                   qPrev);
+                                                   qPrev - 1);
       }
       
       tPrev = topIt->getEndPosition();

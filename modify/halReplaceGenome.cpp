@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
   AlignmentConstPtr bottomAlignment;
   AlignmentConstPtr topAlignment;
   bool useTopAlignment = mainAlignment->getRootName() != genomeName;
-  bool useBottomAlignment=mainAlignment->getChildNames(genomeName).size() != 0;
+  bool useBottomAlignment = mainAlignment->getChildNames(genomeName).size() != 0;
   Genome *mainReplacedGenome = mainAlignment->openGenome(genomeName);
   if (useTopAlignment) {
     // Not a root genome. Can update using a top alignment.

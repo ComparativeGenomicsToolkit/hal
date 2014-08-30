@@ -85,18 +85,18 @@ static void printDupeList(FILE* file, struct hal_target_dupe_list_t* d)
 
 static void printStats(FILE* file, int handle)
 {
-  hal_species_t* species = halGetSpecies(handle);
+  hal_species_t* species = halGetSpecies(handle, NULL);
   for (; species != NULL; species = species->next)
   {
     fprintf(file, "species:%s, len=%ld, nc=%ld, par=%s, bl=%lf\n",
             species->name, species->length, species->numChroms,
             species->parentName, species->parentBranchLength);
-    hal_chromosome_t* chrom = halGetChroms(handle, species->name);
+    hal_chromosome_t* chrom = halGetChroms(handle, species->name, NULL);
     for (; chrom != NULL; chrom = chrom->next)
     {
       int len = chrom->length > 10 ? 10 : chrom->length;
       char* dna = halGetDna(handle, species->name, chrom->name,
-                            0, len);
+                            0, len, NULL);
       fprintf(file, "  chrom:%s, len=%ld seq=%s...\n",
               chrom->name, chrom->length, dna);
       free(dna);              
@@ -108,9 +108,12 @@ static int openWrapper(char* path)
 {
   if (strcmp(path + strlen(path) - 3, "hal") == 0)
   {
-    return halOpen(path);
+    return halOpen(path, NULL);
   }
-  return halOpenLOD(path);
+  int handle = halOpenLOD(path, NULL);
+  hal_int_t maxQuery = halGetMaxLODQueryLength(handle, NULL);
+  printf("Max LOD query: %lu\n", maxQuery);
+  return handle;
 }
 
 #ifdef ENABLE_UDC
@@ -155,7 +158,6 @@ int main(int argc, char** argv)
     udcSetDefaultDir(args.udcPath);
   }
 #endif
-     
   int handle = openWrapper(args.path);
   int ret = 0;
   if (handle >= 0)
@@ -173,26 +175,29 @@ int main(int argc, char** argv)
                                  0,
                                  sm, 
                                  HAL_QUERY_AND_TARGET_DUPS,
-                                 1);
-
+                                 1,
+                                 NULL);
     if (results == NULL)
     {
+      fprintf(stderr, "halGetBlocksInTargetRange returned NULL\n");
       ret = -1;
     }
-    struct hal_block_t* cur = results->mappedBlocks;
-    while (cur)
+    else
     {
-      printBlock(stdout, cur);
-      cur = cur->next;
+      struct hal_block_t* cur = results->mappedBlocks;
+      while (cur)
+      {
+        printBlock(stdout, cur);
+        cur = cur->next;
+      }
+      struct hal_target_dupe_list_t* dupeList = results->targetDupeBlocks;
+      while (dupeList)
+      {
+        printDupeList(stdout, dupeList);
+        dupeList = dupeList->next;
+      }
+      halFreeBlockResults(results);
     }
-    struct hal_target_dupe_list_t* dupeList = results->targetDupeBlocks;
-    while (dupeList)
-    {
-      printDupeList(stdout, dupeList);
-      dupeList = dupeList->next;
-    }
-    halFreeBlockResults(results);
-
 #ifdef ENABLE_UDC
     #define NUM_THREADS 10
     pthread_t threads[NUM_THREADS];

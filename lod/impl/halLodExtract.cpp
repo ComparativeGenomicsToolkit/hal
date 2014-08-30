@@ -161,10 +161,11 @@ void LodExtract::convertInternalNode(const string& genomeName,
   {
     children.push_back(_inAlignment->openGenome(childNames[i]));
   }
-  hal_size_t minAvgBlockSize = getMinAvgBlockSize(parent, children);
+  const Genome* grandParent = NULL; // TEMP HACK  parent->getParent();
+  hal_size_t minAvgBlockSize = getMinAvgBlockSize(parent, children, grandParent);
   hal_size_t step = (hal_size_t)(scale * minAvgBlockSize);
-  _graph.build(_inAlignment, parent, children, step, _allSequences, _probeFrac,
-               _minSeqFrac);
+  _graph.build(_inAlignment, parent, children, grandParent, step, _allSequences, 
+               _probeFrac, _minSeqFrac);
 
   map<const Sequence*, hal_size_t> segmentCounts;
   countSegmentsInGraph(segmentCounts);
@@ -189,6 +190,12 @@ void LodExtract::convertInternalNode(const string& genomeName,
     _outAlignment->closeGenome(
       _outAlignment->openGenome(children[i]->getName()));
     _inAlignment->closeGenome(children[i]);    
+  }
+  if (grandParent != NULL)
+  {
+    _outAlignment->closeGenome(
+      _outAlignment->openGenome(grandParent->getName()));
+    _inAlignment->closeGenome(grandParent);
   }
 }
 
@@ -520,10 +527,11 @@ void LodExtract::updateBlockEdges(const Genome* inParentGenome,
   }
 
   // Do the child genomes
+  const Genome* inGrandParentGenome = inParentGenome->getParent();
   SegmentSet::iterator nextIt;
   for (mapIt = segMap.begin(); mapIt != segMap.end(); ++mapIt)
   {
-    if (mapIt->first != inParentGenome)
+    if (mapIt->first != inParentGenome and mapIt->first != inGrandParentGenome)
     {
       Genome* outChildGenome = 
          _outAlignment->openGenome(mapIt->first->getName());
@@ -629,9 +637,11 @@ void LodExtract::writeParseInfo(Genome* genome)
   }
 }
 
+
 hal_size_t LodExtract::getMinAvgBlockSize(
   const Genome* inParent,
-  const vector<const Genome*>& inChildren) const
+  const vector<const Genome*>& inChildren,
+  const Genome* inGrandParent) const
 {
   hal_size_t minAvgBlockSize = numeric_limits<hal_size_t>::max();
   if (inParent->getSequenceLength() > 0)
@@ -652,6 +662,15 @@ hal_size_t LodExtract::getMinAvgBlockSize(
                                  inChildren[i]->getSequenceLength() / 
                                  inChildren[i]->getNumTopSegments());
     }
+  }
+  if (inGrandParent != NULL && inGrandParent->getSequenceLength() > 0)
+  {
+    assert (inGrandParent->getNumBottomSegments() > 0);
+    assert (inGrandParent->getNumBottomSegments() < 
+            inGrandParent->getSequenceLength());
+    minAvgBlockSize = std::min(minAvgBlockSize,
+                               inGrandParent->getSequenceLength() /
+                               inGrandParent->getNumBottomSegments());
   }
   return minAvgBlockSize;
 }

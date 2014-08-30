@@ -76,7 +76,8 @@ protected:
    void writeParseInfo(Genome* genome);
    hal_size_t getMinAvgBlockSize(
      const Genome* inParent,
-     const std::vector<const Genome*>& inChildren) const;
+     const std::vector<const Genome*>& inChildren,
+     const Genome* inGrandParent) const;
 
    
    AlignmentConstPtr _inAlignment;

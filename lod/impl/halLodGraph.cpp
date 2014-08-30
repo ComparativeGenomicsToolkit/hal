@@ -37,18 +37,21 @@ void LodGraph::erase()
   }
   _blocks.clear();
   _parent = NULL;
+  _grandParent = NULL;
   _genomes.clear();
   _telomeres.clear();
 }
 
 void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
                      const vector<const Genome*>& children, 
+                     const Genome* grandParent,
                      hal_size_t step, bool allSequences, double probeFrac,
                      double minSeqFrac)
 {
   erase();
   _alignment = alignment;
   _parent = parent;
+  _grandParent = grandParent;
   _step = step;
   _allSequences = allSequences;
   _probeFrac = probeFrac;
@@ -64,6 +67,10 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
     _genomes.insert(*child);
   }
   assert(_genomes.size() == children.size() + 1);
+  if (_grandParent != NULL)
+  {
+    _genomes.insert(_grandParent);
+  }
 
   for (set<const Genome*>::iterator gi = _genomes.begin(); 
        gi != _genomes.end(); ++gi)

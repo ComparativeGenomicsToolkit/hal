@@ -11,7 +11,7 @@
 using namespace std;
 using namespace hal;
 
-MafExport::MafExport() : _maxRefGap(0), _noDupes(false)
+MafExport::MafExport() : _maxRefGap(0), _noDupes(false), _printTree(false)
 {
 
 }
@@ -54,6 +54,11 @@ void MafExport::setAppend(bool append)
 void MafExport::setMaxBlockLength(hal_index_t maxLength)
 {
   _mafBlock.setMaxLength(maxLength);
+}
+
+void MafExport::setPrintTree(bool printTree)
+{
+  _printTree = printTree;
 }
 
 void MafExport::writeHeader()
@@ -106,7 +111,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
   hal_size_t appendCount = 0;
   if (_unique == false || colIt->isCanonicalOnRef() == true)
   {
-    _mafBlock.initBlock(colIt, _ucscNames);
+    _mafBlock.initBlock(colIt, _ucscNames, _printTree);
     assert(_mafBlock.canAppendColumn(colIt) == true);
     _mafBlock.appendColumn(colIt);
     ++appendCount;
@@ -119,7 +124,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
     {
       if (appendCount == 0)
       {
-        _mafBlock.initBlock(colIt, _ucscNames);
+        _mafBlock.initBlock(colIt, _ucscNames, _printTree);
         assert(_mafBlock.canAppendColumn(colIt) == true);
       }
       if (_mafBlock.canAppendColumn(colIt) == false)
@@ -134,7 +139,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
         {
           mafStream << _mafBlock << '\n';
         }
-        _mafBlock.initBlock(colIt, _ucscNames);
+        _mafBlock.initBlock(colIt, _ucscNames, _printTree);
         assert(_mafBlock.canAppendColumn(colIt) == true);
       }
       _mafBlock.appendColumn(colIt);
@@ -181,7 +186,7 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
         colIt->setVisitCache(&visitCache);
         for (;;) {
             if (appendCount == 0) {
-                _mafBlock.initBlock(colIt, _ucscNames);
+              _mafBlock.initBlock(colIt, _ucscNames, _printTree);
                 assert(_mafBlock.canAppendColumn(colIt) == true);
             }
             if (_mafBlock.canAppendColumn(colIt) == false)
@@ -196,7 +201,7 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
                 {
                     mafStream << _mafBlock << '\n';
                 }
-                _mafBlock.initBlock(colIt, _ucscNames);
+                _mafBlock.initBlock(colIt, _ucscNames, _printTree);
                 assert(_mafBlock.canAppendColumn(colIt) == true);
             }
             _mafBlock.appendColumn(colIt);

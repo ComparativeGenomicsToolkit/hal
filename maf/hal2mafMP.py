@@ -50,7 +50,7 @@ def getHal2MafCmd(options):
              opt == 'maxRefGap' or
              opt == 'noDupes' or
              opt == 'noAncestors' or
-             opt == 'ucscNames')):
+             opt == 'onlySequenceNames')):
             if val is not True:
                 cmd += ' --%s %s' % (opt, str(val))
             else:
@@ -276,10 +276,10 @@ def main(argv=None):
                         " because the default reference is the root.",
                         action="store_true",
                         default=False)
-    h2mGrp.add_argument("--ucscNames",
-                        help="use UCSC convention of Genome.Seqeunce "
-                        "for output names.  By default, only sequence "
-                        "names are used",
+    h2mGrp.add_argument("--onlySequenceNames",
+                        help="use sequence names "
+                        "for output names.  By default, the UCSC "
+                        "convention of Genome.Sequence is used",
                         action="store_true",
                         default=False)
     
