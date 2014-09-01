@@ -66,7 +66,14 @@ class Setup( Target ):
         if self.options.bwdirs:
             annotations.extend( [os.path.basename(item) for item in self.options.bwdirs] )
         writeGroupFile(self.outdir, self.options.longLabel, annotations)
-         
+        # Check that no two annotations have the same name
+        if not all([annotations.count(x) == 1 for x in annotations]):
+            raise RuntimeError("Some annotation folders (beds, wigs) have the "
+                               "same basename. Since the name for each "
+                               "annotation track is taken from the basename "
+                               "of the annotation folder, all basenames must "
+                               "be unique.")
+
         #Get tree
         if not self.options.tree:
             checkHalTree(self.halfile, self.outdir, self.options)
