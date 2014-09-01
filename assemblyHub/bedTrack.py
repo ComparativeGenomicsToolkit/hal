@@ -45,6 +45,15 @@ class LiftoverBedFiles( Target ):
         
             #get all the bed files (".bed" ext) and as files if available (".as" ext) 
             bedfiles, asfile, extrafields, numfield = readBedDir(genomeindir, self.tab)
+            if numfield < 3:
+                # This is an empty (probably from an automated
+                # process) or otherwise malformed bed. Whine to the
+                # user and then attempt to go as far as possible
+                # anyway.
+                self.logToMaster("WARNING: input bed files in %s have less "
+                                 "than 3 fields, or are completely empty. "
+                                 "Proceeding anyway." % genomeindir)
+                numfield = 3
 
             #Copy as file to bigbed dir:
             if asfile:
@@ -139,23 +148,22 @@ class LiftoverBed( Target ):
 
         outbigbed = os.path.join(self.genomeoutdir, "%s.bb" %self.othergenome)
         chrsizefile = os.path.join(self.outdir, self.othergenome, "chrom.sizes")
-        if os.stat(liftovertempbed).st_size > 0:#make sure the file is not empty
-            if not self.asfile:
-                cmd = "bedToBigBed %s %s %s" %(liftovertempbed, chrsizefile, outbigbed)
-                if self.numfield >= 4:
-                    cmd += " -extraIndex=name"
+        if not self.asfile:
+            cmd = "bedToBigBed -type=bed%d %s %s %s" %(self.numfield, liftovertempbed, chrsizefile, outbigbed)
+            if self.numfield >= 4:
+                cmd += " -extraIndex=name"
+        else:
+            numextra = len(self.extrafields)
+            if numextra > 0:
+                type="bed%d+%d" %(self.numfield - numextra, numextra)
+                extraIndex = "name,%s" % ",".join(self.extrafields)
             else:
-                numextra = len(self.extrafields)
-                if numextra > 0:
-                    type="bed%d+%d" %(self.numfield - numextra, numextra)
-                    extraIndex = "name,%s" % ",".join(self.extrafields)
-                else:
-                    type="bed%d" %self.numfield
-                    extraIndex = "name"
-                cmd = "bedToBigBed -as=%s -type=%s -extraIndex=%s %s %s %s" %(self.asfile, type, extraIndex, liftovertempbed, chrsizefile, outbigbed)
-            if self.tab:
-                cmd += " -tab"
-            system(cmd)
+                type="bed%d" %self.numfield
+                extraIndex = "name"
+            cmd = "bedToBigBed -as=%s -type=%s -extraIndex=%s %s %s %s" %(self.asfile, type, extraIndex, liftovertempbed, chrsizefile, outbigbed)
+        if self.tab:
+            cmd += " -tab"
+        system(cmd)
 
         #Cleanup:
         system("rm %s" % liftovertempbed)
