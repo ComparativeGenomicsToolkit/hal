@@ -64,11 +64,14 @@ class LiftoverBedFiles( Target ):
             outbigbed = os.path.join(genomeoutdir, "%s.bb" %genome) 
             chrsizefile = os.path.join(self.outdir, genome, "chrom.sizes")
             if not asfile:
-                cmd = "bedToBigBed -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed)
+                # Index on the 'name' field if the bed has one
+                indexParameter = "-extraIndex=name" if numfield >= 4 else ""
+                cmd = "bedToBigBed -type=bed%d %s %s %s %s" %(numfield, indexParameter, tempbed, chrsizefile, outbigbed)
                 if self.tab:
-                    cmd = "bedToBigBed -tab -type=bed%d -extraIndex=name %s %s %s" %(numfield, tempbed, chrsizefile, outbigbed) 
+                    cmd = "bedToBigBed -tab -type=bed%d %s %s %s %s" %(numfield, indexParameter, tempbed, chrsizefile, outbigbed)
                 system( cmd )
             else:
+                assert numfields >= 4 # -extraIndex=name will fail if this is not true.
                 numextra = len(extrafields)
                 if numextra > 0:
                     type="bed%d+%d" %(numfield - numextra, numextra)
