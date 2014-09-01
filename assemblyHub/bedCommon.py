@@ -129,6 +129,26 @@ def filterLongIntrons(infile, outfile, maxIntron, tab, ucscNames=True):
             writeBeds12(f, newbeds)
         f.close()
 
+def tabifyBed(bedPath):
+    """Overwrites the given space-separated bed file with a tab-separated
+    version."""
+    lines = []
+    for line in open(bedPath):
+        lines.append("\t".join(line.split(" ")))
+    bedFile = open(bedPath, 'w')
+    for line in lines:
+        bedFile.write(line)
+
+def untabifyBed(bedPath):
+    """Overwrites the given tab-separated bed file with a space-separated
+    version."""
+    lines = []
+    for line in open(bedPath):
+        lines.append(" ".join(line.split("\t")))
+    bedFile = open(bedPath, 'w')
+    for line in lines:
+        bedFile.write(line)
+
 #def main():
 #    usage = "%prog <in.bed> <out.bed> maxIntron"
 #    parser = OptionParser(usage=usage)

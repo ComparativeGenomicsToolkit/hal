@@ -11,7 +11,7 @@ from sonLib.bioio import system
 from jobTree.scriptTree.target import Target
 from optparse import OptionGroup
 from hal.assemblyHub.assemblyHubCommon import CleanupFiles, getProperName
-from hal.assemblyHub.bedCommon import filterLongIntrons 
+from hal.assemblyHub.bedCommon import filterLongIntrons, tabifyBed, untabifyBed
 
 class LiftoverBedFiles( Target ):
     def __init__(self, indir, halfile, genome2seq2len, bigbeddir, noLiftover, tab, outdir, options):
@@ -59,7 +59,13 @@ class LiftoverBedFiles( Target ):
             filterbed = "%s-temp-filtered.bed" %os.path.join(genomeoutdir, genome)
             filterLongIntrons(tempbed, filterbed, 100000, self.tab,
                               self.options.ucscNames)
+            # bedSort expects tab-separated beds, so we have to do some
+            # format gymnastics here.
+            if not self.tab:
+                tabifyBed(filterbed)
             system( "bedSort %s %s" % (filterbed, tempbed) )
+            if not self.tab:
+                untabifyBed(tempbed)
 
             outbigbed = os.path.join(genomeoutdir, "%s.bb" %genome) 
             chrsizefile = os.path.join(self.outdir, genome, "chrom.sizes")
@@ -120,11 +126,17 @@ class LiftoverBed( Target ):
             cmd += " --tab"
         system(cmd) 
         #system("bedSort %s %s" %(liftovertempbed, liftovertempbed))
-            
+
         filterbed = "%s-filtered.bed" %os.path.join(self.genomeoutdir, self.othergenome)
         filterLongIntrons(liftovertempbed, filterbed, 100000, self.tab, self.options.ucscNames)
+        # bedSort expects tab-separated beds, so we have to do some
+        # format gymnastics here.
+        if not self.tab:
+            tabifyBed(filterbed)
         system( "bedSort %s %s" % (filterbed, liftovertempbed) )
-        
+        if not self.tab:
+            untabifyBed(liftovertempbed)
+
         outbigbed = os.path.join(self.genomeoutdir, "%s.bb" %self.othergenome)
         chrsizefile = os.path.join(self.outdir, self.othergenome, "chrom.sizes")
         if os.stat(liftovertempbed).st_size > 0:#make sure the file is not empty
