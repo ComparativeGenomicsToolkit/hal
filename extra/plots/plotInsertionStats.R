@@ -10,18 +10,18 @@ require(data.table)
 args <- commandArgs(TRUE)
 insertionStatsFile <- args[[1]]
 
-ancestorNames <- list(Anc8="human-chimp", Anc7="human-rhesus", Anc5="euarchontoglires", Anc6="mouse-rat", Anc0="boreoeutherian", Anc1="laurasiatheria", Anc2="pig-cow-horse", Anc3="pig-cow", Anc4="dog-cat")
+#ancestorNames <- list(Anc8="human-chimp", Anc7="human-rhesus", Anc5="euarchontoglires", Anc6="mouse-rat", Anc0="boreoeutherian", Anc1="laurasiatheria", Anc2="pig-cow-horse", Anc3="pig-cow", Anc4="dog-cat")
 
 insertionStats <- read.table("entirelyInsertedSequences.tsv", sep="\t", header=T)
 insertionStats$maskedBasesFraction <- insertionStats$maskedBases / insertionStats$insertionSize
 
 # Rename the 10-way ancestors
-insertionStats$genome = sapply(insertionStats$genome, function(x) {
-    if (x %in% names(ancestorNames)) {
-        ancestorNames[[as.character(x)]]
-    } else {
-        as.character(x)
-    }})
+## insertionStats$genome = sapply(insertionStats$genome, function(x) {
+##     if (x %in% names(ancestorNames)) {
+##         ancestorNames[[as.character(x)]]
+##     } else {
+##         as.character(x)
+##     }})
 
 plot <- ggplot(insertionStats, aes(x=insertionSize)) + scale_x_log10() + facet_wrap(~ genome) + theme_bw()
 

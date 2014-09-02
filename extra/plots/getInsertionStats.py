@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-<<<<<<< Updated upstream
-"""Get a TSV of insertion size, length, seq, genome sampled from a HAL
-=======
 """Get a TSV of (insertion size, length, seq, genome) sampled from a HAL
->>>>>>> Stashed changes
 file."""
 from argparse import ArgumentParser
 from sonLib.bioio import popenCatch, system, getTempFile, fastaRead
@@ -30,14 +26,6 @@ class Setup(Target):
             # Get a temp file to hold the genome's output, which will
             # be concatenated with the others at the end
             tempOutput = getTempFile(rootDir=self.getGlobalTempDir())
-<<<<<<< Updated upstream
-            outputs.append(tempOutput)
-            self.addChildTarget(ExtractInsertions(self.opts.halPath, genome, tempOutput, self.opts.samplePerGenome, self.opts.samples, self.opts.noGaps, self.opts.entirelyInsertedSequencesPath))
-        self.setFollowOnTarget(ReduceOutputs(outputs, self.opts.output, not self.opts.samplePerGenome, self.opts.samples))
-
-class ExtractInsertions(Target):
-    def __init__(self, halPath, genome, output, doSampling, numSamples, removeGaps, entirelyInsertedSequencePath):
-=======
             outputss[0].append(tempOutput)
 
             # Create a temp file to hold entirely inserted seqs, if needed
@@ -57,7 +45,6 @@ class ExtractInsertions(Target):
 
 class ExtractInsertions(Target):
     def __init__(self, halPath, genome, output, doSampling, numSamples, removeGaps, entirelyInsertedSequencePath, totalInsertedBasesPath):
->>>>>>> Stashed changes
         Target.__init__(self)
         self.halPath = halPath
         self.genome = genome
@@ -66,10 +53,7 @@ class ExtractInsertions(Target):
         self.numSamples = numSamples
         self.removeGaps = removeGaps
         self.entirelyInsertedSequencePath = entirelyInsertedSequencePath
-<<<<<<< Updated upstream
-=======
         self.totalInsertedBasesPath = totalInsertedBasesPath
->>>>>>> Stashed changes
 
     def getFastaDict(self):
         temp = getTempFile(rootDir=self.getGlobalTempDir())
@@ -80,11 +64,7 @@ class ExtractInsertions(Target):
         return ret
 
     def logEntirelyInsertedSequences(self, fastaDict, chromSizes, insertionBed):
-<<<<<<< Updated upstream
-        outFile = open(self.entirelyInsertedSequencePath, 'a')
-=======
         outFile = open(self.entirelyInsertedSequencePath, 'w')
->>>>>>> Stashed changes
         for line in open(insertionBed):
             fields = line.split()
             if len(fields) >= 3:
@@ -95,8 +75,6 @@ class ExtractInsertions(Target):
                     dna = fastaDict[seq][start:end]
                     maskedBases = countMaskedBases(dna)
                     outFile.write("%d\t%s\t%s\t%s\n" % (end - start, self.genome, seq, maskedBases))
-<<<<<<< Updated upstream
-=======
 
     def logTotalInsertedBases(self, insertionBed):
         outFile = open(self.totalInsertedBasesPath, 'w')
@@ -106,7 +84,6 @@ class ExtractInsertions(Target):
             if len(fields) >= 3:
                 total += int(fields[2]) - int(fields[1])
         outFile.write('%s\t%d\n' % (self.genome, total))
->>>>>>> Stashed changes
 
     def run(self):
         fastaDict = self.getFastaDict()
@@ -119,13 +96,10 @@ class ExtractInsertions(Target):
             # Look for insertions that cover an entire sequence
             self.logEntirelyInsertedSequences(fastaDict, chromSizes, insertionBed)
 
-<<<<<<< Updated upstream
-=======
         if self.totalInsertedBasesPath is not None:
             # Output the total number of inserted bases in this genome
             self.logTotalInsertedBases(insertionBed)
 
->>>>>>> Stashed changes
         if self.doSampling:
             # Sample per-genome instead of overall
             temp = getTempFile(rootDir=self.getGlobalTempDir())
@@ -182,12 +156,8 @@ if __name__ == '__main__':
     parser.add_argument('--samples', help='number of samples', default=10000, type=int)
     parser.add_argument('--samplePerGenome', action="store_true", help="sample n samples per genome instead of n samples overall")
     parser.add_argument('--noGaps', action="store_true", help="remove any sequences with Ns in them")
-<<<<<<< Updated upstream
-    parser.add_argument('--entirelyInsertedSequencesPath', help="only store information about any sequences that are completely unaligned")
-=======
     parser.add_argument('--entirelyInsertedSequencesPath', help="tsv to store information about any sequences that are completely unaligned")
     parser.add_argument('--totalInsertedBasesPath', help="tsv to store total inserted bases per-genome")
->>>>>>> Stashed changes
     Stack.addJobTreeOptions(parser)
     opts = parser.parse_args()
     Stack(Setup(opts)).startJobTree(opts)
