@@ -381,7 +381,7 @@ def getChromSizes(halfile, seq2len, outfile):
 
 def getGenomesFromHal(halfile):
     #Get a list of all genomes from the output of halStats
-    statsfile = "halStats.txt"
+    statsfile = getTempFile("halStats.txt")
     system("halStats --genomes %s > %s" %(halfile, statsfile))
     
     f = open(statsfile, 'r')
