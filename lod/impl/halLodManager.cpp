@@ -30,6 +30,8 @@ using namespace hal;
 const unsigned long LodManager::MaxAgeSec = 432000;
 
 // specify upper limit of lods.
+// (MUST MANUALLY KEEP CONSISTENT WITH global MaxLodToken variable in 
+// hal/lod/halLodInterpolate.py)
 const string LodManager::MaxLodToken = "max";
 
 LodManager::LodManager()
