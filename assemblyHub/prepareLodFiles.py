@@ -68,6 +68,8 @@ def getLod(options, localHalfile, outdir):
         options.lodOpts += '--numProc %d ' % int(options.maxThreads)
     if options.lodMinSeqFrac is not None:
         options.lodOpts += '--minSeqFrac %f ' % options.lodMinSeqFrac
+    if options.lodMinCovFrac is not None:
+        options.lodOpts += '--minCovFrac %f ' % options.lodMinCovFrac
     if options.lodChunk is not None:
         options.lodOpts += '--chunk %d ' % options.lodChunk
     if len(options.lodOpts) > 0:
@@ -102,6 +104,7 @@ def addLodOptions(parser):
     group.add_option('--lodMaxDNA', dest='lodMaxDNA', type='int', help='Maximum query length such that its hal level of detail will contain nucleotide information. Default=%default (see halLodInterpolate.py --help for the default value).', default=None)
     group.add_option('--lodInMemory', dest='lodInMemory', action='store_true', help='Load entire hal file into memory when generating levels of detail instead of using hdf5 cache. Could result in drastic speedup. Default=%default.', default=False)
     group.add_option('--lodMinSeqFrac', dest='lodMinSeqFrac', type='float', help='Minumum sequence length to sample as fraction of step size for level of detail generation: ie sequences with length <= floor(minSeqFrac * step) are ignored (see halLodExtract --help for default value).', default=None)
+    group.add_option('--lodMinCovFrac', dest='lodMinCovFrac', type='float', help='Minimum fraction of a genome that must be covered by sequences that exceed --minSeqFrac * step.  LODs that would violate this threshold will not be generated (or displayed in  the browser).  This is seen a better than the alternative, which is to produce unreasonably sparse LODs because half the sequences were not sampled (see halLodInterpolate.py --help for default value).', default=None)
     group.add_option('--lodChunk', dest='lodChunk', type='int', help='HDF5 chunk size for generated levels of detail (see halLodExtract --help for default value).', default=None)
     #group.add_option('--snpwidth', dest='snpwidth', type='int', default=5000, help='Maximum window size to display SNPs. Default=%default')
     parser.add_option_group(group)

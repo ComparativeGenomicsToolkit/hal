@@ -22,10 +22,16 @@ from hal.stats.halStats import runParallelShellCommands
 from hal.stats.halStats import getHalGenomes
 from hal.stats.halStats import getHalNumSegments
 from hal.stats.halStats import getHalStats
+from hal.stats.halStats import getHalSequenceStats
+
+# specify upper limit of lods.
+# (MUST MANUALLY KEEP CONSISTENT WITH global LodManager::MaxLodToken
+# variable in hal/lod/impl/halLodManager.cpp)
+MaxLodToken = "max"
 
 # Wrapper for halLodExtract
 def getHalLodExtractCmd(inHalPath, outHalPath, scale, keepSeq, inMemory,
-                     probeFrac, minSeqFrac, chunk):
+                     probeFrac, minSeqFrac, chunk, minCovFrac):
     cmd = "halLodExtract %s %s %s" % (inHalPath, outHalPath, scale)
     if keepSeq is True:
         cmd += " --keepSequences"
@@ -48,16 +54,14 @@ def makePath(inHalPath, outDir, step, name, ext):
     return outPath
 
 # Return the length of the longest genome in the HAL file
-def getMaxGenomeLength(halPath):
-    statsTable = getHalStats(halPath)
+def getMaxGenomeLength(statsTable):
     maxLen = 0
     for row in statsTable:
         maxLen = max(maxLen, int(row[2]))
     return maxLen
 
 # Return the smallest averege block length of any genome in the HAL file
-def getMinAvgBlockSize(halPath):
-    statsTable = getHalStats(halPath)
+def getMinAvgBlockSize(statsTable):
     minAvgBlockSize = sys.maxint
     for row in statsTable:
         if float(row[3]) > 0:
@@ -68,25 +72,56 @@ def getMinAvgBlockSize(halPath):
             minAvgBlockSize = min(minAvgBlockSize, avgBottom)
     assert minAvgBlockSize > 0 and minAvgBlockSize != sys.maxint
     return minAvgBlockSize
+
+# Return the smallest fraction of any genome that would be left if we
+# cut out all sequences of length less than minLen
+def getMinCoverageFrac(sequenceStatsTable, minLen):
+    minCoverage = 1.0
+    for genome, sequenceStats in sequenceStatsTable.items():
+        totalLength = 0.0
+        uncutLength = 0.0
+        for sequence, seqLen, numTop, numBot in sequenceStats:
+            totalLength += seqLen
+            if seqLen >= minLen:
+                uncutLength += seqLen
+        coverage = uncutLength / totalLength
+        minCoverage = min(coverage, minCoverage)
+
+    return minCoverage        
         
 # Get a lest of step-sizes required to interpolate the hal such that
 # the maximum level of detail has at most maxBlock (expected) blocks
 # per genome, and each hal file has multFac (approx maxBlock) bigger
 # blocks than the previous
-def getSteps(halPath, maxBlock, scaleFactor, minLod0, cutOffFrac):
-    maxLen = getMaxGenomeLength(halPath)
+def getSteps(halPath, maxBlock, scaleFactor, minLod0, cutOffFrac, minSeqFrac,
+            minCovFrac):
+    statsTable = getHalStats(halPath)
+    sequenceStatsTable = dict()
+    for row in statsTable:
+        sequenceStatsTable[row[0]] = getHalSequenceStats(halPath, row[0])
+    maxLen = getMaxGenomeLength(statsTable)
     assert maxLen > 0
     maxStep = math.ceil(float(maxLen) / float(maxBlock))
     lodBaseStep = math.ceil(float(minLod0) / float(maxBlock))
-    baseStep = max(lodBaseStep, getMinAvgBlockSize(halPath))
+    baseStep = max(lodBaseStep, getMinAvgBlockSize(statsTable))
     outList = []
     step = baseStep
+    # last LOD is just "max" token which tells browser it and anything
+    # beyond is disabled.
+    lastIsMax = False
     while True:
         outList.append(step)
         if step > maxStep * cutOffFrac:
             break
+        minCoverage = 1.0
+        if minSeqFrac > 0. and minCovFrac > 0.:
+            minCoverageFrac = getMinCoverageFrac(sequenceStatsTable,
+                                                 math.floor(step * minSeqFrac))
+            if minCoverageFrac < minCovFrac:
+                lastIsMax = True
+                break
         step *= scaleFactor
-    return [int(x) for x in outList]
+    return [int(x) for x in outList], lastIsMax
 
 def formatOutHalPath(outLodPath, outHalPath, absPath):
     if absPath:
@@ -97,10 +132,11 @@ def formatOutHalPath(outLodPath, outHalPath, absPath):
 # Run halLodExtract for each level of detail.
 def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
                maxDNA, absPath, trans, inMemory, probeFrac, minSeqFrac,
-               scaleCorFac, numProc, chunk, minLod0, cutOff):
+               scaleCorFac, numProc, chunk, minLod0, cutOff, minCovFrac):
     lodFile = open(outLodPath, "w")
     lodFile.write("0 %s\n" % formatOutHalPath(outLodPath, halPath, absPath))
-    steps = getSteps(halPath, maxBlock, scale, minLod0, cutOff)
+    steps, lastIsMax = getSteps(halPath, maxBlock, scale, minLod0, cutOff,
+                                minSeqFrac, minCovFrac)
     curStepFactor = scaleCorFac
     lodExtractCmds = []
     prevStep = None
@@ -116,15 +152,20 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         outHalPath = makePath(halPath, outDir, step, "lod", "hal")
         srcPath = halPath
         if trans is True and stepIdx > 1:
-            srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")  
-        if overwrite is True or not os.path.isfile(outHalPath):
+            srcPath = makePath(halPath, outDir, prevStep, "lod", "hal")
+        isMaxLod = stepIdx == len(steps) - 1 and lastIsMax is True
+        if not isMaxLod and (overwrite is True or
+                             not os.path.isfile(outHalPath)):
             lodExtractCmds.append(
-                getHalLodExtractCmd(srcPath, outHalPath, stepScale, keepSequences,
-                                    inMemory, probeFrac, minSeqFrac, chunk))
-  
-        lodFile.write("%d %s\n" % (maxQueryLength,
-                                   formatOutHalPath(outLodPath, outHalPath,
-                                                    absPath)))
+                getHalLodExtractCmd(srcPath, outHalPath, stepScale,
+                                    keepSequences, inMemory, probeFrac,
+                                    minSeqFrac, chunk, minCovFrac))
+        lodPath =  formatOutHalPath(outLodPath, outHalPath, absPath)
+        if isMaxLod:
+            lodPath = MaxLodToken
+        
+        lodFile.write("%d %s\n" % (maxQueryLength, lodPath))
+
         if prevStep > steps[-1]:
             break
         prevStep = step
@@ -192,7 +233,17 @@ def main(argv=None):
                         "length <= floor(minSeqFrac * step) are ignored."
                         "Use default from halLodExtract if not set. To see"
                         " default value, use halLodExtract --help",                  
-                        type=float, default=None)
+                        # Note: needs to be manually synched with 
+                        # value in halLodInterpolate.py
+                        type=float, default=0.5)
+    parser.add_argument("--minCovFrac", help="Minimum fraction of a genome"
+                        " that must be covered by sequences that exceed"
+                        " --minSeqFrac * step.  LODs that would violate this"
+                        " threshold will not be generated (or displayed in"
+                        " the browser).  This is seen a better than the "
+                        "alternative, which is to produce unreasonably sparse"
+                        " LODs because half the sequences were not sampled",
+                        type=float, default=0.9)
     parser.add_argument("--scaleCorFac", help="Correction factor for scaling. "
                         " Assume that scaling by (X * scaleCorFactor) is "
                         " required to reduce the number of blocks by X.",
@@ -238,7 +289,7 @@ def main(argv=None):
                args.maxBlock, args.scale, not args.resume, args.maxDNA,
                args.absPath, args.trans, args.inMemory, args.probeFrac,
                args.minSeqFrac, args.scaleCorFac, args.numProc, args.chunk,
-               args.minLod0, args.cutOff)
+               args.minLod0, args.cutOff, args.minCovFrac)
     
 if __name__ == "__main__":
     sys.exit(main())

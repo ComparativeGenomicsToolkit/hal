@@ -60,7 +60,9 @@ By default, no level of detail is generated. Users can independently generate th
 
 6. **When I zoom out, I see too many tiny blocks for millions of different contigs or scaffolds.  Can I reduce this?**  Yes, increase the `--lodMinSeqFrac` parameter.  This will increase the minimum length of a contig in relation to the step size for it to be included in the LOD.
 
-7. **I am a power user.   Are the more options available for fine-tuning LOD generation?** Yes, you can regenerate your LODs separately using `halLodInterpolate.py` which provides a number of additional options to those available during hub generation.  You can also easily edit the output `lod.txt` file by hand to, for example, remove a level of detail or adjust its query range. 
+7. **I am unable to zoom out as far as I want to.  The `--lodMinCovFrac` option was added to mitigate some of the issues with gappy LODs discussed above.  It works in conjunction with `--lodMinSeqFrac` to disallow zooming out past a point which too much of any genome is filtered by `-lodMinSeqFrac`.  For example, `--lodMinSeqFrac 0.01 --logMinCovFac 0.8` would specifiy that only LODs such that 80% of all contigs/scafoolds in each genome will be longer than 1% of the stepsize of the LOD.  
+ 
+8. **I am a power user.   Are the more options available for fine-tuning LOD generation?** Yes, you can regenerate your LODs separately using `halLodInterpolate.py` which provides a number of additional options to those available during hub generation.  You can also easily edit the output `lod.txt` file by hand to, for example, remove a level of detail or adjust its query range. 
 
 
 Browsers With Annotation Tracks
