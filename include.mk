@@ -11,8 +11,8 @@ include  ${sonLibRootPath}/include.mk
 
 dataSetsPath=/Users/hickey/Documents/Devel/genomes/datasets
 
-cflags += -I${sonLibPath}
-cppflags += -I${sonLibPath}
+cflags += -I${sonLibPath} -fPIC
+cppflags += -I${sonLibPath} -fPIC
 
 basicLibs = ${sonLibPath}/sonLib.a ${sonLibPath}/cuTest.a
 basicLibsDependencies = ${basicLibs}
