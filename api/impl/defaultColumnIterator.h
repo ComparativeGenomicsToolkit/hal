@@ -74,7 +74,9 @@ protected:
 
    void resetColMap() const;
    void eraseColMap() const;
-   
+
+   void clearTree() const;
+
 protected:
 
    // everything's mutable to keep const behaviour consistent with
@@ -102,6 +104,7 @@ protected:
    mutable const Sequence* _prevRefSequence;
    mutable hal_index_t _prevRefIndex;
    mutable hal_index_t _leftmostRefPos;
+   mutable stTree *_tree;
 };
 
 inline bool DefaultColumnIterator::parentInScope(const Genome* genome) const

@@ -105,7 +105,8 @@ public:
    virtual void print(std::ostream& os) const = 0;
 
    /** Get a new tree that represents the phylogenetic relationship
-    * between the entries in this column. */
+    * between the entries in this column. Do not attempt to free this
+    * tree. */
    virtual stTree *getTree() const = 0;
 
    // temp -- probably want to have a "global column iterator" object
