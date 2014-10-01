@@ -45,6 +45,7 @@ public:
    virtual void defragment() const;
    virtual bool isCanonicalOnRef() const;
    virtual void print(std::ostream& os) const;
+   virtual stTree *getTree() const;
    virtual VisitCache *getVisitCache() const;
    virtual void setVisitCache(VisitCache *visitCache) const;
    virtual void clearVisitCache() const;

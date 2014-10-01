@@ -433,7 +433,7 @@ void HDF5Alignment::removeGenome(const string& name)
          newBot->toRight(), i++)
     {
       newBot->setCoordinates(bottomSegments[i].start, bottomSegments[i].length);
-      for (hal_index_t child = 0; child < childNames.size() - 1; child++)
+      for (hal_index_t child = 0; child < ((hal_index_t) childNames.size()) - 1; child++)
       {
         newBot->setChildIndex(child,
                               bottomSegments[i].children[child].childIndex);

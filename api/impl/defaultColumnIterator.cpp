@@ -527,6 +527,130 @@ bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
   }
   return false;
 }
+// Builds a "gene"-tree node and labels it properly.
+static stTree *getTreeNode(SegmentIteratorConstPtr segIt)
+{
+    // Make sure the segment is sliced to only 1 base.
+    assert(segIt->getStartPosition() == segIt->getEndPosition());
+    stTree *ret = stTree_construct();
+    const Genome *genome = segIt->getGenome();
+    const Sequence *seq = genome->getSequenceBySite(segIt->getStartPosition());
+
+    // make the sequence name safe for newick parsers (':'->'_')
+    string seqName = seq->getName();
+    hal_size_t i;
+    while ((i = seqName.find(":")) != string::npos) {
+        seqName[i] = '_';
+    }
+
+    stringstream ss;
+    ss << segIt->getGenome()->getName() << "." << seqName << "|" << segIt->getStartPosition() - seq->getStartPosition();
+    stTree_setLabel(ret, stString_copy(ss.str().c_str()));
+
+    return ret;
+}
+
+// Recursive part of buildTree
+// tree parameter represents node corresponding to the genome with
+// bottom segment botIt
+static void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree)
+{
+    const Genome *genome = botIt->getGenome();
+
+    // attach a node and recurse for each of this segment's children
+    // (and paralogous segments)
+    for (hal_size_t i = 0; i < botIt->getNumChildren(); i++) {
+        if (botIt->hasChild(i)) {
+            const Genome *child = genome->getChild(i);
+            TopSegmentIteratorConstPtr topIt = child->getTopSegmentIterator();
+            topIt->toChild(botIt, i);
+            stTree *canonicalParalog = getTreeNode(topIt);
+            stTree_setParent(canonicalParalog, tree);
+            if (topIt->hasParseDown()) {
+                BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
+                childBotIt->toParseDown(topIt);
+                buildTreeR(childBotIt, canonicalParalog);
+            }
+            // Traverse the paralogous segments cycle and add those segments as well
+            if (topIt->hasNextParalogy()) {
+                topIt->toNextParalogy();
+                while(!topIt->isCanonicalParalog()) {
+                    stTree *paralog = getTreeNode(topIt);
+                    stTree_setParent(paralog, tree);
+                    if(topIt->hasParseDown()) {
+                        BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
+                        childBotIt->toParseDown(topIt);
+                        buildTreeR(childBotIt, paralog);
+                    }
+                    topIt->toNextParalogy();
+                }
+            }
+        }
+    }
+
+    if (genome->getNumChildren() != 0 && stTree_getChildNumber(tree) == 0) {
+        // Ancestral insertion. Ignore it.
+        stTree_setParent(tree, NULL);
+        stTree_destruct(tree);
+    }
+}
+
+// Build a gene-tree from a column iterator.
+stTree *DefaultColumnIterator::getTree() const
+{
+    // Get any base from the column to begin building the tree
+    const ColumnIterator::ColumnMap *colMap = getColumnMap();
+    ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
+    const Sequence *sequence = NULL;
+    hal_index_t index = NULL_INDEX;
+    while (colMapIt != colMap->end()) {
+        if (!colMapIt->second->empty()) {
+            // Found a non-empty column map entry, just take the index and
+            // sequence of the first base found
+            sequence = colMapIt->first;
+            index = colMapIt->second->at(0)->getArrayIndex();
+            break;
+        }
+        colMapIt++;
+    }
+    assert(sequence != NULL && index != NULL_INDEX);
+    const Genome *genome = sequence->getGenome();
+
+    // Get the bottom segment that is the common ancestor of all entries
+    TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
+    BottomSegmentIteratorConstPtr botIt;
+    if (genome->getNumTopSegments() == 0) {
+        // The reference is the root genome.
+        botIt = genome->getBottomSegmentIterator();
+        botIt->toSite(index);
+    } else {
+        // Keep heading up the tree until we hit the root segment.
+        topIt->toSite(index);
+        while (topIt->hasParent()) {
+            const Genome *parent = topIt->getGenome()->getParent();
+            botIt = parent->getBottomSegmentIterator();
+            botIt->toParent(topIt);
+            if(parent->getParent() == NULL || !botIt->hasParseUp()) {
+                // Reached root genome
+                break;
+            }
+            topIt = parent->getTopSegmentIterator();
+            topIt->toParseUp(botIt);
+        }
+    }
+
+    stTree *tree = NULL;
+    if(topIt->hasParent() == false && topIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
+        // Handle insertions in leaves. botIt doesn't point anywhere since
+        // there are no bottom segments.
+        tree = getTreeNode(topIt);
+    } else {
+        tree = getTreeNode(botIt);
+        buildTreeR(botIt, tree);
+    }
+    assert(tree != NULL);
+    return tree;
+}
 
 void DefaultColumnIterator::updateParent(LinkedTopIterator* topIt) const
 {

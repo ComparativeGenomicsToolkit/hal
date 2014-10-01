@@ -10,6 +10,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include "sonLib.h"
 #include "hal.h"
 #include "halDefs.h"
 #include "halDNAIterator.h"
@@ -102,6 +103,10 @@ public:
 
    /** Print contents of column iterator */
    virtual void print(std::ostream& os) const = 0;
+
+   /** Get a new tree that represents the phylogenetic relationship
+    * between the entries in this column. */
+   virtual stTree *getTree() const = 0;
 
    // temp -- probably want to have a "global column iterator" object
    // instead
