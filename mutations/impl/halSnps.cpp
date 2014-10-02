@@ -428,7 +428,7 @@ static void countSnps(const Genome* refGenome,
         refTsvStream << refSeq->getName() << "\t"
                      << refDnaIt->getArrayIndex() - refSeq->getStartPosition();
         // then the reference base:
-        refTsvStream << "\t" << refDna;
+        refTsvStream << "\t" << refDnaIt->getChar();
         // then finally the orthologs, in the same order that they
         // were spit out in the header.
         vector<char> orthologFields(targetGenomes.size());// initialized to '\0'
