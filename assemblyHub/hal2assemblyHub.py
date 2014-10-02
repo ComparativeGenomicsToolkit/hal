@@ -94,7 +94,8 @@ class Setup( Target ):
                     genomes.append(g)
         else:
             genomes = allgenomes
-        genome2seq2len = getGenomeSequences(self.halfile, genomes)
+        genome2seq2len = getGenomeSequences(self.halfile, genomes,
+                                            self.options.ucscNames)
         #Get basic files (2bit, chrom.sizes) for each genome:
         for genome in genomes: 
             self.addChildTarget( GetBasicFiles(genome, genome2seq2len[genome], self.halfile, self.outdir, self.options) )
@@ -340,18 +341,19 @@ def getLongestSeq(seq2len):
     seqs = sorted( [(seq, len) for seq, len in seq2len.iteritems()], key=lambda item:item[1], reverse=True )
     return seqs[0]
 
-def getGenomeSequencesFromHal(halfile, genome):
+def getGenomeSequencesFromHal(halfile, genome, ucscNames):
     statsfile = getTempFile("%s-seqStats.txt" %genome)
     system("halStats --sequenceStats %s %s > %s" %(genome, halfile, statsfile))
-    
+
     seq2len = {}
     f = open(statsfile, 'r')
     for line in f:
         if len(line) < 2 or re.search("SequenceName", line):
             continue
         items = line.strip().split(", ")
-        seq = items[0].split('.')[-1]
-        #seq = items[0]
+        seq = items[0]
+        if ucscNames:
+            seq = seq.split('.')[-1]
         l = int(items[1])
         seq2len[seq] = l
     f.close()
@@ -359,10 +361,10 @@ def getGenomeSequencesFromHal(halfile, genome):
 
     return seq2len
 
-def getGenomeSequences(halfile, genomes):
+def getGenomeSequences(halfile, genomes, ucscNames):
     genome2seq2len = {}
     for genome in genomes:
-        seq2len = getGenomeSequencesFromHal(halfile, genome)
+        seq2len = getGenomeSequencesFromHal(halfile, genome, ucscNames)
         if len(seq2len) == 0:
             sys.stderr.write("Warning: genome %s contains 0 sequence - no browser was made.\n" %genome)
         else:
