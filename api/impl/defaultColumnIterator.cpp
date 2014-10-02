@@ -309,6 +309,7 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
 */
 
   resetColMap();
+  clearTree();
   _break = false;
   _leftmostRefPos = _stack[0]->_index;
 
@@ -545,7 +546,7 @@ static stTree *getTreeNode(SegmentIteratorConstPtr segIt)
 
   stringstream ss;
   ss << segIt->getGenome()->getName() << "." << seq->getName() << "|" << segIt->getStartPosition() - seq->getStartPosition();
-  stTree_setLabel(ret, stString_copy(ss.str().c_str()));
+  stTree_setLabel(ret, ss.str().c_str());
 
   stTree_setClientData(ret, (void *) new DNAIteratorConstPtr(genome->getDNAIterator(segIt->getStartPosition())));
 

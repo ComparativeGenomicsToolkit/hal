@@ -222,8 +222,8 @@ static void getReferenceNodes_R(stTree *colTree, const Genome *refGenome,
 
   DNAIteratorConstPtr *dnaIt = (DNAIteratorConstPtr *) stTree_getClientData(colTree);
   if ((*dnaIt)->getGenome() == refGenome) {
-    assert(refGenome->getNumChildren != 0 ^
-           stTree_getChildNumber(colTree) == 0);
+    assert((refGenome->getNumChildren() != 0) ^
+           (stTree_getChildNumber(colTree) == 0));
     refNodes->insert(colTree);
   }
 }
