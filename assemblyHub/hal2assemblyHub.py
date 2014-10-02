@@ -403,10 +403,10 @@ def linkTwoBitSeqFile(genome, twobitdir, outdir):
 
 def addOptions(parser):
     parser.add_option('--cpHalFileToOut', dest='cpHal', action='store_true', default=False, help='If specified, copy the input halfile to the output directory (instead of just make a softlink). Default=%default')
-    parser.add_option('--noUcscNames', dest='ucscNames', action='store_false',
-                      default=True,
-                      help='Assume that sequence headers don\'t use the UCSC '
-                      'naming convention, (i.e. "genome.chr"), and don\'t '
+    parser.add_option('--ucscNames', dest='ucscNames', action='store_true',
+                      default=False,
+                      help='Assume that sequence headers use the UCSC '
+                      'naming convention, (i.e. "genome.chr"), and  '
                       'attempt to rename the sequences so that their names '
                       'will end up as "chr"')
     addHubOptions(parser)
