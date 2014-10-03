@@ -58,12 +58,12 @@ def writeTrackDb_compositeStart(f, shortLabel, longLabel, bbdirs, bwdirs, genome
     f.write("centerLabelsDense on\n")
     f.write("visibility full\n")
     f.write("html ../documentation/hubCentral\n")
-    
+
     if url and img:
         imgurl = os.path.join(url, os.path.basename(img))
         f.write("treeImage %s\n" %imgurl)
 
-    f.write("type bed 3\n")
+    f.write("type bigBed 3\n")
     f.write("\n")
 
 def writeTrackDb_compositeSubTrack(f, name, visibility):
