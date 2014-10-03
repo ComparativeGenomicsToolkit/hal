@@ -548,7 +548,11 @@ static stTree *getTreeNode(SegmentIteratorConstPtr segIt)
   ss << segIt->getGenome()->getName() << "." << seq->getName() << "|" << segIt->getStartPosition() - seq->getStartPosition();
   stTree_setLabel(ret, ss.str().c_str());
 
-  stTree_setClientData(ret, (void *) new DNAIteratorConstPtr(genome->getDNAIterator(segIt->getStartPosition())));
+  DNAIteratorConstPtr *dnaIt = new DNAIteratorConstPtr(genome->getDNAIterator(segIt->getStartPosition()));
+  if (segIt->getReversed()) {
+    (*dnaIt)->toReverse();
+  }
+  stTree_setClientData(ret, (void *) dnaIt);
 
   return ret;
 }
