@@ -326,7 +326,7 @@ class WriteTrackDbFile( Target ):
                 #writeTrackDb_bigwigs(f, bigwigdir, genomes, subgenomes, currgenome, self.options.properName)
 
         writeTrackDb_compositeSubTrack(f, "Alignments", "full")
-        writeTrackDb_snakes(f, self.halfile, genomes, subgenomes, currgenome, self.options.properName, self.options.snpwidth)
+        writeTrackDb_snakes(f, self.halfile, genomes, subgenomes, currgenome, self.options.properName, self.options.snpwidth, self.options.selfAlignmentTrack)
         f.close()
 
 ############################ UTILITIES FUNCTIONS ###################
@@ -418,6 +418,7 @@ def addOptions(parser):
     addAlignabilityOptions(parser)
     addConservationOptions(parser)
     addExclusiveRegionOptions(parser)
+    addSnakeOptions(parser)
 
 def checkOptions(parser, args, options):
     if len(args) < 2:

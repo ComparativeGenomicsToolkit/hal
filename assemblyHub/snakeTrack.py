@@ -6,16 +6,26 @@
 
 """Snake tracks
 """
+from optparse import OptionGroup
 import re
 
-def writeTrackDb_snakes(f, halfile, genomes, subgenomes, currgenome, properName, snpwidth=None):
+def addSnakeOptions(parser):
+    group = OptionGroup(parser, "SNAKE TRACKS", "Snake track options")
+    group.add_option('--selfAlignmentSnakes', dest="selfAlignmentTrack",
+                     help="Produce a self-alignment snake track for every genome",
+                     action="store_true", default=False)
+    parser.add_option_group(group)
+
+def writeTrackDb_snakes(f, halfile, genomes, subgenomes, currgenome, properName, snpwidth=None, doSelfAlignment=False):
     for i, genome in enumerate(genomes):
-        if re.search(genome, currgenome): #current genome
+        if not doSelfAlignment and genome == currgenome: #current genome
             continue
         #SNAKE TRACKS
         genomeProperName = genome
         if genome in properName:
             genomeProperName = properName[genome]
+        if genome == currgenome:
+            genomeProperName += " (self)"
         f.write("\t\ttrack snake%s\n" %genome)
         f.write("\t\tlongLabel %s\n" %genomeProperName)
         f.write("\t\tshortLabel %s\n" %genomeProperName)
