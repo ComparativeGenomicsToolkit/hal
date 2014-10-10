@@ -98,7 +98,9 @@ int main(int argc, char** argv)
                            " wigToBigWig", 
                            "\"\"");
   optionsParser->addOption("percentID",
-                           "print % ID of a genome with all other genomes",
+                           "print % ID of a genome with all other genomes."
+                           "Only non-duplicated and unambiguous sites are"
+                           "considered",
                            "\"\"");
   optionsParser->addOption("coverage",
                            "print histogram of coverage of a genome with"
