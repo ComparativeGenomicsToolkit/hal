@@ -164,6 +164,8 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
     _mafStream = &mafStream;
     _alignment = alignment;
 
+    writeHeader();
+
     // Load in all leaves from alignment
     vector<string> leafNames = alignment->getLeafNamesBelow(alignment->getRootName());
     vector<const Genome *> leafGenomes;

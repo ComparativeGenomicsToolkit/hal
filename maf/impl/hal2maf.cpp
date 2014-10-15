@@ -199,7 +199,7 @@ int main(int argc, char** argv)
     }
     const SegmentedSequence* ref = refGenome;
 
-    if (noAncestors == true && refGenome->getNumChildren() != 0)
+    if (noAncestors == true && refGenome->getNumChildren() != 0 && !global)
     {
       throw hal_exception(string("Since the reference genome to be used for the"
                                  " MAF is ancestral (") + refGenome->getName() +
