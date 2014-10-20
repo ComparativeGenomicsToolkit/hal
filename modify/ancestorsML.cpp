@@ -418,7 +418,7 @@ void writeNucleotides(stTree *tree, AlignmentPtr alignment,
   char dna = toupper(dnaIt->getChar());
   if (data->dna != dna) {
     if (printWrites) {
-      cout << genome->getName() << ": " << data->pos << ": different from original char, which is: " << string(1, dna) << " (new char is " << string(1, data->dna) << ")" << endl;
+      cout << genome->getName() << "\t" << data->pos << "\t" << string(1, dna) << "\t" << string(1, data->dna) << endl;
     }
     if (writeHal) {
       dnaIt->setChar(data->dna);
