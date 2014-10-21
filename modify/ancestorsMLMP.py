@@ -62,10 +62,13 @@ class RunAncestorsMLParallel(Target):
             if linesPerJob == 0:
                 linesPerJob = 1
             for start in xrange(0, numLines, linesPerJob):
+                end = start + linesPerJob
+                if end > numLines:
+                    end = numLines
                 bedForJob = getTempFile(rootDir=self.getGlobalTempDir())
                 system("head -n %d %s | tail -n %d > %s" % (start + linesPerJob,
                                                             bedFile,
-                                                            linesPerJob,
+                                                            end - start,
                                                             bedForJob))
                 output = getTempFile(rootDir=self.getGlobalTempDir())
                 self.addChildTarget(RunAncestorsML(self.halFile, genome,
@@ -95,7 +98,7 @@ class WriteNucleotides(Target):
     def run(self):
         for genome, inputs in self.inputsPerGenome.items():
             for input in inputs:
-                system("halWriteNucleotides %s %s" % (input, self.halFile))
+                system("halWriteNucleotides %s %s" % (self.halFile, input))
 
 if __name__ == '__main__':
     from ancestorsMLMP import * # required for jobTree
