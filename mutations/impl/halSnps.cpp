@@ -229,7 +229,7 @@ static void getReferenceNodes_R(stTree *colTree, const Genome *refGenome,
 }
 
 // copy of stTree_getMRCA since phylogeny branch isn't merged in yet.
-static stTree *stTree_getMRCA(stTree *node1, stTree *node2) {
+static stTree *stTree_getMRCA_tmp(stTree *node1, stTree *node2) {
     // Find all of node 1's parents (inclusive of node 1)
     stSet *parents = stSet_construct();
     stTree *curNode = node1;
@@ -314,7 +314,7 @@ static void getOrthologs(stTree *colTree, const Genome *refGenome,
   for (set<stTree *>::const_iterator refNodeIt = refNodes.begin(); refNodeIt != refNodes.end(); refNodeIt++)
   {
     for (set<stTree *>::const_iterator refNodeIt2 = refNodeIt; refNodeIt2 != refNodes.end(); refNodeIt2++) {
-      refCoalescences.insert(stTree_getMRCA(*refNodeIt, *refNodeIt2));
+      refCoalescences.insert(stTree_getMRCA_tmp(*refNodeIt, *refNodeIt2));
     }
 
     // Use those coalescences as "stops" and traverse up the tree from
