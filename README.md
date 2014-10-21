@@ -159,7 +159,7 @@ All HAL tools compiled with HDF5 support expose some caching parameters.  Tools 
 
 #### MAF Import
 
-The (MAF)[http://genome.ucsc.edu/FAQ/FAQformat.html#format5] is a text format used at UCSC to store genome alignments.  MAFs are typically stored with respect to a reference genome.  MAFs can be imported into HAL as subtrees using the `maf2hal` command.  
+[MAF](http://genome.ucsc.edu/FAQ/FAQformat.html#format5) is a text format used at UCSC to store genome alignments.  MAFs are typically stored with respect to a reference genome.  MAFs can be imported into HAL as subtrees using the `maf2hal` command.  
 
 To import primates.maf as a star tree where the first alignment row specifies the root, and all others the leaves:  
 
