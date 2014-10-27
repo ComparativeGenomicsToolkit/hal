@@ -9,6 +9,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include "halDefs.h"
 
 namespace hal {
@@ -135,6 +136,10 @@ public:
 
    /** Get version used to create the file */
    virtual std::string getVersion() const = 0;
+
+   virtual GlobalColumnIteratorPtr getGlobalColumnIterator(
+       const std::set<const Genome*>* targets, bool noDupes, bool noAncestors,
+       bool reverseStrand) const = 0;
 
 protected:
    friend class counted_ptr<Alignment>;

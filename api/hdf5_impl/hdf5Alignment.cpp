@@ -16,6 +16,7 @@
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
 #include "hdf5CLParser.h"
+#include "halGlobalColumnIterator.h"
 extern "C" {
 #include "sonLibTree.h"
 }
@@ -650,6 +651,16 @@ MetaData* HDF5Alignment::getMetaData()
 const MetaData* HDF5Alignment::getMetaData() const
 {
   return _metaData;
+}
+
+GlobalColumnIteratorPtr HDF5Alignment::getGlobalColumnIterator(
+    const set<const Genome*>* targets, bool noDupes, bool noAncestors,
+    bool reverseStrand) const
+{
+    GlobalColumnIterator *colIt = new GlobalColumnIterator(
+        AlignmentConstPtr((const Alignment *) this), targets, noDupes,
+        noAncestors, reverseStrand);
+    return GlobalColumnIteratorPtr(colIt);
 }
 
 string HDF5Alignment::getNewickTree() const

@@ -83,6 +83,10 @@ public:
 
    std::string getVersion() const;
 
+   GlobalColumnIteratorPtr getGlobalColumnIterator(
+       const std::set<const Genome*>* targets, bool noDupes, bool noAncestors,
+       bool reverseStrand) const;
+
 protected:
    // Nobody creates this class except through the interface. 
    friend AlignmentPtr hdf5AlignmentInstance();
