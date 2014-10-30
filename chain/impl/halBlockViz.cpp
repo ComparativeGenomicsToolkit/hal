@@ -525,6 +525,17 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
   return head;
 }
 
+extern "C" void halFreeSpeciesList(struct hal_species_t *species)
+{
+  while (species != NULL) {
+    free(species->name);
+    free(species->parentName);
+    struct hal_species_t *nextSpecies = species->next;
+    free(species);
+    species = nextSpecies;
+  }
+}
+
 extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
                                                  char* speciesName,
                                                  char **errStr)

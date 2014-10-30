@@ -157,6 +157,9 @@ void halFreeBlocks(struct hal_block_t* block);
 /** Free linked list of dupe lists*/
 void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
 
+/** Free linked list of species */
+void halFreeSpeciesList(struct hal_species_t *species);
+
 /** Create linked list of block structures.  Blocks returned will be all
  * aligned blocks in the query sequence that align to the given range
  * in the reference sequence.  The list will be ordered along the reference.
