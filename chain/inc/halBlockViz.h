@@ -80,6 +80,14 @@ struct hal_chromosome_t
    hal_int_t length;
 };
 
+/** Represents genome or alignment metadata as a linked list. */
+struct hal_metadata_t
+{
+  struct hal_metadata_t *next;
+  char *key;
+  char *value;
+};
+
 /** Duplication mode toggler.  
  * HAL_NO_DUPS: No duplications computed
  * HAL_QUERY_DUPS: The same query range can map to multiple places in target
@@ -271,6 +279,13 @@ char *halGetDna(int halHandle,
  *         In the event of an error, -1 will be returned. */
 hal_int_t halGetMaxLODQueryLength(int halHandle, char **errStr);
 
+/** Get the metadata for the genome as a linked list instead of a hash.
+    Returns NULL if there isn't any metadata for this genome. */
+struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
+                                            const char *genomeName);
+
+/** Free a metadata linked list. */
+void halFreeMetadataList(hal_metadata_t metadata);
 
 #ifdef __cplusplus
 }

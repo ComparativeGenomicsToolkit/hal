@@ -1228,3 +1228,43 @@ void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList)
     }
   }
 }
+
+extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
+                                                       const char *genomeName)
+{
+  HAL_LOCK
+  AlignmentConstPtr alignment = 
+    getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                         false);
+
+  const Genome *genome = alignment->openGenome(genomeName);
+  const MetaData *metaData = genome->getMetaData();
+  const map<string, string> metaDataMap = metaData->getMap();
+
+  hal_metadata_t *ret = NULL;
+  hal_metadata_t *prevMetadata = NULL;
+  for (map<string, string>::const_iterator i = metaDataMap.begin();
+       i != metaDataMap.end(); i++) {
+    hal_metadata_t *curMetadata = (hal_metadata_t *) calloc(1, sizeof(hal_metadata_t));
+    curMetadata->key = copyCString(i->first.c_str());
+    curMetadata->value = copyCString(i->second.c_str());
+    if (prevMetadata != NULL) {
+      prevMetadata->next = curMetadata;
+    } else {
+      ret = curMetadata;
+    }
+    prevMetadata = curMetadata;
+  }
+  return ret;
+  HAL_UNLOCK
+}
+
+extern "C" void halFreeMetadataList(struct hal_metadata_t *metadata) {
+    while (metadata != NULL) {
+        struct hal_metadata_t *next = metadata->next;
+        free(metadata->key);
+        free(metadata->value);
+        free(metadata);
+        metadata = next;
+    }
+}
