@@ -285,7 +285,7 @@ struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
                                             const char *genomeName);
 
 /** Free a metadata linked list. */
-void halFreeMetadataList(hal_metadata_t metadata);
+void halFreeMetadataList(struct hal_metadata_t *metadata);
 
 #ifdef __cplusplus
 }
