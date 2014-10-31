@@ -22,7 +22,7 @@ class MetaData
 {
 public:
     
-   /** Get read-only reference to the map of metadat */
+   /** Get read-only reference to the map of metadata */
    virtual const std::map<std::string, std::string>& getMap() const = 0;
    
    /** Get the value associated with a key (throws error if key doesn't exist)
