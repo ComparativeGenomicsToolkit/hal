@@ -32,10 +32,10 @@ using namespace hal;
  *
  * So if a base in the reference genome is aligned to a base in a genome
  * that is not under root or in the target list, it will not count to the
- * alignability.
+ * alignment depth.
  */
 
-/** Print the alignability wiggle for a subrange of a given sequence to
+/** Print the alignment depth wiggle for a subrange of a given sequence to
  * the output stream. */
 static void printSequence(ostream& outStream, const Sequence* sequence, 
                           const set<const Genome*>& targetSet,
@@ -91,7 +91,7 @@ static CLParserPtr initParser()
                                false);
   optionsParser->addOptionFlag("noAncestors", 
                                "do not count ancestral genomes.", false);
-  optionsParser->setDescription("Make alignability wiggle plot for a genome. "
+  optionsParser->setDescription("Make alignment depth wiggle plot for a genome. "
                                 "By default, this is a count of the number of "
                                 "other unique genomes each base aligns to, "
                                 "including ancestral genomes.");

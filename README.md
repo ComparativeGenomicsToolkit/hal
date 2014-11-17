@@ -287,9 +287,9 @@ By default, halLiftover uses spaces and/or tabs to separate columns. To use only
 
 Annotations in [Wiggle](http://genome.ucsc.edu/goldenPath/help/wiggle.html) format can likewise be mapped using `halWiggleLiftover`
 
-#### Alignability
+#### Alignment Depth
 
-The number of distinct genomes different bases of a set of target genomes align to can be computed using the `halAlignability` tool.  The output is in `.wig` format.  
+The number of distinct genomes different bases of a set of target genomes align to can be computed using the `halAlignmentDepth` tool.  The output is in `.wig` format.  
 
 #### Mutation Annotation
 
