@@ -22,12 +22,14 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
                                              hal_size_t maxInsertLength,
                                              bool noDupes,
                                              bool noAncestors,
-                                             bool reverseStrand)
+                                             bool reverseStrand,
+                                             bool unique)
 :
   _maxInsertionLength(maxInsertLength),
   _noDupes(noDupes),
   _noAncestors(noAncestors),
-  _reversed(reverseStrand)
+  _reversed(reverseStrand),
+  _unique(unique)
 {
   assert (columnIndex >= 0 && lastColumnIndex >= columnIndex && 
           lastColumnIndex < (hal_index_t)reference->getSequenceLength());
@@ -785,16 +787,19 @@ void DefaultColumnIterator::nextFreeIndex() const
 {
   hal_index_t index = _stack.top()->_index;
 
-  VisitCache::iterator cacheIt = 
-     _visitCache.find(_stack.top()->_sequence->getGenome());
-  if (cacheIt != _visitCache.end())
+  if (_unique == true || _stack.size() > 1)
   {
-    PositionCache* posCache = cacheIt->second;
-    bool found = posCache->find(index);
-    while (found == true && index <= _stack.top()->_lastIndex)
+    VisitCache::iterator cacheIt = 
+       _visitCache.find(_stack.top()->_sequence->getGenome());
+    if (cacheIt != _visitCache.end())
     {
-      ++index;
-      found = posCache->find(index);
+      PositionCache* posCache = cacheIt->second;
+      bool found = posCache->find(index);
+      while (found == true && index <= _stack.top()->_lastIndex)
+      {
+        ++index;
+        found = posCache->find(index);
+      }
     }
   }
   _stack.top()->_index = index;
@@ -822,6 +827,11 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
     {
       updateCache = true;
     }
+  }
+  // try to avoid building cache if we don't want or need it
+  if (_unique == false && _maxInsertionLength == 0)
+  {
+    updateCache = false;
   }
 
   bool found = false;

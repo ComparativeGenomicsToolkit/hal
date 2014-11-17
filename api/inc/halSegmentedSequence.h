@@ -81,12 +81,18 @@ public:
     * @param targets Only genomes in this set are visited
     * * (note that other genomes in their spanning tree will be
     * * traversed as necessary but not reported)
-    * @param maxInsertLength maximum insertion to be traversed
+    * @param maxInsertLength maximum insertion to be traversed.
+    * Note: if setting > 0, it is recommended to set unique to true.
     * @param position Index in sequence of returned iterator 
     * @param noDupes Don't follow paralogy edges
     * @param noAncestors Don't report any non-leaf nodes in output
     * @param reverseStrand Map from reverse strand of this sequence
-    * (but still in a left-to-right direction of forward strand) */
+    * (but still in a left-to-right direction of forward strand) 
+    * @param unique calls to toRight() will automatically skip 
+    * over bases in the reference sequence that have already been
+    * seen in an alignment column (ie homologous to already visited
+    * sites) using the visitCache. */
+
    virtual ColumnIteratorConstPtr getColumnIterator(
      const std::set<const Genome*>* targets = NULL,
      hal_size_t maxInsertLength = 0,
@@ -94,7 +100,8 @@ public:
      hal_index_t lastPosition = NULL_INDEX,
      bool noDupes = false,
      bool noAncestors = false,
-     bool reverseStrand = false) const = 0;
+     bool reverseStrand = false,
+     bool unique = false) const = 0;
 
    /** Get the character string underlying the segmented sequence
     * @param outString String object into which we copy the result */

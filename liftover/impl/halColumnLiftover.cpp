@@ -30,7 +30,8 @@ void ColumnLiftover::liftInterval(BedList& mappedBedLines)
                                            _bedLine._end - 1,
                                            !_traverseDupes,
                                            false,
-                                           _bedLine._strand == '-');
+                                           _bedLine._strand == '-',
+                                           true);
   while (true) 
   {
     const ColumnMap* cMap = _colIt->getColumnMap();
