@@ -106,7 +106,10 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                                         startPosition,
                                                         lastPosition,
                                                         _noDupes,
-                                                        _noAncestors);
+                                                        _noAncestors,
+                                                        false, // reverseStrand,
+                                                        true); // unique
+
 
   hal_size_t appendCount = 0;
   if (_unique == false || colIt->isCanonicalOnRef() == true)
@@ -184,7 +187,9 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
                                                                  0,
                                                                  NULL_INDEX,
                                                                  _noDupes,
-                                                                 _noAncestors);
+                                                                 _noAncestors,
+                                                                 false, // reverseStrand
+                                                                 true); // unique
         colIt->setVisitCache(&visitCache);
         for (;;) {
             if (appendCount == 0) {

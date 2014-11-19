@@ -736,7 +736,9 @@ void  MappedSegmentColCompareTest::createColArray()
   _colArray.resize(N);
   set<const Genome*> tgtSet;
   tgtSet.insert(_tgt);
-  ColumnIteratorConstPtr colIt = _ref->getColumnIterator(&tgtSet);
+  ColumnIteratorConstPtr colIt = _ref->getColumnIterator(&tgtSet, 0, 0, 
+                                                         NULL_INDEX, false,
+                                                         false, false, true);
   while (true)
   {
     const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
