@@ -28,7 +28,8 @@ public:
                          hal_size_t maxInsertionLength,
                          bool noDupes,
                          bool noAncestors,
-                         bool reverseStrand);
+                         bool reverseStrand,
+                         bool unique);
    
    virtual ~DefaultColumnIterator();
 
@@ -105,6 +106,7 @@ protected:
    mutable hal_index_t _prevRefIndex;
    mutable hal_index_t _leftmostRefPos;
    mutable stTree *_tree;
+   mutable bool _unique;
 };
 
 inline bool DefaultColumnIterator::parentInScope(const Genome* genome) const

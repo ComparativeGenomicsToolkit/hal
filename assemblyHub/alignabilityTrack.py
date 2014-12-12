@@ -4,7 +4,7 @@
 #
 #Released under the MIT license, see LICENSE.txt
 
-"""Creating Alignability track for the hubs
+"""Creating Alignability (Alignment Depth) track for the hubs
 """
 import os
 from sonLib.bioio import system  
@@ -20,7 +20,7 @@ class GetAlignability( Target ):
     def run(self):
         outfile = os.path.join(self.genomedir, "%s.alignability.bw" %self.genome)
         tempwig = os.path.join(self.genomedir, "%s.alignability.wig" %self.genome)
-        system("halAlignability %s %s > %s" %(self.halfile, self.genome, tempwig))
+        system("halAlignmentDepth %s %s > %s" %(self.halfile, self.genome, tempwig))
         chrsizefile = os.path.join(self.genomedir, "chrom.sizes")
         system("wigToBigWig %s %s %s" %(tempwig, chrsizefile, outfile))
         system("rm -f %s" %tempwig)
@@ -50,6 +50,6 @@ def addAlignabilityOptions(parser):
     from optparse import OptionGroup
     #group = OptionGroup(parser, "ALIGNABILITY", "Alignability: the number of genomes aligned to each position.")
     group = OptionGroup(parser, "ALIGNABILITY")
-    group.add_option('--alignability', dest='alignability', action='store_true', default=False, help='If specified, make Alignability tracks. Default=%default')
+    group.add_option('--alignability', dest='alignability', action='store_true', default=False, help='If specified, make Alignability (aka Alignment Depth) tracks. Default=%default')
     parser.add_option_group(group)
 

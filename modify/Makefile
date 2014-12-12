@@ -10,16 +10,16 @@ libTests = $(wildcard tests/*.cpp)
 libTestsHeaders = $(wildcard tests/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
-
+targets = ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree ${binPath}/findRegionsExclusivelyInGroup ${binPath}/halUpdateBranchLengths ${binPath}/ancestorsML ${binPath}/halWriteNucleotides ${binPath}/halSetMetadata
 ifdef ENABLE_PHYLOP
-all : ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree ${binPath}/findRegionsExclusivelyInGroup ${binPath}/halUpdateBranchLengths ${binPath}/ancestorsML ${binPath}/halWriteNucleotides
+all : ${targets}
 else
 all :
 	cd .
 endif
 
 clean : 
-	rm -f ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome
+	rm -f ${targets}
 
 ${binPath}/halRemoveGenome: halRemoveGenome.cpp markAncestors.o ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halRemoveGenome halRemoveGenome.cpp markAncestors.o ${libPath}/halLib.a ${basicLibs}
@@ -52,6 +52,9 @@ ${binPath}/halUpdateBranchLengths: halUpdateBranchLengths.cpp ${libPath}/halLib.
 
 ${binPath}/halWriteNucleotides: halWriteNucleotides.cpp ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halWriteNucleotides halWriteNucleotides.cpp ${libPath}/halLib.a ${basicLibs}
+
+${binPath}/halSetMetadata: halSetMetadata.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halSetMetadata halSetMetadata.cpp ${libPath}/halLib.a ${basicLibs}
 
 markAncestors.o: markAncestors.cpp
 	${cpp} ${cppflags} -I ${libPath} -c -o markAncestors.o markAncestors.cpp

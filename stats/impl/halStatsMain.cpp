@@ -47,7 +47,7 @@ static void printSegments(ostream& os, AlignmentConstPtr alignment,
 int main(int argc, char** argv)
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
-  optionsParser->setDescription("Rertrieve basic statics from a hal database");
+  optionsParser->setDescription("Retrieve basic statistics from a hal database");
   optionsParser->addArgument("halFile", "path to hal file to analyze");
   optionsParser->addOptionFlag("genomes", "print only a list of genomes "
                                "in alignment", false);

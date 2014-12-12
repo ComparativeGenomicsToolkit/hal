@@ -132,7 +132,8 @@ public:
                                             hal_index_t lastPosition,
                                             bool noDupes,
                                             bool noAncestors,
-                                            bool reverseStrand) const;
+                                            bool reverseStrand,
+                                            bool unique) const;
 
    void getString(std::string& outString) const;
 
