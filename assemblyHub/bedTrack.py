@@ -86,7 +86,7 @@ class LiftoverBedFiles( Target ):
                     cmd = "bedToBigBed -tab -type=bed%d %s %s %s %s" %(numfield, indexParameter, tempbed, chrsizefile, outbigbed)
                 system( cmd )
             else:
-                assert numfields >= 4 # -extraIndex=name will fail if this is not true.
+                assert numfield >= 4 # -extraIndex=name will fail if this is not true.
                 numextra = len(extrafields)
                 if numextra > 0:
                     type="bed%d+%d" %(numfield - numextra, numextra)
