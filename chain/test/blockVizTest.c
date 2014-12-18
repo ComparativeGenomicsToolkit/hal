@@ -27,6 +27,7 @@ struct bv_args_t
    int doSeq;
    int doDupes;
    char* udcPath;
+   char* coalescenceLimit;
 };
 
 static int parseArgs(int argc, char** argv, bv_args_t* args)
@@ -60,12 +61,17 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
       return -1;
     }
   }
-  args->udcPath = NULL;
+  args->coalescenceLimit = NULL;
   if (argc >= 10)
   {
-    args->udcPath = argv[9];
+    args->coalescenceLimit = argv[9];
   }
-  return 0; 
+  args->udcPath = NULL;
+  if (argc >= 11)
+  {
+    args->udcPath = argv[10];
+  }
+  return 0;
 }
 
 static void printBlock(FILE* file, struct hal_block_t* b)
@@ -149,7 +155,8 @@ int main(int argc, char** argv)
   if (parseArgs(argc, argv, &args) != 0)
   {
     fprintf(stderr, "Usage: %s <halLodPath> <qSpecies> <tSpecies> <tChrom> "
-            "<tStart> <tEnd> [doSeq=0] [doDupes=0] [udcPath=NULL]\n\n", argv[0]);
+            "<tStart> <tEnd> [doSeq=0] [doDupes=0] [coalescenceLimit=NULL]"
+            " [udcPath=NULL]\n\n", argv[0]);
     return -1;
   }
 #ifdef ENABLE_UDC
@@ -162,6 +169,29 @@ int main(int argc, char** argv)
   int ret = 0;
   if (handle >= 0)
   {
+    if (args.coalescenceLimit != NULL) {
+      // Verify that the coalescence limit is possible.
+      hal_species_t *coalescenceLimits = halGetPossibleCoalescenceLimits(handle,
+                                                                         args.qSpecies,
+                                                                         args.tSpecies,
+                                                                         NULL);
+      hal_species_t *curSpecies = coalescenceLimits;
+      bool found = false;
+      while (curSpecies != NULL) {
+        if (strcmp(curSpecies->name, args.coalescenceLimit) == 0) {
+          found = true;
+          break;
+        }
+        curSpecies = curSpecies->next;
+      }
+      halFreeSpeciesList(coalescenceLimits);
+      if (!found) {
+        fprintf(stderr, "Coalescence limit %s is not in the set of valid "
+                "coalescence limits for this mapping\n", args.coalescenceLimit);
+        return -1;
+      }
+    }
+
     // printStats(stdout, handle);
     hal_seqmode_type_t sm = HAL_NO_SEQUENCE;
     if (args.doSeq != 0) sm = HAL_LOD0_SEQUENCE;
@@ -176,6 +206,7 @@ int main(int argc, char** argv)
                                  sm, 
                                  HAL_QUERY_AND_TARGET_DUPS,
                                  1,
+                                 args.coalescenceLimit,
                                  NULL);
     if (results == NULL)
     {
