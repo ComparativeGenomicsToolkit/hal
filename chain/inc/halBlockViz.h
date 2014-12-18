@@ -282,10 +282,14 @@ hal_int_t halGetMaxLODQueryLength(int halHandle, char **errStr);
 /** Get the metadata for the genome as a linked list instead of a hash.
     Returns NULL if there isn't any metadata for this genome. */
 struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
-                                            const char *genomeName);
+                                            const char *genomeName,
+                                            char **errStr);
 
 /** Free a metadata linked list. */
 void halFreeMetadataList(struct hal_metadata_t *metadata);
+
+/** Free a linked list of chromosome info. */
+void halFreeChromList(struct hal_chromosome_t *chromosome);
 
 #ifdef __cplusplus
 }

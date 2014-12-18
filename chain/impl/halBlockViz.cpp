@@ -1230,41 +1230,81 @@ void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList)
 }
 
 extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
-                                                       const char *genomeName)
+                                                       const char *genomeName,
+                                                       char **errStr)
 {
   HAL_LOCK
-  AlignmentConstPtr alignment = 
-    getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
-                         false);
+  struct hal_metadata_t *ret = NULL;
+  try {
+    AlignmentConstPtr alignment = 
+      getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                           false);
 
-  const Genome *genome = alignment->openGenome(genomeName);
-  const MetaData *metaData = genome->getMetaData();
-  const map<string, string> metaDataMap = metaData->getMap();
-
-  hal_metadata_t *ret = NULL;
-  hal_metadata_t *prevMetadata = NULL;
-  for (map<string, string>::const_iterator i = metaDataMap.begin();
-       i != metaDataMap.end(); i++) {
-    hal_metadata_t *curMetadata = (hal_metadata_t *) calloc(1, sizeof(hal_metadata_t));
-    curMetadata->key = copyCString(i->first.c_str());
-    curMetadata->value = copyCString(i->second.c_str());
-    if (prevMetadata != NULL) {
-      prevMetadata->next = curMetadata;
-    } else {
-      ret = curMetadata;
+    const Genome *genome = alignment->openGenome(genomeName);
+    if (genome == NULL) {
+      stringstream ss;
+      ss << "Genome " << genomeName << " not found in alignment";
+      throw hal_exception(ss.str());
     }
-    prevMetadata = curMetadata;
+    const MetaData *metaData = genome->getMetaData();
+    const map<string, string> metaDataMap = metaData->getMap();
+
+    hal_metadata_t *prevMetadata = NULL;
+    for (map<string, string>::const_iterator i = metaDataMap.begin();
+         i != metaDataMap.end(); i++) {
+      hal_metadata_t *curMetadata = (hal_metadata_t *) calloc(1, sizeof(hal_metadata_t));
+      curMetadata->key = copyCString(i->first.c_str());
+      curMetadata->value = copyCString(i->second.c_str());
+      if (prevMetadata != NULL) {
+        prevMetadata->next = curMetadata;
+      } else {
+        ret = curMetadata;
+      }
+      prevMetadata = curMetadata;
+    }
   }
-  return ret;
+  catch(exception& e)
+  {
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
+    ret = NULL;
+  }
+  catch(...)
+  {
+
+    stringstream ss;
+    ss << "Error getting Max LOD Query from handle " << halHandle << endl;
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
+    ret = NULL;
+  }
   HAL_UNLOCK
+  return ret;
 }
 
 extern "C" void halFreeMetadataList(struct hal_metadata_t *metadata) {
-    while (metadata != NULL) {
-        struct hal_metadata_t *next = metadata->next;
-        free(metadata->key);
-        free(metadata->value);
-        free(metadata);
-        metadata = next;
-    }
+  while (metadata != NULL) {
+    struct hal_metadata_t *next = metadata->next;
+    free(metadata->key);
+    free(metadata->value);
+    free(metadata);
+    metadata = next;
+  }
+}
+
+extern "C" void halFreeChromList(struct hal_chromosome_t *chroms) {
+  while (chroms != NULL) {
+    free(chroms->name);
+    struct hal_chromosome_t *tmp = chroms->next;
+    free(chroms);
+    chroms = tmp;
+  }
 }
