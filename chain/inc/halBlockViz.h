@@ -168,6 +168,22 @@ void halFreeTargetDupeLists(struct hal_target_dupe_list_t* dupes);
 /** Free linked list of species */
 void halFreeSpeciesList(struct hal_species_t *species);
 
+/** Get the list of species that can act as coalescence limits when
+ * mapping from qSpecies to tSpecies, starting from the MRCA and
+ * traveling up.
+ * @param halHandle handle for the HAL alignment obtained from halOpen
+ * @param qSpecies the name of the query species.
+ * @param tSpecies the name of the reference species.
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
+ * @return species list -- must be freed by halFreeSpeciesList().
+ * NULL on failure.
+*/
+extern "C" struct hal_species_t *halGetPossibleCoalescenceLimits(int halHandle,
+                                                                 const char *qSpecies,
+                                                                 const char *tSpecies,
+                                                                 char **errStr);
+
 /** Create linked list of block structures.  Blocks returned will be all
  * aligned blocks in the query sequence that align to the given range
  * in the reference sequence.  The list will be ordered along the reference.
@@ -193,6 +209,9 @@ void halFreeSpeciesList(struct hal_species_t *species);
  * in the alignment are mapped back ot the target (producing offscreen 
  * results). Must be set to 0 it tReversed is not 0 (so set to 0 when doing 
  * liftover).
+ * @param coalescenceLimitName The name of the genome to use as the
+ * limit for walking back and capturing additional paralogs. If NULL,
+ * defaults to using the MRCA, which gives no extra paralogs.
  * @param errStr pointer to a string that contains an error message on
  * failure. If NULL, throws an exception on failure instead.
  * @return  block structure -- must be freed by halFreeBlockResults().
@@ -208,6 +227,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       hal_seqmode_type_t seqMode,
                                                       hal_dup_type_t dupMode,
                                                       int mapBackAdjacencies,
+                                                      const char *coalescenceLimitName,
                                                       char **errStr);
 
 /** Read alignment into an output file in MAF format.  Interface very 

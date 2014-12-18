@@ -62,12 +62,12 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     endOffset = _refSeg->getEndPosition() - globalEnd;
   }
   _refSeg->slice(startOffset, endOffset);
-  
+
   assert(_refSeg->getStartPosition() ==  globalStart);
   assert(_refSeg->getEndPosition() <= globalEnd);
 
   while (_refSeg->getArrayIndex() < _lastIndex &&
-         _refSeg->getStartPosition() <= globalEnd)  
+         _refSeg->getStartPosition() <= globalEnd)
   {
     if (flip == true)
     {
@@ -82,7 +82,6 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     _refSeg->toRight(globalEnd);
   }
 
-  cleanTargetParalogies();
   vector<MappedSegmentConstPtr> fragments;
   BlockMapper::MSSet emptySet;
   set<hal_index_t> queryCutSet;
@@ -131,26 +130,6 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     if (_outPSL == true && !fragments.empty())
     {
       readPSLInfo(fragments, outBedLine);
-    }
-  }
-}
-
-void BlockLiftover::cleanTargetParalogies()
-{
-  set<MappedSegmentConstPtr>::iterator i;
-  set<MappedSegmentConstPtr>::iterator j;
-  for (i = _mappedSegments.begin(); i != _mappedSegments.end(); i = j)
-  {
-    j = i;
-    ++j;
-    if (j != _mappedSegments.end())
-    {
-      if ((*i)->getStartPosition() == (*j)->getStartPosition() &&
-          (*i)->getEndPosition() == (*j)->getEndPosition())
-      {
-        assert((*i)->getSequence() == (*j)->getSequence());
-        _mappedSegments.erase(i);
-      }
     }
   }
 }

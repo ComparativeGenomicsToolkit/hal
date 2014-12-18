@@ -57,7 +57,7 @@ static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                        const Genome* qGenome, 
                                        bool getSequenceString,
                                        bool doDupes, bool doTargetDupes,
-                                       bool doAdjes);
+                                       bool doAdjes, const char *coalescenceLimitName);
 
 static void readBlock(AlignmentConstPtr seqAlignment,
                       hal_block_t* cur, 
@@ -243,6 +243,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       hal_seqmode_type_t seqMode,
                                                       hal_dup_type_t dupMode,
                                                       int mapBackAdjacencies,
+                                                      const char *coalescenceLimitName,
                                                       char **errStr)
 {
   HAL_LOCK
@@ -322,7 +323,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                          qGenome,
                          getSequenceString, dupMode != HAL_NO_DUPS, 
                          dupMode == HAL_QUERY_AND_TARGET_DUPS,
-                         mapBackAdjacencies != 0);
+                         mapBackAdjacencies != 0, coalescenceLimitName);
   }
   catch(exception& e)
   {
@@ -514,6 +515,82 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
   {
     stringstream ss;
     ss << "Error in hal get species";
+    if (errStr == NULL)
+    {
+      throw hal_exception(ss.str());
+    }
+    *errStr = stString_copy(ss.str().c_str());
+    head = NULL;
+  }
+  HAL_UNLOCK
+  return head;
+}
+
+extern "C" struct hal_species_t *halGetPossibleCoalescenceLimits(int halHandle,
+                                                                 const char *qSpecies,
+                                                                 const char *tSpecies,
+                                                                 char **errStr) {
+  HAL_LOCK
+  hal_species_t* head = NULL;
+  try
+  {
+    // read the lowest level of detail because it's fastest
+    AlignmentConstPtr alignment = 
+       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                            false);
+    hal_species_t* prev = NULL;
+    const Genome *qGenome = alignment->openGenome(qSpecies);
+    const Genome *tGenome = alignment->openGenome(tSpecies);
+    set<const Genome*> inputSet;
+    inputSet.insert(qGenome);
+    inputSet.insert(tGenome);
+    const Genome *mrca = getLowestCommonAncestor(inputSet);
+
+    // Get a list of all ancestors of the MRCA.
+    const Genome *curGenome = mrca;
+    do {
+      hal_species_t* cur = (hal_species_t*)calloc(1, sizeof(hal_species_t));
+      cur->next = NULL;
+      cur->name = copyCString(curGenome->getName());
+      cur->length = curGenome->getSequenceLength();
+      cur->numChroms = curGenome->getNumSequences();
+      if (curGenome->getName() == alignment->getRootName())
+      {
+        cur->parentName = NULL;
+        cur->parentBranchLength = 0;
+      }
+      else
+      {
+        cur->parentName = copyCString(curGenome->getParent()->getName());
+        cur->parentBranchLength = 
+          alignment->getBranchLength(cur->parentName, cur->name);
+      }
+      if (head == NULL)
+      {
+        head = cur;
+      }
+      else
+      {
+        prev->next = cur;
+      }
+      prev = cur;
+    } while ((curGenome = curGenome->getParent()) != NULL);
+  }
+  catch(exception& e)
+  {
+    if (errStr == NULL)
+    {
+      throw hal_exception(e.what());
+    }
+    stringstream ss;
+    ss << "Exception caught: " << e.what() << endl;
+    *errStr = stString_copy(ss.str().c_str());
+    head = NULL;
+  }
+  catch(...)
+  {
+    stringstream ss;
+    ss << "Error in getting possible coalescence limits";
     if (errStr == NULL)
     {
       throw hal_exception(ss.str());
@@ -795,14 +872,16 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                 bool tReversed,
                                 const Genome* qGenome, bool getSequenceString,
                                 bool doDupes, bool doTargetDupes, 
-                                bool doAdjes)
+                                bool doAdjes, const char *coalescenceLimitName)
 {
   const Genome* tGenome = tSequence->getGenome();
   string qGenomeName = qGenome->getName();
   hal_block_t* prev = NULL;
   BlockMapper blockMapper;
-  if (qGenome == tGenome)
+  if (qGenome == tGenome && coalescenceLimitName == NULL)
   {
+    // By default, for self-alignment tracks, walk all the way back to
+    // the root finding paralogies.
     const Alignment *alignment = tGenome->getAlignment();
     const Genome *root = alignment->openGenome(alignment->getRootName());
     blockMapper.init(tGenome, qGenome, absStart, absEnd,
@@ -810,8 +889,24 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   }
   else
   {
+    // Just use the standard parameters, with coalescence limit set to
+    // the genome represented by coalescenceLimitName, or the MRCA if
+    // NULL.
+    const Alignment *alignment = tGenome->getAlignment();
+    const Genome *coalescenceLimit = NULL;
+
+    if (coalescenceLimitName != NULL) {
+      coalescenceLimit = alignment->openGenome(coalescenceLimitName);
+      if (coalescenceLimit == NULL) {
+        stringstream ss;
+        ss << "Could not find coalescence limit "
+           << coalescenceLimitName << " in alignment";
+        throw hal_exception(ss.str());
+      }
+    }
+
     blockMapper.init(tGenome, qGenome, absStart, absEnd,
-                     tReversed, doDupes, 0, doAdjes);
+                     tReversed, doDupes, 0, doAdjes, coalescenceLimit);
   }
   blockMapper.map();
   BlockMapper::MSSet paraSet;

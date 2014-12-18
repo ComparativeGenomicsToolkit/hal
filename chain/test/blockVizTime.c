@@ -112,6 +112,7 @@ int main(int argc, char** argv)
                                  sm, 
                                  HAL_QUERY_AND_TARGET_DUPS,
                                  1,
+                                 NULL,
                                  NULL);
     if (results == NULL)
     {
