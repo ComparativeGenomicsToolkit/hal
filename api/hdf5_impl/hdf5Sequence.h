@@ -86,7 +86,8 @@ public:
                                             bool noDupes,
                                             bool noAncestors,
                                             bool reverseStrand,
-                                            bool unique) const;
+                                            bool unique,
+                                            bool onlyOrthologs) const;
 
    void getString(std::string& outString) const;
 

@@ -23,14 +23,16 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
                                              bool noDupes,
                                              bool noAncestors,
                                              bool reverseStrand,
-                                             bool unique)
+                                             bool unique,
+                                             bool onlyOrthologs)
 :
   _maxInsertionLength(maxInsertLength),
   _noDupes(noDupes),
   _noAncestors(noAncestors),
   _reversed(reverseStrand),
   _tree(NULL),
-  _unique(unique)
+  _unique(unique),
+  _onlyOrthologs(onlyOrthologs)
 {
   assert (columnIndex >= 0 && lastColumnIndex >= columnIndex && 
           lastColumnIndex < (hal_index_t)reference->getSequenceLength());
@@ -375,7 +377,9 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
     }
     handleDeletion(topIt->_it);
     updateParent(topIt);
-    updateNextTopDup(topIt);
+    if (!_onlyOrthologs) {
+        updateNextTopDup(topIt);
+    }
     updateParseDown(topIt);
   } 
 
@@ -874,7 +878,9 @@ void DefaultColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
     updateParent(bottomIt->_topParse);
 
     //recurse on parse link's paralogous siblings
-    updateNextTopDup(bottomIt->_topParse);
+    if (!_onlyOrthologs) {
+        updateNextTopDup(bottomIt->_topParse);
+    }
   }
 }
  

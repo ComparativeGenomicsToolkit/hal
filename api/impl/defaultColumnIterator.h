@@ -29,7 +29,8 @@ public:
                          bool noDupes,
                          bool noAncestors,
                          bool reverseStrand,
-                         bool unique);
+                         bool unique,
+                         bool onlyOrthologs);
    
    virtual ~DefaultColumnIterator();
 
@@ -107,6 +108,7 @@ protected:
    mutable hal_index_t _leftmostRefPos;
    mutable stTree *_tree;
    mutable bool _unique;
+   mutable bool _onlyOrthologs;
 };
 
 inline bool DefaultColumnIterator::parentInScope(const Genome* genome) const
