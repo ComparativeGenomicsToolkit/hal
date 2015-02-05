@@ -34,7 +34,8 @@ public:
                 bool traverseDupes = true,
                 bool outPSL = false,
                 bool outPSLWithName = false,
-                const std::locale* inLocale = NULL);
+                const std::locale* inLocale = NULL,
+                const Genome *coalescenceLimit = NULL);
                    
 protected:
 
@@ -70,6 +71,7 @@ protected:
    
    const Genome* _srcGenome;
    const Genome* _tgtGenome;
+   const Genome* _coalescenceLimit;
    const Sequence* _srcSequence;
    std::set<const Genome*> _tgtSet;
 

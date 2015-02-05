@@ -35,10 +35,12 @@ void Liftover::convert(AlignmentConstPtr alignment,
                        bool traverseDupes,
                        bool outPSL,
                        bool outPSLWithName,
-                       const locale* inLocale)
+                       const locale* inLocale,
+                       const Genome *coalescenceLimit)
 {
   _srcGenome = srcGenome;
   _tgtGenome = tgtGenome;
+  _coalescenceLimit = coalescenceLimit;
   _outBedStream = outBedStream;
   _addExtraColumns = addExtraColumns;
   _inBedVersion = inBedVersion;

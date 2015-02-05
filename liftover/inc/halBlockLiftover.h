@@ -39,7 +39,6 @@ protected:
    hal_index_t _lastIndex;
    std::set<const Genome*> _downwardPath;
    const Genome *_mrca;
-   const Genome *_coalescenceLimit;
 };
 
 }

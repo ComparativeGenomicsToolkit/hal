@@ -37,6 +37,11 @@ static CLParserPtr initParser()
                            "the number of columns (see bed "
                            "format specification for more details). Will "
                            "be same as input by default.", 0);
+  optionsParser->addOption("coalescenceLimit", "coalescence limit genome:"
+                           " the genome at or above the MRCA of source"
+                           " and target at which we stop looking for"
+                           " homologies (default: MRCA)",
+                           "");
   optionsParser->addOptionFlag("outPSL", "write output in PSL instead of "
                                "bed format. overrides --outBedVersion when "
                                "specified.", false);
@@ -65,6 +70,7 @@ int main(int argc, char** argv)
   string srcBedPath;
   string tgtGenomeName;
   string tgtBedPath;
+  string coalescenceLimitName;
   bool noDupes;
   bool append;
   int inBedVersion;
@@ -81,6 +87,7 @@ int main(int argc, char** argv)
     srcBedPath =  optionsParser->getArgument<string>("srcBed");
     tgtGenomeName = optionsParser->getArgument<string>("tgtGenome");
     tgtBedPath =  optionsParser->getArgument<string>("tgtBed");
+    coalescenceLimitName = optionsParser->getOption<string>("coalescenceLimit");
     noDupes = optionsParser->getFlag("noDupes");
     append = optionsParser->getFlag("append");
     inBedVersion = optionsParser->getOption<int>("inBedVersion");
@@ -112,7 +119,7 @@ int main(int argc, char** argv)
                                                            optionsParser);
     if (alignment->getNumGenomes() == 0)
     {
-      throw hal_exception("hal alignmenet is empty");
+      throw hal_exception("hal alignment is empty");
     }
 
     const Genome* srcGenome = alignment->openGenome(srcGenomeName);
@@ -127,7 +134,17 @@ int main(int argc, char** argv)
       throw hal_exception(string("tgtGenome, ") + tgtGenomeName + 
                           ", not found in alignment");
     }
-    
+
+    const Genome *coalescenceLimit = NULL;
+    if (coalescenceLimitName != "") {
+      coalescenceLimit = alignment->openGenome(coalescenceLimitName);
+      if (coalescenceLimit == NULL) {
+        throw hal_exception("coalescence limit genome "
+                            + coalescenceLimitName
+                            + " not found in alignment\n");
+      }
+    }
+
     ifstream srcBed;
     istream* srcBedPtr;
     if (srcBedPath == "stdin")
