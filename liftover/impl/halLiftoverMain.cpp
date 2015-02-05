@@ -189,7 +189,7 @@ int main(int argc, char** argv)
     BlockLiftover liftover;
     liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
                      inBedVersion, outBedVersion, keepExtra, !noDupes,
-                     outPSL, outPSLWithName, inLocale);
+                     outPSL, outPSLWithName, inLocale, coalescenceLimit);
     
     delete inLocale;
 

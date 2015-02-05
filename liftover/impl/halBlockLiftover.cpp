@@ -39,7 +39,9 @@ void BlockLiftover::visitBegin()
   inputSet.insert(_srcGenome);
   inputSet.insert(_tgtGenome);
   _mrca = getLowestCommonAncestor(inputSet);
-  _coalescenceLimit = _mrca;
+  if (_coalescenceLimit == NULL) {
+      _coalescenceLimit = _mrca;
+  }
 
   inputSet.clear();
   inputSet.insert(_coalescenceLimit);
