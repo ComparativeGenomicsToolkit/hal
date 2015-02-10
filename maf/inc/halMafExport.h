@@ -45,6 +45,7 @@ public:
    void setAppend(bool append);
    void setMaxBlockLength(hal_index_t maxLength);
    void setPrintTree(bool printTree);
+   void setOnlyOrthologs(bool onlyOrthologs);
 
 protected:
 
@@ -62,6 +63,7 @@ protected:
    bool _unique;
    bool _append;
    bool _printTree;
+   bool _onlyOrthologs;
 };
 
 }

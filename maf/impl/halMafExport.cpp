@@ -61,6 +61,11 @@ void MafExport::setPrintTree(bool printTree)
   _printTree = printTree;
 }
 
+void MafExport::setOnlyOrthologs(bool onlyOrthologs)
+{
+  _onlyOrthologs = onlyOrthologs;
+}
+
 void MafExport::writeHeader()
 {
   assert(_mafStream != NULL);
@@ -108,7 +113,8 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
                                                         _noDupes,
                                                         _noAncestors,
                                                         false, // reverseStrand,
-                                                        true); // unique
+                                                        true,  // unique
+                                                        _onlyOrthologs);
 
 
   hal_size_t appendCount = 0;
@@ -189,7 +195,8 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
                                                                  _noDupes,
                                                                  _noAncestors,
                                                                  false, // reverseStrand
-                                                                 true); // unique
+                                                                 true,  // unique
+                                                                 _onlyOrthologs);
         colIt->setVisitCache(&visitCache);
         for (;;) {
             if (appendCount == 0) {

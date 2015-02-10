@@ -658,6 +658,15 @@ stTree *DefaultColumnIterator::getTree() const
       tree = getTreeNode(botIt);
       buildTreeR(botIt, tree);
     }
+
+    if (_onlyOrthologs || _noDupes || !_targets.empty()) {
+      // The gene tree, at this point, always represents the full
+      // induced tree found in the HAL graph. If we are showing part
+      // of the full column, we should make sure to give only the
+      // corresponding part of the tree.
+      //getInducedTree(tree);
+    }
+
     assert(tree != NULL);
     _tree = tree;
     return tree;

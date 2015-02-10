@@ -83,6 +83,8 @@ static CLParserPtr initParser()
                                false);
   optionsParser->addOptionFlag("printTree", "print a gene tree for every block",
                                false);
+  optionsParser->addOptionFlag("onlyOrthologs", "make only orthologs to the "
+                               "reference appear in the MAF blocks", false);
 
   optionsParser->setDescription("Convert hal database to maf.");
   return optionsParser;
@@ -108,6 +110,7 @@ int main(int argc, char** argv)
   bool append;
   bool global;
   bool printTree;
+  bool onlyOrthologs;
   hal_index_t maxBlockLen;
   try
   {
@@ -130,6 +133,7 @@ int main(int argc, char** argv)
     global = optionsParser->getFlag("global");
     printTree = optionsParser->getFlag("printTree");
     maxBlockLen = optionsParser->getOption<hal_index_t>("maxBlockLen");
+    onlyOrthologs = optionsParser->getFlag("onlyOrthologs");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -246,6 +250,7 @@ int main(int argc, char** argv)
     mafExport.setAppend(append);
     mafExport.setMaxBlockLength(maxBlockLen);
     mafExport.setPrintTree(printTree);
+    mafExport.setOnlyOrthologs(onlyOrthologs);
 
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")
