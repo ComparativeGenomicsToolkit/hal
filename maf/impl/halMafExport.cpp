@@ -191,6 +191,9 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
                                                                  false, // reverseStrand
                                                                  true); // unique
         colIt->setVisitCache(&visitCache);
+        // So that we don't accidentally visit the first column if it's
+        // already been visited.
+        colIt->toSite(0, genome->getSequenceLength() - 1);
         for (;;) {
             if (appendCount == 0) {
               _mafBlock.initBlock(colIt, _ucscNames, _printTree);
