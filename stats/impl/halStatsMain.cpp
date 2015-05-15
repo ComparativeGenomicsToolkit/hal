@@ -43,6 +43,7 @@ static void printCoverage(ostream& os, AlignmentConstPtr alignment,
                                  const string& genomeName);
 static void printSegments(ostream& os, AlignmentConstPtr alignment,
                           const string& genomeName, bool top);
+static void printAllCoverage(ostream& os, AlignmentConstPtr alignment);
 
 int main(int argc, char** argv)
 {
@@ -104,13 +105,16 @@ int main(int argc, char** argv)
                            "\"\"");
   optionsParser->addOption("coverage",
                            "print histogram of coverage of a genome with"
-                           " all other genomes", "\"\"");
+                           " all genomes", "\"\"");
   optionsParser->addOption("topSegments",
                            "print coordinates of all top segments of given"
                            " genome in BED format.", "\"\"");
   optionsParser->addOption("bottomSegments",
                            "print coordinates of all bottom segments of given"
                            " genome in BED format.", "\"\"");
+  optionsParser->addOptionFlag("allCoverage",
+                               "print histogram of coverage from all genomes to"
+                               " all genomes", false);
 
 
   string path;
@@ -134,6 +138,7 @@ int main(int argc, char** argv)
   string coverage;
   string topSegments;
   string bottomSegments;
+  bool allCoverage;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -158,6 +163,7 @@ int main(int argc, char** argv)
     coverage = optionsParser->getOption<string>("coverage");
     topSegments = optionsParser->getOption<string>("topSegments");
     bottomSegments = optionsParser->getOption<string>("bottomSegments");
+    allCoverage = optionsParser->getFlag("allCoverage");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -179,13 +185,15 @@ int main(int argc, char** argv)
     if (coverage != "\"\"") ++optCount;
     if (topSegments != "\"\"") ++optCount;
     if (bottomSegments != "\"\"") ++optCount;
+    if (allCoverage) ++optCount;
     if (optCount > 1)
     {
       throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                           "--branches, --sequenceStats, --children, --parent, "
                           "--bedSequences, --root, --numSegments, --baseComp, "
                           "--genomeMetaData, --chromSizes, --percentID, "
-                          "--coverage,  --topSegments, --bottomSegments "
+                          "--coverage,  --topSegments, --bottomSegments, "
+                          "--allCoverage "
                           "and --branchLength options are exclusive");
     }
   }
@@ -275,6 +283,8 @@ int main(int argc, char** argv)
     }
     else if (bottomSegments != "\"\"") {
       printSegments(cout, alignment, bottomSegments, false);
+    } else if (allCoverage) {
+      printAllCoverage(cout, alignment);
     }
     else
     {
@@ -757,7 +767,7 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
   // Follow paralogies, but ignore ancestors.
   ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
                                                          NULL_INDEX, false,
-                                                         true);
+                                                         true, false, true);
   map<const Genome *, vector<hal_size_t> *> histograms;
   while(1) {
     const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
@@ -789,7 +799,7 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
         histogram->resize(it->second, 0);
       }
       for (hal_size_t i = 0; i < it->second; i++) {
-        (*histogram)[i] = histogram->at(i) + 1;
+        (*histogram)[i] = histogram->at(i) + numSitesMapped[refGenome];
       }
     }
     if (colIt->getReferenceSequencePosition() % 1000 == 0) {
@@ -799,9 +809,7 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
       // Break here--the column iterator will crash if we try to go further.
       break;
     }
-    // Need to clear the position cache. If there are 2 reference sites in a
-    // column, we should count them both separately.
-    colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, refGenome->getSequenceLength() - 1, true);
+    colIt->toRight();
   }
   hal_size_t maxHistLength = 0;
   for (map<const Genome *, vector<hal_size_t> *>::iterator histIt = histograms.begin();
@@ -814,7 +822,7 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
 
   os << "Genome";
   for (hal_size_t i = 0; i < maxHistLength; i++) {
-    os << ", sitesMapping" << i + 1 << "Times";
+    os << ", sitesCovered" << i + 1 << "Times";
   }
   os << endl;
   for (map<const Genome *, vector<hal_size_t> *>::iterator histIt = histograms.begin();
@@ -866,5 +874,117 @@ static void printSegments(ostream& os, AlignmentConstPtr alignment,
        << (segment->getStartPosition() - sequence->getStartPosition()) << '\t'
        << (segment->getEndPosition() + 1 - sequence->getStartPosition()) << '\n';
     segment->toRight();
+  }
+}
+
+// Print coverage for all leaves vs. all leaves efficiently.
+static void printAllCoverage(ostream& os, AlignmentConstPtr alignment)
+{
+  vector<string> leafNames = alignment->getLeafNamesBelow(alignment->getRootName());
+  vector<const Genome *> leafGenomes;
+  for (hal_size_t i = 0; i < leafNames.size(); i++) {
+    const Genome *genome = alignment->openGenome(leafNames[i]);
+    assert(genome != NULL);
+    leafGenomes.push_back(genome);
+  }
+  ColumnIterator::VisitCache visitCache;
+  map<pair<const Genome *, const Genome *>, vector<hal_size_t> *> histograms;
+  for (hal_size_t i = 0; i < leafGenomes.size(); i++) {
+    const Genome *genome = leafGenomes[i];
+    // Follow paralogies, but ignore ancestors.
+    ColumnIteratorPtr colIt = genome->getColumnIterator(NULL, 0, 0,
+                                                        NULL_INDEX, false,
+                                                        true, false, true);
+    colIt->setVisitCache(&visitCache);
+    // So that we don't accidentally visit the first column if it's
+    // already been visited.
+    colIt->toSite(0, genome->getSequenceLength() - 1);
+    while(1) {
+      const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
+      // Temporary collecting of per-genome sites mapped, since it's
+      // organized in the column map by sequence, not genome.
+      map<const Genome *, hal_size_t> numSitesMapped;
+      for (ColumnIterator::ColumnMap::const_iterator colMapIt = cmap->begin();
+           colMapIt != cmap->end(); colMapIt++) {
+        if (colMapIt->second->empty()) {
+          // There are empty entries in the column map.
+          continue;
+        }
+        const Genome *genome = colMapIt->first->getGenome();
+        if (!numSitesMapped.count(genome)) {
+          // Initialize map entry
+          numSitesMapped[genome] = 0;
+        }
+        const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+        numSitesMapped[genome] = numSitesMapped[genome] + dnaSet->size();
+      }
+      // O(n^2) in the number of genomes in the column -- doesn't seem
+      // like there is a better way, since coverage isn't quite
+      // symmetric.
+      for (map<const Genome *, hal_size_t>::const_iterator it = numSitesMapped.begin();
+           it != numSitesMapped.end(); it++) {
+        for(map<const Genome *, hal_size_t>::const_iterator it2 = numSitesMapped.begin();
+           it2 != numSitesMapped.end(); it2++) {
+          pair<const Genome *, const Genome *> key = make_pair(it->first, it2->first);
+          if (!histograms.count(key)) {
+            // Initialize map
+            histograms[key] = new vector<hal_size_t>;
+          }
+          vector<hal_size_t> *histogram = histograms[key];
+          if (histogram->size() < it2->second) {
+            histogram->resize(it2->second, 0);
+          }
+          for (hal_size_t i = 0; i < it2->second; i++) {
+            (*histogram)[i] = histogram->at(i) + numSitesMapped[it->first];
+          }
+        }
+      }
+      if (colIt->getReferenceSequencePosition() % 1000 == 0) {
+        colIt->defragment();
+      }
+      if (colIt->lastColumn()) {
+        // Break here--the column iterator will crash if we try to go further.
+        break;
+      }
+      colIt->toRight();
+    }
+    // Copy over the updated visit cache information so we can supply it to the next genome.
+    visitCache.clear();
+    ColumnIterator::VisitCache *newVisitCache = colIt->getVisitCache();
+    for(ColumnIterator::VisitCache::iterator it = newVisitCache->begin();
+        it != newVisitCache->end(); it++) {
+      visitCache[it->first] = new PositionCache(*it->second);
+    }
+  }
+
+  hal_size_t maxHistLength = 0;
+  for (map<pair<const Genome *, const Genome *>, vector<hal_size_t> *>::iterator histIt = histograms.begin();
+       histIt != histograms.end(); histIt++) {
+    vector <hal_size_t> *histogram = histIt->second;
+    if (histogram->size() > maxHistLength) {
+      maxHistLength = histogram->size();
+    }
+  }
+
+  os << "FromGenome, ToGenome";
+  for (hal_size_t i = 0; i < maxHistLength; i++) {
+    os << ", sitesCovered" << i + 1 << "Times";
+  }
+  os << endl;
+  for (map<pair<const Genome *, const Genome *>, vector<hal_size_t> *>::iterator histIt = histograms.begin();
+       histIt != histograms.end(); histIt++) {
+    string fromName = histIt->first.second->getName();
+    string toName = histIt->first.first->getName();
+    os << fromName;
+    os << ", " << toName;
+    vector <hal_size_t> *histogram = histIt->second;
+    for(hal_size_t i = 0; i < maxHistLength; i++) {
+      if (i < histogram->size()) {
+        os << ", " << (double) histogram->at(i);
+      } else {
+        os << ", " << 0;
+      }
+    }
+    os << endl;
   }
 }
