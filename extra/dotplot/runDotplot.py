@@ -6,9 +6,17 @@ Requires R and ggplot2."""
 from sonLib.bioio import popenCatch
 from argparse import ArgumentParser
 
-def getBedLineForSequence(halFile, genome, sequence):
+def in_range(element, r):
+    """because python's xrange.__contains__ is O(n) for no good reason.
+    Doesn't work if element is "out of phase" with r's step.
+    """
+    return element >= r[0] and element <= r[-1]
+
+def getBedLineForSequence(halFile, genome, sequence, start, length):
     """Get a bed line from the beginning to the end of a given
-    sequence."""
+    sequence. If start and length are None, the full sequence is
+    returned, otherwise only the given region is.
+    """
     bedLines = popenCatch(
         "halStats --bedSequences %s %s" % (genome, halFile)).split("\n")
     seqLines = filter(lambda x: x[0] == sequence, [line.split() for line in bedLines if line != ""])
@@ -18,7 +26,16 @@ def getBedLineForSequence(halFile, genome, sequence):
     elif len(seqLines) == 0:
         raise RuntimeError("No sequence named %s found in genome %s" % (sequence,
                                                                         genome))
-    return "\t".join(seqLines[0])
+    if start is None and length is None:
+        return "\t".join(seqLines[0])
+    elif start is not None and length is not None:
+        if start + length > int(seqLines[0][2]):
+            raise RuntimeError("Selected region runs off end of sequence.")
+        seqLines[0][1] = str(start)
+        seqLines[0][2] = str(start + length)
+        return "\t".join(seqLines[0])
+    else:
+        raise RuntimeError("Both start and length must be provided.")
 
 def liftoverLine(halFile, refGenome, refBedLine, targetGenome, targetSeq=None):
     """Get a list of PSL lines representing the alignment on the given bed
@@ -35,7 +52,7 @@ def liftoverLine(halFile, refGenome, refBedLine, targetGenome, targetSeq=None):
         pslLines = filter(lambda x: x.split()[13] == targetSeq, pslLines)
     return pslLines
 
-def pslsToDotplotTsv(pslLines, genomeX, seqX, genomeY, seqY):
+def pslsToDotplotTsv(pslLines, genomeX, seqX, genomeY, seqY, startY, lengthY):
     """Convert a list of PSL lines to a dotplot TSV comparable to LASTZ's
     dotplot output, namely:
         <target_name>            <query_name>
@@ -69,6 +86,19 @@ def pslsToDotplotTsv(pslLines, genomeX, seqX, genomeY, seqY):
             sizeY = int(fields[14])
             blocksY = [(sizeY - start, sizeY - start - size) for start, size in \
                        zip(startsY, blockSizes)]
+
+        if startY is not None and lengthY is not None:
+            # Filter out blocks that are outside the selected region in Y
+            # (the filtering for the selected region in X took place
+            # before the liftover).
+            regionY = xrange(startY, startY + lengthY)
+            deleteIndices = [index for index, block in enumerate(blocksY) if not in_range(block[0], regionY) or not in_range(block[1], regionY)]
+            numDeleted = 0
+            for deleteIndex in deleteIndices:
+                del blocksY[deleteIndex - numDeleted]
+                del blocksX[deleteIndex - numDeleted]
+                numDeleted += 1
+
         assert len(blocksX) == len(blocksY)
         for blockX, blockY in zip(blocksX, blocksY):
             tsvLines.append("%d\t%d" % (blockX[0], blockY[0]))
@@ -85,12 +115,22 @@ def main():
     parser.add_argument('genomeY', help="Genome containing seqY")
     parser.add_argument('seqY', help="Sequence in genomeY to be plotted on Y "
                         "axis")
+    parser.add_argument('--startX', help="Start position in sequence X",
+                        type=int)
+    parser.add_argument('--startY', help="Start position in sequence Y",
+                        type=int)
+    parser.add_argument('--lengthX', help="Length in sequence X",
+                        type=int)
+    parser.add_argument('--lengthY', help="Length in sequence Y",
+                        type=int)
     opts = parser.parse_args()
-    bedLineX = getBedLineForSequence(opts.halFile, opts.genomeX, opts.seqX)
+    bedLineX = getBedLineForSequence(opts.halFile, opts.genomeX, opts.seqX,
+                                     opts.startX, opts.lengthX)
     psls = liftoverLine(opts.halFile, opts.genomeX, bedLineX, opts.genomeY,
                         opts.seqY)
     rInput = pslsToDotplotTsv(psls, opts.genomeX, opts.seqX,
-                              opts.genomeY, opts.seqY)
+                              opts.genomeY, opts.seqY, opts.startY,
+                              opts.lengthY)
     for line in rInput:
         print line
 
