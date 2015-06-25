@@ -179,10 +179,10 @@ void halFreeSpeciesList(struct hal_species_t *species);
  * @return species list -- must be freed by halFreeSpeciesList().
  * NULL on failure.
 */
-extern "C" struct hal_species_t *halGetPossibleCoalescenceLimits(int halHandle,
-                                                                 const char *qSpecies,
-                                                                 const char *tSpecies,
-                                                                 char **errStr);
+struct hal_species_t *halGetPossibleCoalescenceLimits(int halHandle,
+                                                      const char *qSpecies,
+                                                      const char *tSpecies,
+                                                      char **errStr);
 
 /** Create linked list of block structures.  Blocks returned will be all
  * aligned blocks in the query sequence that align to the given range
