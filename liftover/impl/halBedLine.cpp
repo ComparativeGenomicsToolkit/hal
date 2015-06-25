@@ -402,7 +402,7 @@ bool BedLine::validatePSL() const
     totBlockLen += _blocks[i]._length;
   }
   
-  if (totBlockLen != psl._matches + psl._misMatches + psl._repMatches)
+  if (totBlockLen != psl._matches + psl._misMatches + psl._repMatches + psl._nCount)
   {
     assert(false); return false;
   }
