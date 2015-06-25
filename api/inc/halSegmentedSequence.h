@@ -91,8 +91,11 @@ public:
     * @param unique calls to toRight() will automatically skip 
     * over bases in the reference sequence that have already been
     * seen in an alignment column (ie homologous to already visited
-    * sites) using the visitCache. */
-
+    * sites) using the visitCache.
+    * @param onlyOrthologs Include only the orthologs for each
+    * reference base. In practice, this means paralogy edges are only
+    * followed when moving down the tree for a particular column,
+    * never up. */
    virtual ColumnIteratorConstPtr getColumnIterator(
      const std::set<const Genome*>* targets = NULL,
      hal_size_t maxInsertLength = 0,
@@ -101,7 +104,8 @@ public:
      bool noDupes = false,
      bool noAncestors = false,
      bool reverseStrand = false,
-     bool unique = false) const = 0;
+     bool unique = false,
+     bool onlyOrthologs = false) const = 0;
 
    /** Get the character string underlying the segmented sequence
     * @param outString String object into which we copy the result */

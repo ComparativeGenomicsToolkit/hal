@@ -23,14 +23,16 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
                                              bool noDupes,
                                              bool noAncestors,
                                              bool reverseStrand,
-                                             bool unique)
+                                             bool unique,
+                                             bool onlyOrthologs)
 :
   _maxInsertionLength(maxInsertLength),
   _noDupes(noDupes),
   _noAncestors(noAncestors),
   _reversed(reverseStrand),
   _tree(NULL),
-  _unique(unique)
+  _unique(unique),
+  _onlyOrthologs(onlyOrthologs)
 {
   assert (columnIndex >= 0 && lastColumnIndex >= columnIndex && 
           lastColumnIndex < (hal_index_t)reference->getSequenceLength());
@@ -375,7 +377,9 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
     }
     handleDeletion(topIt->_it);
     updateParent(topIt);
-    updateNextTopDup(topIt);
+    if (!_onlyOrthologs) {
+        updateNextTopDup(topIt);
+    }
     updateParseDown(topIt);
   } 
 
@@ -654,6 +658,15 @@ stTree *DefaultColumnIterator::getTree() const
       tree = getTreeNode(botIt);
       buildTreeR(botIt, tree);
     }
+
+    if (_onlyOrthologs || _noDupes || !_targets.empty()) {
+      // The gene tree, at this point, always represents the full
+      // induced tree found in the HAL graph. If we are showing part
+      // of the full column, we should make sure to give only the
+      // corresponding part of the tree.
+      //getInducedTree(tree);
+    }
+
     assert(tree != NULL);
     _tree = tree;
     return tree;
@@ -874,7 +887,9 @@ void DefaultColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
     updateParent(bottomIt->_topParse);
 
     //recurse on parse link's paralogous siblings
-    updateNextTopDup(bottomIt->_topParse);
+    if (!_onlyOrthologs) {
+        updateNextTopDup(bottomIt->_topParse);
+    }
   }
 }
  
