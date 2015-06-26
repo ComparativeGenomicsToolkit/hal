@@ -609,7 +609,7 @@ stTree *DefaultColumnIterator::getTree() const
     // Because the tree-finding code goes all the way up the column
     // tree and I'm too lazy to make it smarter.
     throw hal_exception("Cannot get the tree for a column iterator "
-                        "which only displays orthologs.")
+                        "which only displays orthologs.");
   }
   if (_tree != NULL) {
     return _tree;
