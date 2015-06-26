@@ -187,13 +187,13 @@ void BlockLiftover::readPSLInfo(vector<MappedSegmentConstPtr>& fragments,
           ++psl._repMatches;
         }
       }
+      else if (isMissingData(tBuf[j]))
+      {
+        ++psl._nCount;
+      }
       else
       {
         ++psl._misMatches;
-      }
-      if (isMissingData(tBuf[j]))
-      {
-        ++psl._nCount;
       }
     }
   }

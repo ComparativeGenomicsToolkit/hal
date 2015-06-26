@@ -6,13 +6,13 @@ modules = api stats randgen validate mutations fasta alignmentDepth liftover lod
 all : ${modules:%=all.%}
 
 all.%:
-	cd $* && make all
+	cd $* && ${MAKE} all
 
 clean:  ${modules:%=clean.%}
 	rm -rf lib/*.h bin/*.dSYM
 
 clean.%:
-	cd $* && make clean
+	cd $* && ${MAKE} clean
 
 test: all
 	python allTests.py
@@ -20,4 +20,4 @@ test: all
 doxy : ${modules:%=doxy.%}
 
 doxy.%:
-	cd api && make doxy
+	cd api && ${MAKE} doxy
