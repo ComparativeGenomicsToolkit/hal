@@ -141,7 +141,9 @@ static void* getBlocksWrapper(void* voidArgs)
                                         0,
                                         sm, 
                                         HAL_QUERY_AND_TARGET_DUPS,
-                                        1);
+                                        1,
+                                        args->coalescenceLimit,
+                                        NULL);
     halFreeBlockResults(results);
   }
   pthread_exit(NULL);
