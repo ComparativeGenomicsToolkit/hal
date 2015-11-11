@@ -55,15 +55,9 @@ void LodManager::loadLODFile(const string& lodPath,
                              CLParserConstPtr options)
 {
   _map.clear();
-  bool loadAll = false;
 
 #ifdef ENABLE_UDC
   char* cpath = const_cast<char*>(lodPath.c_str());
-  if (lodPath.find("http") == 0)
-  {
-    unsigned long cpathAge = udcCacheAge(cpath, NULL);
-    loadAll = cpathAge > MaxAgeSec;
-  }
   
   size_t cbufSize = 0;
   char* cbuffer = udcFileReadAll(cpath, NULL, 100000, &cbufSize);
@@ -133,10 +127,6 @@ void LodManager::loadLODFile(const string& lodPath,
   }
 
   checkMap(lodPath);
-  if (loadAll == true)
-  {
-    preloadAlignments();
-  }
 }
 
 void LodManager::loadSingeHALFile(const string& halPath,
@@ -263,19 +253,3 @@ void LodManager::checkAlignment(hal_size_t minQuery,
   }
 #endif
 }
-
-void LodManager::preloadAlignments()
-{
-  for (AlignmentMap::iterator i = _map.begin(); i != _map.end(); ++i)
-  {
-    AlignmentConstPtr alignment = getAlignment(i->first, false);
-    if (alignment->getNumGenomes() > 0)
-    {
-      const Genome* root = alignment->openGenome(alignment->getRootName()); 
-      (void)root;
-//      set<const Genome*> genomeSet;
-//      getGenomesInSubTree(root, genomeSet);
-     }
-  }
-}
-
