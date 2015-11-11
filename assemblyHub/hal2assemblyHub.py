@@ -288,20 +288,8 @@ class WriteTrackDbFile( Target ):
         if self.options.rmskdir:
             writeTrackDb_rmsk(f, os.path.join(self.options.rmskdir, currgenome), self.outdir)
 
-        #Get order of genomes relative to currgenome:
         genomes = self.genomes
         treeGenomes = self.genomes
-        if not self.options.genomes:
-            if self.options.tree:
-                treeGenomes = []
-                for g in  self.options.leaves:
-                    if g in self.genomes:
-                        treeGenomes.append(g)
-                genomes = treeGenomes
-            #genomes = []
-            #for g in inorder_relative(self.options.tree, currgenome):
-            #    if g in self.genomes:
-            #        genomes.append(g)
         
         #Get the neighboring genomes:
         subgenomes = getNeighbors(self.options.tree, currgenome)
