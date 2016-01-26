@@ -129,8 +129,10 @@ def computeMAFStats(options):
 # msa_view(75116) malloc: *** mmap(size=18446744056529682432) failed (error code=12)
 # *** error: can't allocate region
 def computeAgMAFStats(options):
-    halSpecies = ",".join(options.halGenomes)
-    
+    if options.targetGenomes is not None:
+        halSpecies = ",".join(options.halGenomes)
+    else:
+        halSpecies = options.targetGenomes
     runShellCommand("msa_view -o SS -z --in-format MAF --aggregate %s %s > %s" % (
         halSpecies, options.outMafAllPaths, 
         options.outMafSS))
