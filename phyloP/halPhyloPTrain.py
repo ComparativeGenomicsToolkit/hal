@@ -84,6 +84,8 @@ def extractGeneMAFs(options):
                 h2mFlags += " --noAncestors"
             if options.sliceSize is not None:
                 h2mFlags += " --sliceSize %d" % options.sliceSize
+            if options.targetGenomes is not None:
+                h2mFlags += " --targetGenomes %s" % options.targetGenomes
             runShellCommand("hal2mafMP.py %s %s %s "
                             "--numProc %d --refTargets %s --refGenome %s "
                             % (options.hal, outMaf, h2mFlags,options.numProc,
@@ -127,8 +129,10 @@ def computeMAFStats(options):
 # msa_view(75116) malloc: *** mmap(size=18446744056529682432) failed (error code=12)
 # *** error: can't allocate region
 def computeAgMAFStats(options):
-    halSpecies = ",".join(options.halGenomes)
-    
+    if options.targetGenomes is not None:
+        halSpecies = ",".join(options.halGenomes)
+    else:
+        halSpecies = options.targetGenomes
     runShellCommand("msa_view -o SS -z --in-format MAF --aggregate %s %s > %s" % (
         halSpecies, options.outMafAllPaths, 
         options.outMafSS))
@@ -215,6 +219,9 @@ def main(argv=None):
                         " in the alignment. Note that it is best to enclose"
                         " this string in quotes",
                         default=None)
+    parser.add_argument("--targetGenomes", default=None,
+                        help="comma separated list of targetGenomes to pass to "
+                        "hal2maf. If used, the tree given to --tree should match.")
     parser.add_argument("--substMod", help="Substitution model for phyloFit"
                         ": valid options are JC69|F81|HKY85|HKY85+Gap|REV|"
                         "SSREV|UNREST|R2|R2S|U2|U2S|R3|R3S|U3|U3S",
@@ -247,6 +254,12 @@ def main(argv=None):
     args.halGenomes = getHalGenomes(args.hal)
     if not args.refGenome in args.halGenomes:
         raise RuntimeError("Reference genome %s not found." % args.refGenome)
+    if args.targetGenomes is not None:
+        for targetGenome in args.targetGenomes.split(","):
+            if targetGenome not in args.halGenomes:
+                raise RuntimeError("Target genome %s not in HAL." % targetGenome)
+            if targetGenome not in args.tree:
+                raise RuntimeError("Target genome %s not in provided tree." % targetGenome)
     if os.path.splitext(args.outMod)[1] != ".mod":
         raise RuntimeError("Output model must have .mod extension")
     if not args.substMod in "JC69|F81|HKY85|HKY85+Gap|REV|SSREV|UNREST|R2|R2S|U2|U2S|R3|R3S|U3|U3S".split("|"):
