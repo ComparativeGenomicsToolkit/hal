@@ -271,16 +271,16 @@ int main(int argc, char** argv)
     }
     else
     {
-      if (start == 0 && length == 0 && ref->getSequenceLength() == 0)
+      if(global)
+      {
+        mafExport.convertEntireAlignment(mafStream, alignment);
+      }
+      else if (start == 0 && length == 0 && ref->getSequenceLength() == 0)
       {
         string refSeqName = 
            refSequence != NULL ? refSequence->getName() : refGenome->getName();
         cerr << "hal2maf: Warning reference sequence " << refSeqName
              << " has zero length.  MAF output will be empty" << endl;
-      }
-      else if(global)
-      {
-        mafExport.convertEntireAlignment(mafStream, alignment);
       }
       else
       {
