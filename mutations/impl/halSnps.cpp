@@ -415,6 +415,9 @@ static void countSnps(const Genome* refGenome,
           orthologSet->insert(dnaItToInsert);
         }
       }
+      if ((*refDnaIt)->getArrayIndex() != colIt->getReferenceSequencePosition()) {
+        throw hal_exception("reference dna is in wrong place");
+      }
       orthologs.insert(make_pair(refDnaIt, orthologSet));
     }
 
@@ -481,7 +484,13 @@ static void countSnps(const Genome* refGenome,
         }
         refTsvStream << endl;
       }
+
+      for (set<DNAIteratorConstPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
+      {
+        delete *orthologIt;
+      }
       delete orthologSet;
+      delete orthologsIt->first;
     }
 
     if (colIt->lastColumn()) {
