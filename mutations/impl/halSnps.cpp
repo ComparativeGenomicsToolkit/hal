@@ -415,7 +415,7 @@ static void countSnps(const Genome* refGenome,
           orthologSet->insert(dnaItToInsert);
         }
       }
-      if ((*refDnaIt)->getArrayIndex() != colIt->getReferenceSequencePosition()) {
+      if ((*refDnaIt)->getArrayIndex() != colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition()) {
         throw hal_exception("reference dna is in wrong place");
       }
       orthologs.insert(make_pair(refDnaIt, orthologSet));
