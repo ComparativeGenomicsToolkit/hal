@@ -28,7 +28,7 @@ def getGenomeBed(halFile, genome, output):
     """Put a BED file covering all sequences in the genome at the output path."""
     system("halStats --bedSequences %s %s > %s" % (genome, halFile, output))
 
-def createTrackDb(target, genome, genomes, hal1, hal2, label1, label2, hubDir):
+def createTrackDb(target, genome, genomes, hals, labels, hubDir):
     """Create the trackDb.txt for a specific genome."""
     if not os.path.isdir(os.path.join(hubDir, genome)):
         os.makedirs(os.path.join(hubDir, genome))
@@ -46,7 +46,7 @@ type bigBed 3
 
 ''')
         for i, targetGenome in enumerate(genomes):
-            for halLabel, halPath in zip([label1, label2], [hal1, hal2]):
+            for halLabel, halPath in zip(labels, hals):
                 trackDb.write('''
 	track snake{genome}_{halName}
 	longLabel {genome}_{halName}
@@ -118,10 +118,10 @@ def writeSequenceData(genomes, hal, hubDir):
         system("faToTwoBit %s %s" % (fasta, os.path.join(hubDir, genome, genome + '.2bit')))
         system("twoBitInfo %s %s" % (os.path.join(hubDir, genome, genome + '.2bit'), os.path.join(hubDir, genome, 'chrom.sizes')))
 
-def linkHals(hubDir, hal1, hal2):
+def linkHals(hubDir, hals):
     """Symlink the hals to the hub directory."""
-    system("ln -s %s %s" % (hal1, hubDir))
-    system("ln -s %s %s" % (hal2, hubDir))
+    for hal in hals:
+        system("ln -sf %s %s" % (hal, hubDir))
 
 def createHub(target, genomes, opts):
     """Main method that organizes the creation of the meta-compartive hub."""
@@ -129,10 +129,10 @@ def createHub(target, genomes, opts):
     if not os.path.isdir(opts.hubDir):
         os.makedirs(opts.hubDir)
     writeHubFile(os.path.join(opts.hubDir, 'hub.txt'),
-                 hubName="%s_vs_%s" % (opts.label1, opts.label2))
-    writeGenomesFile(os.path.join(opts.hubDir, 'genomes.txt'), opts.hal1, genomes)
-    writeSequenceData(genomes, opts.hal1, opts.hubDir)
-    linkHals(opts.hubDir, opts.hal1, opts.hal2)
+                 hubName="_vs_".join(opts.labels))
+    writeGenomesFile(os.path.join(opts.hubDir, 'genomes.txt'), opts.hals[0], genomes)
+    writeSequenceData(genomes, opts.hals[0], opts.hubDir)
+    linkHals(opts.hubDir, opts.hals)
 
     # Liftover all genomes
     for genome1 in genomes:
@@ -142,32 +142,30 @@ def createHub(target, genomes, opts):
             # target.addChildTargetFn(liftoverEntireGenome, (opts.hal2, genome1, genome2))
     # Create trackDbs
     for genome in genomes:
-        target.addChildTargetFn(createTrackDb, (genome, genomes, opts.hal1, opts.hal2, opts.label1, opts.label2, opts.hubDir))
+        target.addChildTargetFn(createTrackDb, (genome, genomes, opts.hals, opts.labels, opts.hubDir))
     # Create the bed files that display differential coverage
 
 def parse_args():
     """Parses arguments from sys.argv."""
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument('hal1', help='First hal file')
-    parser.add_argument('hal2', help='Second hal file')
     parser.add_argument('hubDir', help='Directory to place the finished hub in')
-    parser.add_argument('--label1', help='Label for first hal file (default: hal file name)')
-    parser.add_argument('--label2', help='Label for second hal file (default: hal file name)')
+    parser.add_argument('hals', nargs='+', help='Hal files')
+    parser.add_argument('--labels', nargs='+', help='Labels for hal files (default: hal file name)')
     Stack.addJobTreeOptions(parser)
     return parser.parse_args()
 
 def main():
     opts = parse_args()
     # Create labels for the HALs if none were provided
-    if opts.label1 is None:
-        opts.label1 = os.path.basename(opts.hal1)
-    if opts.label2 is None:
-        opts.label2 = os.path.basename(opts.hal2)
+    if opts.labels is None:
+        opts.labels = [os.path.basename(hal) for hal in opts.hals]
+    if len(opts.labels) != len(opts.hals):
+        raise ValueError("%d labels were provided, but %d hals were provided." % (len(opts.labels), len(opts.hals)))
 
-    # Ensure that the hals have some genomes in common
-    genomes1 = getGenomesInHal(opts.hal1)
-    genomes2 = getGenomesInHal(opts.hal2)
-    genomes = genomes1 & genomes2
+    # Ensure that the hals have some genomes in common, and take the
+    # common genomes to display in the hub.
+    genomess = [getGenomesInHal(hal) for hal in opts.hals]
+    genomes = reduce(lambda a, i: a.intersection(i), genomess)
     if len(genomes) == 0:
         raise ValueError("No genomes in common between the HALs.")
 
