@@ -149,7 +149,7 @@ def parse_args():
     """Parses arguments from sys.argv."""
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('hubDir', help='Directory to place the finished hub in')
-    parser.add_argument('hals', nargs='+', help='Hal files')
+    parser.add_argument('hals', type=os.path.abspath, nargs='+', help='Hal files')
     parser.add_argument('--labels', nargs='+', help='Labels for hal files (default: hal file name)')
     Stack.addJobTreeOptions(parser)
     return parser.parse_args()
