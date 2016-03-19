@@ -94,8 +94,8 @@ def writeGenomesFile(genomesTxtPath, halFile, genomes):
             maxChrom = max(chromSizes.iterkeys(), key=lambda x: chromSizes[x])
             defaultPosStart = chromSizes[maxChrom] / 2 - 5000
             defaultPosEnd = chromSizes[maxChrom] /  2 + 5000
-            defaultPosStart = min(defaultPosStart, 0)
-            defaultPosEnd = max(defaultPosEnd, chromSizes[maxChrom])
+            defaultPosStart = max(defaultPosStart, 0)
+            defaultPosEnd = min(defaultPosEnd, chromSizes[maxChrom])
 
             genomesFile.write('''
 genome {genome}
