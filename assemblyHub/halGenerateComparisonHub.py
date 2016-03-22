@@ -107,16 +107,15 @@ description {genome}
 defaultPos {maxChrom}:{defaultPosStart}-{defaultPosEnd}
 '''.format(genome=genome, maxChrom=maxChrom, defaultPosStart=defaultPosStart, defaultPosEnd=defaultPosEnd))
 
-def writeSequenceData(genomes, hal, hubDir):
-    """Write the .2bit and chrom.sizes for each genome."""
-    for genome in genomes:
-        if not os.path.isdir(os.path.join(hubDir, genome)):
-            os.makedirs(os.path.join(hubDir, genome))
-
-        fasta = getTempFile()
-        system("hal2fasta %s %s > %s" % (hal, genome, fasta))
-        system("faToTwoBit %s %s" % (fasta, os.path.join(hubDir, genome, genome + '.2bit')))
-        system("twoBitInfo %s %s" % (os.path.join(hubDir, genome, genome + '.2bit'), os.path.join(hubDir, genome, 'chrom.sizes')))
+def writeSequenceData(target, genome, hal, hubDir):
+    """Write the .2bit and chrom.sizes for a genome."""
+    if not os.path.isdir(os.path.join(hubDir, genome)):
+        os.makedirs(os.path.join(hubDir, genome))
+    fasta = getTempFile()
+    system("hal2fasta %s %s > %s" % (hal, genome, fasta))
+    system("faToTwoBit %s %s" % (fasta, os.path.join(hubDir, genome, genome + '.2bit')))
+    system("twoBitInfo %s %s" % (os.path.join(hubDir, genome, genome + '.2bit'), os.path.join(hubDir, genome, 'chrom.sizes')))
+    os.remove(fasta)
 
 def linkHals(hubDir, hals):
     """Symlink the hals to the hub directory."""
@@ -131,7 +130,8 @@ def createHub(target, genomes, opts):
     writeHubFile(os.path.join(opts.hubDir, 'hub.txt'),
                  hubName="_vs_".join(opts.labels))
     writeGenomesFile(os.path.join(opts.hubDir, 'genomes.txt'), opts.hals[0], genomes)
-    writeSequenceData(genomes, opts.hals[0], opts.hubDir)
+    for genome in genomes:
+        target.addChildTargetFn(writeSequenceData, (genome, opts.hals[0], opts.hubDir))
     linkHals(opts.hubDir, opts.hals)
 
     # Liftover all genomes
