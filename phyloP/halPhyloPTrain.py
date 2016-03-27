@@ -129,7 +129,7 @@ def computeMAFStats(options):
 # msa_view(75116) malloc: *** mmap(size=18446744056529682432) failed (error code=12)
 # *** error: can't allocate region
 def computeAgMAFStats(options):
-    if options.targetGenomes is not None:
+    if options.targetGenomes is None:
         halSpecies = ",".join(options.halGenomes)
     else:
         halSpecies = options.targetGenomes
@@ -221,7 +221,7 @@ def main(argv=None):
                         default=None)
     parser.add_argument("--targetGenomes", default=None,
                         help="comma separated list of targetGenomes to pass to "
-                        "hal2maf. If used, the tree given to --tree should match.")
+                        "hal2maf. If used, --tree is required and should match.")
     parser.add_argument("--substMod", help="Substitution model for phyloFit"
                         ": valid options are JC69|F81|HKY85|HKY85+Gap|REV|"
                         "SSREV|UNREST|R2|R2S|U2|U2S|R3|R3S|U3|U3S",
@@ -254,6 +254,8 @@ def main(argv=None):
     args.halGenomes = getHalGenomes(args.hal)
     if not args.refGenome in args.halGenomes:
         raise RuntimeError("Reference genome %s not found." % args.refGenome)
+    if args.targetGenomes is not None and args.tree is None:
+        raise RuntimeError("Need to provide a tree when providing target genomes.")
     if args.targetGenomes is not None:
         for targetGenome in args.targetGenomes.split(","):
             if targetGenome not in args.halGenomes:
