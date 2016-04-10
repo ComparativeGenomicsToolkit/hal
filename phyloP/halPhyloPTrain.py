@@ -130,14 +130,13 @@ def computeMAFStats(options):
 # *** error: can't allocate region
 def computeAgMAFStats(options):
     if options.targetGenomes is not None:
-        halSpecies = ",".join(options.halGenomes)
+        species = ",".join(options.targetGenomes)
     else:
-        halSpecies = options.targetGenomes
+        species = ",".join(options.halGenomes)
     runShellCommand("msa_view -o SS -z --in-format MAF --aggregate %s %s > %s" % (
-        halSpecies, options.outMafAllPaths, 
+        species, options.outMafAllPaths,
         options.outMafSS))
     runShellCommand("rm -f %s" % options.outMafAllPaths)
-    #runShellCommand("rm -f %s" % options.outMafAllPaths.replace(".maf", ".SS"))
     runShellCommand("rm -f %s" % options.outMafAllPaths.replace(".maf", 
                                                                 ".maf-e"))
 
