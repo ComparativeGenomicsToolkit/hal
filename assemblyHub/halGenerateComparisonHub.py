@@ -43,8 +43,11 @@ view Alignments
 visibility full
 compositeTrack on
 type bigBed 3
+subGroup1 view Track_Type Snake=Alignments
+subGroup2 orgs Organisms {genomeSubgroupList}
+dimensions dimensionX=view dimensionY=orgs
 
-''')
+'''.format(genomeSubgroupList=" ".join([genome + "=" + genome for genome in genomes])))
         for i, targetGenome in enumerate(genomes):
             for halLabel, halPath in zip(labels, hals):
                 trackDb.write('''
@@ -55,6 +58,7 @@ type bigBed 3
 	visibility full
 	parent alignments
         priority {index}
+        subGroups view=Snake orgs={genome}
 	bigDataUrl {halPath}
 	type halSnake
 
