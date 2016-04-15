@@ -108,9 +108,8 @@ From the same parent directory where you downloaded HAL:
 
 *  Install Phast (Mac or Linux)
 
-     `svn co http://compgen.bscb.cornell.edu/svnrepo/phast/trunk phast/`  
+     `git clone https://github.com/CshlSiepelLab/phast.git`  
      `cd phast`  
-     ``export PHAST=`pwd` ``  
      `cd src && make`  
      `cd ../..`  
 
