@@ -30,9 +30,6 @@ def getGenomeBed(halFile, genome, output):
 
 def createTrackDb(target, genome, genomes, hals, labels, hubDir):
     """Create the trackDb.txt for a specific genome."""
-    if not os.path.isdir(os.path.join(hubDir, genome)):
-        os.makedirs(os.path.join(hubDir, genome))
-
     # Snake tracks.
     with open(os.path.join(hubDir, genome, 'trackDb.txt'), 'w') as trackDb:
         trackDb.write('''
@@ -62,7 +59,7 @@ dimensions dimensionX=view dimensionY=orgs
 	bigDataUrl {halPath}
 	type halSnake
 
-'''.format(genome=targetGenome, halName=halLabel, index=i, halPath="../" + os.path.basename(halPath)))
+'''.format(genome=targetGenome, halName=halLabel, index=i, halPath=halPath))
 
 def liftoverEntireGenome(target, halFile, fromGenome, toGenome, toBed):
     fromBed = os.path.join(target.getLocalTempDir(), 'from.bed')
@@ -123,8 +120,12 @@ def writeSequenceData(target, genome, hal, hubDir):
 
 def linkHals(hubDir, hals):
     """Symlink the hals to the hub directory."""
-    for hal in hals:
-        system("ln -sf %s %s" % (hal, hubDir))
+    relativePaths = []
+    for i, hal in enumerate(hals):
+        uniqueName = 'input_%d' % i + ".hal"
+        system("ln -sf %s %s" % (hal, os.path.join(hubDir, uniqueName)))
+        relativePaths.append('../' + uniqueName)
+    return relativePaths
 
 def createHub(target, genomes, opts):
     """Main method that organizes the creation of the meta-compartive hub."""
@@ -136,7 +137,7 @@ def createHub(target, genomes, opts):
     writeGenomesFile(os.path.join(opts.hubDir, 'genomes.txt'), opts.hals[0], genomes)
     for genome in genomes:
         target.addChildTargetFn(writeSequenceData, (genome, opts.hals[0], opts.hubDir))
-    linkHals(opts.hubDir, opts.hals)
+    relativeHalPaths = linkHals(opts.hubDir, opts.hals)
 
     # Liftover all genomes
     for genome1 in genomes:
@@ -146,7 +147,7 @@ def createHub(target, genomes, opts):
             # target.addChildTargetFn(liftoverEntireGenome, (opts.hal2, genome1, genome2))
     # Create trackDbs
     for genome in genomes:
-        target.addChildTargetFn(createTrackDb, (genome, genomes, opts.hals, opts.labels, opts.hubDir))
+        target.addChildTargetFn(createTrackDb, (genome, genomes, relativeHalPaths, opts.labels, opts.hubDir))
     # Create the bed files that display differential coverage
 
 def parse_args():
