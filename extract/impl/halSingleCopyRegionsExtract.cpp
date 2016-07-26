@@ -15,17 +15,20 @@ static CLParserPtr initParser()
   optionsParser->addOption("targetGenomes", "genomes to check for homologous "
                            "duplicated sites (comma-separated, default=leaves)",
                            "");
-  optionsParser->addOption("seqStartNum", "sequence number to start with", 0);
-  optionsParser->addOption("seqEndNum", "sequence number to end with", -1);
+  optionsParser->addOption("refSequence", "sequence to traverse", "");
+  optionsParser->addOption("start", "start position within the sequence "
+                           "(within entire genome if --refSequence is not "
+                           "set)", 0);
+  optionsParser->addOption("length", "length to traverse (default: until end "
+                           "of genome/sequence)", -1);
   optionsParser->addOptionFlag("requireAllTargets", "require the regions to be present in all target genomes", false);
   return optionsParser;
 }
 
 int main(int argc, char *argv[])
 {
-  string halPath, referenceGenomeName, targetGenomesUnsplit;
-  hal_index_t seqStartPos = 0;
-  hal_index_t seqEndPos = -1;
+  string halPath, referenceGenomeName, targetGenomesUnsplit, refSequence;
+  hal_index_t start, length;
   CLParserPtr optParser = initParser();
   bool requireAllTargets = false;
   try {
@@ -33,8 +36,9 @@ int main(int argc, char *argv[])
     halPath = optParser->getArgument<string>("halFile");
     referenceGenomeName = optParser->getArgument<string>("referenceGenome");
     targetGenomesUnsplit = optParser->getOption<string>("targetGenomes");
-    seqStartPos = optParser->getOption<hal_index_t>("seqStartNum");
-    seqEndPos = optParser->getOption<hal_index_t>("seqEndNum");
+    refSequence = optParser->getOption<string>("refSequence");
+    start = optParser->getOption<hal_index_t>("start");
+    length = optParser->getOption<hal_index_t>("length");
     requireAllTargets = optParser->getFlag("requireAllTargets");
   } catch (exception &e) {
     cerr << e.what() << endl;
@@ -55,17 +59,34 @@ int main(int argc, char *argv[])
     targetGenomes.insert(alignment->openGenome(targetGenomeNames[i]));
   }
   const Genome *referenceGenome = alignment->openGenome(referenceGenomeName);
-  ColumnIteratorConstPtr colIt = referenceGenome->getColumnIterator();
-  BedLine curBedLine;
+  if (referenceGenome == NULL) {
+      throw hal_exception("Genome " + referenceGenomeName + " not present in alignment");
+  }
 
   ostream &os = cout;
-  SequenceIteratorConstPtr seqIt = referenceGenome->getSequenceIterator(seqStartPos);
-  SequenceIteratorConstPtr seqItEnd = (seqEndPos == -1) ? referenceGenome->getSequenceEndIterator() : referenceGenome->getSequenceIterator(seqEndPos + 1);
-  for (; seqIt != seqItEnd; seqIt->toNext()) {
-    ColumnIteratorConstPtr colIt = seqIt->getSequence()->getColumnIterator();
-    bool inRegion = false;
-    BedLine curBedLine;
-    while (1) {
+  const SegmentedSequence *sequence;
+  size_t seqStart, seqEnd;
+  if (refSequence != "") {
+      sequence = referenceGenome->getSequence(refSequence);
+      seqStart = referenceGenome->getSequence(refSequence)->getStartPosition();
+      seqEnd = referenceGenome->getSequence(refSequence)->getEndPosition();
+  } else {
+      sequence = referenceGenome;
+      seqStart = 0;
+      seqEnd = referenceGenome->getSequenceLength() - 1;
+  }
+  if (length > (hal_index_t) (seqEnd - seqStart - start)) {
+      throw hal_exception("region too long, goes off the end of sequence or genome.");
+  }
+  ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&targetGenomes,
+      0,
+      start,
+      length == -1 ? NULL_INDEX : start + length);
+  bool inRegion = false;
+  BedLine curBedLine;
+  const Sequence *prevSequence = NULL;
+  hal_index_t prevPos = NULL_INDEX;
+  while (1) {
       bool wasInRegion = inRegion;
       inRegion = true;
       const ColumnIterator::ColumnMap *cols = colIt->getColumnMap();
@@ -73,53 +94,53 @@ int main(int argc, char *argv[])
       set <const Genome *> seenGenomes;
       unsigned int targetGenomeCount = 0;
       for (colMapIt = cols->begin(); colMapIt != cols->end(); colMapIt++) {
-        if (colMapIt->second->empty()) {
-          // The column map can contain empty entries.
-          continue;
-        }
-        const Genome *colGenome = colMapIt->first->getGenome();
-        if (targetGenomes.count(colGenome)) {
-          targetGenomeCount++;
-          if (seenGenomes.count(colGenome) || colMapIt->second->size() > 1) {
-            // Duplication -- not single-copy among targets.
-            inRegion = false;
+          if (colMapIt->second->empty()) {
+              // The column map can contain empty entries.
+              continue;
           }
-          seenGenomes.insert(colGenome);
-        }    
+          const Genome *colGenome = colMapIt->first->getGenome();
+          if (targetGenomes.count(colGenome)) {
+              targetGenomeCount++;
+              if (seenGenomes.count(colGenome) || colMapIt->second->size() > 1) {
+                  // Duplication -- not single-copy among targets.
+                  inRegion = false;
+              }
+              seenGenomes.insert(colGenome);
+          }
       }
       if (requireAllTargets && (targetGenomeCount < targetGenomes.size())) {
-        // not in every genome
-        inRegion = false;
+          // not in every genome
+          inRegion = false;
       }
-      if (!inRegion && wasInRegion) {
+      if ((prevSequence != NULL && prevSequence != colIt->getReferenceSequence()) || colIt->lastColumn()) {
+          if (wasInRegion || inRegion) {
+              // current single-copy region has ended, finish bed entry
+              curBedLine._end = prevPos + 1;
+              curBedLine.write(os);
+              curBedLine._chrName = colIt->getReferenceSequence()->getName();
+              curBedLine._start = 0;
+          }
+          if (colIt->lastColumn()) {
+              // Have to break here instead of at the beginning of the loop to
+              // avoid missing the last column.
+              break;
+          }
+      } else if (!inRegion && wasInRegion) {
           const hal_index_t pos = colIt->getReferenceSequencePosition();
           curBedLine._end = pos;
           curBedLine.write(os);
-      }
-      if (inRegion && !wasInRegion) {
-        // start of single-copy region, output start of bed entry
-        const Sequence * seq = seqIt->getSequence();
-        const hal_index_t pos = colIt->getReferenceSequencePosition();
-        curBedLine._chrName = seq->getName();
-        curBedLine._start = pos;
-      }
-      if (colIt->lastColumn()) {
-        // Have to break here instead of at the beginning of the loop to
-        // avoid missing the last column.
-        // UPDATE TO LATEST CODE FROM ABOVE (OR STOP BEING LAZY)
-        if (inRegion) {
-          // current single-copy region has ended, finish bed entry
+      } else if (inRegion && !wasInRegion) {
+          // start of single-copy region, output start of bed entry
+          const Sequence *seq = colIt->getReferenceSequence();
           const hal_index_t pos = colIt->getReferenceSequencePosition();
-          curBedLine._end = pos;
-          curBedLine.write(os);
-        }
-        break;
+          curBedLine._chrName = seq->getName();
+          curBedLine._start = pos;
       }
       if (colIt->getReferenceSequencePosition() % 10000 == 0) {
-        colIt->defragment();
+          colIt->defragment();
       }
-      // colIt->toRight();
-      colIt->toSite(colIt->getReferenceSequencePosition() + seqIt->getSequence()->getStartPosition() + 1, seqIt->getSequence()->getEndPosition(), true);
-    }
+      prevSequence = colIt->getReferenceSequence();
+      prevPos = colIt->getReferenceSequencePosition();
+      colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, length == -1 ? seqEnd : start + length + colIt->getReferenceSequence()->getStartPosition(), true);
   }
 }
