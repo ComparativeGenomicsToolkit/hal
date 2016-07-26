@@ -75,13 +75,14 @@ int main(int argc, char *argv[])
       seqStart = 0;
       seqEnd = referenceGenome->getSequenceLength() - 1;
   }
-  if (length > (hal_index_t) (seqEnd - seqStart - start)) {
+
+  if (length > (hal_index_t) (seqEnd - seqStart - start + 1)) {
       throw hal_exception("region too long, goes off the end of sequence or genome.");
   }
   ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&targetGenomes,
       0,
       start,
-      length == -1 ? NULL_INDEX : start + length);
+      length == -1 ? NULL_INDEX : start + length - 1);
   bool inRegion = false;
   BedLine curBedLine;
   const Sequence *prevSequence = NULL;
@@ -112,10 +113,16 @@ int main(int argc, char *argv[])
           // not in every genome
           inRegion = false;
       }
-      if ((prevSequence != NULL && prevSequence != colIt->getReferenceSequence()) || colIt->lastColumn()) {
-          if (wasInRegion || inRegion) {
+      bool changedSequence = prevSequence != NULL && prevSequence != colIt->getReferenceSequence();
+      if (changedSequence || colIt->lastColumn()) {
+          if (colIt->lastColumn() && inRegion && length == 1) {
+              curBedLine._chrName = colIt->getReferenceSequence()->getName();
+              curBedLine._start = colIt->getReferenceSequencePosition();
+              curBedLine._end = colIt->getReferenceSequencePosition() + 1;
+              curBedLine.write(os);
+          } else if (wasInRegion) {
               // current single-copy region has ended, finish bed entry
-              curBedLine._end = prevPos + 1;
+              curBedLine._end = changedSequence ? prevPos + 1 : colIt->getReferenceSequencePosition() + 1;
               curBedLine.write(os);
               curBedLine._chrName = colIt->getReferenceSequence()->getName();
               curBedLine._start = 0;
@@ -141,6 +148,6 @@ int main(int argc, char *argv[])
       }
       prevSequence = colIt->getReferenceSequence();
       prevPos = colIt->getReferenceSequencePosition();
-      colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, length == -1 ? seqEnd : start + length + colIt->getReferenceSequence()->getStartPosition(), true);
+      colIt->toSite(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition() + 1, length == -1 ? seqEnd : start + length + colIt->getReferenceSequence()->getStartPosition() - 1, true);
   }
 }
