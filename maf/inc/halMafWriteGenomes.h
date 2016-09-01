@@ -72,6 +72,7 @@ private:
       const Record* _record;
       Genome* _genome;
       bool _skip;
+      std::string _gapComp;
    };
 
    struct Paralogy

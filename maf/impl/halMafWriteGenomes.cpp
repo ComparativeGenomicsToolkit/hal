@@ -229,6 +229,18 @@ void MafWriteGenomes::initBlockInfo(size_t col)
          _alignment->openGenome(genomeName(_block[i]._sequenceName));
       assert(_blockInfo[i]._genome != NULL);
       _blockInfo[i]._skip = false;
+      // correction for - strand: need to iterate index right to left
+      // so keep a correctly flipped maf line here (rather than doing it
+      // every chunk)
+      if (_block[i]._strand == '-')
+      {
+        _blockInfo[i]._gapComp = _block[i]._line;
+        reverseGaps(_blockInfo[i]._gapComp);
+      }
+      else
+      {
+        _blockInfo[i]._gapComp.erase();
+      }
     }
   }
   else
@@ -378,7 +390,7 @@ void MafWriteGenomes::convertSegments(size_t col)
       // at last minute
       hal_index_t genStart = rowInfo._start;
       hal_index_t rowSeqOffset = col;
-      string rowLine = row._line;
+      const string& rowLine = row._strand == '-' ? rowInfo._gapComp : row._line;
 
       seq = genome->getSequence(sequenceName(row._sequenceName));
       assert(seq != NULL);
@@ -406,9 +418,6 @@ void MafWriteGenomes::convertSegments(size_t col)
           hal_index_t sizeSoFar = rowInfo._start - row._startPosition ;
           genStart = row._startPosition +
              (row._length - sizeSoFar - rowInfo._length);
-
-          // correct gap placement row line
-          reverseGaps(rowLine);
         }
 
         _topSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
