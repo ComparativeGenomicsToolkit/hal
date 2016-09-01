@@ -258,8 +258,11 @@ void MafWriteGenomes::initBlockInfo(size_t col)
     }
     else
     {
-      rowInfo._start = row._startPosition + col - rowInfo._gaps;
+      // note : neither _length nor -start valid on - strand if there are any
+      // gaps in block. will be corrected downstream just before writing.
       rowInfo._length = last - col;
+      rowInfo._start = row._startPosition + col - rowInfo._gaps;
+
       const StartMap& startMap = rowInfo._record->_startMap;
       const PosSet& posSet = rowInfo._record->_badPosSet;
       if (rowInfo._arrayIndex == NULL_INDEX && rowInfo._skip == false)
@@ -267,13 +270,18 @@ void MafWriteGenomes::initBlockInfo(size_t col)
         assert(rowInfo._start == row._startPosition);
         assert(rowInfo._gaps <= col);
         StartMap::const_iterator mapIt = startMap.find(rowInfo._start);
-
         if (mapIt != startMap.end() &&
             mapIt->second._written == 0 &&
             mapIt->second._empty == 0 && 
             posSet.find(FilePosition(_mafFile.tellg(), i)) == posSet.end())
         {
           rowInfo._arrayIndex = mapIt->second._index;
+
+          // correction for - strand: need to iterate index right to left
+          if (row._strand == '-') {
+            rowInfo._arrayIndex += mapIt->second._count - 1;
+          }
+
           mapIt->second._written = 1;
           assert(rowInfo._arrayIndex >= 0);
         }
@@ -294,7 +302,8 @@ void MafWriteGenomes::initBlockInfo(size_t col)
       }
       else if (rowInfo._skip == false)
       {
-        ++rowInfo._arrayIndex;
+        // correction for - strand: need to iterate index right to left
+        rowInfo._arrayIndex += row._strand == '-' ? -1 : 1;
       }
       if (!rowInfo._skip && rowInfo._genome == _refGenome && 
           rowInfo._length > 0 && 
@@ -302,6 +311,9 @@ void MafWriteGenomes::initBlockInfo(size_t col)
            _block[i]._startPosition < _block[_refRow]._startPosition))
       {
         _refRow = i;
+        if (row._strand == '-') {
+          throw hal_exception("Reference genome on negative strand not supported");
+        }
       }
     }
   }
@@ -361,6 +373,13 @@ void MafWriteGenomes::convertSegments(size_t col)
       RowInfo& rowInfo = _blockInfo[i];
       Row& row = _block[i];
       Genome* genome = rowInfo._genome;
+
+      // we will overwrite these with corrected values for reverse strand
+      // at last minute
+      hal_index_t genStart = rowInfo._start;
+      hal_index_t rowSeqOffset = col;
+      string rowLine = row._line;
+
       seq = genome->getSequence(sequenceName(row._sequenceName));
       assert(seq != NULL);
       if (genome == _refGenome)
@@ -377,8 +396,23 @@ void MafWriteGenomes::convertSegments(size_t col)
       }
       else
       {
+        // correction for - strand: need to iterate index right to left
+        if (row._strand == '-')
+        {
+          // correct position in row
+          rowSeqOffset = row._line.length() - col - rowInfo._length;
+
+          // correct position in genome
+          hal_index_t sizeSoFar = rowInfo._start - row._startPosition ;
+          genStart = row._startPosition +
+             (row._length - sizeSoFar - rowInfo._length);
+
+          // correct gap placement row line
+          reverseGaps(rowLine);
+        }
+
         _topSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
-        _topSegment->setCoordinates(seq->getStartPosition() + rowInfo._start,
+        _topSegment->setCoordinates(seq->getStartPosition() + genStart,
                                     rowInfo._length);   
 
         _topSegment->setNextParalogyIndex(NULL_INDEX);
@@ -401,9 +435,10 @@ void MafWriteGenomes::convertSegments(size_t col)
           _topSegment->setParentReversed(false);
         }
       }
+
       seq->setSubString(
-        row._line.substr(col, rowInfo._length), rowInfo._start, 
-        rowInfo._length);
+        rowLine.substr(rowSeqOffset, rowInfo._length), genStart, rowInfo._length);
+
     }
   }
 }
