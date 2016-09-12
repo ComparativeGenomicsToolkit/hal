@@ -250,7 +250,7 @@ A count of each type of mutation (Insertions, Deletions, Inversions, Duplication
 
 Subtrees can be specified using the `--targetGenomes` or `--rootGenome` option.  The `--maxGap` option is used to distinguish from small, 'gap' indels and larger indels.  This distinction is somewhat arbitrary (but conventional).  HAL allows gap indels to be nested within larger rearrangements:  ex. an inversion with a gap deletion inside would be counted as a single inversion, but an inversion containing a non-gap event would be identified as multiple independent inversions. 
 
-     halSummarizeMutations mammals.maf --maxNFraction 0
+     halSummarizeMutations mammals.hal --maxNFraction 0
 
 will prevent rearrangements with missing data as being identified as such.  More generally, if an insertion of length 50 contains c N-characters, it will be labeled as missing data (rather than an insertion) if c/N > `maxNFraction`.
 
