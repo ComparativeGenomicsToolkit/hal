@@ -304,6 +304,7 @@ hal_int_t halGetMAF(FILE* outFile,
                     char* tChrom,
                     hal_int_t tStart, 
                     hal_int_t tEnd,
+                    int maxRefGap,
                     int doDupes,
                     char **errStr);
 
