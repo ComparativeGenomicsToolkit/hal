@@ -577,7 +577,6 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
         }
         prev = cur;
         
-        alignment->closeGenome(genome);
         vector<string> childNames = alignment->getChildNames(name);
         for (size_t i = 0; i < childNames.size(); ++i)
         {
