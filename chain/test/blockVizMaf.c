@@ -102,7 +102,8 @@ int main(int argc, char** argv)
                               args.tSpecies,
                               args.tChrom, 
                               args.tStart,
-                              args.tEnd, 
+                              args.tEnd,
+                              0, // maxRefGap
                               args.doDupes,
                               NULL);
 

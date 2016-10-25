@@ -291,7 +291,8 @@ struct hal_block_results_t *halGetBlocksInTargetRange_filterByChrom(int halHandl
  * @param tStart start position in reference  
  * @param tEnd last + 1 position in reference (if 0, then the size of the 
  * chromosome is used). 
- * @param doDupes create blocks for duplications if not 0.  When this 
+ * @param doDupes create blocks for duplications if not 0.  When this
+ * @param maxRefGap maximum gap length in reference. Use 0 for default value. 
  * option is enabled, the same region can appear in more than one block.
  * @param errStr pointer to a string that contains an error message on
  * failure. If NULL, throws an exception on failure instead.
