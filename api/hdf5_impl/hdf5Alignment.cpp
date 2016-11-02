@@ -468,7 +468,6 @@ const Genome* HDF5Alignment::openGenome(const string& name) const
   {
     genome = new HDF5Genome(name, const_cast<HDF5Alignment*>(this), 
                             _file, _dcprops, _inMemory);
-    genome->read();
     _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   }
   return genome;
@@ -485,7 +484,6 @@ Genome* HDF5Alignment::openGenome(const string& name)
   if (_nodeMap.find(name) != _nodeMap.end())
   {
     genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
-    genome->read();
     _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   }
   return genome;
