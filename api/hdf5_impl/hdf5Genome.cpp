@@ -54,12 +54,12 @@ HDF5Genome::HDF5Genome(const string& name,
   try
   {
     _group = h5Parent->openGroup(name);
-    read();
   }
   catch (Exception& e)
   {
     _group = h5Parent->createGroup(name);
   }
+  read();
   _metaData = new HDF5MetaData(&_group, metaGroupName);
   _rup = new HDF5MetaData(&_group, rupGroupName);
 
