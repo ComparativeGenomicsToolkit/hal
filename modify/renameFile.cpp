@@ -1,4 +1,5 @@
 #include <fstream>
+#include "sonLib.h"
 #include "hal.h"
 
 using namespace std;
@@ -12,11 +13,14 @@ map<string, string> ingestRenameFile(string tsvPath) {
   ifstream tsv(tsvPath.c_str());
   string line;
   while (getline(tsv, line)) {
-    stringstream lineStream(line);
-    string oldName;
-    string newName;
-    lineStream >> oldName;
-    lineStream >> newName;
+    stList *tokens = stString_splitByString(line.c_str(), "\t");
+    if (stList_length(tokens) != 2) {
+      throw hal_exception("Rename file does not have 2 tab-separated fields "
+                          "in line: " + line);
+    }
+    string oldName((char *) stList_get(tokens, 0));
+    string newName((char *) stList_get(tokens, 1));
+    stList_destruct(tokens);
 
     if (ret.count(oldName)) {
       throw hal_exception("Old name " + oldName +
