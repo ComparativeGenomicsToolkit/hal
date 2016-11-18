@@ -7,11 +7,13 @@ using namespace std;
 static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  optionsParser->setDescription("Rename the sequences of a genome in-place.");
   optionsParser->addArgument("halFile", "hal file");
   optionsParser->addArgument("genome", "genome to rename the sequences of");
   optionsParser->addArgument("renameFile",
-                             "Tab-separated file. First column: existing genome"
-                             " name, second column: new genome name");
+                             "Tab-separated file. First column: existing "
+                             "sequence name, second column: new sequence name."
+                             " Any sequences not provided will stay the same.");
   return optionsParser;
 }
 

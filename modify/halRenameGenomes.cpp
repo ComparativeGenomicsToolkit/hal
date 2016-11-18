@@ -7,10 +7,12 @@ using namespace hal;
 static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  optionsParser->setDescription("Rename genomes in a HAL file in-place.");
   optionsParser->addArgument("halFile", "hal file");
   optionsParser->addArgument("renameFile",
                              "Tab-separated file. First column: existing genome"
-                             " name, second column: new genome name");
+                             " name, second column: new genome name. Any "
+                             "genomes not provided will stay the same.");
   return optionsParser;
 }
 
