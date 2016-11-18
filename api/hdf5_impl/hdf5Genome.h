@@ -96,6 +96,8 @@ public:
 
    const Alignment* getAlignment() const;
 
+   void rename(const std::string &newName);
+
    // SEGMENTED SEQUENCE INTERFACE
 
    hal_size_t getSequenceLength() const;
@@ -158,7 +160,6 @@ public:
    GappedBottomSegmentIteratorConstPtr getGappedBottomSegmentIterator(
      hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
      bool atomic) const;
-
 
    // HDF5 SPECIFIC 
    void write();

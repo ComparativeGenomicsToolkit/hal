@@ -26,6 +26,7 @@ int main(int argc, char *argv[])
     noMarkAncestors = optParser->getFlag("noMarkAncestors");
   } catch (exception &e) {
     optParser->printUsage(cerr);
+    return 1;
   }
   AlignmentPtr alignment = openHalAlignment(inPath, optParser);
   if (!noMarkAncestors) {

@@ -1009,3 +1009,14 @@ void HDF5Genome::resetBranchCaches()
   _parentCache = NULL;
   _childCache.clear();
 }
+
+void HDF5Genome::rename(const string &newName)
+{
+  _group.move("/" + _name, "/" + newName);
+  string newickStr = _alignment->getNewickTree();
+  stTree *tree = stTree_parseNewickString(newickStr.c_str());
+  stTree *node = stTree_findChild(tree, _name.c_str());
+  stTree_setLabel(node, newName.c_str());
+  _alignment->replaceNewickTree(stTree_getNewickTreeString(tree));
+  stTree_destruct(tree);
+}
