@@ -359,3 +359,11 @@ void HDF5Sequence::setBottomSegmentArrayIndex(hal_size_t bottomIndex)
 {
   _idxArray->setValue(_index, bottomSegmentArrayIndexOffset, bottomIndex);
 }
+
+void HDF5Sequence::setName(const string &newName)
+{
+  char* arrayBuffer = _nameArray->getUpdate(_index);
+  strcpy(arrayBuffer, newName.c_str());
+  _nameArray->write();
+  _genome->readSequences();
+}

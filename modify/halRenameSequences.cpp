@@ -1,13 +1,14 @@
 #include "hal.h"
 #include "renameFile.h"
 
-using namespace std;
 using namespace hal;
+using namespace std;
 
 static CLParserPtr initParser()
 {
   CLParserPtr optionsParser = hdf5CLParserInstance(true);
   optionsParser->addArgument("halFile", "hal file");
+  optionsParser->addArgument("genome", "genome to rename the sequences of");
   optionsParser->addArgument("renameFile",
                              "Tab-separated file. First column: existing genome"
                              " name, second column: new genome name");
@@ -17,10 +18,11 @@ static CLParserPtr initParser()
 int main(int argc, char *argv[])
 {
   CLParserPtr optParser = initParser();
-  string halPath, renamePath;
+  string halPath, renamePath, genomeName;
   try {
     optParser->parseOptions(argc, argv);
     halPath = optParser->getArgument<string>("halFile");
+    genomeName = optParser->getArgument<string>("genome");
     renamePath = optParser->getArgument<string>("renameFile");
   } catch (exception &e) {
     cerr << e.what() << endl;
@@ -29,22 +31,24 @@ int main(int argc, char *argv[])
   }
 
   AlignmentPtr alignment = openHalAlignment(halPath, optParser);
+  Genome *genome = alignment->openGenome(genomeName);
+  if (genome == NULL) {
+      throw hal_exception("Genome " + genomeName + " not found in alignment");
+  }
   map<string, string> renameMap = ingestRenameFile(renamePath);
 
-  // Check that the alignment has all the old genome names, and none
-  // of the new genome names.
   for (map<string, string>::iterator it = renameMap.begin();
        it != renameMap.end(); it++) {
-    Genome *genome = alignment->openGenome(it->first);
-    if (genome == NULL) {
-      throw hal_exception("Genome " + it->first + " not found in alignment");
+    Sequence *sequence = genome->getSequence(it->first);
+    if (sequence == NULL) {
+      throw hal_exception("Sequence " + it->first + " not found in alignment");
     }
 
-    genome = alignment->openGenome(it->second);
-    if (genome != NULL) {
-      throw hal_exception("Attempting to rename " + it->first +
+    sequence = genome->getSequence(it->second);
+    if (sequence != NULL) {
+      throw hal_exception("Attempting to rename sequence " + it->first +
                           " to " + it->second + " failed: " + it->second +
-                          " is already in the alignment! Name it to something"
+                          " is already in the genome! Name it to something"
                           " temporary first");
     }
   }
@@ -54,8 +58,8 @@ int main(int argc, char *argv[])
   for (map<string, string>::iterator it = renameMap.begin();
        it != renameMap.end(); it++) {
     cout << "Renaming " << it->first << " to " << it->second << endl;
-    Genome *genome = alignment->openGenome(it->first);
-    genome->rename(it->second);
+    Sequence *sequence = genome->getSequence(it->first);
+    sequence->setName(it->second);
   }
 
   alignment->close();

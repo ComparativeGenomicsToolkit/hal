@@ -10,7 +10,7 @@ libTests = $(wildcard tests/*.cpp)
 libTestsHeaders = $(wildcard tests/*.h)
 libHalTestsAll := $(wildcard ../api/tests/*.cpp)
 libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
-targets = ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree ${binPath}/findRegionsExclusivelyInGroup ${binPath}/halUpdateBranchLengths ${binPath}/halWriteNucleotides ${binPath}/halSetMetadata ${binPath}/halRenameGenomes
+targets = ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree ${binPath}/findRegionsExclusivelyInGroup ${binPath}/halUpdateBranchLengths ${binPath}/halWriteNucleotides ${binPath}/halSetMetadata ${binPath}/halRenameGenomes ${binPath}/halRenameSequences
 phastTargets = ${binPath}/ancestorsML
 ifdef ENABLE_PHYLOP
 all : ${targets} ${phastTargets}
@@ -56,8 +56,14 @@ ${binPath}/halWriteNucleotides: halWriteNucleotides.cpp ${libPath}/halLib.a ${ba
 ${binPath}/halSetMetadata: halSetMetadata.cpp ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halSetMetadata halSetMetadata.cpp ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/halRenameGenomes: halRenameGenomes.cpp ${libPath}/halLib.a ${basicLibsDependencies}
+${binPath}/halRenameGenomes: halRenameGenomes.cpp renameFile.o ${libPath}/halLib.a ${basicLibsDependencies}
 	${cpp} ${cppflags} -I ${libPath} -o $@ $^
+
+${binPath}/halRenameSequences: halRenameSequences.cpp renameFile.o ${libPath}/halLib.a ${basicLibsDependencies}
+	${cpp} ${cppflags} -I ${libPath} -o $@ $^
+
+renameFile.o: renameFile.cpp
+	${cpp} ${cppflags} -I ${libPath} -c -o $@ $<
 
 markAncestors.o: markAncestors.cpp
 	${cpp} ${cppflags} -I ${libPath} -c -o markAncestors.o markAncestors.cpp

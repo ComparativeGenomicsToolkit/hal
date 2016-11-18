@@ -35,6 +35,7 @@ class HDF5Genome : public Genome
    friend class HDF5BottomSegmentIterator;
    friend class HDF5DNAIterator;
    friend class HDF5SequenceIterator;
+   friend class HDF5Sequence;
 public:
 
    HDF5Genome(const std::string& name,
