@@ -230,6 +230,55 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       const char *coalescenceLimitName,
                                                       char **errStr);
 
+/*
+ * Create linked list of block structures.  Blocks returned will be all
+ * aligned blocks in the query sequence that align to the given range
+ * in the reference sequence.  The list will be ordered along the reference.
+ * The two immediately adjacent blocks to each aligned query block (adjacent
+ * along the query genome) will also be returned if they exist. 
+ *
+ * @param halHandle handle for the HAL alignment obtained from halOpen
+ * @param qSpecies the name of the query species.
+ * @param tSpecies the name of the reference species.
+ * @param tChrom name of the chromosome in reference.
+ * @param tStart start position in reference  
+ * @param tEnd last + 1 position in reference (if 0, then the size of the 
+ * chromosome is used). 
+ * @param tReversed Input region is on the reverse strand (but still 
+ * in forward coordinates like BED).  can only be used in liftOverMode
+ * otherwise must be set to 0
+ * @param seqMode Specify logic used to determine whether or not DNA 
+ * sequence is returned (details in hal_seqmode_type_t comments)  
+ * @param dupMode Specifies which types of duplications to compute. 
+ * (note that when tReversed != 0, target duplications are not supported,
+ * so when doing liftover use no dupes or query dupes only) 
+ * @param mapBackAdjacencies Species if segments adjacent to query segments
+ * in the alignment are mapped back ot the target (producing offscreen 
+ * results). Must be set to 0 it tReversed is not 0 (so set to 0 when doing 
+ * liftover).
+ * @param coalescenceLimitName The name of the genome to use as the
+ * limit for walking back and capturing additional paralogs. If NULL,
+ * defaults to using the MRCA, which gives no extra paralogs.
+ * @param qChrom Only return results in this chromosome in the query species.
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
+ * @return  block structure -- must be freed by halFreeBlockResults().
+ * NULL on failure.
+ */
+struct hal_block_results_t *halGetBlocksInTargetRange_filterByChrom(int halHandle,
+                                                                    char* qSpecies,
+                                                                    char* tSpecies,
+                                                                    char* tChrom,
+                                                                    hal_int_t tStart,
+                                                                    hal_int_t tEnd,
+                                                                    hal_int_t tReversed,
+                                                                    hal_seqmode_type_t seqMode,
+                                                                    hal_dup_type_t dupMode,
+                                                                    int mapBackAdjacencies,
+                                                                    char *qChrom,
+                                                                    const char *coalescenceLimitName,
+                                                                    char **errStr);
+
 /** Read alignment into an output file in MAF format.  Interface very 
  * similar to halGetBlocksInTargetRange except multiple query species 
  * can be specified
@@ -242,7 +291,8 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
  * @param tStart start position in reference  
  * @param tEnd last + 1 position in reference (if 0, then the size of the 
  * chromosome is used). 
- * @param doDupes create blocks for duplications if not 0.  When this 
+ * @param doDupes create blocks for duplications if not 0.  When this
+ * @param maxRefGap maximum gap length in reference. Use 0 for default value. 
  * option is enabled, the same region can appear in more than one block.
  * @param errStr pointer to a string that contains an error message on
  * failure. If NULL, throws an exception on failure instead.
@@ -255,6 +305,7 @@ hal_int_t halGetMAF(FILE* outFile,
                     char* tChrom,
                     hal_int_t tStart, 
                     hal_int_t tEnd,
+                    int maxRefGap,
                     int doDupes,
                     char **errStr);
 

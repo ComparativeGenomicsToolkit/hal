@@ -136,6 +136,9 @@ public:
    /** Get version used to create the file */
    virtual std::string getVersion() const = 0;
 
+   /** Replace the newick tree with a new string */
+   virtual void replaceNewickTree(const std::string& newick) = 0;
+
 protected:
    friend class counted_ptr<Alignment>;
    friend class counted_ptr<const Alignment>;

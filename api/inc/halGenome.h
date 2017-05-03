@@ -172,6 +172,9 @@ public:
    /** Recompute parse info for this genome. */
    void fixParseInfo();
 
+   /** Rename this genome. */
+   virtual void rename(const std::string &name) = 0;
+
 protected:
 
    /** Destructor */

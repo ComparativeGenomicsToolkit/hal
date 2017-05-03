@@ -468,7 +468,6 @@ const Genome* HDF5Alignment::openGenome(const string& name) const
   {
     genome = new HDF5Genome(name, const_cast<HDF5Alignment*>(this), 
                             _file, _dcprops, _inMemory);
-    genome->read();
     _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   }
   return genome;
@@ -485,7 +484,6 @@ Genome* HDF5Alignment::openGenome(const string& name)
   if (_nodeMap.find(name) != _nodeMap.end())
   {
     genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
-    genome->read();
     _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
   }
   return genome;
@@ -739,10 +737,7 @@ void HDF5Alignment::loadTree()
 {
   _nodeMap.clear();
   HDF5MetaData treeMeta(_file, TreeGroupName);
-  map<string, string> metaMap = treeMeta.getMap();
-  assert(metaMap.size() == 1);
-  assert(metaMap.find(TreeGroupName) != metaMap.end());
-  const string& treeString = metaMap[TreeGroupName];
+  const string& treeString = treeMeta.get(TreeGroupName);
   if (_tree != NULL)
   {
     stTree_destruct(_tree);
@@ -758,3 +753,11 @@ void HDF5Alignment::loadTree()
   }
 }
 
+void HDF5Alignment::replaceNewickTree(const string &newNewickString)
+{
+  _nodeMap.clear();
+  HDF5MetaData treeMeta(_file, TreeGroupName);
+  treeMeta.set(TreeGroupName, newNewickString);
+  treeMeta.write();
+  loadTree();
+}

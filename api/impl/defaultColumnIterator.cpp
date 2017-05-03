@@ -605,7 +605,7 @@ static void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree)
 // Build a gene-tree from a column iterator.
 stTree *DefaultColumnIterator::getTree() const
 {
-  if (_onlyOrthologs) {
+  if (_onlyOrthologs || _noDupes) {
     // Because the tree-finding code goes all the way up the column
     // tree and I'm too lazy to make it smarter.
     throw hal_exception("Cannot get the tree for a column iterator "

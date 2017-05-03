@@ -83,6 +83,8 @@ public:
 
    std::string getVersion() const;
 
+   void replaceNewickTree(const std::string &newNewickString);
+
 protected:
    // Nobody creates this class except through the interface. 
    friend AlignmentPtr hdf5AlignmentInstance();

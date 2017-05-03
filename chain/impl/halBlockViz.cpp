@@ -351,6 +351,89 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
   return results;
 }
 
+extern "C"
+struct hal_block_results_t *halGetBlocksInTargetRange_filterByChrom(int halHandle,
+                                                                    char* qSpecies,
+                                                                    char* tSpecies,
+                                                                    char* tChrom,
+                                                                    hal_int_t tStart,
+                                                                    hal_int_t tEnd,
+                                                                    hal_int_t tReversed,
+                                                                    hal_seqmode_type_t seqMode,
+                                                                    hal_dup_type_t dupMode,
+                                                                    int mapBackAdjacencies,
+                                                                    char *qChrom,
+                                                                    const char *coalescenceLimitName,
+                                                                    char **errStr) {
+    hal_block_results_t* results = halGetBlocksInTargetRange(halHandle, qSpecies,
+                                                             tSpecies, tChrom,
+                                                             tStart, tEnd,
+                                                             tReversed, seqMode,
+                                                             dupMode, mapBackAdjacencies,
+                                                             coalescenceLimitName, errStr);
+    if (results == NULL) {
+        // An error occured.
+        return NULL;
+    }
+
+    // Filter out any blocks not on qChrom.
+    hal_block_t *blockHead = results->mappedBlocks;
+    hal_block_t *prevBlock = NULL;
+    while (blockHead != NULL) {
+        hal_block_t *next = blockHead->next;
+        if (strcmp(blockHead->qChrom, qChrom) != 0) {
+            free(blockHead->qSequence);
+            free(blockHead->tSequence);
+            free(blockHead->qChrom);
+            free(blockHead);
+        } else {
+            if (prevBlock != NULL) {
+                prevBlock->next = blockHead;
+            } else {
+                results->mappedBlocks = blockHead;
+            }
+            prevBlock = blockHead;
+        };
+        blockHead = next;
+    }
+    if (prevBlock != NULL) {
+        prevBlock->next = NULL;
+    } else {
+        results->mappedBlocks = NULL;
+    }
+
+    // Filter out any target dupes not corresponding to qChrom.
+    hal_target_dupe_list_t *targetDupeHead = results->targetDupeBlocks;
+    hal_target_dupe_list_t *prevTargetDupe = NULL;
+    while (targetDupeHead != NULL) {
+        hal_target_dupe_list_t *next = targetDupeHead->next;
+        if (strcmp(targetDupeHead->qChrom, qChrom) != 0) {
+            while (targetDupeHead->tRange != NULL)
+            {
+                hal_target_range_t* nextRange = targetDupeHead->tRange->next;
+                free(targetDupeHead->tRange);
+                targetDupeHead->tRange = nextRange;
+            }
+            free(targetDupeHead->qChrom);
+            free(targetDupeHead);
+        } else {
+            if (prevTargetDupe != NULL) {
+                prevTargetDupe->next = targetDupeHead;
+            } else {
+                results->targetDupeBlocks = targetDupeHead;
+            }
+            prevTargetDupe = targetDupeHead;
+        }
+        targetDupeHead = next;
+    }
+    if (prevTargetDupe != NULL) {
+        prevTargetDupe->next = NULL;
+    } else {
+        results->targetDupeBlocks = NULL;
+    }
+    return results;
+}
+
 extern "C" hal_int_t halGetMAF(FILE* outFile,
                                int halHandle, 
                                hal_species_t* qSpeciesNames,
@@ -358,6 +441,7 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
                                char* tChrom,
                                hal_int_t tStart, 
                                hal_int_t tEnd,
+                               int maxRefGap,
                                int doDupes,
                                char **errStr)
 {
@@ -403,6 +487,8 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     MafExport mafExport;
     mafExport.setNoDupes(doDupes == 0);
     mafExport.setUcscNames(true);
+    mafExport.setMaxRefGap(hal_size_t(maxRefGap));
+
     mafExport.convertSegmentedSequence(mafBuffer, alignment, tGenome, 
                                        absStart, 1 + absEnd - absStart,
                                        qGenomeSet);
@@ -491,7 +577,6 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
         }
         prev = cur;
         
-        alignment->closeGenome(genome);
         vector<string> childNames = alignment->getChildNames(name);
         for (size_t i = 0; i < childNames.size(); ++i)
         {

@@ -54,8 +54,12 @@ inline char reverseComplement(char c)
   return c;
 }
 
-/** Get the reversed complement of a string (in place */
+/** Get the reversed complement of a string (in place) */
 void reverseComplement(std::string& s);
+
+/** Reverse the gaps in the string (gap i -> len-1-i) which 
+ * is not done above (does not reverse dna) */
+void reverseGaps(std::string& s);
 
 /** Check if a DNA character is a valid base (or n-chracter) */
 inline bool isNucleotide(char c)

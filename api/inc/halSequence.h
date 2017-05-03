@@ -83,6 +83,9 @@ public:
    /** Get the index of the sequence in the genome's bottom segment array */
    virtual hal_index_t getBottomSegmentArrayIndex() const = 0;
 
+   /** Set the name of this sequence */
+   virtual void setName(const std::string &newName) = 0;
+
 protected:
    
    /** Destructor */

@@ -33,9 +33,9 @@ static CLParserPtr initParser()
                            "genome coordinates, and containing the base "
                            "assignments for each genome",
                            "\"\"");
-  optionsParser->addOption("noDupes",
-                           "do not consider paralogies while mapping",
-                           "\"\"");
+  optionsParser->addOptionFlag("noDupes",
+                               "do not consider paralogies while mapping",
+                               false);
   optionsParser->addOption("refSequence",
                            "name of reference sequence within reference genome"
                            " (all sequences if empty)",
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     refGenomeName = optionsParser->getArgument<string>("refGenome");
     targetGenomesString = optionsParser->getArgument<string>("targetGenomes");
     tsvPath = optionsParser->getOption<string>("tsv");
-    noDupes = optionsParser->getOption<bool>("noDupes");
+    noDupes = optionsParser->getFlag("noDupes");
     refSequenceName = optionsParser->getOption<string>("refSequence");
     start = optionsParser->getOption<hal_index_t>("start");
     length = optionsParser->getOption<hal_size_t>("length");
@@ -302,7 +302,6 @@ static void getOrthologs(stTree *colTree, const Genome *refGenome,
                          set<const Genome *> &targetGenomes,
                          map<DNAIteratorConstPtr *, set<DNAIteratorConstPtr *> *> *orthologs)
 {
-//  printf("%s\n", stTree_getNewickTreeString(colTree));
   set<stTree *> refNodes;
   getReferenceNodes_R(colTree, refGenome, &refNodes);
 
@@ -383,9 +382,44 @@ static void countSnps(const Genome* refGenome,
       // already).
       continue;
     }
-    stTree *colTree = colIt->getTree();
+
     map<DNAIteratorConstPtr *, set<DNAIteratorConstPtr *> *> orthologs;
-    getOrthologs(colTree, refGenome, targetGenomes, &orthologs);
+    if (doDupes) {
+      stTree *colTree = colIt->getTree();
+      getOrthologs(colTree, refGenome, targetGenomes, &orthologs);
+    } else {
+      const ColumnIterator::ColumnMap *cols = colIt->getColumnMap();
+      ColumnIterator::ColumnMap::const_iterator colMapIt;
+      DNAIteratorConstPtr *refDnaIt = NULL;
+      set<DNAIteratorConstPtr *> *orthologSet = new set<DNAIteratorConstPtr *>();
+      for (colMapIt = cols->begin(); colMapIt != cols->end(); colMapIt++) {
+        const Genome *genome = colMapIt->first->getGenome();
+        ColumnIterator::DNASet *dnaIts = colMapIt->second;
+        if (dnaIts->empty()) {
+          continue;
+        }
+        if (dnaIts->size() != 1) {
+          throw hal_exception("column iterator with noDupes has target dup");
+        }
+        DNAIteratorConstPtr dnaIt = dnaIts->at(0);
+        DNAIteratorConstPtr *dnaItToInsert = new DNAIteratorConstPtr(genome->getDNAIterator(dnaIt->getArrayIndex()));
+        if (dnaIt->getReversed()) {
+          (*dnaItToInsert)->toReverse();
+        }
+        if (genome == refGenome) {
+          if (refDnaIt != NULL) {
+            throw hal_exception("column iterator with noDupes has reference dup");
+          }
+          refDnaIt = dnaItToInsert;
+        } else {
+          orthologSet->insert(dnaItToInsert);
+        }
+      }
+      if ((*refDnaIt)->getArrayIndex() != colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition()) {
+        throw hal_exception("reference dna is in wrong place");
+      }
+      orthologs.insert(make_pair(refDnaIt, orthologSet));
+    }
 
     // Now that we have the set of reference bases and their
     // orthologs, just call SNPs.
@@ -450,7 +484,13 @@ static void countSnps(const Genome* refGenome,
         }
         refTsvStream << endl;
       }
+
+      for (set<DNAIteratorConstPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
+      {
+        delete *orthologIt;
+      }
       delete orthologSet;
+      delete orthologsIt->first;
     }
 
     if (colIt->lastColumn()) {

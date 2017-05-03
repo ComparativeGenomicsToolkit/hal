@@ -764,10 +764,10 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
   if (!refGenome) {
     throw hal_exception("Genome " + genomeName + " does not exist.");
   }
-  // Follow paralogies, but ignore ancestors.
+
   ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
                                                          NULL_INDEX, false,
-                                                         true, false, true);
+                                                         false, false, true);
   map<const Genome *, vector<hal_size_t> *> histograms;
   while(1) {
     const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
@@ -781,12 +781,17 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
         continue;
       }
       const Genome *genome = colMapIt->first->getGenome();
-      if (!numSitesMapped.count(genome)) {
-        // Initialize map entry
-        numSitesMapped[genome] = 0;
+      if (genome->getNumChildren() == 0 || genome == refGenome) {
+          // We only care about coverage from leaf genomes, but if
+          // the reference is an ancestor we need to keep track of its
+          // coverage too.
+          if (!numSitesMapped.count(genome)) {
+              // Initialize map entry
+              numSitesMapped[genome] = 0;
+          }
+          const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+          numSitesMapped[genome] = numSitesMapped[genome] + dnaSet->size();
       }
-      const ColumnIterator::DNASet *dnaSet = colMapIt->second;
-      numSitesMapped[genome] = numSitesMapped[genome] + dnaSet->size();
     }
     for (map<const Genome *, hal_size_t>::const_iterator it = numSitesMapped.begin();
          it != numSitesMapped.end(); it++) {

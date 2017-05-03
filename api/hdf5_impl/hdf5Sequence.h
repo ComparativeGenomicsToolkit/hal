@@ -112,6 +112,7 @@ public:
      hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
      bool atomic) const;
 
+   void setName(const std::string &newName);
 
    // LOCAL NON-INTERFACE METHODS
 

@@ -40,14 +40,14 @@ def inorder(tree, reverse=False):
             return [tree.name]
         else:
             return []
-    children = tree.clades
-    if len(children) != 2:
-        sys.stderr.write("Tree %s is not a binary tree format! Binary tree is required. Please check.\n" %tree.name)
-    left, right = getLeftRight(children)
-    leftNames = inorder(left)
     rootName = []
     if tree.name:
         rootName = [tree.name]
+    children = tree.clades
+    if len(children) < 2:
+        return inorder(children[0]) + rootName
+    left, right = getLeftRight(children)
+    leftNames = inorder(left)
     rightNames = inorder(right)
     if not reverse:
         return leftNames + rootName + rightNames

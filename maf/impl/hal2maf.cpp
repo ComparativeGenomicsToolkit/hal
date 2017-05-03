@@ -255,6 +255,10 @@ int main(int argc, char** argv)
     ifstream refTargetsStream;
     if (refTargetsPath != "\"\"")
     {
+      if (start != 0 || length != 0 || refSequence != NULL) {
+        cerr << "--refSequence, --start, and --length options are unsupported"
+                " when using BED input, ignoring" << endl;
+      }
       ifstream bedFileStream;
       if (refTargetsPath != "stdin")
       {
@@ -265,22 +269,21 @@ int main(int argc, char** argv)
         }
       }
       istream& bedStream = refTargetsPath != "stdin" ? bedFileStream : cin;
-      MafBed mafBed(mafStream, alignment, refGenome, refSequence, start,
-                    length, targetSet, mafExport);
+      MafBed mafBed(mafStream, alignment, refGenome, targetSet, mafExport);
       mafBed.scan(&bedStream);
     }
     else
     {
-      if (start == 0 && length == 0 && ref->getSequenceLength() == 0)
+      if(global)
+      {
+        mafExport.convertEntireAlignment(mafStream, alignment);
+      }
+      else if (start == 0 && length == 0 && ref->getSequenceLength() == 0)
       {
         string refSeqName = 
            refSequence != NULL ? refSequence->getName() : refGenome->getName();
         cerr << "hal2maf: Warning reference sequence " << refSeqName
              << " has zero length.  MAF output will be empty" << endl;
-      }
-      else if(global)
-      {
-        mafExport.convertEntireAlignment(mafStream, alignment);
       }
       else
       {

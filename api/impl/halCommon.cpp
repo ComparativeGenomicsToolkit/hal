@@ -71,6 +71,33 @@ void hal::reverseComplement(std::string& s)
   }
 }
 
+void hal::reverseGaps(string& s)
+{
+  bool hasGap = false; // just to skip unnecessary work
+  string flipped(s.length(), '.');
+  for (int i = 0; i < s.length(); ++i)
+  {
+    if (s[i] == '-')
+    {
+      hasGap = true;
+      flipped[s.length() - 1 - i] = '-';
+    }
+  }
+  if (hasGap == true)
+  {
+    int j = 0;
+    for (int i = 0; i < s.length(); ++i)
+    {
+      if (s[i] != '-')
+      {
+        for (; flipped[j] == '-'; ++j);
+        flipped.at(j++) = s[i];
+      }
+    }
+    swap(s, flipped);
+  }
+}
+
 // we now work with names instead of Genome*s to avoid expensive openGenome
 // function
 static size_t lcaRecursive(const Alignment* alignment,
