@@ -129,7 +129,7 @@ def computeAgMAFStats(options):
     if options.targetGenomes is not None:
         species = ",".join(options.targetGenomes)
     else:
-        species = ",".join(options.halGenomes)
+        species = options.halGenomes
     runShellCommand("msa_view -o SS -z --in-format MAF --aggregate %s %s > %s" % (
         species, options.outMafAllPaths,
         options.outMafSS))
