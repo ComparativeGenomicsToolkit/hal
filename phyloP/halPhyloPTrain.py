@@ -79,12 +79,10 @@ def extractGeneMAFs(options):
         for sBedFile in splitBed(bedFile4d, options):
             outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
             os.path.splitext(os.path.basename(sBedFile))[0] + ".maf")
-            h2mFlags = "--splitBySequence --noDupes"
+            h2mFlags = "--noDupes"
             h2mFlags += " --targetGenomes %s" % options.halGenomes
             if options.noAncestors is True:
                 h2mFlags += " --noAncestors"
-            if options.sliceSize is not None:
-                h2mFlags += " --sliceSize %d" % options.sliceSize
             runShellCommand("hal2mafMP.py %s %s %s "
                             "--numProc %d --refTargets %s --refGenome %s "
                             % (options.hal, outMaf, h2mFlags,options.numProc,
@@ -201,9 +199,6 @@ def main(argv=None):
     parser.add_argument("--maxBedLines",
                         help="Split bed files so they have at most this many"
                         " lines",
-                        type=int, default=None)
-    parser.add_argument("--sliceSize",
-                        help="Slice size for hal2maf.",
                         type=int, default=None)
     parser.add_argument("--tree",
                         help="String describing phylogeny in NEWICK format "

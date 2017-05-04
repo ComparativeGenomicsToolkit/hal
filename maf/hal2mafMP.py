@@ -19,6 +19,8 @@ import random
 import string
 from collections import defaultdict
 from multiprocessing import Pool
+from glob import glob
+from sonLib.bioio import system, popenCatch
 
 from hal.stats.halStats import runParallelShellCommands
 from hal.stats.halStats import getHalGenomes
@@ -116,6 +118,12 @@ def concatenateSlices(sliceOpts, sliceCmds):
                                 if not line[0] == '#':
                                     tgt.write(line)
                     os.remove(sliceMafPath)
+
+def splitBed(bed, numParts):
+    """Split up a bed file by lines into N parts, return the paths of the split files"""
+    numLines = int(popenCatch("wc -l %s | cut -d' ' -f 1" % bed))
+    system("split -l %d %s %s.temp" % (math.ceil(float(numLines)/numParts), bed, bed))
+    return glob('%s.temp*' % bed)
             
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes. 
@@ -128,8 +136,16 @@ def runParallelSlices(options):
     options.firstSmallFile = True
     sliceCmds = []
     sliceOpts = []
+    if options.refTargets:
+        splitBedFiles = splitBed(options.refTargets, options.numProc)
+        for i, splitBedFile in enumerate(splitBedFiles):
+            seqOpts = copy.deepcopy(options)
+            seqOpts.refTargets = splitBedFile
+            seqOpts.sliceNumber = i
+            sliceCmds.append(getHal2MafCmd(seqOpts))
+            sliceOpts.append(seqOpts)
     # we are going to deal with sequence coordinates
-    if options.splitBySequence is True or options.refSequence is not None:
+    elif options.splitBySequence is True or options.refSequence is not None:
         for sequence, seqLen, nt, nb in refSequenceStats:
             if options.refSequence is None or sequence == options.refSequence:
                 seqOpts = copy.deepcopy(options)
@@ -292,6 +308,8 @@ def main(argv=None):
     test.write("\n")
     test.close()
     os.remove(args.mafFile)
+    if args.refTargets and any([args.splitBySequence, args.sliceSize, args.start, args.length, args.refSequence]):
+        raise RuntimeError("--refTargets not compatible with --splitBySequence, --sliceSize, --start, --length, or --refSequence")
     if args.splitBySequence:
         if args.start is not None:
             raise RuntimeError("--splitBySequence option currently "
