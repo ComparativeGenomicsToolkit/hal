@@ -85,7 +85,6 @@ void Bed4dExtractTest::checkCallBack(AlignmentConstPtr alignment)
   Extract4d extract;
   extract.run(genome, &bedFile, &outStream, -1);
   vector<string> streamResults = chopString(outStream.str(), "\n");
-  cout << outStream.str() << endl;
   CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t14\t15\tFORWARD\t0\t+") != streamResults.end());
   CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t177\t178\tREV\t0\t-") != streamResults.end());
   CuAssertTrue(_testCase, streamResults.size() == 64);
@@ -112,9 +111,8 @@ void Block4dExtractTest::checkCallBack(AlignmentConstPtr alignment)
   Extract4d extract;
   extract.run(genome, &bedFile, &outStream, -1);
   vector<string> streamResults = chopString(outStream.str(), "\n");
-  cout << outStream.str() << endl;
-  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t14\t67\tFORWARD\t0\t+\t0\t192\t0,0,0\t5\t1,1,1,1,1\t0,16,19,46,52") != streamResults.end());
-  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t3\t178\tREV\t0\t-\t0\t192\t0,0,0\t4\t1,1,1,1\t0,3,9,174") != streamResults.end());
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t0\t192\tFORWARD\t0\t+\t0\t192\t0,0,0\t5\t1,1,1,1,1\t14,30,33,60,66") != streamResults.end());
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t0\t192\tREV\t0\t-\t0\t192\t0,0,0\t4\t1,1,1,1\t3,6,12,177") != streamResults.end());
   CuAssertTrue(_testCase, streamResults.size() == 2);
 }
 
@@ -196,73 +194,84 @@ void ConservedBlock4dExtractTest::checkCallBack(AlignmentConstPtr alignment)
   Extract4d extract;
   extract.run(genome, &bedFile, &outStream, -1, true);
   vector<string> streamResults = chopString(outStream.str(), "\n");
-  cout << outStream.str();
-  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t33\t67\tFORWARD\t0\t+\t0\t192\t0,0,0\t2\t1,1\t0,33") != streamResults.end());
-  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t3\t178\tREV\t0\t-\t0\t192\t0,0,0\t3\t1,1,1\t0,3,174") != streamResults.end());
-  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence2\t33\t67\tFORWARD\t0\t+\t0\t192\t0,0,0\t2\t1,1\t0,33") != streamResults.end());
-  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence2\t3\t178\tREV\t0\t-\t0\t192\t0,0,0\t3\t1,1,1\t0,3,174") != streamResults.end());
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t0\t192\tFORWARD\t0\t+\t0\t192\t0,0,0\t2\t1,1\t33,66") != streamResults.end());
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t0\t192\tREV\t0\t-\t0\t192\t0,0,0\t3\t1,1,1\t3,6,177") != streamResults.end());
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence2\t0\t192\tFORWARD\t0\t+\t0\t192\t0,0,0\t2\t1,1\t33,66") != streamResults.end());
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence2\t0\t192\tREV\t0\t-\t0\t192\t0,0,0\t3\t1,1,1\t3,6,177") != streamResults.end());
   CuAssertTrue(_testCase, streamResults.size() == 4);
+}
+
+void CDS4dExtractTest::createCallBack(AlignmentPtr alignment)
+{
+  Genome *genome = alignment->addRootGenome("root");
+  vector<Sequence::Info> seqVec(1);
+  seqVec[0] = Sequence::Info("rootSequence", 213, 0, 0);
+  genome->setDimensions(seqVec);
+  // all possible codons, in a single frame, starting at position 21
+  // -- we will test only a few but make sure that the correct number
+  // of sites is output as well
+  genome->setString("caccatcatcatcatcatcataaaaacaagaatacaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
+}
+
+void CDS4dExtractTest::checkCallBack(AlignmentConstPtr alignment)
+{
+  const Genome *genome = alignment->openGenome("root");
+  stringstream bedFile("rootSequence\t1\t212\tFORWARD\t0\t+\t21\t88\t0\t5\t10,19,6,8,10\t0,18,50,80,90\n"
+                       "rootSequence\t1\t213\tREV\t0\t-\t25\t198\t0\t2\t13,17\t20,195");
+  stringstream outStream;
+  Extract4d extract;
+  extract.run(genome, &bedFile, &outStream, -1);
+  vector<string> streamResults = chopString(outStream.str(), "\n");
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t1\t212\tFORWARD\t0\t+\t21\t88\t0,0,0\t5\t1,1,1,1,1\t34,50,53,80,86") != streamResults.end());
+  CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "rootSequence\t1\t213\tREV\t0\t-\t25\t198\t0,0,0\t2\t1,1\t26,32") != streamResults.end());
+  CuAssertTrue(_testCase, streamResults.size() == 2);
 }
 
 void halBlock4dExtractTest(CuTest *testCase)
 {
-//  try
-//  {
+  // try
+  // {
     Block4dExtractTest tester;
     tester.check(testCase);
-/*  }
-  catch (...)
-  {
-    CuAssertTrue(testCase, false);
-    }*/
+  // }
+  // catch (...)
+  // {
+  //   CuAssertTrue(testCase, false);
+  // }
+}
+
+void halCDS4dExtractTest(CuTest *testCase)
+{
+  // try
+  // {
+    CDS4dExtractTest tester;
+    tester.check(testCase);
+  // }
+  // catch (...)
+  // {
+  //   CuAssertTrue(testCase, false);
+  // }
 }
 
 void halConservedBlock4dExtractTest(CuTest *testCase)
 {
-//  try
-//  {
+  // try
+  // {
     ConservedBlock4dExtractTest tester;
     tester.check(testCase);
-/*  }
-  catch (...)
-  {
-    CuAssertTrue(testCase, false);
-    }*/
-}
-
-void halBed4dExtractTest(CuTest *testCase)
-{
-  try
-  {
-    Bed4dExtractTest tester;
-    tester.check(testCase);
-  }
-  catch (...)
-  {
-    CuAssertTrue(testCase, false);
-  }
-}
-
-void halConservedBed4dExtractTest(CuTest *testCase)
-{
-  try
-  {
-    ConservedBed4dExtractTest tester;
-    tester.check(testCase);
-  }
-  catch (...)
-  {
-    CuAssertTrue(testCase, false);
-  }
+  // }
+  // catch (...)
+  // {
+  //   CuAssertTrue(testCase, false);
+  // }
 }
 
 CuSuite* hal4dExtractTestSuite(void)
 {
   CuSuite* suite = CuSuiteNew();
-  SUITE_ADD_TEST(suite, halBed4dExtractTest);
   SUITE_ADD_TEST(suite, halBlock4dExtractTest);
-  SUITE_ADD_TEST(suite, halConservedBed4dExtractTest);
   SUITE_ADD_TEST(suite, halConservedBlock4dExtractTest);
+  SUITE_ADD_TEST(suite, halCDS4dExtractTest);
   return suite;
 }
 

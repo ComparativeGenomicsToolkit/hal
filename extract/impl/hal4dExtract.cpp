@@ -58,9 +58,9 @@ void Extract4d::visitLine()
         cerr << "Line " << _lineNumber << ": BED coordinates invalid\n";
       }
       if (_conserved) {
-        extractConservedBlocks4d();
+        extractBlocks4d(true);
       } else {
-        extractBlocks4d();
+        extractBlocks4d(false);
       }
     }
   }
@@ -73,170 +73,118 @@ void Extract4d::visitLine()
   write();
 }
 
-// NB: Throws out 4d sites that occur in a codon split across exon
-// boundaries. Otherwise the data would need to be single-copy per
-// sequence (not so bad).
-void Extract4d::extractConservedBlocks4d()
+// Check if the 4d site is still a 4d site in all aligned regions.
+static bool is4dSiteConserved(const Sequence *sequence, hal_index_t pos, bool reversed)
 {
-  bool reversed = _bedLine._strand == '-';
-  hal_index_t frame = 0;
-  deque<BedBlock> buffer;
-  bool splitCodon = false;
-  // Ugly but way more compact. There is probably a much better way of
-  // doing this...
-  for (hal_size_t i = reversed ? _bedLine._blocks.size() - 1 : 0;
-       reversed ? i != (hal_size_t) -1 : i < _bedLine._blocks.size();
-       reversed ? --i : ++i)
-  {
-    if (_bedLine._blocks[i]._length == 0 ||
-        _bedLine._start + _bedLine._blocks[i]._start + _bedLine._blocks[i]._length >
-        (hal_index_t)_refSequence->getSequenceLength())
-    {
-      cerr << "Line " << _lineNumber << ", block " << i 
-           <<": BED coordinates invalid\n";
-    }
-    else
-    {
-      hal_index_t start = _bedLine._start + _bedLine._blocks[i]._start;
-      hal_index_t end = start + _bedLine._blocks[i]._length;
-      --end;
-      if (reversed) {
-        swap(start, end);
+  ColumnIteratorConstPtr colIt = sequence->getColumnIterator(NULL, 0, pos, NULL_INDEX, false, true, reversed);
+  bool isConserved = true;
+  const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
+  for (ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
+       colMapIt != colMap->end(); ++colMapIt) {
+    const ColumnIterator::DNASet *dnaSet = colMapIt->second;
+    for (hal_size_t j = 0; j < dnaSet->size(); j++) {
+      char c1, c2;
+      DNAIteratorConstPtr dna = dnaSet->at(j);
+      if ((dna->getReversed() && dna->getArrayIndex() > colMapIt->first->getEndPosition() - 2) ||
+          (!dna->getReversed() && dna->getArrayIndex() < colMapIt->first->getStartPosition() + 2)) {
+        isConserved = false;
+        break;
       }
-      ColumnIteratorConstPtr colIt = _refSequence->getColumnIterator(NULL, 0, start, NULL_INDEX, false, true, _bedLine._strand == '-');
-      for (hal_index_t n = 0; n < _bedLine._blocks[i]._length; ++n)
-      {
-        if (frame == 2) {
-          bool is4dSite = true;
-          const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
-          for (ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
-               colMapIt != colMap->end(); ++colMapIt) {
-            const ColumnIterator::DNASet *dnaSet = colMapIt->second;
-            for (hal_size_t j = 0; j < dnaSet->size(); j++) {
-              char c1, c2;
-              DNAIteratorConstPtr dna = dnaSet->at(j);
-              if ((dna->getReversed() && dna->getArrayIndex() > colMapIt->first->getEndPosition() - 2) ||
-                  (!dna->getReversed() && dna->getArrayIndex() < colMapIt->first->getStartPosition() + 2)) {
-                is4dSite = false;
-                break;
-              }
-              dna->toLeft();
-              c2 = dna->getChar();
-              dna->toLeft();
-              c1 = dna->getChar();
-              if (!isFourfoldDegenerate(c1, c2)) {
-                is4dSite = false;
-                break;
-              }
-            }
-            frame = 0;
-          }
-          if (is4dSite && !splitCodon)
-          {
-            BedBlock block;
-            block._start = colIt->getReferenceSequencePosition() - _bedLine._start;
-            block._length = 1;
-            if (reversed) {
-              buffer.push_front(block);
-            } else {
-              buffer.push_back(block);
-            }
-          }
-        } else {
-          frame++;
-        }
-        splitCodon = false;
-        if (n != _bedLine._blocks[i]._length - 1) {
-          if (reversed) {
-            colIt->toSite(colIt->getReferenceSequencePosition() + _refSequence->getStartPosition() - 1,
-                          colIt->getReferenceSequencePosition() + _refSequence->getStartPosition(),
-                          true);
-          } else {
-            colIt->toSite(colIt->getReferenceSequencePosition() + _refSequence->getStartPosition() + 1,
-                          colIt->getReferenceSequencePosition() + _refSequence->getStartPosition() + 2,
-                          true);
-          }
-        }
-      }
-      if (frame != 0) {
-        splitCodon = true;
+      dna->toLeft();
+      c2 = dna->getChar();
+      dna->toLeft();
+      c1 = dna->getChar();
+      if (!isFourfoldDegenerate(c1, c2)) {
+        isConserved = false;
+        break;
       }
     }
   }
-
-  _outBedLines.push_back(_bedLine);
-  assert(_outBedLines.size() == 1);
-  _outBedLines.back()._blocks.clear();
-  for (size_t j = 0; j < buffer.size(); ++j)
-  {
-    _outBedLines.back()._blocks.push_back(buffer[j]);
-  }
-
-  assert(_outBedLines.size() == 1);
+  return isConserved;
 }
 
-// again, keeping this around because of the single-genome alignment
-// issue.. otherwise conserving among just 1 genome would be
-// equivalent to this
-void Extract4d::extractBlocks4d()
+// NB: If conserved == true, throws out 4d sites that occur in a codon
+// split across exon boundaries. Otherwise the data would need to be
+// single-copy per sequence (not so bad).
+void Extract4d::extractBlocks4d(bool conserved)
 {
   hal_index_t frame = 0;
+  hal_index_t cdsStart = _bedLine._thickStart;
+  hal_index_t cdsEnd = _bedLine._thickEnd;
   bool reversed = _bedLine._strand == '-';
-  char currCodon[2] = { '\0', '\0' };
+  char currCodonPrefix[2] = { '\0', '\0' };
   deque<BedBlock> buffer;
-  // Ugly but way more compact. There is probably a much better way of
-  // doing this...
   for (hal_size_t i = reversed ? _bedLine._blocks.size() - 1 : 0;
        reversed ? i != (hal_size_t) -1 : i < _bedLine._blocks.size();
        reversed ? --i : ++i)
   {
-    if (_bedLine._blocks[i]._length == 0 ||
-        _bedLine._start + _bedLine._blocks[i]._start + _bedLine._blocks[i]._length >
+    BedBlock block = _bedLine._blocks[i];
+    if (block._length == 0 ||
+        _bedLine._start + block._start + block._length >
         (hal_index_t)_refSequence->getSequenceLength())
     {
-      cerr << "Line " << _lineNumber << ", block " << i 
+      // Bad bed block.
+      stringstream ss;
+      ss << "Line " << _lineNumber << ", block " << i 
            <<": BED coordinates invalid\n";
+      throw hal_exception(ss.str());
     }
-    else
+    hal_index_t start =  _bedLine._start + block._start;
+    hal_index_t end = start + block._length;
+    // Force start and end to be within the CDS start/end.
+    if (end <= cdsStart) {
+      continue;
+    } else {
+      start = max(cdsStart, start);
+    }
+    if (start >= cdsEnd) {
+      continue;
+    } else {
+      end = min(end, cdsEnd);
+    }
+    hal_index_t length = end - start;
+    if (reversed)
     {
-      hal_index_t start =  _bedLine._start + _bedLine._blocks[i]._start;
-      hal_index_t end = start + _bedLine._blocks[i]._length;
       --end;
-      if (_bedLine._strand == '-')
-      {
-        swap(start, end);
-      }
-      DNAIteratorConstPtr dna = _refSequence->getDNAIterator(start);
-      if (_bedLine._strand == '-')
-      {
-        dna->toReverse();
-      }
+      swap(start, end);
+    }
+    DNAIteratorConstPtr dna = _refSequence->getDNAIterator(start);
+    if (reversed)
+    {
+      dna->toReverse();
+    }
 
-      for (hal_index_t n = 0; n < _bedLine._blocks[i]._length; ++n)
-      {
-        if (frame == 2) {
-          if (isFourfoldDegenerate(currCodon[0], currCodon[1]) == true)
+    for (hal_index_t n = 0; n < length; ++n)
+    {
+      if (frame == 2) {
+        if (isFourfoldDegenerate(currCodonPrefix[0], currCodonPrefix[1]))
+        {
+          if (!conserved ||
+              // We can't deal with split codons in conserved mode currently.
+              (n >= 2 &&
+               // Check if the 4d site is a 4d site in all species.
+               is4dSiteConserved(_refSequence, dna->getArrayIndex() - _refSequence->getStartPosition(), reversed)))
           {
-            BedBlock block;
-            block._start = dna->getArrayIndex() - 
+            BedBlock outBlock;
+            outBlock._start = dna->getArrayIndex() - 
               _refSequence->getStartPosition() - _bedLine._start;
-            block._length = 1;
-            if (_bedLine._strand == '-')
+            outBlock._length = 1;
+            if (reversed)
             {
-              buffer.push_front(block);
+              buffer.push_front(outBlock);
             }
             else
             {
-              buffer.push_back(block);
+              buffer.push_back(outBlock);
             }
           }
-          frame = 0;
-        } else {
-          currCodon[frame] = dna->getChar();
-          frame++;
         }
-        dna->toRight();
+        frame = 0;
+      } else {
+        currCodonPrefix[frame] = dna->getChar();
+        frame++;
       }
+      dna->toRight();
     }
   }
 

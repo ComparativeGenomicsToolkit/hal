@@ -35,10 +35,7 @@ protected:
 
    virtual void visitLine();
 
-   void extractBed4d();
-   void extractConservedBed4d();
-   void extractBlocks4d();
-   void extractConservedBlocks4d();
+   void extractBlocks4d(bool conserved);
    void write();
    
 

@@ -29,4 +29,11 @@ struct ConservedBlock4dExtractTest : public AlignmentTest
   void createCallBack(hal::AlignmentPtr alignment);
   void checkCallBack(hal::AlignmentConstPtr alignment);
 };
+
+struct CDS4dExtractTest : public AlignmentTest
+{
+  void createCallBack(hal::AlignmentPtr alignment);
+  void checkCallBack(hal::AlignmentConstPtr alignment);
+};
+
 #endif
