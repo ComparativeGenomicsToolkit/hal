@@ -26,37 +26,6 @@ from hal.stats.halStats import getHalStats
 from hal.stats.halStats import getHalTree
 from hal.stats.halStats import getHalBaseComposition
 
-# it seems that msa_view doesnt like big files.  hack in some
-# code to split up beds.
-def splitBed(path, options):
-    numLines = int(runShellCommand("wc -l %s" % path).split()[0])
-    outPaths = []
-    outDir = os.path.dirname(options.outMafPath)
-    if options.maxBedLines is not None and numLines > options.maxBedLines:
-        inBed = open(path, "r")
-        curLine = 0
-        curBed = 0
-        outPath = path.replace(".bed", "_%d.bed" % curLine)
-        outPaths.append(outPath)
-        outBed = open(outPath, "w")
-        for inLine in inBed:
-            if curLine > options.maxBedLines:
-                curBed += 1
-                outBed.close()
-                outPath = path.replace(".bed", "_%d.bed" % curBed)
-                outPath = os.path.join(outDir, os.path.basename(outPath))
-                outPaths.append(outPath)
-                outBed = open(outPath, "w")
-                curLine = 0
-            else:
-                curLine += 1
-            outBed.write(inLine)
-        outBed.close()
-    else:
-        outPaths = [path]
-    return outPaths
-
-
 # it seems that msa view doesn't like the second line of MAF headers
 # (reads the tree as a maf block then spits an error).  so we use
 # this to remove 2nd lines from generated mafs.
@@ -76,18 +45,16 @@ def extractGeneMAFs(options):
         else:
             runShellCommand("cp %s %s" % (bedFile, bedFile4d))
 
-        for sBedFile in splitBed(bedFile4d, options):
-            outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
-            os.path.splitext(os.path.basename(sBedFile))[0] + ".maf")
-            h2mFlags = "--noDupes"
-            h2mFlags += " --targetGenomes %s" % options.halGenomes
-            if options.noAncestors is True:
-                h2mFlags += " --noAncestors"
-            runShellCommand("hal2mafMP.py %s %s %s "
-                            "--numProc %d --refTargets %s --refGenome %s "
-                            % (options.hal, outMaf, h2mFlags,options.numProc,
-                               sBedFile, options.refGenome))
-            os.remove(sBedFile)
+        outMaf = (os.path.splitext(options.outMafPath)[0] + "_" +
+                  os.path.splitext(os.path.basename(bedFile4d))[0] + ".maf")
+        h2mFlags = "--noDupes"
+        h2mFlags += " --targetGenomes %s" % options.halGenomes
+        if options.noAncestors is True:
+            h2mFlags += " --noAncestors"
+        runShellCommand("hal2mafMP.py %s %s %s "
+                        "--numProc %d --refTargets %s --refGenome %s "
+                        % (options.hal, outMaf, h2mFlags,options.numProc,
+                           bedFile4d, options.refGenome))
         if os.path.exists(bedFile4d):
             os.remove(bedFile4d)
 
@@ -274,12 +241,14 @@ def main(argv=None):
 
     args.outDir = os.path.dirname(args.outMod)
     args.outName = os.path.splitext(os.path.basename(args.outMod))[0]
-    args.outMafName = args.outName + "_halPhyloPTrain_temp.maf"
+    # Random suffix so two runs don't collide
+    suffix = "".join([random.choice(string.ascii_uppercase) for _ in xrange(7)])
+    args.outMafName = args.outName + "_halPhyloPTrain_temp_%s.maf" % suffix
     args.outMafPath = os.path.join(args.outDir, args.outMafName)
-    args.outMafAllPaths = args.outMafPath.replace("_halPhyloPTrain_temp.maf",
-                                                  "_halPhyloPTrain_temp*.maf")
-    args.outMafSS = args.outMafPath.replace("_halPhyloPTrain_temp.maf",
-                                            "_halPhyloPTrain_temp.ss")
+    args.outMafAllPaths = args.outMafPath.replace("_halPhyloPTrain_temp_%s.maf" % suffix,
+                                                  "_halPhyloPTrain_temp_%s*.maf" % suffix)
+    args.outMafSS = args.outMafPath.replace("_halPhyloPTrain_temp%s.maf" % suffix,
+                                            "_halPhyloPTrain_temp%s.ss" % suffix)
     computeModel(args)
 
 if __name__ == "__main__":

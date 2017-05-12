@@ -102,7 +102,7 @@ def concatenateSlices(sliceOpts, sliceCmds):
     assert len(sliceOpts) == len(sliceCmds)
     if (sliceOpts[0].sliceSize is not None):
         for opt, cmd in zip(sliceOpts, sliceCmds):
-            first = opt.sliceNumber == 0            
+            first = opt.sliceNumber == 0
             sliceMafPath = makeOutMafPath(opt)
             if os.path.isfile(sliceMafPath) and opt.sliceNumber is not None:
                 sliceNum = opt.sliceNumber
@@ -122,8 +122,10 @@ def concatenateSlices(sliceOpts, sliceCmds):
 def splitBed(bed, numParts):
     """Split up a bed file by lines into N parts, return the paths of the split files"""
     numLines = int(popenCatch("wc -l %s | cut -d' ' -f 1" % bed))
-    system("split -l %d %s %s.temp" % (math.ceil(float(numLines)/numParts), bed, bed))
-    return glob('%s.temp*' % bed)
+    # Random suffix so two runs on the same file don't collide
+    suffix = "".join([random.choice(string.ascii_uppercase) for _ in xrange(7)])
+    system("split -l %d %s %s.temp.%s" % (math.ceil(float(numLines)/numParts), bed, bed, suffix))
+    return glob('%s.temp.%s*' % (bed, suffix))
             
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes. 
@@ -184,6 +186,11 @@ def runParallelSlices(options):
             
     # run in parallel
     runParallelShellCommands(sliceCmds, options.numProc)
+
+    # clean up temporary bed files (if present)
+    for opts in sliceOpts:
+        if opts.refTargets and os.path.isfile(opts.refTargets):
+            os.remove(opts.refTargets)
 
     # concatenate into output if desired
     concatenateSlices(sliceOpts, sliceCmds)
