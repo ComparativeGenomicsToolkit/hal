@@ -107,8 +107,8 @@ def computeAgMAFStats(options):
                                                                 ".maf-e"))
 
 def computeFit(options):
-    cmd = "phyloFit --tree \"%s\" --subst-mod %s --sym-freqs %s --out-root %s" % (
-        options.tree, options.substMod, options.outMafSS,
+    cmd = "phyloFit --tree \"%s\" --subst-mod %s --sym-freqs %s --precision %s --out-root %s" % (
+        options.tree, options.substMod, options.outMafSS, options.precision,
         os.path.splitext(options.outMod)[0])
     if options.error is not None:
         cmd += " --error %s " % options.error
@@ -190,6 +190,8 @@ def main(argv=None):
                         " tool.  This flag disables this step, and keeps the"
                         " trained frequencies", action="store_true",
                         default=False)
+    parser.add_argument("--precision", help="Precision to pass to phyloFit (default MED)",
+                        choices=["HIGH", "MED", "LOW"], default="MED")
     parser.add_argument("--error", help="File in which to output confidence"
                         " intervals for the parameters in the model",
                         default=None)
