@@ -188,15 +188,18 @@ void Extract4d::extractBlocks4d(bool conserved)
     }
   }
 
-  _outBedLines.push_back(_bedLine);
-  assert(_outBedLines.size() == 1);
-  _outBedLines.back()._blocks.clear();
-  for (size_t j = 0; j < buffer.size(); ++j)
-  {
-    _outBedLines.back()._blocks.push_back(buffer[j]);
-  }
+  if (buffer.size() > 0) {
+    // We have at least one block to write, put them into an output bed line.
+    _outBedLines.push_back(_bedLine);
+    assert(_outBedLines.size() == 1);
+    _outBedLines.back()._blocks.clear();
+    for (size_t j = 0; j < buffer.size(); ++j)
+    {
+      _outBedLines.back()._blocks.push_back(buffer[j]);
+    }
 
-  assert(_outBedLines.size() == 1);
+    assert(_outBedLines.size() == 1);
+  }
 }
 
 void Extract4d::write()
