@@ -15,6 +15,8 @@ import subprocess
 import time
 import math
 import glob
+import random
+import string
 from collections import defaultdict
 from multiprocessing import Pool
 
@@ -247,8 +249,8 @@ def main(argv=None):
     args.outMafPath = os.path.join(args.outDir, args.outMafName)
     args.outMafAllPaths = args.outMafPath.replace("_halPhyloPTrain_temp_%s.maf" % suffix,
                                                   "_halPhyloPTrain_temp_%s*.maf" % suffix)
-    args.outMafSS = args.outMafPath.replace("_halPhyloPTrain_temp%s.maf" % suffix,
-                                            "_halPhyloPTrain_temp%s.ss" % suffix)
+    # replace .maf suffix with .ss
+    args.outMafSS = args.outMafPath[:-4] + ".ss"
     computeModel(args)
 
 if __name__ == "__main__":
