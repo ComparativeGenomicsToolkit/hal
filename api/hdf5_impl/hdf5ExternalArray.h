@@ -11,6 +11,14 @@
 #include <H5Cpp.h>
 #include "halDefs.h"
 
+// FGCommon deprecated in newer versions of HDF5, so we
+// switch to H5Location
+#if H5_VERSION_LE(1, 8, 11)
+namespace H5 {
+typedef CommonFG H5Location;
+}
+#endif
+
 namespace hal {
 
 /** 

@@ -11,6 +11,7 @@
 #include <string>
 #include <H5Cpp.h>
 #include "halMetaData.h"
+#include "hdf5ExternalArray.h"
 
 namespace hal {
 
