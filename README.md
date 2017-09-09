@@ -40,26 +40,26 @@ Note that HAL can also be downloaded and installed (automatically along with all
 
 ### Installing Dependencies
 
-#### HDF5 1.8 with C++ API enabled
+#### HDF5 1.10.1 with C++ API enabled
 
 * Using [MacPorts](http://www.macports.org/):   
 
-    sudo port install hdf5-18 +cxx
+    sudo port install hdf5 @1.10.1 +cxx
 
-* From [Source](http://www.hdfgroup.org/ftp/HDF5/current/src/):   
+* From [Source](http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/):
 
-     `wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.9.tar.gz`  
-	  `tar xzf  hdf5-1.8.9.tar.gz`  
-     `cd hdf5-1.8.9`  
+     `wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/hdf5-1.10.1.tar.gz`  
+	  `tar xzf  hdf5-1.10.1.tar.gz`  
+     `cd hdf5-1.10.1`  
 	  `./configure --enable-cxx`  
 	  `make && make install`  
 
 * Local install from source into DIR (do not need root password)  
 
-     `mkdir DIR/hdf5`  
-     `wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.9.tar.gz`  
-	  `tar xzf  hdf5-1.8.9.tar.gz`  
-     `cd hdf5-1.8.9`  
+     `mkdir DIR/hdf5`
+     `wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/hdf5-1.10.1.tar.gz`
+	  `tar xzf  hdf5-1.10.1.tar.gz`  
+     `cd hdf5-1.10.1`  
      `./configure --enable-cxx --prefix DIR/hdf5`  
      `make && make install` 
     

@@ -42,7 +42,7 @@ public:
      * 1: use default chunking (from dataset)
      * N: buffersize will be N chunks. 
      */
-   void create(H5::CommonFG* file, 
+   void create(H5::H5Location* file, 
                const H5std_string& path, 
                const H5::DataType& dataType,
                hsize_t numElements,
@@ -57,7 +57,7 @@ public:
      * 1: use default chunking (from dataset)
      * N: buffersize will be N chunks. 
      */
-   void load(H5::CommonFG* file, const H5std_string& path,
+   void load(H5::H5Location* file, const H5std_string& path,
              hsize_t chunksInBuffer = 1);
    
    /** Write the memory buffer back to the file */
@@ -101,7 +101,7 @@ protected:
    void page(hsize_t i);
 
    /** Pointer to file that owns this dataset */
-   H5::CommonFG* _file;
+   H5::H5Location* _file;
    /** Path of dataset in file */
    H5std_string _path;
    /** Datatype for array */

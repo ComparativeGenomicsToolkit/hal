@@ -17,7 +17,7 @@ HDF5MetaData::HDF5MetaData() :
 {
 }
 
-HDF5MetaData::HDF5MetaData(CommonFG* parent, const string& name)
+HDF5MetaData::HDF5MetaData(H5Location* parent, const string& name)
 {
   open(parent, name);
 }
@@ -58,7 +58,7 @@ const map<string, string>& HDF5MetaData::getMap() const
 
 // hack this in for compatibility for newer hdf5 which seems to have changed
 // interface from object to location here. 
-#if H5_VERSION_GE(1, 8, 12)
+#if H5_VERSION_GE(1, 8, 12) && H5_VERSION_LE(1, 10, 0)
 #define ATTR_OP_PARAM__ H5Location
 #else
 #define ATTR_OP_PARAM__ H5Object
@@ -76,7 +76,7 @@ static void attr_operator(ATTR_OP_PARAM__& loc/*in*/,
   attMap->insert(pair<string, string>(attr_name, strg));
 }
 
-void HDF5MetaData::open(CommonFG* parent, const string& name)
+void HDF5MetaData::open(H5Location* parent, const string& name)
 {
   assert(parent != NULL);
   _map.clear();

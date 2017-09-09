@@ -21,7 +21,7 @@ class HDF5MetaData : public MetaData
 {
 public:
    HDF5MetaData();
-   HDF5MetaData(H5::CommonFG* parent,
+   HDF5MetaData(H5::H5Location* parent,
                 const std::string& name);
    virtual ~HDF5MetaData();
    
@@ -32,14 +32,14 @@ public:
 
    void write();
    
-   void open(H5::CommonFG* parent,
+   void open(H5::H5Location* parent,
              const std::string& name);
 
 protected:
 
    static const std::string MetaGroupName;
    
-   H5::CommonFG* _parent;
+   H5::H5Location* _parent;
    H5::Group _group;
    std::map<std::string, std::string> _map;   
    bool _dirty;

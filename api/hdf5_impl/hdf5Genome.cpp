@@ -35,7 +35,7 @@ const double HDF5Genome::dnaChunkScale = 10.;
 
 HDF5Genome::HDF5Genome(const string& name,
                        HDF5Alignment* alignment,
-                       CommonFG* h5Parent,
+                       H5Location* h5Parent,
                        const DSetCreatPropList& dcProps,
                        bool inMemory) :
   _alignment(alignment),
