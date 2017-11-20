@@ -121,7 +121,8 @@ def concatenateSlices(sliceOpts, sliceCmds):
 
 def splitBed(bed, numParts):
     """Split up a bed file by lines into N parts, return the paths of the split files"""
-    numLines = int(popenCatch("wc -l %s | cut -d' ' -f 1" % bed))
+    with open(bed) as f:
+        numLines = sum(1 for line in f)
     # Random suffix so two runs on the same file don't collide
     suffix = "".join([random.choice(string.ascii_uppercase) for _ in xrange(7)])
     system("split -l %d %s %s.temp.%s" % (math.ceil(float(numLines)/numParts), bed, bed, suffix))
