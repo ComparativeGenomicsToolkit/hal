@@ -58,13 +58,9 @@ endif
 	PHAST=../../phast
 	CLAPACKPATH=../../clapack
 
-#	Melissa's version of the above
-#	PHAST=/home/mt269/phast
-#	CLAPACKPATH=/usr/local/software/CLAPACK
-
 ifeq ($(TARGETOS), Darwin)
-	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -framework vecLib -DVECLIB
-	phyloPlibs += -L${PHAST}/lib -lphast -lc
+	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
+	phyloPlibs += -L${PHAST}/lib -lphast -lc -framework Accelerate
 else
 	F2CPATH=${CLAPACKPATH}/F2CLIBS
 	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
