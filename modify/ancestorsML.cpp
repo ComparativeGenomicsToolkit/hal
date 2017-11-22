@@ -4,7 +4,7 @@
 #include "sonLibTree.h"
 #include "string.h"
 #include "halBedScanner.h"
-#include "ancestorsMLBed.h"
+#include "ancestorsML.h"
 extern "C" {
 #include "markov_matrix.h"
 #include "tree_model.h"
@@ -13,57 +13,7 @@ using namespace std;
 using namespace hal;
 
 // globals -- for convenience
-static bool writePosts; // for wigs
 static double outValue; // for wigs
-
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
-  optionsParser->addArgument("halFile", "hal tree");
-  optionsParser->addArgument("genome", "(ancestor) genome to modify");
-  optionsParser->addArgument("model", "phyloP model file");
-  optionsParser->addOption("writeHal", "write changes to hal file", false);
-  optionsParser->addOption("startPos", "start position", 0);
-  optionsParser->addOption("endPos", "end position", -1);
-  optionsParser->addOption("sequence", "Sequence name. IMPORTANT: if "
-                           "sequence name is not provided but startPos or "
-                           "endPos are, they will be assumed to be in "
-                           "genome coordinates", "");
-  optionsParser->addOption("thresholdN", "threshold below which an N is output", 0.9);
-  optionsParser->addOption("bed", "bed file to scan", "");
-  optionsParser->addOptionFlag("outputPosts", "output posterior"
-                               " probabilities for reference in wig"
-                               " format", false);
-  optionsParser->addOptionFlag("printWrites", "print base changes", false);
-  return optionsParser;
-}
-
-typedef struct {
-  const Genome *rootGenome;
-  hal_index_t pos;
-  // Reversed with respect to reference?
-  bool reversed;
-} rootInfo;
-
-typedef struct {
-  // Whether this node has already been calculated.
-  bool done;
-  // Position of this site in the genome
-  hal_index_t pos;
-  // Probability of leaves under this node given each nucleotide.
-  double pLeaves[4];
-  // This is a terrible and incorrect name
-  // TODO change it without breaking everything
-  double pOtherLeaves[4];
-  // should only be set on the leaves at first.
-  char dna;
-  // Reversed with respect to reference?
-  bool reversed;
-  // phast ID from the model.
-  int phastId;
-  // Posterior probability of this call (in case we need it later)
-  double post;
-} felsensteinData;
 
 // These could both be replaced with global arrays
 inline char indexToChar(int index) {
@@ -198,7 +148,7 @@ void buildTree(AlignmentConstPtr alignment, const Genome *genome,
         // comparison is implemented now though.
         TopSegmentIteratorConstPtr original = topIt->copy();
         for (topIt->toNextParalogy(); !topIt->equals(original); topIt->toNextParalogy()) {
-          // TMP, unnecesssary but sanity check
+          // sanity check
           assert(topIt->getLength() == botIt->getLength());
           hal_index_t childPos = topIt->getStartPosition();
           hal_index_t offset = abs(pos - botIt->getStartPosition());
@@ -230,6 +180,8 @@ void buildTree(AlignmentConstPtr alignment, const Genome *genome,
 
 bool pruneTree(stTree *tree)
 {
+  // This function removes any ancestral leaf (usually from alignment
+  // slop aligning to the edge of an ancestral scaffold gap).
   for (int64_t i = 0; i < stTree_getChildNumber(tree); i++) {
     if(pruneTree(stTree_getChild(tree, i))) {
       // The child numbers will shift by 1 on deletion.
@@ -256,14 +208,6 @@ double probTransition(TreeModel *mod, int childId, int parentId, char childDNA, 
   return mm_get_by_state(substMatrix, parentDNA, childDNA);
 }
 
-/*
-  double genRev(char childDNA, char parentDNA, MarkovMatrix *rateMatrix, double t)
-  {
-  MarkovMatrix *substMatrix;
-  substMatrix = mm_new(4, "AGCT", DISCRETE);
-  mm_exp(substMatrix, rateMatrix, t);
-  return mm_get_by_state(substMatrix, parentDNA, childDNA);
-  }*/
 void doFelsenstein(stTree *node, TreeModel *mod)
 {
   felsensteinData *data = (felsensteinData *) stTree_getClientData(node);
@@ -278,7 +222,6 @@ void doFelsenstein(stTree *node, TreeModel *mod)
     } else {
       for (int dna = 0; dna < 4; ++dna) {
         if (dna == charToIndex(data->dna)) {
-//          cout << stTree_getLabel(node) << ": " << data->dna << "( in " << (data->reversed ? "-" : "+") << " strand)" << endl;
           data->pLeaves[dna] = 1.0;
         } else {
           data->pLeaves[dna] = 0.0;
@@ -292,30 +235,6 @@ void doFelsenstein(stTree *node, TreeModel *mod)
 
     for (int dna = 0; dna < 4; dna++) {
       double prob = 1.0;
-/*      // Need all possiblities for child nodes, so iterate over the
-// cartesian product
-// FIXME do this sensibly
-assert(stTree_getChildNumber(node) < 16);
-      
-// get 4**stTree_getChildNumber(node)
-int64_t cartesianLimit = 0;
-for (int64_t i = 0; i < stTree_getChildNumber(node); i++) {
-cartesianLimit *= 4;
-}
-for (int64_t cartesian = 0; cartesian < pow(4, stTree_getChildNumber(node)); cartesian++) {
-int64_t c = cartesian;
-double probAssignment = 1.0;
-for (int64_t childIdx = 0; childIdx < stTree_getChildNumber(node); childIdx++) {
-stTree *childNode = stTree_getChild(node, childIdx);
-felsensteinData *childData = (felsensteinData *) stTree_getClientData(childNode);
-probAssignment *= probTransition(mod, childData->phastId, data->phastId, indexToChar(c % 4), indexToChar(dna));
-probAssignment *= childData->pLeaves[c % 4];
-c /= 4;
-}
-//        cout << "probability of assignment " << cartesian << ": " << probAssignment << endl;
-prob += probAssignment;
-}
-*/
       for (int64_t childIdx = 0; childIdx < stTree_getChildNumber(node); childIdx++) {
         // sum over the possibile assignments for this node
         stTree *childNode = stTree_getChild(node, childIdx);
@@ -327,10 +246,6 @@ prob += probAssignment;
         prob *= probSubtree;
       }
       data->pLeaves[dna] = prob;
-//      cout << stTree_getLabel(node) << ": " << dna << " " << prob << endl;
-      // Leave pointers to the letters in each child that are most
-      // probable given each letter in this node
-
     }
   }
   data->done = true;
@@ -360,7 +275,6 @@ void walkFelsenstein(TreeModel *mod, stTree *tree, char assignment, double thres
           felsensteinData *siblingData = (felsensteinData *) stTree_getClientData(siblingNode);
           for (int siblingDna = 0; siblingDna < 4; siblingDna++) {
             temp[thisDna] += data->pOtherLeaves[thisDna] * siblingData->pLeaves[siblingDna] * probTransition(mod, siblingData->phastId, data->phastId, indexToChar(siblingDna), indexToChar(thisDna));
-            //            cout << temp[thisDna] << " " << data->pOtherLeaves[thisDna] << " " << siblingData->pLeaves[siblingDna] << endl;
           }
         }
         if (stTree_getChildNumber(tree) == 1) {
@@ -390,10 +304,8 @@ void walkFelsenstein(TreeModel *mod, stTree *tree, char assignment, double thres
       } else {
         childAssignment = indexToChar(maxDna);
       }
-//      cout << string(1, childAssignment) << " : " << maxProb << endl;
       childData->post = maxProb;
       if (maxProb < threshold) {
-//        cout << "probability " << maxProb << " below threshold for genome " << stTree_getLabel(childNode) << " at pos " << childData->pos << " original: " << string(1, childAssignment) << " different" << endl;
         childAssignment = 'N';
       }
       walkFelsenstein(mod, childNode, childAssignment, threshold);
@@ -424,7 +336,7 @@ void writeNucleotides(stTree *tree, AlignmentPtr alignment,
       dnaIt->setChar(data->dna);
     }
   }
-  if (writePosts && genome == target && data->pos == targetPos) {
+  if (genome == target && data->pos == targetPos) {
     // correct genome and correct position
     outValue = data->post;
   }
@@ -434,7 +346,6 @@ void writeNucleotides(stTree *tree, AlignmentPtr alignment,
   }
 }
 
-// TODO: just free the tree here as well, it'd be cleaner
 void freeClientData(stTree *tree)
 {
   felsensteinData *data = (felsensteinData *) stTree_getClientData(tree);
@@ -451,7 +362,7 @@ void freeClientData(stTree *tree)
   free(data);
 }
 
-void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_index_t startPos, hal_index_t endPos, map<string, int> &nameToId, double threshold, bool writeHal, bool printWrites)
+void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_index_t startPos, hal_index_t endPos, map<string, int> &nameToId, double threshold, bool writeHal, bool printWrites, bool writePosts)
 {
   stTree *tree = NULL;
   bool firstRun = true;
@@ -504,7 +415,6 @@ void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_inde
     if (maxDna == -1) {
       assignment = randNuc();
     } else if (rootData->post < threshold) {
-//      cout << "below threshold for genome " << stTree_getLabel(tree) << " at pos " << rootData->pos << " original: " << string(1, indexToChar(maxDna)) << " different" << endl;
       assignment = 'N';
     } else {
       assignment = indexToChar(maxDna);
@@ -517,85 +427,4 @@ void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_inde
       cout << outValue << endl;
     }
   }
-}
-
-int main(int argc, char *argv[])
-{
-  string halPath, genomeName, modPath, sequenceName, bedPath;
-  CLParserPtr optParser = initParser();
-  bool writeHal = false, printWrites = false;
-  hal_index_t startPos = 0;
-  hal_index_t endPos = -1;
-  double threshold = 0.0;
-  try {
-    optParser->parseOptions(argc, argv);
-    halPath = optParser->getArgument<string>("halFile");
-    genomeName = optParser->getArgument<string>("genome");
-    modPath = optParser->getArgument<string>("model");
-    writeHal = optParser->getOption<bool>("writeHal");
-    startPos = optParser->getOption<hal_index_t>("startPos");
-    endPos = optParser->getOption<hal_index_t>("endPos");
-    threshold = optParser->getOption<double>("thresholdN");
-    sequenceName = optParser->getOption<string>("sequence");
-    bedPath = optParser->getOption<string>("bed");
-    writePosts = optParser->getFlag("outputPosts");
-    printWrites = optParser->getFlag("printWrites");
-  } catch (exception &e) {
-    optParser->printUsage(cerr);
-    return 1;
-  }
-
-  // Load phast model.
-  FILE *infile = phast_fopen(modPath.c_str(), "r");
-  TreeModel *mod = tm_new_from_file(infile, TRUE);
-  phast_fclose(infile);
-  tm_set_subst_matrices(mod);
-  // Map names to phast model IDs.
-  map<string, int> nameToId;
-  List *phastList = tr_postorder(mod->tree);
-  for (int i = 0; i < mod->tree->nnodes; i++) {
-    TreeNode *n = (TreeNode*) lst_get_ptr(phastList, i);
-    nameToId[n->name] = n->id;
-  }
-  lst_free(phastList);
-
-  AlignmentPtr alignment = openHalAlignment(halPath, optParser);
-  Genome *genome = alignment->openGenome(genomeName);
-  if (genome == NULL) {
-    throw hal_exception("Genome " + genomeName + " not found in alignment.");
-  }
-  if (genome->getNumChildren() == 0) {
-    throw hal_exception("Genome " + genomeName + " is a leaf genome.");
-  }
-  
-  if (bedPath != "") {
-    AncestorsMLBed bedScanner(mod, alignment, genome, nameToId, threshold,
-                              writeHal, printWrites);
-    bedScanner.scan(bedPath, -1);
-    return 0;
-  }
-
-  if (sequenceName != "") {
-    Sequence *sequence = genome->getSequence(sequenceName);
-    if (sequence == NULL) {
-      throw hal_exception("Sequence name not found!");
-    }
-    startPos += sequence->getStartPosition();
-    if (endPos == -1) {
-      endPos = sequence->getEndPosition();
-    } else {
-      endPos += sequence->getStartPosition();
-      if (endPos > sequence->getEndPosition()) {
-        endPos = sequence->getEndPosition();
-      }
-    }
-  }
-
-  if (endPos == -1 || endPos > genome->getSequenceLength()) {
-    endPos = genome->getSequenceLength();
-  }
-  reEstimate(mod, alignment, genome, startPos, endPos, nameToId, threshold, writeHal, printWrites);
-  alignment->close();
-//  tm_free(mod);
-  return 0;
 }

@@ -25,7 +25,7 @@ void AncestorsMLBed::visitLine()
   startPos += sequence->getStartPosition();
   endPos += sequence->getStartPosition();
 
-  reEstimate(_mod, _alignment, _genome, startPos, endPos, _nameToId, _threshold, _writeHal, _printWrites);
+  reEstimate(_mod, _alignment, _genome, startPos, endPos, _nameToId, _threshold, _writeHal, _printWrites, _outputPosts);
 }
 
 #endif

@@ -1,9 +1,13 @@
 #ifndef __ANCESTORSML_H_
 #define __ANCESTORSML_H_
+#include <map>
 #include "halDefs.h"
 #include "halGenome.h"
 #include "halAlignment.h"
 #include "sonLibTree.h"
+extern "C" {
+#include "tree_model.h"
+}
 
 typedef struct {
   const hal::Genome *rootGenome;
@@ -13,34 +17,27 @@ typedef struct {
 } rootInfo;
 
 typedef struct {
-  // Whether this node has already been calculated.
-  bool done;
   // Position of this site in the genome
   hal_index_t pos;
   // Probability of leaves under this node given each nucleotide.
   double pLeaves[4];
-  // points to maximum probability chars for the children of this node,
-  // given each nucleotide for this node.
-  char *MLChildrenChars[4];
-  // array of probs for the chars of children of this node (given the assignment
-  // of this node.)
-  double *childrenCharProbs[4][4];
+  // This is a terrible and incorrect name
+  // TODO change it without breaking everything
+  double pOtherLeaves[4];
+ // phast ID from the model.
+  int phastId;
+  // Posterior probability of this call (in case we need it later)
+  double post;
   // should only be set on the leaves at first.
   char dna;
-  // Reversed with respect to reference?
+   // Reversed with respect to reference?
   bool reversed;
-  // phast ID from the model.
-  int phastId;
+  // Whether this node has already been calculated.
+  bool done;
 } felsensteinData;
 
-rootInfo * findRoot(const hal::Genome *genome,
-                    hal_index_t pos, bool reversed=false);
+void doFelsenstein(stTree *node, TreeModel *mod);
 
-void removeAndPrune(stTree *tree);
-
-void buildTree(hal::AlignmentConstPtr alignment, const hal::Genome *genome,
-               hal_index_t pos, stTree *tree, bool reversed, std::map<std::string, int> *nameToId = NULL);
-
-void reEstimate(TreeModel *mod, hal::AlignmentPtr alignment, hal::Genome *genome, hal_index_t startPos, hal_index_t endPos, std::map<std::string, int> &nameToId, double threshold, bool writeHal, bool printWrites);
+void reEstimate(TreeModel *mod, hal::AlignmentPtr alignment, hal::Genome *genome, hal_index_t startPos, hal_index_t endPos, std::map<std::string, int> &nameToId, double threshold, bool writeHal, bool printWrites, bool outputPosts);
 
 #endif
