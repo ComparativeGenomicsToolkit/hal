@@ -54,11 +54,11 @@ static void doFelsensteinWorkedExampleTest(CuTest *testCase)
 
   doFelsenstein(tree, mod);
   felsensteinData *data = (felsensteinData *) stTree_getClientData(tree);
-  double likelihood = vec_get(mod->backgd_freqs, 0) * data->pLeaves[0]
+  double likelihood = vec_get(mod->backgd_freqs, 0) * exp(data->pLeaves[0])
     // swap of 2, 1 here is intentional because 1 = G for us and 1 = C for the PHAST model
-    + vec_get(mod->backgd_freqs, 2) * data->pLeaves[1]
-    + vec_get(mod->backgd_freqs, 1) * data->pLeaves[2]
-    + vec_get(mod->backgd_freqs, 3) * data->pLeaves[3];
+    + vec_get(mod->backgd_freqs, 2) * exp(data->pLeaves[1])
+    + vec_get(mod->backgd_freqs, 1) * exp(data->pLeaves[2])
+    + vec_get(mod->backgd_freqs, 3) * exp(data->pLeaves[3]);
   // phast's answer is -12.253583 -- check that we are reasonably close
   CuAssertDblEquals(testCase, -12.253583, log2(likelihood), 0.001);
 }

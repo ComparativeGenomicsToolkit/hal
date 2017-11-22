@@ -15,6 +15,17 @@ using namespace hal;
 // globals -- for convenience
 static double outValue; // for wigs
 
+// sum log-transformed probabilities.
+static inline double log_space_add(double x, double y) {
+  if (x == -INFINITY) {
+    return y;
+  }
+  if (y == -INFINITY) {
+    return x;
+  }
+  return max(x, y) + log1p(exp(-fabs(x - y)));
+}
+
 // These could both be replaced with global arrays
 inline char indexToChar(int index) {
   switch(index) {
@@ -217,14 +228,14 @@ void doFelsenstein(stTree *node, TreeModel *mod)
   if (stTree_getChildNumber(node) == 0) {
     if (data->dna == 'N' || data->dna == 'n') {
       for (int dna = 0; dna < 4; ++dna) {
-        data->pLeaves[dna] = 0.25;
+        data->pLeaves[dna] = log(0.25);
       }
     } else {
       for (int dna = 0; dna < 4; ++dna) {
         if (dna == charToIndex(data->dna)) {
-          data->pLeaves[dna] = 1.0;
+          data->pLeaves[dna] = log(1.0);
         } else {
-          data->pLeaves[dna] = 0.0;
+          data->pLeaves[dna] = -INFINITY;
         }
       }
     }
@@ -234,16 +245,18 @@ void doFelsenstein(stTree *node, TreeModel *mod)
     }
 
     for (int dna = 0; dna < 4; dna++) {
-      double prob = 1.0;
+      double prob = 0.0;
       for (int64_t childIdx = 0; childIdx < stTree_getChildNumber(node); childIdx++) {
         // sum over the possibile assignments for this node
         stTree *childNode = stTree_getChild(node, childIdx);
         felsensteinData *childData = (felsensteinData *) stTree_getClientData(childNode);
-        double probSubtree = 0.0;
+        double probSubtree = -INFINITY;
         for (int childDna = 0; childDna < 4; childDna++) {
-          probSubtree += childData->pLeaves[childDna]*probTransition(mod, childData->phastId, data->phastId, indexToChar(childDna), indexToChar(dna));
+          double probBranch = log(probTransition(mod, childData->phastId, data->phastId,
+                                                 indexToChar(childDna), indexToChar(dna)));
+          probSubtree = log_space_add(probSubtree, childData->pLeaves[childDna] + probBranch);
         }
-        prob *= probSubtree;
+        prob += probSubtree;
       }
       data->pLeaves[dna] = prob;
     }
@@ -262,11 +275,11 @@ void walkFelsenstein(TreeModel *mod, stTree *tree, char assignment, double thres
       felsensteinData *childData = (felsensteinData *) stTree_getClientData(childNode);
 
       // Find posterior probability of this base.
-      double totalProb = 0.0;
+      double totalProb = -INFINITY;
       // trick found from phast code -- saves us some compute time
       double temp[4];
       for (int thisDna = 0; thisDna < 4; thisDna++) {
-        temp[thisDna] = 0.0;
+        temp[thisDna] = -INFINITY;
         for (int64_t j = 0; j < stTree_getChildNumber(tree); j++) {
           if (i == j) {
             continue;
@@ -274,7 +287,7 @@ void walkFelsenstein(TreeModel *mod, stTree *tree, char assignment, double thres
           stTree *siblingNode = stTree_getChild(tree, j);
           felsensteinData *siblingData = (felsensteinData *) stTree_getClientData(siblingNode);
           for (int siblingDna = 0; siblingDna < 4; siblingDna++) {
-            temp[thisDna] += data->pOtherLeaves[thisDna] * siblingData->pLeaves[siblingDna] * probTransition(mod, siblingData->phastId, data->phastId, indexToChar(siblingDna), indexToChar(thisDna));
+            temp[thisDna] = log_space_add(temp[thisDna], data->pOtherLeaves[thisDna] + siblingData->pLeaves[siblingDna] + log(probTransition(mod, siblingData->phastId, data->phastId, indexToChar(siblingDna), indexToChar(thisDna))));
           }
         }
         if (stTree_getChildNumber(tree) == 1) {
@@ -283,16 +296,16 @@ void walkFelsenstein(TreeModel *mod, stTree *tree, char assignment, double thres
         }
       }
       for (int childDna = 0; childDna < 4; childDna++) {
-        childData->pOtherLeaves[childDna] = 0.0;
+        childData->pOtherLeaves[childDna] = -INFINITY;
         for (int thisDna = 0; thisDna < 4; thisDna++) {
-          childData->pOtherLeaves[childDna] += temp[thisDna] * probTransition(mod, childData->phastId, data->phastId, indexToChar(childDna), indexToChar(thisDna));
+          childData->pOtherLeaves[childDna] = log_space_add(childData->pOtherLeaves[childDna], temp[thisDna] + log(probTransition(mod, childData->phastId, data->phastId, indexToChar(childDna), indexToChar(thisDna))));
         }
-        totalProb += childData->pOtherLeaves[childDna] * childData->pLeaves[childDna];
+        totalProb = log_space_add(totalProb, childData->pOtherLeaves[childDna] + childData->pLeaves[childDna]);
       }
       int maxDna = -1;
-      double maxProb = 0.0;
+      double maxProb = -INFINITY;
       for (int childDna = 0; childDna < 4; childDna++) {
-        double post = childData->pOtherLeaves[childDna] * childData->pLeaves[childDna] / totalProb;
+        double post = childData->pOtherLeaves[childDna] + childData->pLeaves[childDna] - totalProb;
         if (post > maxProb) {
           maxDna = childDna;
           maxProb = post;
@@ -364,6 +377,7 @@ void freeClientData(stTree *tree)
 
 void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_index_t startPos, hal_index_t endPos, map<string, int> &nameToId, double threshold, bool writeHal, bool printWrites, bool writePosts)
 {
+  threshold = log(threshold);
   stTree *tree = NULL;
   bool firstRun = true;
   for (hal_index_t pos = startPos; pos < endPos; pos++) {
@@ -390,7 +404,7 @@ void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_inde
       stTree_destruct(tree);
       if (writePosts) {
         // need to keep the wig in order
-        outValue = 0.0;
+        outValue = -INFINITY;
         cout << outValue << endl;
       }
       continue;
@@ -399,18 +413,18 @@ void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_inde
     // Find assignment for root node that maximizes P(leaves)
     felsensteinData *rootData = (felsensteinData *) stTree_getClientData(tree);
     // For prob(tree|char) -> prob(char|tree) (there is only one possible tree)
-    double totalProbTree = 0.0;
-    double maxProb = 0.0;
+    double totalProbTree = -INFINITY;
+    double maxProb = -INFINITY;
     int maxDna = -1;
     for (int dna = 0; dna < 4; dna++) {
-      rootData->pOtherLeaves[dna] = 0.25;
-      totalProbTree += rootData->pLeaves[dna];
+      rootData->pOtherLeaves[dna] = log(0.25);
+      totalProbTree = log_space_add(totalProbTree, rootData->pLeaves[dna]);
       if (rootData->pLeaves[dna] > maxProb) {
         maxDna = dna;
         maxProb = rootData->pLeaves[dna];
       }
     }
-    rootData->post = maxProb/totalProbTree;
+    rootData->post = maxProb - totalProbTree;
     char assignment;
     if (maxDna == -1) {
       assignment = randNuc();
