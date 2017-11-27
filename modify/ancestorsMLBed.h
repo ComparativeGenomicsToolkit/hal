@@ -2,6 +2,10 @@
 extern "C" {
 #include "tree_model.h"
 }
+// PHAST code defines min, max macros which conflict with the reserved C++ names.
+#undef min
+#undef max
+
 class AncestorsMLBed : public hal::BedScanner
 {
 public:

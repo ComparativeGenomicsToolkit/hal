@@ -9,6 +9,9 @@ extern "C" {
 #include "markov_matrix.h"
 #include "tree_model.h"
 }
+// PHAST code defines min, max macros which conflict with the reserved C++ names.
+#undef min
+#undef max
 using namespace std;
 using namespace hal;
 
