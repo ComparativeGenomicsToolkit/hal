@@ -18,14 +18,14 @@ void AncestorsMLBed::visitLine()
   string sequenceName = _bedLine._chrName;
   startPos = _bedLine._start;
   endPos = _bedLine._end;
-  Sequence *sequence = _genome->getSequence(sequenceName);
+  const Sequence *sequence = _genome->getSequence(sequenceName);
   if (sequence == NULL) {
     throw hal_exception("Sequence name not found!");
   }
   startPos += sequence->getStartPosition();
   endPos += sequence->getStartPosition();
 
-  reEstimate(_mod, _alignment, _genome, startPos, endPos, _nameToId, _threshold, _writeHal, _printWrites, _outputPosts);
+  reEstimate(_mod, _alignment, _genome, startPos, endPos, _nameToId, _threshold, _printWrites, _outputPosts);
 }
 
 #endif

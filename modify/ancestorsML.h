@@ -38,6 +38,6 @@ typedef struct {
 
 void doFelsenstein(stTree *node, TreeModel *mod);
 
-void reEstimate(TreeModel *mod, hal::AlignmentPtr alignment, hal::Genome *genome, hal_index_t startPos, hal_index_t endPos, std::map<std::string, int> &nameToId, double threshold, bool writeHal, bool printWrites, bool outputPosts);
+void reEstimate(TreeModel *mod, hal::AlignmentConstPtr alignment, const hal::Genome *genome, hal_index_t startPos, hal_index_t endPos, std::map<std::string, int> &nameToId, double threshold, bool printWrites, bool outputPosts);
 
 #endif

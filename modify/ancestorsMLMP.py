@@ -4,17 +4,20 @@ ancestor.
 """
 import math
 from argparse import ArgumentParser
+from collections import defaultdict
+
 from sonLib.bioio import getTempFile, system, popenCatch
 from sonLib.nxnewick import NXNewick
 from jobTree.scriptTree.stack import Stack
 from jobTree.scriptTree.target import Target
 
 class Setup(Target):
-    def __init__(self, halFile, phyloPModel, jobsPerGenome):
+    def __init__(self, halFile, phyloPModel, jobsPerGenome, threshold):
         Target.__init__(self)
         self.halFile = halFile
         self.phyloPModel = phyloPModel
         self.jobsPerGenome = jobsPerGenome
+        self.threshold = threshold
 
     def run(self):
         # Find all ancestral genomes using the tree.
@@ -30,7 +33,7 @@ class Setup(Target):
             bedFileForGenome = getTempFile(rootDir=self.getGlobalTempDir())
             bedFiles[genome] = bedFileForGenome
             self.addChildTarget(GetInsertedColumnBed(self.halFile, genome, bedFileForGenome))
-        self.setFollowOnTarget(RunAncestorsMLParallel(self.halFile, self.phyloPModel, bedFiles, self.jobsPerGenome))
+        self.setFollowOnTarget(RunAncestorsMLParallel(self.halFile, self.phyloPModel, bedFiles, self.jobsPerGenome, self.threshold))
 
 class GetInsertedColumnBed(Target):
     """Gets a bed file containing all columns inserted in this genome."""
@@ -46,18 +49,20 @@ class GetInsertedColumnBed(Target):
                                                               self.outputPath))
 
 class RunAncestorsMLParallel(Target):
-    def __init__(self, halFile, phyloPModel, bedFileDict, jobsPerGenome):
+    def __init__(self, halFile, phyloPModel, bedFileDict, jobsPerGenome, threshold):
         Target.__init__(self)
         self.halFile = halFile
         self.phyloPModel = phyloPModel
         self.bedFileDict = bedFileDict
         self.jobsPerGenome = jobsPerGenome
+        self.threshold = threshold
 
     def run(self):
         outputsPerGenome = {}
         for genome, bedFile in self.bedFileDict.items():
             outputsPerGenome[genome] = []
-            numLines = int(popenCatch("wc -l %s | cut -d' ' -f 1" % bedFile))
+            with open(bedFile) as f:
+                numLines = sum(1 for line in f)
             linesPerJob = int(math.ceil(float(numLines)/self.jobsPerGenome))
             if linesPerJob == 0:
                 linesPerJob = 1
@@ -73,21 +78,22 @@ class RunAncestorsMLParallel(Target):
                 output = getTempFile(rootDir=self.getGlobalTempDir())
                 self.addChildTarget(RunAncestorsML(self.halFile, genome,
                                                    bedForJob, self.phyloPModel,
-                                                   output))
+                                                   self.threshold, output))
                 outputsPerGenome[genome].append(output)
         self.setFollowOnTarget(WriteNucleotides(outputsPerGenome, self.halFile))
 
 class RunAncestorsML(Target):
-    def __init__(self, halFile, genome, bedForJob, modelFile, output):
+    def __init__(self, halFile, genome, bedForJob, modelFile, threshold, output):
         Target.__init__(self)
         self.halFile = halFile
         self.genome = genome
         self.bedForJob = bedForJob
         self.modelFile = modelFile
+        self.threshold = threshold
         self.output = output
 
     def run(self):
-        system("ancestorsML --printWrites --bed %s %s %s %s > %s" % (self.bedForJob, self.halFile, self.genome, self.modelFile, self.output))
+        system("ancestorsML --printWrites --bed %s --thresholdN %s %s %s %s > %s" % (self.bedForJob, self.threshold, self.halFile, self.genome, self.modelFile, self.output))
 
 class WriteNucleotides(Target):
     def __init__(self, inputsPerGenome, halFile):
@@ -96,9 +102,21 @@ class WriteNucleotides(Target):
         self.halFile = halFile
 
     def run(self):
+        counts = defaultdict(int)
+        nCounts = defaultdict(int)
         for genome, inputs in self.inputsPerGenome.items():
             for input in inputs:
+                with open(input) as f:
+                    for line in f:
+                        genome, position, old, new = line.strip().split('\t')
+                        counts[genome] += 1
+                        if new == 'N':
+                            nCounts[genome] += 1
+
                 system("halWriteNucleotides %s %s" % (self.halFile, input))
+
+        for genome in counts:
+            self.logToMaster('Changed %s nucleotides of genome %s (%s to N)' % (counts[genome], genome, nCounts[genome]))
 
 if __name__ == '__main__':
     from ancestorsMLMP import * # required for jobTree
@@ -107,6 +125,9 @@ if __name__ == '__main__':
     parser.add_argument('phyloPModel', help='phyloP model file generated using halPhyloPTrain.py')
     parser.add_argument('--jobsPerGenome', help='maximum number of jobs per genome',
                         type=int, default=2000)
+    parser.add_argument('--threshold', help='bases with a posterior probability less '
+                        'than this will be set to N (set to 0.0 to disable)', type=float,
+                        default=0.9)
     Stack.addJobTreeOptions(parser)
     opts = parser.parse_args()
-    Stack(Setup(opts.halPath, opts.phyloPModel, opts.jobsPerGenome)).startJobTree(opts)
+    Stack(Setup(opts.halPath, opts.phyloPModel, opts.jobsPerGenome, opts.threshold)).startJobTree(opts)

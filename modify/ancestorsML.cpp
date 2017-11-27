@@ -326,15 +326,15 @@ void walkFelsenstein(TreeModel *mod, stTree *tree, char assignment, double thres
   }
 }
 
-void writeNucleotides(stTree *tree, AlignmentPtr alignment,
-                      Genome *target, hal_index_t targetPos, bool writeHal = false,
+void writeNucleotides(stTree *tree, AlignmentConstPtr alignment,
+                      const Genome *target, hal_index_t targetPos,
                       bool printWrites = false)
 {
   felsensteinData *data = (felsensteinData *) stTree_getClientData(tree);
   if (stTree_getChildNumber(tree) == 0) {
     return;
   }
-  Genome *genome = alignment->openGenome(stTree_getLabel(tree));
+  const Genome *genome = alignment->openGenome(stTree_getLabel(tree));
   assert(genome != NULL);
   DNAIteratorPtr dnaIt = genome->getDNAIterator(data->pos);
   if (data->reversed) {
@@ -345,9 +345,6 @@ void writeNucleotides(stTree *tree, AlignmentPtr alignment,
     if (printWrites) {
       cout << genome->getName() << "\t" << data->pos << "\t" << string(1, dna) << "\t" << string(1, data->dna) << endl;
     }
-    if (writeHal) {
-      dnaIt->setChar(data->dna);
-    }
   }
   if (genome == target && data->pos == targetPos) {
     // correct genome and correct position
@@ -355,7 +352,7 @@ void writeNucleotides(stTree *tree, AlignmentPtr alignment,
   }
   for (int64_t i = 0; i < stTree_getChildNumber(tree); i++) {
     stTree *childNode = stTree_getChild(tree, i);
-    writeNucleotides(childNode, alignment, target, targetPos, writeHal, printWrites);
+    writeNucleotides(childNode, alignment, target, targetPos, printWrites);
   }
 }
 
@@ -375,7 +372,7 @@ void freeClientData(stTree *tree)
   free(data);
 }
 
-void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_index_t startPos, hal_index_t endPos, map<string, int> &nameToId, double threshold, bool writeHal, bool printWrites, bool writePosts)
+void reEstimate(TreeModel *mod, AlignmentConstPtr alignment, const Genome *genome, hal_index_t startPos, hal_index_t endPos, map<string, int> &nameToId, double threshold, bool printWrites, bool writePosts)
 {
   threshold = log(threshold);
   stTree *tree = NULL;
@@ -434,7 +431,7 @@ void reEstimate(TreeModel *mod, AlignmentPtr alignment, Genome *genome, hal_inde
       assignment = indexToChar(maxDna);
     }
     walkFelsenstein(mod, tree, assignment, threshold);
-    writeNucleotides(tree, alignment, genome, pos, writeHal, printWrites);
+    writeNucleotides(tree, alignment, genome, pos, printWrites);
     freeClientData(tree);
     stTree_destruct(tree);
     if (writePosts) {

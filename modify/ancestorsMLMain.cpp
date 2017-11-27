@@ -11,7 +11,6 @@ static CLParserPtr initParser()
   optionsParser->addArgument("halFile", "hal tree");
   optionsParser->addArgument("genome", "(ancestor) genome to modify");
   optionsParser->addArgument("model", "phyloP model file");
-  optionsParser->addOption("writeHal", "write changes to hal file", false);
   optionsParser->addOption("startPos", "start position", 0);
   optionsParser->addOption("endPos", "end position", -1);
   optionsParser->addOption("sequence", "Sequence name. IMPORTANT: if "
@@ -32,7 +31,7 @@ int main(int argc, char *argv[])
 {
   string halPath, genomeName, modPath, sequenceName, bedPath;
   CLParserPtr optParser = initParser();
-  bool writeHal = false, printWrites = false, outputPosts = false;
+  bool printWrites = false, outputPosts = false;
   hal_index_t startPos = 0;
   hal_index_t endPos = -1;
   double threshold = 0.0;
@@ -41,7 +40,6 @@ int main(int argc, char *argv[])
     halPath = optParser->getArgument<string>("halFile");
     genomeName = optParser->getArgument<string>("genome");
     modPath = optParser->getArgument<string>("model");
-    writeHal = optParser->getOption<bool>("writeHal");
     startPos = optParser->getOption<hal_index_t>("startPos");
     endPos = optParser->getOption<hal_index_t>("endPos");
     threshold = optParser->getOption<double>("thresholdN");
@@ -68,8 +66,8 @@ int main(int argc, char *argv[])
   }
   lst_free(phastList);
 
-  AlignmentPtr alignment = openHalAlignment(halPath, optParser);
-  Genome *genome = alignment->openGenome(genomeName);
+  AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, optParser);
+  const Genome *genome = alignment->openGenome(genomeName);
   if (genome == NULL) {
     throw hal_exception("Genome " + genomeName + " not found in alignment.");
   }
@@ -79,13 +77,13 @@ int main(int argc, char *argv[])
   
   if (bedPath != "") {
     AncestorsMLBed bedScanner(mod, alignment, genome, nameToId, threshold,
-                              writeHal, printWrites, outputPosts);
+                              printWrites, outputPosts);
     bedScanner.scan(bedPath, -1);
     return 0;
   }
 
   if (sequenceName != "") {
-    Sequence *sequence = genome->getSequence(sequenceName);
+    const Sequence *sequence = genome->getSequence(sequenceName);
     if (sequence == NULL) {
       throw hal_exception("Sequence name not found!");
     }
@@ -103,7 +101,7 @@ int main(int argc, char *argv[])
   if (endPos == -1 || endPos > genome->getSequenceLength()) {
     endPos = genome->getSequenceLength();
   }
-  reEstimate(mod, alignment, genome, startPos, endPos, nameToId, threshold, writeHal, printWrites, outputPosts);
+  reEstimate(mod, alignment, genome, startPos, endPos, nameToId, threshold, printWrites, outputPosts);
   alignment->close();
   return 0;
 }
