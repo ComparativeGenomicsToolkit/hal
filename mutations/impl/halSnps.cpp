@@ -428,13 +428,13 @@ static void countSnps(const Genome* refGenome,
       DNAIteratorConstPtr refDnaIt = *orthologsIt->first;
       set<DNAIteratorConstPtr *> *orthologSet = orthologsIt->second;
       char refDna = tolower(refDnaIt->getChar());
+      hal_size_t numDifferentSpecies = 0; // # of species w/ base
+                                          // different from ref
       if (refDna == 'n')
       {
         // Obviously shouldn't call snps here.
-        continue;
+        goto cleanup;
       }
-      hal_size_t numDifferentSpecies = 0; // # of species w/ base
-                                          // different from ref
       for (set<DNAIteratorConstPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
       {
         DNAIteratorConstPtr targetDnaIt = **orthologIt;
@@ -484,13 +484,15 @@ static void countSnps(const Genome* refGenome,
         }
         refTsvStream << endl;
       }
-
-      for (set<DNAIteratorConstPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
-      {
-        delete *orthologIt;
+      cleanup:
+      if (!doDupes) {
+          for (set<DNAIteratorConstPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
+          {
+              delete *orthologIt;
+          }
+          delete orthologsIt->first;
       }
       delete orthologSet;
-      delete orthologsIt->first;
     }
 
     if (colIt->lastColumn()) {
