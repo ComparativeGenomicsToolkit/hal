@@ -11,13 +11,18 @@
 #include <H5Cpp.h>
 #include "halDefs.h"
 
-// FGCommon deprecated in newer versions of HDF5, so we
-// switch to H5Location
-#if H5_VERSION_LE(1, 8, 11)
+// Hack to compile with various versions of HDF5 that aren't themselves compatible
 namespace H5 {
-typedef CommonFG H5Location;
-}
+#if H5_VERSION_GE(1, 10, 1)
+// Latest version.  H5Location class exists and contains createGroup() and CommonFG doesn't.  We Just use it.
+typedef H5Location PortableH5Location;
+#else
+// Versions 1.8.12 - 1.10.0 inclusive: H5Location exists, but doesn't contain createGroup()
+// Versions 1.8.11 and earlier: H5Location doesn't exist
+// In both cases, we stick with CommonFG
+typedef CommonFG PortableH5Location;
 #endif
+}
 
 namespace hal {
 
@@ -50,7 +55,7 @@ public:
      * 1: use default chunking (from dataset)
      * N: buffersize will be N chunks. 
      */
-   void create(H5::H5Location* file, 
+   void create(H5::PortableH5Location* file, 
                const H5std_string& path, 
                const H5::DataType& dataType,
                hsize_t numElements,
@@ -65,7 +70,7 @@ public:
      * 1: use default chunking (from dataset)
      * N: buffersize will be N chunks. 
      */
-   void load(H5::H5Location* file, const H5std_string& path,
+   void load(H5::PortableH5Location* file, const H5std_string& path,
              hsize_t chunksInBuffer = 1);
    
    /** Write the memory buffer back to the file */
@@ -109,7 +114,7 @@ protected:
    void page(hsize_t i);
 
    /** Pointer to file that owns this dataset */
-   H5::H5Location* _file;
+   H5::PortableH5Location* _file;
    /** Path of dataset in file */
    H5std_string _path;
    /** Datatype for array */

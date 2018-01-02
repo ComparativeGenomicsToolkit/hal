@@ -31,7 +31,7 @@ HDF5ExternalArray::~HDF5ExternalArray()
 }
 
 // Create a new dataset in specifed location
-void HDF5ExternalArray::create(H5Location* file, 
+void HDF5ExternalArray::create(PortableH5Location* file, 
                                const H5std_string& path, 
                                const DataType& dataType,
                                hsize_t numElements,
@@ -90,7 +90,7 @@ void HDF5ExternalArray::create(H5Location* file,
 }
 
 // Load an existing dataset into memory
-void HDF5ExternalArray::load(H5Location* file, const H5std_string& path,
+void HDF5ExternalArray::load(PortableH5Location* file, const H5std_string& path,
                              hsize_t chunksInBuffer)
 {
   // load up the parameters

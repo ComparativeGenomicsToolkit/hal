@@ -17,7 +17,7 @@ HDF5MetaData::HDF5MetaData() :
 {
 }
 
-HDF5MetaData::HDF5MetaData(H5Location* parent, const string& name)
+HDF5MetaData::HDF5MetaData(PortableH5Location* parent, const string& name)
 {
   open(parent, name);
 }
@@ -76,7 +76,7 @@ static void attr_operator(ATTR_OP_PARAM__& loc/*in*/,
   attMap->insert(pair<string, string>(attr_name, strg));
 }
 
-void HDF5MetaData::open(H5Location* parent, const string& name)
+void HDF5MetaData::open(PortableH5Location* parent, const string& name)
 {
   assert(parent != NULL);
   _map.clear();

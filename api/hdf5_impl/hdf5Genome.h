@@ -40,7 +40,7 @@ public:
 
    HDF5Genome(const std::string& name,
               HDF5Alignment* alignment,
-              H5::H5Location* h5Parent,
+              H5::PortableH5Location* h5Parent,
               const H5::DSetCreatPropList& dcProps,
               bool inMemory);
 
@@ -187,7 +187,7 @@ protected:
 protected:
 
    HDF5Alignment* _alignment;
-   H5::H5Location* _h5Parent;
+   H5::PortableH5Location* _h5Parent;
    AlignmentPtr _alignmentPtr;
    std::string _name;
    HDF5MetaData* _metaData;
