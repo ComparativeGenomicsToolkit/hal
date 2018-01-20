@@ -30,9 +30,9 @@ static CLParserPtr initParser()
                                "in event of a crash", false);
 /*  optionsParser->addOptionFlag("unique",
                                "only map block if its left-most paralog is in"
-                               "the input.  this "
-                               "is used to insure that the same column isnt "
-                               "sampled twice (due to ducplications) by mafs "
+                               "the input. This "
+                               "is used to ensure that the same column isn't "
+                               "sampled twice (due to duplications) by mafs "
                                "generated on distinct ranges.",
                                false);
 */

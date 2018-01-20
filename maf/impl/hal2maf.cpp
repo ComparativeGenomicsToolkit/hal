@@ -67,9 +67,9 @@ static CLParserPtr initParser()
                                false);
   optionsParser->addOptionFlag("unique",
                                "only write column whose left-most reference "
-                               "coordinate is in the specified range.  this "
-                               "is used to insure that the same column isnt "
-                               "sampled twice (due to ducplications) by mafs "
+                               "coordinate is in the specified range. This "
+                               "is used to ensure that the same column isn't"
+                               "sampled twice (due to duplications) by mafs"
                                "generated on distinct ranges.",
                                false);
   optionsParser->addOptionFlag("append",
