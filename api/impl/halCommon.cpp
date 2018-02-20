@@ -214,3 +214,16 @@ void hal::getGenomesInSubTree(const Genome* root,
     getGenomesInSubTree(root->getChild(i), outputSet);
   }
 }
+
+vector<const Genome *> hal::getLeafGenomes(AlignmentConstPtr alignment)
+{
+    // Load in all leaves from alignment
+    vector<string> leafNames = alignment->getLeafNamesBelow(alignment->getRootName());
+    vector<const Genome *> leafGenomes;
+    for (hal_size_t i = 0; i < leafNames.size(); i++) {
+        const Genome *genome = alignment->openGenome(leafNames[i]);
+        assert(genome != NULL);
+        leafGenomes.push_back(genome);
+    }
+    return leafGenomes;
+}

@@ -164,6 +164,9 @@ void getGenomesInSpanningTree(const std::set<const Genome*>& inputSet,
 void getGenomesInSubTree(const Genome* root, 
                          std::set<const Genome*>& outputSet);
 
+/* Get all leaf genomes in the alignment, in no particular order. */
+std::vector<const Genome *> getLeafGenomes(AlignmentConstPtr alignment);
+
 }
 
 #endif

@@ -885,13 +885,7 @@ static void printSegments(ostream& os, AlignmentConstPtr alignment,
 // Print coverage for all leaves vs. all leaves efficiently.
 static void printAllCoverage(ostream& os, AlignmentConstPtr alignment)
 {
-  vector<string> leafNames = alignment->getLeafNamesBelow(alignment->getRootName());
-  vector<const Genome *> leafGenomes;
-  for (hal_size_t i = 0; i < leafNames.size(); i++) {
-    const Genome *genome = alignment->openGenome(leafNames[i]);
-    assert(genome != NULL);
-    leafGenomes.push_back(genome);
-  }
+  vector<const Genome *> leafGenomes = getLeafGenomes(alignment);
   ColumnIterator::VisitCache visitCache;
   map<pair<const Genome *, const Genome *>, vector<hal_size_t> *> histograms;
   for (hal_size_t i = 0; i < leafGenomes.size(); i++) {

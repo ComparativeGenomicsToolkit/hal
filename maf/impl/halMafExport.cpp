@@ -176,13 +176,8 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
     writeHeader();
 
     // Load in all leaves from alignment
-    vector<string> leafNames = alignment->getLeafNamesBelow(alignment->getRootName());
-    vector<const Genome *> leafGenomes;
-    for (hal_size_t i = 0; i < leafNames.size(); i++) {
-        const Genome *genome = alignment->openGenome(leafNames[i]);
-        assert(genome != NULL);
-        leafGenomes.push_back(genome);
-    }
+    vector<const Genome *> leafGenomes = getLeafGenomes(alignment);
+
     ColumnIterator::VisitCache visitCache;
     // Go through all the genomes one by one, and spit out any columns
     // they participate in that we haven't seen.
