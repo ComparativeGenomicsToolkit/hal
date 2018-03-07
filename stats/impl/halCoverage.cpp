@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     vector<const Genome *> leafGenomes = getLeafGenomes(alignment);
 
     map<const Genome *, vector<hal_size_t> > coverage;
-    for (int64_t i = 0; i < leafGenomes.size(); i++) {
+    for (size_t i = 0; i < leafGenomes.size(); i++) {
         coverage.insert(make_pair(leafGenomes[i], vector<hal_size_t>()));
     }
 
@@ -56,14 +56,14 @@ int main(int argc, char** argv)
         // Sample (with replacement) a random position in the reference genome.
         hal_index_t pos = st_randomInt64(0, ref->getSequenceLength());
         SegmentIteratorConstPtr refSeg = ref->getTopSegmentIterator();
-        refSeg->toSite(pos);
-        refSeg->slice(pos - refSeg->getStartPosition(), pos - refSeg->getStartPosition() + 1);
+        refSeg->toSite(pos, true);
+        assert(refSeg->getLength() == 1);
         for (size_t j = 0; j < leafGenomes.size(); j++) {
             const Genome *leafGenome = leafGenomes[j];
             set<MappedSegmentConstPtr> segments;
             refSeg->getMappedSegments(segments, leafGenome, NULL,
                                       true, 0, NULL, NULL);
-            vector<hal_size_t> histogram = coverage[leafGenome];
+            vector<hal_size_t> &histogram = coverage[leafGenome];
             hal_size_t depth = segments.size();
             if (depth > maxDepth) {
                 maxDepth = depth;
@@ -74,7 +74,6 @@ int main(int argc, char** argv)
             for (size_t k = 0; k < depth; k++) {
                 histogram[k] += 1;
             }
-            coverage[leafGenome] = histogram;
         }
     }
 
