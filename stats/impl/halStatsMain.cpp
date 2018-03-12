@@ -837,7 +837,7 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
     vector <hal_size_t> *histogram = histIt->second;
     for(hal_size_t i = 0; i < maxHistLength; i++) {
       if (i < histogram->size()) {
-        os << ", " << (double) histogram->at(i);
+        os << ", " << histogram->at(i);
       } else {
         os << ", " << 0;
       }
@@ -979,7 +979,7 @@ static void printAllCoverage(ostream& os, AlignmentConstPtr alignment)
     vector <hal_size_t> *histogram = histIt->second;
     for(hal_size_t i = 0; i < maxHistLength; i++) {
       if (i < histogram->size()) {
-        os << ", " << (double) histogram->at(i);
+        os << ", " << histogram->at(i);
       } else {
         os << ", " << 0;
       }
