@@ -28,7 +28,8 @@ HDF5BottomSegment::HDF5BottomSegment(HDF5Genome* genome,
                                      hal_index_t index) :
   _array(array),
   _index(index),
-  _genome(genome)
+  _genome(genome),
+  _loaded(false)
 {
 
 }
@@ -128,6 +129,7 @@ H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
 
   H5::CompType dataType(totalSize(numChildren));
   dataType.insertMember("genomeIdx", genomeIndexOffset, PredType::NATIVE_INT64);
+  // Unused. But keeping it in because removing it would be a breaking change.
   dataType.insertMember("length", lengthOffset, PredType::NATIVE_HSIZE);
   dataType.insertMember("topIdx", topIndexOffset, PredType::NATIVE_INT64);
   for(hsize_t i = 0; i < numChildren; ++i)
