@@ -87,6 +87,8 @@ public:
    
 private:
 
+   void readFromArray() const;
+
    static const size_t genomeIndexOffset;
    static const size_t bottomIndexOffset;
    static const size_t parIndexOffset;
@@ -95,8 +97,15 @@ private:
    static const size_t totalSize;
 
    mutable HDF5ExternalArray* _array;
-   mutable hal_index_t _index;
    mutable HDF5Genome* _genome;
+   mutable hal_index_t _index;
+   mutable hal_index_t _start;
+   mutable hal_size_t _length;
+   mutable hal_index_t _nextParalogy;
+   mutable hal_index_t _parentIndex;
+   mutable hal_index_t _bottomParseIndex;
+   mutable bool _parentReversed;
+   mutable bool _loaded;
 };
 
 //INLINE members
@@ -108,6 +117,7 @@ inline void HDF5TopSegment::setArrayIndex(Genome* genome,
   _array = &_genome->_topArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;
+  readFromArray();
 }
 
 inline void HDF5TopSegment::setArrayIndex(const Genome* genome, 
@@ -119,11 +129,27 @@ inline void HDF5TopSegment::setArrayIndex(const Genome* genome,
   _array = &_genome->_topArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;
+  readFromArray();
+}
+
+inline void HDF5TopSegment::readFromArray() const
+{
+  _loaded = true;
+  _start = _array->getValue<hal_index_t>(_index, genomeIndexOffset);
+  _length = _array->getValue<hal_size_t>(_index + 1, genomeIndexOffset) -
+    _array->getValue<hal_size_t>(_index, genomeIndexOffset);
+  _nextParalogy = _array->getValue<hal_index_t>(_index, parIndexOffset);
+  _parentIndex = _array->getValue<hal_index_t>(_index, parentIndexOffset);
+  _parentReversed = _array->getValue<bool>(_index, parentReversedOffset);
+  _bottomParseIndex = _array->getValue<hal_index_t>(_index, bottomIndexOffset);
 }
 
 inline hal_index_t HDF5TopSegment::getStartPosition() const
 {
-  return _array->getValue<hal_index_t>(_index, genomeIndexOffset);
+  if (!_loaded) {
+    readFromArray();
+  }
+  return _start;
 }
 
 inline hal_index_t HDF5TopSegment::getEndPosition() const
@@ -133,8 +159,10 @@ inline hal_index_t HDF5TopSegment::getEndPosition() const
 
 inline hal_size_t HDF5TopSegment::getLength() const
 {
-  return _array->getValue<hal_size_t>(_index + 1, genomeIndexOffset) - 
-     _array->getValue<hal_size_t>(_index, genomeIndexOffset);
+  if (!_loaded) {
+    readFromArray();
+  }
+  return _length;
 }
 
 inline const Genome* HDF5TopSegment::getGenome() const
@@ -164,7 +192,10 @@ inline bool HDF5TopSegment::hasParseDown() const
 
 inline hal_index_t HDF5TopSegment::getNextParalogyIndex() const
 {
-  return _array->getValue<hal_index_t>(_index, parIndexOffset);
+  if (!_loaded) {
+    readFromArray();
+  }
+  return _nextParalogy;
 }
 
 inline bool HDF5TopSegment::hasNextParalogy() const
@@ -176,11 +207,15 @@ inline void HDF5TopSegment::setNextParalogyIndex(hal_index_t parIdx)
 {
   assert(parIdx != _index);
   _array->setValue(_index, parIndexOffset, parIdx);
+  readFromArray();
 }
 
 inline hal_index_t HDF5TopSegment::getParentIndex() const
 {
-  return _array->getValue<hal_index_t>(_index, parentIndexOffset);
+  if (!_loaded) {
+    readFromArray();
+  }
+  return _parentIndex;
 }
 
 inline bool HDF5TopSegment::hasParent() const
@@ -191,26 +226,35 @@ inline bool HDF5TopSegment::hasParent() const
 inline void HDF5TopSegment::setParentIndex(hal_index_t parentIndex)
 {
   _array->setValue(_index, parentIndexOffset, parentIndex);
+  readFromArray();
 }
 
 inline bool HDF5TopSegment::getParentReversed() const
 {
-  return _array->getValue<bool>(_index, parentReversedOffset); 
+  if (!_loaded) {
+    readFromArray();
+  }
+  return _parentReversed;
 }
 
 inline void HDF5TopSegment::setParentReversed(bool isReversed)
 {
   _array->setValue(_index, parentReversedOffset, isReversed);
+  readFromArray();
 }
 
 inline hal_index_t HDF5TopSegment::getBottomParseIndex() const
 {
-  return _array->getValue<hal_index_t>(_index, bottomIndexOffset);
+  if (!_loaded) {
+    readFromArray();
+  }
+  return _bottomParseIndex;
 }
 
 inline void HDF5TopSegment::setBottomParseIndex(hal_index_t parseIndex)
 {
   _array->setValue(_index, bottomIndexOffset, parseIndex);
+  readFromArray();
 }
 
 inline hal_index_t HDF5TopSegment::getArrayIndex() const

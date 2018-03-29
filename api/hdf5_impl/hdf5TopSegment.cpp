@@ -27,7 +27,8 @@ HDF5TopSegment::HDF5TopSegment(HDF5Genome* genome,
                                hal_index_t index) :
   _array(array),
   _index(index),
-  _genome(genome)
+  _genome(genome),
+  _loaded(false)
 {
   assert(_index >= 0);
 }
