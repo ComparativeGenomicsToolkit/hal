@@ -117,7 +117,10 @@ inline void HDF5BottomSegment::setArrayIndex(Genome* genome,
   _array = &_genome->_bottomArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;  
-  readFromArray();
+  _loaded = false;
+  hal_size_t numChildren = _genome->getNumChildren();
+  _childIndices.resize(numChildren);
+  _childReversed.resize(numChildren);
 }
 
 inline void HDF5BottomSegment::setArrayIndex(const Genome* genome, 
@@ -129,7 +132,7 @@ inline void HDF5BottomSegment::setArrayIndex(const Genome* genome,
   _array = &_genome->_bottomArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;
-  readFromArray();
+  _loaded = false;
 }
 
 inline void HDF5BottomSegment::readFromArray() const {
@@ -140,15 +143,13 @@ inline void HDF5BottomSegment::readFromArray() const {
     _array->getValue<hal_size_t>(_index, genomeIndexOffset);
   _topParseIndex = _array->getValue<hal_index_t>(_index, topIndexOffset);
   hal_size_t numChildren = _genome->getNumChildren();
-  _childIndices.reserve(numChildren);
-  _childReversed.reserve(numChildren);
   for (hal_size_t i = 0; i < numChildren; i++) {
-    _childIndices.push_back(_array->getValue<hal_index_t>(
-                              (hsize_t)_index, firstChildOffset + 
-                              i * (sizeof(hal_index_t) + sizeof(bool))));
-    _childReversed.push_back(_array->getValue<bool>(
-                               (hsize_t)_index, firstChildOffset + 
-                               i * (sizeof(hal_index_t) + sizeof(bool)) + sizeof(hal_index_t)));
+    _childIndices[i] = _array->getValue<hal_index_t>(
+        (hsize_t)_index, firstChildOffset + 
+        i * (sizeof(hal_index_t) + sizeof(bool)));
+    _childReversed[i] = _array->getValue<bool>(
+        (hsize_t)_index, firstChildOffset + 
+        i * (sizeof(hal_index_t) + sizeof(bool)) + sizeof(hal_index_t));
   }
 }
 

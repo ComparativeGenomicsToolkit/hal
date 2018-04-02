@@ -117,7 +117,7 @@ inline void HDF5TopSegment::setArrayIndex(Genome* genome,
   _array = &_genome->_topArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;
-  readFromArray();
+  _loaded = false;
 }
 
 inline void HDF5TopSegment::setArrayIndex(const Genome* genome, 
@@ -129,7 +129,7 @@ inline void HDF5TopSegment::setArrayIndex(const Genome* genome,
   _array = &_genome->_topArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;
-  readFromArray();
+  _loaded = false;
 }
 
 inline void HDF5TopSegment::readFromArray() const

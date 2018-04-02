@@ -29,7 +29,9 @@ HDF5BottomSegment::HDF5BottomSegment(HDF5Genome* genome,
   _array(array),
   _index(index),
   _genome(genome),
-  _loaded(false)
+  _loaded(false),
+  _childIndices(genome->getNumChildren()),
+  _childReversed(genome->getNumChildren())
 {
 
 }
