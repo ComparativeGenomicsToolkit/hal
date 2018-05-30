@@ -442,6 +442,7 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
                                hal_int_t tStart, 
                                hal_int_t tEnd,
                                int maxRefGap,
+                               int maxBlockLength,
                                int doDupes,
                                char **errStr)
 {
@@ -488,6 +489,7 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     mafExport.setNoDupes(doDupes == 0);
     mafExport.setUcscNames(true);
     mafExport.setMaxRefGap(hal_size_t(maxRefGap));
+    mafExport.setMaxBlockLength(hal_index_t(maxBlockLength));
 
     mafExport.convertSegmentedSequence(mafBuffer, alignment, tGenome, 
                                        absStart, 1 + absEnd - absStart,

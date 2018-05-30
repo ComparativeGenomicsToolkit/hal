@@ -104,6 +104,7 @@ int main(int argc, char** argv)
                               args.tStart,
                               args.tEnd,
                               0, // maxRefGap
+                              0, // maxBlockLength
                               args.doDupes,
                               NULL);
 

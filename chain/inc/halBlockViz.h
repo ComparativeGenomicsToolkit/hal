@@ -306,6 +306,7 @@ hal_int_t halGetMAF(FILE* outFile,
                     hal_int_t tStart, 
                     hal_int_t tEnd,
                     int maxRefGap,
+                    int maxBlockLength,
                     int doDupes,
                     char **errStr);
 
