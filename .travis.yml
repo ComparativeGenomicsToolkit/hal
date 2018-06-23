@@ -1,0 +1,25 @@
+sudo: required
+dist: trusty
+language: c++
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libhdf5-7 libhdf5-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install hdf5 || echo "a brew error code when installing gcc is expected"; fi
+  - git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
+install:
+  - sh -c 'cd sonLib && make'
+script:
+  - export sonLibRootPath=`pwd`/sonLib
+  - make && PYTHONPATH=..:.:$PYTHONPATH PATH=./bin:$PATH make test
+os:
+  - linux
+  - osx
+env:
+  - CGL_DEBUG=1
+  - CGL_DEBUG=ultra ASAN_OPTIONS=detect_leaks=0
+matrix:
+  exclude:
+    # The default OSX env doesn't have a version that supports
+    # -fsanitize=address.
+    - env: CGL_DEBUG=ultra ASAN_OPTIONS=detect_leaks=0
+      os: osx
