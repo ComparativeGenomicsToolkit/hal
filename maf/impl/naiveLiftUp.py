@@ -416,18 +416,31 @@ def read_next_alignment(alignmentFile):
     assert alignment.my_end - alignment.my_start == alignment.other_end - alignment.other_start
     return alignment
 
-@attrs(hash=True)
+@attrs(hash=True, slots=True)
 class BlockLine(object):
     genome = attrib()
     chrom = attrib()
     start = attrib()
     end = attrib()
     strand = attrib()
-    seq = attrib()
+    # Aligned sequence for this block entry.
+    aligned_seq = attrib()
+    # Offset within the above aligned sequence. This allows us to keep
+    # references to the same string within many different block entries, rather
+    # than copying giant strings every time we split or reverse. Quadratic
+    # behavior would really hurt on chromosomes that are hundreds of megabases
+    # long.
+    align_start = attrib(default=0)
+    align_end = attrib()
 
-    def seq_pos_to_align_pos(self, seq_pos, start_offset=0):
-        #logger.debug('seq_pos: %s, start_offset: %s', seq_pos, start_offset)
-        align_pos = start_offset
+    @align_end.default
+    def _align_end(self):
+        return len(self.aligned_seq)
+
+    needs_rev_comp = attrib(default=False)
+
+    def seq_pos_to_align_pos(self, seq_pos):
+        align_pos = self.align_start
         if self.strand == '+':
             my_seq_pos = self.start
             step = +1
@@ -435,12 +448,11 @@ class BlockLine(object):
             my_seq_pos = self.end - 1
             step = -1
         while my_seq_pos != seq_pos:
-            #logger.debug('%s %s', my_seq_pos, align_pos)
-            if self.seq[align_pos] != '-':
+            if self.aligned_seq[align_pos] != '-':
                 my_seq_pos += step
             align_pos += 1
 
-        return align_pos
+        return align_pos - self.align_start
 
     def reverse(self):
         return BlockLine(
@@ -449,31 +461,37 @@ class BlockLine(object):
             self.start,
             self.end,
             '+' if self.strand == '-' else '-',
-            self.seq
+            self.aligned_seq,
+            align_start=self.align_start,
+            align_end=self.align_end,
+            needs_rev_comp=True
         )
 
-    def split(self, split_pos, start_alignment_pos):
-        # Find position (relative to sequence, not alignment) in this line at split point
+    def align_pos_to_seq_pos(self, tgt_align_pos):
         if self.strand == '+':
-            my_pos = self.start
+            seq_pos = self.start
         else:
-            my_pos = self.end
-        align_pos = start_alignment_pos
-        while align_pos < split_pos:
-            if self.seq[align_pos] != '-':
+            seq_pos = self.end
+        align_pos = 0
+        while align_pos < tgt_align_pos:
+            if self.aligned_seq[self.align_start + align_pos] != '-':
                 if self.strand == '+':
-                    my_pos += 1
+                    seq_pos += 1
                 else:
-                    my_pos -= 1
+                    seq_pos -= 1
             align_pos += 1
+        return seq_pos
 
+    def split(self, split_pos):
+        # Find position (relative to sequence, not alignment) in this line at split point
+        my_pos = self.align_pos_to_seq_pos(split_pos)
         # Create 2 new block lines
         if self.strand == '+':
-            first_block_line = BlockLine(self.genome, self.chrom, self.start, my_pos, '+', self.seq)
-            second_block_line = BlockLine(self.genome, self.chrom, my_pos, self.end, '+', self.seq)
+            first_block_line = BlockLine(self.genome, self.chrom, self.start, my_pos, '+', self.aligned_seq, align_start=self.align_start, align_end=self.align_start + split_pos)
+            second_block_line = BlockLine(self.genome, self.chrom, my_pos, self.end, '+', self.aligned_seq, align_start=self.align_start + split_pos, align_end=self.align_end)
         else:
-            first_block_line = BlockLine(self.genome, self.chrom, my_pos, self.end, '-', self.seq)
-            second_block_line = BlockLine(self.genome, self.chrom, self.start, my_pos, '-', self.seq)
+            first_block_line = BlockLine(self.genome, self.chrom, my_pos, self.end, '-', self.aligned_seq, align_start=self.align_start, align_end=self.align_start + split_pos)
+            second_block_line = BlockLine(self.genome, self.chrom, self.start, my_pos, '-', self.aligned_seq, align_start=self.align_start + split_pos, align_end=self.align_end)
         return first_block_line, second_block_line
 
     def overlaps(self, other):
@@ -495,16 +513,24 @@ class BlockLine(object):
         else:
             return False
 
+    @property
+    def seq(self):
+        seq = self.aligned_seq[self.align_start:self.align_end]
+        if self.needs_rev_comp:
+            return reverseComplement(seq)
+        else:
+            return seq
+
+    @seq.setter
+    def seq(self, seq):
+        self.aligned_seq = seq
+        self.align_start = 0
+        self.align_end = len(seq)
+        self.needs_rev_comp = False
+
 class Block(object):
     def __init__(self, block_lines, start_pos=0, end_pos=None):
         self.block_lines = block_lines
-        self.start_pos = start_pos
-        if end_pos is None:
-            self.end_pos = len(block_lines[0].seq)
-        else:
-            self.end_pos = end_pos
-        self.needs_rev_comp = False
-        self.header_not_offset = False
 
     @classmethod
     def read_next_from_file(cls, f):
@@ -520,7 +546,12 @@ class Block(object):
                 break
             fields = line.strip().split('\t')
             fields[2], fields[3] = int(fields[2]), int(fields[3])
-            block_lines.append(BlockLine(*fields))
+            block_lines.append(BlockLine(genome=fields[0],
+                                         chrom=fields[1],
+                                         start=fields[2],
+                                         end=fields[3],
+                                         strand=fields[4],
+                                         aligned_seq=fields[5]))
 
         # Sanity check
         seq_len = len(block_lines[0].seq)
@@ -542,17 +573,11 @@ class Block(object):
         """
         assert self.first.strand == '+'
         assert 0 <= pos < self.first.end - self.first.start, "Split point must be within block"
-        seq = self.first.seq
-        align_pos = self.start_pos
-        seq_pos = self.first.start
-        while seq_pos < self.first.start + pos:
-            if seq[align_pos] != '-':
-                seq_pos += 1
-            align_pos += 1
+        align_pos = self.first.seq_pos_to_align_pos(self.first.start + pos)
         first_block_lines = []
         second_block_lines = []
         for block_line in self.block_lines:
-            first_line, second_line = block_line.split(align_pos, self.start_pos)
+            first_line, second_line = block_line.split(align_pos)
             first_block_lines.append(first_line)
             second_block_lines.append(second_line)
 
@@ -562,17 +587,20 @@ class Block(object):
         first_block_lines = [bl for bl in first_block_lines if bl.start != bl.end]
         second_block_lines = [bl for bl in second_block_lines if bl.start != bl.end]
 
-        return Block(first_block_lines, self.start_pos, align_pos), Block(second_block_lines, align_pos, self.end_pos)
+        return Block(first_block_lines), Block(second_block_lines)
 
     def prepend_new_sequence(self, ref_start, ref_end, new_genome, new_chrom, new_start, new_end, strand):
-        logger.debug("ref_start: %s, ref_end: %s, new_start: %s, new_end: %s", ref_start, ref_end, new_start, new_end)
+        logger.debug("ref_start: %s, ref_end: %s, new_chrom: %s, new_start: %s, new_end: %s, strand: %s", ref_start, ref_end, new_chrom, new_start, new_end, strand)
         assert ref_end - ref_start == new_end - new_start
         assert 0 <= ref_start < ref_end
         assert 0 <= new_start < new_end
-        pre_gap = self.first.seq_pos_to_align_pos(ref_start, self.start_pos) - self.first.seq_pos_to_align_pos(self.first.start, self.start_pos)
-        post_gap = self.first.seq_pos_to_align_pos(self.first.end, self.start_pos) - self.first.seq_pos_to_align_pos(ref_end, self.start_pos)
+        pre_gap = self.first.seq_pos_to_align_pos(ref_start)
+        ref_end_align_pos = self.first.seq_pos_to_align_pos(ref_end)
+        post_gap = len(self.first.seq) - ref_end_align_pos
         block_lines = [bl for bl in self.block_lines]
-        aligned_portion = re.sub(r'[^-]', 'X', self.first.seq[self.start_pos + pre_gap:self.end_pos - post_gap])
+        aligned_portion = re.sub(r'[^-]', 'X', self.first.seq[pre_gap:ref_end_align_pos])
+        assert len(aligned_portion) + pre_gap + post_gap == len(self.first.seq), \
+            "Prepended sequence must match the current length of the block!"
         if strand == '-':
             # Flip everything. The first sequence should always be in the + orientation
             block_lines = [bl.reverse() for bl in block_lines]
@@ -580,31 +608,23 @@ class Block(object):
         else:
             new_seq = '-' * pre_gap + aligned_portion + '-' * post_gap
         block_lines.insert(0, BlockLine(new_genome, new_chrom, new_start, new_end, '+', new_seq))
-        new_block = Block(block_lines, self.start_pos, self.end_pos)
-        new_block.header_not_offset = True
-        if strand == '-':
-            new_block.needs_rev_comp = True
+        new_block = Block(block_lines)
         return new_block
 
     def __str__(self):
         s = ""
-        for i, block_line in enumerate(self.block_lines):
-            if self.needs_rev_comp and i > 0:
-                seq = reverseComplement(block_line.seq[self.start_pos:self.end_pos])
-            elif self.header_not_offset and i == 0:
-                seq = block_line.seq
-            else:
-                seq = block_line.seq[self.start_pos:self.end_pos]
+        for block_line in self.block_lines:
+            assert len(block_line.seq) == len(self.first.seq)
             s += "{genome}\t{chrom}\t{start}\t{end}\t{strand}\t{seq}\n".format(
                 genome=block_line.genome, chrom=block_line.chrom, start=block_line.start,
-                end=block_line.end, strand=block_line.strand, seq=seq)
+                end=block_line.end, strand=block_line.strand, seq=block_line.seq)
         s += "\n"
         return s
 
     def fill_in_first_sequence(self, first_seq):
         assert len(first_seq) == self.first.end - self.first.start
         assert self.first.strand == '+'
-        aligned_seq = self.first.seq[self.start_pos:self.end_pos]
+        aligned_seq = self.first.seq
         # Convert to list and assign the correct characters, skipping gaps
         new_aligned_seq = list(aligned_seq)
         seq_pos = 0
@@ -615,7 +635,6 @@ class Block(object):
         # Convert back to a string
         new_aligned_seq = "".join(new_aligned_seq)
         self.block_lines[0] = BlockLine(self.first.genome, self.first.chrom, self.first.start, self.first.end, self.first.strand, new_aligned_seq)
-        self.header_not_offset = True
 
     def merge(self, other):
         """
@@ -648,6 +667,8 @@ class Block(object):
         other_seq_pos = other.first.start
         my_align_pos = 0
         other_align_pos = 0
+        my_end_pos = len(self.first.seq)
+        other_end_pos = len(other.first.seq)
 
         # Region before overlap.
         overlap_start = max(self.first.start, other.first.start)
@@ -658,25 +679,25 @@ class Block(object):
         # swapping the merger and mergee if not, but that would only get rid of
         # one branch here.
         if my_seq_pos < overlap_start:
-            pre_overlap_align_len = self.first.seq_pos_to_align_pos(overlap_start, self.start_pos) - self.start_pos
+            pre_overlap_align_len = self.first.seq_pos_to_align_pos(overlap_start)
             # First block's sequences: taken from the first block's alignment
             for i in xrange(len(self.block_lines)):
-                block_seqs[i].extend(self.block_lines[i].seq[self.start_pos:self.start_pos + pre_overlap_align_len])
+                block_seqs[i].extend(self.block_lines[i].seq[:pre_overlap_align_len])
             # Second block's sequences: all gaps
             for i in xrange(len(self.block_lines), len(block_seqs)):
                 block_seqs[i].extend('-' * pre_overlap_align_len)
             my_align_pos += pre_overlap_align_len
             my_seq_pos = overlap_start
         elif other_seq_pos < overlap_start:
-            pre_overlap_align_len = other.first.seq_pos_to_align_pos(overlap_start, other.start_pos) - other.start_pos
+            pre_overlap_align_len = other.first.seq_pos_to_align_pos(overlap_start)
             # Reference sequence: taken from the second block
-            block_seqs[0].extend(other.block_lines[0].seq[other.start_pos:other.start_pos + pre_overlap_align_len])
+            block_seqs[0].extend(other.block_lines[0].seq[:pre_overlap_align_len])
             # First block's sequences: all gaps
             for i in xrange(1, len(self.block_lines)):
                 block_seqs[i].extend('-' * pre_overlap_align_len)
             # Second block's sequences: taken from the second block's alignment
             for i in xrange(len(self.block_lines), len(block_seqs)):
-                block_seqs[i].extend(other.block_lines[i - len(self.block_lines) + 1].seq[other.start_pos:other.start_pos + pre_overlap_align_len])
+                block_seqs[i].extend(other.block_lines[i - len(self.block_lines) + 1].seq[:pre_overlap_align_len])
             other_align_pos += pre_overlap_align_len
             other_seq_pos = overlap_start
 
@@ -684,15 +705,15 @@ class Block(object):
 
         def update_columns_from_reference_deletions(my_align_pos, other_align_pos, block_seqs):
             # Handle reference deletions in first block
-            while self.start_pos + my_align_pos < self.end_pos and self.block_lines[0].seq[self.start_pos + my_align_pos] == '-':
-                column = [bl.seq[self.start_pos + my_align_pos] for bl in self.block_lines]
+            while my_align_pos < my_end_pos and self.block_lines[0].seq[my_align_pos] == '-':
+                column = [bl.seq[my_align_pos] for bl in self.block_lines]
                 for i, char in enumerate(column + ['-'] * (len(other.block_lines) - 1)):
                     block_seqs[i].append(char)
                 my_align_pos += 1
 
             # Handle reference deletions within second block
-            while other.start_pos + other_align_pos < other.end_pos and other.block_lines[0].seq[other.start_pos + other_align_pos] == '-':
-                column = [bl.seq[other.start_pos + other_align_pos] for bl in other.block_lines]
+            while other_align_pos < other_end_pos and other.block_lines[0].seq[other_align_pos] == '-':
+                column = [bl.seq[other_align_pos] for bl in other.block_lines]
                 for i, char in enumerate(['-'] * (len(self.block_lines) - 1) + column):
                     block_seqs[i].append(char)
                 other_align_pos += 1
@@ -706,9 +727,9 @@ class Block(object):
             # Add the current column from both blocks, then all insertions
             # relative to the reference in the first block, then all insertions
             # relative to the reference in the second block.
-            my_cur_column = [bl.seq[self.start_pos + my_align_pos] for bl in self.block_lines]
+            my_cur_column = [bl.seq[my_align_pos] for bl in self.block_lines]
             assert my_cur_column[0] != '-'
-            other_cur_column = [bl.seq[other.start_pos + other_align_pos] for bl in other.block_lines]
+            other_cur_column = [bl.seq[other_align_pos] for bl in other.block_lines]
             assert other_cur_column[0] != '-'
             assert my_cur_column[0] == other_cur_column[0], "Mismatch in reference base when merging blocks"
             for i, char in enumerate(my_cur_column + other_cur_column[1:]):
@@ -721,22 +742,22 @@ class Block(object):
             other_seq_pos += 1
 
         # Region after overlap.
-        if my_align_pos < self.end_pos - self.start_pos:
+        if my_align_pos < my_end_pos:
             # First block's sequences: taken from the first block's alignment
             for i in xrange(len(self.block_lines)):
-                block_seqs[i].extend(self.block_lines[i].seq[my_align_pos:self.end_pos])
+                block_seqs[i].extend(self.block_lines[i].seq[my_align_pos:])
             # Second block's sequences: all gaps
             for i in xrange(len(self.block_lines), len(block_seqs)):
-                block_seqs[i].extend('-' * (self.end_pos - my_align_pos))
-        elif other_align_pos < other.end_pos - other.start_pos:
+                block_seqs[i].extend('-' * (my_end_pos - my_align_pos))
+        elif other_align_pos < other_end_pos:
             # Reference sequence: taken from the second block
-            block_seqs[0].extend(other.block_lines[0].seq[other_align_pos:other.end_pos])
+            block_seqs[0].extend(other.block_lines[0].seq[other_align_pos:])
             # First block's sequences: all gaps
             for i in xrange(1, len(self.block_lines)):
-                block_seqs[i].extend('-' * (other.end_pos - other_align_pos))
+                block_seqs[i].extend('-' * (other_end_pos - other_align_pos))
             # Second block's sequences: taken from the second block's alignment
             for i in xrange(len(self.block_lines), len(block_seqs)):
-                block_seqs[i].extend(other.block_lines[i - len(self.block_lines) + 1].seq[other_align_pos:other.end_pos])
+                block_seqs[i].extend(other.block_lines[i - len(self.block_lines) + 1].seq[other_align_pos:])
 
         # Build up and return the new block.
         block_seqs = ["".join(seq) for seq in block_seqs]
@@ -808,6 +829,8 @@ class Block(object):
         assert self.first.end == other.first.start
         corresponding_lines = self.find_partners(other)
         lines_to_add = []
+        my_block_length = len(self.first.seq)
+        other_block_length = len(other.first.seq)
         for other_block_line in other.block_lines:
             if other_block_line in corresponding_lines:
                 self_block_line = corresponding_lines[other_block_line]
@@ -815,11 +838,11 @@ class Block(object):
                     self_block_line.end = other_block_line.end
                 else:
                     self_block_line.start = other_block_line.start
-                self_block_line.seq = self_block_line.seq[self.start_pos:self.end_pos] + other_block_line.seq[other.start_pos:other.end_pos]
+                self_block_line.seq += other_block_line.seq
             else:
                 # No partner line; we just stack it on vertically taking into
                 # account the extra gaps at the beginning.
-                other_block_line.seq = '-' * (self.end_pos - self.start_pos) + other_block_line.seq
+                other_block_line.seq = '-' * (my_block_length) + other_block_line.seq
                 lines_to_add.append(other_block_line)
 
         # Go through and add extra gaps to any of our lines that weren't
@@ -827,7 +850,7 @@ class Block(object):
         self_lines_with_partners = set(corresponding_lines.values())
         for self_block_line in self.block_lines:
             if self_block_line not in self_lines_with_partners:
-                self_block_line.seq = self_block_line.seq + '-' * (other.end_pos - other.start_pos)
+                self_block_line.seq = self_block_line.seq + '-' * (other_block_length)
 
         self.start_pos = 0
         self.end_pos = len(self_block_line.seq)
@@ -890,8 +913,6 @@ def lift_blocks(alignment, blocks, other_genome, output):
                 new_block = block.prepend_new_sequence(start, block.first.end, other_genome, aln.other_chrom, aln.other_start, aln.other_start + (block.first.end - start), aln.other_strand)
             else:
                 new_block = block.prepend_new_sequence(start, block.first.end, other_genome, aln.other_chrom, aln.other_end - (block.first.end - start), aln.other_end, aln.other_strand)
-            logger.debug('outputting block %s', new_block)
-            output.write(str(new_block))
             block = Block.read_next_from_file(blocks)
             if block is None:
                 return
@@ -904,9 +925,9 @@ def lift_blocks(alignment, blocks, other_genome, output):
                 new_block = left_block.prepend_new_sequence(start, aln.my_end, other_genome, aln.other_chrom, aln.other_start + (start - aln.my_start), aln.other_end, aln.other_strand)
             else:
                 new_block = left_block.prepend_new_sequence(start, aln.my_end, other_genome, aln.other_chrom, aln.other_start, aln.other_end - (start - aln.my_start), aln.other_strand)
-            logger.debug('outputting block %s', new_block)
-            output.write(str(new_block))
             block = right_block
+        logger.debug('outputting block %s', new_block)
+        output.write(str(new_block))
 
 def get_sequence(hal_path, genome):
     """
@@ -1107,21 +1128,45 @@ def test_maximize_gapless_alignment_length():
     simHuman.chr6	601715	601827	Anc1refChr1	333013	333125	+
     """).lstrip()
 
-def test_split_block_line():
+def test_block_line_split():
     # positive strand
     # start:   v
     # split:   |                v
     seq = 'CGG---GA---TCAACCAAG--AAGAATTGCTATAcctccTAATCCTA---TAAAGT----AGCG'
-    block_line = BlockLine('Human', 'chr6', 50, 100, '+', seq)
-    first, second = block_line.split(21, 4)
-    assert first == BlockLine('Human', 'chr6', 50, 61, '+', seq)
-    assert second == BlockLine('Human', 'chr6', 61, 100, '+', seq)
+    block_line = BlockLine('Human', 'chr6', 50, 100, '+', seq, align_start=4)
+    first, second = block_line.split(17)
+    assert first.genome == second.genome == 'Human'
+    assert first.chrom == second.chrom == 'chr6'
+    assert first.strand == second.strand == '+'
+    # Ensure the string is passed around rather than being copied.
+    assert first.aligned_seq is second.aligned_seq is seq
+    assert first.start == 50
+    assert first.end == 61
+    assert second.start == 61
+    assert second.end == 100
+
+    # Test that the align_start and align_end combine to create the correct seq
+    # subsets
+    assert first.seq == '--GA---TCAACCAAG-'
+    assert second.seq == '-AAGAATTGCTATAcctccTAATCCTA---TAAAGT----AGCG'
 
     # negative strand
-    block_line = BlockLine('Human', 'chr6', 50, 100, '-', seq)
-    first, second = block_line.split(21, 4)
-    assert first == BlockLine('Human', 'chr6', 89, 100, '-', seq)
-    assert second == BlockLine('Human', 'chr6', 50, 89, '-', seq)
+    block_line = BlockLine('Human', 'chr6', 50, 100, '-', seq, align_start=4)
+    first, second = block_line.split(17)
+    assert first.genome == second.genome == 'Human'
+    assert first.chrom == second.chrom == 'chr6'
+    assert first.strand == second.strand == '-'
+    # Ensure the string is passed around rather than being copied.
+    assert first.aligned_seq is second.aligned_seq is seq
+    assert first.start == 89
+    assert first.end == 100
+    assert second.start == 50
+    assert second.end == 89
+
+    # Test that the align_start and align_end combine to create the correct seq
+    # subsets
+    assert first.seq == '--GA---TCAACCAAG-'
+    assert second.seq == '-AAGAATTGCTATAcctccTAATCCTA---TAAAGT----AGCG'
 
 def test_block_split():
     input = StringIO(dedent("""
@@ -1190,6 +1235,12 @@ def test_block_prepend_new_sequence():
 
     """).lstrip()
 
+def test_block_line_reverse():
+    seq = 'GA---TCAACCAAG--AAG'
+    block_line = BlockLine('Human', 'chr6', 50, 100, '+', seq, align_start=4, align_end=15)
+    reversed = block_line.reverse()
+    assert reversed.strand == '-'
+    assert reversed.seq == '-CTTGGTTGA-'
 
 def test_prune_tree():
     tree = newick.loads('((A,B)C, (D, E)F, (G)H)I;')[0]
