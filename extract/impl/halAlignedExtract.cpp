@@ -14,7 +14,8 @@ using namespace hal;
 
 static void extractAlignedRegions(const Genome* genome,
                                   ostream* bedStream,
-                                  bool complement);
+                                  bool complement,
+                                  bool viewParentCoords);
 
 static CLParserPtr initParser()
 {
@@ -30,6 +31,8 @@ static CLParserPtr initParser()
                                "genome that are *unaligned* to the parent. "
                                "ie all intervals that are not returned with"
                                " the default setting.", false);
+  optionsParser->addOptionFlag("viewParentCoords", "view the corresponding parent "
+                               "coordinates for aligned regions", false);
 
   return optionsParser;
 }
@@ -42,6 +45,7 @@ int main(int argc, char** argv)
   string genomeName;
   string outBedPath;
   bool complement;
+  bool viewParentCoords;
   try
   {
     optionsParser->parseOptions(argc, argv);
@@ -49,6 +53,7 @@ int main(int argc, char** argv)
     genomeName = optionsParser->getArgument<string>("genome");
     outBedPath = optionsParser->getOption<string>("alignedFile");
     complement = optionsParser->getFlag("complement");
+    viewParentCoords = optionsParser->getFlag("viewParentCoords");
   }
   catch(exception& e)
   {
@@ -63,7 +68,7 @@ int main(int argc, char** argv)
                                                              optionsParser);
     if (inAlignment->getNumGenomes() == 0)
     {
-      throw hal_exception("input hal alignmenet is empty");
+      throw hal_exception("input hal alignment is empty");
     }
     
     const Genome* genome = inAlignment->openGenome(genomeName);
@@ -87,7 +92,7 @@ int main(int argc, char** argv)
         throw hal_exception(string("Error opening ") + outBedPath + 
                             " for writing");
       }
-      extractAlignedRegions(genome, bedStream, complement);
+      extractAlignedRegions(genome, bedStream, complement, viewParentCoords);
     }
   }
   catch(hal_exception& e)
@@ -105,7 +110,7 @@ int main(int argc, char** argv)
 }
 
 void extractAlignedRegions(const Genome* genome, ostream* bedStream,
-                           bool complement)
+                           bool complement, bool viewParentCoords)
 {
   assert(genome && bedStream);
   if (genome->getNumTopSegments() > 0)
@@ -122,7 +127,22 @@ void extractAlignedRegions(const Genome* genome, ostream* bedStream,
                    << topSeg->getStartPosition() - sequence->getStartPosition()
                    << '\t' 
                    << (1 + topSeg->getEndPosition() -
-                       sequence->getStartPosition()) << '\n';
+                       sequence->getStartPosition());
+        if (!complement && viewParentCoords) {
+            BottomSegmentIteratorConstPtr botSeg = genome->getParent()->getBottomSegmentIterator();
+            botSeg->toParent(topSeg);
+            if (botSeg->getReversed()) {
+                // Ensure the parent segment coordinates always have start < end.
+                botSeg->toReverse();
+            }
+            const Sequence *parentSequence = botSeg->getSequence();
+            *bedStream << '\t'
+                       << parentSequence->getName() << '\t'
+                       << botSeg->getStartPosition() - parentSequence->getStartPosition() << '\t'
+                       << 1 + botSeg->getEndPosition() - parentSequence->getStartPosition() << '\t'
+                       << (topSeg->getParentReversed() ? "-" : "+");
+        }
+        *bedStream << '\n';
       }
     }
   }
