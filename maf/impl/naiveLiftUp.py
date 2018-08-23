@@ -134,19 +134,22 @@ def start_job(job, halID, refGenome, opts):
 
     return job.addFollowOnJobFn(maf_export, chrom_sizes, blocks_on_ref, opts).rv()
 
-def lift_up(job, genome, parentGenome, blocksID, halID, opts):
-    """Lift up this genome's blocks file to parentGenome."""
-    job.fileStore.logToMaster("Lifting up from {} to {}".format(genome, parentGenome))
+def lift_up(job, genome, parent_genome, blocksID, halID, opts):
+    """Lift up this genome's blocks file to parent_genome."""
+    job.fileStore.logToMaster("Lifting up from {} to {}".format(genome, parent_genome))
     hal = job.fileStore.readGlobalFile(halID)
     alignmentPath = job.fileStore.getLocalTempFile()
     get_alignment_to_parent(hal, genome, alignmentPath)
     blocksPath = job.fileStore.readGlobalFile(blocksID)
     liftedPath = job.fileStore.getLocalTempFile()
     with open(alignmentPath) as alignment, open(blocksPath) as blocks, open(liftedPath, 'w') as lifted:
-        lift_blocks(alignment, blocks, parentGenome, lifted)
+        lift_blocks(alignment, blocks, parent_genome, lifted)
     sortedPath = job.fileStore.getLocalTempFile()
     with open(liftedPath) as lifted, open(sortedPath, 'w') as sorted:
         sort_blocks(lifted, sorted)
+    if opts.intermediateResultsUrl is not None:
+        job.fileStore.exportFile(sortedPath, opts.intermediateResultsUrl + "{}-up-from-{}.blocks".format(parent_genome, genome))
+        job.fileStore.exportFile(alignmentPath, opts.intermediateResultsUrl + "{}-up-from-{}.alignment".format(parent_genome, genome))
     return job.fileStore.writeGlobalFile(sortedPath)
 
 def lift_down(job, genome, child_genome, blocksID, halID, opts):
@@ -162,6 +165,9 @@ def lift_down(job, genome, child_genome, blocksID, halID, opts):
     sortedPath = job.fileStore.getLocalTempFile()
     with open(liftedPath) as lifted, open(sortedPath, 'w') as sorted:
         sort_blocks(lifted, sorted)
+    if opts.intermediateResultsUrl is not None:
+        job.fileStore.exportFile(sortedPath, opts.intermediateResultsUrl + "{}-down-from-{}.blocks".format(child_genome, genome))
+        job.fileStore.exportFile(alignmentPath, opts.intermediateResultsUrl + "{}-down-from-{}.alignment".format(child_genome, genome))
     return job.fileStore.writeGlobalFile(sortedPath)
 
 def merge_blocks(job, genome, child_names, blockIDs, halID, opts):
@@ -883,14 +889,17 @@ def lift_blocks(alignment, blocks, other_genome, output):
     while True:
         assert block.first.strand == '+'
         need_restart = False
-        while block.first.chrom < aln.my_chrom or block.first.end <= aln.my_start:
+        logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.my_chrom, aln.my_start, aln.my_end)
+        while block.first.chrom < aln.my_chrom or (aln.my_chrom == block.first.chrom and block.first.end <= aln.my_start):
+            logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.my_chrom, aln.my_start, aln.my_end)
             logger.debug("fast-forwarding on block side")
             # Block doesn't fit within alignment, fast-forward on block side
             block = Block.read_next_from_file(blocks)
             need_restart = True
             if block is None:
                 return
-        while aln.my_chrom < block.first.chrom or aln.my_end <= block.first.start:
+        while aln.my_chrom < block.first.chrom or (aln.my_chrom == block.first.chrom and aln.my_end <= block.first.start):
+            logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.my_chrom, aln.my_start, aln.my_end)
             logger.debug("fast-forwarding on alignment side")
             # Need to fast-forward on alignment side
             aln = read_next_alignment(alignment)
