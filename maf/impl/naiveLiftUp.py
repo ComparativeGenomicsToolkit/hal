@@ -21,6 +21,7 @@ from toil.job import Job
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
 class LiftedContextManager(object):
     """Transforms an iterable of context managers into a list of opened managers."""
     def __init__(self, iterable):
@@ -207,15 +208,15 @@ def find_split_point(blocks):
     Find the position at which blocks stop sharing overlap.
     """
     logger.debug("Finding split point for %s", [str(b) for b in blocks])
-    return min([(b.first.chrom, b.first.end) for b in blocks if b is not None])[1]
+    return min([(b.chrom, b.end) for b in blocks if b is not None])[1]
 
-def merged_dup_stream(block_file):
+def merged_dup_stream(file, read_next):
     queued_blocks = deque()
     while True:
         if len(queued_blocks) > 0:
             block = queued_blocks.popleft()
         else:
-            block = Block.read_next_from_file(block_file)
+            block = read_next(file)
         if block is None:
             # End of file.
             break
@@ -227,25 +228,32 @@ def merged_dup_stream(block_file):
                 break
         # Read in extra blocks from the file
         while True:
-            next_block = Block.read_next_from_file(block_file)
+            next_block = read_next(file)
             if next_block is None:
                 break
             if block.overlaps(next_block) and all(b.overlaps(next_block) for b in dup_blocks):
                 dup_blocks.append(next_block)
             else:
                 queued_blocks.append(next_block)
+        logger.debug('block: %s, dup_blocks: %s', block, dup_blocks)
         if len(dup_blocks) > 0:
-            split_point = find_split_point([block] + dup_blocks)
+            if not all(b.start == block.start for b in dup_blocks):
+                split_point = min([b.start for b in dup_blocks])
+            else:
+                split_point = min([b.end for b in [block] + dup_blocks])
             leftovers = []
+            logger.debug('split_point: %s', split_point)
             merged_block = None
             for dup_block in [block] + dup_blocks:
-                if dup_block.first.end != split_point:
-                    dup_block, leftover = dup_block.split(split_point - dup_block.first.start)
+                if dup_block.start < split_point < dup_block.end:
+                    dup_block, leftover = dup_block.split(split_point - dup_block.start)
                     leftovers.append(leftover)
                 if merged_block is None:
                     merged_block = dup_block
-                else:
+                elif dup_block.start < split_point:
                     merged_block = merged_block.merge(dup_block)
+                else:
+                    leftovers.append(dup_block)
             block = merged_block
             queued_blocks.extendleft(reversed(leftovers))
         yield block
@@ -287,7 +295,7 @@ def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
     cur_chrom_idx = 0
     cur_chrom = chroms[0]
     cur_pos = 0
-    block_streams = [merged_dup_stream(f) for f in block_files]
+    block_streams = [merged_dup_stream(f, Block.read_next_from_file) for f in block_files]
     cur_blocks = [next(stream, None) for stream in block_streams]
 
     # FIXME: this is awful, but shit needs to get done
@@ -410,6 +418,36 @@ class Alignment(namedtuple('Alignment', ('my_chrom', 'my_start', 'my_end',
                               self.other_chrom, self.other_start, self.other_end - split_point,
                               self.other_strand))
 
+class AlignmentGroup(object):
+    def __init__(self, alignments):
+        self.alignments = alignments
+        self.chrom = alignments[0].my_chrom
+        self.start = alignments[0].my_start
+        self.end = alignments[0].my_end
+
+    def split(self, split_point):
+        splits = [aln.split(split_point) for aln in self.alignments]
+        left = [alns[0] for alns in splits]
+        right = [alns[1] for alns in splits]
+        return AlignmentGroup(left), AlignmentGroup(right)
+
+    def overlaps(self, other):
+        if self.chrom == other.chrom \
+           and ((self.start < other.end <= self.end) \
+                or (self.start <= other.start < self.end)):
+            return True
+        else:
+            return False
+
+    def merge(self, other):
+        assert self.chrom == other.chrom \
+            and self.start == other.start \
+            and self.end == other.end
+        return AlignmentGroup(self.alignments + other.alignments)
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(" + ",".join([repr(a) for a in self.alignments]) + ")"
+
 def read_next_alignment(alignmentFile):
     line = alignmentFile.readline()
     if len(line) == 0:
@@ -420,7 +458,7 @@ def read_next_alignment(alignmentFile):
     fields[1], fields[2], fields[4], fields[5] = int(fields[1]), int(fields[2]), int(fields[4]), int(fields[5])
     alignment = Alignment(*fields)
     assert alignment.my_end - alignment.my_start == alignment.other_end - alignment.other_start
-    return alignment
+    return AlignmentGroup([alignment])
 
 @attrs(hash=True, slots=True)
 class BlockLine(object):
@@ -568,6 +606,18 @@ class Block(object):
     @property
     def first(self):
         return self.block_lines[0]
+
+    @property
+    def chrom(self):
+        return self.first.chrom
+
+    @property
+    def start(self):
+        return self.first.start
+
+    @property
+    def end(self):
+        return self.first.end
 
     def split(self, pos):
         """
@@ -883,26 +933,27 @@ class Block(object):
         ret += "\n"
         return ret
 
-def lift_blocks(alignment, blocks, other_genome, output):
-    aln = read_next_alignment(alignment)
+def lift_blocks(alignments, blocks, other_genome, output):
+    aln_stream = merged_dup_stream(alignments, read_next_alignment)
+    aln = next(aln_stream, None)
     block = Block.read_next_from_file(blocks)
-    while True:
+    while block is not None:
         assert block.first.strand == '+'
         need_restart = False
-        logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.my_chrom, aln.my_start, aln.my_end)
-        while block.first.chrom < aln.my_chrom or (aln.my_chrom == block.first.chrom and block.first.end <= aln.my_start):
-            logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.my_chrom, aln.my_start, aln.my_end)
+        logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.chrom, aln.start, aln.end)
+        while block.first.chrom < aln.chrom or (aln.chrom == block.first.chrom and block.first.end <= aln.start):
+            logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.chrom, aln.start, aln.end)
             logger.debug("fast-forwarding on block side")
             # Block doesn't fit within alignment, fast-forward on block side
             block = Block.read_next_from_file(blocks)
             need_restart = True
             if block is None:
                 return
-        while aln.my_chrom < block.first.chrom or (aln.my_chrom == block.first.chrom and aln.my_end <= block.first.start):
-            logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.my_chrom, aln.my_start, aln.my_end)
+        while aln.chrom < block.first.chrom or (aln.chrom == block.first.chrom and aln.end <= block.first.start):
+            logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.chrom, aln.start, aln.end)
             logger.debug("fast-forwarding on alignment side")
             # Need to fast-forward on alignment side
-            aln = read_next_alignment(alignment)
+            aln = next(aln_stream, None)
             need_restart = True
             if aln is None:
                 return
@@ -912,31 +963,33 @@ def lift_blocks(alignment, blocks, other_genome, output):
 
         logger.debug("aln: %s", aln)
 
-        assert aln.my_chrom == block.first.chrom
-        assert aln.my_start < block.first.end
-        assert block.first.start < aln.my_end
-        if block.first.start < aln.my_end and block.first.end <= aln.my_end:
+        assert aln.chrom == block.first.chrom
+        assert aln.start < block.first.end
+        assert block.first.start < aln.end
+        if block.first.start < aln.end and block.first.end <= aln.end:
             # Block fits within alignment
-            start = max(aln.my_start, block.first.start)
-            if aln.other_strand == '+':
-                new_block = block.prepend_new_sequence(start, block.first.end, other_genome, aln.other_chrom, aln.other_start, aln.other_start + (block.first.end - start), aln.other_strand)
-            else:
-                new_block = block.prepend_new_sequence(start, block.first.end, other_genome, aln.other_chrom, aln.other_end - (block.first.end - start), aln.other_end, aln.other_strand)
+            start = max(aln.start, block.first.start)
+            for grouped_aln in aln.alignments:
+                if grouped_aln.other_strand == '+':
+                    new_block = block.prepend_new_sequence(start, block.first.end, other_genome, grouped_aln.other_chrom, grouped_aln.other_start, grouped_aln.other_start + (block.first.end - start), grouped_aln.other_strand)
+                else:
+                    new_block = block.prepend_new_sequence(start, block.first.end, other_genome, grouped_aln.other_chrom, grouped_aln.other_end - (block.first.end - start), grouped_aln.other_end, grouped_aln.other_strand)
+                logger.debug('outputting block %s', new_block)
+                output.write(str(new_block))
             block = Block.read_next_from_file(blocks)
-            if block is None:
-                return
         else:
             # Block goes over the edge of alignment
-            assert block.first.end > aln.my_end
-            start = max(aln.my_start, block.first.start)
-            left_block, right_block = block.split(aln.my_end - block.first.start)
-            if aln.other_strand == '+':
-                new_block = left_block.prepend_new_sequence(start, aln.my_end, other_genome, aln.other_chrom, aln.other_start + (start - aln.my_start), aln.other_end, aln.other_strand)
-            else:
-                new_block = left_block.prepend_new_sequence(start, aln.my_end, other_genome, aln.other_chrom, aln.other_start, aln.other_end - (start - aln.my_start), aln.other_strand)
+            assert block.first.end > aln.end
+            start = max(aln.start, block.first.start)
+            left_block, right_block = block.split(aln.end - block.first.start)
+            for grouped_aln in aln.alignments:
+                if grouped_aln.other_strand == '+':
+                    new_block = left_block.prepend_new_sequence(start, aln.end, other_genome, grouped_aln.other_chrom, grouped_aln.other_start + (start - aln.start), grouped_aln.other_end, grouped_aln.other_strand)
+                else:
+                    new_block = left_block.prepend_new_sequence(start, aln.end, other_genome, grouped_aln.other_chrom, grouped_aln.other_start, grouped_aln.other_end - (start - aln.start), grouped_aln.other_strand)
+                logger.debug('outputting block %s', new_block)
+                output.write(str(new_block))
             block = right_block
-        logger.debug('outputting block %s', new_block)
-        output.write(str(new_block))
 
 def get_sequence(hal_path, genome):
     """
@@ -1385,10 +1438,14 @@ def test_merge_child_blocks_ref_dups():
     # 5 X--A
 
     assert output.getvalue() == dedent("""
-    foo	chr1	0	5	+	XX-X-X-X
-    bar	chr1	50	55	-	CATG-A--
-    bar	chr2	50	55	+	-A-T-GCC
-    baz	chr1	50	56	+	CA-GTT-T
+    foo	chr1	0	1	+	X
+    bar	chr1	54	55	-	C
+    baz	chr1	50	51	+	C
+
+    foo	chr1	1	5	+	X-X-X-X
+    bar	chr1	50	54	-	ATG-A--
+    bar	chr2	50	55	+	A-T-GCC
+    baz	chr1	51	56	+	A-GTT-T
 
     foo	chr1	5	6	+	X
     baz	chr1	56	57	+	A
@@ -1512,7 +1569,7 @@ def test_block_merge_bug_with_offsets():
     # Check if this hits an assertion
     split.merge(block_2)
 
-def test_merged_dup_stream():
+def test_merged_dup_stream_blocks():
     input_1 = StringIO(dedent("""
     mr	mrrefChr0	12451	12577	+	----XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     simRat_chr6	simRat.chr6	12764	12894	+	ATTGATCTTATAGGAGCACTCCCTCTAGTCAGCAATATAATTAGATAGGACTGACACATTTGTAATCTTGTGCCTAATAGCAAAGGTGTGTGACGTACATCTAGATTGTGTAATGACCTGTAGTGTCAAC
@@ -1533,47 +1590,109 @@ def test_merged_dup_stream():
     simRat_chr6	simRat.chr6	547181	547262	+	TACCGAACACTTGTAATCTTGTGCTTTTTAACAAAGGTGTATGTCATACATATAAATTGTGTGTTGACCTGTAGTGTCCAC
 
     """).lstrip())
-    stream = merged_dup_stream(input_1)
+    stream = merged_dup_stream(input_1, Block.read_next_from_file)
 
     block_1 = next(stream)
     assert str(block_1) == dedent("""
-    mr	mrrefChr0	12451	12456	+	----XXXXX
-    simRat_chr6	simRat.chr6	12764	12773	+	ATTGATCTT
-    simRat_chr6	simRat.chr6	547138	547139	+	--------t
+    mr	mrrefChr0	12451	12455	+	----XXXX
+    simRat_chr6	simRat.chr6	12764	12772	+	ATTGATCT
 
     """).lstrip()
 
     block_2 = next(stream)
     assert str(block_2) == dedent("""
-    mr	mrrefChr0	12456	12459	+	XXX
-    simRat_chr6	simRat.chr6	12773	12776	+	ATA
-    simRat_chr6	simRat.chr6	547139	547140	+	--a
+    mr	mrrefChr0	12455	12456	+	X
+    simRat_chr6	simRat.chr6	12772	12773	+	T
+    simRat_chr6	simRat.chr6	547138	547139	+	t
 
     """).lstrip()
 
     block_3 = next(stream)
     assert str(block_3) == dedent("""
-    mr	mrrefChr0	12459	12464	+	XXXXX
-    simRat_chr6	simRat.chr6	12776	12781	+	GGAGC
-    simRat_chr6	simRat.chr6	547140	547143	+	--agt
+    mr	mrrefChr0	12456	12458	+	XX
+    simRat_chr6	simRat.chr6	12773	12775	+	AT
 
     """).lstrip()
 
     block_4 = next(stream)
     assert str(block_4) == dedent("""
-    mr	mrrefChr0	12464	12503	+	XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    simRat_chr6	simRat.chr6	12781	12820	+	ACTCCCTCTAGTCAGCAATATAATTAGATAGGACTGACA
-    simRat_chr6	simRat.chr6	547143	547181	+	-ttgccTCTAGTCAGCAATCTAATTAGATAAGACTGACA
+    mr	mrrefChr0	12458	12459	+	X
+    simRat_chr6	simRat.chr6	12775	12776	+	A
+    simRat_chr6	simRat.chr6	547139	547140	+	a
 
     """).lstrip()
 
     block_5 = next(stream)
     assert str(block_5) == dedent("""
+    mr	mrrefChr0	12459	12461	+	XX
+    simRat_chr6	simRat.chr6	12776	12778	+	GG
+
+    """).lstrip()
+
+    block_6 = next(stream)
+    assert str(block_6) == dedent("""
+    mr	mrrefChr0	12461	12464	+	XXX
+    simRat_chr6	simRat.chr6	12778	12781	+	AGC
+    simRat_chr6	simRat.chr6	547140	547143	+	agt
+
+    """).lstrip()
+
+    block_7 = next(stream)
+    assert str(block_7) == dedent("""
+    mr	mrrefChr0	12464	12465	+	X
+    simRat_chr6	simRat.chr6	12781	12782	+	A
+
+    """).lstrip()
+
+    block_8 = next(stream)
+    assert str(block_8) == dedent("""
+    mr	mrrefChr0	12465	12503	+	XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    simRat_chr6	simRat.chr6	12782	12820	+	CTCCCTCTAGTCAGCAATATAATTAGATAGGACTGACA
+    simRat_chr6	simRat.chr6	547143	547181	+	ttgccTCTAGTCAGCAATCTAATTAGATAAGACTGACA
+
+    """).lstrip()
+
+    block_10 = next(stream)
+    assert str(block_10) == dedent("""
     mr	mrrefChr0	12503	12577	+	-------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     simRat_chr6	simRat.chr6	12820	12894	+	-------CATTTGTAATCTTGTGCCTAATAGCAAAGGTGTGTGACGTACATCTAGATTGTGTAATGACCTGTAGTGTCAAC
     simRat_chr6	simRat.chr6	547181	547262	+	TACCGAACACTTGTAATCTTGTGCTTTTTAACAAAGGTGTATGTCATACATATAAATTGTGTGTTGACCTGTAGTGTCCAC
 
     """).lstrip()
+
+    with pytest.raises(StopIteration):
+        next(stream)
+
+def test_merged_dup_stream_alignments():
+    alignments = StringIO(dedent("""
+    chr5	20	25	Anc1c5	50	55	-
+    chr6	0	2	Anc1c1	60	62	+
+    chr6	0	3	Anc1c2	30	33	+
+    chr6	4	11	Anc1c3	90	97	+
+    chr6	5	10	Anc1c4	100	105	+
+    """).lstrip())
+
+    stream = merged_dup_stream(alignments, read_next_alignment)
+
+    alignment_group_1 = next(stream)
+    assert alignment_group_1.alignments == [Alignment('chr5', 20, 25, 'Anc1c5', 50, 55, '-')]
+
+    alignment_group_2 = next(stream)
+    assert alignment_group_2.alignments == [Alignment('chr6', 0, 2, 'Anc1c1', 60, 62, '+'),
+                                            Alignment('chr6', 0, 2, 'Anc1c2', 30, 32, '+')]
+
+    alignment_group_3 = next(stream)
+    assert alignment_group_3.alignments == [Alignment('chr6', 2, 3, 'Anc1c2', 32, 33, '+')]
+
+    alignment_group_4 = next(stream)
+    assert alignment_group_4.alignments == [Alignment('chr6', 4, 5, 'Anc1c3', 90, 91, '+')]
+
+    alignment_group_5 = next(stream)
+    assert alignment_group_5.alignments == [Alignment('chr6', 5, 10, 'Anc1c3', 91, 96, '+'),
+                                            Alignment('chr6', 5, 10, 'Anc1c4', 100, 105, '+')]
+
+    alignment_group_6 = next(stream)
+    assert alignment_group_6.alignments == [Alignment('chr6', 10, 11, 'Anc1c3', 96, 97, '+')]
 
     with pytest.raises(StopIteration):
         next(stream)
@@ -1762,6 +1881,7 @@ def test_lift_blocks():
 
     Human	chr6	8	12	+	ACGT
     Chimp	chr12	0	4	+	ACGT
+
     """).lstrip())
     other_genome = 'Anc1'
     output = StringIO()
@@ -1779,12 +1899,88 @@ def test_lift_blocks():
 
     """).lstrip()
 
-    # alignments = StringIO(dedent("""
-    # chr6	0	2	Anc1refChr1	60	62	+
-    # chr6	0	3	Anc1refChr2	30	33	+
-    # chr6	4	9	Anc1refChr3	90	95	+
-    # chr6	5	7	Anc1refChr4	100	102	+
-    # """))
+def test_alignment_group_split():
+    alignments = [
+        Alignment('chr1', 20, 60, 'otherChr1', 0, 40, '+'),
+        Alignment('chr1', 20, 60, 'otherChr2', 20, 60, '-'),
+    ]
+    alignment_group = AlignmentGroup(alignments)
+    left_group, right_group = alignment_group.split(20)
+    assert left_group.chrom == 'chr1'
+    assert left_group.start == 20
+    assert left_group.end == 40
+    assert left_group.alignments == [
+        Alignment('chr1', 20, 40, 'otherChr1', 0, 20, '+'),
+        Alignment('chr1', 20, 40, 'otherChr2', 40, 60, '-'),
+    ]
+    assert right_group.chrom == 'chr1'
+    assert right_group.start == 40
+    assert right_group.end == 60
+    assert right_group.alignments == [
+        Alignment('chr1', 40, 60, 'otherChr1', 20, 40, '+'),
+        Alignment('chr1', 40, 60, 'otherChr2', 20, 40, '-'),
+    ]
+
+
+def test_lift_blocks_dups():
+    alignments = StringIO(dedent("""
+    chr6	0	2	Anc1c1	60	62	+
+    chr6	0	3	Anc1c2	30	33	+
+    chr6	4	11	Anc1c3	90	97	+
+    chr6	5	10	Anc1c4	100	105	+
+    """).lstrip())
+    blocks = StringIO(dedent("""
+    Human	chr6	0	8	+	A------CG-TACGT
+    Chimp	chr6	8	12	+	AC----CT-------
+    Gorilla	chr6	100	105	-	--------CCCCC--
+
+    Human	chr6	8	12	+	ACGT
+    Chimp	chr12	0	4	+	ACGT
+
+    """).lstrip())
+    other_genome = 'Anc1'
+    output = StringIO()
+
+    lift_blocks(alignments, blocks, other_genome, output)
+
+    assert output.getvalue() == dedent("""
+    Anc1	Anc1c1	60	62	+	X------X
+    Human	chr6	0	2	+	A------C
+    Chimp	chr6	8	12	+	AC----CT
+
+    Anc1	Anc1c2	30	32	+	X------X
+    Human	chr6	0	2	+	A------C
+    Chimp	chr6	8	12	+	AC----CT
+
+    Anc1	Anc1c2	32	33	+	X
+    Human	chr6	2	3	+	G
+    Gorilla	chr6	104	105	-	C
+
+    Anc1	Anc1c3	90	91	+	--X
+    Human	chr6	3	5	+	-TA
+    Gorilla	chr6	101	104	-	CCC
+
+    Anc1	Anc1c3	91	94	+	XXX
+    Human	chr6	5	8	+	CGT
+    Gorilla	chr6	100	101	-	C--
+
+    Anc1	Anc1c4	100	103	+	XXX
+    Human	chr6	5	8	+	CGT
+    Gorilla	chr6	100	101	-	C--
+
+    Anc1	Anc1c3	94	96	+	XX
+    Human	chr6	8	10	+	AC
+    Chimp	chr12	0	2	+	AC
+
+    Anc1	Anc1c4	103	105	+	XX
+    Human	chr6	8	10	+	AC
+    Chimp	chr12	0	2	+	AC
+
+    Anc1	Anc1c3	96	97	+	X
+    Human	chr6	10	11	+	G
+    Chimp	chr12	2	3	+	G
+
+    """).lstrip()
 
 if __name__ == '__main__':
     main()
