@@ -234,6 +234,7 @@ def merged_dup_stream(file, read_next):
                 dup_blocks.append(next_block)
             else:
                 queued_blocks.append(next_block)
+                break
         logger.debug('block: %s, dup_blocks: %s', block, dup_blocks)
         if len(dup_blocks) > 0:
             if not all(b.start == block.start for b in dup_blocks):
