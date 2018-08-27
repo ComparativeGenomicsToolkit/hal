@@ -1031,7 +1031,8 @@ def get_leaf_blocks(hal_path, genome, output_path):
     """Get the initial blocks file for a leaf genome."""
     lengths = get_chrom_sizes(hal_path, genome)
     with open(output_path, 'w') as out:
-        for chrom, length in lengths.items():
+        for chrom in sorted(lengths.keys()):
+            length = lengths[chrom]
             # Write the block stanza. In this case, the block is just the whole chromosome.
             seq = get_sequence_for_region(hal_path, genome, chrom, 0, length)
             out.write("{genome}\t{chrom}\t{start}\t{end}\t{strand}\t".format(genome=genome, chrom=chrom, start=0, end=length, strand='+'))
