@@ -20,7 +20,6 @@ from toil.common import Toil
 from toil.job import Job
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 class LiftedContextManager(object):
     """Transforms an iterable of context managers into a list of opened managers."""
@@ -238,7 +237,7 @@ def merged_dup_stream(file, read_next):
         logger.debug('block: %s, dup_blocks: %s', block, dup_blocks)
         if len(dup_blocks) > 0:
             if not all(b.start == block.start for b in dup_blocks):
-                split_point = min([b.start for b in dup_blocks])
+                split_point = min([b.start for b in dup_blocks if b.start != block.start])
             else:
                 split_point = min([b.end for b in [block] + dup_blocks])
             leftovers = []
@@ -256,6 +255,7 @@ def merged_dup_stream(file, read_next):
                     leftovers.append(dup_block)
             block = merged_block
             queued_blocks.extendleft(reversed(leftovers))
+        logger.debug('yielding block %s from dup stream', block)
         yield block
 
 def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
@@ -284,7 +284,7 @@ def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
                 cur_chrom_idx += 1
                 cur_chrom = chroms[cur_chrom_idx]
         if pos != cur_pos:
-            logger.debug('Outputting block for reference insertion before next block at %s', pos)
+            logger.debug('Outputting block for reference insertion before next block at %s (cur_pos %s)', pos, cur_pos)
             assert pos > cur_pos
             block = Block([BlockLine(genome, cur_chrom, cur_pos, pos, '+', 'X' * (pos - cur_pos))])
             output.write(str(block))
@@ -316,6 +316,8 @@ def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
 
         smallest = get_smallest_block(cur_blocks)
 
+        logger.debug('cur_blocks: %s', cur_blocks)
+
         # Handle any insertions before the start of the next block.
         cur_chrom, cur_chrom_idx, cur_pos = output_reference_insertions(cur_chrom, cur_chrom_idx, cur_pos, smallest.first.chrom, smallest.first.start)
 
@@ -337,7 +339,7 @@ def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
                 if block is None:
                     # Already done with this file
                     continue
-                logger.debug('block: %s',  block)
+                logger.debug('block %s: %s',  i, block)
                 if smallest.first.overlaps(block.first) and block.first.start < split_point < block.first.end:
                     left_block, right_block = block.split(split_point - block.first.start)
                     logger.debug('results of split: %s %s', left_block, right_block)
@@ -572,9 +574,9 @@ class BlockLine(object):
         self.align_end = len(seq)
         self.needs_rev_comp = False
 
+@attrs
 class Block(object):
-    def __init__(self, block_lines, start_pos=0, end_pos=None):
-        self.block_lines = block_lines
+    block_lines = attrib()
 
     @classmethod
     def read_next_from_file(cls, f):
@@ -1979,6 +1981,41 @@ def test_lift_blocks_dups():
     Anc1	Anc1c3	96	97	+	X
     Human	chr6	10	11	+	G
     Chimp	chr12	2	3	+	G
+
+    """).lstrip()
+
+def test_merged_dup_stream_same_starts():
+    """
+    Test against a rare bug that crops up with a pattern of dups.
+    """
+    block_file = StringIO(dedent("""
+Anc2	Anc2refChr0	11463	11531	+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+simCow_chr6	simCow.chr6	129132	130571	+	tgaagttaaagggtggtggaaggactaccaaagcaatgggaaaggcaaaaagaaaacgggtcggatcgcaatcccaattaccaagaagttggactatgatgttaagtcagcaagagtcaaaaggaaaagagtcaaggaagggcattcagtgatggtcagaggctctattcaacctgagagattaaccgtagagaatgtacacaaacccaatacaggtactaagactgagcatgcaagggatctgtgtcttgactcatataccgtagtagtggagcatgcgaacacaccggcatcgaccctggataagtcaacacaaagaaaagttaacacttacacacacgagctgaactcagttttgcatcaagccaacttgatcgacatctaccaaactttacatcctattccggctggttactcatttttttctgatccataccattcatacttaaagatagattacatcgtcgtgaaagcactcgtgcataaatgcaaagactccgatatagtagctaattgcctcgctgatcagagctcaatgaagttgagtctggagataagtgctctcacccagaatcagttgactccaaattgctcaaattggcatccgaataatgtatcattccttctaactgagtattgtgtccacaatgagatgaagacagaaattaagacgtttcttgacaaaaactaaaattgggatctcacctatggaaatacttgggagattggggcgttaatcatgctaaacaacacaggtaaaactgggcaaggaaggttgaggatggtgatccttaagtcaaaaataaaagaggttcattagcaagagcttacgcacgccagggcggctaggcagcaacaaatgactaaaataaaatttgagctgaagagtgtaaagaccgaagacacattgcccaaggtcaatgaatccaagagctggtttcttgacaaaaacaaaatcgacaggtctttgctgagcgtgcagaatgtagaaaaaatcatatcgacgtgttgaggaatcatcaggggtacataacaaccgacccagtggacattcaaataggcattaagcagtatcaccaacctctttgcaaaagtttaacttagttgacattgatattttcgattcgtttacccttctgcgactcaacaaagaaggaatagagtctctaaatagatcagtaatcggccccgaaataaagcatttattaacagtccatcgaagaagttacctggtttgccactgatattttacaagcagtacaaagaaaagttggtctcatttttttcctcaagctacaatcaattgagaatgaaggaatactaccgaactattttcacgagtcgtgtagtgtatcgatatcgaaatcaagcgaagccatgatgaaaagacaaaaggtgacatggcccactttttagacatcacacgccggaaaactaaa
+
+Anc2	Anc2refChr0	11463	12315	+	----XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+simCow_chr6	simCow.chr6	11254	12110	+	CAGATaagccatgatgaaaagacagaaggcgacgcggcccgttttttcgacatcacacgatggaaaactaaacagaatagtagccaaccgaaactatcaacgaatcggaaaacttatacattatgatcacttaggtttcaccccagggatgccaggatggcttaggatacgcaaacatataaatgtaatttagcctgttaaccaaactaatcagaaaaattacatgatactatcattagacagggatgatggaccgataaaacaaactgacccagagtacatgcttacaatcctgaatgaattggggattgaaggcaattacctcaatgttgtgagggccatttatgataaaccatcatccaatctcatagtcaacgggcgtaagcttgaagtctttcccttggaaggcaccaggaggcggcaaggttgctctatctctccactcttgttcaacatagtgctagaattgttggcccgcactagccgtcatgagagagacgagcggggtatacaattggatgaagaggaaacaaagctagccatcttcgcggatgacatgatagtctacttggggaacccgatggcggcagcaggcaacctacttaaactaaaaagcaacttgagtgaactctctggttataagatcaacgtgtcaagtcccaaacattcttgtacaaaaacaaccagcagaccagtcatagtataagcgagtcacctccgaccaccgattctaaatgaatcaaattTTtaggaactcaactgacccaagacatcaaggacttgttgatccggatacggaacgtgctattaagataaataagggaaattactaataatccccacaatattaagtgtt
+
+    Anc2	Anc2refChr0	11515	11531	+	XXXXXXXXXXXXXXXX
+    simCow_chr6	simCow.chr6	464111	464127	-	atgatggaagtataaa
+
+    """).lstrip())
+
+    stream = merged_dup_stream(block_file, Block.read_next_from_file)
+
+    block_1 = next(stream)
+    assert str(block_1) == dedent("""
+    Anc2	Anc2refChr0	11463	11515	+	-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    simCow_chr6	simCow.chr6	129132	130555	+	tgaagttaaagggtggtggaaggactaccaaagcaatgggaaaggcaaaaagaaaacgggtcggatcgcaatcccaattaccaagaagttggactatgatgttaagtcagcaagagtcaaaaggaaaagagtcaaggaagggcattcagtgatggtcagaggctctattcaacctgagagattaaccgtagagaatgtacacaaacccaatacaggtactaagactgagcatgcaagggatctgtgtcttgactcatataccgtagtagtggagcatgcgaacacaccggcatcgaccctggataagtcaacacaaagaaaagttaacacttacacacacgagctgaactcagttttgcatcaagccaacttgatcgacatctaccaaactttacatcctattccggctggttactcatttttttctgatccataccattcatacttaaagatagattacatcgtcgtgaaagcactcgtgcataaatgcaaagactccgatatagtagctaattgcctcgctgatcagagctcaatgaagttgagtctggagataagtgctctcacccagaatcagttgactccaaattgctcaaattggcatccgaataatgtatcattccttctaactgagtattgtgtccacaatgagatgaagacagaaattaagacgtttcttgacaaaaactaaaattgggatctcacctatggaaatacttgggagattggggcgttaatcatgctaaacaacacaggtaaaactgggcaaggaaggttgaggatggtgatccttaagtcaaaaataaaagaggttcattagcaagagcttacgcacgccagggcggctaggcagcaacaaatgactaaaataaaatttgagctgaagagtgtaaagaccgaagacacattgcccaaggtcaatgaatccaagagctggtttcttgacaaaaacaaaatcgacaggtctttgctgagcgtgcagaatgtagaaaaaatcatatcgacgtgttgaggaatcatcaggggtacataacaaccgacccagtggacattcaaataggcattaagcagtatcaccaacctctttgcaaaagtttaacttagttgacattgatattttcgattcgtttacccttctgcgactcaacaaagaaggaatagagtctctaaatagatcagtaatcggccccgaaataaagcatttattaacagtccatcgaagaagttacctggtttgccactgatattttacaagcagtacaaagaaaagttggtctcatttttttcctcaagctacaatcaattgagaatgaaggaatactaccgaactattttcacgagtcgtgtagtgtatcgatatcgaaatcaagc----gaagccatgatgaaaagacaaaaggtgacatggcccactttttagacatcac
+    simCow_chr6	simCow.chr6	11254	11310	+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------CAGATaagccatgatgaaaagacagaaggcgacgcggcccgttttttcgacatcac
+
+    """).lstrip()
+
+    block_2 = next(stream)
+    assert str(block_2) == dedent("""
+    Anc2	Anc2refChr0	11515	11531	+	XXXXXXXXXXXXXXXX
+    simCow_chr6	simCow.chr6	130555	130571	+	acgccggaaaactaaa
+    simCow_chr6	simCow.chr6	11310	11326	+	acgatggaaaactaaa
+    simCow_chr6	simCow.chr6	464111	464127	-	atgatggaagtataaa
 
     """).lstrip()
 
