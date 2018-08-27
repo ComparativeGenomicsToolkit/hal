@@ -935,6 +935,19 @@ class Block(object):
         ret += "\n"
         return ret
 
+def lift_region(alignment, ref_start, ref_end):
+    assert alignment.my_start <= ref_start < alignment.my_end
+    assert alignment.my_start < ref_end <= alignment.my_end
+    start_offset = ref_start - alignment.my_start
+    end_offset = alignment.my_end - ref_end
+    if alignment.other_strand == '+':
+        other_start = alignment.other_start + start_offset
+        other_end = alignment.other_end - end_offset
+    else:
+        other_start = alignment.other_start + end_offset
+        other_end = alignment.other_end - start_offset
+    return other_start, other_end
+
 def lift_blocks(alignments, blocks, other_genome, output):
     aln_stream = merged_dup_stream(alignments, read_next_alignment)
     aln = next(aln_stream, None)
@@ -965,33 +978,29 @@ def lift_blocks(alignments, blocks, other_genome, output):
 
         logger.debug("aln: %s", aln)
 
-        assert aln.chrom == block.first.chrom
-        assert aln.start < block.first.end
+        assert aln.chrom == block.chrom
+        assert aln.start < block.end
         assert block.first.start < aln.end
-        if block.first.start < aln.end and block.first.end <= aln.end:
-            # Block fits within alignment
-            start = max(aln.start, block.first.start)
-            for grouped_aln in aln.alignments:
-                if grouped_aln.other_strand == '+':
-                    new_block = block.prepend_new_sequence(start, block.first.end, other_genome, grouped_aln.other_chrom, grouped_aln.other_start, grouped_aln.other_start + (block.first.end - start), grouped_aln.other_strand)
-                else:
-                    new_block = block.prepend_new_sequence(start, block.first.end, other_genome, grouped_aln.other_chrom, grouped_aln.other_end - (block.first.end - start), grouped_aln.other_end, grouped_aln.other_strand)
-                logger.debug('outputting block %s', new_block)
-                output.write(str(new_block))
-            block = Block.read_next_from_file(blocks)
+
+        ref_start = max(aln.start, block.start)
+        ref_end = min(aln.end, block.end)
+        if block.end <= aln.end:
+            # Block end is within alignment (though its start may not be)
+            next_block = Block.read_next_from_file(blocks)
         else:
-            # Block goes over the edge of alignment
-            assert block.first.end > aln.end
-            start = max(aln.start, block.first.start)
+            # Block goes over the edge of alignment, so we need to split it
+            assert block.end > aln.end
             left_block, right_block = block.split(aln.end - block.first.start)
-            for grouped_aln in aln.alignments:
-                if grouped_aln.other_strand == '+':
-                    new_block = left_block.prepend_new_sequence(start, aln.end, other_genome, grouped_aln.other_chrom, grouped_aln.other_start + (start - aln.start), grouped_aln.other_end, grouped_aln.other_strand)
-                else:
-                    new_block = left_block.prepend_new_sequence(start, aln.end, other_genome, grouped_aln.other_chrom, grouped_aln.other_start, grouped_aln.other_end - (start - aln.start), grouped_aln.other_strand)
-                logger.debug('outputting block %s', new_block)
-                output.write(str(new_block))
-            block = right_block
+            block = left_block
+            next_block = right_block
+        for sub_aln in aln.alignments:
+            # For each (possibly) duplicated alignment in this region,
+            # output a new block with the reference sequence added.
+            other_start, other_end = lift_region(sub_aln, ref_start, ref_end)
+            new_block = block.prepend_new_sequence(ref_start, ref_end, other_genome, sub_aln.other_chrom, other_start, other_end, sub_aln.other_strand)
+            logger.debug('outputting block %s', new_block)
+            output.write(str(new_block))
+        block = next_block
 
 def get_sequence(hal_path, genome):
     """
@@ -2018,6 +2027,19 @@ simCow_chr6	simCow.chr6	11254	12110	+	CAGATaagccatgatgaaaagacagaaggcgacgcggcccgt
     simCow_chr6	simCow.chr6	464111	464127	-	atgatggaagtataaa
 
     """).lstrip()
+
+def test_lift_region():
+    alignment_1 = Alignment(my_chrom='Anc1refChr1', my_start=91810, my_end=91881,
+                          other_chrom='mrrefChr5', other_start=57149, other_end=57220,
+                          other_strand='+')
+    assert lift_region(alignment_1, 91810, 91881) == (57149, 57220)
+    assert lift_region(alignment_1, 91845, 91870) == (57184, 57209)
+
+    alignment_2 = Alignment(my_chrom='Anc1refChr0', my_start=8054, my_end=8060,
+                          other_chrom='mrrefChr0', other_start=44139, other_end=44145,
+                          other_strand='-')
+    assert lift_region(alignment_2, 8054, 8060) == (44139, 44145)
+    assert lift_region(alignment_2, 8056, 8059) == (44140, 44143)
 
 if __name__ == '__main__':
     main()
