@@ -132,11 +132,11 @@ def start_job(job, hal_id, refGenome, opts):
             # Find out whether we have to lift up or down
             original_node = find_node_by_name(tree, node.name)
             if original_node.ancestor is None or node.ancestor.name != original_node.ancestor.name:
-                lift_job = merge_job.addFollowOnJobFn(lift_down_job, node.name, node.ancestor.name, merge_job.rv(), hal_id, opts)
-                return lift_job, lift_job.rv()
+                lift_down_job = merge_job.addFollowOnJobFn(lift_job, 'down', node.name, node.ancestor.name, merge_job.rv(), hal_id, opts)
+                return lift_down_job, lift_down_job.rv()
             else:
-                lift_job = merge_job.addFollowOnJobFn(lift_up_job, node.name, node.ancestor.name, merge_job.rv(), hal_id, opts)
-                return lift_job, lift_job.rv()
+                lift_up_job = merge_job.addFollowOnJobFn(lift_job, 'up', node.name, node.ancestor.name, merge_job.rv(), hal_id, opts)
+                return lift_up_job, lift_up_job.rv()
 
     blocks_on_ref = setup_jobs(rerooted)
 
@@ -241,41 +241,59 @@ def group_by_size(files_by_chroms, chrom_sizes, get_temp_path, target_size=50000
     assert len(chrom_sizes_subsets) == len(grouped_pathss)
     return chrom_sizes_subsets, grouped_pathss
 
-def lift_up_job(job, genome, parent_genome, blocksID, hal_id, opts):
-    """Lift up this genome's blocks file to parent_genome."""
-    job.fileStore.logToMaster("Lifting up from {} to {}".format(genome, parent_genome))
-    hal = job.fileStore.readGlobalFile(hal_id)
-    alignmentPath = job.fileStore.getLocalTempFile()
-    get_alignment_to_parent(hal, genome, alignmentPath)
-    blocksPath = job.fileStore.readGlobalFile(blocksID)
-    liftedPath = job.fileStore.getLocalTempFile()
-    with open(alignmentPath) as alignment, open(blocksPath) as blocks, open(liftedPath, 'w') as lifted:
-        lift_blocks(alignment, blocks, parent_genome, lifted)
-    sortedPath = job.fileStore.getLocalTempFile()
-    with open(liftedPath) as lifted, open(sortedPath, 'w') as sorted:
-        sort_blocks(lifted, sorted)
-    if opts.intermediateResultsUrl is not None:
-        job.fileStore.exportFile(sortedPath, opts.intermediateResultsUrl + "{}-up-from-{}.blocks".format(parent_genome, genome))
-        job.fileStore.exportFile(alignmentPath, opts.intermediateResultsUrl + "{}-up-from-{}.alignment".format(parent_genome, genome))
-    return job.fileStore.writeGlobalFile(sortedPath)
+def lift_job(job, up_or_down, genome, other_genome, blocks_id, hal_id, opts):
+    """Lift this genome's blocks file to another genome."""
+    job.fileStore.logToMaster("Lifting from {} to {}".format(genome, other_genome))
 
-def lift_down_job(job, genome, child_genome, blocksID, hal_id, opts):
-    """Lift down this genome's blocks file to child_genome."""
-    job.fileStore.logToMaster("Lifting down from {} to {}".format(genome, child_genome))
+    # Get the alignments / blocks, separated into different files by chromosome.
     hal = job.fileStore.readGlobalFile(hal_id)
-    alignmentPath = job.fileStore.getLocalTempFile()
-    get_alignment_to_child(hal, child_genome, alignmentPath)
-    blocksPath = job.fileStore.readGlobalFile(blocksID)
-    liftedPath = job.fileStore.getLocalTempFile()
-    with open(alignmentPath) as alignment, open(blocksPath) as blocks, open(liftedPath, 'w') as lifted:
-        lift_blocks(alignment, blocks, child_genome, lifted)
-    sortedPath = job.fileStore.getLocalTempFile()
-    with open(liftedPath) as lifted, open(sortedPath, 'w') as sorted:
-        sort_blocks(lifted, sorted)
-    if opts.intermediateResultsUrl is not None:
-        job.fileStore.exportFile(sortedPath, opts.intermediateResultsUrl + "{}-down-from-{}.blocks".format(child_genome, genome))
-        job.fileStore.exportFile(alignmentPath, opts.intermediateResultsUrl + "{}-down-from-{}.alignment".format(child_genome, genome))
-    return job.fileStore.writeGlobalFile(sortedPath)
+    alignment_path = job.fileStore.getLocalTempFile()
+    if up_or_down == 'up':
+        get_alignment_to_parent(hal, genome, alignment_path)
+    else:
+        assert up_or_down == 'down'
+        get_alignment_to_child(hal, other_genome, alignment_path)
+    with open(alignment_path) as alignments:
+        alignments_by_chrom = split_alignments_by_chrom(alignments, job.fileStore.getLocalTempFile)
+    blocks_path = job.fileStore.readGlobalFile(blocks_id)
+    with open(blocks_path) as blocks:
+        blocks_by_chrom = split_blocks_by_chrom(blocks, job.fileStore.getLocalTempFile)
+
+    # Group up the files into larger chunks, each of which will be handled by a separate job.
+    chrom_sizes = get_chrom_sizes(hal, genome)
+    chrom_sizes_subsets, grouped_pathss = group_by_size([alignments_by_chrom, blocks_by_chrom], chrom_sizes, job.fileStore.getLocalTempFile)
+
+    # Set up the jobs to handle each chunk.
+    subset_jobs = []
+    for chrom_sizes_subset, grouped_paths in zip(chrom_sizes_subsets, grouped_pathss):
+        alignments_path = grouped_paths[0]
+        blocks_path = grouped_paths[1]
+        alignment_id = job.fileStore.writeGlobalFile(alignments_path)
+        blocks_id = job.fileStore.writeGlobalFile(blocks_path)
+        subset_job = job.addChildJobFn(lift_subset_job, alignment_id, blocks_id, other_genome)
+        subset_jobs.append(subset_job)
+
+    # Set up the jobs to handle the output of the chunked jobs (concatenating and sorting).
+    cat_job = job.addChildJobFn(concatenate_job, [j.rv() for j in subset_jobs])
+    for subset_job in subset_jobs:
+        subset_job.addChild(cat_job)
+    output_id = cat_job.addChildJobFn(sort_blocks_job, cat_job.rv()).rv()
+    return output_id
+
+def lift_subset_job(job, alignment_id, blocks_id, parent_genome):
+    alignment_path = job.fileStore.readGlobalFile(alignment_id)
+    blocks_path = job.fileStore.readGlobalFile(blocks_id)
+    lifted_path = job.fileStore.getLocalTempFile()
+    with open(alignment_path) as alignment, open(blocks_path) as blocks, open(lifted_path, 'w') as lifted:
+        lift_blocks(alignment, blocks, parent_genome, lifted)
+    return job.fileStore.writeGlobalFile(lifted_path)
+
+def sort_blocks_job(job, blocks_id):
+    blocks_path = job.fileStore.readGlobalFile(blocks_id)
+    sorted_path = job.fileStore.getLocalTempFile()
+    with open(blocks_path) as blocks, open(sorted_path, 'w') as sorted:
+        sort_blocks(blocks, sorted)
+    return job.fileStore.writeGlobalFile(sorted_path)
 
 def merge_blocks_job(job, genome, child_names, block_ids, hal_id, opts):
     """Combine the lifted blocks and add in the current genome's sequence."""
@@ -1220,7 +1238,7 @@ def lift_blocks(alignments, blocks, other_genome, output):
     aln_stream = merged_dup_stream(alignments, read_next_alignment)
     aln = next(aln_stream, None)
     block = Block.read_next_from_file(blocks)
-    while block is not None:
+    while block is not None and aln is not None:
         assert block.first.strand == '+'
 
         # Make sure we are at a point where we have some overlap between our
@@ -2347,7 +2365,7 @@ def test_split_blocks_by_chrom():
 
     """).lstrip())
 
-    paths_by_chrom = split_blocks_by_chrom(block_file, lambda: NamedTemporaryFile().name)
+    paths_by_chrom = split_blocks_by_chrom(block_file, get_temp_path=lambda: NamedTemporaryFile().name)
     assert len(paths_by_chrom) == 2
     with open(paths_by_chrom['chr1']) as f:
         assert f.read() == dedent("""
@@ -2363,6 +2381,33 @@ def test_split_blocks_by_chrom():
         A	chr2	15	20	+	XXXXX
         B	chr1	20	25	+	ACGTG
 
+        """).lstrip()
+
+def test_split_alignments_by_chrom():
+    alignments_file = StringIO(dedent("""
+    simHuman.chr6	601632	601633	Anc1refChr1	332920	332921	+
+    simHuman.chr6	601633	601639	Anc1refChr1	332921	332927	+
+    simHuman.chr6	601639	601664	Anc1refChr1	332927	332952	-
+    simHuman.chrX	601664	601670	Anc1refChr1	332952	332958	-
+    simHuman.chrX	601670	601674	Anc1refChr1	332958	332962	+
+    simHuman.chrY	601674	601684	Anc1refChr1	332963	332973	+
+    """).lstrip())
+    paths_by_chrom = split_alignments_by_chrom(alignments_file, get_temp_path=lambda: NamedTemporaryFile().name)
+    assert len(paths_by_chrom) == 3
+    with open(paths_by_chrom['simHuman.chr6']) as f:
+        assert f.read() == dedent("""
+        simHuman.chr6	601632	601633	Anc1refChr1	332920	332921	+
+        simHuman.chr6	601633	601639	Anc1refChr1	332921	332927	+
+        simHuman.chr6	601639	601664	Anc1refChr1	332927	332952	-
+        """).lstrip()
+    with open(paths_by_chrom['simHuman.chrX']) as f:
+        assert f.read() == dedent("""
+        simHuman.chrX	601664	601670	Anc1refChr1	332952	332958	-
+        simHuman.chrX	601670	601674	Anc1refChr1	332958	332962	+
+        """).lstrip()
+    with open(paths_by_chrom['simHuman.chrY']) as f:
+        assert f.read() == dedent("""
+        simHuman.chrY	601674	601684	Anc1refChr1	332963	332973	+
         """).lstrip()
 
 if __name__ == '__main__':
