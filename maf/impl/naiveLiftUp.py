@@ -3,6 +3,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 import os
 import re
+import shutil
 from StringIO import StringIO
 from argparse import ArgumentParser
 from copy import deepcopy
@@ -101,9 +102,9 @@ def prune_tree(tree, leaves_to_keep):
         if node.is_leaf and node.name not in leaves_to_keep:
             node.ancestor.descendants.remove(node)
 
-def start_job(job, halID, refGenome, opts):
+def start_job(job, hal_id, refGenome, opts):
     """Set up the structure of the pipeline."""
-    hal = job.fileStore.readGlobalFile(halID)
+    hal = job.fileStore.readGlobalFile(hal_id)
     # Newick representation of the HAL species tree.
     newick_string = get_hal_tree(hal)
     job.fileStore.logToMaster("Newick string: %s" % (newick_string))
@@ -120,9 +121,9 @@ def start_job(job, halID, refGenome, opts):
         prev_data = [setup_jobs(child) for child in node.descendants]
         # At this point all of the jobs for the lower parts of the tree have been set up.
         lifted_data = [prev_lifted for _, prev_lifted in prev_data]
-        merge_job = job.wrapJobFn(merge_blocks, node.name, [n.name for n in node.descendants], lifted_data, halID, opts)
+        merge_job = job.wrapJobFn(merge_blocks_job, node.name, [n.name for n in node.descendants], lifted_data, hal_id, opts)
         for prev_job, _ in prev_data:
-            prev_job.addChild(merge_job)
+            prev_job.addFollowOn(merge_job)
         if node.is_leaf:
             job.addChild(merge_job)
         if node.ancestor is None:
@@ -131,10 +132,10 @@ def start_job(job, halID, refGenome, opts):
             # Find out whether we have to lift up or down
             original_node = find_node_by_name(tree, node.name)
             if original_node.ancestor is None or node.ancestor.name != original_node.ancestor.name:
-                lift_job = merge_job.addChildJobFn(lift_down, node.name, node.ancestor.name, merge_job.rv(), halID, opts)
+                lift_job = merge_job.addFollowOnJobFn(lift_down_job, node.name, node.ancestor.name, merge_job.rv(), hal_id, opts)
                 return lift_job, lift_job.rv()
             else:
-                lift_job = merge_job.addChildJobFn(lift_up, node.name, node.ancestor.name, merge_job.rv(), halID, opts)
+                lift_job = merge_job.addFollowOnJobFn(lift_up_job, node.name, node.ancestor.name, merge_job.rv(), hal_id, opts)
                 return lift_job, lift_job.rv()
 
     blocks_on_ref = setup_jobs(rerooted)
@@ -144,12 +145,106 @@ def start_job(job, halID, refGenome, opts):
     for genome in all_genomes:
         chrom_sizes[genome] = get_chrom_sizes(hal, genome)
 
-    return job.addFollowOnJobFn(maf_export, chrom_sizes, blocks_on_ref, opts).rv()
+    return job.addFollowOnJobFn(maf_export_job, chrom_sizes, blocks_on_ref, opts).rv()
 
-def lift_up(job, genome, parent_genome, blocksID, halID, opts):
+def split_blocks_by_chrom(blocks_file, get_temp_path):
+    """
+    Split a blocks file into several files, one per chromosome.
+
+    get_temp_path is a function that returns a new temporary file path.
+
+    Returns a dictionary, {chrom_name: blockfile_path}.
+    """
+    paths = {}
+    cur_chrom = None
+    output_path = get_temp_path()
+    output = open(output_path, 'w')
+    while True:
+        block = Block.read_next_from_file(blocks_file)
+        if block is None:
+            break
+        if cur_chrom is None:
+            cur_chrom = block.chrom
+            paths[cur_chrom] = output_path
+        elif block.chrom != cur_chrom:
+            # Done with this chromosome
+            output.close()
+            output_path = get_temp_path()
+            cur_chrom = block.chrom
+            assert cur_chrom not in paths
+            paths[cur_chrom] = output_path
+            output = open(output_path, 'w')
+        output.write(str(block))
+    return paths
+
+def split_alignments_by_chrom(alignments_file, get_temp_path):
+    """Split an alignments file into several files, one per chromosome.
+
+    get_temp_path is a function that returns a new temporary file path.
+
+    Returns a dictionary, {chrom_name: alignmentfile_path}."""
+    paths = {}
+    cur_chrom = None
+    output_path = get_temp_path()
+    output = open(output_path, 'w')
+    for line in alignments_file:
+        fields = line.split()
+        line_chrom = fields[0]
+        if line_chrom != cur_chrom:
+            output.close()
+            output_path = get_temp_path()
+            cur_chrom = line_chrom
+            paths[cur_chrom] = output_path
+            output = open(output_path, 'w')
+        output.write(line)
+    return paths
+
+def group_by_size(files_by_chroms, chrom_sizes, get_temp_path, target_size=50000000):
+    """
+    Group a series of files (each indexed by chromosome) into larger series of files
+    with total sequence approximately target_size.
+
+    Returns two lists like [chrom_sizes_1, chrom_sizes_2], [[alignments_file_1, blocks_file_1], ...].
+    """
+    def merge(files_by_chroms, chroms_to_merge):
+        # Ensure the output will be generated in sorted order
+        chroms_to_merge.sort()
+
+        paths = [get_temp_path() for _ in range(len(files_by_chroms))]
+        with LiftedContextManager(map(lambda p: open(p, 'w'), paths)) as outputs:
+            for chrom in chroms_to_merge:
+                for files_by_chrom, output in zip(files_by_chroms, outputs):
+                    if chrom not in files_by_chrom:
+                        # No file corresponding to this chrom
+                        continue
+                    with open(files_by_chrom[chrom]) as input:
+                        shutil.copyfileobj(input, output)
+        return paths
+
+    grouped_pathss = []
+    chrom_sizes_subsets = []
+    chromsAndSizes = sorted(chrom_sizes.items(), key=lambda cs: cs[1])
+    running_size = 0
+    chroms_to_merge = []
+    for chrom, size in chromsAndSizes:
+        if running_size > 0 and running_size + size > target_size:
+            grouped_paths = merge(files_by_chroms, chroms_to_merge)
+            grouped_pathss.append(grouped_paths)
+            chrom_sizes_subsets.append({c: chrom_sizes[c] for c in chroms_to_merge})
+            chroms_to_merge = []
+        chroms_to_merge.append(chrom)
+        running_size += size
+    grouped_paths = merge(files_by_chroms, chroms_to_merge)
+    chrom_sizes_subsets.append({c: chrom_sizes[c] for c in chroms_to_merge})
+    grouped_pathss.append(grouped_paths)
+
+    assert len(chrom_sizes_subsets) == len(grouped_pathss)
+    return chrom_sizes_subsets, grouped_pathss
+
+def lift_up_job(job, genome, parent_genome, blocksID, hal_id, opts):
     """Lift up this genome's blocks file to parent_genome."""
     job.fileStore.logToMaster("Lifting up from {} to {}".format(genome, parent_genome))
-    hal = job.fileStore.readGlobalFile(halID)
+    hal = job.fileStore.readGlobalFile(hal_id)
     alignmentPath = job.fileStore.getLocalTempFile()
     get_alignment_to_parent(hal, genome, alignmentPath)
     blocksPath = job.fileStore.readGlobalFile(blocksID)
@@ -164,10 +259,10 @@ def lift_up(job, genome, parent_genome, blocksID, halID, opts):
         job.fileStore.exportFile(alignmentPath, opts.intermediateResultsUrl + "{}-up-from-{}.alignment".format(parent_genome, genome))
     return job.fileStore.writeGlobalFile(sortedPath)
 
-def lift_down(job, genome, child_genome, blocksID, halID, opts):
+def lift_down_job(job, genome, child_genome, blocksID, hal_id, opts):
     """Lift down this genome's blocks file to child_genome."""
     job.fileStore.logToMaster("Lifting down from {} to {}".format(genome, child_genome))
-    hal = job.fileStore.readGlobalFile(halID)
+    hal = job.fileStore.readGlobalFile(hal_id)
     alignmentPath = job.fileStore.getLocalTempFile()
     get_alignment_to_child(hal, child_genome, alignmentPath)
     blocksPath = job.fileStore.readGlobalFile(blocksID)
@@ -182,37 +277,76 @@ def lift_down(job, genome, child_genome, blocksID, halID, opts):
         job.fileStore.exportFile(alignmentPath, opts.intermediateResultsUrl + "{}-down-from-{}.alignment".format(child_genome, genome))
     return job.fileStore.writeGlobalFile(sortedPath)
 
-def merge_blocks(job, genome, child_names, blockIDs, halID, opts):
+def merge_blocks_job(job, genome, child_names, block_ids, hal_id, opts):
     """Combine the lifted blocks and add in the current genome's sequence."""
     job.fileStore.logToMaster("Merging blocks on {} (from child genomes {})".format(genome, child_names))
-    output_path = job.fileStore.getLocalTempFile()
-    hal = job.fileStore.readGlobalFile(halID)
-    if len(blockIDs) == 0:
+    hal = job.fileStore.readGlobalFile(hal_id)
+    if len(block_ids) == 0:
         # Leaf genome.
-        assert len(child_names) == len(blockIDs) == 0
+        assert len(child_names) == len(block_ids) == 0
+        output_path = job.fileStore.getLocalTempFile()
         get_leaf_blocks(hal, genome, output_path)
+        output_id = job.fileStore.writeGlobalFile(output_path)
     else:
-        # Have several blockIDs to merge.
-        assert len(child_names) == len(blockIDs)
+        # Have several block_ids to merge.
+        assert len(child_names) == len(block_ids)
         assert len(child_names) > 0
 
         chrom_sizes = get_chrom_sizes(hal, genome)
 
-        block_paths = map(job.fileStore.readGlobalFile, blockIDs)
-        merged_path = job.fileStore.getLocalTempFile()
-        # Pass 1: combine the child blocks into a single set of blocks on this reference
-        # (including insertions), *but* those blocks aren't necessarily maximal.
-        with LiftedContextManager(map(open, block_paths)) as blocks, open(merged_path, 'w') as output:
-            merge_child_blocks(genome, chrom_sizes, child_names, blocks, output)
-        # Pass 2: Add in the actual reference nucleotides, and maximize the
-        # length of blocks by combining them.
-        ref_sequence = get_sequence(hal, genome)
-        with open(merged_path) as merged_blocks, open(output_path, 'w') as output:
-            maximize_block_length(merged_blocks, ref_sequence, output)
-    output = job.fileStore.writeGlobalFile(output_path)
+        block_paths = map(job.fileStore.readGlobalFile, block_ids)
+        split_blocks = [split_blocks_by_chrom(open(block_path), job.fileStore.getLocalTempFile) for block_path in block_paths]
+        chrom_sizes_subsets, grouped_pathss = group_by_size(split_blocks, chrom_sizes, job.fileStore.getLocalTempFile)
+        subset_jobs = []
+        for chrom_sizes_subset, grouped_paths in zip(chrom_sizes_subsets, grouped_pathss):
+            grouped_ids = [job.fileStore.writeGlobalFile(grouped_path) for grouped_path in grouped_paths]
+            subset_job = job.addChildJobFn(merge_blocks_merge_subset_job, genome, child_names, grouped_ids, chrom_sizes_subset, opts)
+            subset_jobs.append(subset_job)
+
+        cat_job = job.addChildJobFn(concatenate_job, [j.rv() for j in subset_jobs])
+        for subset_job in subset_jobs:
+            subset_job.addChild(cat_job)
+        output_id = cat_job.addChildJobFn(merge_blocks_maximize_block_length_job, genome, cat_job.rv(), hal_id, opts).rv()
+    return output_id
+
+def merge_blocks_merge_subset_job(job, genome, child_names, block_ids, chrom_sizes, opts):
+    """Merges a small subset of the lifted alignments from children/parent."""
+    block_paths = [job.fileStore.readGlobalFile(block_id) for block_id in block_ids]
+    merged_path = job.fileStore.getLocalTempFile()
+    with LiftedContextManager(map(open, block_paths)) as blocks, open(merged_path, 'w') as output:
+        merge_child_blocks(genome, chrom_sizes, child_names, blocks, output)
+    output_id = job.fileStore.writeGlobalFile(merged_path)
     if opts.intermediateResultsUrl is not None:
-        job.fileStore.exportFile(output, opts.intermediateResultsUrl + "{}-merged.blocks".format(genome))
-    return output
+        job.fileStore.exportFile(output_id, opts.intermediateResultsUrl + "{}-merged-subset-{}.blocks".format(genome, chrom_sizes.keys()[0]))
+    return output_id
+
+def merge_blocks_maximize_block_length_job(job, genome, merged_blocks_id, hal_id, opts):
+    """Maximizes the block length of a set of merged blocks."""
+    hal = job.fileStore.readGlobalFile(hal_id)
+    ref_sequence = get_sequence(hal, genome)
+    merged_path = job.fileStore.readGlobalFile(merged_blocks_id)
+    # Sort the blocks (they are probably in a somewhat random order).
+    sorted_path = job.fileStore.getLocalTempFile()
+    with open(merged_path) as merged_blocks, open(sorted_path, 'w') as sorted_blocks:
+        sort_blocks(merged_blocks, sorted_blocks)
+
+    output_path = job.fileStore.getLocalTempFile()
+    with open(sorted_path) as sorted_blocks, open(output_path, 'w') as output:
+        maximize_block_length(sorted_blocks, ref_sequence, output)
+    output_id = job.fileStore.writeGlobalFile(output_path)
+    if opts.intermediateResultsUrl is not None:
+        job.fileStore.exportFile(output_id, opts.intermediateResultsUrl + "{}-merged.blocks".format(genome))
+    return output_id
+
+def concatenate_job(job, input_ids):
+    """This job just concatenates the input files together and returns them."""
+    out_path = job.fileStore.getLocalTempFile()
+    with open(out_path, 'w') as output:
+        for input_id in input_ids:
+            input_path = job.fileStore.readGlobalFile(input_id)
+            with open(input_path) as input:
+                shutil.copyfileobj(input, output)
+    return job.fileStore.writeGlobalFile(out_path)
 
 def find_split_point(blocks):
     """
@@ -423,6 +557,7 @@ def maximize_block_length(blocks, ref_sequence, output):
         cur_block = Block.read_next_from_file(blocks)
         if cur_block is None:
             break
+        logger.debug('cur_block: %s, growing_block: %s', cur_block, growing_block)
         if growing_block is not None:
             assert cur_block.first.chrom >= growing_block.first.chrom and \
                 (cur_block.first.start == growing_block.first.end or cur_block.first.start == 0), \
@@ -442,7 +577,7 @@ def maximize_block_length(blocks, ref_sequence, output):
             growing_block = cur_block
     output.write(str(growing_block))
 
-def maf_export(job, chrom_sizes, blocksID, opts):
+def maf_export_job(job, chrom_sizes, blocksID, opts):
     """Once blocks are on the reference, export them to MAF."""
     blocks_path = job.fileStore.readGlobalFile(blocksID)
     output_path = job.fileStore.getLocalTempFile()
@@ -1270,11 +1405,11 @@ def main():
     if opts.targetGenomes is not None:
         opts.targetGenomes = opts.targetGenomes.split(",")
     with Toil(opts) as toil:
-        halID = toil.importFile(makeURL(opts.hal))
+        hal_id = toil.importFile(makeURL(opts.hal))
         if opts.restart:
             mafID = toil.restart()
         else:
-            mafID = toil.start(Job.wrapJobFn(start_job, halID, opts.refGenome, opts))
+            mafID = toil.start(Job.wrapJobFn(start_job, hal_id, opts.refGenome, opts))
         toil.exportFile(mafID, makeURL(opts.outputMaf))
 
 # Tests
@@ -2186,6 +2321,49 @@ def test_lift_region():
                           other_strand='-')
     assert lift_region(alignment_2, 8054, 8060) == (44139, 44145)
     assert lift_region(alignment_2, 8056, 8059) == (44140, 44143)
+
+def test_group_by_size():
+    chrom_sizes = {'chr1': 5000, 'chr2': 10000, 'chrY': 1000}
+    files_by_chroms = [{'chr1': NamedTemporaryFile().name, 'chr2': NamedTemporaryFile().name, 'chrY': NamedTemporaryFile().name}]
+    for chrom, path in files_by_chroms[0].items():
+        with open(path, 'w') as f:
+            f.write(chrom + "\n")
+    chrom_sizes_subsets, files = group_by_size(files_by_chroms, chrom_sizes, lambda: NamedTemporaryFile().name, target_size=7000)
+    assert chrom_sizes_subsets == [{'chr1': 5000, 'chrY': 1000}, {'chr2': 10000}]
+    assert all([len(f) == 1 for f in files]), "Should have only one output file per grouping if given one input file"
+    file_contents = [open(f[0]).read() for f in files]
+    assert file_contents == ['chr1\nchrY\n', 'chr2\n']
+
+def test_split_blocks_by_chrom():
+    block_file = StringIO(dedent("""
+    A	chr1	0	5	+	XXXXX
+    B	chr1	0	5	+	ACGTG
+
+    A	chr1	15	20	+	XXXXX
+    B	chr1	20	25	+	ACGTG
+
+    A	chr2	15	20	+	XXXXX
+    B	chr1	20	25	+	ACGTG
+
+    """).lstrip())
+
+    paths_by_chrom = split_blocks_by_chrom(block_file, lambda: NamedTemporaryFile().name)
+    assert len(paths_by_chrom) == 2
+    with open(paths_by_chrom['chr1']) as f:
+        assert f.read() == dedent("""
+        A	chr1	0	5	+	XXXXX
+        B	chr1	0	5	+	ACGTG
+
+        A	chr1	15	20	+	XXXXX
+        B	chr1	20	25	+	ACGTG
+
+        """).lstrip()
+    with open(paths_by_chrom['chr2']) as f:
+        assert f.read() == dedent("""
+        A	chr2	15	20	+	XXXXX
+        B	chr1	20	25	+	ACGTG
+
+        """).lstrip()
 
 if __name__ == '__main__':
     main()
