@@ -36,9 +36,16 @@ class LiftedContextManager(object):
         return retval
 
 def call(cmd):
+    """
+    Call the given command and return the output.
+
+    Why not just use check_output directly? This is in case we need to
+    use Docker/Singularity at some point.
+    """
     return check_output(cmd)
 
 def get_hal_tree(hal_path):
+    """Get the species tree of the given hal file."""
     return call(["halStats", "--tree", hal_path])
 
 def find_node_by_name(tree, name):
@@ -54,9 +61,11 @@ def clone_node(node):
     return node
 
 def reroot_tree(tree, new_root_name):
-    """Reroot the tree at the node with name new_root_name.
+    """
+    Reroot the tree at the node with name new_root_name.
 
-    The root node is kept even if it becomes superfluous."""
+    The root node is kept even if it becomes superfluous.
+    """
     node = find_node_by_name(tree, new_root_name)
     if node is None:
         raise ValueError("Node {} not found in tree".format(new_root_name))
@@ -82,9 +91,11 @@ def reroot_tree(tree, new_root_name):
     return new_root
 
 def prune_tree(tree, leaves_to_keep):
-    """Remove any nodes except the given leaves and their
+    """
+    Remove any nodes except the given leaves and their
     ancestors. Ancestral nodes are kept even if they only have a single
-    child."""
+    child.
+    """
     nodes = tree.walk(mode='postorder')
     for node in nodes:
         if node.is_leaf and node.name not in leaves_to_keep:
@@ -105,6 +116,7 @@ def start_job(job, halID, refGenome, opts):
         job.fileStore.logToMaster("Pruned newick string: %s" % newick.dumps(rerooted))
 
     def setup_jobs(node):
+        """Recursively set up jobs for this node and its children."""
         prev_data = [setup_jobs(child) for child in node.descendants]
         # At this point all of the jobs for the lower parts of the tree have been set up.
         lifted_data = [prev_lifted for _, prev_lifted in prev_data]
@@ -206,12 +218,21 @@ def find_split_point(blocks):
     """
     Find the position at which blocks stop sharing overlap.
     """
-    logger.debug("Finding split point for %s", [str(b) for b in blocks])
     return min([(b.chrom, b.end) for b in blocks if b is not None])[1]
 
 def merged_dup_stream(file, read_next):
+    """
+    Stream blocks/alignments from a file, merging overlapping dups.
+
+    Given a sorted file containing block/alignment objects (retrieved
+    via the read_next function), this will eagerly split at any points
+    of overlap and merge objects that belong to the same interval.
+    """
+    # NB: we refer to "blocks" here, but since AlignmentGroup responds to the
+    # same calls as Block, we can use this function on alignments as well.
     queued_blocks = deque()
     while True:
+        # Get our next block to consider.
         if len(queued_blocks) > 0:
             block = queued_blocks.popleft()
         else:
@@ -219,13 +240,14 @@ def merged_dup_stream(file, read_next):
         if block is None:
             # End of file.
             break
+        # Check for overlapping blocks in our queue.
         dup_blocks = []
         while len(queued_blocks) > 0:
             if block.overlaps(queued_blocks[0]) and all(b.overlaps(queued_blocks[0]) for b in dup_blocks):
                 dup_blocks.append(queued_blocks.popleft())
             else:
                 break
-        # Read in extra blocks from the file
+        # Check for overlapping blocks in our file.
         while True:
             next_block = read_next(file)
             if next_block is None:
@@ -235,35 +257,61 @@ def merged_dup_stream(file, read_next):
             else:
                 queued_blocks.append(next_block)
                 break
-        logger.debug('block: %s, dup_blocks: %s', block, dup_blocks)
+
+        # Go through the overlapping blocks (if any) and perform the actual
+        # merging / splitting.
         if len(dup_blocks) > 0:
             if not all(b.start == block.start for b in dup_blocks):
+                # Not every block starts at the same point, so we look for where
+                # the overlap *starts* and split there (so we can output the
+                # part of the block that doesn't share overlap).
                 split_point = min([b.start for b in dup_blocks if b.start != block.start])
             else:
+                # In this case, every block starts at the same point, so we need
+                # to look for where the overlap *stops*.
                 split_point = min([b.end for b in [block] + dup_blocks])
             leftovers = []
-            logger.debug('split_point: %s', split_point)
             merged_block = None
             for dup_block in [block] + dup_blocks:
                 if dup_block.start < split_point < dup_block.end:
+                    # We have a block that overlaps the splitting point. Split
+                    # it and save the rest for a later iteration.
                     dup_block, leftover = dup_block.split(split_point - dup_block.start)
                     leftovers.append(leftover)
                 if merged_block is None:
+                    # We share overlap with the emitted block by definition
+                    # (this is always some part of the initial block).
                     merged_block = dup_block
                 elif dup_block.start < split_point:
+                    # We already have a block to emit, so we have to add in the
+                    # information from this block.
                     merged_block = merged_block.merge(dup_block)
                 else:
+                    # No overlap with the emitted block. Save this for later.
                     leftovers.append(dup_block)
             block = merged_block
+            # Save the blocks that we didn't use for later, maintaining sorted order.
             queued_blocks.extendleft(reversed(leftovers))
         logger.debug('yielding block %s from dup stream', block)
         yield block
 
 def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
+    """Merge several block files on the same reference into one file.
+
+    All input block files must be sorted. This merges the alignment information
+    from the blocks "vertically" so that there is exactly 1 block per reference
+    position, adding in a single-degree block if no input blocks covered a
+    reference position.
+
+    The reference sequence is left as 'X', to be filled in at a later time.
+
+    """
     def get_smallest_block(cur_blocks):
         return reduce(lambda a, i: a if a.first < i.first else i, [b for b in cur_blocks if b is not None])
 
     def output_reference_insertions(cur_chrom, cur_chrom_idx, cur_pos, chrom, pos):
+        """Emit blocks for the reference sequence up to the given chrom and pos,
+        starting from cur_chrom and cur_pos."""
         # Check if we are in a reference insertion.
         if chrom != chroms[cur_chrom_idx]:
             assert chrom > chroms[cur_chrom_idx]
@@ -296,34 +344,29 @@ def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
     cur_chrom_idx = 0
     cur_chrom = chroms[0]
     cur_pos = 0
-    block_streams = [merged_dup_stream(f, Block.read_next_from_file) for f in block_files]
-    cur_blocks = [next(stream, None) for stream in block_streams]
 
+    # Sentinel indicating that we should fetch the next block from this file.
     # FIXME: this is awful, but shit needs to get done
     need_next = 'need next block'
+    # Streams of Blocks from each file, in order.
+    block_streams = [merged_dup_stream(f, Block.read_next_from_file) for f in block_files]
+    # Our current block from each file, in order (or None if we are at EOF, or
+    # need_next if the next block is desired).
+    cur_blocks = [next(stream, None) for stream in block_streams]
+
     while True:
-        # Look at the first block in each file (as well as the second, third,
-        # etc. if ref dups exist). If there is a gap between cur_pos and the
-        # nearest block, we need to emit a single-degree block representing the
-        # unaligned stretch of sequence. Otherwise, we're at the start of one or
-        # more blocks. Iterate through the reference positions and stop once we
-        # hit a significant enough rearrangement, which must be marked by the
-        # start of one or more blocks (or the end of a reference chrom). Split
-        # the blocks at that position, then merge and emit the component blocks
-        # and begin again.
         if all([b is None for b in cur_blocks]):
             # Finished.
             break
 
+        # Find a "next" block after our last position.
         smallest = get_smallest_block(cur_blocks)
-
-        logger.debug('cur_blocks: %s', cur_blocks)
 
         # Handle any insertions before the start of the next block.
         cur_chrom, cur_chrom_idx, cur_pos = output_reference_insertions(cur_chrom, cur_chrom_idx, cur_pos, smallest.first.chrom, smallest.first.start)
 
-        # Print out the smallest block if it doesn't overlap anything.
         if not any(smallest.overlaps(b) for b in cur_blocks if b is not None and b != smallest):
+            # Print out the smallest block if it doesn't overlap anything.
             logger.debug('Found non-overlapping block')
             output.write(str(smallest))
             smallest_idx = cur_blocks.index(smallest)
@@ -333,33 +376,33 @@ def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
             # Split up the current blocks at the end of their overlap.
             blocks_to_merge = []
             split_point = find_split_point(cur_blocks)
-            logger.debug('smallest: %s', smallest)
-            logger.debug('split_point: %s', split_point)
             assert smallest.first.start < split_point <= smallest.first.end
             for i, block in enumerate(cur_blocks):
                 if block is None:
                     # Already done with this file
                     continue
-                logger.debug('block %s: %s',  i, block)
                 if smallest.first.overlaps(block.first) and block.first.start < split_point < block.first.end:
                     left_block, right_block = block.split(split_point - block.first.start)
-                    logger.debug('results of split: %s %s', left_block, right_block)
                     blocks_to_merge.append(left_block)
                     # Keep the right side of the block around for the next iteration.
                     cur_blocks[i] = right_block
                 elif split_point == block.first.end:
+                    # We shouldn't split this block, because it's already a perfect overlap.
                     blocks_to_merge.append(block)
                     cur_blocks[i] = need_next
 
             logger.debug('Merging %s overlapping blocks', len(blocks_to_merge))
 
+            # Merge the blocks and emit the result.
             growing_block = blocks_to_merge[0]
             for block in blocks_to_merge[1:]:
                 growing_block = growing_block.merge(block)
             cur_pos = growing_block.first.end
             output.write(str(growing_block))
 
-        # Advance in whichever of the files we need blocks from.
+        # Done with this iteration. Advance in whichever of the files we need
+        # blocks from. (We may have blocks left over from the splits, so we
+        # shouldn't advance in all of them all the time.)
         for i, block_or_sentinel in enumerate(cur_blocks):
             if block_or_sentinel == need_next:
                 # Read from the corresponding file
@@ -369,6 +412,12 @@ def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
     output_reference_insertions(cur_chrom, cur_chrom_idx, cur_pos, chroms[-1], chrom_sizes[chroms[-1]])
 
 def maximize_block_length(blocks, ref_sequence, output):
+    """
+    Go through the blocks in the given file and concatenate them together "horizontally" if they are adjacent.
+
+    Also fills in the reference sequence lines with the correct bases from ref_sequence.
+    """
+    # Our current block. This will grow as we find more blocks to add to it.
     growing_block = None
     while True:
         cur_block = Block.read_next_from_file(blocks)
@@ -378,13 +427,17 @@ def maximize_block_length(blocks, ref_sequence, output):
             assert cur_block.first.chrom >= growing_block.first.chrom and \
                 (cur_block.first.start == growing_block.first.end or cur_block.first.start == 0), \
                 "Input blocks must be sorted and span the entire sequence without overlap"
+        # Change the reference bases from 'X' to the real sequence
         cur_block.fill_in_first_sequence(ref_sequence[cur_block.first.chrom][cur_block.first.start:cur_block.first.end])
-        logger.debug("%s %s", cur_block, ref_sequence[cur_block.first.chrom][cur_block.first.start:cur_block.first.end])
         if growing_block is None:
             growing_block = cur_block
         elif growing_block.compatible_with(cur_block):
+            # This block is OK to merge with our previous block, so go ahead and
+            # do it.
             growing_block.concatenate(cur_block)
         else:
+            # Not fully adjacent to the previous block, so we can't concatenate
+            # them. Emit our block and start over.
             output.write(str(growing_block))
             growing_block = cur_block
     output.write(str(growing_block))
@@ -405,7 +458,15 @@ def maf_export(job, chrom_sizes, blocksID, opts):
 class Alignment(namedtuple('Alignment', ('my_chrom', 'my_start', 'my_end',
                                          'other_chrom', 'other_start', 'other_end',
                                          'other_strand'))):
+    """
+    Represents a single pairwise alignment.
+
+    The alignment is always from the positive strand of the reference (i.e. the "my_" genome).
+    """
     def split(self, split_point):
+        """
+        Return two new alignments created by splitting this alignment at an offset relative to its start.
+        """
         if self.other_strand == '+':
             return (Alignment(self.my_chrom, self.my_start, self.my_start + split_point,
                               self.other_chrom, self.other_start, self.other_start + split_point,
@@ -422,6 +483,12 @@ class Alignment(namedtuple('Alignment', ('my_chrom', 'my_start', 'my_end',
                               self.other_strand))
 
 class AlignmentGroup(object):
+    """
+    Represents a collection of overlapping pairwise alignments (or just one).
+
+    The overlap is always perfect on the reference, that is, each pairwise
+    alignment refers to the exact same reference region.
+    """
     def __init__(self, alignments):
         self.alignments = alignments
         self.chrom = alignments[0].my_chrom
@@ -429,12 +496,18 @@ class AlignmentGroup(object):
         self.end = alignments[0].my_end
 
     def split(self, split_point):
+        """
+        Return two new AlignmentGroups created by splitting them at an offset relative to its start.
+        """
         splits = [aln.split(split_point) for aln in self.alignments]
         left = [alns[0] for alns in splits]
         right = [alns[1] for alns in splits]
         return AlignmentGroup(left), AlignmentGroup(right)
 
     def overlaps(self, other):
+        """
+        Do these two AlignmentGroups share any bases on the reference?
+        """
         if self.chrom == other.chrom \
            and ((self.start < other.end <= self.end) \
                 or (self.start <= other.start < self.end)):
@@ -443,6 +516,11 @@ class AlignmentGroup(object):
             return False
 
     def merge(self, other):
+        """
+        Add the alignments from another AlignmentGroup into this one.
+
+        The alignments must perfectly overlap these alignments on the reference.
+        """
         assert self.chrom == other.chrom \
             and self.start == other.start \
             and self.end == other.end
@@ -452,6 +530,9 @@ class AlignmentGroup(object):
         return self.__class__.__name__ + "(" + ",".join([repr(a) for a in self.alignments]) + ")"
 
 def read_next_alignment(alignmentFile):
+    """
+    Get the next AlignmentGroup from alignmentFile.
+    """
     line = alignmentFile.readline()
     if len(line) == 0:
         # EOF
@@ -465,6 +546,12 @@ def read_next_alignment(alignmentFile):
 
 @attrs(hash=True, slots=True)
 class BlockLine(object):
+    """
+    Represents a single sequence line within a block.
+
+    This class avoids copying the input sequence on splits, to avoid quadratic
+    behavior when a large block is repeatedly split.
+    """
     genome = attrib()
     chrom = attrib()
     start = attrib()
@@ -472,7 +559,7 @@ class BlockLine(object):
     strand = attrib()
     # Aligned sequence for this block entry.
     aligned_seq = attrib()
-    # Offset within the above aligned sequence. This allows us to keep
+    # Our window within the above aligned sequence. This allows us to keep
     # references to the same string within many different block entries, rather
     # than copying giant strings every time we split or reverse. Quadratic
     # behavior would really hurt on chromosomes that are hundreds of megabases
@@ -484,9 +571,12 @@ class BlockLine(object):
     def _align_end(self):
         return len(self.aligned_seq)
 
+    # Whether we need to be reverse complemented eventually. This is computed
+    # lazily to avoid quadratic behavior.
     needs_rev_comp = attrib(default=False)
 
     def seq_pos_to_align_pos(self, seq_pos):
+        """Given a position in our chromosome, get the corresponding offset within our aligned sequence."""
         align_pos = self.align_start
         if self.strand == '+':
             my_seq_pos = self.start
@@ -502,6 +592,7 @@ class BlockLine(object):
         return align_pos - self.align_start
 
     def reverse(self):
+        """Return a new BlockLine referring to the opposite strand."""
         return BlockLine(
             self.genome,
             self.chrom,
@@ -515,6 +606,7 @@ class BlockLine(object):
         )
 
     def align_pos_to_seq_pos(self, tgt_align_pos):
+        """Given a offset within our aligned sequence, get the corresponding position in our chromosome."""
         if self.strand == '+':
             seq_pos = self.start
         else:
@@ -530,6 +622,12 @@ class BlockLine(object):
         return seq_pos
 
     def split(self, split_pos):
+        """
+        Return two new BlockLines referring to the alignment before and after split_pos.
+
+        split_pos refers to an offset *IN ALIGNED CHARACTERS*, not in sequence
+        positions, from the start position of this block.
+        """
         # Find position (relative to sequence, not alignment) in this line at split point
         my_pos = self.align_pos_to_seq_pos(split_pos)
         # Create 2 new block lines
@@ -542,6 +640,7 @@ class BlockLine(object):
         return first_block_line, second_block_line
 
     def overlaps(self, other):
+        """Does this BlockLine share any bases with the other?"""
         if self.genome == other.genome and self.chrom == other.chrom \
            and ((self.start < other.end <= self.end) \
                 or (self.start <= other.start < self.end)):
@@ -550,6 +649,7 @@ class BlockLine(object):
             return False
 
     def precedes(self, other):
+        """Does this BlockLine *immediately* precede the other?"""
         if self.genome == other.genome \
            and self.chrom == other.chrom \
            and self.strand == other.strand:
@@ -562,6 +662,7 @@ class BlockLine(object):
 
     @property
     def seq(self):
+        """Get the actual aligned characters this BlockLine refers to."""
         seq = self.aligned_seq[self.align_start:self.align_end]
         if self.needs_rev_comp:
             return reverseComplement(seq)
@@ -624,7 +725,7 @@ class Block(object):
 
     def split(self, pos):
         """
-        Split at a given index relative to the first block entry.
+        Split at a given index *in sequence positions* relative to the first block entry.
 
         Creates two new blocks, one of which is everything left of the split
         point, non-inclusive, and the other of which is everything right of the
@@ -649,7 +750,14 @@ class Block(object):
         return Block(first_block_lines), Block(second_block_lines)
 
     def prepend_new_sequence(self, ref_start, ref_end, new_genome, new_chrom, new_start, new_end, strand):
-        logger.debug("ref_start: %s, ref_end: %s, new_chrom: %s, new_start: %s, new_end: %s, strand: %s", ref_start, ref_end, new_chrom, new_start, new_end, strand)
+        """
+        Add a new reference sequence line to this block.
+
+        The new reference sequence will not have any real bases, just 'X' and
+        gap characters. The new sequence is aligned to the old reference
+        sequence starting at ref_start and ending at ref_end (in the orientation
+        given by the strand parameter).
+        """
         assert ref_end - ref_start == new_end - new_start
         assert 0 <= ref_start < ref_end
         assert 0 <= new_start < new_end
@@ -681,6 +789,7 @@ class Block(object):
         return s
 
     def fill_in_first_sequence(self, first_seq):
+        """Set the non-gap bases of the reference line to be equal to the sequence in first_seq."""
         assert len(first_seq) == self.first.end - self.first.start
         assert self.first.strand == '+'
         aligned_seq = self.first.seq
@@ -697,7 +806,12 @@ class Block(object):
 
     def merge(self, other):
         """
-        Add in the alignments from another block, which must overlap with or abut this block (in the reference).
+        Return a new block adding in the alignments from another block.
+
+        The other block must overlap with or abut this block (in the
+        reference). Its alignments are stacked "vertically" after this block's
+        alignments in the new block. The overlap doesn't need to be perfect; gap
+        characters to maintain alignment relationships where necessary.
         """
         # Ensure there's some overlap or adjacency
         assert (self.first.start <= other.first.end <= self.first.end) \
@@ -828,6 +942,9 @@ class Block(object):
         return Block(new_block_lines)
 
     def compatible_with(self, other):
+        """
+        Return whether this block can be concatened with the other.
+        """
         # Our reference entry absolutely has to be syntenic with the other.
         if self.overlaps(other) or not self.first.precedes(other.first):
             return False
@@ -885,6 +1002,13 @@ class Block(object):
         return corresponding_lines
 
     def concatenate(self, other):
+        """
+        Combine the other block's lines with ours, extending our lines to include theirs.
+
+        The other block must abut this one in any matching lines. Any lines that
+        don't have a match between the two blocks will be added as well, but
+        gapped out in the positions where they are missing.
+        """
         assert self.first.end == other.first.start
         corresponding_lines = self.find_partners(other)
         lines_to_add = []
@@ -892,6 +1016,7 @@ class Block(object):
         other_block_length = len(other.first.seq)
         for other_block_line in other.block_lines:
             if other_block_line in corresponding_lines:
+                # We can extend our existing block line with this one.
                 self_block_line = corresponding_lines[other_block_line]
                 if self_block_line.strand == '+':
                     self_block_line.end = other_block_line.end
@@ -899,7 +1024,7 @@ class Block(object):
                     self_block_line.start = other_block_line.start
                 self_block_line.seq += other_block_line.seq
             else:
-                # No partner line; we just stack it on vertically taking into
+                # No partner line; we just stack it on vertically, taking into
                 # account the extra gaps at the beginning.
                 other_block_line.seq = '-' * (my_block_length) + other_block_line.seq
                 lines_to_add.append(other_block_line)
@@ -918,6 +1043,7 @@ class Block(object):
             self.block_lines.append(line)
 
     def to_maf(self, chrom_sizes):
+        """Convert this block into a MAF block, getting the chrom length from the chrom_sizes dict."""
         ret = "a\n"
         for block_line in self.block_lines:
             chr_size = chrom_sizes[block_line.genome][block_line.chrom]
@@ -937,6 +1063,7 @@ class Block(object):
         return ret
 
 def lift_region(alignment, ref_start, ref_end):
+    """Lift a given region on the reference using the provided Alignment."""
     assert alignment.my_start <= ref_start < alignment.my_end
     assert alignment.my_start < ref_end <= alignment.my_end
     start_offset = ref_start - alignment.my_start
@@ -950,24 +1077,28 @@ def lift_region(alignment, ref_start, ref_end):
     return other_start, other_end
 
 def lift_blocks(alignments, blocks, other_genome, output):
+    """
+    Lift the given blocks file to a new reference using the given pairwise alignments file.
+
+    The pairwise alignments must point from the old reference to the new.
+    """
     aln_stream = merged_dup_stream(alignments, read_next_alignment)
     aln = next(aln_stream, None)
     block = Block.read_next_from_file(blocks)
     while block is not None:
         assert block.first.strand == '+'
+
+        # Make sure we are at a point where we have some overlap between our
+        # alignment and our block, advancing through the files and discarding
+        # alignments/blocks if necessary.
         need_restart = False
-        logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.chrom, aln.start, aln.end)
         while block.first.chrom < aln.chrom or (aln.chrom == block.first.chrom and block.first.end <= aln.start):
-            logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.chrom, aln.start, aln.end)
-            logger.debug("fast-forwarding on block side")
             # Block doesn't fit within alignment, fast-forward on block side
             block = Block.read_next_from_file(blocks)
             need_restart = True
             if block is None:
                 return
         while aln.chrom < block.first.chrom or (aln.chrom == block.first.chrom and aln.end <= block.first.start):
-            logger.debug('block: %s:%s-%s aln: %s:%s-%s', block.first.chrom, block.first.start, block.first.end, aln.chrom, aln.start, aln.end)
-            logger.debug("fast-forwarding on alignment side")
             # Need to fast-forward on alignment side
             aln = next(aln_stream, None)
             need_restart = True
@@ -975,9 +1106,11 @@ def lift_blocks(alignments, blocks, other_genome, output):
                 return
 
         if need_restart:
+            # We need to go back to the beginning, because after advancing, our
+            # alignment may now be past our block, or vice versa.
             continue
 
-        logger.debug("aln: %s", aln)
+        # OK, now we have an alignment which overlaps a block. We can do the actual lifting work below.
 
         assert aln.chrom == block.chrom
         assert aln.start < block.end
@@ -1012,6 +1145,7 @@ def get_sequence(hal_path, genome):
         return dict(fastaRead(tmp.name))
 
 def get_sequence_for_region(hal_path, genome, sequence, start, stop):
+    """Get the sequence for a region from a HAL file."""
     fasta = call(['hal2fasta', hal_path, genome, '--sequence', sequence, '--start', str(start), '--length', str(stop - start)])
     return "".join(fasta.split("\n")[1:])
 
@@ -1041,7 +1175,7 @@ def get_leaf_blocks(hal_path, genome, output_path):
             out.write("\n")
 
 def sort_blocks(blocks, output):
-    """Sort blocks relative to the first line."""
+    """Sort a blocks file relative to the first line."""
     # Gather up the start positions within all the blocks, and their position within the file.
     starts_and_pos = []
     while True:
@@ -1060,7 +1194,7 @@ def sort_blocks(blocks, output):
         output.write(str(block))
 
 def get_alignment_to_parent(hal_path, child_genome, output_path):
-    """Get a file representing maximal gapless alignment blocks between this child and its parent."""
+    """Get a file representing maximal gapless alignment blocks between this child and its parent (referenced on the child)."""
     with NamedTemporaryFile() as tmp:
         call(['halAlignedExtract', '--viewParentCoords', '--alignedFile', tmp.name, hal_path, child_genome])
         with open(output_path, 'w') as output:
@@ -1068,6 +1202,7 @@ def get_alignment_to_parent(hal_path, child_genome, output_path):
         call(['sort', output_path, '-k1,1', '-k2,2n', '-o', output_path])
 
 def get_alignment_to_child(hal_path, child_genome, output_path):
+    """Get a file representing maximal gapless alignment blocks between this child and its parent (referenced on the parent)."""
     with NamedTemporaryFile() as original_alignment, NamedTemporaryFile() as flipped_alignment:
         get_alignment_to_parent(hal_path, child_genome, original_alignment.name)
         flip_alignment(open(original_alignment.name), open(flipped_alignment.name, 'w'))
@@ -1386,6 +1521,7 @@ def test_block_fill_in_first_sequence():
     """).lstrip()
 
 def test_merge_child_blocks_simple_overlap():
+    """Run merge_child_blocks with two blocks that don't have perfect overlap."""
     input_a = StringIO(dedent("""
     foo	chr1	1	4	+	X-XX
     bar	chr1	51	55	-	ATGA
@@ -1419,6 +1555,7 @@ def test_merge_child_blocks_simple_overlap():
     """).lstrip()
 
 def test_merge_child_blocks_ref_dups():
+    """Make sure merge_child_blocks merges dups within the same blocks file."""
     input_a = StringIO(dedent("""
     foo	chr1	0	6	+	XX-XXXX
     bar	chr1	50	55	-	CATGA--
@@ -1502,6 +1639,7 @@ def test_block_merge():
     """).lstrip()
 
 def test_block_merge_adjacent():
+    """Make sure Block.merge() works when the blocks don't overlap, but are adjacent."""
     input_1 = StringIO(dedent("""
     Human	chr6	50	77	+	CGG---GA---TCAACCAAG--AAGAATTGCTATA---
     Chimp	chr6	7000	7032	-	CGGTTGGACCCTCA---AAGttAAGAATT---ATAcct
@@ -1524,7 +1662,7 @@ def test_block_merge_adjacent():
 
     """).lstrip()
 
-def test_block_overlap():
+def test_block_overlaps():
     input_1 = StringIO(dedent("""
     Human	chr6	50	77	+	CGG---GA---TCAACCAAG--AAGAATTGCTATA---
     Chimp	chr6	7000	7032	-	CGGTTGGACCCTCA---AAGttAAGAATT---ATAcct
@@ -1562,6 +1700,9 @@ def test_block_overlap():
     assert not block_1.overlaps(block_3)
 
 def test_block_merge_bug_with_offsets():
+    """
+    Test that Block.merge() still works even with BlockLines that have non-zero offset.
+    """
     input_1 = StringIO(dedent("""
     mr	mrrefChr0	0	176	+	-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     simMouse_chr6	simMouse.chr6	0	177	+	TTTTTCAGTTGCAATACCCAACCGGGAGAAACTTTCAGTGAGCACACCTCAGGTTCCTATATCAAGCAGGCAGTCTTGCATAGCAAATGGTCTCTGGTAGACGGTGCACTCAATCTATGTGAGGTATAGAAAATAAAGGACTACACACATCTCATCAAGTATCCCGTCATATTTGTG
@@ -1577,12 +1718,14 @@ def test_block_merge_bug_with_offsets():
     block_1 = Block.read_next_from_file(input_1)
     block_2= Block.read_next_from_file(input_2)
 
+    # Split the block to ensure the right block has non-zero start offsets
     _, split = block_1.split(144)
 
     # Check if this hits an assertion
     split.merge(block_2)
 
 def test_merged_dup_stream_blocks():
+    """Check merged_dup_stream behavior on Blocks."""
     input_1 = StringIO(dedent("""
     mr	mrrefChr0	12451	12577	+	----XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     simRat_chr6	simRat.chr6	12764	12894	+	ATTGATCTTATAGGAGCACTCCCTCTAGTCAGCAATATAATTAGATAGGACTGACACATTTGTAATCTTGTGCCTAATAGCAAAGGTGTGTGACGTACATCTAGATTGTGTAATGACCTGTAGTGTCAAC
@@ -1677,6 +1820,7 @@ def test_merged_dup_stream_blocks():
         next(stream)
 
 def test_merged_dup_stream_alignments():
+    """Check merged_dup_stream behavior on AlignmentGroups."""
     alignments = StringIO(dedent("""
     chr5	20	25	Anc1c5	50	55	-
     chr6	0	2	Anc1c1	60	62	+
@@ -1997,7 +2141,7 @@ def test_lift_blocks_dups():
 
 def test_merged_dup_stream_same_starts():
     """
-    Test against a rare bug that crops up with a pattern of dups.
+    Test merged_dup_stream against a rare bug that crops up with a pattern of dups.
     """
     block_file = StringIO(dedent("""
 Anc2	Anc2refChr0	11463	11531	+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
