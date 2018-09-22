@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import itertools
 import logging
 logging.basicConfig(level=logging.DEBUG)
 import os
@@ -1229,14 +1230,22 @@ def lift_region(alignment, ref_start, ref_end):
         other_end = alignment.other_end - start_offset
     return other_start, other_end
 
+def paired_iter(iterable):
+    """Given an iterable of items, return an iterable that gives (item1, item2), (item2, item3)...
+
+    The last pair will be (final_item, None)."""
+    first_iter, second_iter = itertools.tee(iterable, 2)
+    next(second_iter, None)
+    return itertools.izip_longest(first_iter, second_iter)
+
 def lift_blocks(alignments, blocks, other_genome, output):
     """
     Lift the given blocks file to a new reference using the given pairwise alignments file.
 
     The pairwise alignments must point from the old reference to the new.
     """
-    aln_stream = merged_dup_stream(alignments, read_next_alignment)
-    aln = next(aln_stream, None)
+    aln_stream = paired_iter(merged_dup_stream(alignments, read_next_alignment))
+    aln, next_aln = next(aln_stream, (None, None))
     block = Block.read_next_from_file(blocks)
     while block is not None and aln is not None:
         assert block.first.strand == '+'
@@ -1253,7 +1262,7 @@ def lift_blocks(alignments, blocks, other_genome, output):
                 return
         while aln.chrom < block.first.chrom or (aln.chrom == block.first.chrom and aln.end <= block.first.start):
             # Need to fast-forward on alignment side
-            aln = next(aln_stream, None)
+            aln, next_aln = next(aln_stream, (None, None))
             need_restart = True
             if aln is None:
                 return
@@ -1271,15 +1280,24 @@ def lift_blocks(alignments, blocks, other_genome, output):
 
         ref_start = max(aln.start, block.start)
         ref_end = min(aln.end, block.end)
-        if block.end <= aln.end:
-            # Block end is within alignment (though its start may not be)
-            next_block = Block.read_next_from_file(blocks)
-        else:
+        if block.end > aln.end and (next_aln is not None and next_aln.chrom == aln.chrom):
             # Block goes over the edge of alignment, so we need to split it
             assert block.end > aln.end
-            left_block, right_block = block.split(aln.end - block.first.start)
+            # We should split based on the *next* alignment. If we
+            # have a gap between alignments, i.e. an insertion
+            # relative to our target, then we should always split
+            # *after* the insertion, to ensure we lift as much
+            # syntenic sequence as possible.
+            left_block, right_block = block.split(next_aln.start - block.first.start)
             block = left_block
             next_block = right_block
+        else:
+            # No need to split this block. Either it lies entirely
+            # within this alignment, or it goes past the end of the
+            # current alignment, but there's no following alignment
+            # that we would need to lift a different part of the block
+            # to.
+            next_block = Block.read_next_from_file(blocks)
         for sub_aln in aln.alignments:
             # For each (possibly) duplicated alignment in this region,
             # output a new block with the reference sequence added.
@@ -2199,13 +2217,14 @@ def test_lift_blocks():
     lift_blocks(alignments, blocks, other_genome, output)
 
     assert output.getvalue() == dedent("""
-    Anc1	Anc1refChr1	60	62	+	X------X
-    Human	chr6	0	2	+	A------C
-    Chimp	chr6	8	12	+	AC----CT
+    Anc1	Anc1refChr1	60	62	+	X------X----
+    Human	chr6	0	5	+	A------CG-TA
+    Chimp	chr6	8	12	+	AC----CT----
+    Gorilla	chr6	101	105	-	--------CCCC
 
-    Anc1	Anc1refChr4	100	102	+	----XX
-    Human	chr6	2	7	+	G-TACG
-    Gorilla	chr6	100	105	-	CCCCC-
+    Anc1	Anc1refChr4	100	102	+	XX-
+    Human	chr6	5	8	+	CGT
+    Gorilla	chr6	100	101	-	C--
 
     """).lstrip()
 
@@ -2262,13 +2281,13 @@ def test_lift_blocks_dups():
     Human	chr6	0	2	+	A------C
     Chimp	chr6	8	12	+	AC----CT
 
-    Anc1	Anc1c2	32	33	+	X
-    Human	chr6	2	3	+	G
-    Gorilla	chr6	104	105	-	C
+    Anc1	Anc1c2	32	33	+	X--
+    Human	chr6	2	4	+	G-T
+    Gorilla	chr6	102	105	-	CCC
 
-    Anc1	Anc1c3	90	91	+	--X
-    Human	chr6	3	5	+	-TA
-    Gorilla	chr6	101	104	-	CCC
+    Anc1	Anc1c3	90	91	+	X
+    Human	chr6	4	5	+	A
+    Gorilla	chr6	101	102	-	C
 
     Anc1	Anc1c3	91	94	+	XXX
     Human	chr6	5	8	+	CGT
@@ -2286,9 +2305,9 @@ def test_lift_blocks_dups():
     Human	chr6	8	10	+	AC
     Chimp	chr12	0	2	+	AC
 
-    Anc1	Anc1c3	96	97	+	X
-    Human	chr6	10	11	+	G
-    Chimp	chr12	2	3	+	G
+    Anc1	Anc1c3	96	97	+	X-
+    Human	chr6	10	12	+	GT
+    Chimp	chr12	2	4	+	GT
 
     """).lstrip()
 
