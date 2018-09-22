@@ -1,5 +1,6 @@
 # order is important, libraries first
-modules = api stats randgen validate mutations fasta alignmentDepth liftover lod maf chain extract analysis phyloP modify assemblyHub
+modules = api stats randgen validate mutations fasta alignmentDepth liftover lod maf chain extract analysis phyloP modify assemblyHub synteny
+
 
 .PHONY: all %.all clean %.clean doxy %.doxy
 
