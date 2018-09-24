@@ -1441,10 +1441,10 @@ def main():
     if opts.targetGenomes is not None:
         opts.targetGenomes = opts.targetGenomes.split(",")
     with Toil(opts) as toil:
-        hal_id = toil.importFile(makeURL(opts.hal))
         if opts.restart:
             mafID = toil.restart()
         else:
+            hal_id = toil.importFile(makeURL(opts.hal))
             mafID = toil.start(Job.wrapJobFn(start_job, hal_id, opts.refGenome, opts))
         toil.exportFile(mafID, makeURL(opts.outputMaf))
 
