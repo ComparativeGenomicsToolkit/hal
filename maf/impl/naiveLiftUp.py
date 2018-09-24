@@ -1281,7 +1281,7 @@ def lift_blocks(alignments, blocks, other_genome, output):
 
         ref_start = max(aln.start, block.start)
         ref_end = min(aln.end, block.end)
-        if block.end > aln.end and (next_aln is not None and next_aln.chrom == aln.chrom):
+        if block.end > aln.end and (next_aln is not None and next_aln.chrom == aln.chrom and next_aln.start < block.end):
             # Block goes over the edge of alignment, so we need to split it
             assert block.end > aln.end
             # We should split based on the *next* alignment. If we
