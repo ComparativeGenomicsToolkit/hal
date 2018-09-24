@@ -233,6 +233,7 @@ def group_by_size(files_by_chroms, chrom_sizes, get_temp_path, target_size=50000
             grouped_pathss.append(grouped_paths)
             chrom_sizes_subsets.append({c: chrom_sizes[c] for c in chroms_to_merge})
             chroms_to_merge = []
+            running_size = 0
         chroms_to_merge.append(chrom)
         running_size += size
     grouped_paths = merge(files_by_chroms, chroms_to_merge)
