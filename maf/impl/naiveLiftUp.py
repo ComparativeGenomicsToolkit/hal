@@ -1316,11 +1316,6 @@ def get_sequence(hal_path, genome):
         call(['hal2fasta', hal_path, genome, '--outFaPath', tmp.name])
         return dict(fastaRead(tmp.name))
 
-def get_sequence_for_region(hal_path, genome, sequence, start, stop):
-    """Get the sequence for a region from a HAL file."""
-    fasta = call(['hal2fasta', hal_path, genome, '--sequence', sequence, '--start', str(start), '--length', str(stop - start)])
-    return "".join(fasta.split("\n")[1:])
-
 def get_chrom_sizes(hal_path, genome):
     """Get a dict of {chrom_name: length} for a genome from a hal."""
     bed = call(['halStats', '--bedSequences', genome, hal_path])
@@ -1335,12 +1330,14 @@ def get_chrom_sizes(hal_path, genome):
 
 def get_leaf_blocks(hal_path, genome, output_path):
     """Get the initial blocks file for a leaf genome."""
+    seqs = get_sequence(hal_path, genome)
     lengths = get_chrom_sizes(hal_path, genome)
     with open(output_path, 'w') as out:
         for chrom in sorted(lengths.keys()):
             length = lengths[chrom]
             # Write the block stanza. In this case, the block is just the whole chromosome.
-            seq = get_sequence_for_region(hal_path, genome, chrom, 0, length)
+            seq = seqs[chrom]
+            assert len(seq) == length, "chrom.sizes and fasta must agree on sequence length"
             out.write("{genome}\t{chrom}\t{start}\t{end}\t{strand}\t".format(genome=genome, chrom=chrom, start=0, end=length, strand='+'))
             out.write(seq)
             out.write("\n")
