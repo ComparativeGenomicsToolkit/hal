@@ -1344,23 +1344,33 @@ def get_leaf_blocks(hal_path, genome, output_path):
             out.write("\n")
 
 def sort_blocks(blocks, output):
-    """Sort a blocks file relative to the first line."""
+    """Sort a blocks file relative to the first line.
+
+    This uses UNIX sort, because this can potentially need to sort hundreds of
+    millions to billions of blocks, which can take >30GB of memory if done in
+    Python naively. sort will intelligently use memory/disk resources to avoid
+    memory exhaustion.
+    """
     # Gather up the start positions within all the blocks, and their position within the file.
-    starts_and_pos = []
-    while True:
-        file_pos = blocks.tell()
-        block = Block.read_next_from_file(blocks)
-        if block is None:
-            break
-        starts_and_pos.append((block.first.chrom, block.first.start, block.first.end, file_pos))
-
+    with NamedTemporaryFile(delete=False) as file_to_sort:
+        while True:
+            file_pos = blocks.tell()
+            block = Block.read_next_from_file(blocks)
+            if block is None:
+                break
+            file_to_sort.write("%s\t%s\t%s\t%s\n" % (block.first.chrom, block.first.start,
+                                                     block.first.end, file_pos))
     # Do the actual sorting
-    starts_and_pos.sort()
+    call(['sort', '-k1,1', '-k2,2n', '-k3,3n', file_to_sort.name, '-o', file_to_sort.name])
 
-    for _, _, _, file_pos in starts_and_pos:
-        blocks.seek(file_pos)
-        block = Block.read_next_from_file(blocks)
-        output.write(str(block))
+    with open(file_to_sort.name) as sorted:
+        for line in sorted:
+            fields = line.strip().split()
+            file_pos = int(fields[-1])
+            blocks.seek(file_pos)
+            block = Block.read_next_from_file(blocks)
+            output.write(str(block))
+    os.remove(file_to_sort.name)
 
 def get_alignment_to_parent(hal_path, child_genome, output_path):
     """Get a file representing maximal gapless alignment blocks between this child and its parent (referenced on the child)."""
@@ -1368,7 +1378,7 @@ def get_alignment_to_parent(hal_path, child_genome, output_path):
         call(['halAlignedExtract', '--viewParentCoords', '--alignedFile', tmp.name, hal_path, child_genome])
         with open(output_path, 'w') as output:
             maximize_gapless_alignment_length(open(tmp.name), output)
-        call(['sort', output_path, '-k1,1', '-k2,2n', '-o', output_path])
+        call(['sort', output_path, '-t', '\t', '-k1,1', '-k2,2n', '-o', output_path])
 
 def get_alignment_to_child(hal_path, child_genome, output_path):
     """Get a file representing maximal gapless alignment blocks between this child and its parent (referenced on the parent)."""
