@@ -713,14 +713,14 @@ class BlockLine(object):
     end = attrib()
     strand = attrib()
     # Aligned sequence for this block entry.
-    aligned_seq = attrib()
+    aligned_seq = attrib(cmp=False)
     # Our window within the above aligned sequence. This allows us to keep
     # references to the same string within many different block entries, rather
     # than copying giant strings every time we split or reverse. Quadratic
     # behavior would really hurt on chromosomes that are hundreds of megabases
     # long.
-    align_start = attrib(default=0)
-    align_end = attrib()
+    align_start = attrib(default=0, cmp=False)
+    align_end = attrib(cmp=False)
 
     @align_end.default
     def _align_end(self):
