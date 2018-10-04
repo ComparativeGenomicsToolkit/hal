@@ -16,6 +16,7 @@ clean.%:
 	cd $* && ${MAKE} clean
 
 test: all
+	pytest maf/impl/naiveLiftUp.py
 	python allTests.py
 
 doxy : ${modules:%=doxy.%}

@@ -35,6 +35,7 @@ static void printBaseComp(ostream& os, AlignmentConstPtr alignment,
                           const string& baseCompPair);
 static void printGenomeMetaData(ostream &os, AlignmentConstPtr alignment,
                           const string &genomeName);
+static void printAlignmentMetaData(ostream &os, AlignmentConstPtr alignment);
 static void printChromSizes(ostream& os, AlignmentConstPtr alignment, 
                             const string& genomeName);
 static void printPercentID(ostream& os, AlignmentConstPtr alignment,
@@ -91,6 +92,7 @@ int main(int argc, char** argv)
                            "\"\"");
   optionsParser->addOption("genomeMetaData", "print metadata for given genome, "
                            "one entry per line, tab-seperated.", "\"\"");
+  optionsParser->addOptionFlag("metaData", "print metadata for the entire alignment", false);
   optionsParser->addOption("chromSizes", "print the name and length of each"
                            " sequence in a given genome.  This is a subset"
                            " of the"
@@ -133,6 +135,7 @@ int main(int argc, char** argv)
   string numSegmentsGenome;
   string baseCompPair;
   string genomeMetaData;
+  bool metaData;
   string chromSizesFromGenome;
   string percentID;
   string coverage;
@@ -158,6 +161,7 @@ int main(int argc, char** argv)
     numSegmentsGenome = optionsParser->getOption<string>("numSegments");
     baseCompPair = optionsParser->getOption<string>("baseComp");
     genomeMetaData = optionsParser->getOption<string>("genomeMetaData");
+    metaData = optionsParser->getFlag("metaData");
     chromSizesFromGenome = optionsParser->getOption<string>("chromSizes");
     percentID = optionsParser->getOption<string>("percentID");
     coverage = optionsParser->getOption<string>("coverage");
@@ -180,6 +184,7 @@ int main(int argc, char** argv)
     if (numSegmentsGenome != "\"\"") ++optCount;
     if (baseCompPair != "\"\"") ++optCount;
     if (genomeMetaData != "\"\"") ++optCount;
+    if (metaData) ++optCount;
     if (chromSizesFromGenome != "\"\"") ++optCount;
     if (percentID != "\"\"") ++optCount;
     if (coverage != "\"\"") ++optCount;
@@ -193,7 +198,7 @@ int main(int argc, char** argv)
                           "--bedSequences, --root, --numSegments, --baseComp, "
                           "--genomeMetaData, --chromSizes, --percentID, "
                           "--coverage,  --topSegments, --bottomSegments, "
-                          "--allCoverage "
+                          "--allCoverage, --metaData "
                           "and --branchLength options are exclusive");
     }
   }
@@ -285,6 +290,8 @@ int main(int argc, char** argv)
       printSegments(cout, alignment, bottomSegments, false);
     } else if (allCoverage) {
       printAllCoverage(cout, alignment);
+    } else if (metaData) {
+      printAlignmentMetaData(cout, alignment);
     }
     else
     {
@@ -631,6 +638,16 @@ void printGenomeMetaData(ostream &os, AlignmentConstPtr alignment,
     os << mapIt->first << '\t' << mapIt->second << '\n';
   }
   alignment->closeGenome(genome);
+}
+
+void printAlignmentMetaData(ostream &os, AlignmentConstPtr alignment)
+{
+  const MetaData *metaData = alignment->getMetaData();
+  const map<string, string> metaDataMap = metaData->getMap();
+  map<string, string>::const_iterator mapIt = metaDataMap.begin();
+  for (; mapIt != metaDataMap.end(); mapIt++) {
+    os << mapIt->first << '\t' << mapIt->second << '\n';
+  }
 }
 
 void printChromSizes(ostream& os, AlignmentConstPtr alignment, 
