@@ -1,50 +1,46 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/chain
 
-libSourcesAll = $(wildcard impl/*.cpp)
-libSources=$(subst impl/hal2chain.cpp,,${libSourcesAll})
-libHeaders = $(wildcard inc/*.h)
-libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
-libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
-libTestsAll = $(wildcard test/*.cpp) 
-libTests=$(subst test/blockInterpolateTest.cpp,,${libTestsAll})
-libTestsHeaders = $(wildcard test/*.h)
-libHalTestsAll := $(wildcard ../api/tests/*.cpp)
-libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
+libHalChain_srcs = impl/halBlockViz.cpp impl/halChain.cpp
+libHalChain_objs = ${libHalChain_srcs:%.cpp=${modObjDir}/%.o}
+hal2chain_srcs = impl/hal2chain.cpp
+hal2chain_objs = ${hal2chain_srcs:%.cpp=${modObjDir}/%.o}
+halChainTests_srcs = test/halChainTests.cpp test/halChainGetBlocksTest.cpp
+halChainTests_objs = ${halChainTests_srcs:%.cpp=${modObjDir}/%.o}
+blockVizBed_srcs = test/blockVizBed.cpp
+blockVizBed_objs = ${blockVizBed_srcs:%.cpp=${modObjDir}/%.o}
+blockVizMaf_srcs = test/blockVizMaf.cpp
+blockVizMaf_objs = ${blockVizMaf_srcs:%.cpp=${modObjDir}/%.o}
+blockVizTest_srcs = test/blockVizTest.cpp
+blockVizTest_objs = ${blockVizTest_srcs:%.cpp=${modObjDir}/%.o}
+blockVizTime_srcs = test/blockVizTime.cpp
+blockVizTime_objs = ${blockVizTime_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHalChain_srcs} ${hal2chain_srcs} ${halChainTests_srcs} ${blockVizBed_srcs} \
+    ${blockVizMaf_srcs} ${blockVizTest_srcs} ${blockVizTime_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+inclSpec += -I${rootDir}/liftover/inc -I${rootDir}/lod/inc -I${rootDir}/maf/inc -I${halApiTestIncl}
+otherLibs += ${halApiTestSupportLibs} ${libHalChain} ${libHalLiftover} ${libHalLod} ${libHalMaf}
+progs = ${binDir}/hal2chain ${binDir}/halChainTests ${binDir}/blockVizBed \
+    ${binDir}/blockVizMaf ${binDir}/blockVizTest ${binDir}/blockVizTime \
+    ${binDir}/halChainTests
 
-all : ${libPath}/halChain.a ${binPath}/hal2chain test/blockVizTest test/blockVizBed test/blockVizTime test/blockVizMaf ${binPath}/halChainTests 
+all: libs progs
+libs: ${libHalChain}
+progs: ${progs}
 
-clean : 
-	rm -f ${libPath}/halChain.a ${libPath}/*.h ${binPath}/hal2chain test/blockVizTest test/BlockVizBed test/blockVizTime test/blockVizMaf 
+clean: 
+	rm -f ${libHalChain} ${objs} ${progs} ${depends}
 
-${libPath}/halChain.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${basicLibsDependencies} 
-	cp ${libHeaders} ${libPath}/
-	rm -f *.o
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
-	ar rc halChain.a *.o
-	ranlib halChain.a 
-	rm *.o
-	mv halChain.a ${libPath}/
 
-${binPath}/hal2chain : impl/hal2chain.cpp ${libPath}/halMaf.a ${libPath}/halChain.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/hal2chain impl/hal2chain.cpp ${libPath}/halMaf.a ${libPath}/halChain.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
+include ${rootDir}/rules.mk
 
-test/blockVizTest: test/blockVizTest.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLib\
-sDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizTest test/blockVizTest.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-test/blockVizMaf: test/blockVizMaf.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLib\
-sDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizMaf test/blockVizMaf.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
 
-test/blockVizBed: test/blockVizBed.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLib\
-sDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizBed test/blockVizBed.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
-
-test/blockVizTime: test/blockVizTime.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLib\
-sDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o test/blockVizTime test/blockVizTime.c ${libPath}/halChain.a ${libPath}/halLod.a ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
-
-${binPath}/halChainTests : ${libTests} ${libTestsHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halChainTests ${libHalTests} ${libTests} ${libPath}/halLib.a ${libPath}/halMaf.a ${libPath}/halChain.a ${libPath}/halLiftover.a ${basicLibs}
+# Local Variables:
+# mode: makefile-gmake
+# End:
 

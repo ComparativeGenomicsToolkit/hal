@@ -1,74 +1,72 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/modify
 
-phastCflags = ${phyloPcppflags}
-phastLinkflags = ${phyloPlibs}
-libHeaders = $(wildcard inc/*.h )
-libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
-libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
-libTests = $(wildcard tests/*.cpp)
-libTestsHeaders = $(wildcard tests/*.h)
-libHalTestsAll := $(wildcard ../api/tests/*.cpp)
-libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
-targets = ${binPath}/halRemoveGenome ${binPath}/halAddToBranch ${binPath}/halReplaceGenome ${binPath}/halAppendSubtree ${binPath}/findRegionsExclusivelyInGroup ${binPath}/halUpdateBranchLengths ${binPath}/halWriteNucleotides ${binPath}/halSetMetadata ${binPath}/halRenameGenomes ${binPath}/halRenameSequences
-phastTargets = ${binPath}/ancestorsML ${binPath}/halAncestorsMLTest ${binPath}/ancestorsMLMP.py
+markAncestors_srcs = markAncestors.cpp
+markAncestors_objs = ${markAncestors_srcs:%.cpp=${modObjDir}/%.o}
+renameFile_srcs = renameFile.cpp
+renameFile_objs = ${renameFile_srcs:%.cpp=${modObjDir}/%.o}
+halRemoveGenome_srcs = halRemoveGenome.cpp
+halRemoveGenome_objs = ${halRemoveGenome_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
+halAddToBranch_srcs = halAddToBranch.cpp
+halAddToBranch_objs = ${halAddToBranch_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
+halReplaceGenome_srcs = halReplaceGenome.cpp
+halReplaceGenome_objs = ${halReplaceGenome_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
+halAppendSubtree_srcs = halAppendSubtree.cpp
+halAppendSubtree_objs = ${halAppendSubtree_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
+findRegionsExclusivelyInGroup_srcs = findRegionsExclusivelyInGroup.cpp
+findRegionsExclusivelyInGroup_objs = ${findRegionsExclusivelyInGroup_srcs:%.cpp=${modObjDir}/%.o}
+halUpdateBranchLengths_srcs = halUpdateBranchLengths.cpp
+halUpdateBranchLengths_objs = ${halUpdateBranchLengths_srcs:%.cpp=${modObjDir}/%.o}
+halWriteNucleotides_srcs = halWriteNucleotides.cpp
+halWriteNucleotides_objs = ${halWriteNucleotides_srcs:%.cpp=${modObjDir}/%.o}
+halSetMetadata_srcs = halSetMetadata.cpp
+halSetMetadata_objs = ${halSetMetadata_srcs:%.cpp=${modObjDir}/%.o}
+halRenameGenomes_srcs = halRenameGenomes.cpp
+halRenameGenomes_objs = ${halRenameGenomes_srcs:%.cpp=${modObjDir}/%.o} ${renameFile_objs}
+halRenameSequences_srcs = halRenameSequences.cpp
+halRenameSequences_objs = ${halRenameSequences_srcs:%.cpp=${modObjDir}/%.o} ${renameFile_objs}
+ancestorsML_srcs = ancestorsML.cpp
+ancestorsML_objs = ${ancestorsML_srcs:%.cpp=${modObjDir}/%.o}
+halAncestorsMLTest_srcs = halAncestorsMLTest.cpp
+halAncestorsMLTest_objs = ${halAncestorsMLTest_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${markAncestors_srcs} ${renameFile_srcs} ${halRemoveGenome_srcs} ${halAddToBranch_srcs} \
+    ${halReplaceGenome_srcs} ${halAppendSubtree_srcs} \
+    ${findRegionsExclusivelyInGroup_srcs} ${halUpdateBranchLengths_srcs} \
+    ${halWriteNucleotides_srcs} ${halSetMetadata_srcs} ${halRenameGenomes_srcs} \
+    ${halRenameSequences_srcs} ${ancestorsML_srcs} ${halAncestorsMLTest_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs = ${binDir}/halRemoveGenome ${binDir}/halAddToBranch ${binDir}/halReplaceGenome ${binDir}/halAppendSubtree ${binDir}/findRegionsExclusivelyInGroup ${binDir}/halUpdateBranchLengths ${binDir}/halWriteNucleotides ${binDir}/halSetMetadata ${binDir}/halRenameGenomes ${binDir}/halRenameSequences
+
+inclSpec += -I${rootDir}/liftover/inc
+otherLibs += ${libHalLiftover}
 ifdef ENABLE_PHYLOP
-all : ${targets} ${phastTargets}
+inclSpec += ${phyloPcppflags}
+otherLibs += ${phyloPlibs}
+phast_progs = ${binDir}/ancestorsML ${binDir}/halAncestorsMLTest ${binDir}/ancestorsMLMP.py
+endif
+
+ifdef ENABLE_PHYLOP
+all: progs
+libs:
+progs: ${progs} ${phast_progs}
 else
-all : ${targets}
+all: progs
+libs:
+progs: ${progs}
 endif
 
 clean : 
-	rm -f ${targets} ${phastTargets} ./*.o
+	rm -f ${objs} ${progs} ${phast_progs} ${depends}
 
-${binPath}/halRemoveGenome: halRemoveGenome.cpp markAncestors.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halRemoveGenome halRemoveGenome.cpp markAncestors.o ${libPath}/halLib.a ${basicLibs}
+include ${rootDir}/rules.mk
 
-${binPath}/halAddToBranch: halAddToBranch.cpp markAncestors.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halAddToBranch halAddToBranch.cpp markAncestors.o ${libPath}/halLib.a ${basicLibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-${binPath}/halReplaceGenome: halReplaceGenome.cpp markAncestors.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halReplaceGenome halReplaceGenome.cpp markAncestors.o ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/halAppendSubtree: halAppendSubtree.cpp markAncestors.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halAppendSubtree halAppendSubtree.cpp markAncestors.o ${libPath}/halLib.a ${basicLibs}
+# Local Variables:
+# mode: makefile-gmake
+# End:
 
-${binPath}/findRegionsExclusivelyInGroup: findRegionsExclusivelyInGroup.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/findRegionsExclusivelyInGroup findRegionsExclusivelyInGroup.cpp ${libPath}/halLib.a ${libPath}/halLiftover.a ${basicLibs}
-
-ancestorsMLBed.o: ancestorsMLBed.cpp
-	${cpp} ${cppflags} -I ${libPath} ${phastCflags} -c $< -o $@ ${basicLibs} ${libPath}/halLib.a
-
-ancestorsML.o: ancestorsML.cpp
-	${cpp} ${cppflags} -I ${libPath} ${phastCflags} -c $< -o $@ ${basicLibs} ${libPath}/halLib.a
-
-${binPath}/ancestorsML: ancestorsMLMain.cpp ancestorsML.o ancestorsMLBed.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} ${phastCflags} -o ${binPath}/ancestorsML ancestorsMLMain.cpp ${basicLibs} ancestorsML.o ancestorsMLBed.o ${libPath}/halLib.a ${libPath}/halLiftover.a ${phastLinkflags}
-
-${binPath}/ancestorsMLMP.py: ancestorsMLMP.py
-	cp $< $@
-	chmod +x $@
-
-${binPath}/halAncestorsMLTest: ancestorsML.o ancestorsMLTest.cpp ancestorsMLBed.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} ${phastCflags} -o $@ ancestorsMLTest.cpp ${basicLibs} ancestorsML.o ${libPath}/halLib.a ${libPath}/halLiftover.a ${phastLinkflags}
-
-${binPath}/halUpdateBranchLengths: halUpdateBranchLengths.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halUpdateBranchLengths halUpdateBranchLengths.cpp ${libPath}/halLib.a ${basicLibs}
-
-${binPath}/halWriteNucleotides: halWriteNucleotides.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halWriteNucleotides halWriteNucleotides.cpp ${libPath}/halLib.a ${basicLibs}
-
-${binPath}/halSetMetadata: halSetMetadata.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o ${binPath}/halSetMetadata halSetMetadata.cpp ${libPath}/halLib.a ${basicLibs}
-
-${binPath}/halRenameGenomes: halRenameGenomes.cpp renameFile.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o $@ $^
-
-${binPath}/halRenameSequences: halRenameSequences.cpp renameFile.o ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I ${libPath} -o $@ $^
-
-renameFile.o: renameFile.cpp
-	${cpp} ${cppflags} -I ${libPath} -c -o $@ $<
-
-markAncestors.o: markAncestors.cpp
-	${cpp} ${cppflags} -I ${libPath} -c -o markAncestors.o markAncestors.cpp

@@ -5,6 +5,7 @@
 #include <numeric>
 #include <sstream>
 #include <iterator>
+#include "hal.h"
 
 struct PslBlock {
     hal_size_t qStart;
@@ -162,7 +163,7 @@ class Psl {
 
 };
 
- std::ostream& operator<<(std::ostream &strm, const Psl &a) {    
+inline std::ostream& operator<<(std::ostream &strm, const Psl &a) {    
 
         std::vector<std::string> v;
         v.push_back(std::to_string(a.match));

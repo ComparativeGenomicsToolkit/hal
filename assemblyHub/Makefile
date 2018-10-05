@@ -1,14 +1,21 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
 
-all: ${binPath}/hal2assemblyHub.py
+progs = ${binDir}/hal2assemblyHub.py
 
+all: libs progs
+libs:
+progs: ${progs}
 clean:
-	rm -f ${binPath}/hal2assemblyHub.py
+	rm -f ${progs}
 
-#${binPath}/hal2assemblyHub.py : hal2assemblyHub.py bedCommon.py gcPercentTrack.py prepareHubFiles.py snakeTrack.py alignabilityTrack.py bedTrack.py groupExclusiveRegions.py prepareLodFiles.py treeCommon.py assemblyHubCommon.py conservationTrack.py rmskTrack.py wigTrack.py docs/conservationDocs.py docs/hubCentralDocs.py docs/repeatMaskerDocs.py docs/alignabilityDocs.py docs/gcPercentDocs.py docs/makeDocs.py
-${binPath}/hal2assemblyHub.py : hal2assemblyHub.py
-	cp hal2assemblyHub.py ${binPath}/hal2assemblyHub.py
-	chmod +x ${binPath}/hal2assemblyHub.py
+include ${rootDir}/rules.mk
 
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
+
+
+# Local Variables:
+# mode: makefile-gmake
+# End:
 

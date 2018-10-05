@@ -1,13 +1,32 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/validate
 
-libSources = halValidateMain.cpp
+halValidate_srcs = halValidateMain.cpp
+halValidate_objs = ${halValidate_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${halValidate_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs = ${binDir}/halValidate
 
-all : ${binPath}/halValidate
+inclSpec += -I${rootDir}/stats/inc/
 
-clean : 
-	rm -f ${binPath}/halValidate
 
-${binPath}/halValidate : ${libSources} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I ${rootPath}/api/tests -o ${binPath}/halValidate ${libSources} ${libPath}/halLib.a ${basicLibs}
+all: progs
+libs:
+progs: ${progs}
+
+clean: 
+	rm -f ${objs} ${progs} ${depends}
+
+
+include ${rootDir}/rules.mk
+
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
+
+
+# Local Variables:
+# mode: makefile-gmake
+# End:
 

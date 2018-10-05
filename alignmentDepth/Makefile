@@ -1,14 +1,28 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/alignmentDepth
 
-libSources = halAlignmentDepth.cpp 
+halAlignmentDepth_srcs = halAlignmentDepth.cpp
+halAlignmentDepth_objs = ${halAlignmentDepth_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${halAlignmentDepth_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs = ${binDir}/halAlignmentDepth
 
-all : ${binPath}/halAlignmentDepth
+all: progs
+libs:
+progs: ${progs}
 
-clean : 
-	rm -f ${binPath}/halAlignmentDepth
+clean: 
+	rm -f ${objs} ${progs} ${depends}
 
-${binPath}/halAlignmentDepth : ${libSources} ${libPath}/halLib.a ${basicLibsDependencies}
-	rm -f ${binPath}/halAlignability
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I ${rootPath}/api/tests -o ${binPath}/halAlignmentDepth ${libSources} ${libPath}/halLib.a ${basicLibs}
+include ${rootDir}/rules.mk
+
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
+
+
+# Local Variables:
+# mode: makefile-gmake
+# End:
 

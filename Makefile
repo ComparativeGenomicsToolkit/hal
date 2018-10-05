@@ -1,18 +1,22 @@
-# order is important, libraries first
 modules = api stats randgen validate mutations fasta alignmentDepth liftover lod maf chain extract analysis phyloP modify assemblyHub synteny
 
 
-.PHONY: all %.all clean %.clean doxy %.doxy
+.PHONY: all libs %.libs progs %.progs clean %.clean doxy %.doxy
 
-all : ${modules:%=all.%}
+all : libs progs
 
-all.%:
-	cd $* && ${MAKE} all
+libs: ${modules:%=%.libs}
+%.libs:
+	cd $* && ${MAKE} libs
 
-clean:  ${modules:%=clean.%}
-	rm -rf lib/*.h bin/*.dSYM
+progs: ${modules:%=%.progs}
+%.progs: libs
+	cd $* && ${MAKE} progs
 
-clean.%:
+clean:  ${modules:%=%.clean}
+	rm -rf lib bin objs
+
+%.clean:
 	cd $* && ${MAKE} clean
 
 test: all

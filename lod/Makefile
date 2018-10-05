@@ -1,27 +1,32 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/lod
 
-libSourcesAll = $(wildcard impl/*.cpp)
-libSources=$(subst impl/halLodExtractMain.cpp,,${libSourcesAll})
-libHeaders = inc/*.h 
+libHalLod_srcs = impl/halLodBlock.cpp impl/halLodExtract.cpp impl/halLodGraph.cpp \
+    impl/halLodManager.cpp impl/halLodSegment.cpp
+libHalLod_objs = ${libHalLod_srcs:%.cpp=${modObjDir}/%.o}
+halLodExtract_srcs =impl/halLodExtractMain.cpp
+halLodExtract_objs = ${halLodExtract_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHalLod_srcs} ${halLodExtract_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs = ${binDir}/halLodExtract
+otherLibs = ${libHalLod}
 
-all : ${libPath}/halLod.a ${binPath}/halLodExtract ${binPath}/halLodInterpolate.py
+all : libs progs
+libs: ${libHalLod}
+progs: ${progs}
 
 clean : 
-	rm -f ${libPath}/halLod.a ${libPath}/*.h ${binPath}/halLodExtract ${binPath}/halLodInterpolate.py
+	rm -f ${libHalLod} ${objs} ${progs} ${depends}
 
-${libPath}/halLod.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
-	cp ${libHeaders} ${libPath}/
-	rm -f *.o
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
-	ar rc halLod.a *.o
-	ranlib halLod.a 
-	rm *.o
-	mv halLod.a ${libPath}/
+include ${rootDir}/rules.mk
 
-${binPath}/halLodExtract : impl/halLodExtractMain.cpp ${libPath}/halLod.a ${libPath}/halLod.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halLodExtract impl/halLodExtractMain.cpp ${libPath}/halLod.a ${libPath}/halLib.a ${basicLibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-${binPath}/halLodInterpolate.py : halLodInterpolate.py
-	cp halLodInterpolate.py ${binPath}/halLodInterpolate.py
-	chmod +x ${binPath}/halLodInterpolate.py
+
+# Local Variables:
+# mode: makefile-gmake
+# End:
+

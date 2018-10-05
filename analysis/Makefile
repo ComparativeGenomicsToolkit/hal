@@ -1,19 +1,21 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/api
 
-all : ${binPath}/halTreeNIConservation.py  ${binPath}/halTreeNIBackground.py ${binPath}/halTreeNITurnover.py
+progs = ${binDir}/halTreeNIConservation.py  ${binDir}/halTreeNIBackground.py ${binDir}/halTreeNITurnover.py
 
-clean : 
-	rm -f  ${binPath}/halTreeNIConservation.py  ${binPath}/halTreeNIBackground.py ${binPath}/halTreeNITurnover.py
+all: progs
+libs:
+progs:  ${progs}
+clean: 
+	rm -f ${progs}
 
-${binPath}/halTreeNIConservation.py : neutralIndel/halTreeNIConservation.py
-	cp neutralIndel/halTreeNIConservation.py ${binPath}
-	chmod u+x ${binPath}/halTreeNIConservation.py
+${binDir}/%.py : neutralIndel/%.py
+	@mkdir -p $(dir $@)
+	cp -f $< $@
+	chmod u+x,a-w $@
 
-${binPath}/halTreeNIBackground.py : neutralIndel/halTreeNIBackground.py
-	cp neutralIndel/halTreeNIBackground.py ${binPath}
-	chmod u+x ${binPath}/halTreeNIBackground.py
+# Local Variables:
+# mode: makefile-gmake
+# End:
 
-${binPath}/halTreeNITurnover.py : neutralIndel/halTreeNITurnover.py
-	cp neutralIndel/halTreeNITurnover.py ${binPath}
-	chmod u+x ${binPath}/halTreeNITurnover.py

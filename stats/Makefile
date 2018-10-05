@@ -1,26 +1,33 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/stats
 
-libSourcesAll = $(wildcard impl/*.cpp)
-libSources=$(subst impl/halStatsMain.cpp,,${libSourcesAll})
-libHeaders = $(wildcard inc/*.h)
+libHalStats_srcs = impl/halStats.cpp
+libHalStats_objs = ${libHalStats_srcs:%.cpp=${modObjDir}/%.o}
+halStats_srcs = impl/halStatsMain.cpp
+halStats_objs = ${halStats_srcs:%.cpp=${modObjDir}/%.o}
+halCoverage_srcs = impl/halCoverage.cpp
+halCoverage_objs = ${halCoverage_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHalStats_srcs} ${halStats_srcs} ${halCoverage_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs = ${binDir}/halStats ${binDir}/halCoverage
+otherLibs = ${libHalStats}
 
-all : ${libPath}/halStats.a ${binPath}/halStats ${binPath}/halCoverage
+all : libs progs
+libs: ${libHalStats}
+progs: ${progs}
 
 clean : 
-	rm -f ${libPath}/halStats.a ${libPath}/*.h ${binPath}/halStats 
+	rm -f ${libHalStats} ${objs} ${progs} ${depends}
 
-${libPath}/halStats.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
-	cp ${libHeaders} ${libPath}/
-	rm -f *.o
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
-	ar rc halStats.a *.o
-	ranlib halStats.a 
-	rm *.o
-	mv halStats.a ${libPath}/
+include ${rootDir}/rules.mk
 
-${binPath}/halStats : impl/halStatsMain.cpp ${libPath}/halStats.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halStats impl/halStatsMain.cpp ${libPath}/halStats.a ${libPath}/halLib.a ${basicLibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-${binPath}/halCoverage : impl/halCoverage.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halCoverage impl/halCoverage.cpp ${libPath}/halLib.a ${basicLibs}
+
+# Local Variables:
+# mode: makefile-gmake
+# End:
+

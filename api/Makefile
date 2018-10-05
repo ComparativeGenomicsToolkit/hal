@@ -1,33 +1,37 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/api
 
-libSources = impl/*.cpp hdf5_impl/*.cpp
-libHeaders = inc/*.h 
-libInternalHeaders = hdf5_impl/*.h impl/*.h
-libTests = tests/*.cpp
-libTestsHeaders = tests/*.h 
-libHdf5Tests = hdf5_tests/*.cpp
-libHdf5TestsHeaders = hdf5_tests/*.h
+inclSpec += -Ihdf5_impl
 
-all : ${libPath}/halLib.a ${binPath}/halApiTests ${binPath}/halHdf5Tests 
+libHal_srcs = $(wildcard impl/*.cpp) $(wildcard hdf5_impl/*.cpp) 
+libHal_objs =  ${libHal_srcs:%.cpp=${modObjDir}/%.o}
+halApiTests_srcs = $(wildcard tests/*.cpp)
+halApiTests_objs = ${halApiTests_srcs:%.cpp=${modObjDir}/%.o}
+halHdf5Tests_srcs = $(wildcard hdf5_tests/*.cpp)
+halHdf5Tests_objs = ${halHdf5Tests_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHal_srcs} ${halApiTests_srcs} ${halHdf5Tests_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+
+progs =  ${binDir}/halApiTests ${binDir}/halHdf5Tests
+
+all : libs progs
+libs: ${libHal} ${halApiTestSupportLibs} 
+progs: ${progs}
 
 clean : 
-	rm -f ${libPath}/halLib.a ${libPath}/*.h ${binPath}/halApiTests ${binPath}/halHdf5Tests
+	rm -f ${libHal} ${objs} ${progs} ${depends}
 
 doxy :
 	doxygen doc/doxy.cfg
 
-${libPath}/halLib.a : ${libSources} ${libHeaders} ${libInternalHeaders} ${basicLibsDependencies}
-	cp ${libHeaders} ${libPath}/
-	rm -f *.o
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
-	ar rc halLib.a *.o
-	ranlib halLib.a 
-	rm *.o
-	mv halLib.a ${libPath}/
+include ${rootDir}/rules.mk
 
-${binPath}/halApiTests : ${libTests} ${libTestsHeaders} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halApiTests ${libTests} ${libPath}/halLib.a ${basicLibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-${binPath}/halHdf5Tests : ${libHdf5Tests} ${libHdf5TestsHeaders} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I ${libPath} -I impl -I tests -o ${binPath}/halHdf5Tests ${libHdf5Tests} ${libPath}/halLib.a ${basicLibs}
+
+# Local Variables:
+# mode: makefile-gmake
+# End:

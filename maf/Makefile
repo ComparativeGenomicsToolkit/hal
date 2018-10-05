@@ -1,40 +1,36 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/maf
 
-libSourcesAll = $(wildcard impl/*.cpp)
-libSources1=$(subst impl/hal2maf.cpp,,${libSourcesAll})
-libSources=$(subst impl/maf2hal.cpp,,${libSources1})
-libHeaders = $(wildcard inc/*.h )
-libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp
-libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/allTests.h
-libTests = $(wildcard tests/*.cpp)
-libTestsHeaders = $(wildcard tests/*.h)
-libHalTestsAll := $(wildcard ../api/tests/*.cpp)
-libHalTests = $(subst ../api/tests/allTests.cpp,,${libHalTestsAll})
+libHalMaf_srcs = impl/halMafBed.cpp impl/halMafBlock.cpp impl/halMafExport.cpp \
+    impl/halMafScanDimensions.cpp impl/halMafScanner.cpp impl/halMafScanReference.cpp \
+    impl/halMafWriteGenomes.cpp
+libHalMaf_objs = ${libHalMaf_srcs:%.cpp=${modObjDir}/%.o}
+hal2maf_srcs = impl/hal2maf.cpp
+hal2maf_objs = ${hal2maf_srcs:%.cpp=${modObjDir}/%.o}
+maf2hal_srcs = impl/maf2hal.cpp
+maf2hal_objs = ${maf2hal_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHalMaf_srcs} ${hal2maf_srcs} ${maf2hal_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs = ${binDir}/hal2maf ${binDir}/maf2hal
+otherLibs = ${libHalMaf} ${libHalLiftover}
+inclSpec += -I${rootDir}/liftover/inc
 
-all : ${libPath}/halMaf.a ${binPath}/hal2maf ${binPath}/maf2hal ${binPath}/halMafTests ${binPath}/hal2mafMP.py
+all: libs progs
+libs: ${libHalMaf}
+progs: ${progs}
 
 clean : 
-	rm -f ${libPath}/halMaf.a ${libPath}/*.h ${binPath}/hal2maf ${binPath}/maf2hal ${binPath}/hal2mafMP.py
+	rm -f ${libHalMaf} ${objs} ${progs} ${depends}
 
-${libPath}/halMaf.a : ${libSources} ${libHeaders} ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies} 
-	cp ${libHeaders} ${libPath}/
-	rm -f *.o
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
-	ar rc halMaf.a *.o
-	ranlib halMaf.a 
-	rm *.o
-	mv halMaf.a ${libPath}/
+include ${rootDir}/rules.mk
 
-${binPath}/hal2maf : impl/hal2maf.cpp ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/hal2maf impl/hal2maf.cpp ${libPath}/halMaf.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-${binPath}/maf2hal : impl/maf2hal.cpp ${libPath}/halMaf.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/maf2hal impl/maf2hal.cpp ${libPath}/halMaf.a ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/halMafTests : ${libTests} ${libTestsHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halMafTests ${libHalTests} ${libTests} ${libPath}/halLib.a ${libPath}/halMaf.a ${basicLibs}
+# Local Variables:
+# mode: makefile-gmake
+# End:
 
-${binPath}/hal2mafMP.py : hal2mafMP.py
-	cp hal2mafMP.py ${binPath}/hal2mafMP.py
-	chmod +x ${binPath}/hal2mafMP.py

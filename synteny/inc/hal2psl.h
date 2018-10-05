@@ -14,6 +14,7 @@
 #ifndef HAL2PSL_H
 #define HAL2PSL_H
 
+#include "psl.h"
 #include "halBedLine.h"
 #include "halBlockLiftover.h"
 
@@ -22,11 +23,11 @@ class Hal2Psl : public hal::BlockLiftover {
     
     void storePslResults(std::vector<PslBlock>& pslBlocks);
     void makeUpPsl(const std::vector<hal::PSLInfo>& vpsl,
-                                const std::vector<hal::BedBlock>& blocks, 
-                                const char strand,
-                                const hal_index_t start,
-                                const std::string chrName,
-                                std::vector<PslBlock>& pslBlocks);
+                   const std::vector<hal::BedBlock>& blocks, 
+                   const char strand,
+                   const hal_index_t start,
+                   const std::string chrName,
+                   std::vector<PslBlock>& pslBlocks);
     
     public:
 

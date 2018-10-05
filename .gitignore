@@ -1,10 +1,10 @@
 .pydevproject
 .project
 .cproject
-bin/*
-lib/*
 *.o
 *.pyc
 /bin
 /lib
-chain/test
+/objs
+*.depend
+.emacs.bak

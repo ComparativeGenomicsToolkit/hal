@@ -7,9 +7,9 @@
 #include "hal.h"
 #include "halCLParserInstance.h"
 
-#include "psl_io.cpp"
-#include "psl_merger.cpp"
-#include "hal2psl.cpp"
+#include "psl_io.h"
+#include "psl_merger.h"
+#include "hal2psl.h"
 
 
 static hal::CLParserPtr initParser() {

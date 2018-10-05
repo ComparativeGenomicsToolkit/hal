@@ -1,16 +1,30 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/synteny
 
-libHeaders = $(wildcard inc/*)
-libSourcesAll = $(wildcard impl/*.cpp)
-libSources=$(subst impl/main.cpp,,${libSourcesAll})
+hal2synteny_srcs = impl/main.cpp impl/hal2psl.cpp impl/psl_io.cpp impl/psl_merger.cpp
+hal2synteny_objs = ${hal2synteny_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${hal2synteny_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+inclSpec += -I${rootDir}/liftover/inc
+otherLibs += ${libHalLiftover}
+progs = ${binDir}/hal2synteny
 
-cpp = h5c++ ${h5prefix}
+all: progs
+libs:
+progs: ${progs}
 
-all : ${binPath}/hal2synteny    
+clean : 
+	rm -f ${objs} ${progs} ${depends}
 
-${binPath}/hal2synteny : impl/main.cpp  ${libPath}/halLib.a  ${libPath}/halLiftover.a  ${basicLibsDependencies}
-	${cpp} ${cppflags} -std=c++11 -I${sonLibPath} -I${rootPath}/liftover/inc -I${rootPath}/api/inc -Iinc -Iimpl impl/main.cpp ${libPath}/halLib.a ${libPath}/halLiftover.a  ${sonLibPath}/sonLib.a -o ${binPath}/hal2synteny
+include ${rootDir}/rules.mk
 
-clean:
-	rm -f ${binPath}/hal2synteny
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
+
+
+# Local Variables:
+# mode: makefile-gmake
+# End:
+

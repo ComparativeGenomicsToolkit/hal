@@ -1,40 +1,34 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/phyloP
 
-libSourcesAll = $(wildcard impl/*.cpp)
-libSources=$(subst impl/halPhyloPMain.cpp,,${libSourcesAll})
-libHeaders = $(wildcard inc/*.h)
+halPhyloP_srcs = impl/halPhyloPMain.cpp impl/halPhyloPBed.cpp impl/halPhyloP.cpp
+halPhyloP_objs = ${halPhyloP_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${halPhyloP_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs =  ${binDir}/halPhyloP ${binDir}/halPhyloPTrain.py ${binDir}/halPhyloPMP.py ${binDir}/halTreePhyloP.py
 
 ifdef ENABLE_PHYLOP
-all : ${libPath}/halPhyloP.a ${binPath}/halPhyloP ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py ${binPath}/halTreePhyloP.py
+all: progs
+libs:
+progs: ${progs}
 else
-all :
-	cd .
+all:
+libs:
+progs:
 endif
 
-clean : 
-	rm -f ${libPath}/halPhyloP.a ${libPath}/halPhyloP.h ${binPath}/halPhyloP *.o ${binPath}/halPhyloPTrain.py ${binPath}/halPhyloPMP.py ${binPath}/halTreePhyloP.py
+clean: 
+	rm -f ${objs} ${progs} ${depends}
 
-${libPath}/halPhyloP.a : ${libSources} ${libHeaders} ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies} 
-	cp ${libHeaders} ${libPath}/
-	rm -f *.o
-	${cpp} ${phyloPcppflags} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
-	ar rc halPhyloP.a *.o
-	ranlib halPhyloP.a 
-	rm *.o
-	mv halPhyloP.a ${libPath}/
+include ${rootDir}/rules.mk
 
-${binPath}/halPhyloP : impl/halPhyloPMain.cpp ${libPath}/halPhyloP.a ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${phyloPcppflags} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halPhyloP impl/halPhyloPMain.cpp ${libPath}/halPhyloP.a ${libPath}/halLib.a ${libPath}/halLiftover.a ${basicLibs} ${phyloPlibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-${binPath}/halPhyloPTrain.py : halPhyloPTrain.py
-	cp halPhyloPTrain.py ${binPath}/halPhyloPTrain.py
-	chmod +x ${binPath}/halPhyloPTrain.py
 
-${binPath}/halPhyloPMP.py : halPhyloPMP.py
-	cp halPhyloPMP.py ${binPath}/halPhyloPMP.py
-	chmod +x ${binPath}/halPhyloPMP.py
+# Local Variables:
+# mode: makefile-gmake
+# End:
 
-${binPath}/halTreePhyloP.py : halTreePhyloP.py
-	cp halTreePhyloP.py ${binPath}/halTreePhyloP.py
-	chmod +x ${binPath}/halTreePhyloP.py

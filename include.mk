@@ -1,28 +1,41 @@
-#Location of sonLib
-binPath=${rootPath}bin/
-libPath=${rootPath}lib/
+binDir =${rootDir}/bin
+libDir = ${rootDir}/lib
+objDir = ${rootDir}/objs
+
+libHal = ${libDir}/libHal.a
+libHalStats = ${libDir}/libHalStats.a
+libHalChain = ${libDir}/libHalChain.a
+libHalMutations = ${libDir}/libHalMutations.a
+libHalLiftover = ${libDir}/libHalLiftover.a
+libHalLod = ${libDir}/libHalLod.a
+libHalMaf = ${libDir}/libHalMaf.a
+
+inclSpec = -I${rootDir}/api/inc -Iimpl -Iinc
 
 #Modify this variable to set the location of sonLib
 #(sonlib is used only for cuTest at this potin)
-sonLibRootPath?=${rootPath}/../sonLib
-sonLibPath=${sonLibRootPath}/lib
+sonLibRootDir?=${rootDir}/../sonLib
+sonLibDir=${sonLibRootDir}/lib
 
-include  ${sonLibRootPath}/include.mk
+.SECONDARY: 
 
-dataSetsPath=/Users/hickey/Documents/Devel/genomes/datasets
+include  ${sonLibRootDir}/include.mk
 
-cflags += -I${sonLibPath} -fPIC
-cppflags += -I${sonLibPath} -fPIC
+dataSetsDir=/Users/hickey/Documents/Devel/genomes/datasets
 
-basicLibs = ${sonLibPath}/sonLib.a ${sonLibPath}/cuTest.a
+#
+# The -D_GLIBCXX_USE_CXX11_ABI=0 flag prevents errors with
+#   std::__cxx11::basic_string vs std::basic_string
+# when linking with HDF5 and modern C++ compilers (well, GCC 7.3)
+#
+cflags += -I${sonLibDir} -fPIC
+cppflags += -I${sonLibDir} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0
+
+basicLibs = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 basicLibsDependencies = ${basicLibs}
 
 # hdf5 compilation is done through its wrappers.
 # we can speficy our own (sonlib) compilers with these variables:
-HDF5_CXX = ${cpp}
-HDF5_CXXLINKER = ${cpp}
-HDF5_CC = ${cxx}
-HDF5_CCLINKER = ${cxx} 
 cpp = h5c++ ${h5prefix}
 cxx = h5cc ${h5prefix}
 
@@ -68,3 +81,9 @@ else
 endif
 
 endif
+
+# test includes and libs uses buy several modules
+halApiTestIncl = ${rootDir}/api/tests
+halApiTestSupportLibs = ${objDir}/api/tests/halAlignmentTest.o ${objDir}/api/tests/halBottomSegmentTest.o \
+    ${objDir}/api/tests/halTopSegmentTest.o ${objDir}/api/tests/halAlignmentInstanceTest.o \
+    ${objDir}/api/tests/halRandomData.o

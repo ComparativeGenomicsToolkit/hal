@@ -65,11 +65,11 @@ std::vector<PslBlock> hal::Hal2Psl::convert2psl(hal::AlignmentConstPtr alignment
 
 
 void hal::Hal2Psl::makeUpPsl(const std::vector<hal::PSLInfo>& vpsl,
-                                const std::vector<hal::BedBlock>& blocks, 
-                                const char strand,
-                                const hal_index_t start,
-                                const std::string chrName,
-                                std::vector<PslBlock>& pslBlocks){
+                             const std::vector<hal::BedBlock>& blocks, 
+                             const char strand,
+                             const hal_index_t start,
+                             const std::string chrName,
+                             std::vector<PslBlock>& pslBlocks){
   assert(vpsl.size() == 1);
   const hal::PSLInfo& psl = vpsl[0];
 

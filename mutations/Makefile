@@ -1,39 +1,37 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/mutations
 
-libSourcesAll = $(wildcard impl/*.cpp)
-libSources3=$(subst impl/halBranchMutationsMain.cpp,,${libSourcesAll})
-libSources2=$(subst impl/halSummarizeMutationsMain.cpp,,${libSources3})
-libSources1=$(subst impl/halSnps.cpp,,${libSources2})
-libSources =$(subst impl/halIndels.cpp,,${libSources1})
-libHeaders = $(wildcard inc/*.h)
+libHalMutations_srcs = impl/halBranchMutations.cpp impl/halMutationsStats.cpp impl/halSummarizeMutations.cpp
+libHalMutations_objs = ${libHalMutations_srcs:%.cpp=${modObjDir}/%.o}
+halIndels_srcs = impl/halIndels.cpp
+halIndels_objs = ${halIndels_srcs:%.cpp=${modObjDir}/%.o}
+halBranchMutations_srcs = impl/halBranchMutationsMain.cpp
+halBranchMutations_objs = ${halBranchMutations_srcs:%.cpp=${modObjDir}/%.o}
+halSnps_srcs = impl/halSnps.cpp
+halSnps_objs = ${halSnps_srcs:%.cpp=${modObjDir}/%.o}
+halSummarizeMutations_srcs = impl/halSummarizeMutationsMain.cpp
+halSummarizeMutations_objs = ${halSummarizeMutations_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHalMutations_srcs} ${halIndels_srcs} ${halBranchMutations_srcs} ${halSnps_srcs} ${halSummarizeMutations_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs = ${binDir}/halIndels ${binDir}/halBranchMutations ${binDir}/halSnps ${binDir}/halSummarizeMutations
+otherLibs = ${libHalMutations}
 
-all : ${libPath}/halMutations.a ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halTreeMutations.py ${binPath}/halSnps ${binPath}/halIndels
+all : libs progs
+libs: ${libHalMutations}
+progs: ${progs}
 
 clean : 
-	rm -f ${libPath}/halMutations.a ${libPath}/*.h ${binPath}/halBranchMutations ${binPath}/halSummarizeMutations ${binPath}/halTreeMutations.py ${binPath}/halSnps ${binPath}/halIndels
+	rm -f ${libHalMutations} ${objs} ${progs} ${depends}
 
-${libPath}/halMutations.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
-	cp ${libHeaders} ${libPath}/
-	rm -f *.o
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
-	ar rc halMutations.a *.o
-	ranlib halMutations.a 
-	rm *.o
-	mv halMutations.a ${libPath}/
+include ${rootDir}/rules.mk
 
-${binPath}/halBranchMutations : impl/halBranchMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halBranchMutations impl/halBranchMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-${binPath}/halSummarizeMutations : impl/halSummarizeMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halSummarizeMutations impl/halSummarizeMutationsMain.cpp ${libPath}/halMutations.a ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/halTreeMutations.py : impl/halTreeMutations.py
-	cp impl/halTreeMutations.py ${binPath}
-	chmod u+x ${binPath}/halTreeMutations.py
+# Local Variables:
+# mode: makefile-gmake
+# End:
 
-${binPath}/halSnps : impl/halSnps.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halSnps impl/halSnps.cpp ${libPath}/halLib.a ${basicLibs}
-
-${binPath}/halIndels : impl/halIndels.cpp ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halIndels impl/halIndels.cpp ${libPath}/halLib.a ${basicLibs}

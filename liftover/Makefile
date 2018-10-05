@@ -1,34 +1,35 @@
-rootPath = ../
-include ../include.mk
+rootDir = ..
+include ${rootDir}/include.mk
+modObjDir = ${objDir}/liftover
 
-libSourcesAll = $(wildcard impl/*.cpp)
-libSources1=$(subst impl/halLiftoverMain.cpp,,${libSourcesAll})
-libSources=$(subst impl/halWiggleLiftoverMain.cpp,,${libSources1})
-libHeaders = $(wildcard inc/*.h)
-libTestSources = $(wildcard tests/*.cpp)
-libTestHeaders = $(wildcard tests/*.h)
-libTestsCommon = ${rootPath}/api/tests/halAlignmentTest.cpp ${rootPath}/api/tests/halAlignmentInstanceTest.cpp
-libTestsCommonHeaders = ${rootPath}/api/tests/halAlignmentTest.h ${rootPath}/api/tests/halAlignmentInstanceTest.h ${rootPath}/api/tests/allTests.h
+libHalLiftover_srcs = impl/halBedLine.cpp impl/halBedScanner.cpp impl/halBlockLiftover.cpp \
+    impl/halBlockMapper.cpp impl/halColumnLiftover.cpp impl/halLiftover.cpp \
+    impl/halWiggleLiftover.cpp impl/halWiggleLoader.cpp impl/halWiggleScanner.cpp
+libHalLiftover_objs = ${libHalLiftover_srcs:%.cpp=${modObjDir}/%.o}
+halLiftover_srcs = impl/halLiftoverMain.cpp
+halLiftover_objs = ${halLiftover_srcs:%.cpp=${modObjDir}/%.o}
+halWiggleLiftover_srcs = impl/halWiggleLiftoverMain.cpp
+halWiggleLiftover_objs = ${halWiggleLiftover_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHalLiftover_srcs} ${halLiftover_srcs} ${halWiggleLiftover_srcs}
+objs = ${srcs:%.cpp=${modObjDir}/%.o}
+depends = ${srcs:%.cpp=%.depend}
+progs = ${binDir}/halLiftover ${binDir}/halWiggleLiftover
+otherLibs = ${libHalLiftover}
 
-all : ${libPath}/halLiftover.a ${binPath}/halLiftover ${binPath}/halWiggleLiftover ${binPath}/halLiftoverTests
+all : libs progs
+libs: ${libHalLiftover}
+progs: ${progs}
 
 clean : 
-	rm -f ${libPath}/halLiftover.a ${libPath}/*.h ${binPath}/halLiftover  ${binPath}/halWiggleLiftover ${binPath}/halLiftoverTests
+	rm -f ${libHalLiftover} ${objs} ${progs} ${depends}
 
-${libPath}/halLiftover.a : ${libSources} ${libHeaders} ${libPath}/halLib.a ${basicLibsDependencies} 
-	cp ${libHeaders} ${libPath}/
-	rm -f *.o
-	${cpp} ${cppflags} -I inc -I hdf5_impl -I impl -I ${libPath}/ -c ${libSources}
-	ar rc halLiftover.a *.o
-	ranlib halLiftover.a 
-	rm *.o
-	mv halLiftover.a ${libPath}/
+include ${rootDir}/rules.mk
 
-${binPath}/halLiftover : impl/halLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halLiftover impl/halLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
+# don't fail on missing dependencies, they are first time the .o is generates
+-include ${depends}
 
-${binPath}/halWiggleLiftover : impl/halWiggleLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I impl -I tests -o ${binPath}/halWiggleLiftover impl/halWiggleLiftoverMain.cpp ${libPath}/halLiftover.a ${libPath}/halLib.a ${basicLibs}
 
-${binPath}/halLiftoverTests : ${libTestSources} ${libTestHeaders} ${libTestsCommon} ${libTestsHeadersCommon} ${libSources} ${libHeaders} ${libInternalHeaders} ${libPath}/halLib.a ${basicLibsDependencies}
-	${cpp} ${cppflags} -I inc -I impl -I ${libPath} -I tests -I ../api/tests -o ${binPath}/halLiftoverTests  ${libTestSources} ${libTestsCommon}  ${libPath}/halLib.a ${libPath}/halLiftover.a ${basicLibs}
+# Local Variables:
+# mode: makefile-gmake
+# End:
+
