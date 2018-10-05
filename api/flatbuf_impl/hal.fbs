@@ -1,0 +1,72 @@
+namespace hal;
+
+table Hal {
+  /// File format version.
+  version: short;
+  /// Species tree.
+  tree: string;
+  /// Alignment-wide metadata.
+  metadata: [Metadata];
+  genomes: [Genome];
+}
+
+table Metadata {
+  key: string;
+  value: string;
+}
+
+table Genome {
+  name: string;
+  /// Genome-specific metadata.
+  metadata: [Metadata];
+  /// Length of the entire genome sequence, including Ns.
+  length: uint64;
+  /// Chromosomes/scaffolds, sorted by start position.
+  chroms: [Sequence];
+  /// The entire DNA sequence, joined together into a long string.
+  /// The sequences appear in the same order as in the chroms list.
+  sequence: string;
+  bottomSegments: [BottomSegment];
+  topSegments: [TopSegment];
+}
+
+table Sequence {
+  name: string;
+  /// Offset within the genome-wide coordinates. Must be
+  /// equal to previous chrom start + previous chrom length.
+  startPos: uint64;
+  length: uint64;
+}
+
+struct BottomSegmentForChild {
+  /// Index of corresponding segment in child's top segment array.
+  childSegmentIndex: uint64;
+  /// Is our + strand aligned to the + (false) or - (true) strand of our parent?
+  reversed: bool;
+}
+
+struct TopSegment {
+  /// Start position in genome-wide coordinates. Length is
+  /// determined by looking at the next segment's start.
+  startPos: uint64;
+  /// Index of corresponding segment in parent's bottom segment array.
+  parentSegmentIndex: uint64;
+  /// If present, the index of the next segment in the circular "paralogy list"--i.e.
+  /// other top segments in this genome aligned to the same parent segment.
+  paralogyIndex: uint64;
+  /// Index of first bottom segment in this genome that covers part of this top segment.
+  bottomParseIndex: uint64;
+  /// Is our + strand aligned to the + (false) or - (true) strand of our parent?
+  reversed: bool;
+}
+
+table BottomSegment {
+  /// Start position in genome-wide coordinates. Length is
+  /// determined by looking at the next segment's start.
+  startPos: uint64;
+  /// Index of first top segment in this genome that covers part of this bottom segment.
+  topParseIndex: uint64;
+  childSegments: [BottomSegmentForChild];
+}
+
+root_type Hal;
