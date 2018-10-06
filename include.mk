@@ -14,8 +14,8 @@ inclSpec = -I${rootDir}/api/inc -Iimpl -Iinc
 
 #Modify this variable to set the location of sonLib
 #(sonlib is used only for cuTest at this potin)
-sonLibRootDir?=${rootDir}/../sonLib
-sonLibDir=${sonLibRootDir}/lib
+sonLibRootDir ?= ${rootDir}/../sonLib
+sonLibDir = ${sonLibRootDir}/lib
 
 # update PYTHONPATH for tests
 export PYTHONPATH := $(abspath ${rootDir}/..):${PYTHONPATH}

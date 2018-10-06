@@ -10,7 +10,7 @@ before_install:
 install:
   - sh -c 'cd sonLib && make'
 script:
-  - export sonLibRootPath=`pwd`/sonLib
+  - export sonLibRootDir=`pwd`/sonLib
   - make && PYTHONPATH=..:.:$PYTHONPATH PATH=./bin:$PATH make test
 os:
   - linux
