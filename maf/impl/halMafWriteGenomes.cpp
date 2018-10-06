@@ -345,7 +345,7 @@ void MafWriteGenomes::initParaMap()
     assert(genome != NULL);
     Sequence* sequence = genome->getSequence(sequenceName(row._sequenceName));
     assert(sequence != NULL);
-    Paralogy para = {sequence->getStartPosition() + row._startPosition, i};
+    Paralogy para = {sequence->getStartPosition() + static_cast<hal_index_t>(row._startPosition), i};
     pair<ParaMap::iterator, bool> res = _paraMap.insert(
       pair<Genome*, ParaSet>(genome, ParaSet()));
     res.first->second.insert(para);    
@@ -467,7 +467,7 @@ void MafWriteGenomes::updateParalogy(size_t i)
     Sequence* sequence = rowInfo._genome->getSequence(
       sequenceName(row._sequenceName));
     assert(sequence != NULL);
-    Paralogy query = {sequence->getStartPosition() + row._startPosition, 0};
+    Paralogy query = {sequence->getStartPosition() + static_cast<hal_index_t>(row._startPosition), 0};
     ParaSet::iterator sIt = paraSet.find(query);
     assert(sIt != paraSet.end());
 
