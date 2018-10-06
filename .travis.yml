@@ -11,7 +11,7 @@ install:
   - sh -c 'cd sonLib && make'
 script:
   - export sonLibRootDir=`pwd`/sonLib
-  - make && PYTHONPATH=..:.:$PYTHONPATH PATH=./bin:$PATH make test
+  - make && PYTHONPATH=..:.:$PYTHONPATH PATH=./bin:$PATH make -k test
 os:
   - linux
   - osx
