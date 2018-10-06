@@ -33,3 +33,6 @@ doxy : ${modules:%=doxy.%}
 
 doxy.%:
 	cd api && ${MAKE} doxy
+
+etags:
+	etags $$(find . -name '*.h' -o -name '*.cpp')

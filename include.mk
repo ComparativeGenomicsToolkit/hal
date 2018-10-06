@@ -34,7 +34,7 @@ dataSetsDir=/Users/hickey/Documents/Devel/genomes/datasets
 # when linking with HDF5 and modern C++ compilers (well, GCC 7.3)
 #
 cflags += -I${sonLibDir} -fPIC
-cppflags += -I${sonLibDir} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++14
+cppflags += -I${sonLibDir} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++11
 
 basicLibs = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 basicLibsDependencies = ${basicLibs}
