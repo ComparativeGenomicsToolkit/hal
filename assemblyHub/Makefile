@@ -8,6 +8,7 @@ libs:
 progs: ${progs}
 clean:
 	rm -f ${progs}
+test:
 
 include ${rootDir}/rules.mk
 

@@ -59,6 +59,7 @@ endif
 
 clean : 
 	rm -f ${objs} ${progs} ${phast_progs} ${depends}
+test:
 
 include ${rootDir}/rules.mk
 

@@ -23,6 +23,13 @@ progs: ${progs}
 clean : 
 	rm -f ${libHal} ${objs} ${progs} ${depends}
 
+test: halHdf5Tests halApiTests
+
+halHdf5Tests:
+	${binDir}/halHdf5Tests
+halApiTests:
+	${binDir}/halApiTests
+
 doxy :
 	doxygen doc/doxy.cfg
 

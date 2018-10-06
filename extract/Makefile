@@ -30,6 +30,9 @@ progs: ${progs}
 
 clean : 
 	rm -f ${objs} ${progs} ${depends}
+test: hal4dExtractTest
+hal4dExtractTest:
+	${binDir}/hal4dExtractTest 
 
 include ${rootDir}/rules.mk
 

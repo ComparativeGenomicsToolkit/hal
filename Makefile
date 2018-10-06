@@ -1,3 +1,6 @@
+rootDir = .
+include include.mk
+
 modules = api stats randgen validate mutations fasta alignmentDepth liftover lod maf chain extract analysis phyloP modify assemblyHub synteny
 
 
@@ -13,15 +16,18 @@ progs: ${modules:%=%.progs}
 %.progs: libs
 	cd $* && ${MAKE} progs
 
-clean:  ${modules:%=%.clean}
+clean: ${modules:%=%.clean}
 	rm -rf lib bin objs
+	rm -f *.pyc */*.pyc */*/*.pyc
 
 %.clean:
 	cd $* && ${MAKE} clean
 
-test: all
-	pytest maf/impl/naiveLiftUp.py
-	python allTests.py
+test: ${modules:%=%.test}
+
+%.test: all
+	cd $* && ${MAKE} test
+
 
 doxy : ${modules:%=doxy.%}
 

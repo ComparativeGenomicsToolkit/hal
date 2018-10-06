@@ -19,6 +19,7 @@ progs: ${progs}
 
 clean : 
 	rm -f ${libHalLod} ${objs} ${progs} ${depends}
+test:
 
 include ${rootDir}/rules.mk
 

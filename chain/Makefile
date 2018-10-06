@@ -32,7 +32,10 @@ progs: ${progs}
 
 clean: 
 	rm -f ${libHalChain} ${objs} ${progs} ${depends}
+test: halChainTests
 
+halChainTests:
+	${binDir}/halChainTests 
 
 include ${rootDir}/rules.mk
 

@@ -9,6 +9,7 @@ libs:
 progs:  ${progs}
 clean: 
 	rm -f ${progs}
+test:
 
 ${binDir}/%.py : neutralIndel/%.py
 	@mkdir -p $(dir $@)

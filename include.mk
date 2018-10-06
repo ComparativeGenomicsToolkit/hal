@@ -17,6 +17,11 @@ inclSpec = -I${rootDir}/api/inc -Iimpl -Iinc
 sonLibRootDir?=${rootDir}/../sonLib
 sonLibDir=${sonLibRootDir}/lib
 
+# update PYTHONPATH for tests
+export PYTHONPATH := $(abspath ${rootDir}/..):${PYTHONPATH}
+
+export PATH := $(abspath ${rootDir}/bin):${PATH}
+
 .SECONDARY: 
 
 include  ${sonLibRootDir}/include.mk

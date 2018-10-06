@@ -21,6 +21,7 @@ endif
 
 clean: 
 	rm -f ${objs} ${progs} ${depends}
+test:
 
 include ${rootDir}/rules.mk
 

@@ -24,6 +24,7 @@ progs: ${progs}
 
 clean : 
 	rm -f ${libHalMutations} ${objs} ${progs} ${depends}
+test:
 
 include ${rootDir}/rules.mk
 

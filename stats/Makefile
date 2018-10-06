@@ -20,6 +20,7 @@ progs: ${progs}
 
 clean : 
 	rm -f ${libHalStats} ${objs} ${progs} ${depends}
+test:
 
 include ${rootDir}/rules.mk
 
