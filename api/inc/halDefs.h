@@ -8,6 +8,7 @@
 #define _HALDEFS_H
 
 #include <stdint.h>
+#include <string>
 #include <stdexcept>
 #include <cstdlib>
 #include <cstring>
