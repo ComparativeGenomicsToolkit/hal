@@ -2,9 +2,7 @@ rootDir = ..
 include ${rootDir}/include.mk
 modObjDir = ${objDir}/api
 
-inclSpec += -Ihdf5_impl
-
-libHal_srcs = $(wildcard impl/*.cpp) $(wildcard hdf5_impl/*.cpp) 
+libHal_srcs = $(wildcard impl/*.cpp) $(wildcard hdf5_impl/*.cpp) $(wildcard mmap_impl/*.cpp)
 libHal_objs =  ${libHal_srcs:%.cpp=${modObjDir}/%.o}
 halApiTests_srcs = $(wildcard tests/*.cpp)
 halApiTests_objs = ${halApiTests_srcs:%.cpp=${modObjDir}/%.o}
@@ -12,6 +10,7 @@ halHdf5Tests_srcs = $(wildcard hdf5_tests/*.cpp)
 halHdf5Tests_objs = ${halHdf5Tests_srcs:%.cpp=${modObjDir}/%.o}
 srcs = ${libHal_srcs} ${halApiTests_srcs} ${halHdf5Tests_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
+inclSpec += -Ihdf5_impl -Immap_impl
 depends = ${srcs:%.cpp=%.depend}
 
 progs =  ${binDir}/halApiTests ${binDir}/halHdf5Tests
