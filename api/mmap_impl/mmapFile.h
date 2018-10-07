@@ -1,73 +1,114 @@
 #ifndef _MMAPFILE_H
+#include "halDefs.h"
 #include <cstddef>
 #include <string>
+#include <assert.h>
 
-namespace hal
-{
-struct mmapHeader;
-typedef struct mmapHeader mmapHeader;
-
-/**
- * An mmapped HAL file.  This handles creation and opening of mapped
- * file.
- */
-class MmapFile
-{
-    public:
-    // Open modes
-    enum {
-        READ = 0x01,      // read-access
-        WRITE = 0x02,     // write-access
-        CREATE = 0x04,    // initialize a new file, must be empty if it exists
-        AUTO_GROW = 0x08  // allow auto-growing, see warnings
+namespace hal {
+    /* header for the file */
+    struct mmapHeader {
+        char format[32];
+        char version[32];
+        size_t nextOffset;
+        size_t rootOffset;
+        bool dirty;
     };
+    typedef struct mmapHeader mmapHeader;
 
-    off_t getRootOffset() const;
-    void *toPtr(off_t offset,
-                size_t accessSize);
-    const void *toPtr(off_t offset,
-                      size_t accessSize) const;
-    size_t allocMem(size_t size,
-                    bool isRoot=false);
+    /**
+     * An mmapped HAL file.  This handles creation and opening of mapped
+     * file.  
+     * WARNING: When writing, close() must be explicitly called or file will
+     * be left marked as dirty.
+     */
+    class MmapFile {
+        public:
 
-private:
-    size_t alignRound(size_t size) const;
-    mmapHeader* getHeader();
-    const mmapHeader* getHeader() const;
-    void validateWriteAccess() const;
-    void growFile(size_t size);
-    void storeRoot(off_t rootOffset);
+        // default sizes when opening a file for write access
+        static const size_t DEFAULT_INIT_SIZE = 64 * GIGABYTE;
+        static const size_t DEFAULT_GROW_SIZE = 64 * GIGABYTE;
+        
+        // Open modes
+        enum {
+            READ = 0x01,       // read-access
+            WRITE = 0x02,      // write-access
+            CREATE = 0x04,     // initialize a new file, truncate if exist
+            GROW = 0x08,       // allow auto-growing, see warnings
+            FETCH = 0x10       // call fetch function before converting to pointer (internal, don't specify)
+        };
 
-    const std::string _fileName;   // name of file for errors
-    bool _writeAccess;    // is it open for write access */
-    int _fd;              // open file descriptor
-    void *_basePtr;       // location file is mapped
-    size_t _fileSize;     // size of file
-    size_t _growSize;     // size to grow file on resize
-    off_t _rootOffset;    // offset of root object
-    off_t _nextOffset;    // next byte to allocated when creating (is aligned)
-};
+        size_t getRootOffset() const;
+        void *toPtr(size_t offset,
+                    size_t accessSize);
+        const void *toPtr(size_t offset,
+                          size_t accessSize) const;
+        size_t allocMem(size_t size,
+                        bool isRoot=false);
+        virtual ~MmapFile();
+        
+        protected:
+        MmapFile(const std::string fileName,
+                 unsigned mode);
+        /** close marks as clean, don't call on error, just delete */
+        virtual void close() = 0;
+        virtual void fetch(size_t offset,
+                           size_t accessSize) const = 0;
 
+        size_t alignRound(size_t size) const;
+        void setHeaderPtr();
+        void createHeader();
+        void loadHeader(bool markDirty);
+        void validateWriteAccess() const;
+        void growFile(size_t size);
+        virtual void growFileImpl(size_t size);
+        void fetchIfNeeded(size_t offset,
+                           size_t accessSize) const;
+        
+        const std::string _fileName;   // name of file for errors
+        unsigned _mode;       // access mode
+        void *_basePtr;       // location file is mapped
+        mmapHeader *_header;  // pointer to header
+        size_t _fileSize;     // size of file
+
+        private:
+        MmapFile() {
+            // no copying
+        }
+
+        static MmapFile* localFactory(const std::string& fileName,
+                                      unsigned mode,
+                                      size_t initSize = DEFAULT_INIT_SIZE,
+                                      size_t growSize = DEFAULT_GROW_SIZE);
+    };
+}
 
 /** Get the offset of the root object */
-off_t MmapFile::getRootOffset() const
-{
-    return _rootOffset;
+size_t hal::MmapFile::getRootOffset() const {
+    assert(_header->rootOffset > 0);
+    return _header->rootOffset;
+}
+
+/* fetch the range if required, else inline no-op */
+void hal::MmapFile::fetchIfNeeded(size_t offset,
+                                  size_t accessSize) const {
+    if (_mode & FETCH) {
+        fetch(offset, accessSize);
+    }
 }
 
 /** Get pointer to the root a pointer.  Where accessSize is the
  * number of bytes that will be accessed, which is used when
  * pre-fetching is needed. If accessing an array, accessSize is size
  * of element, not the entire array.*/
-void *MmapFile::toPtr(off_t offset,
-                      size_t accessSize)
-{
+void *hal::MmapFile::toPtr(size_t offset,
+                           size_t accessSize) {
+    fetchIfNeeded(offset, accessSize);
     return static_cast<char*>(_basePtr) + offset;
 }
 
-const void *MmapFile::toPtr(off_t offset,
-                            size_t accessSize) const
-{
+const void *hal::MmapFile::toPtr(size_t offset,
+                                 size_t accessSize) const {
+    fetchIfNeeded(offset, accessSize);
     return static_cast<const char*>(_basePtr) + offset;
 }
 
@@ -75,28 +116,23 @@ const void *MmapFile::toPtr(off_t offset,
  * is specified, it is stored as the root.  If AUTO_GROW mode,
  * then any pointers previously returned may become invalid. Thus
  * only offsets can be stored. */
-size_t MmapFile::allocMem(size_t size,
-                          bool isRoot)
-{
+size_t hal::MmapFile::allocMem(size_t size,
+                               bool isRoot) {
     validateWriteAccess();
-    if (_nextOffset + size > _fileSize)
-    {
+    if (_header->nextOffset + size > _fileSize) {
         growFile(size);
     }
-    size_t offset = _nextOffset;
-    _nextOffset += alignRound(size);
-    if (isRoot)
-    {
-        storeRoot(offset);
+    size_t offset = _header->nextOffset;
+    _header->nextOffset += alignRound(size);
+    if (isRoot) {
+        _header->rootOffset = offset;
     }
     return offset;
 }
 
 /* round up to alignment size */
-size_t MmapFile::alignRound(size_t size) const
-{
+size_t hal::MmapFile::alignRound(size_t size) const {
     return ((size + (sizeof(size_t) - 1)) / sizeof(size_t)) * sizeof(size_t);
-}
 }
 #endif
 

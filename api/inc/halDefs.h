@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdexcept>
 #include <cstdlib>
+#include <cstring>
 #include <cmath>
 #include <algorithm>
 #include <limits>
@@ -40,10 +41,29 @@ typedef uint64_t hal_offset_t;
  */
 typedef uint64_t hal_size_t;
 
+/* gigabyte constant */
+static const uint64_t GIGABYTE = 1024ULL * 1024ULL * 1024ULL;
+
 /*
  * General usage exception class, used for all critical errors. 
  */
 typedef std::runtime_error hal_exception;
+
+/**
+ * Exception raised when on a Unix errno error.
+ */
+class hal_errno_exception: public hal_exception {
+    public:
+    hal_errno_exception(const std::string& msg,
+                        int errnum):
+        runtime_error(msg + ": " + std::strerror(errnum)) {
+    }
+    hal_errno_exception(const std::string& fileName,
+                        const std::string& msg,
+                        int errnum):
+        runtime_error(fileName + ": " + msg + ":" + std::strerror(errnum)) {
+    }
+};
 
 namespace hal {
 

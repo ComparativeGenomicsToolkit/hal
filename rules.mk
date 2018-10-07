@@ -15,7 +15,7 @@ ${binDir}/%.py : %.py
 # multiple times, so do it atomically.
 ${modObjDir}/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	${cpp} -MM -MT ${cppflags} ${inclSpec} -c $< >$*.depend
+	${cpp} -MM -MT $@ ${cppflags} ${inclSpec} -c $< >$*.depend
 	${cpp} ${cppflags} ${inclSpec} -c $< -o $@
 
 # compile a program.
