@@ -20,7 +20,7 @@ using namespace hal;
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->setDescription("Rertrieve chain (pairwise alignment) "
                                 "information from a hal database.\n"
                                 "WARNING: THIS TOOL WAS NEVER FINISHED OR"

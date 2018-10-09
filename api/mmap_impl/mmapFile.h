@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <assert.h>
+#include "halAlignmentInstance.h"
 
 namespace hal {
     /* header for the file */
@@ -24,27 +25,17 @@ namespace hal {
     class MmapFile {
         public:
 
-        // default sizes when opening a file for write access
-        static const size_t DEFAULT_INIT_SIZE = 64 * GIGABYTE;
-        static const size_t DEFAULT_GROW_SIZE = 64 * GIGABYTE;
-        
-        // Open modes
-        enum {
-            READ = 0x01,       // read-access
-            WRITE = 0x02,      // write-access
-            CREATE = 0x04,     // initialize a new file, truncate if exist
-            GROW = 0x08,       // allow auto-growing, see warnings
-            FETCH = 0x10       // call fetch function before converting to pointer (internal, don't specify)
-        };
+       
 
-        size_t getRootOffset() const;
-        void *toPtr(size_t offset,
-                    size_t accessSize);
-        const void *toPtr(size_t offset,
-                          size_t accessSize) const;
-        size_t allocMem(size_t size,
+        inline size_t getRootOffset() const;
+        inline void *toPtr(size_t offset,
+                           size_t accessSize);
+        inline const void *toPtr(size_t offset,
+                                 size_t accessSize) const;
+        inline size_t allocMem(size_t size,
                         bool isRoot=false);
-        virtual ~MmapFile();
+        virtual ~MmapFile() {
+        }
         
         protected:
         MmapFile(const std::string fileName,
@@ -54,21 +45,22 @@ namespace hal {
         virtual void fetch(size_t offset,
                            size_t accessSize) const = 0;
 
-        size_t alignRound(size_t size) const;
+        inline size_t alignRound(size_t size) const;
         void setHeaderPtr();
         void createHeader();
         void loadHeader(bool markDirty);
         void validateWriteAccess() const;
         void growFile(size_t size);
         virtual void growFileImpl(size_t size);
-        void fetchIfNeeded(size_t offset,
-                           size_t accessSize) const;
+        inline void fetchIfNeeded(size_t offset,
+                                  size_t accessSize) const;
         
         const std::string _fileName;   // name of file for errors
         unsigned _mode;       // access mode
         void *_basePtr;       // location file is mapped
         mmapHeader *_header;  // pointer to header
         size_t _fileSize;     // size of file
+        bool _mustFetch;      // fetch must be called on each access.
 
         private:
         MmapFile() {
@@ -76,9 +68,9 @@ namespace hal {
         }
 
         static MmapFile* localFactory(const std::string& fileName,
-                                      unsigned mode,
-                                      size_t initSize = DEFAULT_INIT_SIZE,
-                                      size_t growSize = DEFAULT_GROW_SIZE);
+                                      unsigned mode = MMAP_READ,
+                                      size_t initSize = MMAP_DEFAULT_INIT_SIZE,
+                                      size_t growSize = MMAP_DEFAULT_GROW_SIZE);
     };
 }
 
@@ -91,7 +83,7 @@ size_t hal::MmapFile::getRootOffset() const {
 /* fetch the range if required, else inline no-op */
 void hal::MmapFile::fetchIfNeeded(size_t offset,
                                   size_t accessSize) const {
-    if (_mode & FETCH) {
+    if (_mustFetch) {
         fetch(offset, accessSize);
     }
 }

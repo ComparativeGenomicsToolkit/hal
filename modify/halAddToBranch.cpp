@@ -6,7 +6,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(true);
   optionsParser->addArgument("inFile", "existing tree");
   optionsParser->addArgument("botAlignmentFile", "tree containing insert, its "
                              "proper bottom segments, and the new leaf genome");

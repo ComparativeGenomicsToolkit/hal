@@ -28,7 +28,7 @@ static const hal_size_t StringBufferSize = 1024;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(false);
+  CLParserPtr optionsParser = halCLParserInstance(false);
   optionsParser->addArgument("inHalPath", "input hal file");
   optionsParser->addArgument("genome", "genome to export");
   optionsParser->addOption("outFaPath", "output fasta file (stdout if none)",

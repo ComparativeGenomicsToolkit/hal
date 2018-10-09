@@ -136,6 +136,9 @@ public:
    /** Get version used to create the file */
    virtual std::string getVersion() const = 0;
 
+   /** Is this file open for read-only? */
+   virtual bool isReadOnly() const = 0;
+
    /** Replace the newick tree with a new string */
    virtual void replaceNewickTree(const std::string& newick) = 0;
 

@@ -16,7 +16,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->addArgument("halFile", "input hal file");
   optionsParser->addArgument("srcGenome", "source genome name");
   optionsParser->addArgument("srcBed", "path of input bed file.  set as stdin "

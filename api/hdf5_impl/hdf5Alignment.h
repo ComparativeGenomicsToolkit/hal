@@ -31,9 +31,13 @@ public:
    void createNew(const std::string& alignmentPath);
    void open(const std::string& alignmentPath, 
              bool readOnly);
-   void open(const std::string& alignmentPath) const;
+   void open(const std::string& alignmentPath) const {
+      const_cast<HDF5Alignment*>(this)->open(alignmentPath, true);
+   }
    void close();
-   void close() const;
+   void close() const {
+      const_cast<HDF5Alignment*>(this)->close();
+   }
    void setOptionsFromParser(CLParserConstPtr parser) const;
    
    Genome* addLeafGenome(const std::string& name,
@@ -82,6 +86,8 @@ public:
    std::string getNewickTree() const;
 
    std::string getVersion() const;
+
+   bool isReadOnly() const;
 
    void replaceNewickTree(const std::string &newNewickString);
 

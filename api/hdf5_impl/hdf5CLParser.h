@@ -9,21 +9,23 @@
 
 #include <H5Cpp.h>
 #include "halCLParser.h"
-#include "halCLParserInstance.h"
 
 namespace hal {
 
 /** 
- * HDF5 extension of hal::CLParser
+ * Operations to specify HDF5 options in hal::CLParser and extract the
+ * results.  Only provides function, not an object instance.
  */
-class HDF5CLParser : public CLParser
+class HDF5CLParser
 {
 public:
-   ~HDF5CLParser();
-
-   void applyToDCProps(H5::DSetCreatPropList& dcprops) const;
-   void applyToAProps(H5::FileAccPropList& aprops) const;
-   bool getInMemory() const;
+    static void defineOptions(CLParserPtr parser,
+                              bool createOptions);
+    static void applyToDCProps(CLParserPtr parser,
+                               H5::DSetCreatPropList& dcprops);
+    static void applyToAProps(CLParserPtr parser,
+                              H5::FileAccPropList& aprops);
+    static bool getInMemory(CLParserPtr parser);
 
    static const hsize_t DefaultChunkSize;
    static const hsize_t DefaultDeflate;
@@ -32,13 +34,14 @@ public:
    static const hsize_t DefaultCacheRDCBytes;
    static const double DefaultCacheW0;
    static const bool DefaultInMemory;
+    
+    protected:
+    friend class HDF5Alignment;
 
-protected:
-   // Nobody creates this class except through the interface. 
-   friend CLParserPtr hdf5CLParserInstance(bool createOptions);
-   friend class HDF5Alignment;
-
-   HDF5CLParser(bool createOptions);
+    private:
+    // can't create
+    HDF5CLParser() {
+    }
 };
 
 }

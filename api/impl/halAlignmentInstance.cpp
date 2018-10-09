@@ -55,8 +55,17 @@ hal::hdf5AlignmentInstanceReadOnly(const FileCreatPropList& fileCreateProps,
   return AlignmentConstPtr(al);
 }
 
+AlignmentPtr 
+hal::mmapAlignmentInstance(const std::string& fileName,
+                           unsigned mode,
+                           size_t initSize,
+                           size_t growSize)
+{
+  return AlignmentPtr(NULL);
+}
+
 AlignmentPtr hal::openHalAlignment(const std::string& path,
-                                CLParserConstPtr options)
+                                   CLParserConstPtr options)
 {
   // detect which kind of file it is here (maybe by extension?)
   // ...
@@ -71,7 +80,7 @@ AlignmentPtr hal::openHalAlignment(const std::string& path,
 }
 
 AlignmentConstPtr hal::openHalAlignmentReadOnly(const std::string& path,
-                                CLParserConstPtr options)
+                                                CLParserConstPtr options)
 {
   // detect which kind of file it is here (maybe by extension?)
   // ...

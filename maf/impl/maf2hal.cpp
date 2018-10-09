@@ -16,7 +16,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(true);
   optionsParser->addArgument("mafFile", "output maf file");
   optionsParser->addArgument("halFile", "input hal file");
   optionsParser->addOption("refGenome", "name of reference genome in MAF "

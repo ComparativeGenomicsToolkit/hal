@@ -48,7 +48,7 @@ static void printAllCoverage(ostream& os, AlignmentConstPtr alignment);
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->setDescription("Retrieve basic statistics from a hal database");
   optionsParser->addArgument("halFile", "path to hal file to analyze");
   optionsParser->addOptionFlag("genomes", "print only a list of genomes "

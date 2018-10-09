@@ -57,7 +57,7 @@ static CLParserPtr initParser()
   /** It is convenient to use the HAL command line parser for the command
    * line because it automatically adds some comman options.  Using the 
    * parser is by no means required however */
-  CLParserPtr optionsParser = hdf5CLParserInstance(false);
+  CLParserPtr optionsParser = halCLParserInstance(false);
   optionsParser->addArgument("halPath", "input hal file");
   optionsParser->addArgument("refGenome", "reference genome to scan");
   optionsParser->addOption("outWiggle", "output wig file (stdout if none)",

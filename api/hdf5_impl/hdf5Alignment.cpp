@@ -46,9 +46,9 @@ HDF5Alignment::HDF5Alignment() :
   _inMemory(false)
 {
   // set defaults from the command-line parser
-  HDF5CLParser defaultOptions(true);  
-  defaultOptions.applyToDCProps(_dcprops);
-  defaultOptions.applyToAProps(_aprops);
+  CLParserPtr defaultOptions = halCLParserInstance(true);
+  HDF5CLParser::applyToDCProps(defaultOptions, _dcprops);
+  HDF5CLParser::applyToAProps(defaultOptions, _aprops);
 }
 
 HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
@@ -132,17 +132,14 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
   loadTree();
 }
 
-// todo: properly handle readonly
-void HDF5Alignment::open(const string& alignmentPath) const
-{
-  const_cast<HDF5Alignment*>(this)->open(alignmentPath, true);
-}
-   
+
 void HDF5Alignment::close()
 {
   if (_file != NULL)
   {
-    writeTree();
+    if (not isReadOnly()) {
+      writeTree();
+    }
     if (_tree != NULL)
     {
       stTree_destruct(_tree);
@@ -152,7 +149,9 @@ void HDF5Alignment::close()
     // smart pointer should prevent
     if (_metaData != NULL)
     {
-      _metaData->write();
+      if (not isReadOnly()) {
+        _metaData->write();
+      }
       delete _metaData;
       _metaData = NULL;
     }
@@ -161,11 +160,15 @@ void HDF5Alignment::close()
     for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt)
     {
       HDF5Genome* genome = mapIt->second;
-      genome->write();
+      if (not isReadOnly()) {
+         genome->write();
+      }
       delete genome;
     }
     _openGenomes.clear();
-    _file->flush(H5F_SCOPE_LOCAL);
+    if (not isReadOnly()) {
+       _file->flush(H5F_SCOPE_LOCAL);
+    }
     _file->close();
     delete _file;
     _file = NULL;
@@ -177,54 +180,11 @@ void HDF5Alignment::close()
   }
 }
 
-// same as above but don't write anything to disk.
-void HDF5Alignment::close() const
-{
-  if (_file != NULL)
-  {
-    if (_tree != NULL)
-    {
-      stTree_destruct(const_cast<HDF5Alignment*>(this)->_tree);
-       const_cast<HDF5Alignment*>(this)->_tree = NULL;
-    }
-    // todo: make sure there's no memory leak with metadata 
-    // smart pointer should prevent
-    if (_metaData != NULL)
-    {
-      delete  const_cast<HDF5Alignment*>(this)->_metaData;
-       const_cast<HDF5Alignment*>(this)->_metaData = NULL;
-    }
-
-    map<string, HDF5Genome*>::iterator mapIt;
-    for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt)
-    {
-      HDF5Genome* genome = mapIt->second;
-      delete genome;
-    }
-    _openGenomes.clear();
-     const_cast<HDF5Alignment*>(this)->_file->close();
-     delete const_cast<HDF5Alignment*>(this)->_file;
-     const_cast<HDF5Alignment*>(this)->_file = NULL;
-  }
-  else
-  {
-    assert(_tree == NULL);
-    assert(_openGenomes.empty() == true);
-  }
-}
-
 void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
 {
-  const HDF5CLParser* hdf5Parser = 
-     dynamic_cast<const HDF5CLParser*>(parser.get());
-  if (hdf5Parser == NULL)
-  {
-    throw hal_exception("setOptionsFromParser expected instance of "
-                        "hdf5CLParser");
-  }
-  hdf5Parser->applyToDCProps(_dcprops);
-  hdf5Parser->applyToAProps(_aprops);
-  _inMemory = hdf5Parser->getInMemory();
+  HDF5CLParser::applyToDCProps(parser, _dcprops);
+  HDF5CLParser::applyToAProps(parser, _aprops);
+  _inMemory = HDF5CLParser::getInMemory(parser);
   if (_inMemory == true)
   {
     int mdc;
@@ -235,7 +195,7 @@ void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
     _aprops.setCache(mdc, 0, 0, 0.);
   }
 #ifdef ENABLE_UDC
-  static string udcCachePath = hdf5Parser->getOption<string>("udcCacheDir");
+  static string udcCachePath = HDF5CLParser::getOption<string>(parser, "udcCacheDir");
   if (udcCachePath != "\"\"" && !udcCachePath.empty())
   {
     H5FD_udc_fuse_set_cache_dir(udcCachePath.c_str());
@@ -684,6 +644,10 @@ string HDF5Alignment::getVersion() const
     // we retroactively consider it 0.0
     return "0.0";
   }
+}
+
+bool HDF5Alignment::isReadOnly() const {
+    return (_flags &H5F_ACC_RDONLY) != 0;
 }
 
 void HDF5Alignment::writeTree()

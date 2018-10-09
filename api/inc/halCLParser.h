@@ -56,6 +56,10 @@ public:
     * @param name Name of option to check */
    bool hasOption(const std::string& name) const;
    
+   /** Check if option was specified on the command line.
+    * @param name Name of option to check */
+   bool specifiedOption(const std::string& name) const;
+   
    /** Add a positional (mandatory) command line argument
     * The argument is given as a value on the command line
     * ie with no name or prefix or anything.
@@ -90,6 +94,10 @@ public:
    /** Check if option flag exists in the parser
     * @param name Name of option to check */
    bool hasFlag(const std::string& name) const;
+
+   /** Check if option flag was specified on the command line
+    * @param name Name of option to check */
+   bool specifiedFlag(const std::string& name) const;
 
    /** Get value of option or flag or argument by name */
    template <typename T> 

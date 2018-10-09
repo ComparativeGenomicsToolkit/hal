@@ -8,7 +8,7 @@ using namespace std;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(true);
   optionsParser->setDescription("Write changes to a hal sequence from a TSV "
                                 "containing fields "
                                 "genomeName\tpos\toldChar\tnewChar. Note that "

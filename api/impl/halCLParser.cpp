@@ -36,6 +36,12 @@ bool CLParser::hasOption(const string& name) const
   return i != _options.end() && i->second._flag == false;
 }
    
+bool CLParser::specifiedOption(const string& name) const
+{
+  map<string, Option>::const_iterator i = _options.find(name);
+  return i != _options.end() && i->second._flag == false && (i->second._value.size() > 0);
+}
+   
 void CLParser::addArgument(const string& name,
                            const string& description)
 {
@@ -71,7 +77,6 @@ void CLParser::addOptionFlag(const string& name,
   stringstream ss;
   ss << defaultValue;
   Option opt = { description, ss.str(), ss.str(), true };
-  map<string, Option>::iterator i = _options.find(name);
   _options.insert(pair<string, Option>(name, opt));
   _maxOptLen = max(_maxOptLen, name.length());
 }
@@ -101,6 +106,12 @@ bool CLParser::hasFlag(const string& name) const
 {
   map<string, Option>::const_iterator i = _options.find(name);
   return i != _options.end() && i->second._flag == true;
+}
+   
+bool CLParser::specifiedFlag(const string& name) const
+{
+  map<string, Option>::const_iterator i = _options.find(name);
+  return i != _options.end() && i->second._flag == true && (i->second._value.size() > 0);
 }
    
 void CLParser::parseOptions(int argc, char** argv)

@@ -6,11 +6,15 @@
 
 #include "halCLParserInstance.h"
 #include "hdf5CLParser.h"
+#include "mmapCLParser.h"
 
 using namespace std;
 using namespace hal;
 
-CLParserPtr hal::hdf5CLParserInstance(bool createOptions)
+CLParserPtr hal::halCLParserInstance(bool createOptions)
 {
-  return CLParserPtr(new HDF5CLParser(createOptions));
+    CLParserPtr clParser(new CLParser());
+    HDF5CLParser::defineOptions(clParser, createOptions);
+    MmapCLParser::defineOptions(clParser, createOptions);
+    return clParser;
 }

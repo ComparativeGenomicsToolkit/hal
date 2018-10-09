@@ -13,7 +13,7 @@
 
 
 static hal::CLParserPtr initParser() {
-  auto optionsParser = hal::hdf5CLParserInstance();
+  auto optionsParser = hal::halCLParserInstance();
   optionsParser->addArgument("halFile", "input psl file from liftover");
   optionsParser->addOption("queryGenome", "source genome", "\"\"");
   optionsParser->addOption("targetGenome", "reference genome name", "\"\"");

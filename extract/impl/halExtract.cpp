@@ -25,7 +25,7 @@ static void extract(const AlignmentConstPtr inAlignment,
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(true);
   optionsParser->addArgument("inHalPath", "input hal file");
   optionsParser->addArgument("outHalPath", "output hal file");
   optionsParser->addOption("root", "root of subtree to extract", "\"\"");

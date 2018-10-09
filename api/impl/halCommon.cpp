@@ -75,7 +75,7 @@ void hal::reverseGaps(string& s)
 {
   bool hasGap = false; // just to skip unnecessary work
   string flipped(s.length(), '.');
-  for (int i = 0; i < s.length(); ++i)
+  for (unsigned i = 0; i < s.length(); ++i)
   {
     if (s[i] == '-')
     {
@@ -86,7 +86,7 @@ void hal::reverseGaps(string& s)
   if (hasGap == true)
   {
     int j = 0;
-    for (int i = 0; i < s.length(); ++i)
+    for (unsigned i = 0; i < s.length(); ++i)
     {
       if (s[i] != '-')
       {

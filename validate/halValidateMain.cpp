@@ -13,7 +13,7 @@ using namespace hal;
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->addArgument("halFile", "path to hal file to validate");
   optionsParser->setDescription("Check if hal database is valid");
   string path;

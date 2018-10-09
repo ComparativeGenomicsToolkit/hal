@@ -9,7 +9,7 @@
 
 
 /* constants for header */
-static const char *FORMAT_NAME = "HAL_MMAP";
+static const char *FORMAT_NAME = "MMAP";
 static const char *FORMAT_VERSION = "1.0";
 
 
@@ -25,22 +25,22 @@ static size_t getFileStatSize(int fd) {
 /* constructor, used only by derived classes */
 hal::MmapFile::MmapFile(const std::string fileName,
                         unsigned mode):
-    _fileName(fileName),  _mode(mode), _basePtr(NULL), _fileSize(0) {
+    _fileName(fileName),  _mode(mode), _basePtr(NULL), _fileSize(0), _mustFetch(false) {
     // make mode sane and validate
-    if (_mode & CREATE) {
-        _mode |= WRITE;
+    if (_mode & MMAP_CREATE) {
+        _mode |= MMAP_WRITE;
     }
-    if (_mode & WRITE) {
-        _mode |= READ;
+    if (_mode & MMAP_WRITE) {
+        _mode |= MMAP_READ;
     }
-    if ((_mode & (READ|WRITE|CREATE)) == 0) {
+    if ((_mode & (MMAP_READ|MMAP_WRITE|MMAP_CREATE)) == 0) {
         throw hal_exception(fileName + ": must specify at least one of READ, WRITE, or CREATE on open");
     }
 }
 
 /* error if file is not open for write accecss */
 void hal::MmapFile::validateWriteAccess() const {
-    if ((_mode & WRITE) == 0) {
+    if ((_mode & MMAP_WRITE) == 0) {
         throw hal_exception(_fileName + " is not open for write access");
     }
 }
@@ -84,7 +84,7 @@ void hal::MmapFile::loadHeader(bool markDirty) {
 
 /* create the header */
 void hal::MmapFile::createHeader() {
-    assert(_mode & WRITE);
+    assert(_mode & MMAP_WRITE);
     setHeaderPtr();
     assert(strlen(FORMAT_NAME) < sizeof(_header->format));
     strncpy(_header->format, FORMAT_NAME, sizeof(_header->format));
@@ -98,7 +98,7 @@ void hal::MmapFile::createHeader() {
 /* Grow file to allow for at least the specified amount.  This remaps the
  * file, so it is expensive and existing pointer become invalid. */
 void hal::MmapFile::growFile(size_t size) {
-    assert(_mode & WRITE);
+    assert(_mode & MMAP_WRITE);
     growFileImpl(size);
 }
 
@@ -112,11 +112,12 @@ namespace hal {
     class MmapFileLocal: public MmapFile {
         public:
         MmapFileLocal(const std::string fileName,
-                      unsigned mode = READ,
-                      size_t initSize = 0,
-                      size_t growSize = 0);
+                      unsigned mode,
+                      size_t initSize,
+                      size_t growSize);
         virtual void close();
         virtual ~MmapFileLocal();
+
         protected:
         virtual void fetch(size_t offset,
                            size_t accessSize) const {
@@ -145,7 +146,7 @@ hal::MmapFileLocal::MmapFileLocal(const std::string fileName,
                                   size_t initSize,
                                   size_t growSize):
     MmapFile(fileName, mode), _fd(-1), _growSize(growSize) {
-    if (_mode & WRITE) {
+    if (_mode & MMAP_WRITE) {
         openWrite(initSize);
     } else {
         openRead();
@@ -157,7 +158,7 @@ void hal::MmapFileLocal::close() {
     if (_basePtr == NULL) {
         throw hal_exception(_fileName + ": MmapFile::close() called on closed file");
     }
-    if (_mode & WRITE) {
+    if (_mode & MMAP_WRITE) {
         adjustFileSize(_header->nextOffset);
         _header->dirty = false;
     }
@@ -176,8 +177,8 @@ hal::MmapFileLocal::~MmapFileLocal() {
 int hal::MmapFileLocal::openFile() {
     assert(_fd < 0);
     unsigned openMode = 0;
-    if (_mode & WRITE) {
-        openMode = O_RDWR | ((_mode & CREATE) ? (O_CREAT|O_TRUNC) : 0);
+    if (_mode & MMAP_WRITE) {
+        openMode = O_RDWR | ((_mode & MMAP_CREATE) ? (O_CREAT|O_TRUNC) : 0);
     } else {
         openMode = O_RDONLY;
     }
@@ -199,7 +200,7 @@ void hal::MmapFileLocal::adjustFileSize(size_t size) {
 /* map file into memory */
 void* hal::MmapFileLocal::mapFile() {
     assert(_basePtr == NULL);
-    unsigned prot = PROT_READ | ((_mode & WRITE) ? PROT_WRITE : 0);
+    unsigned prot = PROT_READ | ((_mode & MMAP_WRITE) ? PROT_WRITE : 0);
     void *ptr = mmap(0, _fileSize, prot, MAP_SHARED|MAP_FILE, _fd, 0);
     if (ptr == MAP_FAILED) {
         throw hal_errno_exception(_fileName, "mmap failed", errno);
@@ -228,14 +229,14 @@ void hal::MmapFileLocal::openRead() {
 /* open the file for write access */
 void hal::MmapFileLocal::openWrite(size_t initSize) {
     _fd = openFile();
-    if (_mode & CREATE) {
+    if (_mode & MMAP_CREATE) {
         adjustFileSize(0);  // clear out existing data
     }
     if (initSize > _fileSize) {
         adjustFileSize(initSize);
     }
     _basePtr = mapFile();
-    if (_mode & CREATE) {
+    if (_mode & MMAP_CREATE) {
         createHeader();
     } else {
         loadHeader(true);

@@ -6,7 +6,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(true);
   optionsParser->addArgument("halFile", "hal tree");
   optionsParser->addArgument("referenceGenome", "genome to create the BED file "
                              "for");

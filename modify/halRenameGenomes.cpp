@@ -6,7 +6,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(true);
   optionsParser->setDescription("Rename genomes in a HAL file in-place.");
   optionsParser->addArgument("halFile", "hal file");
   optionsParser->addArgument("renameFile",

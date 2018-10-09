@@ -14,7 +14,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->addArgument("halFile", "input hal file");
   optionsParser->addArgument("srcGenome", "source genome name");
   optionsParser->addArgument("srcWig", "path of input .wig file.  set as stdin "

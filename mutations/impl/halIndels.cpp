@@ -15,7 +15,7 @@ enum indelType {
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->addArgument("halFile", "input hal file");
   optionsParser->addArgument("refGenome", 
                              "name of reference genome.");

@@ -6,7 +6,7 @@ using namespace std;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(true);
   optionsParser->setDescription("Rename the sequences of a genome in-place.");
   optionsParser->addArgument("halFile", "hal file");
   optionsParser->addArgument("genome", "genome to rename the sequences of");

@@ -5,7 +5,7 @@ using namespace hal;
 
 int main(int argc, char** argv)
 {
-    CLParserPtr optionsParser = hdf5CLParserInstance();
+    CLParserPtr optionsParser = halCLParserInstance();
     optionsParser->setDescription("Calculate coverage by sampling bases.");
     optionsParser->addArgument("halFile", "path to hal file to analyze");
     optionsParser->addArgument("refGenome", "genome to calculate coverage on");

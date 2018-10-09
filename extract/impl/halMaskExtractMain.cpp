@@ -14,7 +14,7 @@ using namespace hal;
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance();
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->setDescription("Write masked intervals of genome into bed "
                                 "file");
   optionsParser->addArgument("halFile", "path to hal file to analyze");
