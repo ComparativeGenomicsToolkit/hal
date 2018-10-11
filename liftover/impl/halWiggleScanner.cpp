@@ -33,7 +33,7 @@ void WiggleScanner::scan(const string& wigglePath)
   try {
     scan(_wiggleStream);
   }
-  catch(hal_exception e)
+  catch(hal_exception& e)
   {
     delete _wiggleStream;
     _wiggleStream = NULL;
@@ -76,7 +76,7 @@ void WiggleScanner::scan(istream* is)
       skipWhiteSpaces(_wiggleStream);
     }
   }
-  catch(hal_exception e)
+  catch(hal_exception& e)
   {
     stringstream ss;
     ss << e.what() << " -- input wiggle line " << _lineNumber;

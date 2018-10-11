@@ -38,7 +38,7 @@ void BedScanner::scan(const string& bedPath, int bedVersion,
   try {
     scan(_bedStream, bedVersion);
   }
-  catch(hal_exception e)
+  catch(hal_exception& e)
   {
     delete _bedStream;
     _bedStream = NULL;
@@ -83,7 +83,7 @@ void BedScanner::scan(istream* is, int bedVersion, const locale* inLocale)
       skipWhiteSpaces(_bedStream, inLocale);
     }
   }
-  catch(hal_exception e)
+  catch(hal_exception& e)
   {
     stringstream ss;
     ss << e.what() << " -- input bed line " << _lineNumber;

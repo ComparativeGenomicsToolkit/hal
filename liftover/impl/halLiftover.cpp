@@ -302,8 +302,8 @@ void Liftover::flipBlocks(BedList& bedList)
       }      
       else
       {
-        mustFlip = (bedIt->_strand == '-' && delta >= 0 || 
-                    bedIt->_strand != '-' && delta < 0);
+          mustFlip = ((bedIt->_strand == '-') && (delta >= 0)) || 
+              ((bedIt->_strand != '-') && (delta < 0));
       }
       
       if (mustFlip == true)

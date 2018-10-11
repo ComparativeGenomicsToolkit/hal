@@ -6,9 +6,12 @@ namespace hal {
 class MMapDNAIterator : public DNAIterator
 {
 public:
-    MMapDNAIterator(MMapGenome* genome, hal_index_t index) : _index(index), _genome(genome) {
-        _array = _genome->getDNAArray();
-    };
+    MMapDNAIterator(MMapGenome* genome, hal_index_t index) :
+        _index(index),
+        _array(genome->getDNAArray()),
+        _genome(genome),
+        _reversed(false) {
+    }
 
     char getChar() const;
     void setChar(char c);

@@ -242,8 +242,7 @@ void MafScanDimensions::updateDimensionsFromBlock()
           startIndex.first = end;
           startIndex.second._empty = 1;
           startIndex.second._count = 1;
-          pair<StartMap::iterator, bool> endResult = 
-             rec->_startMap.insert(startIndex);              
+          rec->_startMap.insert(startIndex);              
         }
 
         size_t numGaps = 0;

@@ -89,6 +89,7 @@ static void printDupeList(FILE* file, struct hal_target_dupe_list_t* d)
   }
 }
 
+#ifdef UNUSED
 static void printStats(FILE* file, int handle)
 {
   hal_species_t* species = halGetSpecies(handle, NULL);
@@ -109,6 +110,7 @@ static void printStats(FILE* file, int handle)
     }
   }
 }
+#endif
 
 static int openWrapper(char* path)
 {

@@ -64,14 +64,11 @@ int main(int argc, char *argv[])
   }
 
   ostream &os = cout;
-  const SegmentedSequence *sequence;
   size_t seqStart, seqEnd;
   if (refSequence != "") {
-    sequence = referenceGenome->getSequence(refSequence);
     seqStart = referenceGenome->getSequence(refSequence)->getStartPosition();
     seqEnd = referenceGenome->getSequence(refSequence)->getEndPosition();
   } else {
-    sequence = referenceGenome;
     seqStart = 0;
     seqEnd = referenceGenome->getSequenceLength() - 1;
   }
