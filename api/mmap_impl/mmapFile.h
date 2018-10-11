@@ -71,7 +71,7 @@ namespace hal {
         }
 
         static MmapFile* localFactory(const std::string& alignmentPath,
-                                      unsigned mode = HAL_READ,
+                                      unsigned mode = READ_ACCESS,
                                       size_t initSize = MMAP_DEFAULT_INIT_SIZE,
                                       size_t growSize = MMAP_DEFAULT_GROW_SIZE);
     };
@@ -108,9 +108,9 @@ const void *hal::MmapFile::toPtr(size_t offset,
 }
 
 /** Allocate new memory, resize file if necessary. If isRoot
- * is specified, it is stored as the root.  If AUTO_GROW mode,
- * then any pointers previously returned may become invalid. Thus
- * only offsets can be stored. */
+ * is specified, it is stored as the root.  If file can be grown,
+ * it will be remapped with a larger size if the same virtual address
+ * can be obtained. */
 size_t hal::MmapFile::allocMem(size_t size,
                                bool isRoot) {
     validateWriteAccess();

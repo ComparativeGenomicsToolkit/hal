@@ -59,13 +59,13 @@ void AlignmentTest::checkOne(CuTest* testCase,
     string alignmentPath = getTempFile();
 
     // test with created
-    AlignmentPtr calignment = getTestAlignmentInstances(storageFormat, alignmentPath, HAL_CREATE);
+    AlignmentPtr calignment = getTestAlignmentInstances(storageFormat, alignmentPath, CREATE_ACCESS);
     _createPath = alignmentPath;
     createCallBack(calignment);
     calignment->close();
     
     // test with existing alignment
-    AlignmentPtr ralignment = getTestAlignmentInstances(storageFormat, alignmentPath, HAL_READ);
+    AlignmentPtr ralignment = getTestAlignmentInstances(storageFormat, alignmentPath, READ_ACCESS);
     _checkPath = alignmentPath;
     checkCallBack(ralignment);
     ralignment->close();

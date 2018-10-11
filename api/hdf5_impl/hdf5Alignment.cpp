@@ -49,9 +49,9 @@ const bool HDF5Alignment::DefaultInMemory = false;
 
 /* construction default flags */
 static int hdf5DefaultFlags(unsigned mode) {
-    if (mode & HAL_CREATE) {
+    if (mode & CREATE_ACCESS) {
         return H5F_ACC_TRUNC;
-    } else if (mode & HAL_WRITE) {
+    } else if (mode & WRITE_ACCESS) {
         return H5F_ACC_RDWR;
     } else {
         return H5F_ACC_RDONLY;
@@ -79,7 +79,7 @@ HDF5Alignment::HDF5Alignment(const string& alignmentPath,
   if (_inMemory) {
       setInMemory();
   }
-    if (_mode & HAL_CREATE) {
+    if (_mode & CREATE_ACCESS) {
         create();
     } else {
         open();
@@ -105,7 +105,7 @@ HDF5Alignment::HDF5Alignment(const std::string& alignmentPath,
     if (_inMemory) {
         setInMemory();
     }
-    if (_mode & HAL_CREATE) {
+    if (_mode & CREATE_ACCESS) {
         create();
     } else {
         open();
@@ -149,7 +149,7 @@ void HDF5Alignment::create()
 void HDF5Alignment::open()
 {
 #ifdef ENABLE_UDC
-  if (_mode & HAL_READ)
+  if (_mode & READ_ACCESS)
   {
     _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
   }

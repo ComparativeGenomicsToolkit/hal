@@ -110,7 +110,7 @@ void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
   alignment->close();
 
   alignment = getTestAlignmentInstances(alignment->getStorageFormat(), _createPath,
-                                        HAL_WRITE);
+                                        WRITE_ACCESS);
 
   ancGenome = alignment->openGenome("AncGenome");
   seqVec[0] = Sequence::Info("Sequence", 10000005, 14000, 2000001);
@@ -160,7 +160,7 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
   // name in the same alignment)
   _path = getTempFile();
   _secondAlignment = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               HAL_WRITE);
+                                               WRITE_ACCESS);
 
   Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
   Genome *leafGenome = alignment->addLeafGenome("LeafGenome1",
@@ -271,7 +271,7 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
   // openHalAlignmentReadOnly works? Probably some state isn't cleared
   // on close.
   AlignmentPtr tmp = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               HAL_WRITE);
+                                               WRITE_ACCESS);
   _secondAlignment = tmp;
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
@@ -417,7 +417,7 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(AlignmentPtr 
   // name in the same alignment)
   _path = getTempFile();
   _secondAlignment = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               HAL_CREATE);
+                                               CREATE_ACCESS);
 
   Genome *rootGenome = alignment->addRootGenome("root", 0);
   Genome *internalGenome = alignment->addLeafGenome("internal",
@@ -520,7 +520,7 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::checkCallBack(hal::Alignment
   // openHalAlignmentReadOnly works? Probably some state isn't cleared
   // on close.
   AlignmentPtr tmp = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               HAL_WRITE);
+                                               WRITE_ACCESS);
   _secondAlignment = tmp;
 
   Genome *copyRootGenome = _secondAlignment->openGenome("root");

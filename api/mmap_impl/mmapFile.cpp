@@ -33,7 +33,7 @@ hal::MmapFile::MmapFile(const std::string alignmentPath,
 
 /* error if file is not open for write accecss */
 void hal::MmapFile::validateWriteAccess() const {
-    if ((_mode & HAL_WRITE) == 0) {
+    if ((_mode & WRITE_ACCESS) == 0) {
         throw hal_exception(_alignmentPath + " is not open for write access");
     }
 }
@@ -77,7 +77,7 @@ void hal::MmapFile::loadHeader(bool markDirty) {
 
 /* create the header */
 void hal::MmapFile::createHeader() {
-    assert(_mode & HAL_WRITE);
+    assert(_mode & WRITE_ACCESS);
     setHeaderPtr();
     assert(strlen(FORMAT_NAME) < sizeof(_header->format));
     strncpy(_header->format, FORMAT_NAME, sizeof(_header->format));
@@ -88,10 +88,11 @@ void hal::MmapFile::createHeader() {
     _header->nextOffset = _header->nextOffset;
 }
 
-/* Grow file to allow for at least the specified amount.  This remaps the
- * file, so it is expensive and existing pointer become invalid. */
+/* Grow file to allow for at least the specified amount.  This remaps the *
+ * file, so the same sufficient virtual space must be available at the address
+ * and it is expensive. */
 void hal::MmapFile::growFile(size_t size) {
-    assert(_mode & HAL_WRITE);
+    assert(_mode & WRITE_ACCESS);
     growFileImpl(size);
 }
 
@@ -121,7 +122,7 @@ namespace hal {
         int openFile();
         void closeFile();
         void adjustFileSize(size_t size);
-        void* mapFile();
+        void* mapFile(void *requiredAddr=NULL);
         void unmapFile();
         void openRead();
         void openWrite(size_t initSize);
@@ -139,7 +140,7 @@ hal::MmapFileLocal::MmapFileLocal(const std::string alignmentPath,
                                   size_t initSize,
                                   size_t growSize):
     MmapFile(alignmentPath, mode), _fd(-1), _growSize(growSize) {
-    if (_mode & HAL_WRITE) {
+    if (_mode & WRITE_ACCESS) {
         openWrite(initSize);
     } else {
         openRead();
@@ -151,7 +152,7 @@ void hal::MmapFileLocal::close() {
     if (_basePtr == NULL) {
         throw hal_exception(_alignmentPath + ": MmapFile::close() called on closed file");
     }
-    if (_mode & HAL_WRITE) {
+    if (_mode & WRITE_ACCESS) {
         adjustFileSize(_header->nextOffset);
         _header->dirty = false;
     }
@@ -170,8 +171,8 @@ hal::MmapFileLocal::~MmapFileLocal() {
 int hal::MmapFileLocal::openFile() {
     assert(_fd < 0);
     unsigned openMode = 0;
-    if (_mode & HAL_WRITE) {
-        openMode = O_RDWR | ((_mode & HAL_CREATE) ? (O_CREAT|O_TRUNC) : 0);
+    if (_mode & WRITE_ACCESS) {
+        openMode = O_RDWR | ((_mode & CREATE_ACCESS) ? (O_CREAT|O_TRUNC) : 0);
     } else {
         openMode = O_RDONLY;
     }
@@ -191,10 +192,10 @@ void hal::MmapFileLocal::adjustFileSize(size_t size) {
 }
 
 /* map file into memory */
-void* hal::MmapFileLocal::mapFile() {
+void* hal::MmapFileLocal::mapFile(void *requiredAddr) {
     assert(_basePtr == NULL);
-    unsigned prot = PROT_READ | ((_mode & HAL_WRITE) ? PROT_WRITE : 0);
-    void *ptr = mmap(0, _fileSize, prot, MAP_SHARED|MAP_FILE, _fd, 0);
+    unsigned prot = PROT_READ | ((_mode & WRITE_ACCESS) ? PROT_WRITE : 0);
+    void *ptr = mmap(requiredAddr, _fileSize, prot, MAP_SHARED|MAP_FILE, _fd, 0);
     if (ptr == MAP_FAILED) {
         throw hal_errno_exception(_alignmentPath, "mmap failed", errno);
     }
@@ -222,14 +223,14 @@ void hal::MmapFileLocal::openRead() {
 /* open the file for write access */
 void hal::MmapFileLocal::openWrite(size_t initSize) {
     _fd = openFile();
-    if (_mode & HAL_CREATE) {
+    if (_mode & CREATE_ACCESS) {
         adjustFileSize(0);  // clear out existing data
     }
     if (initSize > _fileSize) {
         adjustFileSize(initSize);
     }
     _basePtr = mapFile();
-    if (_mode & HAL_CREATE) {
+    if (_mode & CREATE_ACCESS) {
         createHeader();
     } else {
         loadHeader(true);
@@ -248,11 +249,14 @@ void hal::MmapFileLocal::closeFile() {
 
 /* grow file  */
 void hal::MmapFileLocal::growFileImpl(size_t size) {
+    assert(_mode & WRITE_ACCESS);
     size_t newSize = _growSize;
     if (newSize < size) {
         newSize += size;  // will leave in extra
     }
-    
+    void * requiredAddr = _basePtr;
+    unmapFile();
+    mapFile(requiredAddr);
 }
 
 /** create a MmapFile object, opening a local file */

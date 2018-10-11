@@ -32,24 +32,23 @@ extern const std::string STORAGE_FORMAT_MMAP;
 /*
  * Open modes for files.
  */
-//FIXME" remove HAL PREFIX, change to _ACCESS
 enum {
-    HAL_READ = 0x01,      // read-access
-    HAL_WRITE = 0x02,     // write-access
-    HAL_CREATE = 0x04     // initialize a new file, truncate if exist
+    READ_ACCESS = 0x01,      // read-access
+    WRITE_ACCESS = 0x02,     // write-access
+    CREATE_ACCESS = 0x04     // initialize a new file, truncate if exist
 };
 
 /* Default values and validate HAL mode. */
 static inline unsigned halDefaultAccessMode(unsigned mode) {
     // make mode sane and validate
-    if (mode & HAL_CREATE) {
-        mode |= HAL_WRITE;
+    if (mode & CREATE_ACCESS) {
+        mode |= WRITE_ACCESS;
     }
-    if (mode & HAL_WRITE) {
-        mode |= HAL_READ;
+    if (mode & WRITE_ACCESS) {
+        mode |= READ_ACCESS;
     }
-    if ((mode & (HAL_READ|HAL_WRITE|HAL_CREATE)) == 0) {
-        throw hal_exception("must specify at least one of HAL_READ, HAL_WRITE, or HAL_CREATE on open");
+    if ((mode & (READ_ACCESS|WRITE_ACCESS|CREATE_ACCESS)) == 0) {
+        throw hal_exception("must specify at least one of READ_ACCESS, WRITE_ACCESS, or CREATE_ACCESS on open");
     }
     return mode;
 }
@@ -71,7 +70,7 @@ const H5::DSetCreatPropList& hdf5DefaultDSetCreatPropList();
     
 /** Get an instance of an HDF5-implemented Alignment while specifying 
  * @param alignmentPath HDF5 file or URL
- * @param mode HAL_READ, HAL_WRITE, HAL_CREATE
+ * @param mode READ_ACCESS, WRITE_ACCESS, CREATE_ACCESS
  * @param fileCreateProps File creation properties.  Fairly low-level 
  * and should generally be set to results from hdf5DefaultFileCreatPropList().
  * @param fileAccessProps File access properties. Contains cache-related stuff.
@@ -97,14 +96,13 @@ hdf5AlignmentInstance(const std::string& alignmentPath,
 
 /** Get an instance of an mmap-implemented Alignment.
  * @param alignmentPath Path to file or URL for UDC access.
- * @param mode Access mode bit map. WARNING if HAL_GROW is specified, pointers
- *  to file might be invalidated when allocMem() is called.
- * @param initSize Initial size to allocate when creating new file (HAL_CREATE)
- * @param growSize Addition size to allocate when growing file if HAL_GROW is specified.
+ * @param mode Access mode bit map
+ * @param initSize Initial size to allocate when creating new file (CREATE_ACCESS)
+ * @param growSize Addition size to allocate when growing file.
  */
 AlignmentPtr 
 mmapAlignmentInstance(const std::string& alignmentPath,
-                      unsigned mode = hal::HAL_READ,
+                      unsigned mode = hal::READ_ACCESS,
                       size_t initSize = hal::MMAP_DEFAULT_INIT_SIZE,
                       size_t growSize = hal::MMAP_DEFAULT_GROW_SIZE);
 
@@ -115,7 +113,7 @@ mmapAlignmentInstance(const std::string& alignmentPath,
  * @param options Command line options information */
 AlignmentPtr openHalAlignment(const std::string& path,
                               CLParserConstPtr options,
-                              unsigned mode = hal::HAL_READ); 
+                              unsigned mode = hal::READ_ACCESS); 
 }
 
 #endif
