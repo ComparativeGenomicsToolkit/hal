@@ -64,8 +64,7 @@ int main(int argc, char** argv)
 
   try
   {
-    AlignmentConstPtr inAlignment = openHalAlignmentReadOnly(halPath, 
-                                                             optionsParser);
+    AlignmentConstPtr inAlignment = openHalAlignment(halPath, optionsParser);
     if (inAlignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignment is empty");
@@ -81,11 +80,9 @@ int main(int argc, char** argv)
     if (genome->getParent() != NULL)
     {
       ostream* bedStream = &cout;
-      bool newBed = false;
       if (outBedPath != "stdout")
       {
         bedStream = new ofstream(outBedPath.c_str());
-        newBed = true;
       }
       if (!bedStream)
       {

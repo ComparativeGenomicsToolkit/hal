@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     }
     st_randomSeed(seed);
 
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(path, optionsParser);
+    AlignmentConstPtr alignment = openHalAlignment(path, optionsParser);
     const Genome *ref = alignment->openGenome(refGenome);
     vector<const Genome *> leafGenomes = getLeafGenomes(alignment);
 

@@ -44,7 +44,7 @@ const hal::Genome* openGenomeOrThrow(const hal::AlignmentConstPtr& alignment,
 hal::AlignmentConstPtr openAlignmentOrThrow(const std::string& halFile,
                                          const hal::CLParserPtr& optionsParser){
     
-    auto alignment = hal::openHalAlignmentReadOnly(halFile, optionsParser);
+    auto alignment = hal::openHalAlignment(halFile, optionsParser);
     if (alignment->getNumGenomes() == 0){
       throw hal_exception("hal alignment is empty");
     }

@@ -53,8 +53,7 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
-                                                           optionsParser);
+    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
 
     const Genome* genome = alignment->openGenome(genomeName);
     if (genome == NULL)

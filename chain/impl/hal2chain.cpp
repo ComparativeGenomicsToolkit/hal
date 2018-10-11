@@ -69,8 +69,7 @@ int main(int argc, char** argv)
     cerr << "WARNING: THIS TOOL WAS NEVER FINISHED OR TESTED. USE AT OWN RISK."
          << " PLEASE CONSIDER halLiftover --outPSL INSTEAD." <<endl;  
 
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath,
-                                                           optionsParser);
+    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
     
     
     const Genome* genome = alignment->openGenome(genomeName);

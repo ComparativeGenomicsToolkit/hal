@@ -26,6 +26,9 @@ namespace hal {
         public:
 
        
+        const std::string& getStorageFormat() const {
+            return STORAGE_FORMAT_MMAP;
+        }
 
         inline size_t getRootOffset() const;
         inline void *toPtr(size_t offset,
@@ -38,7 +41,7 @@ namespace hal {
         }
         
         protected:
-        MmapFile(const std::string fileName,
+        MmapFile(const std::string alignmentPath,
                  unsigned mode);
         /** close marks as clean, don't call on error, just delete */
         virtual void close() = 0;
@@ -55,7 +58,7 @@ namespace hal {
         inline void fetchIfNeeded(size_t offset,
                                   size_t accessSize) const;
         
-        const std::string _fileName;   // name of file for errors
+        const std::string _alignmentPath;   // name of file for errors
         unsigned _mode;       // access mode
         void *_basePtr;       // location file is mapped
         mmapHeader *_header;  // pointer to header
@@ -67,8 +70,8 @@ namespace hal {
             // no copying
         }
 
-        static MmapFile* localFactory(const std::string& fileName,
-                                      unsigned mode = MMAP_READ,
+        static MmapFile* localFactory(const std::string& alignmentPath,
+                                      unsigned mode = HAL_READ,
                                       size_t initSize = MMAP_DEFAULT_INIT_SIZE,
                                       size_t growSize = MMAP_DEFAULT_GROW_SIZE);
     };

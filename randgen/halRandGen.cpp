@@ -98,11 +98,7 @@ int main(int argc, char** argv)
         
   try
   {
-    AlignmentPtr alignment = hdf5AlignmentInstance();
-    alignment->setOptionsFromParser(parser);
-
-    alignment->createNew(options._halFile);
-
+      AlignmentPtr alignment = openHalAlignment(options._halFile, parser, hal::HAL_CREATE);
     // call the crappy unit-test simulator 
     createRandomAlignment(alignment,
                           options._meanDegree,

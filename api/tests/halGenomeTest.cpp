@@ -109,7 +109,9 @@ void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
   ancGenome->setDimensions(seqVec);  
   alignment->close();
 
-  alignment->open(_createPath, false);
+  alignment = getTestAlignmentInstances(alignment->getStorageFormat(), _createPath,
+                                        HAL_WRITE);
+
   ancGenome = alignment->openGenome("AncGenome");
   seqVec[0] = Sequence::Info("Sequence", 10000005, 14000, 2000001);
   ancGenome->setDimensions(seqVec);  
@@ -156,10 +158,9 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
   // segments correctly.  (the names of a node's children are used
   // when copying bottom segments, and two genomes can't have the same
   // name in the same alignment)
-  vector<AlignmentPtr> createInstances = getTestAlignmentInstances();
-  _secondAlignment = createInstances[0];
   _path = getTempFile();
-  _secondAlignment->createNew(_path);
+  _secondAlignment = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
+                                               HAL_WRITE);
 
   Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
   Genome *leafGenome = alignment->addLeafGenome("LeafGenome1",
@@ -269,8 +270,8 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
   // FIXME: halAlignment->open() fails miserably but
   // openHalAlignmentReadOnly works? Probably some state isn't cleared
   // on close.
-  AlignmentPtr tmp = hdf5AlignmentInstance();
-  tmp->open(_path, true);
+  AlignmentPtr tmp = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
+                                               HAL_WRITE);
   _secondAlignment = tmp;
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
@@ -414,10 +415,9 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(AlignmentPtr 
   // segments correctly.  (the names of a node's children are used
   // when copying bottom segments, and two genomes can't have the same
   // name in the same alignment)
-  vector<AlignmentPtr> createInstances = getTestAlignmentInstances();
-  _secondAlignment = createInstances[0];
   _path = getTempFile();
-  _secondAlignment->createNew(_path);
+  _secondAlignment = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
+                                               HAL_CREATE);
 
   Genome *rootGenome = alignment->addRootGenome("root", 0);
   Genome *internalGenome = alignment->addLeafGenome("internal",
@@ -519,8 +519,8 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::checkCallBack(hal::Alignment
   // FIXME: halAlignment->open() fails miserably but
   // openHalAlignmentReadOnly works? Probably some state isn't cleared
   // on close.
-  AlignmentPtr tmp = hdf5AlignmentInstance();
-  tmp->open(_path, true);
+  AlignmentPtr tmp = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
+                                               HAL_WRITE);
   _secondAlignment = tmp;
 
   Genome *copyRootGenome = _secondAlignment->openGenome("root");
@@ -610,6 +610,7 @@ void halGenomeCopyTest(CuTest *testCase)
 CuSuite* halGenomeTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
+  // FIXME: why are these disabled
   // SUITE_ADD_TEST(suite, halGenomeMetaTest);
   // SUITE_ADD_TEST(suite, halGenomeCreateTest);
   // SUITE_ADD_TEST(suite, halGenomeUpdateTest);

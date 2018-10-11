@@ -55,16 +55,13 @@ int main(int argc, char** argv)
 
   try
   {
-    AlignmentConstPtr inAlignment = openHalAlignmentReadOnly(inHalPath, 
-                                                             optionsParser);
+    AlignmentConstPtr inAlignment = openHalAlignment(inHalPath, optionsParser);
     if (inAlignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");
     }
 
-    AlignmentPtr outAlignment = hdf5AlignmentInstance();
-    outAlignment->setOptionsFromParser(optionsParser);
-    outAlignment->createNew(outHalPath);
+    AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser);
 
     if (outAlignment->getNumGenomes() != 0)
     {

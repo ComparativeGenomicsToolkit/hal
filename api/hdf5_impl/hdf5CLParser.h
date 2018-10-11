@@ -27,14 +27,6 @@ public:
                               H5::FileAccPropList& aprops);
     static bool getInMemory(CLParserPtr parser);
 
-   static const hsize_t DefaultChunkSize;
-   static const hsize_t DefaultDeflate;
-   static const hsize_t DefaultCacheMDCElems;
-   static const hsize_t DefaultCacheRDCElems;
-   static const hsize_t DefaultCacheRDCBytes;
-   static const double DefaultCacheW0;
-   static const bool DefaultInMemory;
-    
     protected:
     friend class HDF5Alignment;
 

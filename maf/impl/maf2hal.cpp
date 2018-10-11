@@ -97,9 +97,7 @@ int main(int argc, char** argv)
     }
     else
     {
-      alignment = hdf5AlignmentInstance();
-      alignment->setOptionsFromParser(optionsParser);
-      alignment->createNew(halPath);
+        alignment = openHalAlignment(halPath, optionsParser);
     }
     
     vector<string> targetNames;

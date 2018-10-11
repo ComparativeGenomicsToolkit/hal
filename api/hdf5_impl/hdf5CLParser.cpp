@@ -9,55 +9,48 @@
 #include <cstdlib>
 #include <deque>
 #include "hdf5CLParser.h"
+#include "hdf5Alignment.h"
 
 using namespace hal;
 using namespace std;
 using namespace H5;
-
-const hsize_t HDF5CLParser::DefaultChunkSize = 1000;
-const hsize_t HDF5CLParser::DefaultDeflate = 2;
-const hsize_t HDF5CLParser::DefaultCacheMDCElems = 113;
-const hsize_t HDF5CLParser::DefaultCacheRDCElems = 599999;
-const hsize_t HDF5CLParser::DefaultCacheRDCBytes = 15728640;
-const double HDF5CLParser::DefaultCacheW0 = 0.75;
-const bool HDF5CLParser::DefaultInMemory = false;
 
 void HDF5CLParser::defineOptions(CLParserPtr parser,
                                  bool createOptions)
 {
   if (createOptions)
   {
-    parser->addOption("hdf5Chunk", "hdf5 chunk size", DefaultChunkSize);
-    parser->addOption("chunk", " obsolete name for --hdf5Chunk ", DefaultChunkSize);
+    parser->addOption("hdf5Chunk", "hdf5 chunk size", HDF5Alignment::DefaultChunkSize);
+    parser->addOption("chunk", " obsolete name for --hdf5Chunk ", HDF5Alignment::DefaultChunkSize);
 
     parser->addOption("hdf5Compression", "hdf5 compression factor [0:none - 9:max]", 
-                      DefaultDeflate);
+                      HDF5Alignment::DefaultCompression);
     parser->addOption("deflate", "obsolete name for --hdf5Compression", 
-                      DefaultDeflate);
+                      HDF5Alignment::DefaultCompression);
   }
   parser->addOption("hdf5CacheMDC", "number of metadata slots in hdf5 cache",
-                      DefaultCacheMDCElems);
+                    HDF5Alignment::DefaultCacheMDCElems);
   parser->addOption("cacheMDC", "obsolete name for --hdf5CacheMDC ",
-                      DefaultCacheMDCElems);
+                    HDF5Alignment::DefaultCacheMDCElems);
 
   parser->addOption("hdf5CacheRDC", "number of regular slots in hdf5 cache.  should be"
                       " a prime number ~= 10 * DefaultCacheRDCBytes / chunk",
-                      DefaultCacheRDCElems);
+                    HDF5Alignment::DefaultCacheRDCElems);
   parser->addOption("cacheRDC", "obsolete name for --hdf5CacheRDC",
-                      DefaultCacheRDCElems);
+                    HDF5Alignment::DefaultCacheRDCElems);
 
   parser->addOption("hdf5CacheBytes", "maximum size in bytes of regular hdf5 cache",
-                      DefaultCacheRDCBytes);
+                    HDF5Alignment::DefaultCacheRDCBytes);
   parser->addOption("cacheBytes", "obsolete name for --hdf5CacheBytes",
-                      DefaultCacheRDCBytes);
+                    HDF5Alignment::DefaultCacheRDCBytes);
 
-  parser->addOption("hdf5CacheW0", "w0 parameter for hdf5 cache", DefaultCacheW0);
-  parser->addOption("cacheW0", "obsolete name for --hdf5CacheW0", DefaultCacheW0);
+  parser->addOption("hdf5CacheW0", "w0 parameter for hdf5 cache", HDF5Alignment::DefaultCacheW0);
+  parser->addOption("cacheW0", "obsolete name for --hdf5CacheW0", HDF5Alignment::DefaultCacheW0);
 
   parser->addOptionFlag("hdf5InMemory", "load all data in memory (and disable hdf5 cache)",
-                        DefaultInMemory);
+                        HDF5Alignment::DefaultInMemory);
   parser->addOptionFlag("inMemory", "obsolete name for --hdf5InMemory",
-                        DefaultInMemory);
+                        HDF5Alignment::DefaultInMemory);
 #ifdef ENABLE_UDC
   // this can be define by other storage formats as well
   if (not parser->hasArgument("udcCacheDir")) {
@@ -103,6 +96,7 @@ void HDF5CLParser::applyToDCProps(CLParserPtr parser,
 void HDF5CLParser::applyToAProps(CLParserPtr parser,
                                  H5::FileAccPropList& aprops)
 {
+    // FIXME: don't need intermediates
     hsize_t mdc = getOptionAlt<hsize_t>(parser, "hdf5CacheMDC", "cacheMDC");
     hsize_t rdc = getOptionAlt<hsize_t>(parser, "hdf5CacheRDC", "cacheRDC");
     hsize_t rdcb = getOptionAlt<hsize_t>(parser, "hdf5CacheBytes", "cacheBytes");

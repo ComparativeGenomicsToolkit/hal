@@ -669,7 +669,6 @@ void MappedSegmentMapExtraParalogsTest::checkCallBack(AlignmentConstPtr alignmen
   top->getMappedSegments(results, grandChild1, NULL, true, 0, root);
   CuAssertTrue(_testCase, results.size() == 3);
   set<MappedSegmentConstPtr>::iterator i = results.begin();
-  bool found[3] = {false, false, false};
   for (; i != results.end(); ++i)
   {
       // Source information should be preserved
@@ -692,7 +691,6 @@ void MappedSegmentMapExtraParalogsTest::checkCallBack(AlignmentConstPtr alignmen
                  mseg->getLength() == 3);
     CuAssertTrue(_testCase,
                  mseg->getReversed() == true);
-    found[mseg->getArrayIndex()] = true;
   }
 }
 

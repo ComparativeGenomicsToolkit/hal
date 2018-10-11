@@ -147,8 +147,7 @@ int main(int argc, char** argv)
      * via a path to a .hal file.  Options don't necessarily need to
      * come from the optionsParser -- see other interfaces in 
      * hal/api/inc/halAlignmentInstance.h */
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
-                                                           optionsParser);
+    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");
@@ -204,14 +203,12 @@ int main(int argc, char** argv)
     {
       refGenome = alignment->openGenome(alignment->getRootName());
     }
-    const SegmentedSequence* ref = refGenome;
     
     /** If a sequence was spefied we look for it in the reference genome */
     const Sequence* refSequence = NULL;
     if (refSequenceName != "\"\"")
     {
       refSequence = refGenome->getSequence(refSequenceName);
-      ref = refSequence;
       if (refSequence == NULL)
       {
         throw hal_exception(string("Reference sequence, ") + refSequenceName + 

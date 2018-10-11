@@ -37,43 +37,79 @@ const H5std_string HDF5Alignment::TreeGroupName = "Phylogeny";
 const H5std_string HDF5Alignment::GenomesGroupName = "Genomes";
 const H5std_string HDF5Alignment::VersionGroupName = "Verison";
 
-HDF5Alignment::HDF5Alignment() :
-  _file(NULL),
-  _flags(H5F_ACC_RDONLY),
-  _metaData(NULL),
-  _tree(NULL),
-  _dirty(false),
-  _inMemory(false)
-{
-  // set defaults from the command-line parser
-  CLParserPtr defaultOptions = halCLParserInstance(true);
-  HDF5CLParser::applyToDCProps(defaultOptions, _dcprops);
-  HDF5CLParser::applyToAProps(defaultOptions, _aprops);
+const hsize_t HDF5Alignment::DefaultChunkSize = 1000;
+const hsize_t HDF5Alignment::DefaultCompression = 2;
+const hsize_t HDF5Alignment::DefaultCacheMDCElems = 113;
+const hsize_t HDF5Alignment::DefaultCacheRDCElems = 599999;
+const hsize_t HDF5Alignment::DefaultCacheRDCBytes = 15728640;
+const double HDF5Alignment::DefaultCacheW0 = 0.75;
+const bool HDF5Alignment::DefaultInMemory = false;
+
+
+
+/* construction default flags */
+static int hdf5DefaultFlags(unsigned mode) {
+    if (mode & HAL_CREATE) {
+        return H5F_ACC_TRUNC;
+    } else if (mode & HAL_WRITE) {
+        return H5F_ACC_RDWR;
+    } else {
+        return H5F_ACC_RDONLY;
+    }
 }
 
-HDF5Alignment::HDF5Alignment(const H5::FileCreatPropList& fileCreateProps,
+HDF5Alignment::HDF5Alignment(const string& alignmentPath,
+                             unsigned mode,
+                             const H5::FileCreatPropList& fileCreateProps,
                              const H5::FileAccPropList& fileAccessProps,
                              const H5::DSetCreatPropList& datasetCreateProps,
                              bool inMemory) :
-  _file(NULL),
-  _flags(H5F_ACC_RDONLY),
-  _metaData(NULL),
-  _tree(NULL),
-  _dirty(false),
-  _inMemory(inMemory)
+    _alignmentPath(alignmentPath),
+    _mode(halDefaultAccessMode(mode)),
+    _file(NULL),
+    _flags(hdf5DefaultFlags(_mode)),
+    _inMemory(inMemory),
+    _metaData(NULL),
+    _tree(NULL),
+    _dirty(false)
 {
   _cprops.copy(fileCreateProps);
   _aprops.copy(fileAccessProps);
   _dcprops.copy(datasetCreateProps);
-  if (_inMemory == true)
-  {
-    int mdc;
-    size_t rdc;
-    size_t rdcb;
-    double w0;
-    _aprops.getCache(mdc, rdc, rdcb, w0);    
-    _aprops.setCache(mdc, 0, 0, 0.);
+  if (_inMemory) {
+      setInMemory();
   }
+    if (_mode & HAL_CREATE) {
+        create();
+    } else {
+        open();
+    }
+}
+
+HDF5Alignment::HDF5Alignment(const std::string& alignmentPath,
+                             unsigned mode,
+                             CLParserConstPtr parser):
+    _alignmentPath(alignmentPath),
+    _mode(halDefaultAccessMode(mode)),
+    _file(NULL),
+    _flags(hdf5DefaultFlags(_mode)),
+    _inMemory(HDF5CLParser::getInMemory(parser)),
+    _metaData(NULL),
+    _tree(NULL),
+    _dirty(false) {
+    _cprops.copy(H5::FileCreatPropList::DEFAULT);
+    _aprops.copy(H5::FileAccPropList::DEFAULT);
+    _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
+    HDF5CLParser::applyToDCProps(parser, _dcprops);
+    HDF5CLParser::applyToAProps(parser, _aprops);
+    if (_inMemory) {
+        setInMemory();
+    }
+    if (_mode & HAL_CREATE) {
+        create();
+    } else {
+        open();
+    }
 }
 
 HDF5Alignment::~HDF5Alignment()
@@ -81,21 +117,28 @@ HDF5Alignment::~HDF5Alignment()
   close();
 }
 
-void HDF5Alignment::createNew(const string& alignmentPath)
+/* set properties for in-memory access */
+void HDF5Alignment::setInMemory() {
+    int mdc;
+    size_t rdc, rdcb;
+    double w0;
+    _aprops.getCache(mdc, rdc, rdcb, w0);    
+    _aprops.setCache(mdc, 0, 0, 0.0);
+}
+
+
+void HDF5Alignment::create()
 {
-  close();
-  _flags = H5F_ACC_TRUNC;
-  if (!ofstream(alignmentPath.c_str()))
-  {
-    throw hal_exception("Unable to open " + alignmentPath);
+  if (not ofstream(_alignmentPath.c_str()))
+  {    // FIXME report errno
+    throw hal_exception("Unable to open " + _alignmentPath);
   }
 
-  _file = new H5File(alignmentPath.c_str(), _flags, _cprops, _aprops);
+  _file = new H5File(_alignmentPath.c_str(), _flags, _cprops, _aprops);
   _file->createGroup(MetaGroupName);
   _file->createGroup(TreeGroupName);
   _file->createGroup(GenomesGroupName);
   _file->createGroup(VersionGroupName);
-  delete _metaData;
   _metaData = new HDF5MetaData(_file, MetaGroupName);
   _tree = NULL;
   _dirty = true;
@@ -103,31 +146,28 @@ void HDF5Alignment::createNew(const string& alignmentPath)
 }
 
 // todo: properly handle readonly
-void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
+void HDF5Alignment::open()
 {
-  close();
-  delete _file;
-  int _flags = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
 #ifdef ENABLE_UDC
-  if (readOnly == true)
+  if (_mode & HAL_READ)
   {
     _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
   }
 #else
-  if (!ifstream(alignmentPath.c_str()))
-  {
-    throw hal_exception("Unable to open " + alignmentPath);
+  if (not ifstream(_alignmentPath.c_str()))
+  {   // FIXME report errno
+    throw hal_exception("Unable to open " + _alignmentPath);
   }
 #endif
-  _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
+  _file = new H5File(_alignmentPath.c_str(),  _flags, _cprops, _aprops);
   if (!compatibleWithVersion(getVersion()))
   {
-    stringstream ss;
+   stringstream ss;  // FIXME: can this just be string concat?
+   // FIXME: HAL_VERSION needs to HDF5 specific
     ss << "HAL API v" << HAL_VERSION << " incompatible with format v" 
        << getVersion() << " HAL file.";
     throw hal_exception(ss.str());
   }
-  delete _metaData;
   _metaData = new HDF5MetaData(_file, MetaGroupName);
   loadTree();
 }
@@ -178,29 +218,6 @@ void HDF5Alignment::close()
     assert(_tree == NULL);
     assert(_openGenomes.empty() == true);
   }
-}
-
-void HDF5Alignment::setOptionsFromParser(CLParserConstPtr parser) const
-{
-  HDF5CLParser::applyToDCProps(parser, _dcprops);
-  HDF5CLParser::applyToAProps(parser, _aprops);
-  _inMemory = HDF5CLParser::getInMemory(parser);
-  if (_inMemory == true)
-  {
-    int mdc;
-    size_t rdc;
-    size_t rdcb;
-    double w0;
-    _aprops.getCache(mdc, rdc, rdcb, w0);    
-    _aprops.setCache(mdc, 0, 0, 0.);
-  }
-#ifdef ENABLE_UDC
-  static string udcCachePath = HDF5CLParser::getOption<string>(parser, "udcCacheDir");
-  if (udcCachePath != "\"\"" && !udcCachePath.empty())
-  {
-    H5FD_udc_fuse_set_cache_dir(udcCachePath.c_str());
-  }  
-#endif
 }
 
 Genome*  HDF5Alignment::insertGenome(const string& name,
@@ -276,7 +293,7 @@ Genome*  HDF5Alignment::addLeafGenome(const string& name,
 }
 
 Genome* HDF5Alignment::addRootGenome(const string& name,
-                                        double branchLength)
+                                     double branchLength)
 {
   if (name.empty() == true)
   {
@@ -629,7 +646,7 @@ string HDF5Alignment::getVersion() const
 {
   try
   {
-    H5::Exception::dontPrint();
+      H5::Exception::dontPrint();  // FIXME: change all dontPrint calles to save and restore 
     _file->openGroup(VersionGroupName);  
     HDF5MetaData versionMeta(_file, VersionGroupName);
     if (versionMeta.has(VersionGroupName) == false)

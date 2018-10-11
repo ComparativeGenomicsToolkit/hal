@@ -30,7 +30,7 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(path, optionsParser);
+    AlignmentConstPtr alignment = openHalAlignment(path, optionsParser);
     validateAlignment(alignment);
   }
   catch(hal_exception& e)

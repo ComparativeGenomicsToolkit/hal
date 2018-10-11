@@ -140,11 +140,4 @@ int main(int argc, char *argv[])
   if (!noMarkAncestors) {
     markAncestorsForUpdate(mainAlignment, genomeName);
   }
-  if (useTopAlignment) {
-    topAlignment->close();
-  }
-  if (useBottomAlignment) {
-    bottomAlignment->close();
-  }
-  mainAlignment->close();
 }

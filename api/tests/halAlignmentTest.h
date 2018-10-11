@@ -11,53 +11,22 @@
 #include "halAlignment.h"
 #include "allTests.h"
 
-struct TempCreateAlignment 
+class AlignmentTest
 {
-   TempCreateAlignment(hal::AlignmentPtr alignment);
-   char* _path;
-   hal::AlignmentPtr _alignment;
-   ~TempCreateAlignment();
-};
-
-struct TempReadAlignment 
-{
-   TempReadAlignment(hal::AlignmentPtr alignment,
-                     char* path);
-   char* _path;
-   hal::AlignmentPtr _alignment;
-   ~TempReadAlignment();
-};
-
-struct AlignmentTest
-{
-   AlignmentTest(){}
-   virtual ~AlignmentTest(){}
+public:
+   AlignmentTest() {
+   }
+   virtual ~AlignmentTest() {
+   }
    void check(CuTest *testCase);   
    virtual void createCallBack(hal::AlignmentPtr alignment) {}
    virtual void checkCallBack(hal::AlignmentConstPtr alignment) {}
    CuTest* _testCase;
-   const char* _createPath;
-   const char* _checkPath;
+   std::string _createPath;
+   std::string _checkPath;
    static std::string randomString(hal_size_t length);
+   void checkOne(CuTest* testCase,
+                 const std::string& storageFormat);
 };
-
-struct AlignmentTestTrees : public AlignmentTest
-{
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
-};
-
-struct AlignmentTestEmpty : public AlignmentTest
-{
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
-};
-
-struct AlignmentTestBadPathError : public AlignmentTest
-{
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
-};
-
 
 #endif

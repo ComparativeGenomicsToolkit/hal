@@ -115,10 +115,5 @@ int main(int argc, char *argv[])
   if (!noMarkAncestors) {
     markAncestorsForUpdate(mainAlignment, rootName);
   }
-  mainAlignment->close();
-  appendAlignment->close();
-  if (!merge) {
-    bridgeAlignment->close();
-  }
   return 0;
 }

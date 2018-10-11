@@ -82,8 +82,7 @@ int main(int argc, char** argv)
 
   try
   {
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
-                                                           optionsParser);
+    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");

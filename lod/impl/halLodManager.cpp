@@ -46,7 +46,7 @@ LodManager::~LodManager()
   {
     if (mapIt->second.second.get() != NULL)
     {
-      mapIt->second.second->close();
+        const_cast<Alignment*>(mapIt->second.second.get())->close();
     }
   }
 }
@@ -164,12 +164,7 @@ AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength,
   }
   if (alignment.get() == NULL)
   {
-    alignment = hdf5AlignmentInstanceReadOnly();
-    if (_options.get() != NULL)
-    {
-      alignment->setOptionsFromParser(_options);
-    }
-    alignment->open(mapIt->second.first);
+    alignment = openHalAlignment(mapIt->second.first, _options);
     checkAlignment(mapIt->first, mapIt->second.first, alignment);
   }
   assert(mapIt->second.second.get() != NULL);

@@ -19,77 +19,79 @@ using namespace std;
 using namespace H5;
 using namespace hal;
 
-AlignmentPtr hal::hdf5AlignmentInstance()
-{
-  return AlignmentPtr(new HDF5Alignment());
+const std::string hal::STORAGE_FORMAT_HDF5 = "HDF5";
+const std::string hal::STORAGE_FORMAT_MMAP = "mmap";
+
+/* get default FileCreatPropList with HAL default properties set */
+const H5::FileCreatPropList& hal::hdf5DefaultFileCreatPropList() {
+    static bool initialize = false;
+    static H5::FileCreatPropList fileCreateProps;
+    if (not initialize) {
+        fileCreateProps.copy(H5::FileCreatPropList::DEFAULT);
+        initialize = true;
+    }
+    return fileCreateProps;
 }
 
-AlignmentConstPtr hal::hdf5AlignmentInstanceReadOnly()
-{
-  return AlignmentPtr(new HDF5Alignment());
+/* get default FileAccPropList with HAL default properties set */
+const H5::FileAccPropList& hal::hdf5DefaultFileAccPropList() {
+    static bool initialize = false;
+    static H5::FileAccPropList fileAccessProps;
+    if (not initialize) {
+        fileAccessProps.copy(H5::FileAccPropList::DEFAULT);
+        fileAccessProps.setCache(HDF5Alignment::DefaultCacheMDCElems,
+                                 HDF5Alignment::DefaultCacheRDCElems,
+                                 HDF5Alignment::DefaultCacheRDCBytes,
+                                 HDF5Alignment::DefaultCacheW0);
+        initialize = true;
+    }
+    return fileAccessProps;
 }
 
-AlignmentPtr 
-hal::hdf5AlignmentInstance(const FileCreatPropList& fileCreateProps,
-                           const FileAccPropList& fileAccessProps,
-                           const DSetCreatPropList& datasetCreateProps,
-                           bool inMemory)
-{
-  HDF5Alignment* al = new HDF5Alignment(fileCreateProps,
-                                        fileAccessProps,
-                                        datasetCreateProps,
+/* get default DSetCreatPropList  with HAL default properties set */
+const H5::DSetCreatPropList& hal::hdf5DefaultDSetCreatPropList() {
+    static bool initialize = false;
+    static H5::DSetCreatPropList datasetCreateProps;
+    if (not initialize) {
+        datasetCreateProps.copy(H5::DSetCreatPropList::DEFAULT);
+        datasetCreateProps.setChunk(1, &HDF5Alignment::DefaultChunkSize);
+        datasetCreateProps.setDeflate(HDF5Alignment::DefaultCompression);
+        initialize = true;
+    }
+    return datasetCreateProps;
+}
+
+
+                           
+
+
+AlignmentPtr
+hal::hdf5AlignmentInstance(const std::string& alignmentPath,
+                           unsigned mode,
+                           const H5::FileCreatPropList& fileCreateProps,
+                           const H5::FileAccPropList& fileAccessProps,
+                           const H5::DSetCreatPropList& datasetCreateProps,
+                           bool inMemory) {
+  HDF5Alignment* al = new HDF5Alignment(alignmentPath, mode, fileCreateProps,
+                                        fileAccessProps, datasetCreateProps,
                                         inMemory);
   return AlignmentPtr(al);
 }
 
-AlignmentConstPtr 
-hal::hdf5AlignmentInstanceReadOnly(const FileCreatPropList& fileCreateProps,
-                                   const FileAccPropList& fileAccessProps,
-                                   const DSetCreatPropList& datasetCreateProps,
-                                   bool inMemory)
-{
-  HDF5Alignment* al = new HDF5Alignment(fileCreateProps,
-                                        fileAccessProps,
-                                        datasetCreateProps,
-                                        inMemory);
-  return AlignmentConstPtr(al);
-}
-
 AlignmentPtr 
-hal::mmapAlignmentInstance(const std::string& fileName,
+hal::mmapAlignmentInstance(const std::string& alignmentPath,
                            unsigned mode,
                            size_t initSize,
-                           size_t growSize)
-{
+                           size_t growSize) {
   return AlignmentPtr(NULL);
 }
 
 AlignmentPtr hal::openHalAlignment(const std::string& path,
-                                   CLParserConstPtr options)
+                                   CLParserConstPtr options,
+                                   unsigned mode)
 {
-  // detect which kind of file it is here (maybe by extension?)
-  // ...
+    /* detect which kind of file it is here (maybe by extension?) */
+    
+    return AlignmentPtr(new HDF5Alignment(path, mode, options));
 
-  AlignmentPtr alignment = hdf5AlignmentInstance();
-  if (options.get() != NULL)
-  {
-    alignment->setOptionsFromParser(options);
-  }
-  alignment->open(path, false);
-  return alignment;
-}
-
-AlignmentConstPtr hal::openHalAlignmentReadOnly(const std::string& path,
-                                                CLParserConstPtr options)
-{
-  // detect which kind of file it is here (maybe by extension?)
-  // ...
-
-  AlignmentConstPtr alignment = hdf5AlignmentInstanceReadOnly();
-  if (options.get() != NULL)
-  {
-    alignment->setOptionsFromParser(options);
-  }
-  alignment->open(path);
-  return alignment;
 }

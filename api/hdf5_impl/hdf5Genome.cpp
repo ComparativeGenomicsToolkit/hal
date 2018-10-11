@@ -75,6 +75,7 @@ HDF5Genome::HDF5Genome(const string& name,
     _totalSequenceLength = lastSeq.getEndPosition() + 1;
   }
 
+  // this appears to be a sanity check that raise exception if chunk is not set
   hsize_t chunk;
   _dcprops.getChunk(1, &chunk);
 }
@@ -119,26 +120,26 @@ void HDF5Genome::setDimensions(
   // Unlink the DNA and segment arrays if they exist (using 
   // exceptions is the only way I know how right now).  Note that
   // the file needs to be refactored to take advantage of the new
-  // space. 
+  // space. (FIXME)
   H5::Exception::dontPrint();
   try
   {
     DataSet d = _group.openDataSet(dnaArrayName);
     _group.unlink(dnaArrayName);
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
   try
   {
     DataSet d = _group.openDataSet(sequenceIdxArrayName);
     _group.unlink(sequenceIdxArrayName);
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
   try
   {
     DataSet d = _group.openDataSet(sequenceNameArrayName);
     _group.unlink(sequenceNameArrayName);
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
 
   if (_totalSequenceLength > 0 && storeDNAArrays == true)
   {
@@ -357,7 +358,7 @@ void HDF5Genome::setGenomeTopDimensions(
     DataSet d = _group.openDataSet(topArrayName);
     _group.unlink(topArrayName);
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
   _topArray.create(&_group, topArrayName, HDF5TopSegment::dataType(), 
                    numTopSegments + 1, &_dcprops, _numChunksInArrayBuffer);
   _parentCache = NULL;
@@ -379,7 +380,7 @@ void HDF5Genome::setGenomeBottomDimensions(
     DataSet d = _group.openDataSet(bottomArrayName);
     _group.unlink(bottomArrayName);
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
   hal_size_t numChildren = _alignment->getChildNames(_name).size();
  
   // scale down the chunk size in order to keep chunks proportional to
@@ -795,20 +796,19 @@ void HDF5Genome::write()
 
 void HDF5Genome::read()
 {
-  H5::Exception::dontPrint();
   try
   {
     _group.openDataSet(dnaArrayName);
     _dnaArray.load(&_group, dnaArrayName, _numChunksInArrayBuffer);    
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
 
   try
   {
     _group.openDataSet(topArrayName);
     _topArray.load(&_group, topArrayName, _numChunksInArrayBuffer);
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
   try
   {
     _group.openDataSet(bottomArrayName);
@@ -816,7 +816,7 @@ void HDF5Genome::read()
     _numChildrenInBottomArray = 
        HDF5BottomSegment::numChildrenFromDataType(_bottomArray.getDataType());
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
 
   deleteSequenceCache();
   try
@@ -825,14 +825,14 @@ void HDF5Genome::read()
     _sequenceIdxArray.load(&_group, sequenceIdxArrayName, 
                            _numChunksInArrayBuffer);
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
   try
   {
     _group.openDataSet(sequenceNameArrayName);
     _sequenceNameArray.load(&_group, sequenceNameArrayName, 
                             _numChunksInArrayBuffer);
   }
-  catch (H5::Exception){}
+  catch (H5::Exception&){}
 
   readSequences();
 }

@@ -10,7 +10,10 @@
 #include <vector>
 #include "halAlignmentInstance.h"
 
-std::vector<hal::AlignmentPtr> getTestAlignmentInstances();
+using namespace hal;
+AlignmentPtr getTestAlignmentInstances(const std::string& storageFormat,
+                                       const std::string& alignmentPath,
+                                       unsigned mode);
 
 
 #endif

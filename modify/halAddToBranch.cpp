@@ -104,7 +104,4 @@ int main(int argc, char *argv[])
   if (!noMarkAncestors) {
     markAncestorsForUpdate(mainAlignment, insertName);
   }
-  mainAlignment->close();
-  botAlignment->close();
-  topAlignment->close();
 }

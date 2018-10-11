@@ -210,7 +210,7 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(path, optionsParser);
+    AlignmentConstPtr alignment = openHalAlignment(path, optionsParser);
 
     if (listGenomes == true && alignment->getNumGenomes() > 0)
     {
