@@ -62,7 +62,7 @@ int main(int argc, char** argv)
     const hal_size_t genomeLength = 5000;
     hal_size_t segSize;
     
-    AlignmentPtr alignment = openHalAlignment(halPath, optionsParser, hal::HAL_CREATE);
+    AlignmentPtr alignment = openHalAlignment(halPath, optionsParser, hal::CREATE_ACCESS);
     
     createRoot(alignment, "root", 1, genomeLength);
     

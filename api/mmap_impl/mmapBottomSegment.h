@@ -4,6 +4,7 @@
 #include "halGenome.h"
 #include "mmapGenome.h"
 #include "mmapBottomSegmentData.h"
+#include <cassert>
 
 namespace hal {
 class MMapBottomSegment : public BottomSegment

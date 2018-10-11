@@ -2,7 +2,7 @@
 #include "halDefs.h"
 #include <cstddef>
 #include <string>
-#include <assert.h>
+#include <cassert>
 #include "halAlignmentInstance.h"
 
 namespace hal {

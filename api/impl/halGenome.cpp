@@ -1,5 +1,5 @@
 #include <sstream>
-#include <assert.h>
+#include <cassert>
 #include <map>
 #include <iostream>
 #include "halGenome.h"

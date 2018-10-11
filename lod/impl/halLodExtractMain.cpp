@@ -94,7 +94,7 @@ int main(int argc, char** argv)
       throw hal_exception("Input hal alignment is empty");
     }
 
-    AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser, hal::HAL_CREATE);
+    AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser, hal::CREATE_ACCESS);
     
     if (outAlignment->getNumGenomes() != 0)
     {

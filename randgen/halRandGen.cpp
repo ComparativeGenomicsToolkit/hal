@@ -98,7 +98,7 @@ int main(int argc, char** argv)
         
   try
   {
-      AlignmentPtr alignment = openHalAlignment(options._halFile, parser, hal::HAL_CREATE);
+      AlignmentPtr alignment = openHalAlignment(options._halFile, parser, hal::CREATE_ACCESS);
     // call the crappy unit-test simulator 
     createRandomAlignment(alignment,
                           options._meanDegree,

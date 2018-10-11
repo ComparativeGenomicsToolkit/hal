@@ -25,7 +25,7 @@
  */
 #ifdef ENABLE_UDC
 
-#include <assert.h>
+#include <cassert>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
