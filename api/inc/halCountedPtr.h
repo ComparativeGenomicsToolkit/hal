@@ -222,11 +222,13 @@ inline void counted_ptr<T>::release()
   }
 }
 
+#ifdef FIXME // experiment to see if this fixed weird compile problems; it is not needed.
 template <class T>
 inline std::ostream& operator<<(std::ostream& os, const counted_ptr<T>& cp)
 {
   return os << cp.get();
 }
+#endif
 
 }
 #endif // COUNTEDPTR_H
