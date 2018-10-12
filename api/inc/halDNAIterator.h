@@ -6,7 +6,7 @@
 
 #ifndef _HALDNAITERATOR_H
 #define _HALDNAITERATOR_H
-
+#include <iostream>
 #include "halDefs.h"
 
 namespace hal {
