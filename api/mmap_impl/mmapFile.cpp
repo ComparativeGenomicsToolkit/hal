@@ -176,7 +176,7 @@ int hal::MmapFileLocal::openFile() {
     } else {
         openMode = O_RDONLY;
     }
-    int fd = ::open(_alignmentPath.c_str(), openMode);
+    int fd = ::open(_alignmentPath.c_str(), openMode, 0777);
     if (fd < 0) {
         throw hal_errno_exception(_alignmentPath, "open failed", errno);
     }

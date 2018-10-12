@@ -31,6 +31,8 @@ dataSetsDir=/Users/hickey/Documents/Devel/genomes/datasets
 #
 # The -D_GLIBCXX_USE_CXX11_ABI=1 flag prevents errors with
 #   std::__cxx11::basic_string vs std::basic_string
+# vs
+#   std::basic_string vs std::basic_string
 # when linking with HDF5 and modern C++ compilers (well, GCC 7.3)
 #
 cflags += -I${sonLibDir} -fPIC
