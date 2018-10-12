@@ -29,12 +29,12 @@ include  ${sonLibRootDir}/include.mk
 dataSetsDir=/Users/hickey/Documents/Devel/genomes/datasets
 
 #
-# The -D_GLIBCXX_USE_CXX11_ABI=0 flag prevents errors with
+# The -D_GLIBCXX_USE_CXX11_ABI=1 flag prevents errors with
 #   std::__cxx11::basic_string vs std::basic_string
 # when linking with HDF5 and modern C++ compilers (well, GCC 7.3)
 #
 cflags += -I${sonLibDir} -fPIC
-cppflags += -I${sonLibDir} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++11 -Wno-sign-compare
+cppflags += -I${sonLibDir} -fPIC -D_GLIBCXX_USE_CXX11_ABI=1 -std=c++11 -Wno-sign-compare
 
 basicLibs = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 basicLibsDependencies = ${basicLibs}
