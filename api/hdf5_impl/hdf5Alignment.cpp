@@ -162,11 +162,8 @@ void HDF5Alignment::open()
   _file = new H5File(_alignmentPath.c_str(),  _flags, _cprops, _aprops);
   if (!compatibleWithVersion(getVersion()))
   {
-   stringstream ss;  // FIXME: can this just be string concat?
-   // FIXME: HAL_VERSION needs to HDF5 specific
-    ss << "HAL API v" << HAL_VERSION << " incompatible with format v" 
-       << getVersion() << " HAL file.";
-    throw hal_exception(ss.str());
+    throw hal_exception("HAL API v" + HAL_VERSION + " incompatible with format v" 
+                        + getVersion() + " HAL file.");
   }
   _metaData = new HDF5MetaData(_file, MetaGroupName);
   loadTree();
@@ -695,9 +692,7 @@ void HDF5Alignment::writeVersion()
   
   assert(_file != NULL);
   HDF5MetaData versionMeta(_file, VersionGroupName);
-  stringstream ss;
-  ss << HAL_VERSION;
-  versionMeta.set(VersionGroupName, ss.str());
+  versionMeta.set(VersionGroupName, HAL_VERSION);
 }
 
 static void addNodeToMap(stTree* node, map<string, stTree*>& nodeMap)

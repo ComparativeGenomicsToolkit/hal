@@ -27,7 +27,7 @@ inline bool compatibleWithVersion(const std::string& version)
   ss >> myVersion;
   ss2 << version;
   ss2 >> inVersion;
-  return (int)myVersion == (int)inVersion;
+  return int(myVersion) == int(inVersion);
 }
 
 /** C++ style strtok-type function.  Can't remember why I wrote it */

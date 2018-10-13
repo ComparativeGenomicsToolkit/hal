@@ -9,10 +9,8 @@
 
 
 /* constants for header */
-static const char *FORMAT_NAME = "MMAP";
-
-// FIXME: change to use HAL_VERSION
-static const char *FORMAT_VERSION = "1.0";
+static const std::string FORMAT_NAME = "MMAP";
+static const std::string MMAP_VERSION = "1.0";
 
 
 /* get the file size from the OS */
@@ -52,14 +50,16 @@ void hal::MmapFile::loadHeader(bool markDirty) {
     }
     setHeaderPtr();
 
-    // don;t print found strings as it might have garbage
-    if (::strcmp(_header->format, FORMAT_NAME) != 0) {
+    // don't print found strings as it might have garbage
+    if (::strcmp(_header->format, FORMAT_NAME.c_str()) != 0) {
         throw hal_exception(_alignmentPath + ": invalid file header, expected format name of '" +
                             FORMAT_NAME + "'");
     }
-    if (::strcmp(_header->version, FORMAT_VERSION) != 0) {
-        throw hal_exception(_alignmentPath + ": invalid file header, expected version of '" +
-                            FORMAT_VERSION + "'");
+    // FIXME: to need to check version compatibility
+    if (::strcmp(_header->mmapVersion, MMAP_VERSION.c_str()) != 0) {
+        throw hal_exception(_alignmentPath + ": incompatible mmap format versions: "
+                            + "file version " + _header->mmapVersion
+                            + ", mmap API version " + MMAP_VERSION);
     }
     if ((_header->nextOffset < sizeof(mmapHeader)) or (_header->nextOffset > _fileSize)) {
         throw hal_exception(_alignmentPath + ": header nextOffset field out of bounds, probably file corruption");
@@ -80,9 +80,11 @@ void hal::MmapFile::createHeader() {
     assert(_mode & WRITE_ACCESS);
     setHeaderPtr();
     assert(strlen(FORMAT_NAME) < sizeof(_header->format));
-    strncpy(_header->format, FORMAT_NAME, sizeof(_header->format));
-    assert(strlen(FORMAT_VERSION) < sizeof(_header->version));
-    strncpy(_header->version, FORMAT_VERSION, sizeof(_header->version));
+    strncpy(_header->format, FORMAT_NAME.c_str(), sizeof(_header->format)-1);
+    assert(strlen(MMAP_VERSION) < sizeof(_header->version));
+    strncpy(_header->mmapVersion, MMAP_VERSION.c_str(), sizeof(_header->mmapVersion)-1);
+    assert(strlen(HAL_VERSION) < sizeof(_header->halVersion));
+    strncpy(_header->halVersion, HAL_VERSION.c_str(), sizeof(_header->halVersion)-1);
     _header->nextOffset = alignRound(sizeof(mmapHeader));
     _header->dirty = true;
     _header->nextOffset = _header->nextOffset;

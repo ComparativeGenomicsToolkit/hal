@@ -9,7 +9,8 @@ namespace hal {
     /* header for the file */
     struct mmapHeader {
         char format[32];
-        char version[32];
+        char mmapVersion[32];
+        char halVersion[32];
         size_t nextOffset;
         size_t rootOffset;
         bool dirty;
@@ -39,7 +40,7 @@ namespace hal {
         inline size_t allocMem(size_t size,
                         bool isRoot=false);
         bool isReadOnly() const { return !(_mode & WRITE_ACCESS); };
-        const char *getVersion() { return _header->version; };
+        std::string getVersion() { return _header->halVersion; };
         virtual ~MmapFile() {
         }
         

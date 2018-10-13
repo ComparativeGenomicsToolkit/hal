@@ -179,12 +179,10 @@ void CLParser::printUsage(ostream& os) const
   os << endl;
   if (_description.empty() == false)
   {
-    stringstream vstring;
-    vstring << HAL_VERSION;
-    os << _exeName << " v" << vstring.str() << ": " 
+    os << _exeName << " v" << HAL_VERSION << ": " 
        << multiLine(_description, _exeName.length() + 
-                    vstring.str().length() + 4)
-       << "\n\n";
+                    HAL_VERSION.size() + 4)
+       << endl << endl;
   }
   os << "USAGE:\n" << _exeName << " [Options]";
   for (size_t i = 0; i < _args.size(); ++i)
