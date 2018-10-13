@@ -79,11 +79,11 @@ void hal::MMapFile::loadHeader(bool markDirty) {
 void hal::MMapFile::createHeader() {
     assert(_mode & WRITE_ACCESS);
     setHeaderPtr();
-    assert(strlen(FORMAT_NAME) < sizeof(_header->format));
+    assert(FORMAT_NAME.size() < sizeof(_header->format));
     strncpy(_header->format, FORMAT_NAME.c_str(), sizeof(_header->format)-1);
-    assert(strlen(MMAP_VERSION) < sizeof(_header->version));
+    assert(MMAP_VERSION.size() < sizeof(_header->mmapVersion));
     strncpy(_header->mmapVersion, MMAP_VERSION.c_str(), sizeof(_header->mmapVersion)-1);
-    assert(strlen(HAL_VERSION) < sizeof(_header->halVersion));
+    assert(HAL_VERSION.size() < sizeof(_header->halVersion));
     strncpy(_header->halVersion, HAL_VERSION.c_str(), sizeof(_header->halVersion)-1);
     _header->nextOffset = alignRound(sizeof(mmapHeader));
     _header->dirty = true;
