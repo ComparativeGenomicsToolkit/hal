@@ -54,5 +54,19 @@ Genome *MMapAlignment::_openGenome(const string &name) const {
         // Already loaded.
         return _openGenomes[name];
     }
-    // TODO go through genome array checking names (slow, but necessary for now)
+    // Go through the genome array and find the genome we want.
+    MMapGenomeData *genomeArray = (MMapGenomeData *) resolveOffset(_data->_genomeArrayOffset, _data->_numGenomes * sizeof(MMapGenomeData));
+    MMapGenome *genome = NULL;
+    for (size_t i = 0; i < _data->_numGenomes; i++) {
+        MMapGenome curGenome(const_cast<MMapAlignment *>(this), genomeArray + i);
+        if (curGenome.getName() == name) {
+            genome = new MMapGenome(const_cast<MMapAlignment *>(this), genomeArray + i);
+            break;
+        }
+    }
+    if (genome == NULL) {
+        throw hal_exception("Genome " + name + "not found in alignment");
+    }
+    _openGenomes[name] = genome;
+    return genome;
 }
