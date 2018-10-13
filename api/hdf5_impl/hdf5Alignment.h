@@ -38,9 +38,9 @@ public:
 
    void close();
 
-    std::string getStorageFormat() const {
+   const std::string& getStorageFormat() const {
         return STORAGE_FORMAT_HDF5;
-    }
+   }
     
    Genome* addLeafGenome(const std::string& name,
                            const std::string& parentName,

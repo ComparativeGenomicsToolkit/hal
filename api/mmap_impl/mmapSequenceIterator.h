@@ -6,8 +6,9 @@ class MMapSequenceIterator : public SequenceIterator {
 public:
     MMapSequenceIterator(MMapGenome* genome, hal_index_t index) :
         _genome(genome),
-        _index(index),
-        _sequence(_genome, _genome->getSequenceData(index)) {};
+        _sequence(_genome, _genome->getSequenceData(index)),
+        _index(index)  {
+    };
 
     // SEQUENCE ITERATOR METHODS
     SequenceIteratorPtr copy() { return SequenceIteratorPtr(new MMapSequenceIterator(_genome, _index)); };

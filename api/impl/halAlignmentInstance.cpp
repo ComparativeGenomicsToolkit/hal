@@ -19,8 +19,8 @@ using namespace std;
 using namespace H5;
 using namespace hal;
 
-const char *hal::STORAGE_FORMAT_HDF5 = "HDF5";
-const char *hal::STORAGE_FORMAT_MMAP = "mmap";
+const std::string hal::STORAGE_FORMAT_HDF5 = "HDF5";
+const std::string hal::STORAGE_FORMAT_MMAP = "mmap";
 
 /* get default FileCreatPropList with HAL default properties set */
 const H5::FileCreatPropList& hal::hdf5DefaultFileCreatPropList() {

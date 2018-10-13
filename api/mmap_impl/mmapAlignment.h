@@ -5,8 +5,6 @@
 #include "mmapFile.h"
 #include "sonLib.h"
 
-#define STORAGE_FORMAT_MMAP "mmap"
-
 namespace hal {
 class MMapAlignment;
 class MMapGenome;
@@ -47,8 +45,8 @@ class MMapAlignment : public Alignment {
 
     void close() { _file->close(); }
 
-    std::string getStorageFormat() const {
-        return _file->getStorageFormat();
+    const std::string& getStorageFormat() const {
+        return STORAGE_FORMAT_MMAP;
     }
 
     Genome* addLeafGenome(const std::string& name,

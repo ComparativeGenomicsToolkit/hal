@@ -26,8 +26,8 @@ namespace hal {
 /**
  * Constants defining the storage format.
  */
-extern const char *STORAGE_FORMAT_HDF5;
-extern const char *STORAGE_FORMAT_MMAP;
+extern const std::string STORAGE_FORMAT_HDF5;
+extern const std::string STORAGE_FORMAT_MMAP;
 
 /*
  * Open modes for files.
