@@ -24,7 +24,13 @@ public:
    /** Close the alignment */
    virtual void close() = 0;
 
-   /** Get the name of the storage engine  */
+   /** Get the name of the storage engine.
+    * FIXME: This returns a copy of the constant rather than
+    * the constant to work around a bug/feature/weirdness with
+    *  Apple LLVM version 10.0.0 (clang-1000.11.45.2)
+    * where the implements thought they were returning a local
+    * variable as a reference.
+    **/
     virtual std::string getStorageFormat() const = 0;
     
    /** Add a new genome to the alignment
