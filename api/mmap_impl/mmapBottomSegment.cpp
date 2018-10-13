@@ -67,3 +67,7 @@ bool MMapBottomSegment::isMissingData(double nThreshold) const
   }
   return false;
 }
+
+void MMapBottomSegment::print(std::ostream &os) const {
+    os << "MMapBottomSegment" << getStartPosition() << " " << getEndPosition() << std::endl;
+}

@@ -181,22 +181,22 @@ private:
     void loadSequenceNameCache() const;
 };
 
-std::string MMapGenomeData::getName(MMapAlignment *alignment) const {
+inline std::string MMapGenomeData::getName(MMapAlignment *alignment) const {
     return (const char *) alignment->resolveOffset(_nameOffset, _nameLength);
 }
 
-void MMapGenomeData::setName(MMapAlignment *alignment, const std::string &newName) {
+inline void MMapGenomeData::setName(MMapAlignment *alignment, const std::string &newName) {
     size_t size = newName.size() + 1;
     _nameOffset = alignment->allocateNewArray(sizeof(char) * size);
     strncpy((char *) alignment->resolveOffset(_nameOffset, size), newName.c_str(), size);
     _nameLength = size;
 }
 
-MMapTopSegmentData *MMapGenomeData::getTopSegmentData(MMapAlignment *alignment, hal_index_t index) {
+inline MMapTopSegmentData *MMapGenomeData::getTopSegmentData(MMapAlignment *alignment, hal_index_t index) {
     return (MMapTopSegmentData *) alignment->resolveOffset(_topSegmentsOffset + index * sizeof(MMapTopSegmentData), sizeof(MMapTopSegmentData));
 }
 
-MMapBottomSegmentData *MMapGenomeData::getBottomSegmentData(MMapAlignment *alignment, MMapGenome *genome, hal_index_t index) {
+inline MMapBottomSegmentData *MMapGenomeData::getBottomSegmentData(MMapAlignment *alignment, MMapGenome *genome, hal_index_t index) {
     size_t segmentSize = MMapBottomSegmentData::getSize(genome);
     return (MMapBottomSegmentData *) alignment->resolveOffset(_bottomSegmentsOffset + index * segmentSize, segmentSize);
 }

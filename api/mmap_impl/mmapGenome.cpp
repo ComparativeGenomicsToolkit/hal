@@ -435,6 +435,10 @@ GappedBottomSegmentIteratorConstPtr MMapGenome::getGappedBottomSegmentIterator(
   return GappedBottomSegmentIteratorConstPtr(gb);
 }
 
+void MMapGenome::rename(const std::string &name) {
+    _data->setName(_alignment, name);
+}
+
 void MMapGenome::deleteSequenceCache()
 {
   if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0)
