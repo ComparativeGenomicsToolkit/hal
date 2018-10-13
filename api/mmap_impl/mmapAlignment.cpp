@@ -34,6 +34,7 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
 }
 
 void MMapAlignment::create() {
+    _file->allocMem(sizeof(MMapAlignmentData), true);
     _data = static_cast<MMapAlignmentData *>(resolveOffset(_file->getRootOffset(), sizeof(MMapAlignmentData)));
     _data->_numGenomes = 0;
 }
