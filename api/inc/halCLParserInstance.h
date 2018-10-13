@@ -9,6 +9,7 @@
 
 #include "halDefs.h"
 #include "halCLParser.h"
+#include "halAlignmentInstance.h"
 
 /** HAL API namespace */
 namespace hal {
@@ -18,7 +19,7 @@ namespace hal {
  * @param createOptions set to true if tool will need to 
  * create a new hal file (as opposed to just reading an existing one)
  */
-CLParserPtr halCLParserInstance(bool createOptions = false);
+CLParserPtr halCLParserInstance(unsigned mode=READ_ACCESS);
 }
 
 #endif

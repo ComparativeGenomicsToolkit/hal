@@ -145,7 +145,6 @@ void HDF5Alignment::create()
   writeVersion();
 }
 
-// todo: properly handle readonly
 void HDF5Alignment::open()
 {
 #ifdef ENABLE_UDC

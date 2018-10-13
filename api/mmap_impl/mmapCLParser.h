@@ -16,21 +16,21 @@ namespace hal {
  * Operations to specify mmap options in hal::CLParser and extract the
  * results.  Only provides function, not an object instance.
  */
-class MmapCLParser
+class MMapCLParser
 {
 public:
     static void defineOptions(CLParserPtr parser,
-                              bool createOptions);
+                              unsigned mode);
     static size_t getInitSize(CLParserPtr parser);
     static size_t getGrowSize(CLParserPtr parser);
 
     
     protected:
-   //friend class MmapAlignment;
+   //friend class MMapAlignment;
 
     private:
     // can't create
-    MmapCLParser() {
+    MMapCLParser() {
     }
 };
 

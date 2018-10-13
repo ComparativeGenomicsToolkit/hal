@@ -6,7 +6,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
   optionsParser->addArgument("inFile", "existing tree");
   optionsParser->addArgument("deleteNode", "(leaf) genome to delete");
   optionsParser->addOptionFlag("noMarkAncestors", "don't mark ancestors for"

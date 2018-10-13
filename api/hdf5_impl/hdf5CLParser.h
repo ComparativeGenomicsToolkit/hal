@@ -20,7 +20,7 @@ class HDF5CLParser
 {
 public:
     static void defineOptions(CLParserPtr parser,
-                              bool createOptions);
+                              unsigned mode);
     static void applyToDCProps(CLParserPtr parser,
                                H5::DSetCreatPropList& dcprops);
     static void applyToAProps(CLParserPtr parser,

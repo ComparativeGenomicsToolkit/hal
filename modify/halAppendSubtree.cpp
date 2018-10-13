@@ -6,7 +6,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
   optionsParser->addArgument("mainFile", "destination tree");
   optionsParser->addArgument("appendFile", "alignment containing the tree to be"
                              " appended");

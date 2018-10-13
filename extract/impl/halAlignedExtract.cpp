@@ -19,7 +19,7 @@ static void extractAlignedRegions(const Genome* genome,
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(false);
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->setDescription("Extract aligned regions of genome (with its"
                                 " parent) and output to bed file");
   optionsParser->addArgument("halPath", "input hal file");

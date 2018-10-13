@@ -36,7 +36,7 @@ static const Options defaultBig = {2,  0.7, 50, 2, 500, 100, 5000, 2000000, ""};
 static const Options defaultLrg = {2, 1, 100, 2, 10, 10000, 500000, 2000000, ""};
 
 static CLParserPtr initParser() {
-    CLParserPtr parser = halCLParserInstance(true);
+    CLParserPtr parser = halCLParserInstance(CREATE_ACCESS);
     parser->setDescription("Generate a random HAL alignment file");
     parser->addOption("-preset", "one of small, medium, big, large [medium]", "medium");
     parser->addOption("meanDegree", "[" + std::to_string(defaultMed._meanDegree), defaultMed._meanDegree);

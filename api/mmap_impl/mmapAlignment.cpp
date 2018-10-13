@@ -1,8 +1,48 @@
 #include "mmapAlignment.h"
 #include "mmapGenome.h"
+#include "mmapCLParser.h"
 
 using namespace hal;
 using namespace std;
+
+
+MMapAlignment::MMapAlignment(const std::string& alignmentPath,
+                             unsigned mode,
+                             size_t initSize,
+                             size_t growSize):
+    _file(NULL), _data(NULL), _tree(NULL) {
+    _file = MMapFile::localFactory(alignmentPath, mode, initSize, growSize);
+    if (mode & CREATE_ACCESS) {
+        create();
+    } else {
+        open();
+    }
+}
+
+MMapAlignment::MMapAlignment(const std::string& alignmentPath,
+                             unsigned mode,
+                             CLParserConstPtr parser):
+    _file(NULL), _data(NULL), _tree(NULL) {
+    _file = MMapFile::localFactory(alignmentPath, mode,
+                                   MMapCLParser::getInitSize(parser),
+                                   MMapCLParser::getGrowSize(parser));
+    if (mode & CREATE_ACCESS) {
+        create();
+    } else {
+        open();
+    }
+}
+
+void MMapAlignment::create() {
+    _data = static_cast<MMapAlignmentData *>(resolveOffset(_file->getRootOffset(), sizeof(MMapAlignmentData)));
+    _data->_numGenomes = 0;
+}
+
+void MMapAlignment::open() {
+    _data = static_cast<MMapAlignmentData *>(resolveOffset(_file->getRootOffset(), sizeof(MMapAlignmentData)));
+    loadTree();
+}
+
 
 MMapGenome *MMapAlignmentData::addGenome(MMapAlignment *alignment, const std::string &name) {
     size_t newGenomeArraySize = (_numGenomes + 1) * sizeof(MMapGenomeData);

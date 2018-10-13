@@ -6,7 +6,7 @@ using namespace std;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
   optionsParser->setDescription("Set metadata for an alignment or genome");
   optionsParser->addArgument("halFile", "hal file to modify");
   optionsParser->addArgument("key", "metadata key");

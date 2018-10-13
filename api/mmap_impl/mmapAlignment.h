@@ -25,20 +25,17 @@ private:
 
 class MMapAlignment : public Alignment {
     public:
-    // Create a new alignment.
-    MMapAlignment(const std::string &path) : _tree(NULL) {
-        _file = MmapFile::localFactory(path, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS,
-                                       10*1024*1024, 10*1024*1024);
-        _file->allocMem(sizeof(MMapAlignmentData), true);
-        _data = (MMapAlignmentData *) resolveOffset(_file->getRootOffset(), sizeof(MMapAlignmentData));
-        _data->_numGenomes = 0;
-    }
-    // Open an existing alignment on local disk.
-    MMapAlignment(const std::string &path, unsigned mode, size_t initSize, size_t growSize) : _tree(NULL) {
-        _file = MmapFile::localFactory(path, mode, initSize, growSize);
-        _data = (MMapAlignmentData *) resolveOffset(_file->getRootOffset(), sizeof(MMapAlignmentData));
-        loadTree();
-    }
+    /* constructor with all arguments specified */
+    MMapAlignment(const std::string& alignmentPath,
+                  unsigned mode = READ_ACCESS,
+                  size_t initSize = MMAP_DEFAULT_INIT_SIZE,
+                  size_t growSize = MMAP_DEFAULT_GROW_SIZE);
+    
+    /* constructor from command line options */
+    MMapAlignment(const std::string& alignmentPath,
+                  unsigned mode,
+                  CLParserConstPtr parser);
+
     // Allocate new array and return the offset.
     size_t allocateNewArray(size_t size) const { return _file->allocMem(size, false); };
     void *resolveOffset(size_t offset, size_t len) const { return _file->toPtr(offset, len); };
@@ -173,6 +170,8 @@ class MMapAlignment : public Alignment {
     };
 
 private:
+    void create();
+    void open();
     Genome *_openGenome(const std::string &name) const;
     stTree *getGenomeNode(const std::string &name) const {
         stTree *node = stTree_findChild(_tree, name.c_str());
@@ -192,7 +191,7 @@ private:
         _data->setNewickString(this, newickString);
         free(newickString);
     };
-    MmapFile *_file;
+    MMapFile *_file;
     MMapAlignmentData *_data;
     stTree *_tree;
     mutable std::map<std::string, MMapGenome *> _openGenomes;

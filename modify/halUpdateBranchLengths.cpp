@@ -6,7 +6,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
   optionsParser->addArgument("halFile", "hal file");
   optionsParser->addArgument("newickTree", "newick tree (must be identical,"
                              " except for the branch lengths");

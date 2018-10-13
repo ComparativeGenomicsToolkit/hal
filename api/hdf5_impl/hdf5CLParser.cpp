@@ -16,9 +16,9 @@ using namespace std;
 using namespace H5;
 
 void HDF5CLParser::defineOptions(CLParserPtr parser,
-                                 bool createOptions)
+                                 unsigned mode)
 {
-  if (createOptions)
+  if (mode & CREATE_ACCESS)
   {
     parser->addOption("hdf5Chunk", "hdf5 chunk size", HDF5Alignment::DefaultChunkSize);
     parser->addOption("chunk", " obsolete name for --hdf5Chunk ", HDF5Alignment::DefaultChunkSize);
@@ -51,13 +51,6 @@ void HDF5CLParser::defineOptions(CLParserPtr parser,
                         HDF5Alignment::DefaultInMemory);
   parser->addOptionFlag("inMemory", "obsolete name for --hdf5InMemory",
                         HDF5Alignment::DefaultInMemory);
-#ifdef ENABLE_UDC
-  // this can be define by other storage formats as well
-  if (not parser->hasArgument("udcCacheDir")) {
-      parser->addOption("udcCacheDir", "udc cache path for *input* hal file(s).",
-                        "\"\"");
-  }
-#endif
 }
 
 template <typename T>

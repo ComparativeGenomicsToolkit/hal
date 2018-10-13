@@ -23,7 +23,7 @@ namespace hal {
      * WARNING: When writing, close() must be explicitly called or file will
      * be left marked as dirty.
      */
-    class MmapFile {
+    class MMapFile {
         friend class MMapAlignment;
         public:
 
@@ -41,11 +41,11 @@ namespace hal {
                         bool isRoot=false);
         bool isReadOnly() const { return !(_mode & WRITE_ACCESS); };
         std::string getVersion() { return _header->halVersion; };
-        virtual ~MmapFile() {
+        virtual ~MMapFile() {
         }
         
         protected:
-        MmapFile(const std::string alignmentPath,
+        MMapFile(const std::string alignmentPath,
                  unsigned mode);
         /** close marks as clean, don't call on error, just delete */
         virtual void close() = 0;
@@ -70,11 +70,11 @@ namespace hal {
         bool _mustFetch;      // fetch must be called on each access.
 
         private:
-        MmapFile() {
+        MMapFile() {
             // no copying
         }
 
-        static MmapFile *localFactory(const std::string& alignmentPath,
+        static MMapFile *localFactory(const std::string& alignmentPath,
                                       unsigned mode = READ_ACCESS,
                                       size_t initSize = MMAP_DEFAULT_INIT_SIZE,
                                       size_t growSize = MMAP_DEFAULT_GROW_SIZE);
@@ -82,13 +82,13 @@ namespace hal {
 }
 
 /** Get the offset of the root object */
-size_t hal::MmapFile::getRootOffset() const {
+size_t hal::MMapFile::getRootOffset() const {
     assert(_header->rootOffset > 0);
     return _header->rootOffset;
 }
 
 /* fetch the range if required, else inline no-op */
-void hal::MmapFile::fetchIfNeeded(size_t offset,
+void hal::MMapFile::fetchIfNeeded(size_t offset,
                                   size_t accessSize) const {
     if (_mustFetch) {
         fetch(offset, accessSize);
@@ -99,13 +99,13 @@ void hal::MmapFile::fetchIfNeeded(size_t offset,
  * number of bytes that will be accessed, which is used when
  * pre-fetching is needed. If accessing an array, accessSize is size
  * of element, not the entire array.*/
-void *hal::MmapFile::toPtr(size_t offset,
+void *hal::MMapFile::toPtr(size_t offset,
                            size_t accessSize) {
     fetchIfNeeded(offset, accessSize);
     return static_cast<char*>(_basePtr) + offset;
 }
 
-const void *hal::MmapFile::toPtr(size_t offset,
+const void *hal::MMapFile::toPtr(size_t offset,
                                  size_t accessSize) const {
     fetchIfNeeded(offset, accessSize);
     return static_cast<const char*>(_basePtr) + offset;
@@ -115,7 +115,7 @@ const void *hal::MmapFile::toPtr(size_t offset,
  * is specified, it is stored as the root.  If file can be grown,
  * it will be remapped with a larger size if the same virtual address
  * can be obtained. */
-size_t hal::MmapFile::allocMem(size_t size,
+size_t hal::MMapFile::allocMem(size_t size,
                                bool isRoot) {
     validateWriteAccess();
     if (_header->nextOffset + size > _fileSize) {
@@ -130,7 +130,7 @@ size_t hal::MmapFile::allocMem(size_t size,
 }
 
 /* round up to alignment size */
-size_t hal::MmapFile::alignRound(size_t size) const {
+size_t hal::MMapFile::alignRound(size_t size) const {
     return ((size + (sizeof(size_t) - 1)) / sizeof(size_t)) * sizeof(size_t);
 }
 #endif

@@ -12,7 +12,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(CREATE_ACCESS);
   optionsParser->addArgument("inHalPath", "Input hal file");
   optionsParser->addArgument("outHalPath", "output hal file");
   optionsParser->addArgument("scale", "Scale factor for interpolation");

@@ -23,27 +23,27 @@ static size_t getFileStatSize(int fd) {
 }
 
 /* constructor, used only by derived classes */
-hal::MmapFile::MmapFile(const std::string alignmentPath,
+hal::MMapFile::MMapFile(const std::string alignmentPath,
                         unsigned mode):
     _alignmentPath(alignmentPath),  _mode(halDefaultAccessMode(mode)),
     _basePtr(NULL), _fileSize(0), _mustFetch(false) {
 }
 
 /* error if file is not open for write accecss */
-void hal::MmapFile::validateWriteAccess() const {
+void hal::MMapFile::validateWriteAccess() const {
     if ((_mode & WRITE_ACCESS) == 0) {
         throw hal_exception(_alignmentPath + " is not open for write access");
     }
 }
 
 /* setup pointer to header */
-void hal::MmapFile::setHeaderPtr() {
+void hal::MMapFile::setHeaderPtr() {
     fetchIfNeeded(0, sizeof(mmapHeader));
     _header = static_cast<mmapHeader*>(_basePtr);
 }
 
 /* validate the file header and save a pointer to it. */
-void hal::MmapFile::loadHeader(bool markDirty) {
+void hal::MMapFile::loadHeader(bool markDirty) {
     if (_fileSize < sizeof(mmapHeader)) {
         throw hal_exception(_alignmentPath + ": file size of " + std::to_string(_fileSize)
                             + " is less that header size of " + std::to_string(sizeof(mmapHeader)));
@@ -76,7 +76,7 @@ void hal::MmapFile::loadHeader(bool markDirty) {
 }
 
 /* create the header */
-void hal::MmapFile::createHeader() {
+void hal::MMapFile::createHeader() {
     assert(_mode & WRITE_ACCESS);
     setHeaderPtr();
     assert(strlen(FORMAT_NAME) < sizeof(_header->format));
@@ -93,26 +93,26 @@ void hal::MmapFile::createHeader() {
 /* Grow file to allow for at least the specified amount.  This remaps the *
  * file, so the same sufficient virtual space must be available at the address
  * and it is expensive. */
-void hal::MmapFile::growFile(size_t size) {
+void hal::MMapFile::growFile(size_t size) {
     assert(_mode & WRITE_ACCESS);
     growFileImpl(size);
 }
 
 /* override this for classes that support growing file */
-void hal::MmapFile::growFileImpl(size_t size) {
-    throw hal_exception("logic error: growFile() not available for this MmapFile implementation");
+void hal::MMapFile::growFileImpl(size_t size) {
+    throw hal_exception("logic error: growFile() not available for this MMapFile implementation");
 }
 
 namespace hal {
-    /* Class that implements local file version of MmapFile */
-    class MmapFileLocal: public MmapFile {
+    /* Class that implements local file version of MMapFile */
+    class MMapFileLocal: public MMapFile {
         public:
-        MmapFileLocal(const std::string alignmentPath,
+        MMapFileLocal(const std::string alignmentPath,
                       unsigned mode,
                       size_t initSize,
                       size_t growSize);
         virtual void close();
-        virtual ~MmapFileLocal();
+        virtual ~MMapFileLocal();
 
         protected:
         virtual void fetch(size_t offset,
@@ -137,11 +137,11 @@ namespace hal {
 
 
 /* Constructor. Open or create the specified file. */
-hal::MmapFileLocal::MmapFileLocal(const std::string alignmentPath,
+hal::MMapFileLocal::MMapFileLocal(const std::string alignmentPath,
                                   unsigned mode,
                                   size_t initSize,
                                   size_t growSize):
-    MmapFile(alignmentPath, mode), _fd(-1), _growSize(growSize) {
+    MMapFile(alignmentPath, mode), _fd(-1), _growSize(growSize) {
     if (_mode & WRITE_ACCESS) {
         openWrite(initSize);
     } else {
@@ -150,9 +150,9 @@ hal::MmapFileLocal::MmapFileLocal(const std::string alignmentPath,
 }
 
 /* close file, marking as clean.  Don't  */
-void hal::MmapFileLocal::close() {
+void hal::MMapFileLocal::close() {
     if (_basePtr == NULL) {
-        throw hal_exception(_alignmentPath + ": MmapFile::close() called on closed file");
+        throw hal_exception(_alignmentPath + ": MMapFile::close() called on closed file");
     }
     if (_mode & WRITE_ACCESS) {
         adjustFileSize(_header->nextOffset);
@@ -164,13 +164,13 @@ void hal::MmapFileLocal::close() {
 
 /* Destructor. write fields to header and close.  If write access and close
  * has not been called, file will me left mark dirty */
-hal::MmapFileLocal::~MmapFileLocal() {
+hal::MMapFileLocal::~MMapFileLocal() {
     unmapFile();
     closeFile();
 }
 
 /* open the file for the specified mode */
-int hal::MmapFileLocal::openFile() {
+int hal::MMapFileLocal::openFile() {
     assert(_fd < 0);
     unsigned openMode = 0;
     if (_mode & WRITE_ACCESS) {
@@ -186,7 +186,7 @@ int hal::MmapFileLocal::openFile() {
 }
 
 /* change size size of the file, possibly deleting data. */
-void hal::MmapFileLocal::adjustFileSize(size_t size) {
+void hal::MMapFileLocal::adjustFileSize(size_t size) {
     if (ftruncate(_fd, size) < 0) {
         throw hal_errno_exception(_alignmentPath, "set size failed", errno);
     }
@@ -194,7 +194,7 @@ void hal::MmapFileLocal::adjustFileSize(size_t size) {
 }
 
 /* map file into memory */
-void* hal::MmapFileLocal::mapFile(void *requiredAddr) {
+void* hal::MMapFileLocal::mapFile(void *requiredAddr) {
     assert(_basePtr == NULL);
     unsigned prot = PROT_READ | ((_mode & WRITE_ACCESS) ? PROT_WRITE : 0);
     void *ptr = mmap(requiredAddr, _fileSize, prot, MAP_SHARED|MAP_FILE, _fd, 0);
@@ -205,7 +205,7 @@ void* hal::MmapFileLocal::mapFile(void *requiredAddr) {
 }
 
 /* unmap file, if mapped */
-void hal::MmapFileLocal::unmapFile() {
+void hal::MMapFileLocal::unmapFile() {
     if (_basePtr != NULL) {
         if (::munmap(const_cast<void*>(_basePtr), _fileSize) < 0) {
             throw hal_errno_exception(_alignmentPath, "munmap failed", errno);
@@ -215,7 +215,7 @@ void hal::MmapFileLocal::unmapFile() {
 }
 
 /* open the file for read access */
-void hal::MmapFileLocal::openRead() {
+void hal::MMapFileLocal::openRead() {
     _fd = openFile();
     _fileSize = getFileStatSize(_fd);
     _basePtr = mapFile();
@@ -223,7 +223,7 @@ void hal::MmapFileLocal::openRead() {
 }
 
 /* open the file for write access */
-void hal::MmapFileLocal::openWrite(size_t initSize) {
+void hal::MMapFileLocal::openWrite(size_t initSize) {
     _fd = openFile();
     if (_mode & CREATE_ACCESS) {
         adjustFileSize(0);  // clear out existing data
@@ -240,7 +240,7 @@ void hal::MmapFileLocal::openWrite(size_t initSize) {
 }
 
 /* close the file if open */
-void hal::MmapFileLocal::closeFile() {
+void hal::MMapFileLocal::closeFile() {
     if (_fd >= 0) {
         if (::close(_fd) < 0) {
             throw hal_errno_exception(_alignmentPath, "close failed", errno);
@@ -250,7 +250,7 @@ void hal::MmapFileLocal::closeFile() {
 }
 
 /* grow file  */
-void hal::MmapFileLocal::growFileImpl(size_t size) {
+void hal::MMapFileLocal::growFileImpl(size_t size) {
     assert(_mode & WRITE_ACCESS);
     size_t newSize = _growSize;
     if (newSize < size) {
@@ -261,11 +261,11 @@ void hal::MmapFileLocal::growFileImpl(size_t size) {
     mapFile(requiredAddr);
 }
 
-/** create a MmapFile object, opening a local file */
-hal::MmapFile *hal::MmapFile::localFactory(const std::string& alignmentPath,
+/** create a MMapFile object, opening a local file */
+hal::MMapFile *hal::MMapFile::localFactory(const std::string& alignmentPath,
                                            unsigned mode,
                                            size_t initSize,
                                            size_t growSize) {
-    return new MmapFileLocal(alignmentPath, mode, initSize, growSize);
+    return new MMapFileLocal(alignmentPath, mode, initSize, growSize);
 }
 

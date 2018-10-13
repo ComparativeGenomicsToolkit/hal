@@ -8,7 +8,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(CREATE_ACCESS);
   optionsParser->addArgument("halFile", "hal tree");
   optionsParser->addArgument("referenceGenome", "genome to create the BED file "
                              "for");

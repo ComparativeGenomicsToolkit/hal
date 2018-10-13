@@ -7,6 +7,7 @@
 #include <iostream>
 #include "halCLParser.h"
 #include "hal.h"
+#include "halAlignmentInstance.h"
 
 using namespace std;
 using namespace hal;
@@ -18,7 +19,8 @@ CLParser::CLParser() :
   _maxArgLen(0),
   _maxOptLen(0)
 {
-  addOptionFlag("help", "dsiplay this help page", false);
+  addOptionFlag("help", "display this help page", false);
+  addOption("format", "choose the back-end storage format.", STORAGE_FORMAT_HDF5);
 }
 
 CLParser::~CLParser()

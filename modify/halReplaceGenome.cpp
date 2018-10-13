@@ -6,7 +6,7 @@ using namespace std;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(true);
+  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
   optionsParser->addArgument("inFile", "existing tree");
   optionsParser->addOption("bottomAlignmentFile", "hal file containing an "
                            "alignment of the genome and its children. "

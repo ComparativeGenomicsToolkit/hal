@@ -92,8 +92,15 @@ AlignmentPtr hal::openHalAlignment(const std::string& path,
                                    CLParserConstPtr options,
                                    unsigned mode)
 {
-    /* detect which kind of file it is here (maybe by extension?) */
-    
-    return AlignmentPtr(new HDF5Alignment(path, mode, options));
+    /* FIXME: detect which kind of file it is here (maybe by extension?) */
+    if (options->getOption<std::string>("format") == STORAGE_FORMAT_HDF5) {
+        return AlignmentPtr(new HDF5Alignment(path, mode, options));
+    } else if (options->getOption<std::string>("format") == STORAGE_FORMAT_MMAP) {
+        return AlignmentPtr(new MMapAlignment(path, mode, options));
+    } else {
+        throw hal_exception("invalid --format argument " + options->getOption<std::string>("format")
+                            + ", expected one of " + STORAGE_FORMAT_HDF5
+                            + " or " + STORAGE_FORMAT_MMAP);
+    }
 
 }

@@ -15,7 +15,7 @@ using namespace hal;
 
 static CLParserPtr initParser()
 {
-  CLParserPtr optionsParser = halCLParserInstance(false);
+  CLParserPtr optionsParser = halCLParserInstance();
   optionsParser->setDescription("Extract Fourfold-Degenerate codon positions"
                                 " from a BED file that contains exons");
   optionsParser->addArgument("halPath", "input hal file");
