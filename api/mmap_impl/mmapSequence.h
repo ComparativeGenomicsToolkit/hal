@@ -6,6 +6,7 @@
 
 namespace hal {
 class MMapSequence : public Sequence {
+    friend class MMapSequenceIterator;
 public:
     MMapSequence(MMapGenome *genome,
                  MMapSequenceData *data) : _genome(genome), _data(data) {};

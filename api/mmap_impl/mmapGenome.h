@@ -161,11 +161,11 @@ public:
         bool atomic) const;
 
     MMapAlignment *_alignment;
+    MMapSequenceData *getSequenceData(size_t i) const;
 protected:
     char *getDNAArray() { return ((char *) _data) + _data->_dnaOffset; }
 
 private:
-    MMapSequenceData *getSequenceData(size_t i) const;
     void setSequenceData(size_t i, hal_index_t startPos, hal_index_t topSegmentStartIndex,
                          hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo);
     MMapGenomeData *_data;
