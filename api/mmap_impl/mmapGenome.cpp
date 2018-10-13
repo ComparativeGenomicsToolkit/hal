@@ -167,7 +167,6 @@ const Sequence* MMapGenome::getSequenceBySite(hal_size_t position) const
 SequenceIteratorPtr MMapGenome::getSequenceIterator(
   hal_index_t position)
 {
-  assert(position <= (hal_index_t)_sequenceNameArray.getSize());
   MMapSequenceIterator* newIt = new MMapSequenceIterator(this, position);
   return SequenceIteratorPtr(newIt);
 }
@@ -175,7 +174,6 @@ SequenceIteratorPtr MMapGenome::getSequenceIterator(
 SequenceIteratorConstPtr MMapGenome::getSequenceIterator(
   hal_index_t position) const
 {
-  assert(position <= (hal_index_t)_sequenceNameArray.getSize());
   // genome effectively gets re-consted when returned in the
   // const iterator.  just save doubling up code.
   MMapSequenceIterator* newIt = new MMapSequenceIterator(
@@ -282,7 +280,6 @@ hal_size_t MMapGenome::getNumBottomSegments() const
 
 TopSegmentIteratorPtr MMapGenome::getTopSegmentIterator(hal_index_t segmentIndex)
 {
-  assert(position <= (hal_index_t)getNumTopSegments());
   MMapTopSegment *newSeg = new MMapTopSegment(this, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
@@ -292,7 +289,6 @@ TopSegmentIteratorPtr MMapGenome::getTopSegmentIterator(hal_index_t segmentIndex
 
 TopSegmentIteratorConstPtr MMapGenome::getTopSegmentIterator(hal_index_t segmentIndex) const
 {
-  assert(position <= (hal_index_t)getNumTopSegments());
   MMapGenome *genome = const_cast<MMapGenome*>(this);
   MMapTopSegment *newSeg = new MMapTopSegment(genome, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
@@ -308,7 +304,6 @@ TopSegmentIteratorConstPtr MMapGenome::getTopSegmentEndIterator() const
 
 BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmentIndex)
 {
-  assert(position <= (hal_index_t)getNumBottomSegments());
   MMapBottomSegment* newSeg = new MMapBottomSegment(this, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
@@ -318,7 +313,6 @@ BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmen
 
 BottomSegmentIteratorConstPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmentIndex) const
 {
-  assert(position <= (hal_index_t)getNumBottomSegments());
   MMapGenome* genome = const_cast<MMapGenome*>(this);
   MMapBottomSegment* newSeg = new MMapBottomSegment(genome, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
@@ -334,15 +328,12 @@ BottomSegmentIteratorConstPtr MMapGenome::getBottomSegmentEndIterator() const
    
 DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position)
 {
-  assert(position / 2 <= (hal_index_t)_dnaArray.getSize());
   MMapDNAIterator* newIt = new MMapDNAIterator(this, position);
   return DNAIteratorPtr(newIt);
 }
 
 DNAIteratorConstPtr MMapGenome::getDNAIterator(hal_index_t position) const
 {
-  assert(_dnaArray.getSize() == 0 || 
-         position / 2 <= (hal_index_t)_dnaArray.getSize());
   MMapGenome* genome = const_cast<MMapGenome*>(this);
   const MMapDNAIterator* newIt = new MMapDNAIterator(genome, position);
   return DNAIteratorConstPtr(newIt);
