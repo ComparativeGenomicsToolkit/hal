@@ -1,38 +1,63 @@
 #ifndef _MMAPSEQUENCE_H
 #define _MMAPSEQUENCE_H
 #include "halSequence.h"
+#include "mmapGenome.h"
+#include "mmapSequenceData.h"
+
 namespace hal {
 class MMapSequence : public Sequence {
 public:
-   MMapSequence(MMapGenome* genome,
-                hal_index_t index) {};
+    MMapSequence(MMapGenome *genome,
+                 MMapSequenceData *data) : _genome(genome), _data(data) {};
+
+    MMapSequence(MMapGenome *genome,
+                 MMapSequenceData *data,
+                 hal_index_t index,
+                 hal_index_t startPosition,
+                 hal_size_t length,
+                 hal_index_t topSegmentStartIndex,
+                 hal_index_t bottomSegmentStartIndex,
+                 hal_size_t numTopSegments,
+                 hal_size_t numBottomSegments,
+                 const std::string &name) :
+        _genome(genome),
+        _data(data) {
+        _data->_index = index;
+        _data->_startPosition = startPosition;
+        _data->_length = length;
+        _data->_topSegmentStartIndex = topSegmentStartIndex;
+        _data->_bottomSegmentStartIndex = bottomSegmentStartIndex;
+        _data->_numTopSegments = numTopSegments;
+        _data->_numBottomSegments = numBottomSegments;
+        _data->setName(_genome->_alignment, name);
+    };
 
    // SEQUENCE INTERFACE
-   std::string getName() const;
+   std::string getName() const { return _data->getName(_genome->_alignment); };
 
-   std::string getFullName() const;
+   std::string getFullName() const { return _genome->getName() + "." + _data->getName(_genome->_alignment); };
 
-   const Genome* getGenome() const;
+   const Genome* getGenome() const { return _genome; };
 
-   Genome* getGenome();
+   Genome* getGenome() { return _genome; };
 
-   hal_index_t getStartPosition() const;
+   hal_index_t getStartPosition() const { return _data->_startPosition; };
 
-   hal_index_t getEndPosition() const;
+   hal_index_t getEndPosition() const { return _data->_startPosition + _data->_length; };
 
-   hal_index_t getArrayIndex() const;
+   hal_index_t getArrayIndex() const { return _data->_index; };
 
-   hal_index_t getTopSegmentArrayIndex() const;
+   hal_index_t getTopSegmentArrayIndex() const { return _data->_topSegmentStartIndex; };
 
-   hal_index_t getBottomSegmentArrayIndex() const;
+   hal_index_t getBottomSegmentArrayIndex() const { return _data->_bottomSegmentStartIndex; };
 
    // SEGMENTED SEQUENCE INTERFACE
 
-   hal_size_t getSequenceLength() const;
+   hal_size_t getSequenceLength() const { return _data->_length; };
    
-   hal_size_t getNumTopSegments() const;
+   hal_size_t getNumTopSegments() const { return _data->_numTopSegments; };
 
-   hal_size_t getNumBottomSegments() const;
+   hal_size_t getNumBottomSegments() const { return _data->_numBottomSegments; };
 
    TopSegmentIteratorPtr getTopSegmentIterator(
      hal_index_t position);
@@ -89,7 +114,14 @@ public:
      hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
      bool atomic) const;
 
-   void setName(const std::string &newName);
+   void setName(const std::string &newName) { _data->setName(_genome->_alignment, newName); };
+
+    void setTopSegmentStartIndex(hal_index_t index) { _data->_topSegmentStartIndex = index; }
+    void setBottomSegmentStartIndex(hal_index_t index) { _data->_bottomSegmentStartIndex = index; }
+
+    private:
+    MMapGenome *_genome;
+    MMapSequenceData *_data;
 };
 }
 #endif

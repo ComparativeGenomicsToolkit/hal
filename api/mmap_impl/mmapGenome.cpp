@@ -18,7 +18,6 @@ void MMapGenome::setDimensions(
   bool storeDNAArrays)
 {
     hal_size_t totalSequenceLength = 0;
-   hal_size_t maxName = 0;
 
     // Copy segment dimensions to use the external interface
     vector<Sequence::UpdateInfo> topDimensions;
@@ -32,7 +31,6 @@ void MMapGenome::setDimensions(
          ++i)
     {
         totalSequenceLength += i->_length;
-        maxName = max(static_cast<hal_size_t>(i->_name.length()), maxName);
         topDimensions.push_back(
             Sequence::UpdateInfo(i->_name, i->_numTopSegments));
         bottomDimensions.push_back(
@@ -42,18 +40,18 @@ void MMapGenome::setDimensions(
     // Write the new DNA/sequence information.
     _data->_totalSequenceLength = totalSequenceLength;
     _data->_dnaOffset = _alignment->allocateNewArray(sizeof(char) * totalSequenceLength);
-    // FIXME: this needs to replaced, for two reasons: a) alignment
-    // and b) Sequence class needs to carry around more information,
-    // like the number of top/bottom segments for some reason.
-    size_t sequenceElementSize = maxName + 1 + sizeof(hal_size_t);
-    _data->_sequencesOffset = _alignment->allocateNewArray(sequenceElementSize * sequenceDimensions.size());
+    _data->_sequencesOffset = _alignment->allocateNewArray(sizeof(MMapSequenceData) * sequenceDimensions.size());
     hal_size_t startPos = 0;
+    hal_index_t topSegmentStartIndex = 0;
+    hal_index_t bottomSegmentStartIndex = 0;
     for (size_t i = 0;
          i < sequenceDimensions.size();
          ++i)
     {
-        setSequenceElement(i, sequenceDimensions[i]._name, startPos);
+        setSequenceData(i, startPos, topSegmentStartIndex, bottomSegmentStartIndex, sequenceDimensions[i]);
         startPos += sequenceDimensions[i]._length;
+        topSegmentStartIndex += sequenceDimensions[i]._numTopSegments;
+        bottomSegmentStartIndex += sequenceDimensions[i]._numBottomSegments;
     }
 
     // Write the new segment data.
@@ -61,21 +59,46 @@ void MMapGenome::setDimensions(
     updateBottomDimensions(bottomDimensions);
 }
 
-void MMapGenome::setSequenceElement(size_t i, const std::string &name, hal_size_t startPos) {
-    // TODO
+void MMapGenome::setSequenceData(size_t i, hal_index_t startPos, hal_index_t topSegmentStartIndex,
+                                 hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo) {
+    MMapSequenceData *data = getSequenceData(i);
+    // FIXME: Kinda stupid that this calls the constructor to
+    // initialize the data but doesn't do anything with it.
+    MMapSequence seq(this, data, i, startPos, sequenceInfo._length,
+                     topSegmentStartIndex, bottomSegmentStartIndex,
+                     sequenceInfo._numTopSegments, sequenceInfo._numBottomSegments,
+                     sequenceInfo._name);
+}
+
+MMapSequenceData *MMapGenome::getSequenceData(size_t i) const {
+    MMapSequenceData *sequences = (MMapSequenceData *) _alignment->resolveOffset(_data->_sequencesOffset, sizeof(MMapSequenceData));
+    return sequences + i;
 }
 
 void MMapGenome::updateTopDimensions(
   const vector<Sequence::UpdateInfo>& topDimensions)
 {
-    // TODO
+    _data->_numTopSegments = topDimensions.size();
+    _data->_topSegmentsOffset = _alignment->allocateNewArray(_data->_numTopSegments * sizeof(MMapTopSegmentData));
+    hal_index_t topSegmentStartIndex = 0;
+    for (size_t i = 0; i < topDimensions.size(); i++) {
+        MMapSequence seq(this, getSequenceData(i));
+        seq.setTopSegmentStartIndex(topSegmentStartIndex);
+        topSegmentStartIndex += topDimensions[i]._numSegments;
+    }
 }
 
 void MMapGenome::updateBottomDimensions(
   const vector<Sequence::UpdateInfo>& bottomDimensions)
 {
-    // TODO
-}
+    _data->_numBottomSegments = bottomDimensions.size();
+    _data->_bottomSegmentsOffset = _alignment->allocateNewArray(_data->_numBottomSegments * MMapBottomSegmentData::getSize(this));
+    hal_index_t bottomSegmentStartIndex = 0;
+    for (size_t i = 0; i < bottomDimensions.size(); i++) {
+        MMapSequence seq(this, getSequenceData(i));
+        seq.setBottomSegmentStartIndex(bottomSegmentStartIndex);
+        bottomSegmentStartIndex += bottomDimensions[i]._numSegments;
+    }}
 
 hal_size_t MMapGenome::getNumSequences() const
 {
@@ -239,8 +262,7 @@ const Alignment* MMapGenome::getAlignment() const
 
 const string& MMapGenome::getName() const
 {
-    // TODO
-    throw hal_exception("unimplemented");
+    return _name;
 }
 
 hal_size_t MMapGenome::getSequenceLength() const
@@ -461,7 +483,7 @@ void MMapGenome::loadSequenceNameCache() const
   {
       MMapSequence* seq = 
           new MMapSequence(const_cast<MMapGenome*>(this),
-                           i);
+                           getSequenceData(i));
 
       _sequenceNameCache.insert(
           pair<string, MMapSequence*>(seq->getName(), seq));

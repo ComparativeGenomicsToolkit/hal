@@ -3,14 +3,17 @@
 #include <map>
 #include "halGenome.h"
 #include "mmapAlignment.h"
-
 namespace hal {
 class MMapTopSegmentData;
 class MMapBottomSegmentData;
 class MMapSequence;
+class MMapSequenceData;
 
 class MMapGenomeData {
     friend class MMapGenome;
+public:
+    std::string getName(MMapAlignment *alignment) const;
+    void setName(MMapAlignment *alignment, const std::string &name);
 protected:
     hal_size_t _nameLength;
     hal_size_t _totalSequenceLength;
@@ -20,20 +23,26 @@ protected:
     hal_size_t _numBottomSegments;
     hal_size_t _numChildren;
 
-    // All offsets are relative to the start of this MMapGenomeData, in
-    // bytes. Negative offsets are allowed, but unlikely.
-    int64_t _nameOffset;
-    int64_t _sequencesOffset;
-    int64_t _metadataOffset;
-    int64_t _dnaOffset;
-    int64_t _topSegmentsOffset;
-    int64_t _bottomSegmentsOffset;
-    int64_t _childNamesOffset;
+    size_t _nameOffset;
+    size_t _sequencesOffset;
+    size_t _metadataOffset;
+    size_t _dnaOffset;
+    size_t _topSegmentsOffset;
+    size_t _bottomSegmentsOffset;
+    size_t _childNamesOffset;
 };
 
 class MMapGenome : public Genome {
     friend class MMapDNAIterator;
 public:
+    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data) : _alignment(alignment), _data(data) {
+        _name = _data->getName(_alignment);
+    };
+    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, const std::string &name) :
+        _alignment(alignment), _data(data), _name(name) {
+        _data->setName(_alignment, _name);
+    };
+
     MMapTopSegmentData *getTopSegmentPointer(hal_index_t index);
     MMapBottomSegmentData *getBottomSegmentPointer(hal_index_t index);
 
@@ -151,19 +160,32 @@ public:
         hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
         bool atomic) const;
 
+    MMapAlignment *_alignment;
 protected:
     char *getDNAArray() { return ((char *) _data) + _data->_dnaOffset; }
 
 private:
-    void setSequenceElement(size_t i, const std::string &name, hal_size_t startPos);
-    MMapAlignment *_alignment;
+    MMapSequenceData *getSequenceData(size_t i) const;
+    void setSequenceData(size_t i, hal_index_t startPos, hal_index_t topSegmentStartIndex,
+                         hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo);
     MMapGenomeData *_data;
+    std::string _name;
     mutable std::map<hal_size_t, MMapSequence*> _sequencePosCache;
     mutable std::vector<MMapSequence*> _zeroLenPosCache;
     mutable std::map<std::string, MMapSequence*> _sequenceNameCache;
     void deleteSequenceCache();
     void loadSequencePosCache() const;
     void loadSequenceNameCache() const;
+};
+
+std::string MMapGenomeData::getName(MMapAlignment *alignment) const {
+    return (const char *) alignment->resolveOffset(_nameOffset, _nameLength);
+};
+void MMapGenomeData::setName(MMapAlignment *alignment, const std::string &newName) {
+    size_t size = newName.size() + 1;
+    _nameOffset = alignment->allocateNewArray(sizeof(char) * size);
+    strncpy((char *) alignment->resolveOffset(_nameOffset, size), newName.c_str(), size);
+    _nameLength = size;
 };
 }
 #endif

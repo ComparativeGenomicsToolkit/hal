@@ -38,7 +38,7 @@ public:
 
    void close();
 
-    const std::string& getStorageFormat() const {
+    std::string getStorageFormat() const {
         return STORAGE_FORMAT_HDF5;
     }
     

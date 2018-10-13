@@ -23,10 +23,11 @@ namespace hal {
      * be left marked as dirty.
      */
     class MmapFile {
+        friend class MMapAlignment;
         public:
 
        
-        const std::string& getStorageFormat() const {
+        std::string getStorageFormat() const {
             return STORAGE_FORMAT_MMAP;
         }
 
@@ -37,6 +38,8 @@ namespace hal {
                                  size_t accessSize) const;
         inline size_t allocMem(size_t size,
                         bool isRoot=false);
+        bool isReadOnly() const { return !(_mode & WRITE_ACCESS); };
+        const char *getVersion() { return _header->version; };
         virtual ~MmapFile() {
         }
         
@@ -70,7 +73,7 @@ namespace hal {
             // no copying
         }
 
-        static MmapFile* localFactory(const std::string& alignmentPath,
+        static MmapFile *localFactory(const std::string& alignmentPath,
                                       unsigned mode = READ_ACCESS,
                                       size_t initSize = MMAP_DEFAULT_INIT_SIZE,
                                       size_t growSize = MMAP_DEFAULT_GROW_SIZE);

@@ -25,7 +25,7 @@ public:
    virtual void close() = 0;
 
    /** Get the name of the storage engine  */
-    virtual const std::string& getStorageFormat() const = 0;
+    virtual std::string getStorageFormat() const = 0;
     
    /** Add a new genome to the alignment
     * @param name name of new genome in alignment (must be unique)

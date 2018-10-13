@@ -260,7 +260,7 @@ void hal::MmapFileLocal::growFileImpl(size_t size) {
 }
 
 /** create a MmapFile object, opening a local file */
-hal::MmapFile* hal::MmapFile::localFactory(const std::string& alignmentPath,
+hal::MmapFile *hal::MmapFile::localFactory(const std::string& alignmentPath,
                                            unsigned mode,
                                            size_t initSize,
                                            size_t growSize) {
