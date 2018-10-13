@@ -3,8 +3,9 @@
 #include <map>
 #include "halGenome.h"
 #include "mmapAlignment.h"
+#include "mmapTopSegmentData.h"
+#include "mmapBottomSegmentData.h"
 namespace hal {
-class MMapTopSegmentData;
 class MMapBottomSegmentData;
 class MMapSequence;
 class MMapSequenceData;
@@ -14,6 +15,8 @@ class MMapGenomeData {
 public:
     std::string getName(MMapAlignment *alignment) const;
     void setName(MMapAlignment *alignment, const std::string &name);
+    MMapTopSegmentData *getTopSegmentData(MMapAlignment *alignment, hal_index_t index);
+    MMapBottomSegmentData *getBottomSegmentData(MMapAlignment *alignment, MMapGenome *genome, hal_index_t index);
 protected:
     hal_size_t _nameLength;
     hal_size_t _totalSequenceLength;
@@ -43,8 +46,8 @@ public:
         _data->setName(_alignment, _name);
     };
 
-    MMapTopSegmentData *getTopSegmentPointer(hal_index_t index);
-    MMapBottomSegmentData *getBottomSegmentPointer(hal_index_t index);
+    MMapTopSegmentData *getTopSegmentPointer(hal_index_t index) { return _data->getTopSegmentData(_alignment, index); };
+    MMapBottomSegmentData *getBottomSegmentPointer(hal_index_t index) { return _data->getBottomSegmentData(_alignment, this, index);  };
 
     const std::string& getName() const;
 
@@ -180,12 +183,24 @@ private:
 
 std::string MMapGenomeData::getName(MMapAlignment *alignment) const {
     return (const char *) alignment->resolveOffset(_nameOffset, _nameLength);
-};
+}
+
 void MMapGenomeData::setName(MMapAlignment *alignment, const std::string &newName) {
     size_t size = newName.size() + 1;
     _nameOffset = alignment->allocateNewArray(sizeof(char) * size);
     strncpy((char *) alignment->resolveOffset(_nameOffset, size), newName.c_str(), size);
     _nameLength = size;
-};
+}
+
+MMapTopSegmentData *MMapGenomeData::getTopSegmentData(MMapAlignment *alignment, hal_index_t index) {
+    return (MMapTopSegmentData *) alignment->resolveOffset(_topSegmentsOffset + index * sizeof(MMapTopSegmentData), sizeof(MMapTopSegmentData));
+}
+
+MMapBottomSegmentData *MMapGenomeData::getBottomSegmentData(MMapAlignment *alignment, MMapGenome *genome, hal_index_t index) {
+    size_t segmentSize = MMapBottomSegmentData::getSize(genome);
+    return (MMapBottomSegmentData *) alignment->resolveOffset(_bottomSegmentsOffset + index * segmentSize, segmentSize);
+}
+
+
 }
 #endif
