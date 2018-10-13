@@ -13,6 +13,7 @@
 #include "halCommon.h"
 #include "halAlignmentInstance.h"
 #include "hdf5Alignment.h"
+#include "mmapAlignment.h"
 #include "hdf5CLParser.h"
 
 using namespace std;
@@ -83,7 +84,8 @@ hal::mmapAlignmentInstance(const std::string& alignmentPath,
                            unsigned mode,
                            size_t initSize,
                            size_t growSize) {
-  return AlignmentPtr(NULL);
+    MMapAlignment *al = new MMapAlignment(alignmentPath, mode, initSize, growSize);
+    return AlignmentPtr(al);
 }
 
 AlignmentPtr hal::openHalAlignment(const std::string& path,

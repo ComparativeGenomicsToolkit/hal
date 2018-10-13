@@ -34,8 +34,8 @@ class MMapAlignment : public Alignment {
         _data->_numGenomes = 0;
     }
     // Open an existing alignment on local disk.
-    MMapAlignment(const std::string &path, unsigned mode) : _tree(NULL) {
-        _file = MmapFile::localFactory(path, mode);
+    MMapAlignment(const std::string &path, unsigned mode, size_t initSize, size_t growSize) : _tree(NULL) {
+        _file = MmapFile::localFactory(path, mode, initSize, growSize);
         _data = (MMapAlignmentData *) resolveOffset(_file->getRootOffset(), sizeof(MMapAlignmentData));
         loadTree();
     }

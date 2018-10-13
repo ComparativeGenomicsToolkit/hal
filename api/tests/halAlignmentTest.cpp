@@ -50,7 +50,7 @@ void AlignmentTest::check(CuTest* testCase)
 {
   _testCase = testCase;
   checkOne(testCase, hal::STORAGE_FORMAT_HDF5);
-  //FIXME: checkOne(testCase, hal::STORAGE_FORMAT_MMAP);
+  checkOne(testCase, hal::STORAGE_FORMAT_MMAP);
 }
 
 void AlignmentTest::checkOne(CuTest* testCase,
