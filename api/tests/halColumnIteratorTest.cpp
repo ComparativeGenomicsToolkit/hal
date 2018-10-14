@@ -1046,106 +1046,50 @@ void ColumnIteratorPositionCacheTest::checkCallBack(AlignmentConstPtr alignment)
 
 void halColumnIteratorBaseTest(CuTest *testCase)
 {
-  try 
-  {
     ColumnIteratorBaseTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halColumnIteratorDepthTest(CuTest *testCase)
 {
-  try 
-  {
     ColumnIteratorDepthTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halColumnIteratorDupTest(CuTest *testCase)
 {
-  try 
-  {
     ColumnIteratorDupTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halColumnIteratorInvTest(CuTest *testCase)
 {
-  try 
-  {
     ColumnIteratorInvTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halColumnIteratorGapTest(CuTest *testCase)
 {
-  try 
-  {
     ColumnIteratorGapTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halColumnIteratorMultiGapTest(CuTest *testCase)
 {
-  try 
-  {
     ColumnIteratorMultiGapTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halColumnIteratorMultiGapInvTest(CuTest *testCase)
 {
-  try 
-  {
     ColumnIteratorMultiGapInvTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halColumnIteratorPositionCacheTest(CuTest *testCase)
 {
-  try 
-  {
     ColumnIteratorPositionCacheTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 CuSuite* halColumnIteratorTestSuite(void) 

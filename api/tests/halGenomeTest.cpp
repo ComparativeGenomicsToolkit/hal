@@ -557,65 +557,36 @@ void halGenomeMetaTest(CuTest *testCase)
 
 void halGenomeCreateTest(CuTest *testCase)
 {
-  try
-  {
     GenomeCreateTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 void halGenomeUpdateTest(CuTest *testCase)
 {
-  try
-  {
     GenomeUpdateTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 void halGenomeStringTest(CuTest *testCase)
 {
-  try
-  {
     GenomeStringTest tester;
     tester.check(testCase);
-  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 void halGenomeCopyTest(CuTest *testCase)
 {
-/*  try
-    {*/
     GenomeCopyTest tester;
     tester.check(testCase);
-/*  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-    } */
 }
 
 CuSuite* halGenomeTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
-  // FIXME: why are these disabled
-  // SUITE_ADD_TEST(suite, halGenomeMetaTest);
-  // SUITE_ADD_TEST(suite, halGenomeCreateTest);
-  // SUITE_ADD_TEST(suite, halGenomeUpdateTest);
-  // SUITE_ADD_TEST(suite, halGenomeStringTest);
-//  SUITE_ADD_TEST(suite, halGenomeCopyTest);
+  SUITE_ADD_TEST(suite, halGenomeMetaTest);
+  SUITE_ADD_TEST(suite, halGenomeCreateTest);
+  SUITE_ADD_TEST(suite, halGenomeUpdateTest);
+  SUITE_ADD_TEST(suite, halGenomeStringTest);
+  SUITE_ADD_TEST(suite, halGenomeCopyTest);
   SUITE_ADD_TEST(suite, halGenomeCopySegmentsWhenSequencesOutOfOrderTest);
   return suite;
 }

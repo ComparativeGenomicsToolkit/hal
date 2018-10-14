@@ -407,41 +407,20 @@ GappedSegmentIteratorIndelTest::checkCallBack(AlignmentConstPtr alignment)
 
 void halGappedSegmentSimpleIteratorTest(CuTest *testCase)
 {
-  try 
-  {
     GappedSegmentSimpleIteratorTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halGappedSegmentSimpleIteratorTest2(CuTest *testCase)
 {
-  try 
-  {
     GappedSegmentSimpleIteratorTest2 tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halGappedSegmentIteratorIndelTest(CuTest *testCase)
 {
-  try 
-  {
     GappedSegmentIteratorIndelTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 CuSuite* halGappedSegmentIteratorTestSuite(void) 

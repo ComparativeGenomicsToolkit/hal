@@ -49,8 +49,12 @@ string AlignmentTest::randomString(hal_size_t length)
 void AlignmentTest::check(CuTest* testCase)
 {
   _testCase = testCase;
-  checkOne(testCase, hal::STORAGE_FORMAT_HDF5);
-  checkOne(testCase, hal::STORAGE_FORMAT_MMAP);
+  try {
+      checkOne(testCase, hal::STORAGE_FORMAT_HDF5);
+      checkOne(testCase, hal::STORAGE_FORMAT_MMAP);
+  } catch (const exception &e) {
+      CuFail(testCase, stString_print("Caught exception while testing: %s", e.what()));
+  }
 }
 
 void AlignmentTest::checkOne(CuTest* testCase,

@@ -74,56 +74,20 @@ void ValidateLargeTest::checkCallBack(AlignmentConstPtr alignment)
 
 void halValidateSmallTest(CuTest *testCase)
 {
-  try
-  {
     ValidateSmallTest tester;
     tester.check(testCase);
-  }
-  catch (hal_exception& e)
-  {
-    cerr << e.what() << endl;
-    CuAssertTrue(testCase, false);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 void halValidateMediumTest(CuTest *testCase)
 {
-  try
-  {
     ValidateMediumTest tester;
     tester.check(testCase);
-  }
-  catch (hal_exception& e)
-  {
-    cerr << e.what() << endl;
-    CuAssertTrue(testCase, false);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 void halValidateLargeTest(CuTest *testCase)
 {
-  try
-  {
     ValidateLargeTest tester;
     tester.check(testCase);
-  }
-  catch (hal_exception& e)
-  {
-    cerr << e.what() << endl;
-    CuAssertTrue(testCase, false);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 CuSuite* halValidateTestSuite(void) 
@@ -131,7 +95,7 @@ CuSuite* halValidateTestSuite(void)
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halValidateSmallTest);
   SUITE_ADD_TEST(suite, halValidateMediumTest);
-//  SUITE_ADD_TEST(suite, halValidateLargeTest);
+  SUITE_ADD_TEST(suite, halValidateLargeTest);
   return suite;
 }
 

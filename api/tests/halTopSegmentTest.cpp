@@ -587,80 +587,38 @@ void TopSegmentIsGapTest::checkCallBack(AlignmentConstPtr alignment)
 
 void halTopSegmentSimpleIteratorTest(CuTest *testCase)
 {
-  try 
-  {
     TopSegmentSimpleIteratorTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halTopSegmentSequenceTest(CuTest *testCase)
 {
-  try 
-  {
     TopSegmentSequenceTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halTopSegmentIteratorParseTest(CuTest *testCase)
 {
-  try 
-  {
     TopSegmentIteratorParseTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halTopSegmentIteratorToSiteTest(CuTest *testCase)
 {
-  try 
-  {
     TopSegmentIteratorToSiteTest tester;
     tester.check(testCase);
-  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halTopSegmentIteratorReverseTest(CuTest *testCase)
 {
-  try 
-  {
     TopSegmentIteratorReverseTest tester;
     tester.check(testCase);
-  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halTopSegmentIsGapTest(CuTest *testCase)
 {
-  try 
-  {
     TopSegmentIsGapTest tester;
     tester.check(testCase);
-  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 CuSuite* halTopSegmentTestSuite(void) 

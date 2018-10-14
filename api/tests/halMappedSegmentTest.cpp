@@ -938,145 +938,68 @@ void MappedSegmentColCompareTest3::createCallBack(AlignmentPtr alignment)
 
 void halMappedSegmentMapUpTest(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentMapUpTest tester;
     tester.check(testCase);
-  }
-  catch (double) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halMappedSegmentParseTest(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentParseTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halMappedSegmentMapDownTest(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentMapDownTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halMappedSegmentMapAcrossTest(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentMapAcrossTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halMappedSegmentMapDupeTest(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentMapDupeTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halMappedSegmentMapExtraParalogsTest(CuTest *testCase)
 {
-/*  try 
-  {*/
     MappedSegmentMapExtraParalogsTest tester;
     tester.check(testCase);
-/*  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } */
 }
 
 void haMappedSegmentColCompareTestCheck1(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentColCompareTestCheck1 tester;
     tester.check(testCase);
-  }
-  catch (double) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void haMappedSegmentColCompareTestCheck2(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentColCompareTestCheck2 tester;
     tester.check(testCase);
-  }
-  catch (double) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halMappedSegmentColCompareTest1(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentColCompareTest1 tester;
     tester.check(testCase);
-  }
-  catch (double) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halMappedSegmentColCompareTest2(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentColCompareTest2 tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halMappedSegmentColCompareTest3(CuTest *testCase)
 {
-  try 
-  {
     MappedSegmentColCompareTest3 tester;
     tester.check(testCase);
-  }
-  catch (double) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 CuSuite* halMappedSegmentTestSuite(void) 
@@ -1091,8 +1014,8 @@ CuSuite* halMappedSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck1);
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck2);
   SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
-//  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
-//  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
+  //SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
+  //SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
   return suite;
 }
 

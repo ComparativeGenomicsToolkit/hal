@@ -272,41 +272,20 @@ void SequenceUpdateTest::checkCallBack(AlignmentConstPtr alignment)
 
 void halSequenceCreateTest(CuTest *testCase)
 {
-  try
-  {
     SequenceCreateTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 void halSequenceIteratorTest(CuTest *testCase)
 {
-  try
-  {
     SequenceIteratorTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 void halSequenceUpdateTest(CuTest *testCase)
 {
-  try
-  {
     SequenceUpdateTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  }
 }
 
 

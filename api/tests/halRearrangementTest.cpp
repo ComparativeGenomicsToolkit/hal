@@ -399,41 +399,20 @@ RearrangementGappedInversionTest::checkCallBack(AlignmentConstPtr alignment)
 
 void halRearrangementInsertionTest(CuTest *testCase)
 {
-  try 
-  {
     RearrangementInsertionTest tester;
     tester.check(testCase);
-  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halRearrangementSimpleInversionTest(CuTest *testCase)
 {
-  try 
-  {
     RearrangementSimpleInversionTest tester;
     tester.check(testCase);
-  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halRearrangementGappedInversionTest(CuTest *testCase)
 {
-  try 
-  {
     RearrangementGappedInversionTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 CuSuite* halRearrangementTestSuite(void) 

@@ -594,80 +594,38 @@ void BottomSegmentIsGapTest::checkCallBack(AlignmentConstPtr alignment)
 
 void halBottomSegmentSimpleIteratorTest(CuTest *testCase)
 {
-  try 
-  {
     BottomSegmentSimpleIteratorTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halBottomSegmentSequenceTest(CuTest *testCase)
 {
-  try 
-  {
     BottomSegmentSequenceTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halBottomSegmentIteratorParseTest(CuTest *testCase)
 {
-  try 
-  {
     BottomSegmentIteratorParseTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halBottomSegmentIteratorToSiteTest(CuTest *testCase)
 {
-  try 
-  {
     BottomSegmentIteratorToSiteTest tester;
     tester.check(testCase);
-  }
-  catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halBottomSegmentIteratorReverseTest(CuTest *testCase)
 {
-  try 
-  {
     BottomSegmentIteratorReverseTest tester;
     tester.check(testCase);
-  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 void halBottomSegmentIsGapTest(CuTest *testCase)
 {
-  try 
-  {
     BottomSegmentIsGapTest tester;
     tester.check(testCase);
-  }
-   catch (...) 
-  {
-    CuAssertTrue(testCase, false);
-  } 
 }
 
 CuSuite* halBottomSegmentTestSuite(void) 
