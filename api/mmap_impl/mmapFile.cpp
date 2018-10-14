@@ -9,7 +9,7 @@
 
 
 /* constants for header */
-static const std::string FORMAT_NAME = "MMAP";
+static const std::string FORMAT_NAME = "HAL-MMAP";
 static const std::string MMAP_VERSION = "1.0";
 
 
