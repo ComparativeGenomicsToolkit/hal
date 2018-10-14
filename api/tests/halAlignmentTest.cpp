@@ -83,9 +83,7 @@ class AlignmentTestTrees : public AlignmentTest {
 
       alignment->addRootGenome("Root", 0);
       alignment->addLeafGenome("Leaf", "Root", 10);
-#if 0 // FIXME: not yet implemented in mmap
       alignment->addRootGenome("NewRoot", 15);
-#endif
       alignment->addLeafGenome("Leaf1", "Root", 4.1);
       alignment->addLeafGenome("Leaf2", "Root", 5.1);
       alignment->addLeafGenome("Leaf3", "Root", 6.1);

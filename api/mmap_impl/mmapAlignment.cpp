@@ -77,18 +77,17 @@ Genome* MMapAlignment::addLeafGenome(const string& name,
 
 Genome* MMapAlignment::addRootGenome(const string& name,
                                      double branchLength) {
+    stTree *newRoot = stTree_construct();
+    stTree_setLabel(newRoot, name.c_str());
     if (_tree != NULL) {
-        // FIXME
-        throw hal_exception("adding a new root when one is already defined is unimplemented");
-    } else {
-        _tree = stTree_construct();
-        stTree_setLabel(_tree, name.c_str());
+        stTree_setParent(_tree, newRoot);
         stTree_setBranchLength(_tree, branchLength);
-        writeTree();
-        MMapGenome *genome = _data->addGenome(this, name);
-        _openGenomes[name] = genome;
-        return genome;
     }
+    _tree = newRoot;
+    writeTree();
+    MMapGenome *genome = _data->addGenome(this, name);
+    _openGenomes[name] = genome;
+    return genome;
 }
 
 Genome *MMapAlignment::_openGenome(const string &name) const {
