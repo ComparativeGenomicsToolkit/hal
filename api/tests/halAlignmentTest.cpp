@@ -122,26 +122,9 @@ class AlignmentTestTrees : public AlignmentTest {
     }
 };
 
-class AlignmentTestEmpty : public AlignmentTest {
-    public:
-    void createCallBack(hal::AlignmentPtr alignment) {
-    }
-
-    void checkCallBack(hal::AlignmentConstPtr alignment)
-    {
-        CuAssertTrue(_testCase, alignment->getNumGenomes() == 0);
-    }
-};
-
 void halAlignmentTestTrees(CuTest *testCase)
 {
   AlignmentTestTrees tester;
-  tester.check(testCase);
-}
-
-void halAlignmentTestEmpty(CuTest *testCase)
-{
-  AlignmentTestEmpty tester;
   tester.check(testCase);
 }
 
@@ -149,7 +132,6 @@ CuSuite* halAlignmentTestSuite(void)
 {
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halAlignmentTestTrees);
-  SUITE_ADD_TEST(suite, halAlignmentTestEmpty);
   return suite;
 }
 

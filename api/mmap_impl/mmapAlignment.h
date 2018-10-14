@@ -184,6 +184,9 @@ private:
         if (_tree != NULL) {
             stTree_destruct(_tree);
         }
+        if (_data->_newickStringLength == 0) {
+            throw hal_exception("hal alignment has no tree");
+        }
         _tree = stTree_parseNewickString(_data->getNewickString(this));
     };
     void writeTree() {

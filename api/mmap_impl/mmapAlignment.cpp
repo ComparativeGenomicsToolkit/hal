@@ -84,6 +84,7 @@ Genome* MMapAlignment::addRootGenome(const string& name,
         _tree = stTree_construct();
         stTree_setLabel(_tree, name.c_str());
         stTree_setBranchLength(_tree, branchLength);
+        writeTree();
         MMapGenome *genome = _data->addGenome(this, name);
         _openGenomes[name] = genome;
         return genome;

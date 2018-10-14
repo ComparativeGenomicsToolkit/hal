@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <cassert>
+#include <iostream>
 #include "halAlignmentInstance.h"
 
 namespace hal {
@@ -126,6 +127,7 @@ size_t hal::MMapFile::allocMem(size_t size,
     if (isRoot) {
         _header->rootOffset = offset;
     }
+    std::cout << "allocMem returning offset " << offset << " for allocation of size " << size << ", root: " << isRoot << std::endl;
     return offset;
 }
 
