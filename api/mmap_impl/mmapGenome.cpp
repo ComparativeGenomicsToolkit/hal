@@ -200,7 +200,12 @@ const MetaData* MMapGenome::getMetaData() const
 
 Genome* MMapGenome::getParent()
 {
-  return _alignment->openGenome(_alignment->getParentName(getName()));
+    std::string parentName = _alignment->getParentName(getName());
+    if (parentName.empty()) {
+        return NULL;
+    } else {
+        return _alignment->openGenome(parentName);
+    }
 }
 
 const Genome* MMapGenome::getParent() const

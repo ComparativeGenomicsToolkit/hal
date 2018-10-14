@@ -87,9 +87,10 @@ class MMapAlignment : public Alignment {
         stTree *node = getGenomeNode(name);
         stTree *parent = stTree_getParent(node);
         if (parent == NULL) {
-            throw hal_exception("Root genome has no parent");
+            return "";
+        } else {
+            return stTree_getLabel(parent);
         }
-        return stTree_getLabel(parent);
     };
 
     void updateBranchLength(const std::string& parentName,
