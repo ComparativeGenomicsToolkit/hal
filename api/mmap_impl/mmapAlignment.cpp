@@ -55,9 +55,16 @@ MMapGenome *MMapAlignmentData::addGenome(MMapAlignment *alignment, const std::st
         memcpy(newGenomeArray, oldGenomeArray, _numGenomes * sizeof(MMapGenomeData));
     }
     _genomeArrayOffset = newGenomeArrayOffset;
+
+    // Update any existing genome's data entries to point to their new location.
+    for (auto &name_genome : alignment->_openGenomes) {
+        MMapGenome *genome = name_genome.second;
+        genome->updateGenomeArrayBasePtr(newGenomeArray);
+    }
+
     MMapGenomeData *data = newGenomeArray + _numGenomes;
     _numGenomes += 1;
-    MMapGenome *genome = new MMapGenome(alignment, data, name);
+    MMapGenome *genome = new MMapGenome(alignment, data, _numGenomes - 1, name);
     return genome;
 }
 
@@ -99,9 +106,9 @@ Genome *MMapAlignment::_openGenome(const string &name) const {
     MMapGenomeData *genomeArray = (MMapGenomeData *) resolveOffset(_data->_genomeArrayOffset, _data->_numGenomes * sizeof(MMapGenomeData));
     MMapGenome *genome = NULL;
     for (size_t i = 0; i < _data->_numGenomes; i++) {
-        MMapGenome curGenome(const_cast<MMapAlignment *>(this), genomeArray + i);
+        MMapGenome curGenome(const_cast<MMapAlignment *>(this), genomeArray + i, i);
         if (curGenome.getName() == name) {
-            genome = new MMapGenome(const_cast<MMapAlignment *>(this), genomeArray + i);
+            genome = new MMapGenome(const_cast<MMapAlignment *>(this), genomeArray + i, i);
             break;
         }
     }

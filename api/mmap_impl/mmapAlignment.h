@@ -24,6 +24,7 @@ private:
 };
 
 class MMapAlignment : public Alignment {
+    friend class MMapAlignmentData;
     public:
     /* constructor with all arguments specified */
     MMapAlignment(const std::string& alignmentPath,
@@ -170,6 +171,8 @@ class MMapAlignment : public Alignment {
         loadTree();
     };
 
+protected:
+    mutable std::map<std::string, MMapGenome *> _openGenomes;
 private:
     void create();
     void open();
@@ -198,7 +201,6 @@ private:
     MMapFile *_file;
     MMapAlignmentData *_data;
     stTree *_tree;
-    mutable std::map<std::string, MMapGenome *> _openGenomes;
 };
 
 inline const char *MMapAlignmentData::getNewickString(const MMapAlignment *alignment) {

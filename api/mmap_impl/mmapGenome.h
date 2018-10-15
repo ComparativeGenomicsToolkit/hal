@@ -37,16 +37,20 @@ protected:
 class MMapGenome : public Genome {
     friend class MMapDNAIterator;
 public:
-    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data) : _alignment(alignment), _data(data) {
+    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex) : _alignment(alignment), _data(data), _arrayIndex(arrayIndex) {
         _name = _data->getName(_alignment);
     };
-    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, const std::string &name) :
-        _alignment(alignment), _data(data), _name(name) {
+    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex, const std::string &name) :
+        _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name) {
         _data->setName(_alignment, _name);
     };
 
     MMapTopSegmentData *getTopSegmentPointer(hal_index_t index) { return _data->getTopSegmentData(_alignment, index); };
     MMapBottomSegmentData *getBottomSegmentPointer(hal_index_t index) { return _data->getBottomSegmentData(_alignment, this, index);  };
+
+    void updateGenomeArrayBasePtr(MMapGenomeData *base) {
+        _data = base + _arrayIndex;
+    }
 
     const std::string& getName() const;
 
@@ -166,11 +170,12 @@ public:
     MMapSequenceData *getSequenceData(size_t i) const;
 protected:
     char *getDNAArray() { return ((char *) _data) + _data->_dnaOffset; }
-
 private:
+    // Index within the alignment's genome array.
+    MMapGenomeData *_data;
+    size_t _arrayIndex;
     void setSequenceData(size_t i, hal_index_t startPos, hal_index_t topSegmentStartIndex,
                          hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo);
-    MMapGenomeData *_data;
     std::string _name;
     mutable std::map<hal_size_t, MMapSequence*> _sequencePosCache;
     mutable std::vector<MMapSequence*> _zeroLenPosCache;
