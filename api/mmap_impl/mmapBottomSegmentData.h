@@ -35,7 +35,7 @@ class MMapBottomSegmentData
 
     private:
     hal_index_t *getChildIndexLocation(hal_size_t child) const {
-        return const_cast<hal_index_t *>(&_topParseIndex + child);
+        return const_cast<hal_index_t *>(&_topParseIndex + 1 + child);
     }
     bool *getChildReversedLocation(hal_size_t numChildren, hal_size_t child) const {
         return ((bool *) getChildIndexLocation(numChildren)) + child;
