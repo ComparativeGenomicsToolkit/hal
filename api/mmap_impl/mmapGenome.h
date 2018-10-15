@@ -13,6 +13,7 @@ class MMapSequenceData;
 class MMapGenomeData {
     friend class MMapGenome;
 public:
+    char *getDNAArray(MMapAlignment *alignment) const;
     std::string getName(MMapAlignment *alignment) const;
     void setName(MMapAlignment *alignment, const std::string &name);
     MMapTopSegmentData *getTopSegmentData(MMapAlignment *alignment, hal_index_t index);
@@ -169,7 +170,7 @@ public:
     MMapAlignment *_alignment;
     MMapSequenceData *getSequenceData(size_t i) const;
 protected:
-    char *getDNAArray() { return ((char *) _data) + _data->_dnaOffset; }
+    char *getDNAArray() { return _data->getDNAArray(_alignment); }
 private:
     // Index within the alignment's genome array.
     MMapGenomeData *_data;
@@ -205,6 +206,9 @@ inline MMapBottomSegmentData *MMapGenomeData::getBottomSegmentData(MMapAlignment
     return (MMapBottomSegmentData *) alignment->resolveOffset(_bottomSegmentsOffset + index * segmentSize, segmentSize);
 }
 
-
+inline char *MMapGenomeData::getDNAArray(MMapAlignment *alignment) const {
+    // FIXME: need to move this to DNA iterator so length can function properly
+    return (char *) alignment->resolveOffset(_dnaOffset, 1);
+}
 }
 #endif
