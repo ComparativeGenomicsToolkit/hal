@@ -148,11 +148,13 @@ static int udcFseekWrapper(struct udcFile* file, long long offset, int whence)
   return 0;
 }
 
+#if 0
 static int udcFtruncateWrapper(int, long long)
 {
   assert(0);
   return -1;
 }
+#endif
 
 
 /* Use similar structure as in H5private.h by defining Windows stuff first. */
@@ -214,19 +216,20 @@ static herr_t H5FD_udc_fuse_query(const H5FD_t *_f1, unsigned long *flags);
 static haddr_t H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, hsize_t size);
 static haddr_t H5FD_udc_fuse_get_eoa(const H5FD_t *_file, H5FD_mem_t type);
 static herr_t H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr);
-static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file);
+static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type);
 static herr_t  H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void** file_handle);
 static herr_t H5FD_udc_fuse_read(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr,
                 size_t size, void *buf);
 static herr_t H5FD_udc_fuse_write(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr,
                 size_t size, const void *buf);
-static herr_t H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, unsigned closing);
+static herr_t H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, hbool_t closing);
 static herr_t H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing);
 
 static const H5FD_class_t H5FD_udc_fuse_g = {
     "udc_fuse",                    /* name         */
     MAXADDR,                    /* maxaddr      */
     H5F_CLOSE_WEAK,             /* fc_degree    */
+    NULL,                       /* terminate */
     NULL,                       /* sb_size      */
     NULL,                       /* sb_encode    */
     NULL,                       /* sb_decode    */
@@ -376,8 +379,6 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
     static const char   *func = "H5FD_udc_fuse_open";  /* Function Name for error reporting */
 #ifdef H5_HAVE_WIN32_API
     struct _BY_HANDLE_FILE_INFORMATION fileinfo;
-#else /* H5_HAVE_WIN32_API */
-    struct stat         sb;
 #endif  /* H5_HAVE_WIN32_API */
     /* Sanity check on file offsets */
     assert(sizeof(file_offset_t) >= sizeof(size_t));
@@ -461,7 +462,6 @@ static herr_t
 H5FD_udc_fuse_close(H5FD_t *_file)
 {
     H5FD_udc_fuse_t  *file = (H5FD_udc_fuse_t*)_file;
-    static const char *func = "H5FD_udc_fuse_close";  /* Function Name for error reporting */
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
@@ -666,7 +666,7 @@ H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, haddr_t addr)
  *-------------------------------------------------------------------------
  */
 static haddr_t
-H5FD_udc_fuse_get_eof(const H5FD_t *_file)
+H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type)
 {
     const H5FD_udc_fuse_t  *file = (const H5FD_udc_fuse_t *)_file;
 
@@ -839,7 +839,6 @@ static herr_t
 H5FD_udc_fuse_write(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr,
     size_t size, const void *buf)
 {
-    H5FD_udc_fuse_t    *file = (H5FD_udc_fuse_t*)_file;
     static const char *func = "H5FD_udc_fuse_write";  /* Function Name for error reporting */
 
     /* Clear the error stack */
@@ -868,9 +867,8 @@ H5FD_udc_fuse_write(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr,
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, unsigned closing)
+H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, hbool_t closing)
 {
-    H5FD_udc_fuse_t  *file = (H5FD_udc_fuse_t*)_file;
     static const char *func = "H5FD_udc_fuse_flush";  /* Function Name for error reporting */
     H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot flush", -1)
     
@@ -898,7 +896,6 @@ H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, unsigned closing)
 static herr_t
 H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing)
 {
-    H5FD_udc_fuse_t  *file = (H5FD_udc_fuse_t*)_file;
     static const char *func = "H5FD_udc_fuse_truncate";  /* Function Name for error reporting */
     
     H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot truncate", -1)

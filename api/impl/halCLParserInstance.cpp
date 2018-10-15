@@ -13,9 +13,9 @@ using namespace hal;
 
 CLParserPtr hal::halCLParserInstance(unsigned mode)
 {
-    CLParserPtr clParser(new CLParser());
-    HDF5CLParser::defineOptions(clParser, mode);
-    MMapCLParser::defineOptions(clParser, mode);
+    CLParserPtr parser(new CLParser());
+    HDF5CLParser::defineOptions(parser, mode);
+    MMapCLParser::defineOptions(parser, mode);
 #ifdef ENABLE_UDC
   // this can be define by other storage formats as well
     if ((mode & (CREATE_ACCESS | WRITE_ACCESS)) == 0 ) {
@@ -23,5 +23,5 @@ CLParserPtr hal::halCLParserInstance(unsigned mode)
                         "\"\"");
   }
 #endif
-    return clParser;
+    return parser;
 }

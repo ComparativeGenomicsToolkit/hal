@@ -1,3 +1,10 @@
+# if include.local.mk exists, include it first to set various options
+# it shuld not be checked in
+includeLocal = ${rootDir}/include.local.mk
+ifneq ($(wildcard ${includeLocal}),)
+   include ${includeLocal}
+endif
+
 binDir =${rootDir}/bin
 libDir = ${rootDir}/lib
 objDir = ${rootDir}/objs
@@ -39,7 +46,7 @@ cflags += -I${sonLibDir} -fPIC
 cppflags += -I${sonLibDir} -fPIC -D_GLIBCXX_USE_CXX11_ABI=1 -std=c++11 -Wno-sign-compare
 
 basicLibs = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
-basicLibsDependencies = ${basicLibs}
+basicLibsDependencies = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 
 # hdf5 compilation is done through its wrappers.
 # we can speficy our own (sonlib) compilers with these variables:
@@ -50,14 +57,11 @@ cxx = h5cc ${h5prefix}
 # relies on KENTSRC containing path to top level kent/ dir
 # and MACHTYPE being specified
 ifdef ENABLE_UDC
-#  Find samtabix as in kent/src/inc/common.mk:
-	ifeq (${SAMTABIXDIR},)
-		SAMTABIXDIR = /hive/data/outside/samtabix/${MACHTYPE}
-	endif
-
-	cppflags += -DENABLE_UDC -I${KENTSRC}/src/inc -pthread
-	cflags += -I${KENTSRC}/src/inc -pthread
-	basicLibs += ${KENTSRC}/src/lib/${MACHTYPE}/jkweb.a  ${SAMTABIXDIR}/libsamtabix.a -lssl -lcrypto
+    #  Find htslib as in kent/src/inc/common.mk:
+    MACHTYPE = x86_64
+    cppflags += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
+    cflags += -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
+    basicLibs += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lssl -lcrypto
 endif
 
 
