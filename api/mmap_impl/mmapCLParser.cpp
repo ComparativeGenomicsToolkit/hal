@@ -23,10 +23,18 @@ void MMapCLParser::defineOptions(CLParserPtr parser,
 
 size_t MMapCLParser::getInitSize(CLParserPtr parser)
 {
-    return parser->get<size_t>("mmapInitSize");
+    if (parser->hasOption("mmapInitSize")) {
+        return parser->get<size_t>("mmapInitSize");
+    } else {
+        return 0;
+    }
 }
 
 size_t MMapCLParser::getGrowSize(CLParserPtr parser)
 {
-    return parser->get<size_t>("mmapGrowSize");
+    if (parser->hasOption("mmapGrowSize")) {
+        return parser->get<size_t>("mmapGrowSize");
+    } else {
+        return 0;
+    }
 }

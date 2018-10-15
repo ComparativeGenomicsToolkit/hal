@@ -74,10 +74,6 @@ HDF5Genome::HDF5Genome(const string& name,
                           _sequenceNameArray.getSize() - 1);
     _totalSequenceLength = lastSeq.getEndPosition() + 1;
   }
-
-  // this appears to be a sanity check that raise exception if chunk is not set
-  hsize_t chunk;
-  _dcprops.getChunk(1, &chunk);
 }
 
 

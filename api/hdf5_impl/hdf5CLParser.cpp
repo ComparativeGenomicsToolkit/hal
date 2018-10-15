@@ -21,7 +21,7 @@ void HDF5CLParser::defineOptions(CLParserPtr parser,
   if (mode & CREATE_ACCESS)
   {
     parser->addOption("hdf5Chunk", "hdf5 chunk size", HDF5Alignment::DefaultChunkSize);
-    parser->addOption("chunk", " obsolete name for --hdf5Chunk ", HDF5Alignment::DefaultChunkSize);
+    parser->addOption("chunk", "obsolete name for --hdf5Chunk ", HDF5Alignment::DefaultChunkSize);
 
     parser->addOption("hdf5Compression", "hdf5 compression factor [0:none - 9:max]", 
                       HDF5Alignment::DefaultCompression);
@@ -80,10 +80,13 @@ static bool getFlagAlt(CLParserPtr parser,
 void HDF5CLParser::applyToDCProps(CLParserPtr parser,
                                   DSetCreatPropList& dcprops)
 {
-    hsize_t chunk = getOptionAlt<hsize_t>(parser, "hdf5Chunk", "chunk");
-    hsize_t deflate = getOptionAlt<hsize_t>(parser, "hdf5Compression", "deflate");
-    dcprops.setChunk(1, &chunk);
-    dcprops.setDeflate(deflate);
+    // these are only available on create
+    if (parser->hasOption("hdf5Chunk")) {
+        hsize_t chunk = getOptionAlt<hsize_t>(parser, "hdf5Chunk", "chunk");
+        hsize_t deflate = getOptionAlt<hsize_t>(parser, "hdf5Compression", "deflate");
+        dcprops.setChunk(1, &chunk);
+        dcprops.setDeflate(deflate);
+    }
 }
 
 void HDF5CLParser::applyToAProps(CLParserPtr parser,

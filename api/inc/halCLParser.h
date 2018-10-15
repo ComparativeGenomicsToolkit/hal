@@ -128,12 +128,14 @@ protected:
       std::string _defaultValue;
       std::string _value;
       bool _flag;
+      bool _specified;
    };
 
    struct Argument {
       std::string _name;
       std::string _description;
       std::string _value;
+      bool _specified;
    };
 
    std::string _prefix;
@@ -190,6 +192,7 @@ inline void CLParser::addOption(const std::string& name,
     opt._defaultValue = ss.str();
     opt._value = opt._defaultValue;
     opt._flag = false;
+    opt._specified = false;
   }
   catch (...)
   {

@@ -38,7 +38,7 @@ static const Options defaultLrg = {2, 1, 100, 2, 10, 10000, 500000, 2000000, ""}
 static CLParserPtr initParser() {
     CLParserPtr parser = halCLParserInstance(CREATE_ACCESS);
     parser->setDescription("Generate a random HAL alignment file");
-    parser->addOption("-preset", "one of small, medium, big, large [medium]", "medium");
+    parser->addOption("preset", "one of small, medium, big, large [medium]", "medium");
     parser->addOption("meanDegree", "[" + std::to_string(defaultMed._meanDegree), defaultMed._meanDegree);
     parser->addOption("maxBranchLength", "[" + std::to_string(defaultMed._maxBranchLength), defaultMed._maxBranchLength);
     parser->addOption("maxGenomes", "[" + std::to_string(defaultMed._maxGenomes), defaultMed._maxGenomes);
@@ -75,7 +75,7 @@ static Options getPresetDefault(CLParserPtr parser) {
     }
 }
 
-static Options parseOptions(CLParserPtr parser)
+static Options parseProgOptions(CLParserPtr parser)
 {
     Options options = getPresetDefault(parser);
     updateOption(parser, "--meanDegree", options._meanDegree);
@@ -93,8 +93,15 @@ static Options parseOptions(CLParserPtr parser)
 int main(int argc, char** argv)
 {
     CLParserPtr parser = initParser();
-    parser->parseOptions(argc, argv);
-    Options options = parseOptions(parser);
+    Options options;
+    try {
+        parser->parseOptions(argc, argv);
+        options = parseProgOptions(parser);
+    } catch (hal_exception &e) {
+        cerr << e.what() << endl;
+        parser->printUsage(cerr);
+        exit(1);
+    }
         
   try
   {
