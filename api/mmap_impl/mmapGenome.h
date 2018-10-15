@@ -177,6 +177,7 @@ private:
     size_t _arrayIndex;
     void setSequenceData(size_t i, hal_index_t startPos, hal_index_t topSegmentStartIndex,
                          hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo);
+    std::vector<Sequence::UpdateInfo> getCompleteInputDimensions(const std::vector<Sequence::UpdateInfo>& inputDimensions, bool isTop);
     std::string _name;
     mutable std::map<hal_size_t, MMapSequence*> _sequencePosCache;
     mutable std::vector<MMapSequence*> _zeroLenPosCache;

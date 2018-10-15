@@ -78,9 +78,39 @@ MMapSequenceData *MMapGenome::getSequenceData(size_t i) const {
     return sequences + i;
 }
 
+// Get a vector containing updates for *all* sequences (leaving ones
+// unupdated the same) from a vector containing updates for *some*
+// sequences.
+vector<Sequence::UpdateInfo> MMapGenome::getCompleteInputDimensions(const vector<Sequence::UpdateInfo>& inputDimensions, bool isTop) {
+    vector <Sequence::UpdateInfo> dimensions;
+    if (dimensions.size() != _data->_numSequences) {
+        // Not all the sequences are included in this update. Build a
+        // new update vector that contains all the sequences (leaving
+        // the ones that aren't in the input exactly the same).
+        map<string, size_t> updatedSeqToIndex;
+        for (size_t i = 0; i < inputDimensions.size(); i++) {
+            updatedSeqToIndex.insert(make_pair(inputDimensions[i]._name, i));
+        }
+        for (size_t i = 0; i < _data->_numSequences; i++) {
+            MMapSequenceData *data = getSequenceData(i);
+            string name = data->getName(_alignment);
+            if (updatedSeqToIndex.find(name) != updatedSeqToIndex.end()) {
+                dimensions.push_back(inputDimensions[updatedSeqToIndex[name]]);
+            } else {
+                dimensions.push_back(Sequence::UpdateInfo(name, isTop ? data->_numTopSegments : data->_numBottomSegments));
+            }
+        }
+    } else {
+        // This update affects all sequences.
+        dimensions = inputDimensions;
+    }
+    return dimensions;
+}
+
 void MMapGenome::updateTopDimensions(
-  const vector<Sequence::UpdateInfo>& topDimensions)
+  const vector<Sequence::UpdateInfo>& updatedTopDimensions)
 {
+    vector<Sequence::UpdateInfo> topDimensions = getCompleteInputDimensions(updatedTopDimensions, true);
     // Figure out how many top segments the dimension array implies in total.
     size_t numTopSegments = 0;
     for (auto &i : topDimensions) {
@@ -99,8 +129,9 @@ void MMapGenome::updateTopDimensions(
 }
 
 void MMapGenome::updateBottomDimensions(
-  const vector<Sequence::UpdateInfo>& bottomDimensions)
+  const vector<Sequence::UpdateInfo>& updatedBottomDimensions)
 {
+    vector<Sequence::UpdateInfo> bottomDimensions = getCompleteInputDimensions(updatedBottomDimensions, false);
     size_t numBottomSegments = 0;
     for (auto &i : bottomDimensions) {
         numBottomSegments += i._numSegments;
@@ -113,7 +144,8 @@ void MMapGenome::updateBottomDimensions(
         seq.setNumBottomSegments(bottomDimensions[i]._numSegments);
         seq.setBottomSegmentStartIndex(bottomSegmentStartIndex);
         bottomSegmentStartIndex += bottomDimensions[i]._numSegments;
-    }}
+    }
+}
 
 hal_size_t MMapGenome::getNumSequences() const
 {

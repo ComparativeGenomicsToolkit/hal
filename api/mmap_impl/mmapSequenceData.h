@@ -4,6 +4,7 @@
 namespace hal {
 class MMapSequenceData {
     friend class MMapSequence;
+    friend class MMapGenome;
     public:
     const char *getName(MMapAlignment *alignment) const { return (const char *) alignment->resolveOffset(_nameOffset, _nameLength); };
     void setName(MMapAlignment *alignment, const std::string &newName) {
