@@ -13,7 +13,7 @@ void MMapBottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
   }
 
   _data->setStartPosition(startPos);
-  (_data + 1)->setStartPosition(startPos + length);
+  getNextData()->setStartPosition(startPos + length);
 }
 
 hal_offset_t MMapBottomSegment::getTopParseOffset() const

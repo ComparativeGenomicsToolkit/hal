@@ -72,6 +72,10 @@ class MMapBottomSegment : public BottomSegment
     hal_index_t getRightChildIndex(hal_size_t i) const;
 
     private:
+    // Return a pointer to the data for the segment *after* this one in the array.
+    MMapBottomSegmentData *getNextData() const {
+        return (MMapBottomSegmentData *) (((char *) _data) + MMapBottomSegmentData::getSize(_genome));
+    };
     mutable MMapBottomSegmentData *_data;
     mutable MMapGenome *_genome;
     mutable hal_index_t _index;
@@ -94,7 +98,7 @@ inline hal_index_t MMapBottomSegment::getEndPosition() const
 
 inline hal_size_t MMapBottomSegment::getLength() const
 {
-  return (_data + 1)->getStartPosition() - _data->getStartPosition();
+  return getNextData()->getStartPosition() - _data->getStartPosition();
 }
 
 inline const Sequence* MMapBottomSegment::getSequence() const
