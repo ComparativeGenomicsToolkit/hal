@@ -78,8 +78,14 @@ MMapSequenceData *MMapGenome::getSequenceData(size_t i) const {
 void MMapGenome::updateTopDimensions(
   const vector<Sequence::UpdateInfo>& topDimensions)
 {
-    _data->_numTopSegments = topDimensions.size();
-    _data->_topSegmentsOffset = _alignment->allocateNewArray(_data->_numTopSegments * sizeof(MMapTopSegmentData));
+    // Figure out how many top segments the dimension array implies in total.
+    size_t numTopSegments = 0;
+    for (auto &i : topDimensions) {
+        numTopSegments += i._numSegments;
+    }
+    _data->_numTopSegments = numTopSegments;
+
+    _data->_topSegmentsOffset = _alignment->allocateNewArray((_data->_numTopSegments + 1) * sizeof(MMapTopSegmentData));
     hal_index_t topSegmentStartIndex = 0;
     for (size_t i = 0; i < topDimensions.size(); i++) {
         MMapSequence seq(this, getSequenceData(i));
@@ -91,8 +97,12 @@ void MMapGenome::updateTopDimensions(
 void MMapGenome::updateBottomDimensions(
   const vector<Sequence::UpdateInfo>& bottomDimensions)
 {
-    _data->_numBottomSegments = bottomDimensions.size();
-    _data->_bottomSegmentsOffset = _alignment->allocateNewArray(_data->_numBottomSegments * MMapBottomSegmentData::getSize(this));
+    size_t numBottomSegments = 0;
+    for (auto &i : bottomDimensions) {
+        numBottomSegments += i._numSegments;
+    }
+    _data->_numBottomSegments = numBottomSegments;
+    _data->_bottomSegmentsOffset = _alignment->allocateNewArray((_data->_numBottomSegments + 1) * MMapBottomSegmentData::getSize(this));
     hal_index_t bottomSegmentStartIndex = 0;
     for (size_t i = 0; i < bottomDimensions.size(); i++) {
         MMapSequence seq(this, getSequenceData(i));
