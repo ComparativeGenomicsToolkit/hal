@@ -257,7 +257,12 @@ Genome* MMapGenome::getParent()
 
 const Genome* MMapGenome::getParent() const
 {
-  return _alignment->openGenome(_alignment->getParentName(getName()));
+    std::string parentName = _alignment->getParentName(getName());
+    if (parentName.empty()) {
+        return NULL;
+    } else {
+        return _alignment->openGenome(parentName);
+    }
 }
 
 Genome* MMapGenome::getChild(hal_size_t childIdx)
