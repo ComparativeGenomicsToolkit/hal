@@ -41,6 +41,7 @@ void MMapGenome::setDimensions(
     _data->_totalSequenceLength = totalSequenceLength;
     _data->_dnaOffset = _alignment->allocateNewArray(sizeof(char) * totalSequenceLength);
     _data->_sequencesOffset = _alignment->allocateNewArray(sizeof(MMapSequenceData) * sequenceDimensions.size());
+    _data->_numSequences = sequenceDimensions.size();
     hal_size_t startPos = 0;
     hal_index_t topSegmentStartIndex = 0;
     hal_index_t bottomSegmentStartIndex = 0;
