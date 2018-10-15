@@ -24,7 +24,6 @@ protected:
     hal_size_t _numMetadata;
     hal_size_t _numTopSegments;
     hal_size_t _numBottomSegments;
-    hal_size_t _numChildren;
 
     size_t _nameOffset;
     size_t _sequencesOffset;
