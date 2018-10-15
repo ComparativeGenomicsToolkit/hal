@@ -1010,6 +1010,7 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(AlignmentConstPtr alignment)
 
 void ColumnIteratorPositionCacheTest::createCallBack(AlignmentPtr alignment)
 {
+    alignment->addRootGenome("foobar");
 }
 
 void ColumnIteratorPositionCacheTest::checkCallBack(AlignmentConstPtr alignment)
