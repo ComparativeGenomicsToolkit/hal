@@ -55,8 +55,8 @@ MMapGenome *MMapAlignmentData::addGenome(MMapAlignment *alignment, const std::st
         memcpy(newGenomeArray, oldGenomeArray, _numGenomes * sizeof(MMapGenomeData));
     }
     _genomeArrayOffset = newGenomeArrayOffset;
-    _numGenomes += 1;
     MMapGenomeData *data = newGenomeArray + _numGenomes;
+    _numGenomes += 1;
     MMapGenome *genome = new MMapGenome(alignment, data, name);
     return genome;
 }
