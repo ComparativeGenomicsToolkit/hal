@@ -26,6 +26,7 @@ public:
     static void applyToAProps(CLParserPtr parser,
                               H5::FileAccPropList& aprops);
     static bool getInMemory(CLParserPtr parser);
+    static const std::string& getUdcCacheDir(CLParserPtr parser);
 
     protected:
     friend class HDF5Alignment;

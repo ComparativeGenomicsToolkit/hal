@@ -102,4 +102,14 @@ void HDF5CLParser::applyToAProps(CLParserPtr parser,
 
 bool HDF5CLParser::getInMemory(CLParserPtr parser)
 {
-    return getFlagAlt(parser, "hdf5InMemory", "inMemory");}
+    return getFlagAlt(parser, "hdf5InMemory", "inMemory");
+}
+
+const string& HDF5CLParser::getUdcCacheDir(CLParserPtr parser) {
+    if (parser->specifiedOption("udcCacheDir")) {
+        return parser->getOptionString("udcCacheDir");
+    } else {
+        static const std::string empty;
+        return empty;
+    }
+}

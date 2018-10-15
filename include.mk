@@ -42,8 +42,12 @@ dataSetsDir=/Users/hickey/Documents/Devel/genomes/datasets
 #   std::basic_string vs std::basic_string
 # when linking with HDF5 and modern C++ compilers (well, GCC 7.3)
 #
+ifeq (${CXX_11_ABI_DEF},)
+    CXX_11_ABI_DEF = -D_GLIBCXX_USE_CXX11_ABI=1
+endif
+
 cflags += -I${sonLibDir} -fPIC
-cppflags += -I${sonLibDir} -fPIC -D_GLIBCXX_USE_CXX11_ABI=1 -std=c++11 -Wno-sign-compare
+cppflags += -I${sonLibDir} -fPIC ${CXX_11_ABI_DEF} -std=c++11 -Wno-sign-compare
 
 basicLibs = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 basicLibsDependencies = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a

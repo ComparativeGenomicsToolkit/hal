@@ -141,7 +141,7 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
       initEntry(entry, sequence, dna, false);
     }
     assert(entry->_name == getName(sequence));
-    assert(entry->_strand == dna->getReversed() ? '-' : '+');
+    assert(entry->_strand == (dna->getReversed() ? '-' : '+'));
     assert(entry->_srcLength == (hal_index_t)sequence->getSequenceLength());
 
     ++entry->_length;

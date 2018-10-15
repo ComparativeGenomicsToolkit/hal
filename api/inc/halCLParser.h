@@ -47,6 +47,10 @@ public:
                   const std::string& descritpion,
                   const T& defaultValue);
 
+   /** Get the value of an option as a string in the parsed arguments
+    * @param name Name of option */
+  const std::string& getOptionString(const std::string& name) const;
+
    /** Get the value of an option in the parsed arguments
     * @param name Name of option */
    template <typename T>
@@ -206,12 +210,7 @@ inline void CLParser::addOption(const std::string& name,
 template <typename T>
 inline T CLParser::getOption(const std::string& name) const
 {
-  std::map<std::string, Option>::const_iterator i = _options.find(name);
-  if (i == _options.end() || i->second._flag == true)
-  {
-    throw hal_exception(std::string("Option ") + name + " not recognized");
-  }
-  return convertFromString<T>(i->second._value);
+  return convertFromString<T>(getOptionString(name));
 }
 
 template <typename T>

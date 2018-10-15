@@ -105,6 +105,12 @@ HDF5Alignment::HDF5Alignment(const std::string& alignmentPath,
     if (_inMemory) {
         setInMemory();
     }
+#ifdef ENABLE_UDC
+    const std::string& udcCacheDir(HDF5CLParser::getUdcCacheDir(parser));
+    if (not udcCacheDir.empty()) {
+        H5FD_udc_fuse_set_cache_dir(udcCacheDir.c_str());
+    }
+#endif
     if (_mode & CREATE_ACCESS) {
         create();
     } else {
