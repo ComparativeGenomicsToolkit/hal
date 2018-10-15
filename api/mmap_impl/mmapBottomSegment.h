@@ -175,7 +175,7 @@ inline bool MMapBottomSegment::isLast() const
 
 inline bool MMapBottomSegment::isTop() const
 {
-  return true;
+  return false;
 }
 
 inline hal_size_t MMapBottomSegment::getMappedSegments(
