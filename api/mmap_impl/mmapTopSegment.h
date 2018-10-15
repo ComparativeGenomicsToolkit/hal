@@ -95,7 +95,7 @@ inline hal_index_t MMapTopSegment::getEndPosition() const
 
 inline hal_size_t MMapTopSegment::getLength() const
 {
-  return _data->getStartPosition() - (_data + 1)->getStartPosition();
+  return (_data + 1)->getStartPosition() - _data->getStartPosition();
 }
 
 inline const Sequence* MMapTopSegment::getSequence() const

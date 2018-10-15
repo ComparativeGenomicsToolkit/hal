@@ -94,7 +94,7 @@ inline hal_index_t MMapBottomSegment::getEndPosition() const
 
 inline hal_size_t MMapBottomSegment::getLength() const
 {
-  return _data->getStartPosition() - (_data + 1)->getStartPosition();
+  return (_data + 1)->getStartPosition() - _data->getStartPosition();
 }
 
 inline const Sequence* MMapBottomSegment::getSequence() const
