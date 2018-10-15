@@ -92,6 +92,7 @@ void MMapGenome::updateTopDimensions(
     hal_index_t topSegmentStartIndex = 0;
     for (size_t i = 0; i < topDimensions.size(); i++) {
         MMapSequence seq(this, getSequenceData(i));
+        seq.setNumTopSegments(topDimensions[i]._numSegments);
         seq.setTopSegmentStartIndex(topSegmentStartIndex);
         topSegmentStartIndex += topDimensions[i]._numSegments;
     }
@@ -109,6 +110,7 @@ void MMapGenome::updateBottomDimensions(
     hal_index_t bottomSegmentStartIndex = 0;
     for (size_t i = 0; i < bottomDimensions.size(); i++) {
         MMapSequence seq(this, getSequenceData(i));
+        seq.setNumBottomSegments(bottomDimensions[i]._numSegments);
         seq.setBottomSegmentStartIndex(bottomSegmentStartIndex);
         bottomSegmentStartIndex += bottomDimensions[i]._numSegments;
     }}

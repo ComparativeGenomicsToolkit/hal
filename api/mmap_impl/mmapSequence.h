@@ -60,6 +60,10 @@ public:
 
    hal_size_t getNumBottomSegments() const { return _data->_numBottomSegments; };
 
+   void setNumTopSegments(hal_size_t topSegments) { _data->_numTopSegments = topSegments; };
+
+   void setNumBottomSegments(hal_size_t bottomSegments) { _data->_numBottomSegments = bottomSegments; };
+
    TopSegmentIteratorPtr getTopSegmentIterator(
      hal_index_t position);
 
