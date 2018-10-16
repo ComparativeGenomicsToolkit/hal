@@ -1,6 +1,5 @@
 #include "mmapAlignment.h"
 #include "mmapGenome.h"
-#include "mmapCLParser.h"
 
 using namespace hal;
 using namespace std;
@@ -10,6 +9,7 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
                              unsigned mode,
                              size_t initSize,
                              size_t growSize):
+    _alignmentPath(alignmentPath),
     _mode(mode), _initSize(initSize), _growSize(initSize),
     _file(NULL), _data(NULL), _tree(NULL) {
     _file = MMapFile::localFactory(alignmentPath, mode, initSize, growSize);
@@ -23,12 +23,11 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
 MMapAlignment::MMapAlignment(const std::string& alignmentPath,
                              unsigned mode,
                              CLParserConstPtr parser):
+    _alignmentPath(alignmentPath),
     _mode(mode), _initSize(0), _growSize(0),
     _file(NULL), _data(NULL), _tree(NULL) {
     initializeFromOptions(parser);
-    _file = MMapFile::localFactory(alignmentPath, mode,
-                                   MMapCLParser::getInitSize(parser),
-                                   MMapCLParser::getGrowSize(parser));
+    _file = MMapFile::localFactory(alignmentPath, _mode, _initSize, _growSize);
     if (mode & CREATE_ACCESS) {
         create();
     } else {

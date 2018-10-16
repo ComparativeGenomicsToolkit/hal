@@ -37,8 +37,8 @@ class MMapAlignment : public Alignment {
                   unsigned mode,
                   CLParserConstPtr parser);
 
-    void defineOptions(CLParserPtr parser,
-                       unsigned mode);
+    static void defineOptions(CLParserPtr parser,
+                              unsigned mode);
 
     // Allocate new array and return the offset.
     size_t allocateNewArray(size_t size) const { return _file->allocMem(size, false); };
@@ -202,6 +202,7 @@ private:
         _data->setNewickString(this, newickString);
         free(newickString);
     };
+    std::string _alignmentPath;
     unsigned _mode;
     size_t _initSize;
     size_t _growSize;
