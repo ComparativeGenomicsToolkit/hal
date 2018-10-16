@@ -107,12 +107,6 @@ void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
   vector<Sequence::Info> seqVec(1);
   seqVec[0] = Sequence::Info("Sequence", 1000000, 5000, 700000);
   ancGenome->setDimensions(seqVec);  
-  alignment->close();
-
-  alignment = getTestAlignmentInstances(alignment->getStorageFormat(), _createPath,
-                                        WRITE_ACCESS);
-
-  ancGenome = alignment->openGenome("AncGenome");
   seqVec[0] = Sequence::Info("Sequence", 10000005, 14000, 2000001);
   ancGenome->setDimensions(seqVec);  
 }
