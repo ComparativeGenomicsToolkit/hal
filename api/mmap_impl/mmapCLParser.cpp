@@ -38,3 +38,4 @@ size_t MMapCLParser::getGrowSize(CLParserPtr parser)
         return 0;
     }
 }
+

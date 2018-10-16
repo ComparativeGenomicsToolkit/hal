@@ -24,9 +24,9 @@ clean :
 
 test: halHdf5Tests halApiTests
 
-halHdf5Tests:
+halHdf5Tests: all
 	${binDir}/halHdf5Tests
-halApiTests:
+halApiTests: all
 	${binDir}/halApiTests
 
 doxy :

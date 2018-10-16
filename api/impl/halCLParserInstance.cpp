@@ -5,8 +5,8 @@
  */
 
 #include "halCLParserInstance.h"
-#include "hdf5CLParser.h"
 #include "mmapCLParser.h"
+#include "hdf5Alignment.h"
 
 using namespace std;
 using namespace hal;
@@ -14,7 +14,7 @@ using namespace hal;
 CLParserPtr hal::halCLParserInstance(unsigned mode)
 {
     CLParserPtr parser(new CLParser());
-    HDF5CLParser::defineOptions(parser, mode);
+    HDF5Alignment::defineOptions(parser, mode);
     MMapCLParser::defineOptions(parser, mode);
 #ifdef ENABLE_UDC
   // this can be define by other storage formats as well

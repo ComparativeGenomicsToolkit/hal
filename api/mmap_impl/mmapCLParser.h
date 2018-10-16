@@ -23,7 +23,7 @@ public:
                               unsigned mode);
     static size_t getInitSize(CLParserPtr parser);
     static size_t getGrowSize(CLParserPtr parser);
-
+    static const std::string& getUdcCacheDir(CLParserPtr parser);
     
     protected:
    //friend class MMapAlignment;

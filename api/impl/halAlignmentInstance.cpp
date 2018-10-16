@@ -14,7 +14,6 @@
 #include "halAlignmentInstance.h"
 #include "hdf5Alignment.h"
 #include "mmapAlignment.h"
-#include "hdf5CLParser.h"
 
 using namespace std;
 using namespace H5;

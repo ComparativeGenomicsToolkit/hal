@@ -15,7 +15,6 @@
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
-#include "hdf5CLParser.h"
 extern "C" {
 #include "sonLibTree.h"
 }
@@ -93,24 +92,14 @@ HDF5Alignment::HDF5Alignment(const std::string& alignmentPath,
     _mode(halDefaultAccessMode(mode)),
     _file(NULL),
     _flags(hdf5DefaultFlags(_mode)),
-    _inMemory(HDF5CLParser::getInMemory(parser)),
+    _inMemory(false),
     _metaData(NULL),
     _tree(NULL),
     _dirty(false) {
-    _cprops.copy(H5::FileCreatPropList::DEFAULT);
-    _aprops.copy(H5::FileAccPropList::DEFAULT);
-    _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
-    HDF5CLParser::applyToDCProps(parser, _dcprops);
-    HDF5CLParser::applyToAProps(parser, _aprops);
+    initializeFromOptions(parser);
     if (_inMemory) {
         setInMemory();
     }
-#ifdef ENABLE_UDC
-    const std::string& udcCacheDir(HDF5CLParser::getUdcCacheDir(parser));
-    if (not udcCacheDir.empty()) {
-        H5FD_udc_fuse_set_cache_dir(udcCacheDir.c_str());
-    }
-#endif
     if (_mode & CREATE_ACCESS) {
         create();
     } else {
@@ -121,6 +110,67 @@ HDF5Alignment::HDF5Alignment(const std::string& alignmentPath,
 HDF5Alignment::~HDF5Alignment()
 {
   close();
+}
+
+void HDF5Alignment::defineOptions(CLParserPtr parser,
+                                  unsigned mode)
+{
+  if (mode & CREATE_ACCESS)
+  {
+    parser->addOption("hdf5Chunk", "hdf5 chunk size", DefaultChunkSize);
+    parser->addOption("chunk", "obsolete name for --hdf5Chunk ", DefaultChunkSize);
+
+    parser->addOption("hdf5Compression", "hdf5 compression factor [0:none - 9:max]", 
+                      DefaultCompression);
+    parser->addOption("deflate", "obsolete name for --hdf5Compression", 
+                      DefaultCompression);
+  }
+  parser->addOption("hdf5CacheMDC", "number of metadata slots in hdf5 cache",
+                    DefaultCacheMDCElems);
+  parser->addOption("cacheMDC", "obsolete name for --hdf5CacheMDC ",
+                    DefaultCacheMDCElems);
+
+  parser->addOption("hdf5CacheRDC", "number of regular slots in hdf5 cache.  should be"
+                      " a prime number ~= 10 * DefaultCacheRDCBytes / chunk",
+                    DefaultCacheRDCElems);
+  parser->addOption("cacheRDC", "obsolete name for --hdf5CacheRDC",
+                    HDF5Alignment::DefaultCacheRDCElems);
+
+  parser->addOption("hdf5CacheBytes", "maximum size in bytes of regular hdf5 cache",
+                    DefaultCacheRDCBytes);
+  parser->addOption("cacheBytes", "obsolete name for --hdf5CacheBytes",
+                    DefaultCacheRDCBytes);
+
+  parser->addOption("hdf5CacheW0", "w0 parameter for hdf5 cache", DefaultCacheW0);
+  parser->addOption("cacheW0", "obsolete name for --hdf5CacheW0", DefaultCacheW0);
+
+  parser->addOptionFlag("hdf5InMemory", "load all data in memory (and disable hdf5 cache)", DefaultInMemory);
+  parser->addOptionFlag("inMemory", "obsolete name for --hdf5InMemory", DefaultInMemory);
+}
+
+/* initialize class from options */
+void HDF5Alignment::initializeFromOptions(CLParserConstPtr parser) {
+    _inMemory = parser->getFlagAlt("hdf5InMemory", "inMemory");
+    _cprops.copy(H5::FileCreatPropList::DEFAULT);
+    if (_mode & CREATE_ACCESS) {
+        // these are only available on create
+        hsize_t chunk = parser->getOptionAlt<hsize_t>("hdf5Chunk", "chunk");
+        _dcprops.setChunk(1, &chunk);
+        _dcprops.setDeflate(parser->getOptionAlt<hsize_t>("hdf5Compression", "deflate"));
+    }
+    _aprops.copy(H5::FileAccPropList::DEFAULT);
+    _aprops.setCache(parser->getOptionAlt<hsize_t>("hdf5CacheMDC", "cacheMDC"),
+                     parser->getOptionAlt<hsize_t>("hdf5CacheRDC", "cacheRDC"),
+                     parser->getOptionAlt<hsize_t>("hdf5CacheBytes", "cacheBytes"),
+                     parser->getOptionAlt<double>("hdf5CacheW0", "cacheW0"));
+
+    _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
+#ifdef ENABLE_UDC
+    const std::string& udcCacheDir(parser->getOption<const string&>("udcCacheDir"));
+    if (not udcCacheDir.empty()) {
+        H5FD_udc_fuse_set_cache_dir(udcCacheDir.c_str());
+    }
+#endif
 }
 
 /* set properties for in-memory access */

@@ -37,6 +37,9 @@ class MMapAlignment : public Alignment {
                   unsigned mode,
                   CLParserConstPtr parser);
 
+    void defineOptions(CLParserPtr parser,
+                       unsigned mode);
+
     // Allocate new array and return the offset.
     size_t allocateNewArray(size_t size) const { return _file->allocMem(size, false); };
     void *resolveOffset(size_t offset, size_t len) const { return _file->toPtr(offset, len); };
@@ -174,6 +177,7 @@ class MMapAlignment : public Alignment {
 protected:
     mutable std::map<std::string, MMapGenome *> _openGenomes;
 private:
+    void initializeFromOptions(CLParserConstPtr parser);
     void create();
     void open();
     Genome *_openGenome(const std::string &name) const;
@@ -198,6 +202,10 @@ private:
         _data->setNewickString(this, newickString);
         free(newickString);
     };
+    unsigned _mode;
+    size_t _initSize;
+    size_t _growSize;
+    std::string _udcCacheDir;
     MMapFile *_file;
     MMapAlignmentData *_data;
     stTree *_tree;

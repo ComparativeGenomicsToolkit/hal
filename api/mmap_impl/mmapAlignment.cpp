@@ -10,6 +10,7 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
                              unsigned mode,
                              size_t initSize,
                              size_t growSize):
+    _mode(mode), _initSize(initSize), _growSize(initSize),
     _file(NULL), _data(NULL), _tree(NULL) {
     _file = MMapFile::localFactory(alignmentPath, mode, initSize, growSize);
     if (mode & CREATE_ACCESS) {
@@ -22,7 +23,9 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
 MMapAlignment::MMapAlignment(const std::string& alignmentPath,
                              unsigned mode,
                              CLParserConstPtr parser):
+    _mode(mode), _initSize(0), _growSize(0),
     _file(NULL), _data(NULL), _tree(NULL) {
+    initializeFromOptions(parser);
     _file = MMapFile::localFactory(alignmentPath, mode,
                                    MMapCLParser::getInitSize(parser),
                                    MMapCLParser::getGrowSize(parser));
@@ -31,6 +34,29 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
     } else {
         open();
     }
+}
+
+void MMapAlignment::defineOptions(CLParserPtr parser,
+                                  unsigned mode) {
+    if (mode & CREATE_ACCESS) {
+      parser->addOption("mmapInitSize", "mmap HAL file initial size", MMAP_DEFAULT_INIT_SIZE);
+    }
+    if (mode & (CREATE_ACCESS | WRITE_ACCESS)) {
+      parser->addOption("mmapGrowSize", "mmap HAL file size to grow when more memory is needed", MMAP_DEFAULT_INIT_SIZE);
+    }
+}
+
+/* initialize class from options */
+void MMapAlignment::initializeFromOptions(CLParserConstPtr parser) {
+    if (_mode & CREATE_ACCESS) {
+        _initSize = parser->get<size_t>("mmapInitSize");
+    }
+    if (_mode & WRITE_ACCESS) {
+        _growSize = parser->get<size_t>("mmapGrowSize");
+    }
+#ifdef ENABLE_UDC
+    _udcCacheDir = parser->getOption<const string&>("udcCacheDir");
+#endif
 }
 
 void MMapAlignment::create() {

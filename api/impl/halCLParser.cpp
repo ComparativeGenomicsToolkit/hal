@@ -110,15 +110,6 @@ bool CLParser::hasFlag(const string& name) const
   return i != _options.end() && i->second._flag == true;
 }
    
-const std::string& CLParser::getOptionString(const std::string& name) const {
-  std::map<std::string, Option>::const_iterator i = _options.find(name);
-  if (i == _options.end() || i->second._flag == true)
-  {
-    throw hal_exception(std::string("Option ") + name + " not recognized");
-  }
-  return (i->second._value);
-}
-
 bool CLParser::specifiedFlag(const string& name) const
 {
   map<string, Option>::const_iterator i = _options.find(name);

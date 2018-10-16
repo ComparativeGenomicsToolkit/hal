@@ -47,15 +47,17 @@ public:
                   const std::string& descritpion,
                   const T& defaultValue);
 
-   /** Get the value of an option as a string in the parsed arguments
-    * @param name Name of option */
-  const std::string& getOptionString(const std::string& name) const;
-
    /** Get the value of an option in the parsed arguments
     * @param name Name of option */
    template <typename T>
    T getOption(const std::string& name) const;
 
+    /* Get an option value or default, checking for obsoleteName as an alternative.  Warn if
+     * obsolete name is used */
+   template <typename T>
+   T getOptionAlt(const std::string& name,
+                  const std::string& obsoleteName) const;
+    
    /** Check if option exists in the parser
     * @param name Name of option to check */
    bool hasOption(const std::string& name) const;
@@ -103,6 +105,11 @@ public:
     * @param name Name of option to check */
    bool specifiedFlag(const std::string& name) const;
 
+    /* Get a flag, checking for obsoleteName as an alternative.  Warn if
+     * obsolete name is used */
+    bool getFlagAlt(const std::string& name,
+                    const std::string& obsoleteName) const;
+    
    /** Get value of option or flag or argument by name */
    template <typename T> 
    T get(const std::string& name) const;
@@ -164,8 +171,7 @@ inline T CLParser::convertFromString(const std::string& token) const
   }
   catch (...)
   {
-    throw hal_exception(std::string("type conversion error parsing"
-                                    " token ") + token);
+    throw hal_exception("type conversion error parsing value: " + token);
   }
   return value;
 }
@@ -174,6 +180,13 @@ inline T CLParser::convertFromString(const std::string& token) const
 template <>
 inline std::string 
 CLParser::convertFromString<std::string>(const std::string& token) const
+{
+  return token;
+}
+
+template <>
+inline const std::string& 
+CLParser::convertFromString<const std::string&>(const std::string& token) const
 {
   return token;
 }
@@ -210,7 +223,12 @@ inline void CLParser::addOption(const std::string& name,
 template <typename T>
 inline T CLParser::getOption(const std::string& name) const
 {
-  return convertFromString<T>(getOptionString(name));
+  std::map<std::string, Option>::const_iterator i = _options.find(name);
+  if (i == _options.end() || i->second._flag == true)
+  {
+    throw hal_exception(std::string("Option ") + name + " not recognized");
+  }
+  return convertFromString<T>(i->second._value);
 }
 
 template <typename T>
@@ -226,6 +244,28 @@ inline T CLParser::getArgument(const std::string& name) const
   throw hal_exception(std::string("Argument ") + name + " not recognized");
   return T();
 }
+
+template <typename T>
+inline T CLParser::getOptionAlt(const std::string& name,
+                                const std::string& obsoleteName) const {
+    if (specifiedOption(obsoleteName)) {
+        std::cerr << "Warning: --" << obsoleteName << " is obsolete, use --" << name << std::endl;
+        return getOption<T>(obsoleteName);
+    } else {
+        return getOption<T>(name);
+    }
+}
+
+inline bool CLParser::getFlagAlt(const std::string& name,
+                                 const std::string& obsoleteName) const {
+    if (specifiedFlag(obsoleteName)) {
+        std::cerr << "Warning: --" << obsoleteName << " is obsolete, use --" << name << std::endl;
+        return getFlag(obsoleteName);
+    } else {
+        return getFlag(name);
+    }
+}
+
 
 template <typename T> 
 inline T CLParser::get(const std::string& name) const

@@ -36,6 +36,10 @@ public:
                  CLParserConstPtr parser);
    ~HDF5Alignment();
 
+    static void defineOptions(CLParserPtr parser,
+                              unsigned mode);
+
+
    void close();
 
    const std::string& getStorageFormat() const {
@@ -108,6 +112,7 @@ protected:
     }
     HDF5Alignment(const HDF5Alignment&) {
     }
+    void initializeFromOptions(CLParserConstPtr parser);
     void create();
     void open();
     void setInMemory();
@@ -138,7 +143,7 @@ protected:
    H5::DSetCreatPropList _dcprops;
    HDF5MetaData* _metaData;
    stTree* _tree;
-   mutable std::map<std::string, stTree*> _nodeMap;
+    mutable std::map<std::string, stTree*> _nodeMap;
    bool _dirty;
    mutable std::map<std::string, HDF5Genome*> _openGenomes;
 };
