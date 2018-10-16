@@ -160,7 +160,7 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
   // name in the same alignment)
   _path = getTempFile();
   _secondAlignment = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               WRITE_ACCESS);
+                                               WRITE_ACCESS | CREATE_ACCESS);
 
   Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
   Genome *leafGenome = alignment->addLeafGenome("LeafGenome1",
