@@ -49,8 +49,8 @@ endif
 cflags += -I${sonLibDir} -fPIC
 cppflags += -I${sonLibDir} -fPIC ${CXX_11_ABI_DEF} -std=c++11 -Wno-sign-compare
 
-basicLibs = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
-basicLibsDependencies = ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
+basicLibs += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
+basicLibsDependencies += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 
 # hdf5 compilation is done through its wrappers.
 # we can speficy our own (sonlib) compilers with these variables:
