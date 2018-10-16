@@ -127,7 +127,6 @@ size_t hal::MMapFile::allocMem(size_t size,
     if (isRoot) {
         _header->rootOffset = offset;
     }
-    std::cout << "allocMem returning offset " << offset << " for allocation of size " << size << ", root: " << isRoot << std::endl;
     return offset;
 }
 
