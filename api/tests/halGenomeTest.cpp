@@ -436,13 +436,17 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(AlignmentPtr 
   seqVec[0] =Sequence::Info("Sequence1", 130, 0, 13);
   seqVec[1] =Sequence::Info("Sequence2", 170, 0, 17);
   rootGenome->setDimensions(seqVec);
+  rootGenome->setString(randomString(rootGenome->getSequenceLength()));
   seqVec[0] =Sequence::Info("Sequence1", 130, 13, 13);
   seqVec[1] =Sequence::Info("Sequence2", 170, 17, 17);
   internalGenome->setDimensions(seqVec);
+  internalGenome->setString(randomString(internalGenome->getSequenceLength()));
   seqVec[0] =Sequence::Info("Sequence1", 130, 13, 0);
   seqVec[1] =Sequence::Info("Sequence2", 170, 17, 0);
   leaf1Genome->setDimensions(seqVec);
+  leaf1Genome->setString(randomString(leaf1Genome->getSequenceLength()));
   leaf2Genome->setDimensions(seqVec);
+  leaf2Genome->setString(randomString(leaf2Genome->getSequenceLength()));
 
   setTopSegments(internalGenome, 10);
   setTopSegments(leaf1Genome, 10);
@@ -459,13 +463,17 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(AlignmentPtr 
   seqVec[0] =Sequence::Info("Sequence1", 130, 0, 13);
   seqVec[1] =Sequence::Info("Sequence2", 170, 0, 17);
   copyRootGenome->setDimensions(seqVec);
+  copyRootGenome->setString(randomString(copyRootGenome->getSequenceLength()));
   seqVec[0] =Sequence::Info("Sequence1", 130, 13, 0);
   seqVec[1] =Sequence::Info("Sequence2", 170, 17, 0);
   copyLeaf1Genome->setDimensions(seqVec);
   copyLeaf2Genome->setDimensions(seqVec);
+  copyLeaf1Genome->setString(randomString(copyLeaf1Genome->getSequenceLength()));
+  copyLeaf2Genome->setString(randomString(copyLeaf2Genome->getSequenceLength()));
   seqVec[0] =Sequence::Info("Sequence2", 170, 17, 17);
   seqVec[1] =Sequence::Info("Sequence1", 130, 13, 13);
   copyInternalGenome->setDimensions(seqVec);
+  copyInternalGenome->setString(randomString(copyInternalGenome->getSequenceLength()));
 
   rootGenome->copyBottomDimensions(copyRootGenome);
   rootGenome->copyBottomSegments(copyRootGenome);
