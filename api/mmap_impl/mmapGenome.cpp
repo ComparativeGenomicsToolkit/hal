@@ -267,28 +267,27 @@ const Genome* MMapGenome::getParent() const
 
 Genome* MMapGenome::getChild(hal_size_t childIdx)
 {
-  vector<string> childNames = _alignment->getChildNames(getName());
+  vector<string> &childNames = _alignment->getChildNamesRef(getName());
   assert(childNames.size() > childIdx);
   return _alignment->openGenome(childNames.at(childIdx));
 }
 
 const Genome* MMapGenome::getChild(hal_size_t childIdx) const
 {
-  vector<string> childNames = _alignment->getChildNames(getName());
+  vector<string> &childNames = _alignment->getChildNamesRef(getName());
   assert(childNames.size() > childIdx);
   return _alignment->openGenome(childNames.at(childIdx));
 }
 
 hal_size_t MMapGenome::getNumChildren() const
 {
-    // FIXME: this will be quite slow.
-    return _alignment->getChildNames(getName()).size();
+    return _alignment->getChildNamesRef(getName()).size();
 }
 
 hal_index_t MMapGenome::getChildIndex(const Genome* child) const
 {
   string childName = child->getName();
-  vector<string> childNames = _alignment->getChildNames(getName());
+  vector<string> &childNames = _alignment->getChildNamesRef(getName());
   for (hal_size_t i = 0; i < childNames.size(); ++i)
   {
     if (childNames[i] == childName)

@@ -119,15 +119,32 @@ class MMapAlignment : public Alignment {
         return stTree_getBranchLength(node);
     };
 
-    std::vector<std::string> 
-    getChildNames(const std::string& name) const {
+    std::vector<std::string> getChildNames(const std::string &name) const {
+        if (_childNames.find(name) != _childNames.end()) {
+            return _childNames[name];
+        } else {
+            _fillChildNames(name);
+            return _childNames[name];
+        }
+    }
+
+    std::vector<std::string> &getChildNamesRef(const std::string &name) const {
+        if (_childNames.find(name) != _childNames.end()) {
+            return _childNames[name];
+        } else {
+            _fillChildNames(name);
+            return _childNames[name];
+        }
+    }
+
+    void _fillChildNames(const std::string& name) const {
         stTree *node = getGenomeNode(name);
-        std::vector<std::string> ret;
+        std::vector<std::string> childNames;
         for (int64_t i = 0; i < stTree_getChildNumber(node); i++) {
             const char *name = stTree_getLabel(stTree_getChild(node, i));
-            ret.push_back(std::string(name));
+            childNames.push_back(std::string(name));
         }
-        return ret;
+        _childNames[name] = childNames;
     };
 
     std::vector<std::string>
@@ -198,6 +215,7 @@ private:
         _tree = stTree_parseNewickString(_data->getNewickString(this));
     };
     void writeTree() {
+        _childNames.clear();
         char *newickString = stTree_getNewickTreeString(_tree);
         _data->setNewickString(this, newickString);
         free(newickString);
@@ -210,6 +228,7 @@ private:
     MMapFile *_file;
     MMapAlignmentData *_data;
     stTree *_tree;
+    mutable std::map<std::string, std::vector<std::string>> _childNames;
 };
 
 inline const char *MMapAlignmentData::getNewickString(const MMapAlignment *alignment) {

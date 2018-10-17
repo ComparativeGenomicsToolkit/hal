@@ -98,6 +98,7 @@ MMapGenome *MMapAlignmentData::addGenome(MMapAlignment *alignment, const std::st
 Genome* MMapAlignment::addLeafGenome(const string& name,
                                      const string& parentName,
                                      double branchLength) {
+    _childNames.clear();
     stTree *parentNode = getGenomeNode(parentName);
     stTree *childNode = stTree_construct();
     stTree_setLabel(childNode, name.c_str());
@@ -111,6 +112,7 @@ Genome* MMapAlignment::addLeafGenome(const string& name,
 
 Genome* MMapAlignment::addRootGenome(const string& name,
                                      double branchLength) {
+    _childNames.clear();
     stTree *newRoot = stTree_construct();
     stTree_setLabel(newRoot, name.c_str());
     if (_tree != NULL) {
