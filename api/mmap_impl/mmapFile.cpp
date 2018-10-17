@@ -6,12 +6,24 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/mman.h>
+#ifdef ENABLE_UDC
+extern "C" {
+#include "common.h"
+#include "udc.h"
+}
+#endif
 
 
 /* constants for header */
 static const std::string FORMAT_NAME = "HAL-MMAP";
 static const std::string MMAP_VERSION = "1.0";
 
+
+/* is file a URL that requires UDC? */
+static bool isUdcUrl(const std::string alignmentPath) {
+    return (alignmentPath.find("http:") == 0) or (alignmentPath.find("https:") == 0)
+        or (alignmentPath.find("ftp:") == 0);
+}
 
 /* get the file size from the OS */
 static size_t getFileStatSize(int fd) {
@@ -107,18 +119,12 @@ namespace hal {
     /* Class that implements local file version of MMapFile */
     class MMapFileLocal: public MMapFile {
         public:
-        MMapFileLocal(const std::string alignmentPath,
+        MMapFileLocal(const std::string& alignmentPath,
                       unsigned mode,
                       size_t initSize,
                       size_t growSize);
         virtual void close();
         virtual ~MMapFileLocal();
-
-        protected:
-        virtual void fetch(size_t offset,
-                           size_t accessSize) const {
-            // no-op
-        }
 
         private:
         int openFile();
@@ -137,7 +143,7 @@ namespace hal {
 
 
 /* Constructor. Open or create the specified file. */
-hal::MMapFileLocal::MMapFileLocal(const std::string alignmentPath,
+hal::MMapFileLocal::MMapFileLocal(const std::string& alignmentPath,
                                   unsigned mode,
                                   size_t initSize,
                                   size_t growSize):
@@ -261,11 +267,83 @@ void hal::MMapFileLocal::growFileImpl(size_t size) {
     mapFile(requiredAddr);
 }
 
+namespace hal {
+    /* Class that implements UDC file version of MMapFile */
+    class MMapFileUdc: public MMapFile {
+        public:
+        MMapFileUdc(const std::string& alignmentPath,
+                    unsigned mode,
+                    size_t initSize,
+                    size_t growSize,
+                    const std::string& udcCacheDir);
+        virtual void close();
+        virtual ~MMapFileUdc();
+
+        protected:
+        virtual void fetch(size_t offset,
+                           size_t accessSize) const;
+
+        private:
+        struct udcFile *_udcFile;
+    };
+}
+
+
+/* Constructor. Open or create the specified file. */
+hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
+                              unsigned mode,
+                              size_t initSize,
+                              size_t growSize,
+                              const std::string& udcCacheDir):
+    MMapFile(alignmentPath, mode), _udcFile(NULL) {
+    if (_mode & WRITE_ACCESS) {
+        throw hal_exception("write access not supported for UDC:" + alignmentPath);
+    }
+    _udcFile = udcFileOpen(const_cast<char*>(alignmentPath.c_str()),
+                           (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
+    // get base point and fetch header in one move.
+    _basePtr = udcMMapFetch(_udcFile, 0, sizeof(mmapHeader));
+}
+
+/* close file, marking as clean.  Don't  */
+void hal::MMapFileUdc::close() {
+    if (_basePtr == NULL) {
+        throw hal_exception(_alignmentPath + ": MMapFile::close() called on closed file");
+    }
+    udcFileClose(&_udcFile);
+}
+
+/* Destructor. write fields to header and close.  If write access and close
+ * has not been called, file will me left mark dirty */
+hal::MMapFileUdc::~MMapFileUdc() {
+    if (_udcFile != NULL) {
+        udcFileClose(&_udcFile);
+    }
+}
+
+/* fetch into UDC cache */
+void hal::MMapFileUdc::fetch(size_t offset,
+                             size_t accessSize) const {
+    udcMMapFetch(_udcFile, offset, accessSize);    
+}
+
 /** create a MMapFile object, opening a local file */
-hal::MMapFile *hal::MMapFile::localFactory(const std::string& alignmentPath,
-                                           unsigned mode,
-                                           size_t initSize,
-                                           size_t growSize) {
-    return new MMapFileLocal(alignmentPath, mode, initSize, growSize);
+hal::MMapFile *hal::MMapFile::factory(const std::string& alignmentPath,
+                                      unsigned mode,
+                                      size_t initSize,
+                                      size_t growSize,
+                                      const std::string& udcCacheDir) {
+    if (isUdcUrl(alignmentPath)) {
+        if (mode & (CREATE_ACCESS | WRITE_ACCESS)) {
+            throw hal_exception("create or write access not support with URL: " + alignmentPath);
+        }
+#ifdef ENABLE_UDC
+        return new MMapFileUdc(alignmentPath, mode, initSize, growSize, udcCacheDir);
+#else
+        throw hal_exception("URL access requires UDC support to be compiled into HAL library: " + alignmentPath);
+#endif
+    } else {
+        return new MMapFileLocal(alignmentPath, mode, initSize, growSize);
+    }
 }
 

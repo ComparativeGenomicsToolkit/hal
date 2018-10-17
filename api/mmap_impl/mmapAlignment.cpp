@@ -12,7 +12,7 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
     _alignmentPath(alignmentPath),
     _mode(mode), _initSize(initSize), _growSize(initSize),
     _file(NULL), _data(NULL), _tree(NULL) {
-    _file = MMapFile::localFactory(alignmentPath, mode, initSize, growSize);
+    _file = MMapFile::factory(alignmentPath, mode, initSize, growSize);
     if (mode & CREATE_ACCESS) {
         create();
     } else {
@@ -27,7 +27,7 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
     _mode(mode), _initSize(0), _growSize(0),
     _file(NULL), _data(NULL), _tree(NULL) {
     initializeFromOptions(parser);
-    _file = MMapFile::localFactory(alignmentPath, _mode, _initSize, _growSize);
+    _file = MMapFile::factory(alignmentPath, _mode, _initSize, _growSize, _udcCacheDir);
     if (mode & CREATE_ACCESS) {
         create();
     } else {

@@ -6,6 +6,8 @@
 #include <iostream>
 #include "halAlignmentInstance.h"
 
+struct udcFile;
+
 namespace hal {
     /* header for the file */
     struct mmapHeader {
@@ -51,7 +53,9 @@ namespace hal {
         /** close marks as clean, don't call on error, just delete */
         virtual void close() = 0;
         virtual void fetch(size_t offset,
-                           size_t accessSize) const = 0;
+                           size_t accessSize) const {
+            // no-op by default
+        }
 
         inline size_t alignRound(size_t size) const;
         void setHeaderPtr();
@@ -75,10 +79,11 @@ namespace hal {
             // no copying
         }
 
-        static MMapFile *localFactory(const std::string& alignmentPath,
-                                      unsigned mode = READ_ACCESS,
-                                      size_t initSize = MMAP_DEFAULT_INIT_SIZE,
-                                      size_t growSize = MMAP_DEFAULT_GROW_SIZE);
+        static MMapFile *factory(const std::string& alignmentPath,
+                                 unsigned mode = READ_ACCESS,
+                                 size_t initSize = MMAP_DEFAULT_INIT_SIZE,
+                                 size_t growSize = MMAP_DEFAULT_GROW_SIZE,
+                                 const std::string& udcCacheDir = "");
     };
 }
 

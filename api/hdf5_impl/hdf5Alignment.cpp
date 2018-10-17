@@ -166,7 +166,10 @@ void HDF5Alignment::initializeFromOptions(CLParserConstPtr parser) {
 
     _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
 #ifdef ENABLE_UDC
-    const std::string& udcCacheDir(parser->getOption<const string&>("udcCacheDir"));
+   if (_mode & WRITE_ACCESS) {
+       throw hal_exception("write access not supported for UDC:" + _alignmentPath);
+    }
+   const std::string& udcCacheDir(parser->getOption<const string&>("udcCacheDir"));
     if (not udcCacheDir.empty()) {
         H5FD_udc_fuse_set_cache_dir(udcCacheDir.c_str());
     }
@@ -211,7 +214,7 @@ void HDF5Alignment::open()
 #else
   if (not ifstream(_alignmentPath.c_str()))
   {   // FIXME report errno
-    throw hal_exception("Unable to open " + _alignmentPath);
+      throw hal_errno_exception("Unable to open " + _alignmentPath, errno);
   }
 #endif
   _file = new H5File(_alignmentPath.c_str(),  _flags, _cprops, _aprops);
