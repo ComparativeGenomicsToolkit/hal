@@ -8,7 +8,6 @@ class MMapDNAIterator : public DNAIterator
 public:
     MMapDNAIterator(MMapGenome* genome, hal_index_t index) :
         _index(index),
-        _array(genome->getDNAArray()),
         _genome(genome),
         _reversed(false) {
     }
@@ -38,7 +37,6 @@ public:
 
 protected:
     mutable hal_index_t _index;
-    mutable char *_array;
     mutable MMapGenome *_genome;
     mutable bool _reversed;
 };
@@ -52,7 +50,7 @@ inline bool MMapDNAIterator::inRange() const
 inline char MMapDNAIterator::getChar() const
 {
   assert(inRange() == true);
-  char c = _array[_index];
+  char c = *_genome->getDNA(_index, 1);
   if (_reversed)
   {
     c = reverseComplement(c);
@@ -74,7 +72,7 @@ inline void MMapDNAIterator::setChar(char c)
   {
     c = reverseComplement(c);
   }
-  _array[_index] = c;
+  *_genome->getDNA(_index, 1) = c;
 }
 
 inline void MMapDNAIterator::toLeft() const
