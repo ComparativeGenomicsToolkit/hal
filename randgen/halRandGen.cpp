@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#include <halCLParser.h>
+#include "halCLParser.h"
 #include "hal.h"
 #include "halRandomData.h"
 

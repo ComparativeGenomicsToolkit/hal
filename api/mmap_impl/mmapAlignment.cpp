@@ -24,7 +24,7 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
                              unsigned mode,
                              CLParserConstPtr parser):
     _alignmentPath(alignmentPath),
-    _mode(mode), _initSize(0), _growSize(0),
+    _mode(halDefaultAccessMode(mode)), _initSize(0), _growSize(0),
     _file(NULL), _data(NULL), _tree(NULL) {
     initializeFromOptions(parser);
     _file = MMapFile::factory(alignmentPath, _mode, _initSize, _growSize, _udcCacheDir);
@@ -54,7 +54,9 @@ void MMapAlignment::initializeFromOptions(CLParserConstPtr parser) {
         _growSize = parser->get<size_t>("mmapGrowSize");
     }
 #ifdef ENABLE_UDC
-    _udcCacheDir = parser->getOption<const string&>("udcCacheDir");
+    if ((_mode & WRITE_ACCESS) == 0) {
+        _udcCacheDir = parser->getOption<const string&>("udcCacheDir");
+    }
 #endif
 }
 
