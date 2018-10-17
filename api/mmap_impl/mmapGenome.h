@@ -199,12 +199,18 @@ inline void MMapGenomeData::setName(MMapAlignment *alignment, const std::string 
 }
 
 inline MMapTopSegmentData *MMapGenomeData::getTopSegmentData(MMapAlignment *alignment, hal_index_t index) {
-    return (MMapTopSegmentData *) alignment->resolveOffset(_topSegmentsOffset + index * sizeof(MMapTopSegmentData), sizeof(MMapTopSegmentData));
+    // We request twice the segment length here because checking the length of
+    // this segment requires reading the start position of the following
+    // segment.
+    return (MMapTopSegmentData *) alignment->resolveOffset(_topSegmentsOffset + index * sizeof(MMapTopSegmentData), 2 *sizeof(MMapTopSegmentData));
 }
 
 inline MMapBottomSegmentData *MMapGenomeData::getBottomSegmentData(MMapAlignment *alignment, MMapGenome *genome, hal_index_t index) {
     size_t segmentSize = MMapBottomSegmentData::getSize(genome);
-    return (MMapBottomSegmentData *) alignment->resolveOffset(_bottomSegmentsOffset + index * segmentSize, segmentSize);
+    // We request twice the segment length here because checking the length of
+    // this segment requires reading the start position of the following
+    // segment.
+    return (MMapBottomSegmentData *) alignment->resolveOffset(_bottomSegmentsOffset + index * segmentSize, 2 * segmentSize);
 }
 
 inline char *MMapGenomeData::getDNAArray(MMapAlignment *alignment) const {
