@@ -267,6 +267,7 @@ void hal::MMapFileLocal::growFileImpl(size_t size) {
     mapFile(requiredAddr);
 }
 
+#ifdef ENABLE_UDC
 namespace hal {
     /* Class that implements UDC file version of MMapFile */
     class MMapFileUdc: public MMapFile {
@@ -326,6 +327,8 @@ void hal::MMapFileUdc::fetch(size_t offset,
                              size_t accessSize) const {
     udcMMapFetch(_udcFile, offset, accessSize);    
 }
+
+#endif
 
 /** create a MMapFile object, opening a local file */
 hal::MMapFile *hal::MMapFile::factory(const std::string& alignmentPath,
