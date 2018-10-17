@@ -28,6 +28,7 @@ static CLParserPtr initParser()
   CLParserPtr optionsParser = halCLParserInstance(CREATE_ACCESS);
   optionsParser->addArgument("inHalPath", "input hal file");
   optionsParser->addArgument("outHalPath", "output hal file");
+  optionsParser->addOption("outputFormat", "format for output hal file (same as input file by default)", "");
   optionsParser->addOption("root", "root of subtree to extract", "\"\"");
   return optionsParser;
 }
@@ -39,12 +40,14 @@ int main(int argc, char** argv)
   string inHalPath;
   string outHalPath;
   string rootName;
+  string outputFormat;
   try
   {
     optionsParser->parseOptions(argc, argv);
     inHalPath = optionsParser->getArgument<string>("inHalPath");
     outHalPath = optionsParser->getArgument<string>("outHalPath");
     rootName = optionsParser->getOption<string>("root");
+    outputFormat = optionsParser->getOption<string>("outputFormat");
   }
   catch(exception& e)
   {
@@ -61,7 +64,21 @@ int main(int argc, char** argv)
       throw hal_exception("input hal alignmenet is empty");
     }
 
-    AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser);
+    AlignmentPtr outAlignment;
+    if (outputFormat.empty()) {
+        // No alignment format specified, just use the default / the
+        // one given by the default command line parser
+        AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS);
+    } else if (outputFormat == "mmap") {
+        outAlignment = mmapAlignmentInstance(outHalPath, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS);
+    } else if (outputFormat == "hdf5") {
+        outAlignment = hdf5AlignmentInstance(outHalPath, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS,
+                                             hdf5DefaultFileCreatPropList(),
+                                             hdf5DefaultFileAccPropList(),
+                                             hdf5DefaultDSetCreatPropList());
+    } else {
+        throw hal_exception("unrecognized format " + outputFormat);
+    }
 
     if (outAlignment->getNumGenomes() != 0)
     {
@@ -75,6 +92,7 @@ int main(int argc, char** argv)
 
     extractTree(inAlignment, outAlignment, rootName);
     extract(inAlignment, outAlignment, rootName);
+    outAlignment->close();
   }
   catch(hal_exception& e)
   {
@@ -86,7 +104,6 @@ int main(int argc, char** argv)
     cerr << "Exception caught: " << e.what() << endl;
     return 1;
   }
-
   return 0;
 }
 
