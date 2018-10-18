@@ -497,7 +497,6 @@ void checkBottomSegments(Genome *genome, hal_size_t width, CuTest *testCase) {
    hal_index_t startPos = 0;
    for (; bottomIt->getArrayIndex() < n; bottomIt->toRight(), startPos += width)
    {
-     cout << "bot start: " << bottomIt->getStartPosition() << " startPos: " << startPos << endl;
      CuAssertTrue(testCase, bottomIt->getStartPosition() == startPos);
 
      for(hal_size_t i = 0; i < numChildren; i++) {
