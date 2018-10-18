@@ -25,8 +25,12 @@ void halMafBlockCreateTest(CuTest *testCase)
 {
   try
   {
+#if 0 // FIXME: test callback are empty
     MafBlockCreateTest tester;
     tester.check(testCase);
+#else
+    std::cerr << "Warning: halMafBlockCreateTest are not implemented" << std::endl;
+#endif
   }
   catch (...) 
   {

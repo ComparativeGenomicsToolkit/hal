@@ -166,10 +166,7 @@ void HDF5Alignment::initializeFromOptions(CLParserConstPtr parser) {
 
     _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
 #ifdef ENABLE_UDC
-   if (_mode & WRITE_ACCESS) {
-       throw hal_exception("write access not supported for UDC:" + _alignmentPath);
-    }
-   const std::string& udcCacheDir(parser->getOption<const string&>("udcCacheDir"));
+    const std::string& udcCacheDir(parser->getOption<const string&>("udcCacheDir"));
     if (not udcCacheDir.empty()) {
         H5FD_udc_fuse_set_cache_dir(udcCacheDir.c_str());
     }

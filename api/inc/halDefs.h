@@ -48,7 +48,12 @@ static const uint64_t GIGABYTE = 1024ULL * 1024ULL * 1024ULL;
 /*
  * General usage exception class, used for all critical errors. 
  */
-typedef std::runtime_error hal_exception;
+class hal_exception: public std::runtime_error {
+    public:
+    hal_exception(const std::string& msg):
+        std::runtime_error(msg) {
+    }
+};
 
 /**
  * Exception raised when on a Unix errno error.
@@ -57,12 +62,12 @@ class hal_errno_exception: public hal_exception {
     public:
     hal_errno_exception(const std::string& msg,
                         int errnum):
-        runtime_error(msg + ": " + std::strerror(errnum)) {
+        hal_exception(msg + ": " + std::strerror(errnum)) {
     }
     hal_errno_exception(const std::string& fileName,
                         const std::string& msg,
                         int errnum):
-        runtime_error(fileName + ": " + msg + ":" + std::strerror(errnum)) {
+        hal_exception(fileName + ": " + msg + ":" + std::strerror(errnum)) {
     }
 };
 

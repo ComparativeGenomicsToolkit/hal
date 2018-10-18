@@ -18,10 +18,7 @@ CLParserPtr hal::halCLParserInstance(unsigned mode)
     MMapAlignment::defineOptions(parser, mode);
 #ifdef ENABLE_UDC
   // this can be used by multiple storage formats
-    if ((mode & (CREATE_ACCESS | WRITE_ACCESS)) == 0 ) {
-      parser->addOption("udcCacheDir", "udc cache path for *input* hal file(s).",
-                        "\"\"");
-  }
+    parser->addOption("udcCacheDir", "udc cache path for *input* hal file(s).", "\"\"");
 #endif
     return parser;
 }
