@@ -49,7 +49,8 @@ namespace hal {
         
         protected:
         MMapFile(const std::string alignmentPath,
-                 unsigned mode);
+                 unsigned mode,
+                 bool mustFetch);
         /** close marks as clean, don't call on error, just delete */
         virtual void close() = 0;
         virtual void fetch(size_t offset,

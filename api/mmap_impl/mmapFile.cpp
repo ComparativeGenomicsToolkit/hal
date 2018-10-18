@@ -36,9 +36,10 @@ static size_t getFileStatSize(int fd) {
 
 /* constructor, used only by derived classes */
 hal::MMapFile::MMapFile(const std::string alignmentPath,
-                        unsigned mode):
+                        unsigned mode,
+                        bool mustFetch):
     _alignmentPath(alignmentPath),  _mode(halDefaultAccessMode(mode)),
-    _basePtr(NULL), _fileSize(0), _mustFetch(false) {
+    _basePtr(NULL), _fileSize(0), _mustFetch(mustFetch) {
 }
 
 /* error if file is not open for write accecss */
@@ -147,7 +148,7 @@ hal::MMapFileLocal::MMapFileLocal(const std::string& alignmentPath,
                                   unsigned mode,
                                   size_t initSize,
                                   size_t growSize):
-    MMapFile(alignmentPath, mode), _fd(-1), _growSize(growSize) {
+    MMapFile(alignmentPath, mode, false), _fd(-1), _growSize(growSize) {
     if (_mode & WRITE_ACCESS) {
         openWrite(initSize);
     } else {
@@ -296,7 +297,7 @@ hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
                               size_t initSize,
                               size_t growSize,
                               const std::string& udcCacheDir):
-    MMapFile(alignmentPath, mode), _udcFile(NULL) {
+    MMapFile(alignmentPath, mode, true), _udcFile(NULL) {
     if (_mode & WRITE_ACCESS) {
         throw hal_exception("write access not supported for UDC:" + alignmentPath);
     }
