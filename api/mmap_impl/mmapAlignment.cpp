@@ -140,7 +140,7 @@ Genome *MMapAlignment::_openGenome(const string &name) const {
         }
     }
     if (genome == NULL) {
-        throw hal_exception("Genome " + name + "not found in alignment");
+        throw hal_exception("Genome " + name + " not found in alignment");
     }
     _openGenomes[name] = genome;
     return genome;

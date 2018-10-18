@@ -184,7 +184,7 @@ int hal::MMapFileLocal::openFile() {
     } else {
         openMode = O_RDONLY;
     }
-    int fd = ::open(_alignmentPath.c_str(), openMode, 0777);
+    int fd = ::open(_alignmentPath.c_str(), openMode, 0666);
     if (fd < 0) {
         throw hal_errno_exception(_alignmentPath, "open failed", errno);
     }
@@ -302,8 +302,13 @@ hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
     }
     _udcFile = udcFileOpen(const_cast<char*>(alignmentPath.c_str()),
                            (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
-    // get base point and fetch header in one move.
+    udcMMap(_udcFile);
+
+    // get base point and fetch header
     _basePtr = udcMMapFetch(_udcFile, 0, sizeof(mmapHeader));
+    _fileSize = udcSizeFromCache(const_cast<char*>(_alignmentPath.c_str()),
+                                 const_cast<char*>(udcCacheDir.c_str()));
+    loadHeader(false);
 }
 
 /* close file, marking as clean.  Don't  */
