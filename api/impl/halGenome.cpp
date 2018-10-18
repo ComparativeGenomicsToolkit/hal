@@ -188,8 +188,6 @@ void Genome::copyBottomSegments(Genome *dest) const
     BottomSegmentIteratorPtr inBot = inSeq->getBottomSegmentIterator();
     BottomSegmentIteratorPtr outBot = outSeq->getBottomSegmentIterator();
 
-    cout << "DEBUG: inSeq name: " << inSeq->getName() << ", outSeq name: " << outSeq->getName() << endl;
-
     if (inSeq->getName() != outSeq->getName()) {
       // This check is important enough that it can't be an assert.
       stringstream ss;
@@ -204,13 +202,11 @@ void Genome::copyBottomSegments(Genome *dest) const
     }
 
     hal_index_t inSegmentEnd = inSeq->getBottomSegmentArrayIndex() + inSeq->getNumBottomSegments();
-    cout << "DEBUG: inSegmentStart: " << inSeq->getBottomSegmentArrayIndex() << " inSegmentEnd: " << inSegmentEnd << " num bottom segments: " << inSeq->getNumBottomSegments() << endl;
     for (; inBot->getArrayIndex() < inSegmentEnd; inBot->toRight(),
            outBot->toRight())
     {
       hal_index_t outStartPosition = inBot->getStartPosition() - inSeq->getStartPosition() + outSeq->getStartPosition();
 
-      cout << "Decided on outStartPosition " << outStartPosition << " for seg index " << outBot->getArrayIndex() << " (src index " << inBot->getArrayIndex() << ")" << endl;
 
       if (dest->getSequenceBySite(outStartPosition) != outSeq) {
         stringstream ss;
@@ -222,7 +218,6 @@ void Genome::copyBottomSegments(Genome *dest) const
         hal_size_t outChild = inChildToOutChild[inChild];
         if (outChild != outNc) {
           outBot->setChildIndex(outChild, inBot->getChildIndex(inChild));
-          cout << "genome " << getName() << ": Set child index " << inChild << " to " << inBot->getChildIndex(inChild) << endl;
           outBot->setChildReversed(outChild, inBot->getChildReversed(inChild));
         }
       }
