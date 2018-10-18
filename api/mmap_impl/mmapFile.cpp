@@ -331,6 +331,11 @@ hal::MMapFileUdc::~MMapFileUdc() {
 /* fetch into UDC cache */
 void hal::MMapFileUdc::fetch(size_t offset,
                              size_t accessSize) const {
+    if ((offset < _fileSize) and (offset + accessSize) > _fileSize) {
+        // FIXME  - length off end, iterator does this
+        accessSize = _fileSize - offset;
+    }
+
     udcMMapFetch(_udcFile, offset, accessSize);    
 }
 
