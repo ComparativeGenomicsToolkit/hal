@@ -38,11 +38,10 @@ protected:
 class MMapGenome : public Genome {
     friend class MMapDNAIterator;
 public:
-    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex) : _alignment(alignment), _data(data), _arrayIndex(arrayIndex) {
-        _name = _data->getName(_alignment);
+    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex) : _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(_data->getName(_alignment)), _numChildren(alignment->getChildNamesRef(_name).size()) {
     };
     MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex, const std::string &name) :
-        _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name) {
+        _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name), _numChildren(alignment->getChildNamesRef(_name).size()) {
         _data->setName(_alignment, _name);
     };
 
@@ -94,7 +93,7 @@ public:
 
     const Genome* getChild(hal_size_t childIdx) const;
 
-    hal_size_t getNumChildren() const;
+    hal_size_t getNumChildren() const { return _numChildren; };
 
     hal_index_t getChildIndex(const Genome* child) const;
 
@@ -179,6 +178,7 @@ private:
                          hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo);
     std::vector<Sequence::UpdateInfo> getCompleteInputDimensions(const std::vector<Sequence::UpdateInfo>& inputDimensions, bool isTop);
     std::string _name;
+    size_t _numChildren;
     mutable std::map<hal_size_t, MMapSequence*> _sequencePosCache;
     mutable std::vector<MMapSequence*> _zeroLenPosCache;
     mutable std::map<std::string, MMapSequence*> _sequenceNameCache;
