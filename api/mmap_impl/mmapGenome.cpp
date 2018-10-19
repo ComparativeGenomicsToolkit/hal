@@ -279,6 +279,11 @@ const Genome* MMapGenome::getChild(hal_size_t childIdx) const
   return _alignment->openGenome(childNames.at(childIdx));
 }
 
+hal_size_t MMapGenome::getNumChildren() const
+{
+    return _alignment->getChildNamesRef(getName()).size();
+}
+
 hal_index_t MMapGenome::getChildIndex(const Genome* child) const
 {
   string childName = child->getName();
