@@ -166,9 +166,9 @@ void HDF5Alignment::initializeFromOptions(CLParserConstPtr parser) {
 
     _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
 #ifdef ENABLE_UDC
-    const std::string& udcCacheDir(parser->getOption<const string&>("udcCacheDir"));
-    if (not udcCacheDir.empty()) {
-        H5FD_udc_fuse_set_cache_dir(udcCacheDir.c_str());
+    _udcCacheDir = parser->getOption<const string&>("udcCacheDir");
+    if (not _udcCacheDir.empty()) {
+        H5FD_udc_fuse_set_cache_dir(_udcCacheDir.c_str());
     }
 #endif
 }
@@ -204,7 +204,7 @@ void HDF5Alignment::create()
 void HDF5Alignment::open()
 {
 #ifdef ENABLE_UDC
-  if (_mode & READ_ACCESS)
+    if (((_mode & WRITE_ACCESS) == 0) and (not _udcCacheDir.empty()))
   {
     _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
   }
