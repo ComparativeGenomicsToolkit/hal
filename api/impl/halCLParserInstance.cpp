@@ -16,6 +16,7 @@ CLParserPtr hal::halCLParserInstance(unsigned mode)
     CLParserPtr parser(new CLParser());
     HDF5Alignment::defineOptions(parser, mode);
     MMapAlignment::defineOptions(parser, mode);
+    parser->addOption("format", "choose the back-end storage format.", STORAGE_FORMAT_HDF5);
 #ifdef ENABLE_UDC
   // this can be used by multiple storage formats
     parser->addOption("udcCacheDir", "udc cache path for *input* hal file(s).", "\"\"");
