@@ -126,6 +126,7 @@ void MMapGenome::updateTopDimensions(
         seq.setTopSegmentStartIndex(topSegmentStartIndex);
         topSegmentStartIndex += topDimensions[i]._numSegments;
     }
+    reload();
 }
 
 void MMapGenome::updateBottomDimensions(
@@ -145,6 +146,7 @@ void MMapGenome::updateBottomDimensions(
         seq.setBottomSegmentStartIndex(bottomSegmentStartIndex);
         bottomSegmentStartIndex += bottomDimensions[i]._numSegments;
     }
+    reload();
 }
 
 hal_size_t MMapGenome::getNumSequences() const
@@ -243,59 +245,6 @@ const MetaData* MMapGenome::getMetaData() const
 {
     // TODO
     throw hal_exception("All metadata functions currently unimplemented");
-}
-
-Genome* MMapGenome::getParent()
-{
-    std::string parentName = _alignment->getParentName(getName());
-    if (parentName.empty()) {
-        return NULL;
-    } else {
-        return _alignment->openGenome(parentName);
-    }
-}
-
-const Genome* MMapGenome::getParent() const
-{
-    std::string parentName = _alignment->getParentName(getName());
-    if (parentName.empty()) {
-        return NULL;
-    } else {
-        return _alignment->openGenome(parentName);
-    }
-}
-
-Genome* MMapGenome::getChild(hal_size_t childIdx)
-{
-  vector<string> &childNames = _alignment->getChildNamesRef(getName());
-  assert(childNames.size() > childIdx);
-  return _alignment->openGenome(childNames.at(childIdx));
-}
-
-const Genome* MMapGenome::getChild(hal_size_t childIdx) const
-{
-  vector<string> &childNames = _alignment->getChildNamesRef(getName());
-  assert(childNames.size() > childIdx);
-  return _alignment->openGenome(childNames.at(childIdx));
-}
-
-hal_size_t MMapGenome::getNumChildren() const
-{
-    return _alignment->getChildNamesRef(getName()).size();
-}
-
-hal_index_t MMapGenome::getChildIndex(const Genome* child) const
-{
-  string childName = child->getName();
-  vector<string> &childNames = _alignment->getChildNamesRef(getName());
-  for (hal_size_t i = 0; i < childNames.size(); ++i)
-  {
-    if (childNames[i] == childName)
-    {
-      return i;
-    }
-  }
-  return NULL_INDEX;
 }
 
 bool MMapGenome::containsDNAArray() const

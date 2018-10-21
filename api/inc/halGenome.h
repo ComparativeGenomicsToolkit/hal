@@ -12,6 +12,7 @@
 #include "halDefs.h"
 #include "halSegmentedSequence.h"
 #include "halSequence.h"
+#include "halAlignment.h"
 
 namespace hal {
 
@@ -24,6 +25,7 @@ namespace hal {
 class Genome : public SegmentedSequence
 {
 public:   
+    Genome(Alignment *alignment, const std::string &name) : _alignment(alignment), _parentCache(NULL), _name(name), _numChildren(alignment->getChildNames(name).size()) {};
    /** Get the name of the genome */
    virtual const std::string& getName() const = 0;
 
@@ -94,25 +96,25 @@ public:
    virtual const MetaData* getMetaData() const = 0;
 
    /** Get the parent genome */
-   virtual Genome* getParent() = 0;
+   Genome* getParent();
 
    /** Get const parent genome */
-   virtual const Genome* getParent() const = 0;
+   const Genome* getParent() const;
 
    /** Get child genome 
     * @param childIdx index of child genome */
-   virtual Genome* getChild(hal_size_t childIdx) = 0;
+   Genome* getChild(hal_size_t childIdx);
 
    /** Get const child genome 
     * @param childIdx index of child genome */
-   virtual const Genome* getChild(hal_size_t childIdx) const = 0;
+   const Genome* getChild(hal_size_t childIdx) const;
 
    /** Get number of child genomes */
-   virtual hal_size_t getNumChildren() const = 0;
+   hal_size_t getNumChildren() const;
 
    /** Get the numeric index of a given child Genome 
     * @child child genome */
-   virtual hal_index_t getChildIndex(const Genome* child) const = 0;
+   hal_index_t getChildIndex(const Genome* child) const;
 
    /** Test if the genome stores DNA sequence.  Will be true unless
     * storeDNAArrays was set to false in setDimensions */
@@ -175,7 +177,19 @@ public:
    /** Rename this genome. */
    virtual void rename(const std::string &name) = 0;
 
+   /** Reload the genome after some aspect has changed, clearing any caches. */
+   void reload() {
+       _numChildren = _alignment->getChildNames(_name).size();
+       _childCache.empty();
+       _parentCache = NULL;
+   };
+
 protected:
+   Alignment *_alignment;
+   mutable Genome* _parentCache;
+   mutable std::vector<Genome*> _childCache;
+   std::string _name;
+   mutable hal_index_t _numChildren;
 
    /** Destructor */
    virtual ~Genome() = 0;
@@ -183,5 +197,78 @@ protected:
 
 inline Genome::~Genome() {}
 
+
+inline Genome* Genome::getChild(hal_size_t childIdx)
+{
+  if (_childCache.size() <= childIdx)
+  {
+    _childCache.assign(_numChildren, NULL);
+  }
+  if (_childCache[childIdx] == NULL)
+  {
+    std::vector<std::string> childNames = _alignment->getChildNames(_name);
+    _childCache[childIdx] = _alignment->openGenome(childNames.at(childIdx));
+  }
+  return _childCache[childIdx];
+}
+
+inline const Genome* Genome::getChild(hal_size_t childIdx) const
+{
+  if (_childCache.size() <= childIdx)
+  {
+    _childCache.assign(_numChildren, NULL);
+  }
+  if (_childCache[childIdx] == NULL)
+  {
+    std::vector<std::string> childNames = _alignment->getChildNames(_name);
+    _childCache[childIdx] = _alignment->openGenome(childNames.at(childIdx));
+  }
+  return _childCache[childIdx];
+}
+
+inline hal_size_t Genome::getNumChildren() const
+{
+  return _numChildren;
+}
+
+inline hal_index_t Genome::getChildIndex(const Genome* child) const
+{
+  std::string childName = child->getName();
+  std::vector<std::string> childNames = _alignment->getChildNames(_name);
+  for (hal_size_t i = 0; i < childNames.size(); ++i)
+  {
+    if (childNames[i] == childName)
+    {
+      return i;
+    }
+  }
+  return NULL_INDEX;
+}
+
+inline Genome* Genome::getParent()
+{
+  if (_parentCache == NULL)
+  {
+    std::string parName = _alignment->getParentName(_name);
+    if (parName.empty() == false)
+    {
+      _parentCache = _alignment->openGenome(parName);
+    }
+  }
+  return _parentCache;
+}
+
+inline const Genome* Genome::getParent() const
+{
+  if (_parentCache == NULL)
+  {
+    std::string parName = _alignment->getParentName(_name);
+    if (parName.empty() == false)
+    {
+      _parentCache = _alignment->openGenome(parName);
+    }
+  }
+  return _parentCache;
+}
 }
 #endif

@@ -38,11 +38,12 @@ protected:
 class MMapGenome : public Genome {
     friend class MMapDNAIterator;
 public:
-    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex) : _alignment(alignment), _data(data), _arrayIndex(arrayIndex) {
+    MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex) :
+        Genome(alignment, data->getName(alignment)), _alignment(alignment), _data(data), _arrayIndex(arrayIndex) {
         _name = _data->getName(_alignment);
     };
     MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex, const std::string &name) :
-        _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name) {
+        Genome(alignment, name), _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name) {
         _data->setName(_alignment, _name);
     };
 
@@ -85,18 +86,6 @@ public:
     MetaData* getMetaData();
 
     const MetaData* getMetaData() const;
-
-    Genome* getParent();
-
-    const Genome* getParent() const;
-
-    Genome* getChild(hal_size_t childIdx);
-
-    const Genome* getChild(hal_size_t childIdx) const;
-
-    hal_size_t getNumChildren() const;
-
-    hal_index_t getChildIndex(const Genome* child) const;
 
     bool containsDNAArray() const;
 

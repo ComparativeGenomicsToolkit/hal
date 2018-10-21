@@ -81,18 +81,6 @@ public:
 
    const MetaData* getMetaData() const;
 
-   Genome* getParent();
-
-   const Genome* getParent() const;
-
-   Genome* getChild(hal_size_t childIdx);
-
-   const Genome* getChild(hal_size_t childIdx) const;
-
-   hal_size_t getNumChildren() const;
-
-   hal_index_t getChildIndex(const Genome* child) const;
-
    bool containsDNAArray() const;
 
    const Alignment* getAlignment() const;
@@ -203,8 +191,6 @@ protected:
    hal_size_t _totalSequenceLength;
    hal_size_t _numChunksInArrayBuffer;
 
-   mutable Genome* _parentCache;
-   mutable std::vector<Genome*> _childCache;
    mutable std::map<hal_size_t, HDF5Sequence*> _sequencePosCache;
    mutable std::vector<HDF5Sequence*> _zeroLenPosCache;
    mutable std::map<std::string, HDF5Sequence*> _sequenceNameCache;
