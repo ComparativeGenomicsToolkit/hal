@@ -8,40 +8,22 @@
 #include <iostream>
 #include <algorithm>
 #include "hal.h"
-#include "defaultBottomSegmentIterator.h"
+#include "halBottomSegmentIterator.h"
 
 using namespace std;
 using namespace hal;
 
-DefaultBottomSegmentIterator::
-DefaultBottomSegmentIterator(BottomSegment* bottomSegment, 
+BottomSegmentIterator::
+BottomSegmentIterator(BottomSegment* bottomSegment, 
                              hal_size_t startOffset, 
                              hal_size_t endOffset,
                              bool reversed) :
-  DefaultSegmentIterator(startOffset,
-                         endOffset,
-                         reversed),
   _bottomSegment(bottomSegment)
 {
 
 }
 
-DefaultBottomSegmentIterator::~DefaultBottomSegmentIterator()
-{
-
-}
-
-SegmentPtr DefaultBottomSegmentIterator::getSegment()
-{
-  return _bottomSegment;
-}
-
-SegmentConstPtr DefaultBottomSegmentIterator::getSegment() const
-{
-  return _bottomSegment;
-}
-
-hal_size_t DefaultBottomSegmentIterator::getNumSegmentsInGenome() const
+hal_size_t BottomSegmentIterator::getNumSegmentsInGenome() const
 {
   return getGenome()->getNumBottomSegments();
 }
@@ -49,7 +31,7 @@ hal_size_t DefaultBottomSegmentIterator::getNumSegmentsInGenome() const
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE OVERRIDE
 //////////////////////////////////////////////////////////////////////////////
-void DefaultBottomSegmentIterator::print(ostream& os) const
+void BottomSegmentIterator::print(ostream& os) const
 {
   os << "BotSegIt: ";
   DefaultSegmentIterator::print(os);
@@ -73,76 +55,76 @@ void DefaultBottomSegmentIterator::print(ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 // BOTTOM SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-hal_size_t DefaultBottomSegmentIterator::getNumChildren() const
+hal_size_t BottomSegmentIterator::getNumChildren() const
 {
   return _bottomSegment->getNumChildren();
 }
 
-hal_index_t DefaultBottomSegmentIterator::getChildIndex(hal_size_t i) const
+hal_index_t BottomSegmentIterator::getChildIndex(hal_size_t i) const
 {
   return _bottomSegment->getChildIndex(i);
 }
 
-hal_index_t DefaultBottomSegmentIterator::getChildIndexG(
+hal_index_t BottomSegmentIterator::getChildIndexG(
   const Genome* childGenome) const
 {
   return _bottomSegment->getChildIndexG(childGenome);
 }
 
-bool DefaultBottomSegmentIterator::hasChild(hal_size_t child) const
+bool BottomSegmentIterator::hasChild(hal_size_t child) const
 {
   return _bottomSegment->hasChild(child);
 }
 
-bool DefaultBottomSegmentIterator::hasChildG(const Genome* childGenome) const
+bool BottomSegmentIterator::hasChildG(const Genome* childGenome) const
 {
   return _bottomSegment->hasChildG(childGenome);
 }
 
-void DefaultBottomSegmentIterator::setChildIndex(hal_size_t i, 
+void BottomSegmentIterator::setChildIndex(hal_size_t i, 
                                               hal_index_t childIndex)
 {
   _bottomSegment->setChildIndex(i, childIndex);
 }
 
-bool DefaultBottomSegmentIterator::getChildReversed(hal_size_t i) const
+bool BottomSegmentIterator::getChildReversed(hal_size_t i) const
 {
   return _bottomSegment->getChildReversed(i);
 }
 
-void DefaultBottomSegmentIterator::setChildReversed(hal_size_t child,
+void BottomSegmentIterator::setChildReversed(hal_size_t child,
                                                  bool isReversed)
 {
   _bottomSegment->setChildReversed(child, isReversed);
 }
 
-hal_index_t DefaultBottomSegmentIterator::getTopParseIndex() const
+hal_index_t BottomSegmentIterator::getTopParseIndex() const
 {
   return _bottomSegment->getTopParseIndex();
 }
 
-void DefaultBottomSegmentIterator::setTopParseIndex(hal_index_t parseIndex)
+void BottomSegmentIterator::setTopParseIndex(hal_index_t parseIndex)
 {
   _bottomSegment->setTopParseIndex(parseIndex);
 }
 
-hal_offset_t DefaultBottomSegmentIterator::getTopParseOffset() const
+hal_offset_t BottomSegmentIterator::getTopParseOffset() const
 {
   return _bottomSegment->getTopParseOffset();
 }
 
-bool DefaultBottomSegmentIterator::hasParseUp() const
+bool BottomSegmentIterator::hasParseUp() const
 {
   return _bottomSegment->hasParseUp();
 }
 
-hal_index_t DefaultBottomSegmentIterator::getLeftChildIndex(hal_size_t i) const
+hal_index_t BottomSegmentIterator::getLeftChildIndex(hal_size_t i) const
 {
   assert(_startOffset == 0 && _endOffset == 0);
   return _bottomSegment->getLeftChildIndex(i);
 }
 
-hal_index_t DefaultBottomSegmentIterator::getRightChildIndex(hal_size_t i) const
+hal_index_t BottomSegmentIterator::getRightChildIndex(hal_size_t i) const
 {
   assert(_startOffset == 0 && _endOffset == 0);
   return _bottomSegment->getRightChildIndex(i);
@@ -151,7 +133,7 @@ hal_index_t DefaultBottomSegmentIterator::getRightChildIndex(hal_size_t i) const
 //////////////////////////////////////////////////////////////////////////////
 // BOTTOM SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void DefaultBottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
+void BottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
 {
   _bottomSegment->setArrayIndex(ts->getGenome()->getParent(),
                                 ts->getParentIndex());
@@ -166,7 +148,7 @@ void DefaultBottomSegmentIterator::toParent(TopSegmentIteratorConstPtr ts) const
 }
 
 void 
-DefaultBottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
+BottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
 {
   const Genome* genome = ts->getGenome();
   hal_index_t index = ts->getBottomParseIndex();
@@ -204,7 +186,7 @@ DefaultBottomSegmentIterator::toParseDown(TopSegmentIteratorConstPtr ts) const
   assert (inRange() == true);
 }
 
-BottomSegmentIteratorPtr DefaultBottomSegmentIterator::copy()
+BottomSegmentIteratorPtr BottomSegmentIterator::copy()
 {
   assert (inRange() == true);
   BottomSegmentIteratorPtr newIt = 
@@ -217,7 +199,7 @@ BottomSegmentIteratorPtr DefaultBottomSegmentIterator::copy()
   return newIt;
 }
 
-BottomSegmentIteratorConstPtr DefaultBottomSegmentIterator::copy() const
+BottomSegmentIteratorConstPtr BottomSegmentIterator::copy() const
 {
   assert (inRange() == true);
   BottomSegmentIteratorConstPtr newIt = 
@@ -230,7 +212,7 @@ BottomSegmentIteratorConstPtr DefaultBottomSegmentIterator::copy() const
   return newIt;
 }
 
-void DefaultBottomSegmentIterator::copy(BottomSegmentIteratorConstPtr bs) const
+void BottomSegmentIterator::copy(BottomSegmentIteratorConstPtr bs) const
 {
   assert(bs.get() != NULL);
   _bottomSegment->setArrayIndex(bs->getGenome(), bs->getArrayIndex());
@@ -239,23 +221,21 @@ void DefaultBottomSegmentIterator::copy(BottomSegmentIteratorConstPtr bs) const
   _reversed = bs->getReversed();
 }
 
-BottomSegment* DefaultBottomSegmentIterator::getBottomSegment()
-{
-  // Deprecated now, but so much current code relies on these functions
-  return _bottomSegment.get();
-}
-
-const BottomSegment* DefaultBottomSegmentIterator::getBottomSegment() const
-{
-  // Deprecated now, but so much current code relies on these functions
-  return _bottomSegment.get();
-}
-
-bool DefaultBottomSegmentIterator::equals(BottomSegmentIteratorConstPtr other) 
+bool BottomSegmentIterator::equals(BottomSegmentIteratorConstPtr other) 
   const
 {
   assert(_bottomSegment->getGenome() == other->getGenome());
   return getArrayIndex() == other->getArrayIndex();
+}
+
+SegmentPtr BottomSegmentIterator::getSegment()
+{
+  return _bottomSegment;
+}
+
+SegmentConstPtr BottomSegmentIterator::getSegment() const
+{
+  return _bottomSegment;
 }
 
 

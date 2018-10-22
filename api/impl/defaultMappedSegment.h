@@ -51,11 +51,11 @@ public:
    virtual hal_size_t getMappedSegments(
      std::set<MappedSegmentConstPtr>& outSegments,
      const Genome* tgtGenome,
-     const std::set<const Genome*>* genomesOnPath,
-     bool doDupes,
-     hal_size_t minLength,
-     const Genome *coalescenceLimit,
-     const Genome *mrca) const;
+     const std::set<const Genome*>* genomesOnPath = NULL,
+     bool doDupes = true,
+     hal_size_t minLength = 0,
+     const Genome *coalescenceLimit = NULL,
+     const Genome *mrca = NULL) const;
    virtual void print(std::ostream& os) const;
 
    // SLICED SEGMENT INTERFACE 

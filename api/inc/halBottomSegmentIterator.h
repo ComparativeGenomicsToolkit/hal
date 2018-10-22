@@ -10,6 +10,7 @@
 #include "halDefs.h"
 #include "halBottomSegment.h"
 #include "halSegmentIterator.h"
+#include "defaultSegmentIterator.h"
 
 namespace hal {
 
@@ -19,44 +20,78 @@ namespace hal {
  * Always hidden in smart pointers in the public interface. 
  */
 class BottomSegmentIterator : public virtual BottomSegment,
-                              public virtual SegmentIterator
+                              public virtual SegmentIterator,
+                              public DefaultSegmentIterator
 {
 public:
-   /** Return a new copy of the iterator */
-   virtual BottomSegmentIteratorPtr copy() = 0;
+    /** constructor */
+    BottomSegmentIterator(BottomSegment* bottomSegment, 
+                          hal_size_t startOffset = 0, 
+                          hal_size_t endOffset = 0,
+                          bool reversed = false);
+    /** destructor */
+    ~BottomSegmentIterator();
+
+    /** Return a new copy of the iterator */
+    BottomSegmentIteratorPtr copy();
 
    /** Return a new copy of the iterator */
-   virtual BottomSegmentIteratorConstPtr copy() const = 0;
+    BottomSegmentIteratorConstPtr copy() const;
 
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
     * @param ts Iterator to copy */
-   virtual void copy(BottomSegmentIteratorConstPtr bs) const = 0;
+    void copy(BottomSegmentIteratorConstPtr bs) const;
 
    /** Move the iterator to the parent segment of a given iterator
     * @param ts Iterator whose parent to move to */
-   virtual void toParent(TopSegmentIteratorConstPtr ts) const = 0; 
+    void toParent(TopSegmentIteratorConstPtr ts) const; 
 
-   /** Move the iterator down to the bottom segment containg the
+   /** Move the iterator down to the bottom segment containing the
     * start position of the given iterator in the same genome
     * @param ts Top iterator to parse down on */
-   virtual void toParseDown(TopSegmentIteratorConstPtr ts) const = 0;
+    void toParseDown(TopSegmentIteratorConstPtr ts) const;
 
    /** DEPRECATED */
-   virtual BottomSegment* getBottomSegment() = 0;
+    BottomSegment* getBottomSegment() {
+        return  _bottomSegment.get();
+    }
 
    /** DEPRECATED */
-   virtual const BottomSegment* getBottomSegment() const = 0;
+    const BottomSegment* getBottomSegment() const {
+        return  _bottomSegment.get();
+    }
 
    /** Test equality with other iterator (current implementation does not
     * take into account reverse state or offsets -- too review)
     * @param other Iterator to test equality to */
-   virtual bool equals(BottomSegmentIteratorConstPtr other) const = 0;
+    bool equals(BottomSegmentIteratorConstPtr other) const;
 
+    // SEGMENT INTERFACE OVERRIDE
+    virtual void print(std::ostream& os) const;
+
+   // BOTTOM SEGMENT INTERFACE
+   virtual hal_size_t getNumChildren() const;
+   virtual hal_index_t getChildIndex(hal_size_t i) const;
+   virtual hal_index_t getChildIndexG(const Genome* childGenome) const;
+   virtual bool hasChild(hal_size_t child) const;
+   virtual bool hasChildG(const Genome* childGenome) const;
+   virtual void setChildIndex(hal_size_t i, hal_index_t childIndex);
+   virtual bool getChildReversed(hal_size_t i) const;
+   virtual void setChildReversed(hal_size_t child, bool isReversed);
+   virtual hal_index_t getTopParseIndex() const;
+   virtual void setTopParseIndex(hal_index_t parseIndex);
+   virtual hal_offset_t getTopParseOffset() const;
+   virtual bool hasParseUp() const;
+   virtual hal_index_t getLeftChildIndex(hal_size_t i) const;
+   virtual hal_index_t getRightChildIndex(hal_size_t i) const;
 protected:
    friend class counted_ptr<BottomSegmentIterator>;
    friend class counted_ptr<const BottomSegmentIterator>;
-   virtual ~BottomSegmentIterator() = 0;
+   virtual SegmentPtr getSegment();
+   virtual SegmentConstPtr getSegment() const;
+   virtual hal_size_t getNumSegmentsInGenome() const;
+   BottomSegmentPtr _bottomSegment;
 };
 
 inline BottomSegmentIterator::~BottomSegmentIterator() {}

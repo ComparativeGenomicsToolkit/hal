@@ -11,6 +11,8 @@
 #include "halDefs.h"
 #include "halSegmentIterator.h"
 #include "halTopSegment.h"
+#include "halGenome.h"
+#include "defaultSegmentIterator.h"
 
 namespace hal {
 
@@ -20,61 +22,101 @@ namespace hal {
  * Always hidden in smart pointers in the public interface. 
  */
 class TopSegmentIterator : public virtual TopSegment,
-                           public virtual SegmentIterator
+                           public virtual SegmentIterator,
+                           public DefaultSegmentIterator
 {
 public:
+    /* constructor */
+   TopSegmentIterator(TopSegment* topSegment,
+                      hal_offset_t startOffset = 0, 
+                      hal_offset_t endOffset = 0,
+                      bool inverted = false);
+
+    /* destructor */
+    virtual ~TopSegmentIterator() {
+    }
+   
    /** Return a new copy of the iterator */
-   virtual TopSegmentIteratorPtr copy() = 0;
+    TopSegmentIteratorPtr copy();
 
    /** Return a new copy of the iterator */
-   virtual TopSegmentIteratorConstPtr copy() const = 0;
+     TopSegmentIteratorConstPtr copy() const;
 
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
     * @param ts Iterator to copy */
-   virtual void copy(TopSegmentIteratorConstPtr ts) const = 0;
+    void copy(TopSegmentIteratorConstPtr ts) const;
 
    /** Move the iterator to the child of a given bottom segment
     * @param bs Bottom segment whose child will be moved to
     * @param child Index of child in bottom segment's genome */
-   virtual void toChild(BottomSegmentIteratorConstPtr bs, 
-                        hal_size_t child) const = 0;
+    void toChild(BottomSegmentIteratorConstPtr bs, 
+                 hal_size_t child) const;
 
    /** Move the iterator to the child of a given bottom segment
     * @param bs Bottom segment whose child will be moved to
     * @param childGenome genome of child in bottom segment */
-   virtual void toChildG(BottomSegmentIteratorConstPtr bs, 
-                         const Genome* childGenome) const = 0;
+    void toChildG(BottomSegmentIteratorConstPtr bs, 
+                  const Genome* childGenome) const;
    
    /** Given a bottom segment, move to the top segment that contains
     * its start position.  The genome remains unchanged.  The iterator
     * will be sliced accordingly (reversed state also taken into account)
     * @param bs Bottom segment to parse up from */
-   virtual void toParseUp(BottomSegmentIteratorConstPtr bs) const = 0;
+    void toParseUp(BottomSegmentIteratorConstPtr bs) const;
 
    /** DEPRECATED */
-   virtual TopSegment* getTopSegment() = 0;
+    TopSegment* getTopSegment() {
+        return _topSegment.get();
+    }
 
    /** DEPRECATED */
-   virtual const TopSegment* getTopSegment() const = 0;
+    const TopSegment* getTopSegment() const  {
+        return _topSegment.get();
+   }
 
    /** Test equality with other iterator (current implementation does not
     * take into account reverse state or offsets -- too review)
     * @param other Iterator to test equality to */
-   virtual bool equals(TopSegmentIteratorConstPtr other) const = 0;
+    bool equals(TopSegmentIteratorConstPtr other) const;
 
    /** Move iterator to next paralgous segment.  Iterator will be reversed
    * if the next segment is in a different orientation wrt their common
    * parent */
-   virtual void toNextParalogy() const = 0;
+    void toNextParalogy() const;
+
+    // SEGMENT INTERFACE OVERRIDE
+    virtual void print(std::ostream& os) const;
+   // TOP SEGMENT INTERFACE
+   virtual hal_index_t getParentIndex() const;
+   virtual bool hasParent() const;
+   virtual void setParentIndex(hal_index_t parIdx);
+   virtual bool getParentReversed() const;
+   virtual void setParentReversed(bool isReversed);
+   virtual hal_index_t getBottomParseIndex() const;
+   virtual void setBottomParseIndex(hal_index_t botParseIdx);
+   virtual hal_offset_t getBottomParseOffset() const;
+   virtual bool hasParseDown() const;
+   virtual hal_index_t getNextParalogyIndex() const;
+   virtual bool hasNextParalogy() const;
+   virtual void setNextParalogyIndex(hal_index_t parIdx);
+   virtual hal_index_t getLeftParentIndex() const;
+   virtual hal_index_t getRightParentIndex() const;
+   virtual bool isCanonicalParalog() const;
+
+
+protected:
+   virtual SegmentPtr getSegment();
+   virtual SegmentConstPtr getSegment() const;
+   virtual hal_size_t getNumSegmentsInGenome() const;
+
+protected:
+   TopSegmentPtr _topSegment;
 
 protected:
    friend class counted_ptr<TopSegmentIterator>;
    friend class counted_ptr<const TopSegmentIterator>;
-   virtual ~TopSegmentIterator() = 0;
 };
-
-inline TopSegmentIterator::~TopSegmentIterator() {}
 
 inline bool operator==(TopSegmentIteratorConstPtr p1,
                        TopSegmentIteratorConstPtr p2) 
@@ -91,6 +133,30 @@ inline bool operator!=(TopSegmentIteratorConstPtr p1,
 {
   return !(p1 == p2);
 }
+
+inline TopSegmentIterator::TopSegmentIterator(TopSegment* topSegment, 
+                                             hal_offset_t startOffset, 
+                                             hal_offset_t endOffset,
+                                             bool reversed) :
+  _topSegment(topSegment) {
+
+}
+
+inline SegmentPtr TopSegmentIterator::getSegment()
+{
+  return _topSegment;
+}
+
+inline SegmentConstPtr TopSegmentIterator::getSegment() const
+{
+  return _topSegment;
+}
+
+inline hal_size_t TopSegmentIterator::getNumSegmentsInGenome() const
+{
+  return getGenome()->getNumTopSegments();
+}
+
 
 }
 

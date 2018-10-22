@@ -8,47 +8,16 @@
 #include <iostream>
 #include <algorithm>
 #include "hal.h"
-#include "defaultTopSegmentIterator.h"
+#include "halTopSegmentIterator.h"
+#include "defaultSegmentIterator.h"
 
 using namespace std;
 using namespace hal;
 
-DefaultTopSegmentIterator::DefaultTopSegmentIterator(TopSegment* topSegment, 
-                                                     hal_offset_t startOffset, 
-                                                     hal_offset_t endOffset,
-                                                     bool reversed) :
-  DefaultSegmentIterator(startOffset,
-                         endOffset,
-                         reversed),
-  _topSegment(topSegment)
-{
-
-}
-
-DefaultTopSegmentIterator::~DefaultTopSegmentIterator()
-{
-
-}
-
-SegmentPtr DefaultTopSegmentIterator::getSegment()
-{
-  return _topSegment;
-}
-
-SegmentConstPtr DefaultTopSegmentIterator::getSegment() const
-{
-  return _topSegment;
-}
-
-hal_size_t DefaultTopSegmentIterator::getNumSegmentsInGenome() const
-{
-  return getGenome()->getNumTopSegments();
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE OVERRIDE
 //////////////////////////////////////////////////////////////////////////////
-void DefaultTopSegmentIterator::print(ostream& os) const
+void TopSegmentIterator::print(ostream& os) const
 {
   os << "TopSegIt: ";
   DefaultSegmentIterator::print(os);
@@ -67,48 +36,48 @@ void DefaultTopSegmentIterator::print(ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 // TOP SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-hal_index_t DefaultTopSegmentIterator::getParentIndex() const
+hal_index_t TopSegmentIterator::getParentIndex() const
 {
   return _topSegment->getParentIndex();
 }
 
-bool DefaultTopSegmentIterator::hasParent() const
+bool TopSegmentIterator::hasParent() const
 {
   assert(inRange() == true);
   return _topSegment->getParentIndex() != NULL_INDEX;
 }
 
-void DefaultTopSegmentIterator::setParentIndex(hal_index_t parIdx)
+void TopSegmentIterator::setParentIndex(hal_index_t parIdx)
 {
   _topSegment->setParentIndex(parIdx);
 }
 
-bool DefaultTopSegmentIterator::getParentReversed() const
+bool TopSegmentIterator::getParentReversed() const
 {
   return _topSegment->getParentReversed();
 }
 
-void DefaultTopSegmentIterator::setParentReversed(bool isReversed)
+void TopSegmentIterator::setParentReversed(bool isReversed)
 {
   _topSegment->setParentReversed(isReversed);
 }
 
-hal_index_t DefaultTopSegmentIterator::getBottomParseIndex() const
+hal_index_t TopSegmentIterator::getBottomParseIndex() const
 {
   return _topSegment->getBottomParseIndex();
 }
 
-void DefaultTopSegmentIterator::setBottomParseIndex(hal_index_t botParseIdx)
+void TopSegmentIterator::setBottomParseIndex(hal_index_t botParseIdx)
 {
   _topSegment->setBottomParseIndex(botParseIdx);
 }
 
-hal_offset_t DefaultTopSegmentIterator::getBottomParseOffset() const
+hal_offset_t TopSegmentIterator::getBottomParseOffset() const
 {
   return _topSegment->getBottomParseOffset();
 }
 
-bool DefaultTopSegmentIterator::hasParseDown() const
+bool TopSegmentIterator::hasParseDown() const
 {
   assert (inRange() == true);
   assert (_topSegment->getBottomParseIndex() == NULL_INDEX ||
@@ -116,32 +85,32 @@ bool DefaultTopSegmentIterator::hasParseDown() const
   return _topSegment->getBottomParseIndex() != NULL_INDEX;
 }
 
-hal_index_t DefaultTopSegmentIterator::getNextParalogyIndex() const
+hal_index_t TopSegmentIterator::getNextParalogyIndex() const
 {
   return _topSegment->getNextParalogyIndex();
 }
 
-bool DefaultTopSegmentIterator::hasNextParalogy() const
+bool TopSegmentIterator::hasNextParalogy() const
 {
   return _topSegment->hasNextParalogy();
 }
 
-void DefaultTopSegmentIterator::setNextParalogyIndex(hal_index_t parIdx)
+void TopSegmentIterator::setNextParalogyIndex(hal_index_t parIdx)
 {
   _topSegment->setNextParalogyIndex(parIdx);
 }
 
-hal_index_t DefaultTopSegmentIterator::getLeftParentIndex() const
+hal_index_t TopSegmentIterator::getLeftParentIndex() const
 {
   return _topSegment->getLeftParentIndex();
 }
 
-hal_index_t DefaultTopSegmentIterator::getRightParentIndex() const
+hal_index_t TopSegmentIterator::getRightParentIndex() const
 {
   return _topSegment->getRightParentIndex();
 }
 
-bool DefaultTopSegmentIterator::isCanonicalParalog() const
+bool TopSegmentIterator::isCanonicalParalog() const
 {
   return _topSegment->isCanonicalParalog();
 }
@@ -149,7 +118,7 @@ bool DefaultTopSegmentIterator::isCanonicalParalog() const
 //////////////////////////////////////////////////////////////////////////////
 // TOP SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void DefaultTopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs, 
+void TopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs, 
                                      hal_size_t child) const
 {
   _topSegment->setArrayIndex(bs->getGenome()->getChild(child),
@@ -164,7 +133,7 @@ void DefaultTopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs,
   assert (inRange() == true);
 }
 
-void DefaultTopSegmentIterator::toChildG(BottomSegmentIteratorConstPtr bs, 
+void TopSegmentIterator::toChildG(BottomSegmentIteratorConstPtr bs, 
                                       const Genome* childGenome) const
 {
   hal_index_t childIndex = bs->getGenome()->getChildIndex(childGenome);
@@ -175,7 +144,7 @@ void DefaultTopSegmentIterator::toChildG(BottomSegmentIteratorConstPtr bs,
 }
 
 
-void DefaultTopSegmentIterator::toParseUp(BottomSegmentIteratorConstPtr bs) const
+void TopSegmentIterator::toParseUp(BottomSegmentIteratorConstPtr bs) const
 { 
   const Genome* genome = bs->getGenome();
   hal_index_t index = bs->getTopParseIndex();
@@ -213,17 +182,7 @@ void DefaultTopSegmentIterator::toParseUp(BottomSegmentIteratorConstPtr bs) cons
   assert (inRange() == true);
 }
 
-TopSegment* DefaultTopSegmentIterator::getTopSegment()
-{
-  return _topSegment.get();
-}
-
-const TopSegment* DefaultTopSegmentIterator::getTopSegment() const
-{
-  return _topSegment.get();
-}
-
-TopSegmentIteratorPtr DefaultTopSegmentIterator::copy()
+TopSegmentIteratorPtr TopSegmentIterator::copy()
 {
   TopSegmentIteratorPtr newIt = 
      getGenome()->getTopSegmentIterator(getArrayIndex());
@@ -235,7 +194,7 @@ TopSegmentIteratorPtr DefaultTopSegmentIterator::copy()
   return newIt;
 }
 
-TopSegmentIteratorConstPtr DefaultTopSegmentIterator::copy() const
+TopSegmentIteratorConstPtr TopSegmentIterator::copy() const
 {
   TopSegmentIteratorConstPtr newIt = 
      getGenome()->getTopSegmentIterator(getArrayIndex());
@@ -247,7 +206,7 @@ TopSegmentIteratorConstPtr DefaultTopSegmentIterator::copy() const
   return newIt;
 }
 
-void DefaultTopSegmentIterator::copy(TopSegmentIteratorConstPtr ts) const
+void TopSegmentIterator::copy(TopSegmentIteratorConstPtr ts) const
 {
   _topSegment->setArrayIndex(ts->getGenome(), ts->getArrayIndex());
   _startOffset = ts->getStartOffset();
@@ -255,13 +214,13 @@ void DefaultTopSegmentIterator::copy(TopSegmentIteratorConstPtr ts) const
   _reversed = ts->getReversed();
 }
 
-bool DefaultTopSegmentIterator::equals(TopSegmentIteratorConstPtr other) const
+bool TopSegmentIterator::equals(TopSegmentIteratorConstPtr other) const
 {
   assert(getGenome() == other->getGenome());
   return getArrayIndex() == other->getArrayIndex();
 }
 
-void DefaultTopSegmentIterator::toNextParalogy() const
+void TopSegmentIterator::toNextParalogy() const
 {
   assert(_topSegment->getNextParalogyIndex() != NULL_INDEX);
   assert(_topSegment->getNextParalogyIndex() != _topSegment->getArrayIndex());

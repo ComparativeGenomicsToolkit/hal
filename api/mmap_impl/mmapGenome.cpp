@@ -4,8 +4,8 @@
 #include "mmapSequence.h"
 #include "mmapSequenceIterator.h"
 #include "mmapDNAIterator.h"
-#include "defaultTopSegmentIterator.h"
-#include "defaultBottomSegmentIterator.h"
+#include "halTopSegmentIterator.h"
+#include "halBottomSegmentIterator.h"
 #include "defaultColumnIterator.h"
 #include "defaultRearrangement.h"
 #include "defaultGappedTopSegmentIterator.h"
@@ -287,7 +287,7 @@ TopSegmentIteratorPtr MMapGenome::getTopSegmentIterator(hal_index_t segmentIndex
   MMapTopSegment *newSeg = new MMapTopSegment(this, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
-  DefaultTopSegmentIterator *newIt = new DefaultTopSegmentIterator(newSeg);
+  TopSegmentIterator *newIt = new TopSegmentIterator(newSeg);
   return TopSegmentIteratorPtr(newIt);
 }
 
@@ -297,7 +297,7 @@ TopSegmentIteratorConstPtr MMapGenome::getTopSegmentIterator(hal_index_t segment
   MMapTopSegment *newSeg = new MMapTopSegment(genome, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
-  DefaultTopSegmentIterator* newIt = new DefaultTopSegmentIterator(newSeg);
+  TopSegmentIterator* newIt = new TopSegmentIterator(newSeg);
   return TopSegmentIteratorConstPtr(newIt);
 }
 
@@ -311,7 +311,7 @@ BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmen
   MMapBottomSegment* newSeg = new MMapBottomSegment(this, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
-  DefaultBottomSegmentIterator* newIt = new DefaultBottomSegmentIterator(newSeg);
+  BottomSegmentIterator* newIt = new BottomSegmentIterator(newSeg);
   return BottomSegmentIteratorPtr(newIt);
 }
 
@@ -321,7 +321,7 @@ BottomSegmentIteratorConstPtr MMapGenome::getBottomSegmentIterator(hal_index_t s
   MMapBottomSegment* newSeg = new MMapBottomSegment(genome, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
-  DefaultBottomSegmentIterator* newIt = new DefaultBottomSegmentIterator(newSeg);
+  BottomSegmentIterator* newIt = new BottomSegmentIterator(newSeg);
   return BottomSegmentIteratorConstPtr(newIt);
 }
 

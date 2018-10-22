@@ -20,7 +20,6 @@ namespace hal {
 class SegmentIterator : public virtual SlicedSegment
 {
 public:
-
    /** move iterator one segment to the left 
     * @param leftCutoff If the left segment contains the 
     * genome position (DNA coordinate) specified by leftCutoff

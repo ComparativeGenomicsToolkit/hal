@@ -11,8 +11,8 @@
 #include <limits>
 #include "hal.h"
 #include "defaultMappedSegment.h"
-#include "defaultTopSegmentIterator.h"
-#include "defaultBottomSegmentIterator.h"
+#include "halTopSegmentIterator.h"
+#include "halBottomSegmentIterator.h"
 
 using namespace std;
 using namespace hal;
@@ -393,16 +393,16 @@ hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
   if (source->isTop())
   {
     startSource = 
-       dynamic_cast<const DefaultTopSegmentIterator*>(source)->copy();
+       dynamic_cast<const TopSegmentIterator*>(source)->copy();
     startTarget = 
-       dynamic_cast<const DefaultTopSegmentIterator*>(source)->copy();
+       dynamic_cast<const TopSegmentIterator*>(source)->copy();
   }
   else
   {
     startSource = 
-       dynamic_cast<const DefaultBottomSegmentIterator*>(source)->copy();
+       dynamic_cast<const BottomSegmentIterator*>(source)->copy();
     startTarget = 
-       dynamic_cast<const DefaultBottomSegmentIterator*>(source)->copy();
+       dynamic_cast<const BottomSegmentIterator*>(source)->copy();
   }
   
   DefaultMappedSegmentConstPtr newMappedSeg(
