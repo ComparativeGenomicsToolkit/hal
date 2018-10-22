@@ -265,6 +265,7 @@ void hal::MMapFileLocal::growFileImpl(size_t size) {
     }
     void * requiredAddr = _basePtr;
     unmapFile();
+    adjustFileSize(newSize);
     _basePtr = mapFile(requiredAddr);
 }
 
