@@ -214,9 +214,20 @@ try_truncate:
 void* hal::MMapFileLocal::mapFile(void *requiredAddr) {
     assert(_basePtr == NULL);
     unsigned prot = PROT_READ | ((_mode & WRITE_ACCESS) ? PROT_WRITE : 0);
-    void *ptr = mmap(requiredAddr, _fileSize, prot, MAP_SHARED|MAP_FILE, _fd, 0);
+    int flags = MAP_SHARED|MAP_FILE;
+    if (requiredAddr != NULL) {
+        // We don't want MAP_FIXED when we don't have an address we
+        // need, as that will, apparently, happily map NULL to the
+        // beginning of our file. That could mask some bugs. But we
+        // *do* want MAP_FIXED otherwise.
+        flags |= MAP_FIXED;
+    }
+    void *ptr = mmap(requiredAddr, _fileSize, prot, flags, _fd, 0);
     if (ptr == MAP_FAILED) {
         throw hal_errno_exception(_alignmentPath, "mmap failed", errno);
+    }
+    if (requiredAddr != NULL && ptr != requiredAddr) {
+        throw hal_exception("unable to remap file at same address");
     }
     return ptr;
 }
@@ -274,9 +285,9 @@ void hal::MMapFileLocal::closeFile() {
 /* grow file  */
 void hal::MMapFileLocal::growFileImpl(size_t size) {
     assert(_mode & WRITE_ACCESS);
-    size_t newSize = _growSize;
-    if (newSize < size) {
-        newSize += size;  // will leave in extra
+    size_t newSize = _fileSize + size;
+    if (newSize < _fileSize + _growSize) {
+        newSize = _fileSize + _growSize;
     }
     void * requiredAddr = _basePtr;
     unmapFile();
