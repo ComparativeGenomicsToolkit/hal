@@ -185,17 +185,27 @@ int hal::MMapFileLocal::openFile() {
     } else {
         openMode = O_RDONLY;
     }
+try_open:
     int fd = ::open(_alignmentPath.c_str(), openMode, 0666);
     if (fd < 0) {
-        throw hal_errno_exception(_alignmentPath, "open failed", errno);
+        if (errno == EINTR) {
+            goto try_open;
+        } else {
+            throw hal_errno_exception(_alignmentPath, "open failed", errno);
+        }
     }
     return fd;
 }
 
 /* change size size of the file, possibly deleting data. */
 void hal::MMapFileLocal::adjustFileSize(size_t size) {
+try_truncate:
     if (ftruncate(_fd, size) < 0) {
-        throw hal_errno_exception(_alignmentPath, "set size failed", errno);
+        if (errno == EINTR) {
+            goto try_truncate;
+        } else {
+            throw hal_errno_exception(_alignmentPath, "set size failed", errno);
+        }
     }
     _fileSize = size;
 }
@@ -249,8 +259,13 @@ void hal::MMapFileLocal::openWrite(size_t initSize) {
 /* close the file if open */
 void hal::MMapFileLocal::closeFile() {
     if (_fd >= 0) {
+    try_close:
         if (::close(_fd) < 0) {
-            throw hal_errno_exception(_alignmentPath, "close failed", errno);
+            if (errno == EINTR) {
+                goto try_close;
+            } else {
+                throw hal_errno_exception(_alignmentPath, "close failed", errno);
+            }
         }
         _fd = -1;
     }
