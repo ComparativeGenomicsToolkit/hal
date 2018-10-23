@@ -64,22 +64,14 @@ int main(int argc, char** argv)
       throw hal_exception("input hal alignmenet is empty");
     }
 
-    AlignmentPtr outAlignment;
     if (outputFormat.empty()) {
-        // No alignment format specified, just use the default / the
-        // one given by the default command line parser
-        AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS);
-    } else if (outputFormat == "mmap") {
-        outAlignment = mmapAlignmentInstance(outHalPath, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS);
-    } else if (outputFormat == "hdf5") {
-        outAlignment = hdf5AlignmentInstance(outHalPath, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS,
-                                             hdf5DefaultFileCreatPropList(),
-                                             hdf5DefaultFileAccPropList(),
-                                             hdf5DefaultDSetCreatPropList());
-    } else {
-        throw hal_exception("unrecognized format " + outputFormat);
+        // No alignment format specified, just use the same as the input format.
+        outputFormat = inAlignment->getStorageFormat();
     }
 
+
+    AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS,
+                                                 outputFormat);
     if (outAlignment->getNumGenomes() != 0)
     {
       throw hal_exception("output hal alignmenet cannot be initialized");

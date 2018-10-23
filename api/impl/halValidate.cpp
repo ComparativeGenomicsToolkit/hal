@@ -415,7 +415,7 @@ void hal::validateGenome(const Genome* genome)
   {
     stringstream ss;
     ss << "Problem: genome has length " << genomeLength 
-       << "But sequences total " << totalLength;
+       << ", however sequences total " << totalLength;
     throw hal_exception(ss.str());
   }
   if (genomeTop != totalTop)

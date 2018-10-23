@@ -110,10 +110,14 @@ mmapAlignmentInstance(const std::string& alignmentPath,
  * implementation to use.  (will currently (and probably forever more) 
  * just return an HDF5 instance since that's all that exists) 
  * @param path Path of file to open 
- * @param options Command line options information */
+ * @param options Command line options information
+ * @param overrideFormat If not empty, this overrides any format in options.  Used for
+ * command that both input and output HALs.
+ */
 AlignmentPtr openHalAlignment(const std::string& path,
                               CLParserConstPtr options,
-                              unsigned mode = hal::READ_ACCESS); 
+                              unsigned mode = hal::READ_ACCESS,
+                              const std::string& overrideFormat = ""); 
 }
 
 #endif

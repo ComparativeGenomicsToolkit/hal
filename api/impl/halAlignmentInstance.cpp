@@ -89,15 +89,18 @@ hal::mmapAlignmentInstance(const std::string& alignmentPath,
 
 AlignmentPtr hal::openHalAlignment(const std::string& path,
                                    CLParserConstPtr options,
-                                   unsigned mode)
+                                   unsigned mode,
+                                   const std::string& overrideFormat)
 {
     /* FIXME: detect which kind of file it is here (maybe by extension?) */
-    if (options->getOption<std::string>("format") == STORAGE_FORMAT_HDF5) {
+    const std::string& fmt((overrideFormat.empty()) ? options->getOption<const std::string&>("format")
+                           : overrideFormat);
+    if (fmt == STORAGE_FORMAT_HDF5) {
         return AlignmentPtr(new HDF5Alignment(path, mode, options));
-    } else if (options->getOption<std::string>("format") == STORAGE_FORMAT_MMAP) {
+    } else if (fmt == STORAGE_FORMAT_MMAP) {
         return AlignmentPtr(new MMapAlignment(path, mode, options));
     } else {
-        throw hal_exception("invalid --format argument " + options->getOption<std::string>("format")
+        throw hal_exception("invalid --format argument " + fmt
                             + ", expected one of " + STORAGE_FORMAT_HDF5
                             + " or " + STORAGE_FORMAT_MMAP);
     }

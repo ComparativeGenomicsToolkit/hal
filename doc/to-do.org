@@ -1,0 +1,3 @@
+* change use of "stringstream ss" to build string to using std::to_string
+* halValidate needs to have initSize, it is a bit tricky for halExport, you can't reallya pass the parser in because it only allows one "format", so I hacked it up.
+* 
