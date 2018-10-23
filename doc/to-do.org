@@ -1,3 +1,9 @@
 * change use of "stringstream ss" to build string to using std::to_string
 * halValidate needs to have initSize, it is a bit tricky for halExport, you can't reallya pass the parser in because it only allows one "format", so I hacked it up.
-* 
+* Add a units suffix (G, M) to mmapInitSize
+* Drop mmap grow functionality, as it doesn't seem to work.  Maybe estimate the initial size from the input or just make it huge.
+* api/impl/defaultMappedSegment.h says
+note it would be nice to extend SegmentIterator but the crappy smart pointer interface makes it impossible to use "this" as a parameter to lots of api functions.  simplest for now just to contain a pair of segment iterators and wrap up all the interface methods. 
+* Get rid of iterators implementing the types they are iterating over.  Add an explict get or operator*. This will allow  more inlining.
+* does this still make sense now that databases doesn't have constness defaultGappedBottomSegmentIterator.h - keep convention of other iterators where const-ness only applies to the database and not the iterator...
+* getSegment is duplicated in different places due to top/bottom/gapped/ungapped implementations.  Is this a good approach?
