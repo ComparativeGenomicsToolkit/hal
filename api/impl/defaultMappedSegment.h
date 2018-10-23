@@ -9,13 +9,13 @@
 
 #include <list>
 #include "halMappedSegment.h"
-#include "defaultSegmentIterator.h"
+#include "halSegmentIterator.h"
 
 namespace hal {
 
 HAL_FORWARD_DEC_CLASS(DefaultMappedSegment)
 
-// note it would be nice to extend DefaultSegmentIterator but the 
+// note it would be nice to extend SegmentIterator but the 
 // crappy smart pointer interface makes it impossible to use "this"
 // as a parameter to lots of api functions.  simplest for now just
 // to contain a pair of segment iterators and wrap up all the interface
@@ -82,7 +82,7 @@ public:
 
 
    // INTERNAL METHODS
-   static hal_size_t map(const DefaultSegmentIterator* source,
+   static hal_size_t map(const SegmentIterator* source,
                          std::set<MappedSegmentConstPtr>& results,
                          const Genome* tgtGenome,
                          const std::set<const Genome*>* genomesOnPath,
@@ -102,16 +102,16 @@ protected:
                         SegmentIteratorConstPtr target);
 
    static 
-   int fastComp(const DefaultSegmentIteratorConstPtr& s1, 
-                const DefaultSegmentIteratorConstPtr& s2);
+   int fastComp(const SegmentIteratorConstPtr& s1, 
+                const SegmentIteratorConstPtr& s2);
 
    static 
-   int boundComp(const DefaultSegmentIteratorConstPtr& s1, 
-                const DefaultSegmentIteratorConstPtr& s2);
+   int boundComp(const SegmentIteratorConstPtr& s1, 
+                const SegmentIteratorConstPtr& s2);
 
    static 
-   int slowComp(const DefaultSegmentIteratorConstPtr& s1, 
-                const DefaultSegmentIteratorConstPtr& s2);
+   int slowComp(const SegmentIteratorConstPtr& s1, 
+                const SegmentIteratorConstPtr& s2);
    
    enum OverlapCat { Same, Disjoint, AContainsB, BContainsA,
                      AOverlapsLeftOfB, BOverlapsLeftOfA };
@@ -226,8 +226,8 @@ protected:
    
 protected:
 
-   mutable DefaultSegmentIteratorConstPtr _source;
-   mutable DefaultSegmentIteratorConstPtr _target;
+   mutable SegmentIteratorConstPtr _source;
+   mutable SegmentIteratorConstPtr _target;
 };
 
 inline TopSegmentIteratorConstPtr DefaultMappedSegment::targetAsTop() const

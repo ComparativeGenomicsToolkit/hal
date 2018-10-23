@@ -12,7 +12,7 @@
 #include "halSegmentIterator.h"
 #include "halTopSegment.h"
 #include "halGenome.h"
-#include "defaultSegmentIterator.h"
+#include "halSegmentIterator.h"
 
 namespace hal {
 
@@ -22,8 +22,7 @@ namespace hal {
  * Always hidden in smart pointers in the public interface. 
  */
 class TopSegmentIterator : public virtual TopSegment,
-                           public virtual SegmentIterator,
-                           public DefaultSegmentIterator
+                           public virtual SegmentIterator
 {
 public:
     /* constructor */
@@ -85,6 +84,10 @@ public:
    * parent */
     void toNextParalogy() const;
 
+    // FIXME: document or change way getting segment works
+    virtual SegmentPtr getSegment();
+    virtual SegmentConstPtr getSegment() const;
+    
     // SEGMENT INTERFACE OVERRIDE
     virtual void print(std::ostream& os) const;
    // TOP SEGMENT INTERFACE
@@ -106,8 +109,6 @@ public:
 
 
 protected:
-   virtual SegmentPtr getSegment();
-   virtual SegmentConstPtr getSegment() const;
    virtual hal_size_t getNumSegmentsInGenome() const;
 
 protected:
@@ -138,7 +139,9 @@ inline TopSegmentIterator::TopSegmentIterator(TopSegment* topSegment,
                                              hal_offset_t startOffset, 
                                              hal_offset_t endOffset,
                                              bool reversed) :
-  _topSegment(topSegment) {
+    SegmentIterator(startOffset, endOffset, reversed),
+    _topSegment(topSegment)
+{
 
 }
 

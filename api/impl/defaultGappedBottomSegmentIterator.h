@@ -59,6 +59,11 @@ public:
      const Genome *mrca) const;
    virtual void print(std::ostream& os) const;
 
+    virtual SegmentPtr getSegment();
+    virtual SegmentConstPtr getSegment() const;
+    
+
+
    // SEGMENT ITERATOR IrNTERFACE
    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const;
    virtual void toRight(hal_index_t rightCutoff = NULL_INDEX) const;

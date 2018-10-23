@@ -9,7 +9,6 @@
 #include <algorithm>
 #include "hal.h"
 #include "halTopSegmentIterator.h"
-#include "defaultSegmentIterator.h"
 
 using namespace std;
 using namespace hal;
@@ -20,7 +19,7 @@ using namespace hal;
 void TopSegmentIterator::print(ostream& os) const
 {
   os << "TopSegIt: ";
-  DefaultSegmentIterator::print(os);
+  SegmentIterator::print(os);
 
   hal_index_t ai = getArrayIndex();
   bool offRight = 

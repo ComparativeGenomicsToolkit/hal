@@ -18,6 +18,7 @@ BottomSegmentIterator(BottomSegment* bottomSegment,
                              hal_size_t startOffset, 
                              hal_size_t endOffset,
                              bool reversed) :
+    SegmentIterator(startOffset, endOffset, reversed),
   _bottomSegment(bottomSegment)
 {
 
@@ -34,7 +35,7 @@ hal_size_t BottomSegmentIterator::getNumSegmentsInGenome() const
 void BottomSegmentIterator::print(ostream& os) const
 {
   os << "BotSegIt: ";
-  DefaultSegmentIterator::print(os);
+  SegmentIterator::print(os);
 
   hal_index_t ai = getArrayIndex();
   bool offRight = 

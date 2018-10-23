@@ -10,7 +10,6 @@
 #include "halDefs.h"
 #include "halBottomSegment.h"
 #include "halSegmentIterator.h"
-#include "defaultSegmentIterator.h"
 
 namespace hal {
 
@@ -20,8 +19,7 @@ namespace hal {
  * Always hidden in smart pointers in the public interface. 
  */
 class BottomSegmentIterator : public virtual BottomSegment,
-                              public virtual SegmentIterator,
-                              public DefaultSegmentIterator
+                              public virtual SegmentIterator
 {
 public:
     /** constructor */
@@ -67,6 +65,10 @@ public:
     * @param other Iterator to test equality to */
     bool equals(BottomSegmentIteratorConstPtr other) const;
 
+    // FIXME: document or change way getting segment works
+    virtual SegmentPtr getSegment();
+    virtual SegmentConstPtr getSegment() const;
+    
     // SEGMENT INTERFACE OVERRIDE
     virtual void print(std::ostream& os) const;
 
@@ -88,8 +90,6 @@ public:
 protected:
    friend class counted_ptr<BottomSegmentIterator>;
    friend class counted_ptr<const BottomSegmentIterator>;
-   virtual SegmentPtr getSegment();
-   virtual SegmentConstPtr getSegment() const;
    virtual hal_size_t getNumSegmentsInGenome() const;
    BottomSegmentPtr _bottomSegment;
 };

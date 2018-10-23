@@ -25,6 +25,9 @@ public:
 
    virtual ~DefaultGappedTopSegmentIterator();
    
+    virtual SegmentPtr getSegment();
+    virtual SegmentConstPtr getSegment() const;
+    
    // SEGMENT INTERFACE
    virtual void setArrayIndex(Genome* genome, 
                               hal_index_t arrayIndex);

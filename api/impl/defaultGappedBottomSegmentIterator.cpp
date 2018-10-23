@@ -52,6 +52,17 @@ DefaultGappedBottomSegmentIterator::~DefaultGappedBottomSegmentIterator()
 
 }
 
+SegmentPtr DefaultGappedBottomSegmentIterator::getSegment()
+{
+    return _left->getSegment();
+
+}
+
+SegmentConstPtr DefaultGappedBottomSegmentIterator::getSegment() const
+{
+    return _left->getSegment();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////

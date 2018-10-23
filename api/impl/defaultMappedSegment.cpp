@@ -21,8 +21,8 @@ DefaultMappedSegment::DefaultMappedSegment(
   SegmentIteratorConstPtr source,
   SegmentIteratorConstPtr target)
   :
-  _source(source.downCast<DefaultSegmentIteratorConstPtr>()),
-  _target(target.downCast<DefaultSegmentIteratorConstPtr>())
+  _source(source.downCast<SegmentIteratorConstPtr>()),
+  _target(target.downCast<SegmentIteratorConstPtr>())
 {
   assert(_source->getLength() == _target->getLength());
 }
@@ -106,8 +106,8 @@ MappedSegmentConstPtr DefaultMappedSegment::copy() const
   {
     srcCpy = _source.downCast<BottomSegmentIteratorConstPtr>()->copy();
   }
-  DefaultSegmentIteratorConstPtr srcIt = 
-     srcCpy.downCast<DefaultSegmentIteratorConstPtr>();
+  SegmentIteratorConstPtr srcIt = 
+     srcCpy.downCast<SegmentIteratorConstPtr>();
 
   SegmentIteratorConstPtr tgtCpy;
   if (_target->isTop())
@@ -118,8 +118,8 @@ MappedSegmentConstPtr DefaultMappedSegment::copy() const
   {
     tgtCpy = _target.downCast<BottomSegmentIteratorConstPtr>()->copy();
   }
-  DefaultSegmentIteratorConstPtr tgtIt = 
-     tgtCpy.downCast<DefaultSegmentIteratorConstPtr>();
+  SegmentIteratorConstPtr tgtIt = 
+     tgtCpy.downCast<SegmentIteratorConstPtr>();
 
   assert(srcIt->getStartPosition() == _source->getStartPosition() &&
          srcIt->getEndPosition() == _source->getEndPosition());
@@ -213,8 +213,8 @@ bool DefaultMappedSegment::canMergeRightWith(
 // INTERNAL FUNCTIONS
 //////////////////////////////////////////////////////////////////////////////
 
-int DefaultMappedSegment::fastComp(const DefaultSegmentIteratorConstPtr& s1, 
-                                   const DefaultSegmentIteratorConstPtr& s2)
+int DefaultMappedSegment::fastComp(const SegmentIteratorConstPtr& s1, 
+                                   const SegmentIteratorConstPtr& s2)
 {
   // compare without accessing anything from disk (ie using only index
   // and offset)
@@ -274,8 +274,8 @@ int DefaultMappedSegment::fastComp(const DefaultSegmentIteratorConstPtr& s1,
   return res;
 }
 
-int DefaultMappedSegment::boundComp(const DefaultSegmentIteratorConstPtr& s1, 
-                                    const DefaultSegmentIteratorConstPtr& s2)
+int DefaultMappedSegment::boundComp(const SegmentIteratorConstPtr& s1, 
+                                    const SegmentIteratorConstPtr& s2)
 {
   int res = 0;
   bool flip = s2->getReversed();
@@ -287,7 +287,7 @@ int DefaultMappedSegment::boundComp(const DefaultSegmentIteratorConstPtr& s1,
   if (s1->isTop() && !s2->isTop())
   {
     BottomSegmentIteratorConstPtr bot = 
-       const_cast<DefaultSegmentIteratorConstPtr&>(
+       const_cast<SegmentIteratorConstPtr&>(
          s2).downCast<BottomSegmentIteratorConstPtr>();
     hal_index_t lb = bot->getTopParseIndex();
     hal_index_t ub = lb;
@@ -311,7 +311,7 @@ int DefaultMappedSegment::boundComp(const DefaultSegmentIteratorConstPtr& s1,
   else if (!s1->isTop() && s2->isTop())
   {
     TopSegmentIteratorConstPtr top = 
-       const_cast<DefaultSegmentIteratorConstPtr&>(
+       const_cast<SegmentIteratorConstPtr&>(
          s2).downCast<TopSegmentIteratorConstPtr>();
     hal_index_t lb = top->getBottomParseIndex();
     hal_index_t ub = lb;
@@ -341,8 +341,8 @@ int DefaultMappedSegment::boundComp(const DefaultSegmentIteratorConstPtr& s1,
   return res;
 }
 
-int DefaultMappedSegment::slowComp(const DefaultSegmentIteratorConstPtr& s1, 
-                                   const DefaultSegmentIteratorConstPtr& s2)
+int DefaultMappedSegment::slowComp(const SegmentIteratorConstPtr& s1, 
+                                   const SegmentIteratorConstPtr& s2)
 {
   assert(s1->getGenome() == s2->getGenome());
   int res = 0;
@@ -377,7 +377,7 @@ int DefaultMappedSegment::slowComp(const DefaultSegmentIteratorConstPtr& s1,
   return res;
 }
 
-hal_size_t DefaultMappedSegment::map(const DefaultSegmentIterator* source,
+hal_size_t DefaultMappedSegment::map(const SegmentIterator* source,
                                      set<MappedSegmentConstPtr>& results,
                                      const Genome* tgtGenome,
                                      const set<const Genome*>* genomesOnPath,
@@ -684,7 +684,7 @@ hal_size_t DefaultMappedSegment::mapUp(
         (doDupes == true || top->isCanonicalParalog() == true))
     {
       bottom->toParent(top);
-      mappedSeg->_target = bottom.downCast<DefaultSegmentIteratorConstPtr>();
+      mappedSeg->_target = bottom.downCast<SegmentIteratorConstPtr>();
       results.push_back(mappedSeg);
       ++added;
     }
@@ -761,7 +761,7 @@ hal_size_t DefaultMappedSegment::mapDown(
     if (bottom->hasChild(childIndex) == true && bottom->getLength() >= minLength)
     {
       top->toChild(bottom, childIndex);
-      mappedSeg->_target = top.downCast<DefaultSegmentIteratorConstPtr>();
+      mappedSeg->_target = top.downCast<SegmentIteratorConstPtr>();
       results.push_back(mappedSeg);
       ++added;
     }
