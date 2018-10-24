@@ -716,7 +716,7 @@ string HDF5Alignment::getVersion() const
 }
 
 bool HDF5Alignment::isReadOnly() const {
-    return (_flags &H5F_ACC_RDONLY) != 0;
+    return (_flags & H5F_ACC_RDWR) == 0;
 }
 
 void HDF5Alignment::writeTree()
