@@ -35,12 +35,12 @@ public:
     * Paths that contain ":/" are assumed to be
     * web addressed of some sort and considered absolute. */
    void loadLODFile(const std::string& lodPath,
-                    CLParserConstPtr options = CLParserConstPtr());
+                    CLParserConstPtr options = halCLParserInstance());
 
    /** Just use the given HAL file for everything.  Same as if we gave a
     * lodFile containing only "0 halPath"*/
    void loadSingeHALFile(const std::string& halPath,
-                         CLParserConstPtr options = CLParserConstPtr());
+                         CLParserConstPtr options = halCLParserInstance());
 
    AlignmentConstPtr getAlignment(hal_size_t queryLength, 
                                   bool needDNA);

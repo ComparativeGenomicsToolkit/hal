@@ -54,6 +54,7 @@ LodManager::~LodManager()
 void LodManager::loadLODFile(const string& lodPath,
                              CLParserConstPtr options)
 {
+    _options = options;
   _map.clear();
 
 #ifdef ENABLE_UDC
@@ -132,6 +133,7 @@ void LodManager::loadLODFile(const string& lodPath,
 void LodManager::loadSingeHALFile(const string& halPath,
                                   CLParserConstPtr options)
 {
+    _options = options;
   _map.clear();
   _map.insert(pair<hal_size_t, PathAlign>(
                 0, PathAlign(halPath, AlignmentConstPtr())));
