@@ -11,7 +11,6 @@
 #include <stack>
 #include <vector>
 #include <map>
-#include "halColumnIterator.h"
 #include "halRearrangement.h"
 #include "halCommon.h"
 

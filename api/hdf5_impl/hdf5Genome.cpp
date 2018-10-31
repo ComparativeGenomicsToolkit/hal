@@ -15,7 +15,7 @@
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
 #include "hdf5DNAIterator.h"
-#include "defaultColumnIterator.h"
+#include "halColumnIterator.h"
 #include "defaultRearrangement.h"
 #include "defaultGappedTopSegmentIterator.h"
 #include "defaultGappedBottomSegmentIterator.h"
@@ -624,10 +624,10 @@ ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
        << "(" << position << ", " << lastPosition << ") out of bounds";
     throw hal_exception(ss.str());
   }
-  const DefaultColumnIterator* newIt = 
-     new DefaultColumnIterator(this, targets, position, lastIdx, 
-                               maxInsertLength, noDupes, noAncestors,
-                               reverseStrand, unique, onlyOrthologs);
+  const ColumnIterator* newIt = 
+     new ColumnIterator(this, targets, position, lastIdx, 
+                        maxInsertLength, noDupes, noAncestors,
+                        reverseStrand, unique, onlyOrthologs);
   return ColumnIteratorConstPtr(newIt);
 }
 

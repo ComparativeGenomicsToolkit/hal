@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cassert>
 #include <deque>
-#include "columnIteratorStack.h"
+#include "halColumnIteratorStack.h"
 #include "hal.h"
 
 using namespace std;

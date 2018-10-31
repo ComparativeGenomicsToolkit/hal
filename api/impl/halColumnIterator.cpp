@@ -9,23 +9,22 @@
 #include <algorithm>
 #include <cassert>
 #include <deque>
-#include "defaultColumnIterator.h"
 #include "hal.h"
+#include "halColumnIterator.h"
 
 using namespace std;
 using namespace hal;
 
-DefaultColumnIterator::DefaultColumnIterator(const Genome* reference, 
-                                             const set<const Genome*>* targets,
-                                             hal_index_t columnIndex,
-                                             hal_index_t lastColumnIndex,
-                                             hal_size_t maxInsertLength,
-                                             bool noDupes,
-                                             bool noAncestors,
-                                             bool reverseStrand,
-                                             bool unique,
-                                             bool onlyOrthologs)
-:
+ColumnIterator::ColumnIterator(const Genome* reference, 
+                               const set<const Genome*>* targets,
+                               hal_index_t columnIndex,
+                               hal_index_t lastColumnIndex,
+                               hal_size_t maxInsertLength,
+                               bool noDupes,
+                               bool noAncestors,
+                               bool reverseStrand,
+                               bool unique,
+                               bool onlyOrthologs) :
   _maxInsertionLength(maxInsertLength),
   _noDupes(noDupes),
   _noAncestors(noAncestors),
@@ -80,14 +79,14 @@ DefaultColumnIterator::DefaultColumnIterator(const Genome* reference,
   toRight();
 }
    
-DefaultColumnIterator::~DefaultColumnIterator()
+ColumnIterator::~ColumnIterator()
 {
   eraseColMap();
   clearVisitCache();
   clearTree();
 }
 
-void DefaultColumnIterator::toRight() const
+void ColumnIterator::toRight() const
 {
   clearTree();
 
@@ -175,7 +174,7 @@ void DefaultColumnIterator::toRight() const
 #endif
 }
 
-void DefaultColumnIterator::toSite(hal_index_t columnIndex, 
+void ColumnIterator::toSite(hal_index_t columnIndex, 
                                    hal_index_t lastColumnIndex,
                                    bool clearCache) const
 {
@@ -202,40 +201,40 @@ void DefaultColumnIterator::toSite(hal_index_t columnIndex,
          columnIndex);
 }
 
-bool DefaultColumnIterator::lastColumn() const
+bool ColumnIterator::lastColumn() const
 {
   return _stack.size() == 1 &&
      _stack.top()->_index > _stack.top()->_lastIndex;
 }
 
-const Genome* DefaultColumnIterator::getReferenceGenome() const 
+const Genome* ColumnIterator::getReferenceGenome() const 
 {
   return _prevRefSequence->getGenome();
 }
 
-const Sequence* DefaultColumnIterator::getReferenceSequence() const 
+const Sequence* ColumnIterator::getReferenceSequence() const 
 {
   return _prevRefSequence;
 }
 
-hal_index_t DefaultColumnIterator::getReferenceSequencePosition() const 
+hal_index_t ColumnIterator::getReferenceSequencePosition() const 
 {
   return _prevRefIndex;
 }
 
-const DefaultColumnIterator::ColumnMap* DefaultColumnIterator::getColumnMap() 
+const ColumnIterator::ColumnMap* ColumnIterator::getColumnMap() 
 const
 {
   return &_colMap;
 }
 
-hal_index_t DefaultColumnIterator::getArrayIndex() const
+hal_index_t ColumnIterator::getArrayIndex() const
 {
   assert(_stack.size() > 0);
   return _stack[0]->_index;
 }
 
-void DefaultColumnIterator::defragment() const
+void ColumnIterator::defragment() const
 {
   ColumnMap::iterator i = _colMap.begin();
   ColumnMap::iterator next;
@@ -254,7 +253,7 @@ void DefaultColumnIterator::defragment() const
   _stack.resetLinks();
 }
 
-bool DefaultColumnIterator::isCanonicalOnRef() const
+bool ColumnIterator::isCanonicalOnRef() const
 {
   assert(_stack.size() > 0);
   assert(_leftmostRefPos >= 0 && (hal_size_t)_leftmostRefPos < 
@@ -263,12 +262,12 @@ bool DefaultColumnIterator::isCanonicalOnRef() const
      _leftmostRefPos <= _stack[0]->_lastIndex;
 }
 
-ColumnIterator::VisitCache *DefaultColumnIterator::getVisitCache() const
+ColumnIterator::VisitCache *ColumnIterator::getVisitCache() const
 {
     return &_visitCache;
 }
 
-void DefaultColumnIterator::clearVisitCache() const
+void ColumnIterator::clearVisitCache() const
 {
     for (VisitCache::iterator i = _visitCache.begin();
          i != _visitCache.end(); ++i)
@@ -278,13 +277,13 @@ void DefaultColumnIterator::clearVisitCache() const
     _visitCache.clear();
 }
 
-void DefaultColumnIterator::setVisitCache(ColumnIterator::VisitCache *visitCache) const
+void ColumnIterator::setVisitCache(ColumnIterator::VisitCache *visitCache) const
 {
     clearVisitCache();
     _visitCache = *visitCache;
 }
 
-void DefaultColumnIterator::print(ostream& os) const
+void ColumnIterator::print(ostream& os) const
 {
   const ColumnIterator::ColumnMap* cmap = getColumnMap();
   for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin();
@@ -304,7 +303,7 @@ void DefaultColumnIterator::print(ostream& os) const
 // if init is specified, all the initial iterators are created
 // then moved to the index (in the stack).  if init is false,
 // all the existing iterators are moved to the right.
-void DefaultColumnIterator::recursiveUpdate(bool init) const
+void ColumnIterator::recursiveUpdate(bool init) const
 {
 /*  cout <<"update " << _stack.top()->_sequence->getName() << " "
        <<_stack.top()->_firstIndex << "," 
@@ -450,7 +449,7 @@ void DefaultColumnIterator::recursiveUpdate(bool init) const
   }
 }
 
-bool DefaultColumnIterator::handleDeletion(TopSegmentIteratorConstPtr 
+bool ColumnIterator::handleDeletion(TopSegmentIteratorConstPtr 
   inputTopIterator) const
 {
   if (_maxInsertionLength > 0 && inputTopIterator->hasParent() == true)
@@ -497,7 +496,7 @@ bool DefaultColumnIterator::handleDeletion(TopSegmentIteratorConstPtr
   return false;
 }
 
-bool DefaultColumnIterator::handleInsertion(TopSegmentIteratorConstPtr 
+bool ColumnIterator::handleInsertion(TopSegmentIteratorConstPtr 
                                             inputTopIterator) const
 {
   if (_maxInsertionLength > 0 && inputTopIterator->hasParent() == true)
@@ -603,7 +602,7 @@ static void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree)
 }
 
 // Build a gene-tree from a column iterator.
-stTree *DefaultColumnIterator::getTree() const
+stTree *ColumnIterator::getTree() const
 {
   if (_onlyOrthologs || _noDupes) {
     // Because the tree-finding code goes all the way up the column
@@ -688,7 +687,7 @@ static void clearTree_R(stTree *tree)
   delete (DNAIteratorConstPtr *) stTree_getClientData(tree);
 }
 
-void DefaultColumnIterator::clearTree() const
+void ColumnIterator::clearTree() const
 {
   if (_tree != NULL)
   {
@@ -698,7 +697,7 @@ void DefaultColumnIterator::clearTree() const
   }
 }
 
-void DefaultColumnIterator::updateParent(LinkedTopIterator* topIt) const
+void ColumnIterator::updateParent(LinkedTopIterator* topIt) const
 {
   const Genome* genome = topIt->_it->getTopSegment()->getGenome();
   if (!_break && topIt->_it->hasParent() && parentInScope(genome) &&
@@ -761,7 +760,7 @@ void DefaultColumnIterator::updateParent(LinkedTopIterator* topIt) const
   }  
 }
 
-void DefaultColumnIterator::updateChild(LinkedBottomIterator* bottomIt, 
+void ColumnIterator::updateChild(LinkedBottomIterator* bottomIt, 
                                         hal_size_t index) const
 {
   const Genome* genome = bottomIt->_it->getBottomSegment()->getGenome();
@@ -812,7 +811,7 @@ void DefaultColumnIterator::updateChild(LinkedBottomIterator* bottomIt,
   }
 }
 
-void DefaultColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
+void ColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
 {
   assert (topIt->_it.get() != NULL);
   const Genome* genome =  topIt->_it->getTopSegment()->getGenome();
@@ -864,7 +863,7 @@ void DefaultColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
          firstIndex);
 }
 
-void DefaultColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
+void ColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
    const
 {
   if (!_break && bottomIt->_it->hasParseUp())
@@ -899,7 +898,7 @@ void DefaultColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
   }
 }
  
-void DefaultColumnIterator::updateParseDown(LinkedTopIterator* topIt) const
+void ColumnIterator::updateParseDown(LinkedTopIterator* topIt) const
 {
   if (!_break && topIt->_it->hasParseDown())
   {
@@ -953,7 +952,7 @@ void DefaultColumnIterator::updateParseDown(LinkedTopIterator* topIt) const
 // moves index "right" until unvisited base is found
 // if none exists in the current range, index is left one
 // spot out of bounds (invalid) and return false.
-void DefaultColumnIterator::nextFreeIndex() const
+void ColumnIterator::nextFreeIndex() const
 {
   hal_index_t index = _stack.top()->_index;
 
@@ -975,7 +974,7 @@ void DefaultColumnIterator::nextFreeIndex() const
   _stack.top()->_index = index;
 }
 
-bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
+bool ColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
 {
   const Sequence* sequence = dnaIt->getSequence();
   const Genome* genome = dnaIt->getGenome();
@@ -1048,7 +1047,7 @@ bool DefaultColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
   return !found;
 }
 
-void DefaultColumnIterator::resetColMap() const
+void ColumnIterator::resetColMap() const
 {
   for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
   {
@@ -1056,7 +1055,7 @@ void DefaultColumnIterator::resetColMap() const
   }
 }
 
-void DefaultColumnIterator::eraseColMap() const
+void ColumnIterator::eraseColMap() const
 {
   for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
   {

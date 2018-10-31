@@ -12,6 +12,7 @@
 #include <sstream>
 #include <algorithm>
 #include "halCommon.h"
+#include "halSequenceIterator.h"
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"

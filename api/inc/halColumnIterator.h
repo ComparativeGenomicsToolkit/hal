@@ -7,6 +7,7 @@
 #ifndef _HALCOLUMNITERATOR_H
 #define _HALCOLUMNITERATOR_H
 
+#include <set>
 #include <list>
 #include <map>
 #include <set>
@@ -15,6 +16,7 @@
 #include "halDefs.h"
 #include "halDNAIterator.h"
 #include "halSequence.h"
+#include "halColumnIteratorStack.h"
 
 namespace hal {
 
@@ -29,6 +31,18 @@ class ColumnIterator
 {
 public:
 
+    /* constructor */
+    ColumnIterator(const Genome* reference, 
+                   const std::set<const Genome*>* targets,
+                   hal_index_t columnIndex,
+                   hal_index_t lastColumnIndex,
+                   hal_size_t maxInsertLength,
+                   bool noDupes,
+                   bool noAncestors,
+                   bool reverseStrand,
+                   bool unique,
+                   bool onlyOrthologs);
+    
    /// @cond TEST
    // we can compare genomes by pointers (because they are persistent
    // and unique, though it's still hacky) but we can't do the same 
@@ -46,7 +60,7 @@ public:
 
    /** Move column iterator one column to the right along reference
     * genoem sequence */
-   virtual void toRight() const = 0;
+   virtual void toRight() const;
 
    /** Move column iterator to arbitrary site in genome -- effectively
     * resetting the iterator (convenience function to avoid creation of
@@ -59,30 +73,30 @@ public:
     * ends up not at "columnIndex" but at the next unvisited column.*/
    virtual void toSite(hal_index_t columnIndex, 
                        hal_index_t lastIndex,
-                       bool clearCache = false) const = 0;
+                       bool clearCache = false) const;
 
    /** Use this method to bound iteration loops.  When the column iterator
     * is retrieved from the sequence or genome, the last column is specfied.
     * toRight() cna then be called until lastColumn is true.  */
-   virtual bool lastColumn() const = 0;
+   virtual bool lastColumn() const;
    
    /** Get a pointer to the reference genome for the column iterator */
-   virtual const Genome* getReferenceGenome() const = 0;
+   virtual const Genome* getReferenceGenome() const;
 
    /** Get a pointer to the reference sequence for the column iterator */
-   virtual const Sequence* getReferenceSequence() const = 0;
+   virtual const Sequence* getReferenceSequence() const;
 
    /** Get the position in the reference sequence 
     * NOTE
     * Seems to be returning the next position, rather than the current.
     * Must go back and review but it is concerning. */
-   virtual hal_index_t getReferenceSequencePosition() const = 0;
+   virtual hal_index_t getReferenceSequencePosition() const;
 
    /** Get a pointer to the column map */
-   virtual const ColumnMap* getColumnMap() const = 0;
+   virtual const ColumnMap* getColumnMap() const;
 
    /** Get the index of the column in the reference genome's array */
-   virtual hal_index_t getArrayIndex() const = 0;
+   virtual hal_index_t getArrayIndex() const;
 
    /** As we iterate along, we keep a column map entry for each sequence
     * visited.  This works out pretty well except for extreme cases (such
@@ -92,42 +106,110 @@ public:
     * circumstances, calling this method every 1M bases or so will help
     * reduce memory as well as speed up queries on the column map. Perhaps
     * this should eventually be built in and made transparent? */
-   virtual void defragment() const = 0;
+   virtual void defragment() const;
 
    /** Check whether the column iterator's left-most reference coordinate
     * is within the iterator's range, ie is "canonical".  This can be used
     * to ensure that the same reference position does not get sampled by
     * different iterators covering distinct ranges.  If there are no 
     * duplications, then this function will always return true. */
-   virtual bool isCanonicalOnRef() const = 0;
+   virtual bool isCanonicalOnRef() const;
 
    /** Print contents of column iterator */
-   virtual void print(std::ostream& os) const = 0;
+   virtual void print(std::ostream& os) const;
 
    /** Get a new tree that represents the phylogenetic relationship
     * between the entries in this column. Do not attempt to free this
     * tree. */
-   virtual stTree *getTree() const = 0;
+   virtual stTree *getTree() const;
 
    // temp -- probably want to have a "global column iterator" object
    // instead
    typedef std::map<const Genome*, PositionCache*> VisitCache;
-   virtual VisitCache *getVisitCache() const = 0;
-   virtual void setVisitCache(VisitCache *visitCache) const = 0;
-   virtual void clearVisitCache() const = 0;
+   virtual VisitCache *getVisitCache() const;
+   virtual void setVisitCache(VisitCache *visitCache) const;
+   virtual void clearVisitCache() const;
+
+protected:
+
+   typedef ColumnIteratorStack::LinkedBottomIterator LinkedBottomIterator;
+   typedef ColumnIteratorStack::LinkedTopIterator LinkedTopIterator;
+   typedef ColumnIteratorStack::Entry StackEntry;
+protected:
+
+   void recursiveUpdate(bool init) const;
+   bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
+   bool handleInsertion(TopSegmentIteratorConstPtr inputTopIterator) const;
+
+   void updateParent(LinkedTopIterator* topIt) const;
+   void updateChild(LinkedBottomIterator* bottomIt, hal_size_t index) const;
+   void updateNextTopDup(LinkedTopIterator* topIt) const;
+   void updateParseUp(LinkedBottomIterator* bottomIt) const;
+   void updateParseDown(LinkedTopIterator* topIt) const;
+
+   bool parentInScope(const Genome*) const;
+   bool childInScope(const Genome*, hal_size_t child) const;
+   void nextFreeIndex() const;
+   bool colMapInsert(DNAIteratorConstPtr dnaIt) const;
+
+   void resetColMap() const;
+   void eraseColMap() const;
+
+   void clearTree() const;
+
+protected:
+
+   // everything's mutable to keep const behaviour consistent with
+   // other iterators (which provide both const and non-const access)
+   // the fact that this iterator has no writable interface makes it
+   // seem like a dumb excercise though. 
+   mutable std::set<const Genome*> _targets;
+   mutable std::set<const Genome*> _scope;
+   mutable ColumnIteratorStack _stack;
+   mutable ColumnIteratorStack _indelStack;
+   mutable const Sequence* _ref;
+   mutable size_t _curInsertionLength;
+
+   mutable RearrangementPtr _rearrangement;
+   mutable hal_size_t _maxInsertionLength;
+   mutable bool _noDupes;
+   mutable bool _noAncestors;
+   mutable bool _reversed;
+
+   mutable ColumnMap _colMap;
+   mutable TopSegmentIteratorConstPtr _top;
+   mutable TopSegmentIteratorConstPtr _next;
+   mutable VisitCache _visitCache;
+   mutable bool _break;
+   mutable const Sequence* _prevRefSequence;
+   mutable hal_index_t _prevRefIndex;
+   mutable hal_index_t _leftmostRefPos;
+   mutable stTree *_tree;
+   mutable bool _unique;
+   mutable bool _onlyOrthologs;
 
 protected:
    friend class counted_ptr<ColumnIterator>;
    friend class counted_ptr<const ColumnIterator>;
-   virtual ~ColumnIterator() = 0;
+   virtual ~ColumnIterator();
 };
-
-inline ColumnIterator::~ColumnIterator() {}
 
 inline std::ostream& operator<<(std::ostream& os, const ColumnIterator& cit)
 {
   cit.print(os);
   return os;
+}
+inline bool ColumnIterator::parentInScope(const Genome* genome) const
+{
+  assert(genome != NULL && genome->getParent() != NULL);
+  return _scope.empty() || _scope.find(genome->getParent()) != _scope.end();
+}
+
+inline bool ColumnIterator::childInScope(const Genome* genome,
+                                         hal_size_t child) const
+{
+  assert(genome != NULL && genome->getChild(child) != NULL);
+  return _scope.empty() || _scope.find(genome->getChild(child)) != _scope.end();
 }
 
 }

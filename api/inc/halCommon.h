@@ -14,7 +14,7 @@
 #include <locale>
 #include <cassert>
 #include <sstream>
-#include "hal.h"
+#include "halDefs.h"
 
 namespace hal {
 
