@@ -61,10 +61,9 @@ public:
 protected:
    friend class counted_ptr<SlicedSegment>;
    friend class counted_ptr<const SlicedSegment>;
-   virtual ~SlicedSegment() = 0;
+    virtual ~SlicedSegment() {
+    }
 };
-
-inline SlicedSegment::~SlicedSegment() {}
 
 inline bool operator<(SlicedSegmentConstPtr segmentIt,
                       hal_index_t genomePos) 

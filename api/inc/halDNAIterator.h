@@ -72,10 +72,9 @@ protected:
 
    friend class counted_ptr<DNAIterator>;
    friend class counted_ptr<const DNAIterator>;
-   virtual ~DNAIterator() = 0;
+    virtual ~DNAIterator() {
+    }
 };
-
-inline DNAIterator::~DNAIterator() {}
 
 }
 

@@ -166,10 +166,10 @@ public:
 protected:
 
    /** Destructor */
-   virtual ~SegmentedSequence() = 0;
+    virtual ~SegmentedSequence() {
+    }
 };
 
-inline SegmentedSequence::~SegmentedSequence() {}
-
 }
+
 #endif

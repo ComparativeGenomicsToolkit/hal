@@ -80,11 +80,10 @@ public:
 protected:
    friend class counted_ptr<GappedTopSegmentIterator>;
    friend class counted_ptr<const GappedTopSegmentIterator>;
-   virtual ~GappedTopSegmentIterator() = 0;
+    virtual ~GappedTopSegmentIterator() {
+    }
 };
 
-
-inline GappedTopSegmentIterator::~GappedTopSegmentIterator() {}
 
 inline bool operator==(GappedTopSegmentIteratorConstPtr p1,
                        GappedTopSegmentIteratorConstPtr p2) 

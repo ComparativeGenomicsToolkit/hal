@@ -60,10 +60,9 @@ public:
 protected:
    friend class counted_ptr<GappedSegmentIterator>;
    friend class counted_ptr<const GappedSegmentIterator>;
-   virtual ~GappedSegmentIterator() = 0;
+    virtual ~GappedSegmentIterator() {
+    }
 };
-
-inline GappedSegmentIterator::~GappedSegmentIterator() {}
 
 }
 #endif

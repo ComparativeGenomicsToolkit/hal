@@ -67,10 +67,9 @@ public:
 protected:
    friend class counted_ptr<GappedBottomSegmentIterator>;
    friend class counted_ptr<const GappedBottomSegmentIterator>;
-   virtual ~GappedBottomSegmentIterator() = 0;
+    virtual ~GappedBottomSegmentIterator() {
+    }
 };
-
-inline GappedBottomSegmentIterator::~GappedBottomSegmentIterator() {}
 
 inline bool operator==(GappedBottomSegmentIteratorConstPtr p1,
                        GappedBottomSegmentIteratorConstPtr p2) 

@@ -146,10 +146,9 @@ public:
 protected:
    friend class counted_ptr<Segment>;
    friend class counted_ptr<const Segment>;
-   virtual ~Segment() = 0;
+    virtual ~Segment() {
+    }
 };
-
-inline Segment::~Segment() {}
 
 inline std::ostream& operator<<(std::ostream& os, const Segment& s)
 {

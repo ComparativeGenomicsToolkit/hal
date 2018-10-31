@@ -88,9 +88,9 @@ public:
 protected:
    friend class counted_ptr<BottomSegment>;
    friend class counted_ptr<const BottomSegment>;
-   virtual ~BottomSegment() = 0;
+    virtual ~BottomSegment() {
+    }
 };
 
-inline BottomSegment::~BottomSegment() {}
 }
 #endif

@@ -41,10 +41,9 @@ public:
 protected:
    
    /** Destructor */
-   virtual ~MetaData() = 0;
+    virtual ~MetaData() {
+    }
 };
-
-inline MetaData::~MetaData() {}
 
 }
 #endif

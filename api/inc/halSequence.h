@@ -89,10 +89,9 @@ public:
 protected:
    
    /** Destructor */
-   virtual ~Sequence() = 0;
+    virtual ~Sequence() {
+    }
 };
-
-inline Sequence::~Sequence() {}
 
 }
 #endif

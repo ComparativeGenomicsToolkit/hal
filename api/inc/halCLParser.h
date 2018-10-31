@@ -32,7 +32,8 @@ class CLParser
 public:
    
    CLParser();
-   virtual ~CLParser();
+    virtual ~CLParser() {
+    }
    
    /** Set the prefix string for an optional argument [Default = "--"]
     * @param prefix The prefix string */

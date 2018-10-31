@@ -44,10 +44,9 @@ public:
 protected:
    friend class counted_ptr<SequenceIterator>;
    friend class counted_ptr<const SequenceIterator>;
-   virtual ~SequenceIterator() = 0;
+    virtual ~SequenceIterator() {
+    }
 };
-
-inline SequenceIterator::~SequenceIterator() {}
 
 inline bool operator==(SequenceIteratorConstPtr p1,
                        SequenceIteratorConstPtr p2) 

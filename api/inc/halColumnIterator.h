@@ -191,7 +191,7 @@ private:
 private:
    friend class counted_ptr<ColumnIterator>;
    friend class counted_ptr<const ColumnIterator>;
-   virtual ~ColumnIterator();
+    virtual ~ColumnIterator();
 };
 
 inline std::ostream& operator<<(std::ostream& os, const ColumnIterator& cit)

@@ -192,10 +192,9 @@ protected:
    mutable hal_index_t _numChildren;
 
    /** Destructor */
-   virtual ~Genome() = 0;
+    virtual ~Genome() {
+    }
 };
-
-inline Genome::~Genome() {}
 
 
 inline Genome* Genome::getChild(hal_size_t childIdx)

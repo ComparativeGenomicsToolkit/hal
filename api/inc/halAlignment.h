@@ -128,9 +128,9 @@ protected:
    friend class counted_ptr<Alignment>;
    friend class counted_ptr<const Alignment>;
    /** Destructor */
-   virtual ~Alignment() = 0;
+    virtual ~Alignment() {
+    }
 };
 
-inline Alignment::~Alignment() {}
 }
 #endif

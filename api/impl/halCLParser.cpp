@@ -21,10 +21,6 @@ CLParser::CLParser() :
   addOptionFlag("help", "display this help page", false);
 }
 
-CLParser::~CLParser()
-{
-}
-   
 void CLParser::setOptionPrefix(const string& prefix)
 {
   _prefix = prefix;

@@ -28,7 +28,8 @@ public:
                           hal_size_t endOffset = 0,
                           bool reversed = false);
     /** destructor */
-    ~BottomSegmentIterator();
+    ~BottomSegmentIterator() {
+    }
 
     /** Return a new copy of the iterator */
     BottomSegmentIteratorPtr copy();
@@ -93,8 +94,6 @@ private:
    virtual hal_size_t getNumSegmentsInGenome() const;
    BottomSegmentPtr _bottomSegment;
 };
-
-inline BottomSegmentIterator::~BottomSegmentIterator() {}
 
 inline bool operator==(BottomSegmentIteratorConstPtr p1,
                        BottomSegmentIteratorConstPtr p2) 
