@@ -7,8 +7,16 @@
 #include <deque>
 #include <vector>
 #include <iostream>
+#include <cassert>
+#include "halCommon.h"
 #include "halValidate.h"
-#include "hal.h"
+#include "halTopSegment.h"
+#include "halTopSegmentIterator.h"
+#include "halBottomSegment.h"
+#include "halBottomSegmentIterator.h"
+#include "halSequenceIterator.h"
+#include "halGenome.h"
+#include "halDNAIterator.h"
 
 using namespace std;
 using namespace hal;

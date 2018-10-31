@@ -9,8 +9,8 @@
 #include <algorithm>
 #include <cassert>
 #include <deque>
-#include "hal.h"
 #include "halColumnIterator.h"
+#include "halBottomSegmentIterator.h"
 
 using namespace std;
 using namespace hal;

@@ -10,7 +10,6 @@
 #include <cassert>
 #include <deque>
 #include "halColumnIteratorStack.h"
-#include "hal.h"
 
 using namespace std;
 using namespace hal;

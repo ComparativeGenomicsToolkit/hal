@@ -5,8 +5,8 @@
  */
 #include <sstream>
 #include <iostream>
+#include <cassert>
 #include "halCLParser.h"
-#include "hal.h"
 
 using namespace std;
 using namespace hal;

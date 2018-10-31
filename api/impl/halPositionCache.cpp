@@ -5,7 +5,6 @@
  */
 #include <sstream>
 #include "halPositionCache.h"
-#include "hal.h"
 
 using namespace std;
 using namespace hal;

@@ -9,9 +9,11 @@
 #include <algorithm>
 #include <cassert>
 #include <deque>
-
 #include "defaultGappedTopSegmentIterator.h"
-#include "hal.h"
+#include "halBottomSegmentIterator.h"
+#include "halDNAIterator.h"
+#include "halGappedBottomSegmentIterator.h"
+
 using namespace std;
 using namespace hal;
 

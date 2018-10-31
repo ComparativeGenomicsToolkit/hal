@@ -9,7 +9,10 @@
 #include <algorithm>
 #include <cassert>
 #include <deque>
-#include "hal.h"
+#include "halGenome.h"
+#include "halDNAIterator.h"
+#include "halGappedTopSegmentIterator.h"
+#include "halTopSegmentIterator.h"
 #include "halGappedBottomSegmentIterator.h"
 #include "defaultGappedBottomSegmentIterator.h"
 

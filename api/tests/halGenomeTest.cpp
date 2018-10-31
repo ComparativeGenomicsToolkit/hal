@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "halGenomeTest.h"
 #include "halAlignment.h"
+#include "halValidate.h"
 #include "halAlignmentInstanceTest.h"
 #include "halAlignmentTest.h"
 #include "halBottomSegmentIterator.h"

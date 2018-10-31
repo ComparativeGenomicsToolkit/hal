@@ -10,7 +10,6 @@
 #include <cassert>
 #include <deque>
 #include "defaultRearrangement.h"
-#include "hal.h"
 
 using namespace std;
 using namespace hal;

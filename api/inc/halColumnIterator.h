@@ -12,7 +12,7 @@
 #include <map>
 #include <set>
 #include "sonLib.h"
-#include "hal.h"
+#include "halPositionCache.h"
 #include "halDefs.h"
 #include "halDNAIterator.h"
 #include "halSequence.h"

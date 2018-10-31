@@ -5,8 +5,10 @@
  */
 #include <sstream>
 #include <map>
-#include "halDefs.h"
-#include "hal.h"
+#include <cassert>
+#include "halCommon.h"
+#include "halAlignment.h"
+#include "halGenome.h"
 
 using namespace std;
 using namespace hal;

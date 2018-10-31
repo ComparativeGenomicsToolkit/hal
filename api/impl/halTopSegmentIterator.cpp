@@ -7,8 +7,9 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-#include "hal.h"
+#include <cassert>
 #include "halTopSegmentIterator.h"
+#include "halBottomSegmentIterator.h"
 
 using namespace std;
 using namespace hal;

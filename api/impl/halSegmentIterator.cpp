@@ -7,8 +7,10 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-#include "hal.h"
+#include <cassert>
 #include "halSegmentIterator.h"
+#include "halCommon.h"
+#include "halGenome.h"
 #include "halMappedSegment.h"
 
 using namespace std;

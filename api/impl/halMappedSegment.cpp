@@ -9,7 +9,7 @@
 #include <limits>
 #include <algorithm>
 #include <limits>
-#include "hal.h"
+#include <cassert>
 #include "halMappedSegment.h"
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
