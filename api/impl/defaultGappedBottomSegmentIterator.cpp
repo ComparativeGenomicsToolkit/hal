@@ -195,7 +195,7 @@ bool DefaultGappedBottomSegmentIterator::isTop() const
 }
 
 hal_size_t DefaultGappedBottomSegmentIterator::getMappedSegments(
-  set<MappedSegmentConstPtr>& outSegments,
+  MappedSegmentConstSet& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes,

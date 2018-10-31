@@ -11,6 +11,7 @@
 #include <vector>
 #include <set>
 #include "halDefs.h"
+#include "halMappedSegmentContainers.h"
 
 namespace hal {
 
@@ -131,7 +132,7 @@ public:
     * @param mrca The MRCA of the source and target genomes. By
     * default, it is computed automatically. */
    virtual hal_size_t getMappedSegments(
-     std::set<MappedSegmentConstPtr>& outSegments,
+     MappedSegmentConstSet& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath = NULL,
      bool doDupes = true,

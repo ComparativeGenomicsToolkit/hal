@@ -63,7 +63,7 @@ protected:
    const Genome* _tgtGenome;
    const Sequence* _srcSequence;
    std::set<const Genome*> _tgtSet;
-   std::set<MappedSegmentConstPtr> _mappedSegments;
+   MappedSegmentConstSet _mappedSegments;
    hal_index_t _lastIndex;
 
    SegmentIteratorConstPtr _segment;

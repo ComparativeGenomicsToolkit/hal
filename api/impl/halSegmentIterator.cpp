@@ -9,7 +9,7 @@
 #include <algorithm>
 #include "hal.h"
 #include "halSegmentIterator.h"
-#include "defaultMappedSegment.h"
+#include "halMappedSegment.h"
 
 using namespace std;
 using namespace hal;
@@ -174,7 +174,7 @@ bool SegmentIterator::isTop() const
 }
 
 hal_size_t SegmentIterator::getMappedSegments(
-  set<MappedSegmentConstPtr>& outSegments,
+  MappedSegmentConstSet& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes,
@@ -210,12 +210,12 @@ hal_size_t SegmentIterator::getMappedSegments(
     genomesOnPath = &pathSet;
   }
 
-  hal_size_t numResults = DefaultMappedSegment::map(this, outSegments,
-                                                    tgtGenome,
-                                                    genomesOnPath, doDupes,
-                                                    minLength,
-                                                    coalescenceLimit,
-                                                    mrca);
+  hal_size_t numResults = MappedSegment::map(this, outSegments,
+                                             tgtGenome,
+                                             genomesOnPath, doDupes,
+                                             minLength,
+                                             coalescenceLimit,
+                                             mrca);
   return numResults;
 }
 

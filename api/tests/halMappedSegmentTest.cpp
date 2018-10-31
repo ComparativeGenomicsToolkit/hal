@@ -200,7 +200,7 @@ void MappedSegmentMapUpTest::testTopSegment(AlignmentConstPtr alignment,
                                             const string& ancName)
 {
   const Genome* parent = alignment->openGenome(ancName);
-  set<MappedSegmentConstPtr> results;
+  MappedSegmentConstSet results;
   top->getMappedSegments(results, parent, NULL, false);
   CuAssertTrue(_testCase, results.size() == 1);
   MappedSegmentConstPtr mseg = *results.begin();
@@ -268,14 +268,14 @@ void MappedSegmentParseTest::testTopSegment(AlignmentConstPtr alignment,
                                             TopSegmentIteratorConstPtr top)
 {
   const Genome* parent = alignment->openGenome("parent");
-  set<MappedSegmentConstPtr> results;
+  MappedSegmentConstSet results;
   top->getMappedSegments(results, parent, NULL, false);
 
   vector<bool> covered(top->getLength(), false);
   
   CuAssertTrue(_testCase, results.size() >= 1);
 
-  set<MappedSegmentConstPtr>::iterator i = results.begin();
+  MappedSegmentConstSet::iterator i = results.begin();
   for (; i != results.end(); ++i)
   {
     MappedSegmentConstPtr mseg = *i;
@@ -292,7 +292,7 @@ void MappedSegmentParseTest::testTopSegment(AlignmentConstPtr alignment,
     CuAssertTrue(_testCase, mseg->getEndPosition() == 
                  mseg->getSource()->getEndPosition());
 
-    set<MappedSegmentConstPtr> tResults;
+    MappedSegmentConstSet tResults;
     mseg->getMappedSegments(tResults, top->getGenome(), NULL, false);
     CuAssertTrue(_testCase, tResults.size() == 1);
     MappedSegmentConstPtr tmseg = *tResults.begin();
@@ -337,7 +337,7 @@ void MappedSegmentMapDownTest::testBottomSegment(
   hal_size_t childIndex)
 {
   const Genome* child = bottom->getGenome()->getChild(childIndex);
-  set<MappedSegmentConstPtr> results;
+  MappedSegmentConstSet results;
   bottom->getMappedSegments(results, child, NULL, false);
   CuAssertTrue(_testCase, results.size() == 1);
   MappedSegmentConstPtr mseg = *results.begin();
@@ -382,7 +382,7 @@ void MappedSegmentMapAcrossTest::testTopSegment(AlignmentConstPtr alignment,
   const Genome* parent = top->getGenome()->getParent();
   const Genome* other = top->getGenome()->getName() == "child1" ? 
      alignment->openGenome("child2") : alignment->openGenome("child1");
-  set<MappedSegmentConstPtr> results;
+  MappedSegmentConstSet results;
   top->getMappedSegments(results, other, NULL, false);
   CuAssertTrue(_testCase, results.size() == 1);
   MappedSegmentConstPtr mseg = *results.begin();
@@ -485,7 +485,7 @@ void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* child2 = alignment->openGenome("child2");
 
   TopSegmentIteratorConstPtr top = child1->getTopSegmentIterator();
-  set<MappedSegmentConstPtr> results;
+  MappedSegmentConstSet results;
   top->getMappedSegments(results, child2, NULL, true);
 //  CuAssertTrue(_testCase, results.size() == 3);
   
@@ -515,7 +515,7 @@ void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
   top->getMappedSegments(results, child1, NULL, true);
   CuAssertTrue(_testCase, results.size() == 3);
   bool found[3] = {false};
-  set<MappedSegmentConstPtr>::iterator i = results.begin();
+  MappedSegmentConstSet::iterator i = results.begin();
   for (; i != results.end(); ++i)
   {
     MappedSegmentConstPtr mseg = *i;
@@ -638,7 +638,7 @@ void MappedSegmentMapExtraParalogsTest::checkCallBack(AlignmentConstPtr alignmen
   const Genome *root = alignment->openGenome("root");
 
   TopSegmentIteratorConstPtr top = grandChild2->getTopSegmentIterator();
-  set<MappedSegmentConstPtr> results;
+  MappedSegmentConstSet results;
 
   // First, check that by default we will only get the homologies in
   // or before the MRCA. (in this case, just seg 0 of grandChild1).
@@ -668,7 +668,7 @@ void MappedSegmentMapExtraParalogsTest::checkCallBack(AlignmentConstPtr alignmen
   // will get all the paralogs.
   top->getMappedSegments(results, grandChild1, NULL, true, 0, root);
   CuAssertTrue(_testCase, results.size() == 3);
-  set<MappedSegmentConstPtr>::iterator i = results.begin();
+  MappedSegmentConstSet::iterator i = results.begin();
   for (; i != results.end(); ++i)
   {
       // Source information should be preserved
@@ -806,13 +806,13 @@ void  MappedSegmentColCompareTest::createBlockArray()
     numSegs = _ref->getNumBottomSegments();
   }
 
-  set<MappedSegmentConstPtr> results;  
+  MappedSegmentConstSet results;  
   for (; refSeg->getArrayIndex() < numSegs; refSeg->toRight())
   {
     refSeg->getMappedSegments(results, _tgt);
   }
   
-  for (set<MappedSegmentConstPtr>::iterator i = results.begin();
+  for (MappedSegmentConstSet::iterator i = results.begin();
        i != results.end(); ++i)
   {
     MappedSegmentConstPtr mseg = *i;

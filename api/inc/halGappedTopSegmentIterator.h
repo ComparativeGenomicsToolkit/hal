@@ -83,6 +83,7 @@ protected:
    virtual ~GappedTopSegmentIterator() = 0;
 };
 
+
 inline GappedTopSegmentIterator::~GappedTopSegmentIterator() {}
 
 inline bool operator==(GappedTopSegmentIteratorConstPtr p1,

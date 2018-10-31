@@ -166,7 +166,7 @@ void WiggleLiftover::mapSegment()
   }
 
   vector<MappedSegmentConstPtr> fragments;
-  BlockMapper::MSSet emptySet;
+  MappedSegmentConstSet emptySet;
   set<hal_index_t> queryCutSet;
   set<hal_index_t> targetCutSet;
   

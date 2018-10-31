@@ -51,7 +51,7 @@ public:
    virtual bool isMissingData(double nThreshold) const;
    virtual bool isTop() const;
    virtual hal_size_t getMappedSegments(
-     std::set<MappedSegmentConstPtr>& outSegments,
+     MappedSegmentConstSet& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,

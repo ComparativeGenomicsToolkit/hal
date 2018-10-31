@@ -34,7 +34,7 @@ protected:
    
 protected: 
    
-   std::set<MappedSegmentConstPtr> _mappedSegments;
+   MappedSegmentConstSet _mappedSegments;
    SegmentIteratorConstPtr _refSeg;
    hal_index_t _lastIndex;
    std::set<const Genome*> _downwardPath;

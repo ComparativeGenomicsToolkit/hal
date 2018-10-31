@@ -102,6 +102,6 @@ HAL_FORWARD_DEC_CLASS(SequenceIterator)
 HAL_FORWARD_DEC_CLASS(ColumnIterator)
 HAL_FORWARD_DEC_CLASS(Rearrangement)
 
-  
+
 }
 #endif

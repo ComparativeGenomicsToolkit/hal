@@ -60,7 +60,7 @@ int main(int argc, char** argv)
         assert(refSeg->getLength() == 1);
         for (size_t j = 0; j < leafGenomes.size(); j++) {
             const Genome *leafGenome = leafGenomes[j];
-            set<MappedSegmentConstPtr> segments;
+            MappedSegmentConstSet segments;
             refSeg->getMappedSegments(segments, leafGenome, NULL,
                                       true, 0, NULL, NULL);
             vector<hal_size_t> &histogram = coverage[leafGenome];

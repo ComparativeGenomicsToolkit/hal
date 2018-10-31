@@ -46,7 +46,7 @@ class MMapBottomSegment : public BottomSegment
     bool isMissingData(double nThreshold) const;
     bool isTop() const;
     hal_size_t getMappedSegments(
-        std::set<MappedSegmentConstPtr>& outSegments,
+        MappedSegmentConstSet& outSegments,
         const Genome* tgtGenome,
         const std::set<const Genome*>* genomesOnPath,
         bool doDupes,
@@ -179,7 +179,7 @@ inline bool MMapBottomSegment::isTop() const
 }
 
 inline hal_size_t MMapBottomSegment::getMappedSegments(
-  std::set<MappedSegmentConstPtr>& outSegments,
+  MappedSegmentConstSet& outSegments,
   const Genome* tgtGenome,
   const std::set<const Genome*>* genomesOnPath,
   bool doDupes,

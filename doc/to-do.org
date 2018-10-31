@@ -7,3 +7,4 @@ note it would be nice to extend SegmentIterator but the crappy smart pointer int
 * Get rid of iterators implementing the types they are iterating over.  Add an explict get or operator*. This will allow  more inlining.
 * does this still make sense now that databases doesn't have constness defaultGappedBottomSegmentIterator.h - keep convention of other iterators where const-ness only applies to the database and not the iterator...
 * getSegment is duplicated in different places due to top/bottom/gapped/ungapped implementations.  Is this a good approach?
+* typedef containers for HAL objects (e.g. std::set<MappedSegmentConstPtr>) instead of repeating

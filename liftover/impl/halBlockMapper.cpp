@@ -129,7 +129,7 @@ void BlockMapper::map()
   if (_mapAdj)
   {
     assert(_targetReversed == false);
-    MSSet::const_iterator i;
+    MappedSegmentConstSet::const_iterator i;
     for (i = _segSet.begin(); i != _segSet.end(); ++i)
     {
       if (_adjSet.find(*i) == _adjSet.end())
@@ -140,11 +140,11 @@ void BlockMapper::map()
   }
 }
 
-void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
+void BlockMapper::extractReferenceParalogies(MappedSegmentConstSet& outParalogies)
 {
-  MSSet::iterator i = _segSet.begin();
-  MSSet::iterator j = _segSet.end();
-  MSSet::iterator k;
+  MappedSegmentConstSet::iterator i = _segSet.begin();
+  MappedSegmentConstSet::iterator j = _segSet.end();
+  MappedSegmentConstSet::iterator k;
   hal_index_t iStart = NULL_INDEX;
   hal_index_t iEnd = NULL_INDEX;
   bool iIns = false;
@@ -223,7 +223,7 @@ void BlockMapper::extractReferenceParalogies(MSSet& outParalogies)
 }
 
   
-void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
+void BlockMapper::mapAdjacencies(MappedSegmentConstSet::const_iterator segIt)
 {
   assert(_segSet.empty() == false && segIt != _segSet.end());
   MappedSegmentConstPtr mappedQuerySeg = *segIt;
@@ -232,8 +232,8 @@ void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
   SegmentIteratorConstPtr queryIt = makeIterator(mappedQuerySeg, 
                                                  minIndex,
                                                  maxIndex);
-  MSSet backResults;
-  MSSet::const_iterator segNext = segIt;
+  MappedSegmentConstSet backResults;
+  MappedSegmentConstSet::const_iterator segNext = segIt;
   if (queryIt->getReversed())
   {
     segNext = segNext == _segSet.begin() ? _segSet.end() : --segNext;
@@ -276,7 +276,7 @@ void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
                          minIndex,
                          maxIndex);
 
-  MSSet::const_iterator segPrev = segIt;
+  MappedSegmentConstSet::const_iterator segPrev = segIt;
   if (queryIt->getReversed())
   {
     ++segPrev;
@@ -314,7 +314,7 @@ void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
   }
 
   // flip the results and copy back to our main set.
-  for (MSSet::iterator i = backResults.begin(); i != backResults.end(); ++i)
+  for (MappedSegmentConstSet::iterator i = backResults.begin(); i != backResults.end(); ++i)
   {
     MappedSegmentConstPtr mseg = *i;
     if (mseg->getSequence() == _refSequence)
@@ -326,7 +326,7 @@ void BlockMapper::mapAdjacencies(MSSet::const_iterator segIt)
         mseg->fullReverse();
       }
 
-      MSSet::const_iterator j = _segSet.lower_bound(*i);
+      MappedSegmentConstSet::const_iterator j = _segSet.lower_bound(*i);
       bool overlaps = false;
       if (j != _segSet.begin())
       {
@@ -469,10 +469,10 @@ bool BlockMapper::cutByNext(SlicedSegmentConstPtr queryIt,
   return wasCut;
 }
 
-void BlockMapper::extractSegment(MSSet::iterator start, 
-                                 const MSSet& paraSet,
+void BlockMapper::extractSegment(MappedSegmentConstSet::iterator start, 
+                                 const MappedSegmentConstSet& paraSet,
                                  vector<MappedSegmentConstPtr>& fragments,
-                                 MSSet* startSet,
+                                 MappedSegmentConstSet* startSet,
                                  const set<hal_index_t>& targetCutPoints,
                                  set<hal_index_t>& queryCutPoints)
 {
@@ -480,14 +480,14 @@ void BlockMapper::extractSegment(MSSet::iterator start,
   fragments.push_back(*start);
   const Sequence* startSeq = (*start)->getSequence();
 
-  vector<MSSet::iterator> vector1;
-  vector<MSSet::iterator>* v1 = &vector1;
-  vector<MSSet::iterator> vector2;
-  vector<MSSet::iterator>* v2 = &vector2;
-  vector<MSSet::iterator> toErase;
+  vector<MappedSegmentConstSet::iterator> vector1;
+  vector<MappedSegmentConstSet::iterator>* v1 = &vector1;
+  vector<MappedSegmentConstSet::iterator> vector2;
+  vector<MappedSegmentConstSet::iterator>* v2 = &vector2;
+  vector<MappedSegmentConstSet::iterator> toErase;
 
   v1->push_back(start);
-  MSSet::iterator next = start;
+  MappedSegmentConstSet::iterator next = start;
   ++next;
 
   // equivalence class based on start set

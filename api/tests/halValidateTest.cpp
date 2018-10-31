@@ -95,7 +95,9 @@ CuSuite* halValidateTestSuite(void)
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halValidateSmallTest);
   SUITE_ADD_TEST(suite, halValidateMediumTest);
+#if 0  // this is very slow
   SUITE_ADD_TEST(suite, halValidateLargeTest);
+#endif
   return suite;
 }
 

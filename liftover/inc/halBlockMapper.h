@@ -13,6 +13,7 @@
 #include <vector>
 #include <map>
 #include "hal.h"
+#include "halMappedSegmentContainers.h"
 
 namespace hal{
 
@@ -24,8 +25,6 @@ class BlockMapper
 {
 public:
 
-   typedef std::set<MappedSegmentConstPtr> MSSet;
-
    BlockMapper();
    virtual ~BlockMapper();
 
@@ -36,15 +35,15 @@ public:
              bool mapTargetAdjacencies,
              const Genome *coalescenceLimit = NULL);
    void map();
-   void extractReferenceParalogies(MSSet& outParalogies);
+   void extractReferenceParalogies(MappedSegmentConstSet& outParalogies);
 
-   const MSSet& getMap() const;
-   MSSet& getMap();
+   const MappedSegmentConstSet& getMap() const;
+   MappedSegmentConstSet& getMap();
 
-   static void extractSegment(MSSet::iterator start, 
-                              const MSSet& paraSet,                       
+   static void extractSegment(MappedSegmentConstSet::iterator start, 
+                              const MappedSegmentConstSet& paraSet,                       
                               std::vector<MappedSegmentConstPtr>& fragments,
-                              MSSet* startSet,
+                              MappedSegmentConstSet* startSet,
                               const std::set<hal_index_t>& targetCutPoints,
                               std::set<hal_index_t>& queryCutPoints);
 
@@ -54,7 +53,7 @@ public:
 protected:
    
    void erase();
-   void mapAdjacencies(MSSet::const_iterator setIt);
+   void mapAdjacencies(MappedSegmentConstSet::const_iterator setIt);
 
    static SegmentIteratorConstPtr makeIterator(
      MappedSegmentConstPtr mappedSegment, 
@@ -71,8 +70,8 @@ protected:
                                 const MappedSegmentConstPtr& s2);
 protected:
 
-   MSSet _segSet;
-   MSSet _adjSet;
+   MappedSegmentConstSet _segSet;
+   MappedSegmentConstSet _adjSet;
    std::set<const Genome*> _downwardPath;
    std::set<const Genome*> _upwardPath;
    const Genome* _refGenome;
@@ -92,12 +91,12 @@ protected:
    static hal_size_t _maxAdjScan;
 };
 
-inline const BlockMapper::MSSet& BlockMapper::getMap() const
+inline const MappedSegmentConstSet& BlockMapper::getMap() const
 {
   return _segSet;
 }
 
-inline BlockMapper::MSSet& BlockMapper::getMap()
+inline MappedSegmentConstSet& BlockMapper::getMap()
 {
   return _segSet;
 }

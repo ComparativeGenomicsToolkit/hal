@@ -85,11 +85,11 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
   }
 
   vector<MappedSegmentConstPtr> fragments;
-  BlockMapper::MSSet emptySet;
+  MappedSegmentConstSet emptySet;
   set<hal_index_t> queryCutSet;
   set<hal_index_t> targetCutSet;
   
-  for (std::set<MappedSegmentConstPtr>::iterator i = _mappedSegments.begin();
+  for (MappedSegmentConstSet::iterator i = _mappedSegments.begin();
        i != _mappedSegments.end(); ++i)
   {
     BlockMapper::extractSegment(i, emptySet, fragments, &_mappedSegments, 

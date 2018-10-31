@@ -9,17 +9,18 @@
 
 #include "halDefs.h"
 #include "halSegment.h"
+#include "halMappedSegmentContainers.h"
 
 namespace hal {
 
 class MappedSegment;
 
 /** 
- * Interface for a sliced segement.  This extends the segment interface
+ * Interface for a sliced segment.  This extends the segment interface
  * by allowing slicing (accessing just subintervals of the segmenet), 
  * along with reversing. 
  */
-class SlicedSegment : public virtual Segment
+class SlicedSegment: public virtual Segment
 {
 public:
 

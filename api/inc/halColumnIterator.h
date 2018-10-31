@@ -33,16 +33,16 @@ public:
    // we can compare genomes by pointers (because they are persistent
    // and unique, though it's still hacky) but we can't do the same 
    // for anything else, including sequences.  
-   struct SequenceLess { bool operator()(const hal::Sequence* s1,
-                                         const hal::Sequence* s2) const {
+   struct SequenceLess { bool operator()(const Sequence* s1,
+                                         const Sequence* s2) const {
      return s1->getGenome() < s2->getGenome() || (
        s1->getGenome() == s2->getGenome() && 
        s1->getArrayIndex() < s2->getArrayIndex()); }
    };
    /// @endcond
 
-   typedef std::vector<hal::DNAIteratorConstPtr> DNASet;
-   typedef std::map<const hal::Sequence*, DNASet*, SequenceLess> ColumnMap;
+   typedef std::vector<DNAIteratorConstPtr> DNASet;
+   typedef std::map<const Sequence*, DNASet*, SequenceLess> ColumnMap;
 
    /** Move column iterator one column to the right along reference
     * genoem sequence */
@@ -67,10 +67,10 @@ public:
    virtual bool lastColumn() const = 0;
    
    /** Get a pointer to the reference genome for the column iterator */
-   virtual const hal::Genome* getReferenceGenome() const = 0;
+   virtual const Genome* getReferenceGenome() const = 0;
 
    /** Get a pointer to the reference sequence for the column iterator */
-   virtual const hal::Sequence* getReferenceSequence() const = 0;
+   virtual const Sequence* getReferenceSequence() const = 0;
 
    /** Get the position in the reference sequence 
     * NOTE

@@ -56,7 +56,7 @@ public:
    bool isMissingData(double nThreshold) const;
    bool isTop() const;
    hal_size_t getMappedSegments(
-     std::set<MappedSegmentConstPtr>& outSegments,
+     MappedSegmentConstSet& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
@@ -254,7 +254,7 @@ inline bool HDF5TopSegment::isTop() const
 }
 
 inline hal_size_t HDF5TopSegment::getMappedSegments(
-  std::set<MappedSegmentConstPtr>& outSegments,
+  MappedSegmentConstSet& outSegments,
   const Genome* tgtGenome,
   const std::set<const Genome*>* genomesOnPath,
   bool doDupes,
