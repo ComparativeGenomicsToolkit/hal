@@ -80,6 +80,7 @@ inline DNAIterator::~DNAIterator() {}
 }
 
 #ifndef NDEBUG
+// FIXME: refactor?  why only NDEBUG
 #include "halGenome.h"
 namespace hal {
 inline std::ostream& operator<<(std::ostream& os, 

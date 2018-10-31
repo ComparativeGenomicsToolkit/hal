@@ -87,7 +87,7 @@ public:
    virtual bool hasParseUp() const;
    virtual hal_index_t getLeftChildIndex(hal_size_t i) const;
    virtual hal_index_t getRightChildIndex(hal_size_t i) const;
-protected:
+private:
    friend class counted_ptr<BottomSegmentIterator>;
    friend class counted_ptr<const BottomSegmentIterator>;
    virtual hal_size_t getNumSegmentsInGenome() const;

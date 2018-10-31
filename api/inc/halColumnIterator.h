@@ -135,7 +135,7 @@ protected:
    typedef ColumnIteratorStack::LinkedBottomIterator LinkedBottomIterator;
    typedef ColumnIteratorStack::LinkedTopIterator LinkedTopIterator;
    typedef ColumnIteratorStack::Entry StackEntry;
-protected:
+private:
 
    void recursiveUpdate(bool init) const;
    bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
@@ -157,7 +157,7 @@ protected:
 
    void clearTree() const;
 
-protected:
+private:
 
    // everything's mutable to keep const behaviour consistent with
    // other iterators (which provide both const and non-const access)
@@ -188,7 +188,7 @@ protected:
    mutable bool _unique;
    mutable bool _onlyOrthologs;
 
-protected:
+private:
    friend class counted_ptr<ColumnIterator>;
    friend class counted_ptr<const ColumnIterator>;
    virtual ~ColumnIterator();

@@ -76,7 +76,7 @@ public:
    void resetLinks();
    bool topInBounds() const;
 
-protected:
+private:
 
    std::vector<Entry*> _stack;
 };

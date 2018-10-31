@@ -108,13 +108,11 @@ public:
    virtual bool isCanonicalParalog() const;
 
 
-protected:
+private:
    virtual hal_size_t getNumSegmentsInGenome() const;
 
-protected:
    TopSegmentPtr _topSegment;
 
-protected:
    friend class counted_ptr<TopSegmentIterator>;
    friend class counted_ptr<const TopSegmentIterator>;
 };

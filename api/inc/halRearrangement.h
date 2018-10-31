@@ -126,7 +126,7 @@ public:
     * the rearrangement is termed "missing data". */
    virtual double getNThreshold() const;
    
-protected:
+private:
    
    virtual void resetStatus(TopSegmentIteratorConstPtr topSegment);
    
@@ -137,7 +137,7 @@ protected:
    virtual bool scanTranslocationCycle(TopSegmentIteratorConstPtr topSegment);
    virtual bool scanDuplicationCycle(TopSegmentIteratorConstPtr topSegment);
 
-protected:
+private:
    
    hal_size_t _gapThreshold;
    bool _atomic;

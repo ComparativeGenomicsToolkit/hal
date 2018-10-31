@@ -107,7 +107,6 @@ protected:
    virtual bool inRange() const;
    virtual hal_size_t getNumSegmentsInGenome() const;
    
-protected:
    mutable hal_offset_t _startOffset;
    mutable hal_offset_t _endOffset;
    mutable bool _reversed;
