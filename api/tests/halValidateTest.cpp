@@ -9,6 +9,8 @@
 #include "halAlignmentTest.h"
 #include "halValidateTest.h"
 #include "halRandomData.h"
+#include "defaultGappedTopSegmentIterator.h"
+#include "defaultGappedBottomSegmentIterator.h"
 
 extern "C" {
 #include "commonC.h"

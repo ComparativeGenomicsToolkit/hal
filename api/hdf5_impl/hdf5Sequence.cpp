@@ -8,12 +8,13 @@
 #include <sstream>
 #include <set>
 #include <iostream>
+#include <cassert>
 #include "hdf5Sequence.h"
 #include "hdf5DNAIterator.h"
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
 #include "halColumnIterator.h"
-#include "defaultRearrangement.h"
+#include "halRearrangement.h"
 #include "defaultGappedTopSegmentIterator.h"
 #include "defaultGappedBottomSegmentIterator.h"
 
@@ -283,10 +284,10 @@ RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position,
                                                 bool atomic) const
 {
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
-  DefaultRearrangement* rea = new DefaultRearrangement(getGenome(),
-                                                       gapLengthThreshold,
-                                                       nThreshold,
-                                                       atomic);
+  Rearrangement* rea = new Rearrangement(getGenome(),
+                                         gapLengthThreshold,
+                                         nThreshold,
+                                         atomic);
   rea->identifyFromLeftBreakpoint(top);
   return RearrangementPtr(rea);
 }

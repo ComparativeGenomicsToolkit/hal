@@ -7,7 +7,7 @@
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
 #include "halColumnIterator.h"
-#include "defaultRearrangement.h"
+#include "halRearrangement.h"
 #include "defaultGappedTopSegmentIterator.h"
 #include "defaultGappedBottomSegmentIterator.h"
 using namespace hal;
@@ -411,10 +411,10 @@ RearrangementPtr MMapGenome::getRearrangement(hal_index_t position,
 {
   assert(position >= 0 && position < (hal_index_t)getNumTopSegments());
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
-  DefaultRearrangement* rea = new DefaultRearrangement(this,
-                                                       gapLengthThreshold,
-                                                       nThreshold,
-                                                       atomic);
+  Rearrangement* rea = new Rearrangement(this,
+                                         gapLengthThreshold,
+                                         nThreshold,
+                                         atomic);
   rea->identifyFromLeftBreakpoint(top);
   return RearrangementPtr(rea);
 }

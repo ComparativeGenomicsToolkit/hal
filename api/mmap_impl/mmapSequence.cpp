@@ -1,5 +1,5 @@
 #include "halColumnIterator.h"
-#include "defaultRearrangement.h"
+#include "halRearrangement.h"
 #include "defaultGappedTopSegmentIterator.h"
 #include "defaultGappedBottomSegmentIterator.h"
 #include "mmapSequence.h"
@@ -138,10 +138,10 @@ RearrangementPtr MMapSequence::getRearrangement(hal_index_t position,
                                                 bool atomic) const
 {
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
-  DefaultRearrangement* rea = new DefaultRearrangement(getGenome(),
-                                                       gapLengthThreshold,
-                                                       nThreshold,
-                                                       atomic);
+  Rearrangement* rea = new Rearrangement(getGenome(),
+                                         gapLengthThreshold,
+                                         nThreshold,
+                                         atomic);
   rea->identifyFromLeftBreakpoint(top);
   return RearrangementPtr(rea);
 }

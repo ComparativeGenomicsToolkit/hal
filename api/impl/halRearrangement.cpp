@@ -9,17 +9,21 @@
 #include <algorithm>
 #include <cassert>
 #include <deque>
-#include "defaultRearrangement.h"
+#include "halRearrangement.h"
+#include "halGappedTopSegmentIterator.h"
+#include "halGappedBottomSegmentIterator.h"
+#include "defaultGappedTopSegmentIterator.h"
+#include "defaultGappedBottomSegmentIterator.h"
 
 using namespace std;
 using namespace hal;
 
 // maximum size a simple indel can be to be considered a gap (and not
 // a rearrangement)
-const hal_size_t DefaultRearrangement::DefaultGapThreshold = 10;
-const double DefaultRearrangement::DefaultNThreshold = 0.10;
+const hal_size_t Rearrangement::DefaultGapThreshold = 10;
+const double Rearrangement::DefaultNThreshold = 0.10;
 
-DefaultRearrangement::DefaultRearrangement(const Genome* childGenome,
+Rearrangement::Rearrangement(const Genome* childGenome,
                                            hal_size_t gapThreshold,
                                            double nThreshold,
                                            bool atomic) :
@@ -47,47 +51,42 @@ DefaultRearrangement::DefaultRearrangement(const Genome* childGenome,
   _top = _cur->getLeft()->copy();
 }
 
-DefaultRearrangement::~DefaultRearrangement()
-{
-
-}
-   
 // Rearrangement Interface Methods
-DefaultRearrangement::
-ID DefaultRearrangement::getID() const
+Rearrangement::
+ID Rearrangement::getID() const
 {
   return _id;
 }
 
-hal_size_t DefaultRearrangement::getLength() const
+hal_size_t Rearrangement::getLength() const
 {
   return _id == Deletion ? _leftParent->getLength() : _cur->getLength();
 }
 
-hal_size_t DefaultRearrangement::getNumContainedGaps() const
+hal_size_t Rearrangement::getNumContainedGaps() const
 {
   return _id == Deletion ? _leftParent->getNumGaps() : _cur->getNumGaps();
 }
 
-hal_size_t DefaultRearrangement::getNumContainedGapBases() const
+hal_size_t Rearrangement::getNumContainedGapBases() const
 {
   return
      _id == Deletion ? _leftParent->getNumGapBases() : _cur->getNumGapBases();
 }
 
-TopSegmentIteratorConstPtr DefaultRearrangement::getLeftBreakpoint() const
+TopSegmentIteratorConstPtr Rearrangement::getLeftBreakpoint() const
 {
   assert(_cur->getReversed() == false);
   return _cur->getLeft();
 }
 
-TopSegmentIteratorConstPtr DefaultRearrangement::getRightBreakpoint() const
+TopSegmentIteratorConstPtr Rearrangement::getRightBreakpoint() const
 {
   assert(_cur->getReversed() == false);
   return _cur->getRight();
 }
 
-bool DefaultRearrangement::identifyFromLeftBreakpoint(
+bool Rearrangement::identifyFromLeftBreakpoint(
   TopSegmentIteratorConstPtr topSegment)
 {
   if (scanDuplicationCycle(topSegment) == true)
@@ -179,7 +178,7 @@ bool DefaultRearrangement::identifyFromLeftBreakpoint(
   return true;
 }
 
-bool DefaultRearrangement::identifyDeletionFromLeftBreakpoint(
+bool Rearrangement::identifyDeletionFromLeftBreakpoint(
   TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment->getReversed() == false);
@@ -193,7 +192,7 @@ bool DefaultRearrangement::identifyDeletionFromLeftBreakpoint(
   return false;
 }
 
-pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
+pair<hal_index_t, hal_index_t> Rearrangement::getDeletedRange() const
 {
   pair<hal_index_t, hal_index_t> range;
   if (_leftParent->getReversed() == false)
@@ -211,7 +210,7 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getDeletedRange() const
   return range;
 }
 
-bool DefaultRearrangement::identifyInsertionFromLeftBreakpoint(
+bool Rearrangement::identifyInsertionFromLeftBreakpoint(
   TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment->getReversed() == false);
@@ -225,7 +224,7 @@ bool DefaultRearrangement::identifyInsertionFromLeftBreakpoint(
   return false;
 }
 
-pair<hal_index_t, hal_index_t> DefaultRearrangement::getInsertedRange() const
+pair<hal_index_t, hal_index_t> Rearrangement::getInsertedRange() const
 {
   pair<hal_index_t, hal_index_t> range;
   range.first = _cur->getLeft()->getStartPosition();
@@ -241,7 +240,7 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getInsertedRange() const
   return range;
 }
 
-pair<hal_index_t, hal_index_t> DefaultRearrangement::getDuplicatedRange() const
+pair<hal_index_t, hal_index_t> Rearrangement::getDuplicatedRange() const
 {
   pair<hal_index_t, hal_index_t> range;
   assert(_cur->hasParent() == true);
@@ -262,7 +261,7 @@ pair<hal_index_t, hal_index_t> DefaultRearrangement::getDuplicatedRange() const
   return range;
 }
 
-bool DefaultRearrangement::identifyNext()
+bool Rearrangement::identifyNext()
 {
   assert(_cur->getReversed() == false);
   // don't like this.  need to refactor interface to make better
@@ -281,12 +280,12 @@ bool DefaultRearrangement::identifyNext()
   }
 }
 
-hal_size_t DefaultRearrangement::getGapLengthThreshold() const
+hal_size_t Rearrangement::getGapLengthThreshold() const
 {
   return _gapThreshold;
 }
 
-void DefaultRearrangement::setGapLengthThreshold(hal_size_t threshold)
+void Rearrangement::setGapLengthThreshold(hal_size_t threshold)
 {
   _gapThreshold = threshold;
   _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold, _atomic);
@@ -301,18 +300,18 @@ void DefaultRearrangement::setGapLengthThreshold(hal_size_t threshold)
   _top = _cur->getLeft()->copy();
 }
 
-bool DefaultRearrangement::getAtomic() const
+bool Rearrangement::getAtomic() const
 {
   return _atomic;
 }
 
-void DefaultRearrangement::setAtomic(bool atomic)
+void Rearrangement::setAtomic(bool atomic)
 {
   _atomic = atomic;
   setGapLengthThreshold(0);
 }
 
-void DefaultRearrangement::setNThreshold(double nThreshold)
+void Rearrangement::setNThreshold(double nThreshold)
 {
   if (nThreshold < 0 || nThreshold > 1)
   {
@@ -324,12 +323,12 @@ void DefaultRearrangement::setNThreshold(double nThreshold)
   _nThreshold = nThreshold;
 }
 
-double DefaultRearrangement::getNThreshold() const
+double Rearrangement::getNThreshold() const
 {
   return _nThreshold;
 }
 
-void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
+void Rearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
 {  
   _id = Invalid;
   assert(topSegment.get());
@@ -361,7 +360,7 @@ void DefaultRearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
 // there is a rearrangement in the homolgous segment in its sibling 
 // genome.  In general, we can expect about half of segments to correspond
 // to such cases.   
-bool DefaultRearrangement::scanNothingCycle(
+bool Rearrangement::scanNothingCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment.get());
@@ -437,7 +436,7 @@ bool DefaultRearrangement::scanNothingCycle(
 
 // Segment is an inverted descendant of another Segment but 
 // otherwise no rearrangement.  
-bool DefaultRearrangement::scanInversionCycle(
+bool Rearrangement::scanInversionCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment.get());
@@ -482,7 +481,7 @@ bool DefaultRearrangement::scanInversionCycle(
 // If true, _cur will store the insertion 'candidate'
 // It must be further verified that this segment has no parent to
 // distinguish between destination of transposition and insertion. 
-bool DefaultRearrangement::scanInsertionCycle(
+bool Rearrangement::scanInsertionCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment.get());
@@ -580,7 +579,7 @@ bool DefaultRearrangement::scanInsertionCycle(
 // If true, _leftParent will store the deletion 'candidate'
 // It must be further verified that this segment has no child to
 // distinguish between source of transposition and deletion. 
-bool DefaultRearrangement::scanDeletionCycle(
+bool Rearrangement::scanDeletionCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment.get());
@@ -662,7 +661,7 @@ bool DefaultRearrangement::scanDeletionCycle(
 // the other half
 // NEED TO REVISE WITH STRONGER CRITERIA -- right now any operation
 // next to an endpoint can get confused with a translocation.  
-bool DefaultRearrangement::scanTranslocationCycle(
+bool Rearrangement::scanTranslocationCycle(
   TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment.get());
@@ -695,8 +694,8 @@ bool DefaultRearrangement::scanTranslocationCycle(
 }
 
 // leaves duplication on _cur and _right
-bool DefaultRearrangement::scanDuplicationCycle(
-  TopSegmentIteratorConstPtr topSegment)
+bool Rearrangement::scanDuplicationCycle(
+    TopSegmentIteratorConstPtr topSegment)
 {
   assert(topSegment.get());
   resetStatus(topSegment);
