@@ -283,7 +283,7 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     CuAssertTrue(_testCase, dnaIt->getChar() == ancSeq[i]);
   }
-  TopSegmentIteratorPtr topIt = leafGenome->getTopSegmentIterator();
+  TopSegmentIteratorConstPtr topIt = leafGenome->getTopSegmentIterator();
   n = leafGenome->getNumTopSegments();
   for (; topIt->getArrayIndex() < n; topIt->toRight())
   {
@@ -299,7 +299,7 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
       CuAssertTrue(_testCase, topIt->getNextParalogyIndex() == 7);
     }
   }
-  BottomSegmentIteratorPtr botIt = ancGenome->getBottomSegmentIterator();
+  BottomSegmentIteratorConstPtr botIt = ancGenome->getBottomSegmentIterator();
   n = ancGenome->getNumBottomSegments();
   for (; botIt->getArrayIndex() < n; botIt->toRight())
   {

@@ -648,10 +648,8 @@ void MafWriteGenomes::updateRefParseInfo()
   BottomSegmentIteratorPtr bottomIterator = 
      _refGenome->getBottomSegmentIterator();
   TopSegmentIteratorPtr topIterator = _refGenome->getTopSegmentIterator();
-  BottomSegmentIteratorConstPtr bend = _refGenome->getBottomSegmentEndIterator();
-  TopSegmentIteratorConstPtr tend = _refGenome->getTopSegmentEndIterator();
 
-  while (bottomIterator != bend && topIterator != tend)
+  while ((not bottomIterator->atEnd()) && (not topIterator->atEnd()))
   {
     bool bright = false;
     bool tright = false;

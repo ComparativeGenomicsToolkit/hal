@@ -43,7 +43,10 @@ public:
                    bool unique,
                    bool onlyOrthologs);
     
-   /// @cond TEST
+   /** Destructor */
+    virtual ~ColumnIterator();
+
+    /// @cond TEST
    // we can compare genomes by pointers (because they are persistent
    // and unique, though it's still hacky) but we can't do the same 
    // for anything else, including sequences.  
@@ -187,11 +190,6 @@ private:
    mutable stTree *_tree;
    mutable bool _unique;
    mutable bool _onlyOrthologs;
-
-private:
-   friend class counted_ptr<ColumnIterator>;
-   friend class counted_ptr<const ColumnIterator>;
-    virtual ~ColumnIterator();
 };
 
 inline std::ostream& operator<<(std::ostream& os, const ColumnIterator& cit)

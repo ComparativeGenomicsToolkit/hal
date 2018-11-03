@@ -24,7 +24,11 @@ class SegmentedSequence
 {
 public:   
 
-   /** Get the total length of the DNA sequence in the sequence*/
+   /** Destructor */
+    virtual ~SegmentedSequence() {
+    }
+
+    /** Get the total length of the DNA sequence in the sequence*/
    virtual hal_size_t getSequenceLength() const = 0;
    
    /** Get the number of top segements 
@@ -47,9 +51,6 @@ public:
    virtual TopSegmentIteratorConstPtr getTopSegmentIterator(
      hal_index_t position = 0) const = 0;
 
-   /** Get a topSegment end iterator (one beyond last element in list) */
-   virtual TopSegmentIteratorConstPtr getTopSegmentEndIterator() const = 0;
-
    /** Get a bottom segment iterator
     * @param position Index in segment array of returned iterator */
    virtual BottomSegmentIteratorPtr getBottomSegmentIterator(
@@ -59,10 +60,6 @@ public:
     * @param position Index in segment array of returned iterator */
    virtual BottomSegmentIteratorConstPtr getBottomSegmentIterator(
      hal_index_t position = 0) const = 0;
-
-   /** Get a bottomSegment end iterator (one beyond last element in list) */
-   virtual BottomSegmentIteratorConstPtr getBottomSegmentEndIterator() 
-     const = 0;
 
    /** Get a DNA iterator
     * @param position Index in genome of returned iterator */
@@ -163,11 +160,6 @@ public:
      hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
      bool atomic = false) const = 0;
 
-protected:
-
-   /** Destructor */
-    virtual ~SegmentedSequence() {
-    }
 };
 
 }

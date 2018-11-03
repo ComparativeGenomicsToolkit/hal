@@ -42,7 +42,7 @@ void addIdenticalParentChild(hal::AlignmentPtr alignment,
   child->setDimensions(seqVec);
 
   bi = parent->getBottomSegmentIterator();
-  for (; bi != parent->getBottomSegmentEndIterator(); bi->toRight())
+  for (; not bi->atEnd(); bi->toRight())
   {
     bs.set(bi->getBottomSegment()->getArrayIndex() * segmentLength, 
            segmentLength);
@@ -54,7 +54,7 @@ void addIdenticalParentChild(hal::AlignmentPtr alignment,
   }
      
   ti = child->getTopSegmentIterator();
-  for (; ti != child->getTopSegmentEndIterator(); ti->toRight())
+  for (; not ti->atEnd(); ti->toRight())
   {
     ts.set(ti->getTopSegment()->getArrayIndex() * segmentLength, 
            segmentLength, 
@@ -88,11 +88,9 @@ void makeInsGap(TopSegmentIteratorPtr ti)
   Genome* genome = ti->getTopSegment()->getGenome();
   Genome* parent = genome->getParent();
   BottomSegmentIteratorPtr bi = parent->getBottomSegmentIterator();
-  BottomSegmentIteratorConstPtr biEnd = parent->getBottomSegmentEndIterator();
-  TopSegmentIteratorConstPtr tiEnd = genome->getTopSegmentEndIterator();
   assert(ti->hasParent() == true);
   bi->toParent(ti);
-  while (bi != biEnd)
+  while (not bi->atEnd())
   {
     hal_index_t childIndex = bi->getBottomSegment()->getChildIndex(0);
     if (childIndex == (hal_index_t)(genome->getNumTopSegments() - 1))
@@ -108,7 +106,7 @@ void makeInsGap(TopSegmentIteratorPtr ti)
   TopSegmentIteratorPtr topIt = ti->copy();
   topIt->getTopSegment()->setParentIndex(NULL_INDEX);
   topIt->toRight();
-  while (topIt != tiEnd)
+  while (not topIt->atEnd())
   {
     hal_index_t parentIndex = topIt->getTopSegment()->getParentIndex();
     topIt->getTopSegment()->setParentIndex(parentIndex - 1);
@@ -122,17 +120,15 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
   Genome* genome = parent->getChild(0);
   BottomSegmentIteratorPtr bi = botIt->copy();
   BottomSegmentIteratorPtr bi2 = botIt->copy();
-  BottomSegmentIteratorConstPtr biEnd = parent->getBottomSegmentEndIterator();
   TopSegmentIteratorPtr ti =  genome->getTopSegmentIterator();
   TopSegmentIteratorPtr ti2 =  genome->getTopSegmentIterator();
-  TopSegmentIteratorConstPtr tiEnd = genome->getTopSegmentEndIterator();
   assert(bi->hasChild(0) == true);
   hal_index_t prevIndex = bi->getBottomSegment()->getChildIndex(0);
   bool prevReversed = bi->getBottomSegment()->getChildReversed(0);
   ti->toChild(bi, 0);
   bi->getBottomSegment()->setChildIndex(0, NULL_INDEX);
   bi->toRight();
-  while (bi != biEnd)
+  while (not bi->atEnd())
   {
     hal_index_t prevIndex2 = bi->getBottomSegment()->getChildIndex(0);
     bool prevReversed2 = bi->getBottomSegment()->getChildReversed(0);
@@ -146,7 +142,7 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
     swap(prevReversed, prevReversed2);
   }
 
-  while (ti != tiEnd)
+  while (not ti->atEnd())
   {
     hal_index_t parentIndex = ti->getTopSegment()->getParentIndex();
     if (parentIndex == (hal_index_t)(parent->getNumBottomSegments() - 1))
@@ -207,9 +203,7 @@ void RearrangementInsertionTest::createCallBack(AlignmentPtr alignment)
   // stagger insertions to prevent gapped iterators from being larger
   // than a segment
   size_t count = 0;
-  for (bi = parent->getBottomSegmentIterator();
-       bi != parent->getBottomSegmentEndIterator();
-       bi->toRight())
+  for (bi = parent->getBottomSegmentIterator(); not bi->atEnd(); bi->toRight())
   {
     if (bi->hasChild(0))
     {

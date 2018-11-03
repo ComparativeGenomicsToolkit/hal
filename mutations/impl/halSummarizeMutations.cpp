@@ -103,7 +103,6 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
            (!_targetSet || _targetSet->find(genomeName) != _targetSet->end()))
   {
     TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
-    TopSegmentIteratorConstPtr topEnd = genome->getTopSegmentEndIterator();
     BottomSegmentIteratorConstPtr parIt = parent->getBottomSegmentIterator();
 
     rearrangementAnalysis(genome, stats);

@@ -22,6 +22,9 @@ namespace hal {
 class Segment
 {
 public:
+   /** Destructor */
+    virtual ~Segment() {
+    }
 
    /** Set the current array index of the segment.  This writes no information
     * to the database, but just moves the position of the segment
@@ -142,12 +145,6 @@ public:
 
    /** Print contents of segment */
    virtual void print(std::ostream& os) const = 0;
-
-protected:
-   friend class counted_ptr<Segment>;
-   friend class counted_ptr<const Segment>;
-    virtual ~Segment() {
-    }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Segment& s)

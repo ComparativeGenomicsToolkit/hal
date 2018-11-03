@@ -301,11 +301,6 @@ TopSegmentIteratorConstPtr MMapGenome::getTopSegmentIterator(hal_index_t segment
   return TopSegmentIteratorConstPtr(newIt);
 }
 
-TopSegmentIteratorConstPtr MMapGenome::getTopSegmentEndIterator() const
-{
-  return getTopSegmentIterator(getNumTopSegments());
-}
-
 BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmentIndex)
 {
   MMapBottomSegment* newSeg = new MMapBottomSegment(this, segmentIndex);
@@ -325,11 +320,6 @@ BottomSegmentIteratorConstPtr MMapGenome::getBottomSegmentIterator(hal_index_t s
   return BottomSegmentIteratorConstPtr(newIt);
 }
 
-BottomSegmentIteratorConstPtr MMapGenome::getBottomSegmentEndIterator() const
-{
-  return getBottomSegmentIterator(getNumBottomSegments());
-}
-   
 DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position)
 {
   MMapDNAIterator* newIt = new MMapDNAIterator(this, position);

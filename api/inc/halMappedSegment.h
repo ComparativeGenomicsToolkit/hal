@@ -27,7 +27,11 @@ class MappedSegment : public virtual SlicedSegment
 {
 public:
 
-   /** Get the original segment from which this segment was mapped */
+   /** Destructor */
+    virtual ~MappedSegment() {
+    }
+
+    /** Get the original segment from which this segment was mapped */
    virtual SlicedSegmentConstPtr getSource() const;
 
    /** Comparison used to store in stl sets and maps.  We sort based
@@ -136,13 +140,6 @@ public:
                          hal_size_t minLength,
                          const Genome *coalescenceLimit,
                          const Genome *mrca);
-
-protected:
-   friend class counted_ptr<MappedSegment>;
-   friend class counted_ptr<const MappedSegment>;
-    virtual ~MappedSegment() {
-    }
-
 protected:
 
    MappedSegment(SegmentIteratorConstPtr source,
@@ -266,33 +263,33 @@ protected:
 
 inline hal::TopSegmentIteratorConstPtr hal::MappedSegment::targetAsTop() const
 {
-  return _target.downCast<TopSegmentIteratorConstPtr>();
+    return std::dynamic_pointer_cast<const TopSegmentIterator>(_target);
 }
 
 inline 
 hal::BottomSegmentIteratorConstPtr hal::MappedSegment::targetAsBottom() const
 {
-  return _target.downCast<BottomSegmentIteratorConstPtr>();
+    return std::dynamic_pointer_cast<const BottomSegmentIterator>(_target);
 }
 
 inline hal::TopSegmentIteratorConstPtr hal::MappedSegment::sourceAsTop() const
 {
-  return _source.downCast<TopSegmentIteratorConstPtr>();
+    return std::dynamic_pointer_cast<const TopSegmentIterator>(_source);
 }
 
 inline 
 hal::BottomSegmentIteratorConstPtr hal::MappedSegment::sourceAsBottom() const
 {
-  return _source.downCast<BottomSegmentIteratorConstPtr>();
+    return std::dynamic_pointer_cast<const BottomSegmentIterator>(_source);
 }
 
 inline hal::SegmentIteratorConstPtr hal::MappedSegment::sourceCopy() const
 {
-  if (_source->isTop())
-  {
+  if (_source->isTop()) {
     return sourceAsTop()->copy();
+  } else {
+      return sourceAsBottom()->copy();
   }
-  return sourceAsBottom()->copy();
 }
 
 #endif

@@ -127,9 +127,9 @@ void MappedSegmentMapUpTest::createCallBack(AlignmentPtr alignment)
 
   for (size_t i = 0; i < 5; ++i)
   {
-    const Genome* g = gs[i];
-    const Genome* parent = g->getParent();
-    const Genome* child = i == 4 ? NULL : g->getChild(0);
+    Genome* g = gs[i];
+    Genome* parent = g->getParent();
+    Genome* child = i == 4 ? NULL : g->getChild(0);
     hal_size_t segLen = g->getSequenceLength() / g->getNumTopSegments();
     hal_size_t psegLen = parent->getSequenceLength() / 
        parent->getNumTopSegments();
@@ -161,9 +161,9 @@ void MappedSegmentMapUpTest::createCallBack(AlignmentPtr alignment)
   
   for (size_t i = 0; i < 5; ++i)
   {
-    const Genome* g = gis[i];
-    const Genome* parent = g->getParent();
-    const Genome* child = i == 4 ? NULL : g->getChild(0);
+      Genome* g = gis[i];
+      Genome* parent = g->getParent();
+      Genome* child = i == 4 ? NULL : g->getChild(0);
     hal_size_t segLen = g->getSequenceLength() / g->getNumTopSegments();
     hal_size_t psegLen = parent->getSequenceLength() / 
        parent->getNumTopSegments();

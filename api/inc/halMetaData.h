@@ -22,7 +22,11 @@ class MetaData
 {
 public:
     
-   /** Get read-only reference to the map of metadata */
+   /** Destructor */
+    virtual ~MetaData() {
+    }
+
+    /** Get read-only reference to the map of metadata */
    virtual const std::map<std::string, std::string>& getMap() const = 0;
    
    /** Get the value associated with a key (throws error if key doesn't exist)
@@ -37,12 +41,6 @@ public:
    /** Determine if key exists in metadata 
     * @param key Key to test */
    virtual bool has(const std::string& key) const = 0;
-
-protected:
-   
-   /** Destructor */
-    virtual ~MetaData() {
-    }
 };
 
 }

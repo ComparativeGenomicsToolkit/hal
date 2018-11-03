@@ -7,6 +7,7 @@
 #ifndef _HALBOTTOMSEGMENTITERATOR_H
 #define _HALBOTTOMSEGMENTITERATOR_H
 
+#include <cassert>
 #include "halDefs.h"
 #include "halBottomSegment.h"
 #include "halSegmentIterator.h"
@@ -62,10 +63,22 @@ public:
     }
 
    /** Test equality with other iterator (current implementation does not
-    * take into account reverse state or offsets -- too review)
+    * take into account reverse state or offsets -- FIXME: too review). 
+    * FIXME merge with operator==?? 
     * @param other Iterator to test equality to */
     bool equals(BottomSegmentIteratorConstPtr other) const;
 
+    /* equality operator */
+    bool operator==(const BottomSegmentIterator& other) const {
+        assert(_bottomSegment->getGenome() == other.getBottomSegment()->getGenome());
+        return getArrayIndex() == other.getArrayIndex();
+    }
+
+    /* inequality operator */
+    bool operator!=(const BottomSegmentIterator& other) const {
+        return !(*this == other);
+    }
+    
     // FIXME: document or change way getting segment works
     virtual SegmentPtr getSegment();
     virtual SegmentConstPtr getSegment() const;
@@ -89,8 +102,6 @@ public:
    virtual hal_index_t getLeftChildIndex(hal_size_t i) const;
    virtual hal_index_t getRightChildIndex(hal_size_t i) const;
 private:
-   friend class counted_ptr<BottomSegmentIterator>;
-   friend class counted_ptr<const BottomSegmentIterator>;
    virtual hal_size_t getNumSegmentsInGenome() const;
    BottomSegmentPtr _bottomSegment;
 };
@@ -110,7 +121,6 @@ inline bool operator!=(BottomSegmentIteratorConstPtr p1,
 {
   return !(p1 == p2);
 }
-
 }
 
 

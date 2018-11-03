@@ -27,12 +27,14 @@ static inline double uniformDbl(double min, double max)
   return rval * (max - min) + min;
 }
 
+#if UNUSED
 static inline string randName()
 {
   stringstream ss;
   ss << "Genome_" << rand();
   return ss.str();
 }
+#endif
 
 static inline bool exponEvent(double mu)
 {

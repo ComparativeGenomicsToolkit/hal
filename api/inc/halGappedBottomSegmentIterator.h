@@ -22,7 +22,11 @@ class GappedBottomSegmentIterator : virtual public GappedSegmentIterator
 {
 public:
    
-   /** Return a copy of the iterator */
+   /** Destructor */
+    virtual ~GappedBottomSegmentIterator() {
+    }
+
+    /** Return a copy of the iterator */
    virtual GappedBottomSegmentIteratorPtr copy() = 0;
 
    /** Return a copy of the iterator */
@@ -62,13 +66,6 @@ public:
     * @param ts This will be the left segment of the current iterator. The 
     * right segment will be extended as far as possible */
    virtual void setLeft(BottomSegmentIteratorConstPtr bs) const = 0;
-
-
-protected:
-   friend class counted_ptr<GappedBottomSegmentIterator>;
-   friend class counted_ptr<const GappedBottomSegmentIterator>;
-    virtual ~GappedBottomSegmentIterator() {
-    }
 };
 
 inline bool operator==(GappedBottomSegmentIteratorConstPtr p1,

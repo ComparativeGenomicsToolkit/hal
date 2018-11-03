@@ -18,6 +18,9 @@ namespace hal {
 class SequenceIterator
 {
 public:
+   /** Destructor */
+    virtual ~SequenceIterator() {
+    }
    /** Create a duplicate iterator referring to the same sequence
     * which itself is not copied */
    virtual SequenceIteratorPtr copy() = 0;
@@ -40,12 +43,6 @@ public:
 
    /** Test if iterator points to same sequence as other iterator */
    virtual bool equals(SequenceIteratorConstPtr p2) const = 0;
-
-protected:
-   friend class counted_ptr<SequenceIterator>;
-   friend class counted_ptr<const SequenceIterator>;
-    virtual ~SequenceIterator() {
-    }
 };
 
 inline bool operator==(SequenceIteratorConstPtr p1,

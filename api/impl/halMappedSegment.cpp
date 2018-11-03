@@ -21,8 +21,8 @@ MappedSegment::MappedSegment(
   SegmentIteratorConstPtr source,
   SegmentIteratorConstPtr target)
   :
-  _source(source.downCast<SegmentIteratorConstPtr>()),
-  _target(target.downCast<SegmentIteratorConstPtr>())
+    _source(std::dynamic_pointer_cast<const SegmentIterator>(source)),
+    _target(std::dynamic_pointer_cast<const SegmentIterator>(target))
 {
   assert(_source->getLength() == _target->getLength());
 }
@@ -44,8 +44,7 @@ SlicedSegmentConstPtr MappedSegment::getSource() const
 
 bool MappedSegment::lessThan(const MappedSegmentConstPtr& other) const
 {
-  MappedSegmentConstPtr od = const_cast<MappedSegmentConstPtr&>(
-    other).downCast<MappedSegmentConstPtr>();
+  MappedSegmentConstPtr od = std::dynamic_pointer_cast<const MappedSegment>(other);
   assert(od.get() != NULL);
   int res = fastComp(_target, od->_target);
   if (res == 0)
@@ -58,8 +57,7 @@ bool MappedSegment::lessThan(const MappedSegmentConstPtr& other) const
 bool MappedSegment::lessThanBySource(
   const MappedSegmentConstPtr& other) const
 {
-  MappedSegmentConstPtr od = const_cast<MappedSegmentConstPtr&>(
-    other).downCast<MappedSegmentConstPtr>();
+    MappedSegmentConstPtr od = std::dynamic_pointer_cast<const MappedSegment>(other);
   assert(od.get() != NULL);
   int res = fastComp(_source, od->_source);
   if (res == 0)
@@ -71,8 +69,7 @@ bool MappedSegment::lessThanBySource(
 
 bool MappedSegment::equals(const MappedSegmentConstPtr& other) const
 {
-  MappedSegmentConstPtr od = const_cast<MappedSegmentConstPtr&>(
-    other).downCast<MappedSegmentConstPtr>();
+    MappedSegmentConstPtr od = other;
   assert(od.get() != NULL);
   int res = fastComp(_source, od->_source);
   if (res == 0)
@@ -101,26 +98,22 @@ MappedSegmentConstPtr MappedSegment::copy() const
   SegmentIteratorConstPtr srcCpy;
   if (_source->isTop())
   {
-    srcCpy = _source.downCast<TopSegmentIteratorConstPtr>()->copy();
+    srcCpy = std::dynamic_pointer_cast<const TopSegmentIterator>(_source)->copy();
   }
   else
   {
-    srcCpy = _source.downCast<BottomSegmentIteratorConstPtr>()->copy();
+    srcCpy = std::dynamic_pointer_cast<const BottomSegmentIterator>(_source)->copy();
   }
-  SegmentIteratorConstPtr srcIt = 
-     srcCpy.downCast<SegmentIteratorConstPtr>();
+  SegmentIteratorConstPtr srcIt = std::dynamic_pointer_cast<const SegmentIterator>(srcCpy);
 
   SegmentIteratorConstPtr tgtCpy;
   if (_target->isTop())
   {
-    tgtCpy = _target.downCast<TopSegmentIteratorConstPtr>()->copy();
-  }
-  else
-  {
-    tgtCpy = _target.downCast<BottomSegmentIteratorConstPtr>()->copy();
+      tgtCpy = std::dynamic_pointer_cast<const TopSegmentIterator>(_target)->copy();
+  } else { tgtCpy = std::dynamic_pointer_cast<const BottomSegmentIterator>(_target)->copy();
   }
   SegmentIteratorConstPtr tgtIt = 
-     tgtCpy.downCast<SegmentIteratorConstPtr>();
+     std::static_pointer_cast<const SegmentIterator>(tgtCpy);
 
   assert(srcIt->getStartPosition() == _source->getStartPosition() &&
          srcIt->getEndPosition() == _source->getEndPosition());
@@ -287,9 +280,8 @@ int MappedSegment::boundComp(const SegmentIteratorConstPtr& s1,
   
   if (s1->isTop() && !s2->isTop())
   {
-    BottomSegmentIteratorConstPtr bot = 
-       const_cast<SegmentIteratorConstPtr&>(
-         s2).downCast<BottomSegmentIteratorConstPtr>();
+    BottomSegmentIteratorConstPtr bot =
+        std::dynamic_pointer_cast<const BottomSegmentIterator>(s2);
     hal_index_t lb = bot->getTopParseIndex();
     hal_index_t ub = lb;
     if ((hal_size_t)bot->getArrayIndex() <
@@ -311,9 +303,8 @@ int MappedSegment::boundComp(const SegmentIteratorConstPtr& s1,
   }
   else if (!s1->isTop() && s2->isTop())
   {
-    TopSegmentIteratorConstPtr top = 
-       const_cast<SegmentIteratorConstPtr&>(
-         s2).downCast<TopSegmentIteratorConstPtr>();
+    TopSegmentIteratorConstPtr top =
+        std::dynamic_pointer_cast<const TopSegmentIterator>(s2);
     hal_index_t lb = top->getBottomParseIndex();
     hal_index_t ub = lb;
     if ((hal_size_t)top->getArrayIndex() < 
@@ -685,7 +676,7 @@ hal_size_t MappedSegment::mapUp(
         (doDupes == true || top->isCanonicalParalog() == true))
     {
       bottom->toParent(top);
-      mappedSeg->_target = bottom.downCast<SegmentIteratorConstPtr>();
+      mappedSeg->_target = std::dynamic_pointer_cast<const SegmentIterator>(bottom);
       results.push_back(mappedSeg);
       ++added;
     }
@@ -756,13 +747,13 @@ hal_size_t MappedSegment::mapDown(
   {
     TopSegmentIteratorConstPtr top = child->getTopSegmentIterator();
     SegmentIteratorConstPtr target = mappedSeg->_target;
-    BottomSegmentIteratorConstPtr bottom = 
-       target.downCast<BottomSegmentIteratorConstPtr>();
+    BottomSegmentIteratorConstPtr bottom =
+        std::dynamic_pointer_cast<const BottomSegmentIterator>(target);
 
     if (bottom->hasChild(childIndex) == true && bottom->getLength() >= minLength)
     {
       top->toChild(bottom, childIndex);
-      mappedSeg->_target = top.downCast<SegmentIteratorConstPtr>();
+      mappedSeg->_target = std::dynamic_pointer_cast<const SegmentIterator>(top);
       results.push_back(mappedSeg);
       ++added;
     }
@@ -831,16 +822,18 @@ hal_size_t MappedSegment::mapSelf(
   {
     SegmentIteratorConstPtr target = mappedSeg->_target;
     SegmentIteratorConstPtr source = mappedSeg->_source;
-    TopSegmentIteratorConstPtr top = 
-       target.downCast<TopSegmentIteratorConstPtr>();
+    TopSegmentIteratorConstPtr top =
+        std::dynamic_pointer_cast<const TopSegmentIterator>(target);
     TopSegmentIteratorConstPtr topCopy = top->copy();
     do
     {
-      SegmentIteratorConstPtr newSource = source->isTop() ? 
-         (SegmentIteratorConstPtr)source.downCast<
-           TopSegmentIteratorConstPtr>()->copy() :
-         (SegmentIteratorConstPtr)source.downCast<
-           BottomSegmentIteratorConstPtr>()->copy();
+        // FIXME: why isn't copy() polymorphic?
+        SegmentIteratorConstPtr newSource;
+        if (source->isTop()) {
+            newSource = std::dynamic_pointer_cast<const TopSegmentIterator>(source)->copy();
+        } else {
+            newSource = std::dynamic_pointer_cast<const BottomSegmentIterator>(source)->copy();
+        }
       TopSegmentIteratorConstPtr newTop = topCopy->copy();
       MappedSegmentConstPtr newMappedSeg(
         new MappedSegment(newSource, newTop));
@@ -1029,8 +1022,9 @@ MappedSegment::clipAagainstB(MappedSegmentConstPtr segA,
   {
     swap(startB, endB);
   }
-  MappedSegmentPtr left = segA;
-  MappedSegmentPtr middle = segA->copy();
+  // FIXME: my are these cast from const?
+  MappedSegmentPtr left = const_pointer_cast<MappedSegment>(segA);
+  MappedSegmentPtr middle = const_pointer_cast<MappedSegment>(segA->copy());
   MappedSegmentPtr right;
 
   hal_index_t startO = segA->getStartOffset();
@@ -1041,7 +1035,7 @@ MappedSegment::clipAagainstB(MappedSegmentConstPtr segA,
   hal_index_t middleSize = length - leftSize - rightSize;
   if (rightSize > 0)
   {
-    right = segA->copy();
+      right = const_pointer_cast<MappedSegment>(segA->copy());
   }
 
   assert (overlapCat == AOverlapsLeftOfB || overlapCat == BOverlapsLeftOfA ||
@@ -1065,7 +1059,7 @@ MappedSegment::clipAagainstB(MappedSegmentConstPtr segA,
   }
   else
   {
-    middle = segA;
+      middle = const_pointer_cast<MappedSegment>(segA);
   }
     
   leftSlice = leftSize;

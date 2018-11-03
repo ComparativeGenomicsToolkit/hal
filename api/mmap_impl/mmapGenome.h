@@ -107,15 +107,11 @@ public:
     TopSegmentIteratorConstPtr getTopSegmentIterator(
         hal_index_t position) const;
 
-    TopSegmentIteratorConstPtr getTopSegmentEndIterator() const;
-
     BottomSegmentIteratorPtr getBottomSegmentIterator(
         hal_index_t position);
 
     BottomSegmentIteratorConstPtr getBottomSegmentIterator(
         hal_index_t position) const;
-
-    BottomSegmentIteratorConstPtr getBottomSegmentEndIterator() const;
 
     DNAIteratorPtr getDNAIterator(hal_index_t position);
 

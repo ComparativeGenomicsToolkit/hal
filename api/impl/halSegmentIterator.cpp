@@ -460,8 +460,16 @@ void SegmentIterator::toSite(hal_index_t position, bool slice) const
        getSegment()->getLength() - position - 1;
     if (_reversed)
     {
+        // FIXME: why disabled??
 //       swap(_startOffset, _endOffset);
     }
   }  
 }
 
+bool SegmentIterator::atEnd() const {
+    if (_reversed == false) {
+        return ((hal_size_t)getArrayIndex() >= getNumSegmentsInGenome());
+    } else {
+        return (getArrayIndex() < 0);
+    }
+}

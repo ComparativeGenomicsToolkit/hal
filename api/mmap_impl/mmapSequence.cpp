@@ -23,11 +23,6 @@ TopSegmentIteratorConstPtr MMapSequence::getTopSegmentIterator(
   return _genome->getTopSegmentIterator(idx);
 }
 
-TopSegmentIteratorConstPtr MMapSequence::getTopSegmentEndIterator() const
-{
-  return getTopSegmentIterator(getNumTopSegments());
-}
-
 BottomSegmentIteratorPtr MMapSequence::getBottomSegmentIterator(
   hal_index_t position)
 {
@@ -40,11 +35,6 @@ BottomSegmentIteratorConstPtr MMapSequence::getBottomSegmentIterator(
 {
   hal_size_t idx = position + getBottomSegmentArrayIndex();
   return _genome->getBottomSegmentIterator(idx);
-}
-
-BottomSegmentIteratorConstPtr MMapSequence::getBottomSegmentEndIterator() const
-{
-  return getBottomSegmentIterator(getNumBottomSegments());
 }
 
 DNAIteratorPtr MMapSequence::getDNAIterator(hal_index_t position)

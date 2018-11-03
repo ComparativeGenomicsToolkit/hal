@@ -18,7 +18,11 @@ class DNAIterator
 {
 public:
 
-   /** Get the DNA character at this position (if revsersed is set
+   /** Destructor */
+    virtual ~DNAIterator() {
+    }
+    
+    /** Get the DNA character at this position (if revsersed is set
     * the reverse compelement is returned */
    virtual char getChar() const = 0;
 
@@ -67,13 +71,6 @@ public:
 
    /** Compare (array indexes) of two iterators */
    virtual bool leftOf(DNAIteratorConstPtr& other) const = 0;
-
-protected:
-
-   friend class counted_ptr<DNAIterator>;
-   friend class counted_ptr<const DNAIterator>;
-    virtual ~DNAIterator() {
-    }
 };
 
 }

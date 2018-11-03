@@ -22,6 +22,10 @@ class GappedTopSegmentIterator : virtual public GappedSegmentIterator
 {
 public:
    
+   /** Destructor */
+    virtual ~GappedTopSegmentIterator() {
+    }
+    
    /** Return a copy of the iterator */
    virtual GappedTopSegmentIteratorPtr copy() = 0;
 
@@ -76,12 +80,6 @@ public:
     * the column iterator or mappedSegment interface.  It is also the segment
     * that is connected from its parent's down edge.*/
    virtual bool isCanonicalParalog() const = 0;
-
-protected:
-   friend class counted_ptr<GappedTopSegmentIterator>;
-   friend class counted_ptr<const GappedTopSegmentIterator>;
-    virtual ~GappedTopSegmentIterator() {
-    }
 };
 
 

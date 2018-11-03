@@ -462,7 +462,7 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
         DNAIteratorConstPtr graIt = 
            *colMap->find(graSeq->getSequence())->second->begin();
 
-        if (colNumber >= 0 && colNumber < 10)
+        if (colNumber < 10)
         {
           CuAssertTrue(_testCase, dnaIt->getReversed() == false);
           CuAssertTrue(_testCase, 

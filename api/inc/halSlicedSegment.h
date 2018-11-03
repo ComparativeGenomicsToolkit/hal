@@ -23,6 +23,9 @@ class MappedSegment;
 class SlicedSegment: public virtual Segment
 {
 public:
+   /** Destructor */
+    virtual ~SlicedSegment() {
+    }
 
    /** switch to segment's reverse complement */
    virtual void toReverse() const = 0;
@@ -56,13 +59,6 @@ public:
 
    /** Check whether iterator is on segment's reverse complement */
    virtual bool getReversed() const = 0;
-
-
-protected:
-   friend class counted_ptr<SlicedSegment>;
-   friend class counted_ptr<const SlicedSegment>;
-    virtual ~SlicedSegment() {
-    }
 };
 
 inline bool operator<(SlicedSegmentConstPtr segmentIt,

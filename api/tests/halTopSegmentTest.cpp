@@ -90,9 +90,7 @@ void TopSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
   }
   
   TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator(0);
-  TopSegmentIteratorConstPtr tsEnd = 
-     ancGenome->getTopSegmentEndIterator();
-  for (size_t i = 0; tsIt != tsEnd; tsIt->toRight(), ++i)
+  for (size_t i = 0; not tsIt->atEnd(); tsIt->toRight(), ++i)
   {
     CuAssertTrue(_testCase, 
                  (size_t)tsIt->getTopSegment()->getArrayIndex() == i);
@@ -516,7 +514,7 @@ void TopSegmentIsGapTest::createCallBack(AlignmentPtr alignment)
   child1->setDimensions(seqVec);
 
   bi = parent1->getBottomSegmentIterator();
-  for (; bi != parent1->getBottomSegmentEndIterator(); bi->toRight())
+  for (; not bi->atEnd(); bi->toRight())
   {
     bs.set(bi->getBottomSegment()->getArrayIndex() * 2, 2);
     bs._children.clear();
@@ -527,7 +525,7 @@ void TopSegmentIsGapTest::createCallBack(AlignmentPtr alignment)
   }
      
   ti = child1->getTopSegmentIterator();
-  for (; ti != child1->getTopSegmentEndIterator(); ti->toRight())
+  for (; not ti->atEnd(); ti->toRight())
   {
     ts.set(ti->getTopSegment()->getArrayIndex() * 2, 2, 
            ti->getTopSegment()->getArrayIndex());

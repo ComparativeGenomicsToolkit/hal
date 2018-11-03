@@ -18,6 +18,9 @@ namespace hal {
 class BottomSegment : virtual public Segment
 {
 public:
+   /** Destructor */
+    virtual ~BottomSegment() {
+    }
 
    /** Get the number of child genomes (note this is a number of slots
     * and that the current segment could actually have fewer children) */
@@ -84,12 +87,6 @@ public:
     * is in the same sequence)
     * @param i index of child genome to query */
    virtual hal_index_t getRightChildIndex(hal_size_t i) const = 0;
-
-protected:
-   friend class counted_ptr<BottomSegment>;
-   friend class counted_ptr<const BottomSegment>;
-    virtual ~BottomSegment() {
-    }
 };
 
 }

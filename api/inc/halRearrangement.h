@@ -38,7 +38,11 @@ public:
                  double nThreshold = DefaultNThreshold,
                  bool atomic = false);
 
-   /** Get the ID of the rearrangement */
+   /** Destructor */
+    virtual ~Rearrangement() {
+    }
+
+    /** Get the ID of the rearrangement */
    virtual ID getID() const;
    
    /** Get the length of a rearrangement (ie number of bases that were
@@ -153,12 +157,6 @@ private:
    const Genome* _parent;
 
    ID _id;  
-protected:
-   friend class counted_ptr<Rearrangement>;
-   friend class counted_ptr<const Rearrangement>;
-   /** Destructor */
-    virtual ~Rearrangement() {
-    }
 };
 }
 

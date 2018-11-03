@@ -678,7 +678,7 @@ void printPercentID(ostream& os, AlignmentConstPtr alignment,
     throw hal_exception("Genome " + genomeName + " does not exist.");
   }
 
-  ColumnIteratorPtr colIt = refGenome->getColumnIterator();
+  ColumnIteratorConstPtr colIt = refGenome->getColumnIterator();
   // A bit sloppy, but a mapping from genome to (# identical bases, # aligned sites)
   // The # of aligned sites is necessary since a) not all sites are aligned and
   // b) we don't consider anything containing N's to be aligned.
@@ -782,9 +782,9 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
     throw hal_exception("Genome " + genomeName + " does not exist.");
   }
 
-  ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
-                                                         NULL_INDEX, false,
-                                                         false, false, true);
+  ColumnIteratorConstPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
+                                                              NULL_INDEX, false,
+                                                              false, false, true);
   map<const Genome *, vector<hal_size_t> *> histograms;
   while(1) {
     const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
@@ -908,9 +908,9 @@ static void printAllCoverage(ostream& os, AlignmentConstPtr alignment)
   for (hal_size_t i = 0; i < leafGenomes.size(); i++) {
     const Genome *genome = leafGenomes[i];
     // Follow paralogies, but ignore ancestors.
-    ColumnIteratorPtr colIt = genome->getColumnIterator(NULL, 0, 0,
-                                                        NULL_INDEX, false,
-                                                        true, false, true);
+    ColumnIteratorConstPtr colIt = genome->getColumnIterator(NULL, 0, 0,
+                                                             NULL_INDEX, false,
+                                                             true, false, true);
     colIt->setVisitCache(&visitCache);
     // So that we don't accidentally visit the first column if it's
     // already been visited.

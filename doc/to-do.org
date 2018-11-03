@@ -10,3 +10,15 @@ note it would be nice to extend SegmentIterator but the crappy smart pointer int
 * typedef containers for HAL objects (e.g. std::set<MappedSegmentConstPtr>) instead of repeating
 * make more members private
 * change to std::shared_ptr
+* there should not be const pointers for iterators??  Check why const_pointer_cast is needed
+* how useful is it that Top/BottomSegmentIterators are the same base class?  Do you ever just iterate not caring? joel: hmm, not sure. i feel like you almost always *should* care, but IIRC the mappedSegment code uses the generic SegmentIterator and downcasts it based on the isTop() response when it needs to treat it like a top/bottom segment.  This creates dynamic casts, but because SegmentIterator is virtual.
+* Investigate const casts added with std::shared_ptr, are they really needed?
+* Why Genome* rather than smart pointer: halMappedSegmentTest.cpp
+* change most pointer function arguments to be reference.
+* behavior of ColumnIterator: the last column is inclusive, so if you use toRight() on the last base you crash
+* DNAIterator doesn't have a direct way to check for end
+  hal_index_t n = ancGenome->getSequenceLength();
+  DNAIteratorPtr dnaIt = ancGenome->getDNAIterator();
+  for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
+* smart pointer casting:
+https://herbsutter.com/2012/06/21/reader-qa-why-dont-modern-smart-pointers-implicitly-convert-to/

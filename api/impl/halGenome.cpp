@@ -185,8 +185,8 @@ void Genome::copyBottomSegments(Genome *dest) const
   {
     const Sequence *inSeq = seqIt->getSequence();
     const Sequence *outSeq = dest->getSequence(inSeq->getName());
-    BottomSegmentIteratorPtr inBot = inSeq->getBottomSegmentIterator();
-    BottomSegmentIteratorPtr outBot = outSeq->getBottomSegmentIterator();
+    BottomSegmentIteratorPtr inBot = const_pointer_cast<BottomSegmentIterator>(inSeq->getBottomSegmentIterator());
+    BottomSegmentIteratorPtr outBot = const_pointer_cast<BottomSegmentIterator>(outSeq->getBottomSegmentIterator());
 
     if (inSeq->getName() != outSeq->getName()) {
       // This check is important enough that it can't be an assert.
@@ -262,10 +262,8 @@ void Genome::fixParseInfo()
   BottomSegmentIteratorPtr bottomIterator = 
     getBottomSegmentIterator();
   TopSegmentIteratorPtr topIterator = getTopSegmentIterator();
-  BottomSegmentIteratorConstPtr bend = getBottomSegmentEndIterator();
-  TopSegmentIteratorConstPtr tend = getTopSegmentEndIterator();
   int top = 0, bot = 0;
-  while (bottomIterator != bend && topIterator != tend)
+  while ((not bottomIterator->atEnd()) && (not topIterator->atEnd()))
   {
     bool bright = false;
     bool tright = false;

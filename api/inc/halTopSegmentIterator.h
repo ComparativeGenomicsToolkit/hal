@@ -76,9 +76,21 @@ public:
 
    /** Test equality with other iterator (current implementation does not
     * take into account reverse state or offsets -- too review)
+    * FIXME merge with operator==?? 
     * @param other Iterator to test equality to */
     bool equals(TopSegmentIteratorConstPtr other) const;
 
+    /* equality operator */
+    bool operator==(const TopSegmentIterator& other) const {
+        assert(_topSegment->getGenome() == other.getTopSegment()->getGenome());
+        return getArrayIndex() == other.getArrayIndex();
+    }
+
+    /* inequality operator */
+    bool operator!=(const TopSegmentIterator& other) const {
+        return !(*this == other);
+    }
+    
    /** Move iterator to next paralgous segment.  Iterator will be reversed
    * if the next segment is in a different orientation wrt their common
    * parent */
@@ -112,9 +124,6 @@ private:
    virtual hal_size_t getNumSegmentsInGenome() const;
 
    TopSegmentPtr _topSegment;
-
-   friend class counted_ptr<TopSegmentIterator>;
-   friend class counted_ptr<const TopSegmentIterator>;
 };
 
 inline bool operator==(TopSegmentIteratorConstPtr p1,

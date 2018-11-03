@@ -20,6 +20,9 @@ namespace hal {
 class Sequence : public SegmentedSequence
 {
 public:
+   /** Destructor */
+    virtual ~Sequence() {
+    }
 
    /** Basic information describing the dimenisons and name of a sequence
     * required for each sequence when creating a new genome */
@@ -86,11 +89,6 @@ public:
    /** Set the name of this sequence */
    virtual void setName(const std::string &newName) = 0;
 
-protected:
-   
-   /** Destructor */
-    virtual ~Sequence() {
-    }
 };
 
 }

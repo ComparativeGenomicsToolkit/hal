@@ -17,9 +17,9 @@ using namespace hal;
 
 BottomSegmentIterator::
 BottomSegmentIterator(BottomSegment* bottomSegment, 
-                             hal_size_t startOffset, 
-                             hal_size_t endOffset,
-                             bool reversed) :
+                      hal_size_t startOffset, 
+                      hal_size_t endOffset,
+                      bool reversed) :
     SegmentIterator(startOffset, endOffset, reversed),
   _bottomSegment(bottomSegment)
 {

@@ -26,7 +26,11 @@ public:
                     hal_offset_t endOffset = 0,
                     bool reversed = false);
     
-   /** move iterator one segment to the left 
+   /** Destructor */
+    virtual ~SegmentIterator() {
+   }
+
+    /** move iterator one segment to the left 
     * @param leftCutoff If the left segment contains the 
     * genome position (DNA coordinate) specified by leftCutoff
     * the segment iterator is sliced to begin at this position 
@@ -49,6 +53,9 @@ public:
     * though it should be faster on average*/
     virtual void toSite(hal_index_t position, bool slice = true) const;
 
+    /** has the iterator reach the end of the traversal in the direction of
+     * movement? */
+    virtual bool atEnd() const;
     
     // FIXME: document or change way getting segment works
     virtual SegmentPtr getSegment() = 0;
@@ -97,12 +104,6 @@ public:
    virtual void slice(hal_offset_t startOffset ,
                       hal_offset_t endOffset ) const;
    virtual bool getReversed() const;
-
-protected:
-   friend class counted_ptr<SegmentIterator>;
-   friend class counted_ptr<const SegmentIterator>;
-    virtual ~SegmentIterator() {
-   }
 protected:
    virtual bool inRange() const;
    virtual hal_size_t getNumSegmentsInGenome() const;

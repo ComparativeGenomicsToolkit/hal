@@ -23,7 +23,7 @@ void GappedSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
   TopSegmentIteratorPtr ti = child->getTopSegmentIterator();
   BottomSegmentIteratorPtr bi = parent->getBottomSegmentIterator();
   int i = 0;
-  while (ti != child->getTopSegmentEndIterator())
+  while (not ti->atEnd())
   {
     if (i++ % 2)
     {
@@ -128,7 +128,7 @@ void GappedSegmentSimpleIteratorTest2::createCallBack(AlignmentPtr alignment)
   BottomSegmentIteratorPtr bi = parent->getBottomSegmentIterator();
   hal_index_t i = 0;
   bool reversed = true;
-  while (ti != child->getTopSegmentEndIterator())
+  while (not ti->atEnd())
   {
     if (i % 5 == 0)
     {

@@ -24,9 +24,15 @@ namespace hal {
  */
 class Genome : public SegmentedSequence
 {
-public:   
+public:
+    /* Constructor */
     Genome(Alignment *alignment, const std::string &name) : _alignment(alignment), _parentCache(NULL), _name(name), _numChildren(alignment->getChildNames(name).size()) {};
-   /** Get the name of the genome */
+
+    /** Destructor */
+    virtual ~Genome() {
+    }
+
+    /** Get the name of the genome */
    virtual const std::string& getName() const = 0;
 
    /** Reset (or initialize) the dimensions of the genome 
@@ -191,9 +197,6 @@ protected:
    std::string _name;
    mutable hal_index_t _numChildren;
 
-   /** Destructor */
-    virtual ~Genome() {
-    }
 };
 
 

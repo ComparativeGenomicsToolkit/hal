@@ -284,8 +284,7 @@ getIndel(hal_index_t refPos,
   if (refPos == 0) {
     return make_pair(NONE, 0);
   }
-  ColumnIteratorPtr colIt = refGenome->getColumnIterator(targets, 0,
-                                                         refPos - 1);
+  ColumnIteratorConstPtr colIt = refGenome->getColumnIterator(targets, 0, refPos - 1);
   const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
   if (!isStrictSingleCopy(colMap, targets)) {
     // Make sure our assumptions hold about prevPos maps
@@ -339,7 +338,7 @@ static void printIndels(const Genome *refGenome,
 {
   hal_size_t refLength = refGenome->getSequenceLength();
   hal_size_t numSites = 0;
-  ColumnIteratorPtr colIt = refGenome->getColumnIterator(&targets);
+  ColumnIteratorConstPtr colIt = refGenome->getColumnIterator(&targets);
   // good flanking site
   PositionCache knownGoodSites;
   for (hal_index_t refPos = adjacentBases; refPos < refLength - adjacentBases;

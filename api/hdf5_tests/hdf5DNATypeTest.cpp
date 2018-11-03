@@ -30,8 +30,6 @@ using namespace std;
 
 static const hsize_t chunkSizes[] = {0, 4, N/10, N/2, N};
 static const hsize_t numSizes = 5;
-static const hsize_t numChildrens[] = {0,1,2,3,50};
-static const hsize_t numNumChildrens = 5;
 
 static void teardown()
 {

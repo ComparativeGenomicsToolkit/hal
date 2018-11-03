@@ -550,11 +550,6 @@ TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
   return TopSegmentIteratorConstPtr(newIt);
 }
 
-TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentEndIterator() const
-{
-  return getTopSegmentIterator(getNumTopSegments());
-}
-
 BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
   hal_index_t position)
 {
@@ -580,11 +575,6 @@ BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
   return BottomSegmentIteratorConstPtr(newIt);
 }
 
-BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentEndIterator() const
-{
-  return getBottomSegmentIterator(getNumBottomSegments());
-}
-   
 DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position)
 {
   assert(position / 2 <= (hal_index_t)_dnaArray.getSize());

@@ -14,8 +14,8 @@
 #include <cstring>
 #include <cmath>
 #include <algorithm>
+#include <memory>
 #include <limits>
-#include "halCountedPtr.h"
 
 /** 
  *  Keep simple compiler-related definitions in this file. 
@@ -75,11 +75,12 @@ namespace hal {
 
 extern const hal_index_t NULL_INDEX;
 
+
 // FORWARD DECLARATIONS
 #define HAL_FORWARD_DEC_CLASS(T) \
   class T;\
-  typedef counted_ptr<T> T ## Ptr;\
-  typedef counted_ptr<const T> T ## ConstPtr;
+  typedef std::shared_ptr<T> T ## Ptr;                 \
+  typedef std::shared_ptr<const T> T ## ConstPtr;
 
 HAL_FORWARD_DEC_CLASS(Alignment)
 HAL_FORWARD_DEC_CLASS(CLParser)

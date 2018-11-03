@@ -379,12 +379,12 @@ void LodExtract::writeSegments(const Genome* inParent,
          inGenome->getSequence(outSequence->getName());
       if (outGenome != outParent && outSequence->getNumTopSegments() > 0)
       {
-        top = outSequence->getTopSegmentIterator();
+          top = const_pointer_cast<TopSegmentIterator>(outSequence->getTopSegmentIterator());
         outSegment = top;
       }
       else if (outSequence->getNumBottomSegments() > 0)
       {
-        bottom = outSequence->getBottomSegmentIterator();
+          bottom = const_pointer_cast<BottomSegmentIterator>(outSequence->getBottomSegmentIterator());
         outSegment = bottom;
       }
       const LodGraph::SegmentSet* segSet = _graph.getSegmentSet(inSequence);
@@ -427,7 +427,7 @@ void LodExtract::writeUnsampledSequence(const Sequence* outSequence,
   if (outSegment->isTop())
   {
     assert(outSequence->getNumTopSegments() == 1);
-    TopSegmentIteratorPtr top = outSegment.downCast<TopSegmentIteratorPtr>();
+    TopSegmentIteratorPtr top = dynamic_pointer_cast<TopSegmentIterator>(outSegment);
     top->setParentIndex(NULL_INDEX);
     top->setParentReversed(false);
     top->setNextParalogyIndex(NULL_INDEX);
@@ -436,8 +436,7 @@ void LodExtract::writeUnsampledSequence(const Sequence* outSequence,
   else
   {
     assert(outSequence->getNumBottomSegments() == 1);
-    BottomSegmentIteratorPtr bottom = 
-       outSegment.downCast<BottomSegmentIteratorPtr>();
+    BottomSegmentIteratorPtr bottom = dynamic_pointer_cast<BottomSegmentIterator>(outSegment);
     hal_size_t numChildren = bottom->getNumChildren();
     for (hal_size_t childNum = 0; childNum < numChildren; ++childNum)
     {
@@ -593,10 +592,8 @@ void LodExtract::writeParseInfo(Genome* genome)
   BottomSegmentIteratorPtr bottomIterator = 
      genome->getBottomSegmentIterator();
   TopSegmentIteratorPtr topIterator = genome->getTopSegmentIterator();
-  BottomSegmentIteratorConstPtr bend = genome->getBottomSegmentEndIterator();
-  TopSegmentIteratorConstPtr tend = genome->getTopSegmentEndIterator();
 
-  while (bottomIterator != bend && topIterator != tend)
+  while ((not bottomIterator->atEnd()) && (topIterator->atEnd()))
   {
     bool bright = false;
     bool tright = false;

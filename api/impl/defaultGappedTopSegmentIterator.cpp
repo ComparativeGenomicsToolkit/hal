@@ -47,7 +47,7 @@ DefaultGappedTopSegmentIterator::~DefaultGappedTopSegmentIterator()
 
 SegmentPtr DefaultGappedTopSegmentIterator::getSegment()
 {
-    return _left->getSegment();
+    return const_pointer_cast<Segment>(_left->getSegment());
 
 }
 

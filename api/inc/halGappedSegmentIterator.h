@@ -23,7 +23,11 @@ class GappedSegmentIterator : virtual public SegmentIterator
 {
 public:
    
-   /** Get the gap length threshold.  This is the maximum length (in sites)
+   /** Destructor */
+    virtual ~GappedSegmentIterator() {
+    }
+
+    /** Get the gap length threshold.  This is the maximum length (in sites)
     * of an indel such that it can be considered a gap (and therefore ignored
     * in the rearrangement analysis */
    virtual hal_size_t getGapThreshold() const = 0;
@@ -56,12 +60,6 @@ public:
 
    /** Get the Segment array index of the right segment of the iterator */
    virtual hal_index_t getRightArrayIndex() const = 0;
-
-protected:
-   friend class counted_ptr<GappedSegmentIterator>;
-   friend class counted_ptr<const GappedSegmentIterator>;
-    virtual ~GappedSegmentIterator() {
-    }
 };
 
 }

@@ -155,8 +155,7 @@ void addLeaf(AlignmentPtr alignment, const string& name,
   hal_index_t segLen = leaf->getSequenceLength() / numTop;
   bi = lastLeaf->getBottomSegmentIterator();
   ti = leaf->getTopSegmentIterator();
-  for (; bi != lastLeaf->getBottomSegmentEndIterator(); 
-       bi->toRight(), ti->toRight())
+  for (; not bi->atEnd(); bi->toRight(), ti->toRight())
   {
     bs.set(bi->getArrayIndex() * segLen, segLen);
     bs._children.clear();
@@ -301,11 +300,8 @@ void writeParseInfo(Genome* genome)
   BottomSegmentIteratorPtr bottomIterator = 
      genome->getBottomSegmentIterator();
   TopSegmentIteratorPtr topIterator = genome->getTopSegmentIterator();
-  BottomSegmentIteratorConstPtr bend = genome->getBottomSegmentEndIterator();
-  TopSegmentIteratorConstPtr tend = genome->getTopSegmentEndIterator();
 
-  while (bottomIterator != bend && topIterator != tend)
-  {
+  while ((not bottomIterator->atEnd()) && (not topIterator->atEnd())) {
     bool bright = false;
     bool tright = false;
     BottomSegment* bseg = bottomIterator->getBottomSegment();

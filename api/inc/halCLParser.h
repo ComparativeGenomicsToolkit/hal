@@ -32,12 +32,14 @@ class CLParser
 public:
    
    CLParser();
-    virtual ~CLParser() {
+
+    /** Destructor */
+    ~CLParser() {
     }
    
    /** Set the prefix string for an optional argument [Default = "--"]
     * @param prefix The prefix string */
-   virtual void setOptionPrefix(const std::string& prefix);
+    void setOptionPrefix(const std::string& prefix);
 
    /** Add an optional command line argument to the parser 
     * @param name Name of option: will take form of <prefix><name> <value>
@@ -123,10 +125,10 @@ public:
    
    /** Parse the command line arguments, throwing exception on
     * failure. */
-   virtual void parseOptions(int argc, char** argv);
+   void parseOptions(int argc, char** argv);
 
    /** Print the help screen to output stream */
-   virtual void printUsage(std::ostream& os) const; 
+   void printUsage(std::ostream& os) const; 
 
 protected:
 

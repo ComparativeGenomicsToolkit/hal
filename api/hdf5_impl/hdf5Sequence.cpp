@@ -168,11 +168,6 @@ TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentIterator(
   return _genome->getTopSegmentIterator(idx);
 }
 
-TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentEndIterator() const
-{
-  return getTopSegmentIterator(getNumTopSegments());
-}
-
 BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
   hal_index_t position)
 {
@@ -185,11 +180,6 @@ BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentIterator(
 {
   hal_size_t idx = position + getBottomSegmentArrayIndex();
   return _genome->getBottomSegmentIterator(idx);
-}
-
-BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentEndIterator() const
-{
-  return getBottomSegmentIterator(getNumBottomSegments());
 }
 
 DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position)

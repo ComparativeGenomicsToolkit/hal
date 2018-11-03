@@ -19,7 +19,11 @@ class TopSegment : virtual public Segment
 {
 public:
   
-   /** Get index of the homologous segmenet in the ancestral genome */
+   /** Destructor */
+    virtual ~TopSegment() {
+    }
+
+    /** Get index of the homologous segmenet in the ancestral genome */
    virtual hal_index_t getParentIndex() const = 0;
 
    /* Check if segment has a parent bottom segment */
@@ -80,12 +84,6 @@ public:
     * the column iterator or mappedSegment interface.  It is also the segment
     * that is connected from its parent's down edge.*/
    virtual bool isCanonicalParalog() const = 0;
-
-protected:
-   friend class counted_ptr<TopSegment>;
-   friend class counted_ptr<const TopSegment>;
-    virtual ~TopSegment() {
-    }
 };
 }
 #endif

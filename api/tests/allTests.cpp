@@ -8,7 +8,7 @@
 
 int halRunAllTests(void) {
   CuString *output = CuStringNew();
-  CuSuite* suite = CuSuiteNew(); 
+  CuSuite* suite = CuSuiteNew();
   CuSuiteAddSuite(suite, halAlignmentTestSuite());
   CuSuiteAddSuite(suite, halMetaDataTestSuite());
   CuSuiteAddSuite(suite, halGenomeTestSuite());
