@@ -22,3 +22,4 @@ note it would be nice to extend SegmentIterator but the crappy smart pointer int
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
 * smart pointer casting:
 https://herbsutter.com/2012/06/21/reader-qa-why-dont-modern-smart-pointers-implicitly-convert-to/
+* dropped gapped: "Interface for Gapped Top Segment iterator.  Only used internally"

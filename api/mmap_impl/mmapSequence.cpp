@@ -1,7 +1,7 @@
 #include "halColumnIterator.h"
 #include "halRearrangement.h"
-#include "defaultGappedTopSegmentIterator.h"
-#include "defaultGappedBottomSegmentIterator.h"
+#include "halGappedTopSegmentIterator.h"
+#include "halGappedBottomSegmentIterator.h"
 #include "mmapSequence.h"
 #include "mmapGenome.h"
 #include "mmapDNAIterator.h"
@@ -140,8 +140,8 @@ GappedTopSegmentIteratorConstPtr MMapSequence::getGappedTopSegmentIterator(
   hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
   TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
-  DefaultGappedTopSegmentIterator* gt = 
-     new DefaultGappedTopSegmentIterator(top, gapThreshold, atomic);
+  GappedTopSegmentIterator* gt = 
+     new GappedTopSegmentIterator(top, gapThreshold, atomic);
   return GappedTopSegmentIteratorConstPtr(gt);
 }
 
@@ -151,8 +151,8 @@ MMapSequence::getGappedBottomSegmentIterator(
   bool atomic) const
 {
   BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
-  DefaultGappedBottomSegmentIterator* gb = 
-     new DefaultGappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
+  GappedBottomSegmentIterator* gb = 
+     new GappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
                                             atomic);
   return GappedBottomSegmentIteratorConstPtr(gb);
 }

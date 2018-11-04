@@ -12,8 +12,8 @@
 #include "halRearrangement.h"
 #include "halGappedTopSegmentIterator.h"
 #include "halGappedBottomSegmentIterator.h"
-#include "defaultGappedTopSegmentIterator.h"
-#include "defaultGappedBottomSegmentIterator.h"
+#include "halGappedTopSegmentIterator.h"
+#include "halGappedBottomSegmentIterator.h"
 
 using namespace std;
 using namespace hal;

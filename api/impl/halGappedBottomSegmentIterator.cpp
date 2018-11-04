@@ -14,12 +14,12 @@
 #include "halGappedTopSegmentIterator.h"
 #include "halTopSegmentIterator.h"
 #include "halGappedBottomSegmentIterator.h"
-#include "defaultGappedBottomSegmentIterator.h"
+#include "halGappedBottomSegmentIterator.h"
 
 using namespace std;
 using namespace hal;
 
-DefaultGappedBottomSegmentIterator::DefaultGappedBottomSegmentIterator(
+GappedBottomSegmentIterator::GappedBottomSegmentIterator(
   BottomSegmentIteratorConstPtr left,
   hal_size_t childIndex,
   hal_size_t gapThreshold,
@@ -50,18 +50,13 @@ DefaultGappedBottomSegmentIterator::DefaultGappedBottomSegmentIterator(
   extendRight();
 }
 
-DefaultGappedBottomSegmentIterator::~DefaultGappedBottomSegmentIterator()
-{
-
-}
-
-SegmentPtr DefaultGappedBottomSegmentIterator::getSegment()
+SegmentPtr GappedBottomSegmentIterator::getSegment()
 {
     return const_pointer_cast<Segment>(_left->getSegment());
 
 }
 
-SegmentConstPtr DefaultGappedBottomSegmentIterator::getSegment() const
+SegmentConstPtr GappedBottomSegmentIterator::getSegment() const
 {
     return _left->getSegment();
 }
@@ -69,99 +64,99 @@ SegmentConstPtr DefaultGappedBottomSegmentIterator::getSegment() const
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void DefaultGappedBottomSegmentIterator::setArrayIndex(Genome* genome, 
+void GappedBottomSegmentIterator::setArrayIndex(Genome* genome, 
                                                        hal_index_t arrayIndex)
 {
   setLeft(genome->getBottomSegmentIterator(arrayIndex));
 }
 
-void DefaultGappedBottomSegmentIterator::setArrayIndex(const Genome* genome, 
+void GappedBottomSegmentIterator::setArrayIndex(const Genome* genome, 
                                                        hal_index_t arrayIndex) 
   const
 {
   setLeft(genome->getBottomSegmentIterator(arrayIndex));
 }
 
-const Genome* DefaultGappedBottomSegmentIterator::getGenome() const
+const Genome* GappedBottomSegmentIterator::getGenome() const
 {
   return _left->getGenome();
 }
 
-Genome* DefaultGappedBottomSegmentIterator::getGenome()
+Genome* GappedBottomSegmentIterator::getGenome()
 {
   throw hal_exception("getGenome not supported in gapped iterators");
 }
 
-const Sequence* DefaultGappedBottomSegmentIterator::getSequence() const
+const Sequence* GappedBottomSegmentIterator::getSequence() const
 {
   assert(_left->getBottomSegment()->getSequence() ==
          _right->getBottomSegment()->getSequence());
   return _left->getBottomSegment()->getSequence();
 }
 
-Sequence* DefaultGappedBottomSegmentIterator::getSequence()
+Sequence* GappedBottomSegmentIterator::getSequence()
 {
   throw hal_exception("getSequence not supported in gapped iterators");
 }
 
-hal_index_t DefaultGappedBottomSegmentIterator::getStartPosition() const
+hal_index_t GappedBottomSegmentIterator::getStartPosition() const
 {
   return _left->getStartPosition();
 }
 
-hal_index_t DefaultGappedBottomSegmentIterator::getEndPosition() const
+hal_index_t GappedBottomSegmentIterator::getEndPosition() const
 {
   return _right->getEndPosition();
 }
 
-hal_size_t DefaultGappedBottomSegmentIterator::getLength() const
+hal_size_t GappedBottomSegmentIterator::getLength() const
 {
   return abs(getEndPosition() - getStartPosition()) + 1;
 }
 
-void DefaultGappedBottomSegmentIterator::getString(std::string& outString) const
+void GappedBottomSegmentIterator::getString(std::string& outString) const
 {
   throw hal_exception("getString not supported in gapped iterators");
 }
 
-void DefaultGappedBottomSegmentIterator::setCoordinates(hal_index_t startPos, 
+void GappedBottomSegmentIterator::setCoordinates(hal_index_t startPos, 
                                                         hal_size_t length)
 {
   throw hal_exception("setCoordinates not supported in gapped iterators");
 }
 
-hal_index_t DefaultGappedBottomSegmentIterator::getArrayIndex() const
+hal_index_t GappedBottomSegmentIterator::getArrayIndex() const
 {
   throw hal_exception("getArrayIndex not supported in gapped iterators");
   return NULL_INDEX;
 }
 
-bool DefaultGappedBottomSegmentIterator::leftOf(hal_index_t genomePos) const
+bool GappedBottomSegmentIterator::leftOf(hal_index_t genomePos) const
 {
   return _right->leftOf(genomePos);
 }
 
-bool DefaultGappedBottomSegmentIterator::rightOf(hal_index_t genomePos) const
+bool GappedBottomSegmentIterator::rightOf(hal_index_t genomePos) const
 {
   return _left->rightOf(genomePos);
 }
 
-bool DefaultGappedBottomSegmentIterator::overlaps(hal_index_t genomePos) const
+bool GappedBottomSegmentIterator::overlaps(hal_index_t genomePos) const
 {
   return !leftOf(genomePos) && !rightOf(genomePos);
 }
 
-bool DefaultGappedBottomSegmentIterator::isLast() const
+bool GappedBottomSegmentIterator::isLast() const
 {
   return _right->isLast();
 }
 
-bool DefaultGappedBottomSegmentIterator::isFirst() const
+bool GappedBottomSegmentIterator::isFirst() const
 {
   return _left->isFirst();
 }
 
-bool DefaultGappedBottomSegmentIterator::isMissingData(double nThreshold) const
+bool GappedBottomSegmentIterator::isMissingData(double nThreshold) const
 {
   if (nThreshold >= 1.0)
   {
@@ -192,12 +187,12 @@ bool DefaultGappedBottomSegmentIterator::isMissingData(double nThreshold) const
   return false;
 }
 
-bool DefaultGappedBottomSegmentIterator::isTop() const
+bool GappedBottomSegmentIterator::isTop() const
 {
   return false;
 }
 
-hal_size_t DefaultGappedBottomSegmentIterator::getMappedSegments(
+hal_size_t GappedBottomSegmentIterator::getMappedSegments(
   MappedSegmentConstSet& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
@@ -206,11 +201,10 @@ hal_size_t DefaultGappedBottomSegmentIterator::getMappedSegments(
   const Genome *coalescenceLimit,
   const Genome *mrca) const
 {
-  throw hal_exception("getMappedSegments is not supported in "
-                      "DefaultGappedTopSegmentIterator");
+  throw hal_exception("getMappedSegments is not supported in GappedTopSegmentIterator");
 }
 
-void DefaultGappedBottomSegmentIterator::print(std::ostream& os) const
+void GappedBottomSegmentIterator::print(std::ostream& os) const
 {
   os << "Gapped Bottom Segment: (thresh=" << getGapThreshold() 
      << " ci=" << getChildIndex() << ")\n";
@@ -237,7 +231,7 @@ void DefaultGappedBottomSegmentIterator::print(std::ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void DefaultGappedBottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
+void GappedBottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
 {
   assert(_right->getReversed() == _left->getReversed());
   assert(_left->equals(_right) || _left->getReversed() || 
@@ -259,7 +253,7 @@ void DefaultGappedBottomSegmentIterator::toLeft(hal_index_t leftCutoff) const
   }
 }
 
-void DefaultGappedBottomSegmentIterator::toRight(hal_index_t rightCutoff) const
+void GappedBottomSegmentIterator::toRight(hal_index_t rightCutoff) const
 {
   assert(_right->getReversed() == _left->getReversed());
   assert(_left->equals(_right) || _left->getReversed() || 
@@ -281,7 +275,7 @@ void DefaultGappedBottomSegmentIterator::toRight(hal_index_t rightCutoff) const
   }
 }
 
-void DefaultGappedBottomSegmentIterator::toReverse() const
+void GappedBottomSegmentIterator::toReverse() const
 {
   assert(_right->getReversed() == _left->getReversed());
   assert(_left->equals(_right) || _left->getReversed() || 
@@ -294,7 +288,7 @@ void DefaultGappedBottomSegmentIterator::toReverse() const
   swap(_left, _right);
 }
 
-void DefaultGappedBottomSegmentIterator::toReverseInPlace() const
+void GappedBottomSegmentIterator::toReverseInPlace() const
 {
   assert(_right->getReversed() == _left->getReversed());
   assert(_left->equals(_right) || _left->getReversed() || 
@@ -307,29 +301,29 @@ void DefaultGappedBottomSegmentIterator::toReverseInPlace() const
   swap(_left, _right);
 }
 
-void DefaultGappedBottomSegmentIterator::toSite(hal_index_t position, 
+void GappedBottomSegmentIterator::toSite(hal_index_t position, 
                                              bool slice) const
 {
   throw hal_exception("tosite not currently supported in gapped iterators");
 }
 
-hal_offset_t DefaultGappedBottomSegmentIterator::getStartOffset() const
+hal_offset_t GappedBottomSegmentIterator::getStartOffset() const
 {
   return 0;
 }
 
-hal_offset_t DefaultGappedBottomSegmentIterator::getEndOffset() const
+hal_offset_t GappedBottomSegmentIterator::getEndOffset() const
 {
   return 0;
 }
 
-void DefaultGappedBottomSegmentIterator::slice(hal_offset_t startOffset,
+void GappedBottomSegmentIterator::slice(hal_offset_t startOffset,
                                             hal_offset_t endOffset) const
 {
   throw hal_exception("slice not currently supported in gapped iterators");
 }
 
-bool DefaultGappedBottomSegmentIterator::getReversed() const
+bool GappedBottomSegmentIterator::getReversed() const
 {
   assert(_left->getReversed() == _right->getReversed());
   return _left->getReversed();
@@ -338,28 +332,28 @@ bool DefaultGappedBottomSegmentIterator::getReversed() const
 //////////////////////////////////////////////////////////////////////////////
 // GAPPED SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-hal_size_t DefaultGappedBottomSegmentIterator::getGapThreshold() const
+hal_size_t GappedBottomSegmentIterator::getGapThreshold() const
 {
   return _gapThreshold;
 }
 
-bool DefaultGappedBottomSegmentIterator::getAtomic() const
+bool GappedBottomSegmentIterator::getAtomic() const
 {
   return _atomic;
 }
 
-hal_size_t DefaultGappedBottomSegmentIterator::getChildIndex() const
+hal_size_t GappedBottomSegmentIterator::getChildIndex() const
 {
   return _childIndex;
 }
 
-hal_size_t DefaultGappedBottomSegmentIterator::getNumSegments() const
+hal_size_t GappedBottomSegmentIterator::getNumSegments() const
 {
   return (hal_size_t)abs(_right->getBottomSegment()->getArrayIndex() - 
                          _left->getBottomSegment()->getArrayIndex()) + 1;
 }
 
-hal_size_t DefaultGappedBottomSegmentIterator::getNumGaps() const
+hal_size_t GappedBottomSegmentIterator::getNumGaps() const
 {
   hal_size_t count = 0;
   _temp->copy(_left);
@@ -375,7 +369,7 @@ hal_size_t DefaultGappedBottomSegmentIterator::getNumGaps() const
   return count;
 }
 
-hal_size_t DefaultGappedBottomSegmentIterator::getNumGapBases() const
+hal_size_t GappedBottomSegmentIterator::getNumGapBases() const
 {
     hal_size_t count = 0;
   _temp->copy(_left);
@@ -389,12 +383,12 @@ hal_size_t DefaultGappedBottomSegmentIterator::getNumGapBases() const
   return count;
 }
 
-hal_index_t DefaultGappedBottomSegmentIterator::getLeftArrayIndex() const
+hal_index_t GappedBottomSegmentIterator::getLeftArrayIndex() const
 {
   return _left->getBottomSegment()->getArrayIndex();
 }
 
-hal_index_t DefaultGappedBottomSegmentIterator::getRightArrayIndex() const
+hal_index_t GappedBottomSegmentIterator::getRightArrayIndex() const
 {
   return _right->getBottomSegment()->getArrayIndex();
 }
@@ -402,10 +396,10 @@ hal_index_t DefaultGappedBottomSegmentIterator::getRightArrayIndex() const
 //////////////////////////////////////////////////////////////////////////////
 // GAPPED BOTTOM SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-GappedBottomSegmentIteratorPtr DefaultGappedBottomSegmentIterator::copy()
+GappedBottomSegmentIteratorPtr GappedBottomSegmentIterator::copy()
 {
-  DefaultGappedBottomSegmentIterator* newIt =
-     new DefaultGappedBottomSegmentIterator(_left, _childIndex, _gapThreshold,
+  GappedBottomSegmentIterator* newIt =
+     new GappedBottomSegmentIterator(_left, _childIndex, _gapThreshold,
        _atomic);
   newIt->_left->copy(_left);
   newIt->_right->copy(_right);
@@ -416,10 +410,10 @@ GappedBottomSegmentIteratorPtr DefaultGappedBottomSegmentIterator::copy()
   return GappedBottomSegmentIteratorPtr(newIt);
 }
 
-GappedBottomSegmentIteratorConstPtr DefaultGappedBottomSegmentIterator::copy() const
+GappedBottomSegmentIteratorConstPtr GappedBottomSegmentIterator::copy() const
 {
-  const DefaultGappedBottomSegmentIterator* newIt =
-     new DefaultGappedBottomSegmentIterator(_left, _childIndex, _gapThreshold,
+  const GappedBottomSegmentIterator* newIt =
+     new GappedBottomSegmentIterator(_left, _childIndex, _gapThreshold,
        _atomic);
   newIt->_left->copy(_left);
   newIt->_right->copy(_right);
@@ -430,7 +424,7 @@ GappedBottomSegmentIteratorConstPtr DefaultGappedBottomSegmentIterator::copy() c
   return GappedBottomSegmentIteratorConstPtr(newIt);
 }
 
-void DefaultGappedBottomSegmentIterator::copy(
+void GappedBottomSegmentIterator::copy(
   GappedBottomSegmentIteratorConstPtr ts) const
 {
   _left->copy(ts->getLeft());
@@ -441,7 +435,7 @@ void DefaultGappedBottomSegmentIterator::copy(
   assert(getChildReversed() == ts->getChildReversed());
 }
 
-void DefaultGappedBottomSegmentIterator::toParent(
+void GappedBottomSegmentIterator::toParent(
   GappedTopSegmentIteratorConstPtr ts) const
 {
   TopSegmentIteratorConstPtr leftChild = ts->getLeft()->copy();
@@ -460,7 +454,7 @@ void DefaultGappedBottomSegmentIterator::toParent(
   // should extend here?!
 }
 
-bool DefaultGappedBottomSegmentIterator::equals(
+bool GappedBottomSegmentIterator::equals(
   GappedBottomSegmentIteratorConstPtr other) const
 {
   _temp->copy(_left);
@@ -478,7 +472,7 @@ bool DefaultGappedBottomSegmentIterator::equals(
   return _temp->equals(_temp2);
 }
 
-bool DefaultGappedBottomSegmentIterator::adjacentTo(
+bool GappedBottomSegmentIterator::adjacentTo(
   GappedBottomSegmentIteratorConstPtr other) const
 {
   _temp->copy(_left);
@@ -536,7 +530,7 @@ bool DefaultGappedBottomSegmentIterator::adjacentTo(
   return false;
 }
 
-bool DefaultGappedBottomSegmentIterator::hasChild() const
+bool GappedBottomSegmentIterator::hasChild() const
 {
   _temp->copy(_left);
   _temp2->copy(_right);
@@ -553,7 +547,7 @@ bool DefaultGappedBottomSegmentIterator::hasChild() const
   return _temp->hasChild(_childIndex) && _temp2->hasChild(_childIndex);
 }
 
-bool DefaultGappedBottomSegmentIterator::getChildReversed() const
+bool GappedBottomSegmentIterator::getChildReversed() const
 {
   if (hasChild())
   {
@@ -576,18 +570,18 @@ bool DefaultGappedBottomSegmentIterator::getChildReversed() const
   return false;
 }
 
-BottomSegmentIteratorConstPtr DefaultGappedBottomSegmentIterator::getLeft() const
+BottomSegmentIteratorConstPtr GappedBottomSegmentIterator::getLeft() const
 {
   return _left;
 }
 
-BottomSegmentIteratorConstPtr DefaultGappedBottomSegmentIterator::getRight() const
+BottomSegmentIteratorConstPtr GappedBottomSegmentIterator::getRight() const
 {
   return _right;
 }
 
 void 
-DefaultGappedBottomSegmentIterator::setLeft(BottomSegmentIteratorConstPtr bi) const
+GappedBottomSegmentIterator::setLeft(BottomSegmentIteratorConstPtr bi) const
 {
   throw hal_exception("setLeft not currently supported in bottom iterator");
 }
@@ -595,7 +589,7 @@ DefaultGappedBottomSegmentIterator::setLeft(BottomSegmentIteratorConstPtr bi) co
 //////////////////////////////////////////////////////////////////////////////
 // INTERNAL METHODS
 //////////////////////////////////////////////////////////////////////////////
-bool DefaultGappedBottomSegmentIterator::compatible(
+bool GappedBottomSegmentIterator::compatible(
   BottomSegmentIteratorConstPtr left,
   BottomSegmentIteratorConstPtr right) const
 {
@@ -693,7 +687,7 @@ bool DefaultGappedBottomSegmentIterator::compatible(
   return true;
 }
 
-void DefaultGappedBottomSegmentIterator::extendRight() const
+void GappedBottomSegmentIterator::extendRight() const
 {
   _right->copy(_left);
   if (_atomic == true ||
@@ -726,7 +720,7 @@ void DefaultGappedBottomSegmentIterator::extendRight() const
   }
 }
 
-void DefaultGappedBottomSegmentIterator::extendLeft() const
+void GappedBottomSegmentIterator::extendLeft() const
 {
   _left->copy(_right);
   if (_atomic == true ||
@@ -759,7 +753,7 @@ void DefaultGappedBottomSegmentIterator::extendLeft() const
   }
 }
 
-void DefaultGappedBottomSegmentIterator::toLeftNextUngapped(
+void GappedBottomSegmentIterator::toLeftNextUngapped(
   BottomSegmentIteratorConstPtr bs) const
 {
   while (bs->hasChild(_childIndex) == false && 
@@ -774,7 +768,7 @@ void DefaultGappedBottomSegmentIterator::toLeftNextUngapped(
   }
 }
 
-void DefaultGappedBottomSegmentIterator::toRightNextUngapped(
+void GappedBottomSegmentIterator::toRightNextUngapped(
   BottomSegmentIteratorConstPtr bs) const
 {
   while (bs->hasChild(_childIndex) == false &&
@@ -789,7 +783,7 @@ void DefaultGappedBottomSegmentIterator::toRightNextUngapped(
   }
 }
 
-void DefaultGappedBottomSegmentIterator::toLeftNextUngapped(
+void GappedBottomSegmentIterator::toLeftNextUngapped(
   TopSegmentIteratorConstPtr ts) const
 {
   while (ts->hasParent() == false && 
@@ -804,7 +798,7 @@ void DefaultGappedBottomSegmentIterator::toLeftNextUngapped(
   }
 }
 
-void DefaultGappedBottomSegmentIterator::toRightNextUngapped(
+void GappedBottomSegmentIterator::toRightNextUngapped(
   TopSegmentIteratorConstPtr ts) const
 {
   while (ts->hasParent() == false &&
