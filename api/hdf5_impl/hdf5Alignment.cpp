@@ -333,11 +333,11 @@ Genome*  HDF5Alignment::addLeafGenome(const string& name,
     throw hal_exception(string("parent ") + parentName + " not found in tree");
   }
   stTree* parent = findIt->second;
-  stTree* node = stTree_construct();
-  stTree_setLabel(node, name.c_str());
-  stTree_setParent(node, parent);
-  stTree_setBranchLength(node, branchLength);
-  _nodeMap.insert(pair<string, stTree*>(name, node));
+  stTree* childNode = stTree_construct();
+  stTree_setLabel(childNode, name.c_str());
+  stTree_setParent(childNode, parent);
+  stTree_setBranchLength(childNode, branchLength);
+  _nodeMap.insert(pair<string, stTree*>(name, childNode));
 
   HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
   _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));

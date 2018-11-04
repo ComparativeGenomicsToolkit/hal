@@ -21,8 +21,13 @@ class HDF5DNAIterator : public DNAIterator
 {
 public:
    
-   HDF5DNAIterator(HDF5Genome* genome, hal_index_t index);
-   ~HDF5DNAIterator();
+    HDF5DNAIterator(HDF5Genome* genome, hal_index_t index) :
+        _index(index),
+        _genome(genome),
+        _reversed(false) {
+    }
+    ~HDF5DNAIterator() {
+    }
    
    char getChar() const;
    void setChar(char c);
