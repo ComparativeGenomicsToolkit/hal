@@ -36,7 +36,7 @@ public:
    void open(H5::PortableH5Location* parent,
              const std::string& name);
 
-protected:
+private:
 
    static const std::string MetaGroupName;
    

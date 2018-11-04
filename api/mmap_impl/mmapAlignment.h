@@ -15,9 +15,8 @@ public:
     void setNewickString(MMapAlignment *alignment, const char *newickString);
 
     MMapGenome *addGenome(MMapAlignment *alignment, const std::string &name);
-protected:
-    size_t _numGenomes;
 private:
+    size_t _numGenomes;
     size_t _newickStringOffset;
     size_t _newickStringLength;
     size_t _genomeArrayOffset;
@@ -191,9 +190,8 @@ class MMapAlignment : public Alignment {
         loadTree();
     };
 
-protected:
-    mutable std::map<std::string, MMapGenome *> _openGenomes;
 private:
+    mutable std::map<std::string, MMapGenome *> _openGenomes;
     void initializeFromOptions(CLParserConstPtr parser);
     void create();
     void open();

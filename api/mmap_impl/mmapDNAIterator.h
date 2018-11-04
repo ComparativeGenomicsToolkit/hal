@@ -35,7 +35,7 @@ public:
 
     bool inRange() const;
 
-protected:
+private:
     mutable hal_index_t _index;
     mutable MMapGenome *_genome;
     mutable bool _reversed;

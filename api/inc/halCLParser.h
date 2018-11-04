@@ -130,7 +130,7 @@ public:
    /** Print the help screen to output stream */
    void printUsage(std::ostream& os) const; 
 
-protected:
+private:
 
    template<typename T> T convertFromString(const std::string& token) const;
 

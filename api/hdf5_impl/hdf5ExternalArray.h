@@ -108,7 +108,7 @@ public:
    /** Get the HDF5 Datatype */
    const H5::DataType& getDataType() const;
    
-protected:
+private:
 
    /** Read chunk from file */
    void page(hsize_t i);

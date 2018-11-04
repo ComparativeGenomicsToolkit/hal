@@ -133,7 +133,7 @@ public:
    virtual void setVisitCache(VisitCache *visitCache) const;
    virtual void clearVisitCache() const;
 
-protected:
+private:
 
    typedef ColumnIteratorStack::LinkedBottomIterator LinkedBottomIterator;
    typedef ColumnIteratorStack::LinkedTopIterator LinkedTopIterator;

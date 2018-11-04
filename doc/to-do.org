@@ -22,5 +22,8 @@ note it would be nice to extend SegmentIterator but the crappy smart pointer int
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
 * smart pointer casting:
 https://herbsutter.com/2012/06/21/reader-qa-why-dont-modern-smart-pointers-implicitly-convert-to/
-* dropped gapped: "Interface for Gapped Top Segment iterator.  Only used internally"
-* Using stTree with C-strings results in copying rather than sharing strngs.
+* dropped gapped??: "Interface for Gapped Top Segment iterator.  Only used internally"
+- used by halChain (which doesn't do anything) and halSummarizeMutations (which doesn't work right)
+* hdf5DNAIterator structure could be collapsed with generic if genome provide a way to get an array
+of DNA.  Maybe pack DNA in mmap?
+* Using stTree with C-strings results in copying rather than sharing strings.

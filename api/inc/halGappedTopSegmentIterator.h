@@ -146,7 +146,7 @@ public:
    virtual hal_index_t getLeftArrayIndex() const;
    virtual hal_index_t getRightArrayIndex() const;
 
-protected:
+private:
    
    bool compatible(TopSegmentIteratorConstPtr left,
                    TopSegmentIteratorConstPtr right) const;

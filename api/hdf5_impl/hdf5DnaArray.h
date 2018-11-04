@@ -58,7 +58,7 @@ public:
    /** Get size of array */
    hsize_t size();
    
-protected:
+private:
    
    RawH5ExternalArray _array;
 };

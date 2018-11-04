@@ -97,7 +97,7 @@ public:
 
    void replaceNewickTree(const std::string &newNewickString);
 
-protected:
+private:
     // FIXME: should these be private?
    void loadTree();
    void writeTree();
@@ -132,7 +132,7 @@ protected:
    static const H5std_string VersionGroupName;
     const std::string _alignmentPath;
 
-    protected:
+    private:
     unsigned _mode;
 
    H5::H5File* _file;

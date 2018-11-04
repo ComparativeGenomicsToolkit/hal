@@ -18,7 +18,7 @@ public:
     void setName(MMapAlignment *alignment, const std::string &name);
     MMapTopSegmentData *getTopSegmentData(MMapAlignment *alignment, hal_index_t index);
     MMapBottomSegmentData *getBottomSegmentData(MMapAlignment *alignment, MMapGenome *genome, hal_index_t index);
-protected:
+private:
     hal_size_t _nameLength;
     hal_size_t _totalSequenceLength;
     hal_size_t _numSequences;
@@ -154,9 +154,9 @@ public:
 
     MMapAlignment *_alignment;
     MMapSequenceData *getSequenceData(size_t i) const;
-protected:
-    char *getDNA(size_t start, size_t length) { return _data->getDNA(_alignment, start, length); }
 private:
+    char *getDNA(size_t start, size_t length) { return _data->getDNA(_alignment, start, length); }
+
     // Index within the alignment's genome array.
     MMapGenomeData *_data;
     size_t _arrayIndex;

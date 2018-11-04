@@ -140,7 +140,7 @@ public:
                          hal_size_t minLength,
                          const Genome *coalescenceLimit,
                          const Genome *mrca);
-protected:
+private:
 
    MappedSegment(SegmentIteratorConstPtr source,
                  SegmentIteratorConstPtr target);
@@ -254,7 +254,7 @@ protected:
    SegmentIteratorConstPtr sourceCopy() const;
 
    
-protected:
+private:
 
    mutable SegmentIteratorConstPtr _source;
    mutable SegmentIteratorConstPtr _target;

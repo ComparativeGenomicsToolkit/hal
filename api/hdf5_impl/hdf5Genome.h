@@ -153,7 +153,7 @@ public:
    void resetTreeCache();
    void resetBranchCaches();
 
-protected:
+private:
 
    void readSequences();
    void writeSequences(const std::vector<hal::Sequence::Info>&
@@ -168,7 +168,7 @@ protected:
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
 
 
-protected:
+private:
 
    HDF5Alignment* _alignment;
    H5::PortableH5Location* _h5Parent;

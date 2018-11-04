@@ -36,7 +36,7 @@ public:
 
    const IntervalSet* getIntervalSet() const { return &_set; }
 
-protected:
+private:
 
    IntervalSet _set;
    hal_size_t _size;

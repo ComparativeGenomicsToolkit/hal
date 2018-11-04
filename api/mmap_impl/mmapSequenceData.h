@@ -13,7 +13,7 @@ class MMapSequenceData {
         strncpy((char *) alignment->resolveOffset(_nameOffset, size), newName.c_str(), size);
         _nameLength = size;
     };
-    protected:
+    private:
     hal_index_t _startPosition;
     hal_index_t _index;
     hal_size_t _length;

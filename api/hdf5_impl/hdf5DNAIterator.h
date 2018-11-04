@@ -53,7 +53,7 @@ public:
    inline bool inRange() const;
    
 
-protected:
+private:
    mutable hal_index_t _index;
    mutable HDF5Genome* _genome;
    mutable bool _reversed;

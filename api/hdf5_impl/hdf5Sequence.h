@@ -127,7 +127,7 @@ public:
 
    void setBottomSegmentArrayIndex(hal_size_t bottomIndex); 
    
-protected:
+private:
 
    void refreshNameCache() const;
    void refreshFullNameCache() const;

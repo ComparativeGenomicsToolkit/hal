@@ -34,7 +34,7 @@ public:
    const Sequence* getSequence() const;
    bool equals(SequenceIteratorConstPtr other) const;
 
-protected:
+private:
    HDF5Sequence _sequence;
 };
 
