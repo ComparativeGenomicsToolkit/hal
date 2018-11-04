@@ -1,4 +1,3 @@
-#include <sstream>
 #include <cassert>
 #include <map>
 #include <iostream>
@@ -112,11 +111,11 @@ void Genome::copyTopSegments(Genome *dest) const
     assert(genomePos != NULL_INDEX);
     string inSeqName = getSequenceBySite(genomePos)->getName();
     string outSeqName = dest->getSequenceBySite(genomePos)->getName();
-    // if (inSeqName != outSeqName) {
-    //   stringstream ss;
-    //   ss << "When copying top segments from " << getName() << " to " << dest->getName() << ": sequence " << inSeqName << " != " << outSeqName << " at site " << genomePos;
-    //   throw hal_exception(ss.str());
-    // }
+#if NDEBUG
+    if (inSeqName != outSeqName) {
+        throw hal_exception("When copying top segments from " + getName() + " to " + dest->getName() + ": sequence " + inSeqName + " != " + outSeqName + " at site " + std::to_string(genomePos));
+    }
+#endif
 
     outTop->setCoordinates(inTop->getStartPosition(), inTop->getLength());
     outTop->setParentIndex(inTop->getParentIndex());
@@ -190,15 +189,11 @@ void Genome::copyBottomSegments(Genome *dest) const
 
     if (inSeq->getName() != outSeq->getName()) {
       // This check is important enough that it can't be an assert.
-      stringstream ss;
-      ss << "When copying bottom segments: segment #" << inBot->getArrayIndex() << " of source genome is from sequence " << inBot->getSequence()->getName() << ", but segment #" << outBot->getArrayIndex() << " is from sequence " << outBot->getSequence()->getName();
-      throw hal_exception(ss.str());
+      throw hal_exception("When copying bottom segments: segment #" + std::to_string(inBot->getArrayIndex()) + " of source genome is from sequence " + inBot->getSequence()->getName() + ", but segment #" + std::to_string(outBot->getArrayIndex()) + " is from sequence " + outBot->getSequence()->getName());
     }
 
     if (inSeq->getNumBottomSegments() != outSeq->getNumBottomSegments()) {
-      stringstream ss;
-      ss << "When copying bottom segments: sequence " << inSeq->getName() << " has " << inSeq->getNumBottomSegments() << " in genome " << getName() << ", while it has " << outSeq->getNumBottomSegments() << " in genome " << dest->getName();
-      throw hal_exception(ss.str());      
+        throw hal_exception("When copying bottom segments: sequence " + inSeq->getName() + " has " + std::to_string(inSeq->getNumBottomSegments()) + " in genome " + getName() + ", while it has " + std::to_string(outSeq->getNumBottomSegments()) + " in genome " + dest->getName());
     }
 
     hal_index_t inSegmentEnd = inSeq->getBottomSegmentArrayIndex() + inSeq->getNumBottomSegments();
@@ -209,9 +204,7 @@ void Genome::copyBottomSegments(Genome *dest) const
 
 
       if (dest->getSequenceBySite(outStartPosition) != outSeq) {
-        stringstream ss;
-        ss << "When copying bottom segments from " << getName() << " to " << dest->getName() << ": expected destination sequence " << outSeq->getName() << " for segment # " << inBot->getArrayIndex() << " but got " << dest->getSequenceBySite(outStartPosition)->getName();
-        throw hal_exception(ss.str());
+          throw hal_exception("When copying bottom segments from " + getName() + " to " + dest->getName() + ": expected destination sequence " + outSeq->getName() + " for segment # " + std::to_string(inBot->getArrayIndex()) + " but got " + dest->getSequenceBySite(outStartPosition)->getName());
       }
       outBot->setCoordinates(outStartPosition, inBot->getLength());
       for(hal_size_t inChild = 0; inChild < inNc; inChild++) {

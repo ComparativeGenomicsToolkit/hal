@@ -5,7 +5,6 @@
  */
 #include <string>
 #include <iostream>
-#include <sstream>
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
@@ -30,9 +29,7 @@ static inline double uniformDbl(double min, double max)
 #if UNUSED
 static inline string randName()
 {
-  stringstream ss;
-  ss << "Genome_" << rand();
-  return ss.str();
+  return "Genome_" + std::to_string(rand());
 }
 #endif
 
@@ -144,9 +141,7 @@ void hal::createRandomTree(hal::AlignmentPtr emptyAlignment,
 
     for (hal_size_t i = 0; i < numChildren; ++i)
     {
-      stringstream ss;
-      ss << "Genome_" << genomeCount++;
-      string childName = ss.str();
+        string childName = "Genome_" + std::to_string(genomeCount++);
       emptyAlignment->addLeafGenome(childName,
                                     genome->getName(),
                                     uniformDbl(1e-5, maxBranchLength));

@@ -609,10 +609,8 @@ ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
   if (position < 0 || 
       lastPosition >= (hal_index_t)(getSequenceLength()))
   {
-    stringstream ss;
-    ss << "HDF5Genome::getColumnIterator: input indices "
-       << "(" << position << ", " << lastPosition << ") out of bounds";
-    throw hal_exception(ss.str());
+      throw hal_exception("HDF5Genome::getColumnIterator: input indices ("
+                          + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
   const ColumnIterator* newIt = 
      new ColumnIterator(this, targets, position, lastIdx, 
@@ -829,12 +827,10 @@ void HDF5Genome::loadSequencePosCache() const
   }
   if (_totalSequenceLength > 0 && totalReadLen != _totalSequenceLength)
   {
-    stringstream ss;
-    ss << "Sequences for genome " << getName() << " have total length " 
-       << totalReadLen << " but the (non-zero) DNA array contains "
-       << _totalSequenceLength << " elements. This is an internal error "
-       << "or the file is corrupt.";
-    throw hal_exception(ss.str());
+    throw hal_exception("Sequences for genome " + getName() + " have total length " 
+                        + std::to_string(totalReadLen) + " but the (non-zero) DNA array contains "
+                        + std::to_string(_totalSequenceLength) + " elements. This is an internal error "
+                        + "or the file is corrupt.");
   }
 }
 

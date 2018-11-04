@@ -40,10 +40,8 @@ void WiggleLoader::visitHeader()
   _srcSequence = _srcGenome->getSequence(_sequenceName);
   if (_srcSequence == NULL)
   {
-    stringstream ss;
-    ss << "Sequence " << _sequenceName << " not found in genome " 
-       << _srcGenome->getName();
-    throw hal_exception(ss.str());
+    throw hal_exception("Sequence " + _sequenceName + " not found in genome " 
+                        + _srcGenome->getName());
   }
 }
 

@@ -351,10 +351,8 @@ ColumnIteratorConstPtr MMapGenome::getColumnIterator(
   if (position < 0 || 
       lastPosition >= (hal_index_t)(getSequenceLength()))
   {
-    stringstream ss;
-    ss << "MMapGenome::getColumnIterator: input indices "
-       << "(" << position << ", " << lastPosition << ") out of bounds";
-    throw hal_exception(ss.str());
+    throw hal_exception("MMapGenome::getColumnIterator: input indices ("
+                        + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
   const ColumnIterator* newIt = 
      new ColumnIterator(this, targets, position, lastIdx, 

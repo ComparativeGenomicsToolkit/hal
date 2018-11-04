@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <deque>
-#include <sstream>
 #include "halCommon.h"
 #include "halAlignmentInstance.h"
 #include "hdf5Alignment.h"

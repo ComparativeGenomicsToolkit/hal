@@ -6,7 +6,6 @@
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
-#include <sstream>
 #include <algorithm>
 
 #include "halMafScanner.h"
@@ -70,12 +69,10 @@ void MafScanner::scan(const string& mafFilePath, const set<string>& targets)
       }
       if (_rows > 1 && row._line.length() != _block[_rows - 2]._line.length())
       {
-        stringstream ss;
-        ss << "two lines in same block have different lengths: " 
-           << row._sequenceName << " " << row._startPosition << " and "
-           << _block[_rows - 2]._sequenceName << " " 
-           << _block[_rows - 2]._startPosition;
-        throw hal_exception(ss.str());
+        throw hal_exception("two lines in same block have different lengths: " 
+                            + row._sequenceName + " " + std::to_string(row._startPosition) + " and "
+                            + _block[_rows - 2]._sequenceName + " " 
+                            + std::to_string(_block[_rows - 2]._startPosition));
       }
 
       if (_targets.size() > 1 && // (will always include reference) 

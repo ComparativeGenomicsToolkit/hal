@@ -31,10 +31,8 @@ void addIdenticalParentChild(hal::AlignmentPtr alignment,
 
   for (size_t i = 0; i < numSequences; ++i)
   {
-    stringstream ss;
-    ss << "Sequence" << i;
-    string name = ss.str();
-    seqVec[i] = Sequence::Info(name, segmentLength * numSegmentsPerSequence, 
+    seqVec[i] = Sequence::Info("Sequence" + std::to_string(i),
+                               segmentLength * numSegmentsPerSequence, 
                                numSegmentsPerSequence, 
                                numSegmentsPerSequence);
   }

@@ -6,7 +6,6 @@
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
-#include <sstream>
 #include <algorithm>
 #include "halMafScanReference.h"
 
@@ -39,10 +38,8 @@ void MafScanReference::sLine()
   if (row._sequenceName.find('.') == string::npos || 
       row._sequenceName.find('.') == 0)
   {
-    stringstream ss;
-    ss << "illegal sequence name found: " << row._sequenceName << ".  Sequence "
-       "names must be in genomeName.sequenceName format.";
-    throw hal_exception(ss.str());
+    throw hal_exception("illegal sequence name found: " + row._sequenceName
+                        + ".  Sequence names must be in genomeName.sequenceName format.");
   }
   
   _name = genomeName(row._sequenceName);

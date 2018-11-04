@@ -37,9 +37,7 @@ void WiggleScanner::scan(const string& wigglePath)
   {
     delete _wiggleStream;
     _wiggleStream = NULL;
-    stringstream ss;
-    ss << e.what() << " in file " << wigglePath;
-    throw hal_exception(ss.str());
+    throw hal_exception(string(e.what()) + " in file " + wigglePath);
   }  
 
   delete _wiggleStream;
@@ -78,9 +76,7 @@ void WiggleScanner::scan(istream* is)
   }
   catch(hal_exception& e)
   {
-    stringstream ss;
-    ss << e.what() << " -- input wiggle line " << _lineNumber;
-    throw hal_exception(ss.str());
+      throw hal_exception(string(e.what()) + " in input wiggle line " + std::to_string(_lineNumber));
   }
   visitEOF();
   _wiggleStream = NULL;

@@ -216,11 +216,9 @@ void PhyloP::processSequence(const Sequence* sequence,
   hal_size_t last = start + length;
   if (last > seqLen)
   {
-    stringstream ss;
-    ss << "Specified range [" << start << "," << length << "] is"
-       << "out of range for sequence " << sequence->getName() 
-       << ", which has length " << seqLen;
-    throw (hal_exception(ss.str()));
+      throw hal_exception("Specified range [" + start + "," + std::to_string(length)
+                        + "] is out of range for sequence " + sequence->getName() 
+                          + ", which has length " + std::to_string(seqLen);
   }
 
   const Genome* genome = sequence->getGenome();

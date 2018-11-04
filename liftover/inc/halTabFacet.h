@@ -11,7 +11,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <sstream>    
 
 // This is my facet:
 // It is designed to treat only <tab> as whitespace

@@ -5,7 +5,6 @@
  */
 #include <string>
 #include <iostream>
-#include <sstream>
 #include "halGenomeTest.h"
 #include "halAlignmentTest.h"
 #include "halSequenceTest.h"
@@ -29,11 +28,8 @@ void SequenceCreateTest::createCallBack(AlignmentPtr alignment)
   vector<Sequence::Info> seqVec;
   for (size_t i = 0; i < numSequences; ++i)
   {
-    std::stringstream ss;
-    ss << i;
     hal_size_t len = 1 + i * 5 + i;
-    string name = "sequence" + ss.str();
-    seqVec.push_back(Sequence::Info(name, len, i, i * 2));
+    seqVec.push_back(Sequence::Info("sequence" + std::to_string(i), len, i, i * 2));
   }
   ancGenome->setDimensions(seqVec);
 }
@@ -56,10 +52,8 @@ void SequenceCreateTest::checkCallBack(AlignmentConstPtr alignment)
   for (; seqIt != endIt; seqIt->toNext())
   {
     hal_size_t i = (hal_size_t)seqIt->getSequence()->getArrayIndex();
-    stringstream ss;
-    ss << i;
     hal_size_t len = 1 + i * 5 + i;
-    string name = "sequence" + ss.str();
+    string name = "sequence" + std::to_string(i);
     const Sequence* seq = seqIt->getSequence();
     CuAssertTrue(_testCase, seq->getName() == name);
     CuAssertTrue(_testCase, seq->getSequenceLength() == len);
@@ -110,10 +104,8 @@ void SequenceIteratorTest::createCallBack(AlignmentPtr alignment)
   vector<Sequence::Info> seqVec;
   for (size_t i = 0; i < numSequences; ++i)
   {
-    std::stringstream ss;
-    ss << i;
     size_t len = 100;
-    string name = "sequence" + ss.str();
+    string name = "sequence" + std::to_string(i);
     seqVec.push_back(Sequence::Info(name, i * len, i ? len : 0, i ? len : 0));
   }
   ancGenome->setDimensions(seqVec);
@@ -174,10 +166,8 @@ void SequenceUpdateTest::createCallBack(AlignmentPtr alignment)
   vector<Sequence::Info> seqVec;
   for (size_t i = 0; i < numSequences; ++i)
   {
-    stringstream ss;
-    ss << i;
     hal_size_t len = 1 + i * 5 + i;
-    string name = "sequence" + ss.str();
+    string name = "sequence" + std::to_string(i);
     seqVec.push_back(Sequence::Info(name, len, i, i * 2));
   }
   ancGenome->setDimensions(seqVec);
@@ -187,9 +177,7 @@ void SequenceUpdateTest::createCallBack(AlignmentPtr alignment)
   vector<Sequence::UpdateInfo> updateVec;
   for (size_t i = 0; i < numSequences / 2; ++i)
   {
-    stringstream ss;
-    ss << "sequence" << i;
-    Sequence* sequence = ancGenome->getSequence(ss.str());
+    Sequence* sequence = ancGenome->getSequence("sequence" + std::to_string(i));
     updateVec.push_back(Sequence::UpdateInfo(sequence->getName(), i * 7));
   }
   ancGenome->updateTopDimensions(updateVec);
@@ -197,9 +185,7 @@ void SequenceUpdateTest::createCallBack(AlignmentPtr alignment)
   updateVec.clear();
   for (size_t i = 0; i < numSequences / 3; ++i)
   {
-    stringstream ss;
-    ss << "sequence" << i;
-    Sequence* sequence = ancGenome->getSequence(ss.str());
+    Sequence* sequence = ancGenome->getSequence("sequence" + std::to_string(i));
     updateVec.push_back(Sequence::UpdateInfo(sequence->getName(), i * 5));
   }
   ancGenome->updateBottomDimensions(updateVec);
@@ -224,12 +210,10 @@ void SequenceUpdateTest::checkCallBack(AlignmentConstPtr alignment)
   {
     const Sequence* sequence = seqIt->getSequence();
     hal_size_t i = (hal_size_t)sequence->getArrayIndex();
-    stringstream ss;
-    ss << i;
     hal_size_t len = 1 + i * 5 + i;
     hal_size_t numTop = i < numSequences / 2 ? i * 7 : i;
     hal_size_t numBottom = i < numSequences / 3 ? i * 5 : i * 2;
-    string name = "sequence" + ss.str();
+    string name = "sequence" + std::to_string(i);
     const Sequence* seq = seqIt->getSequence();
     CuAssertTrue(_testCase, seq->getName() == name);
     CuAssertTrue(_testCase, seq->getSequenceLength() == len);

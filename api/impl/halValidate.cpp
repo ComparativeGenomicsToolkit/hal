@@ -3,7 +3,6 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-#include <sstream>
 #include <deque>
 #include <vector>
 #include <iostream>
@@ -30,18 +29,14 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
   hal_index_t index = bottomSegment->getArrayIndex();
   if (index < 0 || index >= (hal_index_t)genome->getSequenceLength())
   {
-    stringstream ss;
-    ss << "Bottom segment out of range " << index << " in genome "
-       << genome->getName();
-    throw hal_exception(ss.str());
+      throw hal_exception("Bottom segment out of range " + std::to_string(index) + " in genome "
+                        + genome->getName());
   }
   
   if (bottomSegment->getLength() < 1)
   {
-    stringstream ss;
-    ss << "Bottom segment " << index  << " in genome " << genome->getName()
-       << " has length 0 which is not currently supported";
-    throw hal_exception(ss.str());
+      throw hal_exception("Bottom segment " + std::to_string(index)  + " in genome " + genome->getName()
+                          + " has length 0 which is not currently supported");
   }
 
   hal_size_t numChildren = bottomSegment->getNumChildren();
@@ -53,50 +48,42 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
     {
       if (childIndex >= (hal_index_t)childGenome->getNumTopSegments())
       {
-        stringstream ss;
-        ss << "Child " << child << " index " <<childIndex << " of segment "
-           << bottomSegment->getArrayIndex() << " out of range in genome "
-           << childGenome->getName();
-        throw hal_exception(ss.str());
+          throw hal_exception("Child " + std::to_string(child) + " index " + std::to_string(childIndex) + " of segment "
+                            + std::to_string(bottomSegment->getArrayIndex()) + " out of range in genome "
+                            + childGenome->getName());
       }
       TopSegmentIteratorConstPtr topSegmentIteratr = 
          childGenome->getTopSegmentIterator(childIndex);
       const TopSegment* childSegment = topSegmentIteratr->getTopSegment();
       if (childSegment->getLength() != bottomSegment->getLength())
       {
-        stringstream ss;
-        ss << "Child " << child << " with index " 
-           << childSegment->getArrayIndex()
-           << " and start position " << childSegment->getStartPosition() 
-           << " and sequence " << childSegment->getSequence()->getName()
-           << " has length " << childSegment->getLength()
-           << " but parent with index " << bottomSegment->getArrayIndex() 
-           << " and start position " << bottomSegment->getStartPosition()
-           << " in sequence " << bottomSegment->getSequence()->getName() 
-           << " has length " << bottomSegment->getLength();
-        throw hal_exception(ss.str());
+          throw hal_exception("Child " + std::to_string(child) + " with index " 
+                            + std::to_string(childSegment->getArrayIndex())
+                            + " and start position " + std::to_string(childSegment->getStartPosition())
+                            + " and sequence " + childSegment->getSequence()->getName()
+                            + " has length " + std::to_string(childSegment->getLength())
+                            + " but parent with index " + std::to_string(bottomSegment->getArrayIndex() )
+                            + " and start position " + std::to_string(bottomSegment->getStartPosition())
+                            + " in sequence " + bottomSegment->getSequence()->getName() 
+                            + " has length " + std::to_string(bottomSegment->getLength()));
       }
       if (childSegment->getNextParalogyIndex() == NULL_INDEX &&
           childSegment->getParentIndex() != bottomSegment->getArrayIndex())
       {
-        stringstream ss;
-        ss << "Parent / child index mismatch:\n" 
-           << genome->getName() << "[" << bottomSegment->getArrayIndex() << "]"
-           << " links to " << childGenome->getName() << "[" << childIndex 
-           << "] but \n"
-           << childGenome->getName() << "[" << childSegment->getArrayIndex() 
-           << "] links to " << genome->getName() << "[" 
-           << childSegment->getParentIndex() << "]";
-        throw hal_exception(ss.str());
+        throw hal_exception("Parent / child index mismatch:\n" 
+                            + genome->getName() + "[" + std::to_string(bottomSegment->getArrayIndex()) + "]"
+                            + " links to " + childGenome->getName() + "[" + std::to_string(childIndex)
+                            + "] but \n"
+                            + childGenome->getName() + "[" + std::to_string(childSegment->getArrayIndex())
+                            + "] links to " + genome->getName() + "[" 
+                            + std::to_string(childSegment->getParentIndex()) + "]");
       }
       if (childSegment->getParentReversed() != 
           bottomSegment->getChildReversed(child))
       {
-        stringstream ss;
-        ss << "parent / child reversal mismatch (parent=" <<
-          genome->getName() << " parentSegNum=" << bottomSegment->getArrayIndex() << " child=" <<
-          childGenome->getName() << " childSegNum=" << childSegment->getArrayIndex() << ")";
-          throw hal_exception(ss.str());
+          throw hal_exception("parent / child reversal mismatch (parent=" +
+                              genome->getName() + " parentSegNum=" + std::to_string(bottomSegment->getArrayIndex()) + " child=" +
+                              childGenome->getName() + " childSegNum=" + std::to_string(childSegment->getArrayIndex()) + ")");
       }
     }
   }
@@ -106,22 +93,18 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
   {
     if (genome->getParent() != NULL)
     {
-      stringstream ss;
-      ss << "Bottom segment " << bottomSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has null parse index";
-      throw hal_exception(ss.str());
+        throw hal_exception("Bottom segment " + std::to_string(bottomSegment->getArrayIndex()) + " in genome "
+                          + genome->getName() + " has null parse index");
     }
   }
   else
   {
     if (parseIndex >= (hal_index_t)genome->getNumTopSegments())
     {
-      stringstream ss;
-      ss << "BottomSegment " << bottomSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has parse index " << parseIndex 
-         << " greater than the number of top segments, " 
-         << (hal_index_t)genome->getNumTopSegments();
-      throw hal_exception(ss.str());
+        throw hal_exception("BottomSegment " + std::to_string(bottomSegment->getArrayIndex()) + " in genome "
+                            + genome->getName() + " has parse index " + std::to_string(parseIndex)
+                            + " greater than the number of top segments, " 
+                            + std::to_string(genome->getNumTopSegments()));
     }
     TopSegmentIteratorConstPtr parseIterator = 
        genome->getTopSegmentIterator(parseIndex);
@@ -129,12 +112,10 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
     hal_offset_t parseOffset = bottomSegment->getTopParseOffset();
     if (parseOffset >= parseSegment->getLength())
     {
-      stringstream ss;
-      ss << "BottomSegment " << bottomSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has parse offset, " << parseOffset 
-         << ", greater than the length of the segment, " 
-         << parseSegment->getLength();
-      throw hal_exception(ss.str());
+        throw hal_exception("BottomSegment " + std::to_string(bottomSegment->getArrayIndex()) + " in genome "
+                            + genome->getName() + " has parse offset, " + std::to_string(parseOffset)
+                            + ", greater than the length of the segment, "
+                            + std::to_string(parseSegment->getLength()));
     }
     if ((hal_index_t)parseOffset + parseSegment->getStartPosition() != 
         bottomSegment->getStartPosition())
@@ -152,18 +133,14 @@ void hal::validateTopSegment(const TopSegment* topSegment)
   hal_index_t index = topSegment->getArrayIndex();
   if (index < 0 || index >= (hal_index_t)genome->getSequenceLength())
   {
-    stringstream ss;
-    ss << "Segment out of range " << index << " in genome "
-       << genome->getName();
-    throw hal_exception(ss.str());
+      throw hal_exception("Segment out of range " + std::to_string(index) + " in genome "
+                        + genome->getName());
   }
 
   if (topSegment->getLength() < 1)
   {
-    stringstream ss;
-    ss << "Top segment " << index  << " in genome " << genome->getName()
-       << " has length 0 which is not currently supported";
-    throw hal_exception(ss.str());
+      throw hal_exception("Top segment " + std::to_string(index)  + " in genome " + genome->getName()
+                          + " has length 0 which is not currently supported");
   }
 
   const Genome* parentGenome = genome->getParent();
@@ -172,11 +149,9 @@ void hal::validateTopSegment(const TopSegment* topSegment)
   {
     if (parentIndex >= (hal_index_t)parentGenome->getNumBottomSegments())
     {
-      stringstream ss;
-      ss << "Parent index " << parentIndex << " of segment "
-         << topSegment->getArrayIndex() << " out of range in genome "
-         << parentGenome->getName();
-      throw hal_exception(ss.str());
+        throw hal_exception("Parent index " + std::to_string(parentIndex) + " of segment "
+                            + std::to_string(topSegment->getArrayIndex()) + " out of range in genome "
+                            + parentGenome->getName());
     }
     BottomSegmentIteratorConstPtr bottomSegmentIterator = 
        parentGenome->getBottomSegmentIterator(parentIndex);
@@ -184,12 +159,10 @@ void hal::validateTopSegment(const TopSegment* topSegment)
        bottomSegmentIterator->getBottomSegment();
     if (topSegment->getLength() != parentSegment->getLength())
     {
-      stringstream ss;
-      ss << "Parent length of segment " << topSegment->getArrayIndex() 
-         << " in genome " << genome->getName() << " has length "
-         << parentSegment->getLength() << " which does not match "
-         << topSegment->getLength();
-      throw hal_exception(ss.str());
+        throw hal_exception("Parent length of segment " + std::to_string(topSegment->getArrayIndex()) 
+                            + " in genome " + genome->getName() + " has length "
+                            + std::to_string(parentSegment->getLength()) + " which does not match "
+                            + std::to_string(topSegment->getLength()));
     }
   }
 
@@ -198,22 +171,18 @@ void hal::validateTopSegment(const TopSegment* topSegment)
   {
     if (genome->getNumChildren() != 0)
     {
-      stringstream ss;
-      ss << "Top Segment " << topSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has null parse index";
-      throw hal_exception(ss.str());
+        throw hal_exception("Top Segment " + std::to_string(topSegment->getArrayIndex()) + " in genome "
+                            + genome->getName() + " has null parse index");
     }
   }
   else
   {
     if (parseIndex >= (hal_index_t)genome->getNumBottomSegments())
     {
-      stringstream ss;
-      ss << "Top Segment " << topSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has parse index " << parseIndex 
-         << " which is out of range since genome has " 
-         << genome->getNumBottomSegments() << " bottom segments";
-      throw hal_exception(ss.str());
+        throw hal_exception("Top Segment " + std::to_string(topSegment->getArrayIndex()) + " in genome "
+                            + genome->getName() + " has parse index " + std::to_string(parseIndex)
+                            + " which is out of range since genome has " 
+                            + std::to_string(genome->getNumBottomSegments()) + " bottom segments");
     }
     hal_offset_t parseOffset = topSegment->getBottomParseOffset();
     BottomSegmentIteratorConstPtr bottomSegmentIterator =
@@ -222,10 +191,8 @@ void hal::validateTopSegment(const TopSegment* topSegment)
        bottomSegmentIterator->getBottomSegment();
     if (parseOffset >= parseSegment->getLength())
     {
-      stringstream ss;
-      ss << "Top Segment " << topSegment->getArrayIndex() << " in genome "
-         << genome->getName() << " has parse offset out of range";
-      throw hal_exception(ss.str());
+        throw hal_exception("Top Segment " + std::to_string(topSegment->getArrayIndex()) + " in genome "
+                          + genome->getName() + " has parse offset out of range");
     }
     if ((hal_index_t)parseOffset + parseSegment->getStartPosition() != 
         topSegment->getStartPosition())
@@ -243,22 +210,17 @@ void hal::validateTopSegment(const TopSegment* topSegment)
        genome->getTopSegmentIterator(paralogyIndex);
     if (pti->getTopSegment()->getParentIndex() != topSegment->getParentIndex())
     {
-      stringstream ss;
-      ss << "Top segment " << topSegment->getArrayIndex() 
-         << " has parent index "
-         << topSegment->getParentIndex() << ", but next paraglog " 
-         << topSegment->getNextParalogyIndex() << " has parent Index " 
-         << pti->getTopSegment()->getParentIndex() 
-         << ". Paralogous top segments must share same parent.";
-      throw hal_exception(ss.str());
+        throw hal_exception("Top segment " + std::to_string(topSegment->getArrayIndex())
+                            + " has parent index " + std::to_string(topSegment->getParentIndex()) + ", but next paraglog " 
+                            + std::to_string(topSegment->getNextParalogyIndex()) + " has parent Index " 
+                            + std::to_string(pti->getTopSegment()->getParentIndex()) 
+                            + ". Paralogous top segments must share same parent.");
     }
     if (paralogyIndex == topSegment->getArrayIndex())
     {
-      stringstream ss;
-      ss << "Top segment " << topSegment->getArrayIndex() 
-         << " has paralogy index " << topSegment->getNextParalogyIndex()
-         << " which isn't allowed";
-      throw hal_exception(ss.str());
+        throw hal_exception("Top segment " + std::to_string(topSegment->getArrayIndex())
+                            + " has paralogy index " + std::to_string(topSegment->getNextParalogyIndex())
+                            + " which isn't allowed");
     }
   }
 }
@@ -275,10 +237,8 @@ void hal::validateSequence(const Sequence* sequence)
       char c = dnaIt->getChar();
       if (isNucleotide(c) == false)
       {
-        stringstream ss;
-        ss << "Non-nucleotide character discoverd at position " 
-           << i << " of sequence " << sequence->getName() << ": " << c;
-        throw hal_exception(ss.str());
+        throw hal_exception( "Non-nucleotide character discoverd at position " 
+                             + std::to_string(i) + " of sequence " + sequence->getName() + ": " + c);
       }
     }
   }
@@ -298,10 +258,8 @@ void hal::validateSequence(const Sequence* sequence)
     }
     if (totalTopLength != length)
     {
-      stringstream ss;
-      ss << "Sequence " << sequence->getName() << " has length " << length 
-         << " but its top segments add up to " << totalTopLength;
-      throw hal_exception(ss.str());
+        throw hal_exception("Sequence " + sequence->getName() + " has length " + std::to_string(length )
+                            + " but its top segments add up to " + std::to_string(totalTopLength));
     }
   }
 
@@ -321,10 +279,8 @@ void hal::validateSequence(const Sequence* sequence)
     }
     if (totalBottomLength != length)
     {
-      stringstream ss;
-      ss << "Sequence " << sequence->getName() << " has length " << length 
-         << " but its bottom segments add up to " << totalBottomLength;
-      throw hal_exception(ss.str());
+        throw hal_exception("Sequence " + sequence->getName() + " has length " + std::to_string(length)
+                            + " but its bottom segments add up to " + std::to_string(totalBottomLength));
     }
   }
 }
@@ -357,13 +313,11 @@ void hal::validateDuplications(const Genome* genome)
       {
         if (topIt->hasNextParalogy() == false && count > 1)
         {
-          stringstream ss;
-          ss << "Top Segment " << topIt->getTopSegment()->getArrayIndex()
-             << " in genome " << genome->getName() << " is not marked as a"
-             << " duplication but it shares its parent " 
-             << topIt->getTopSegment()->getArrayIndex() << " with at least " 
-             << count - 1 << " other segments in the same genome";
-          throw hal_exception(ss.str());
+            throw hal_exception("Top Segment " + std::to_string(topIt->getTopSegment()->getArrayIndex())
+                                + " in genome " + genome->getName() + " is not marked as a"
+                                + " duplication but it shares its parent " 
+                                + std::to_string(topIt->getTopSegment()->getArrayIndex()) + " with at least " 
+                                                 + std::to_string(count - 1) + " other segments in the same genome");
         }  
       }
     }
@@ -396,20 +350,16 @@ void hal::validateGenome(const Genome* genome)
 
       if (s1 == NULL || s1->getName() != sequence->getName())
       {
-        stringstream ss;
-        ss << "Sequence " << sequence->getName() << " has a bad overlap in "
-           << genome->getName();
-        throw hal_exception(ss.str());
+          throw hal_exception("Sequence " + sequence->getName() + " has a bad overlap in "
+                              + genome->getName());
       }
       const Sequence* s2 = 
          genome->getSequenceBySite(sequence->getStartPosition() +
                                    sequence->getSequenceLength() - 1);
       if (s2 == NULL || s2->getName() != sequence->getName())
       {
-        stringstream ss;
-        ss << "Sequence " << sequence->getName() << " has a bad overlap in "
-           << genome->getName();
-        throw hal_exception(ss.str());
+        throw hal_exception("Sequence " + sequence->getName() + " has a bad overlap in "
+                             + genome->getName());
       }
     }
   }
@@ -420,32 +370,24 @@ void hal::validateGenome(const Genome* genome)
 
   if (genomeLength != totalLength)
   {
-    stringstream ss;
-    ss << "Problem: genome has length " << genomeLength 
-       << ", however sequences total " << totalLength;
-    throw hal_exception(ss.str());
+      throw hal_exception("Problem: genome has length " + std::to_string(genomeLength)
+                          + ", however sequences total " + std::to_string(totalLength));
   }
   if (genomeTop != totalTop)
   {
-    stringstream ss;
-    ss << "Problem: genome has " << genomeTop << " top segments but "
-       << "sequences have " << totalTop << " top segments";
-    throw ss.str();
+      throw hal_exception("Problem: genome has " + std::to_string(genomeTop) + " top segments but "
+                          + "sequences have " + std::to_string(totalTop) + " top segments");
   }
   if (genomeBottom != totalBottom)
   {
-    stringstream ss;
-    ss << "Problem: genome has " << genomeBottom << " bottom segments but "
-       << "sequences have " << totalBottom << " bottom segments";
-    throw hal_exception(ss.str());
+      throw hal_exception("Problem: genome has " + std::to_string(genomeBottom) + " bottom segments but "
+                          + "sequences have " + std::to_string(totalBottom) + " bottom segments");
   }
 
   if (genomeLength > 0 && genomeTop == 0 && genomeBottom == 0)
   {
-    stringstream ss;
-    ss << "Problem: genome " << genome->getName() << " has length " 
-       << genomeLength << "but no segments";
-    throw hal_exception(ss.str());
+    throw hal_exception("Problem: genome " + genome->getName() + " has length " 
+                        + std::to_string(genomeLength) + "but no segments");
   }
   
   validateDuplications(genome);

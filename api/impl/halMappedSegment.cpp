@@ -4,7 +4,6 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <string>
-#include <sstream>
 #include <iostream>
 #include <limits>
 #include <algorithm>
@@ -534,10 +533,8 @@ hal_size_t MappedSegment::mapRecursiveUp(
 
   if (nextGenome == NULL)
   {
-    stringstream ss;
-    ss << "Reached top of tree when attempting to recursively map up from "
-       << curGenome->getName() << " to " << tgtGenome->getName();
-    throw hal_exception(ss.str());
+      throw hal_exception("Reached top of tree when attempting to recursively map up from "
+                          + curGenome->getName() + " to " + tgtGenome->getName());
   }
   
   // Map all segments to the parent.
@@ -612,10 +609,8 @@ hal_size_t MappedSegment::mapRecursiveDown(
 
   if (nextGenome == NULL)
   {
-    stringstream ss;
-    ss << "Could not find correct child that leads from "
-       << curGenome->getName() << " to " << tgtGenome->getName();
-    throw hal_exception(ss.str());
+    throw hal_exception("Could not find correct child that leads from "
+                        + curGenome->getName() + " to " + tgtGenome->getName());
   }
 
   assert(nextGenome->getParent() == curGenome);

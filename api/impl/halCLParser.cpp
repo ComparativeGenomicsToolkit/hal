@@ -3,7 +3,6 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-#include <sstream>
 #include <iostream>
 #include <cassert>
 #include "halCLParser.h"
@@ -72,7 +71,7 @@ void CLParser::addOptionFlag(const string& name,
   }
   stringstream ss;
   ss << defaultValue;
-  Option opt = { description, ss.str(), ss.str(), true, false };
+  Option opt = { description, std::to_string(defaultValue), std::to_string(defaultValue), true, false };
   _options.insert(pair<string, Option>(name, opt));
   _maxOptLen = max(_maxOptLen, name.length());
 }

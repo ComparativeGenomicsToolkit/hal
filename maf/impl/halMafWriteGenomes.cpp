@@ -6,7 +6,6 @@
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
-#include <sstream>
 #include <algorithm>
 #include "hal.h"
 #include "halMafWriteGenomes.h"
@@ -58,11 +57,9 @@ MafWriteGenomes::MapRange MafWriteGenomes::getRefSequences() const
   
   if (i == _dimMap->end())
   {
-    stringstream ss;
-    ss << "Reference genome " << _refName << " was not found in the MAF file.  "
-       "Ie, no sequence in name in the form " << _refName << ".something was "
-       "found.";
-    throw hal_exception(ss.str());
+    throw hal_exception("Reference genome " + _refName + " was not found in the MAF file.  "
+                        "Ie, no sequence in name in the form " + _refName + ".something was "
+                        "found.");
   }
 
   DimMap::const_iterator j = i;
@@ -304,10 +301,8 @@ void MafWriteGenomes::initBlockInfo(size_t col)
           {
             if (i == (hal_size_t)_refRow)
             {
-              stringstream ss;
-              ss << "duplication detected in reference at row with start "
-                 "position (in + coordinates) " << row._startPosition;
-              throw hal_exception(ss.str());
+              throw hal_exception("duplication detected in reference at row with start position (in + coordinates) "
+                                  + std::to_string(row._startPosition));
             }
           }
         }

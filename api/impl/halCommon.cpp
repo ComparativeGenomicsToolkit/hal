@@ -3,7 +3,6 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-#include <sstream>
 #include <map>
 #include <cassert>
 #include "halCommon.h"

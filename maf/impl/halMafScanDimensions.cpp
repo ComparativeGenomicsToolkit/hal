@@ -6,7 +6,6 @@
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
-#include <sstream>
 #include <algorithm>
 #include "halMafScanDimensions.h"
 
@@ -63,10 +62,8 @@ void MafScanDimensions::sLine()
   if (dotPos == string::npos || dotPos == 0 || 
       dotPos == row._sequenceName.length() - 1)
   {
-    stringstream ss;
-    ss << "illegal sequence name found: " << row._sequenceName << ".  Sequence "
-       "names must be in genomeName.sequenceName format.";
-    throw hal_exception(ss.str());
+    throw hal_exception("illegal sequence name found: " + row._sequenceName + ".  Sequence "
+                        "names must be in genomeName.sequenceName format.");
   }
   
   size_t numGaps = 0;
@@ -80,31 +77,25 @@ void MafScanDimensions::sLine()
     {
       if (!isNucleotide(row._line[i]))
       {
-        stringstream ss;
-        ss << "problem reading line for sequence " << row._sequenceName << ": "
-           " non-gap non-nucleotide character " << row._line[i] << " found at "
-           << i << "th position";
-        throw hal_exception(ss.str());
+        throw hal_exception("problem reading line for sequence " + row._sequenceName
+                            + ": non-gap non-nucleotide character " + row._line[i] + " found at "
+                            + std::to_string(i) + "th position");
       }
     }
   }
 
   if (row._line.length() - numGaps != row._length)
   {
-    stringstream ss;
-    ss << "problem reading line for sequence " << row._sequenceName << ": "
-           " length field was " << row._length << " but line contains "
-           << row._line.length() - numGaps << " bases";
-    throw hal_exception(ss.str());
+    throw hal_exception("problem reading line for sequence " + row._sequenceName
+                        + ": length field was " + std::to_string(row._length) + " but line contains "
+                        + std::to_string(row._line.length() - numGaps) + " bases");
   }
 
   if (row._startPosition + row._length > row._srcLength)
   {
-    stringstream ss;
-    ss << "problem reading line for sequence " << row._sequenceName << ": "
-           " sequence length is" << row._srcLength << " but line starts at "
-       << row._startPosition << " and contains " << row._length << " bases";
-    throw hal_exception(ss.str());
+    throw hal_exception("problem reading line for sequence " + row._sequenceName
+                        + ": sequence length is" + std::to_string(row._srcLength) + " but line starts at "
+                        + std::to_string(row._startPosition) + " and contains " + std::to_string(row._length) + " bases");
   }
 }
 
@@ -136,11 +127,9 @@ void MafScanDimensions::updateDimensionsFromBlock()
     if (result.second == false && row._srcLength != rec->_length)
     {
       assert(rec != NULL);
-      stringstream ss;
-      ss << "conflicting length for sequence " << row._sequenceName << ": "
-         << "was scanned once as " << row._srcLength << " then again as "
-         << rec->_length;
-      throw hal_exception(ss.str());
+      throw hal_exception("conflicting length for sequence " + row._sequenceName + ": "
+                          + "was scanned once as " + std::to_string(row._srcLength) + " then again as "
+                          + std::to_string(rec->_length));
     }
     else if (result.second == true)
     {

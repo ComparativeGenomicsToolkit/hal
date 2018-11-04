@@ -4,7 +4,6 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <string>
-#include <sstream>
 #include <iostream>
 #include <algorithm>
 #include <cassert>
@@ -549,9 +548,8 @@ static stTree *getTreeNode(SegmentIteratorConstPtr segIt)
   const Genome *genome = segIt->getGenome();
   const Sequence *seq = genome->getSequenceBySite(segIt->getStartPosition());
 
-  stringstream ss;
-  ss << segIt->getGenome()->getName() << "." << seq->getName() << "|" << segIt->getStartPosition() - seq->getStartPosition();
-  stTree_setLabel(ret, ss.str().c_str());
+  std::string label(segIt->getGenome()->getName() + "." + seq->getName() + "|" + std::to_string(segIt->getStartPosition() - seq->getStartPosition()));
+  stTree_setLabel(ret, label.c_str());
 
   DNAIteratorConstPtr *dnaIt = new DNAIteratorConstPtr(genome->getDNAIterator(segIt->getStartPosition()));
   if (segIt->getReversed()) {

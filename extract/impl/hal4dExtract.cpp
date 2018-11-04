@@ -124,10 +124,8 @@ void Extract4d::extractBlocks4d(bool conserved)
         (hal_index_t)_refSequence->getSequenceLength())
     {
       // Bad bed block.
-      stringstream ss;
-      ss << "Line " << _lineNumber << ", block " << i 
-           <<": BED coordinates invalid\n";
-      throw hal_exception(ss.str());
+        throw hal_exception("Line " + std::to_string(_lineNumber) + ", block " + std::to_string(i)
+                            + ": BED coordinates invalid");
     }
     hal_index_t start =  _bedLine._start + block._start;
     hal_index_t end = start + block._length;

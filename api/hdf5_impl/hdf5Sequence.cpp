@@ -5,7 +5,6 @@
  */
 #include <string>
 #include <cstring>
-#include <sstream>
 #include <set>
 #include <iostream>
 #include <cassert>
@@ -220,10 +219,8 @@ ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
   if (position < 0 || 
       lastPosition >= (hal_index_t)(getStartPosition() + getSequenceLength()))
   {
-    stringstream ss;
-    ss << "HDF5Sequence::getColumnIterators: input indices "
-       << "(" << position << ", " << lastPosition << ") out of bounds";
-    throw hal_exception(ss.str());
+    throw hal_exception("HDF5Sequence::getColumnIterators: input indices ("
+                        + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
   const ColumnIterator* newIt = 
      new ColumnIterator(getGenome(), targets, idx, lastIdx, 
@@ -257,11 +254,9 @@ void HDF5Sequence::setSubString(const std::string& inString,
 {
   if (length != inString.length())
   {
-    stringstream ss;
-    ss << "setString: input string of length " << inString.length()
-       << " has length different from target string in sequence " << getName() 
-       << " which is of length " << length;
-    throw hal_exception(ss.str());
+      throw hal_exception("setString: input string of length " + std::to_string(inString.length())
+                          + " has length different from target string in sequence " + getName()
+                          + " which is of length " + std::to_string(length));
   }
   hal_size_t idx = start + getStartPosition();
   HDF5DNAIterator dnaIt(_genome, idx);

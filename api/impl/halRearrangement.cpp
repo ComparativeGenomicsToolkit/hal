@@ -4,7 +4,6 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <string>
-#include <sstream>
 #include <iostream>
 #include <algorithm>
 #include <cassert>
@@ -315,10 +314,8 @@ void Rearrangement::setNThreshold(double nThreshold)
 {
   if (nThreshold < 0 || nThreshold > 1)
   {
-    stringstream ss;
-    ss << "Invalid nThreshold, " << nThreshold << ", specified. "
-       "must be between 0 and 1.";       
-    throw hal_exception(ss.str());
+      throw hal_exception("Invalid nThreshold, " + std::to_string(nThreshold) + ", specified. "
+                          "must be between 0 and 1.0");
   }
   _nThreshold = nThreshold;
 }

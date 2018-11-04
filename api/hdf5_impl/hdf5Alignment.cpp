@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <deque>
-#include <sstream>
 #include <algorithm>
 #include "halCommon.h"
 #include "halSequenceIterator.h"

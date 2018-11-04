@@ -568,10 +568,8 @@ void printBaseComp(ostream& os, AlignmentConstPtr alignment,
   }
   if (step == 0)
   {
-    stringstream ss;
-    ss << "Invalid value for --baseComp: " << baseCompPair << ".  Must be of"
-       << " format genomeName,step";
-    throw hal_exception(ss.str());
+    throw hal_exception("Invalid value for --baseComp: " + baseCompPair + ".  Must be of"
+                        + " format genomeName,step");
   }
       
   const Genome* genome = alignment->openGenome(genomeName);

@@ -4,7 +4,6 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <string>
-#include <sstream>
 #include <cstdlib>
 #include "hdf5BottomSegment.h"
 #include "hdf5TopSegment.h"
@@ -132,13 +131,10 @@ H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
   dataType.insertMember("topIdx", topIndexOffset, PredType::NATIVE_INT64);
   for(hsize_t i = 0; i < numChildren; ++i)
   {
-    std::stringstream ss;
-    ss << i;
-    H5std_string number = ss.str();
-    dataType.insertMember("childIdx" + number, firstChildOffset + 
+      dataType.insertMember("childIdx" + std::to_string(i), firstChildOffset + 
                           i * (sizeof(hal_index_t) + sizeof(bool)), 
                           PredType::NATIVE_INT64);
-    dataType.insertMember("reverseFlag" + number, firstChildOffset + 
+      dataType.insertMember("reverseFlag" + std::to_string(i), firstChildOffset + 
                           i * (sizeof(hal_index_t) + sizeof(bool)) +
                           sizeof(hal_index_t), 
                           PredType::NATIVE_CHAR);

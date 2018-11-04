@@ -42,9 +42,7 @@ void BedScanner::scan(const string& bedPath, int bedVersion,
   {
     delete _bedStream;
     _bedStream = NULL;
-    stringstream ss;
-    ss << e.what() << " in file " << bedPath;
-    throw hal_exception(ss.str());
+    throw hal_exception(string(e.what()) + " in file " + bedPath);
   }  
 
   delete _bedStream;
@@ -85,9 +83,7 @@ void BedScanner::scan(istream* is, int bedVersion, const locale* inLocale)
   }
   catch(hal_exception& e)
   {
-    stringstream ss;
-    ss << e.what() << " -- input bed line " << _lineNumber;
-    throw hal_exception(ss.str());
+      throw hal_exception(string(e.what()) + " in input bed line " + std::to_string(_lineNumber));
   }
   visitEOF();
   _bedStream = NULL;

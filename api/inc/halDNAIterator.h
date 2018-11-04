@@ -6,7 +6,6 @@
 
 #ifndef _HALDNAITERATOR_H
 #define _HALDNAITERATOR_H
-#include <iostream>
 #include "halDefs.h"
 
 namespace hal {
@@ -74,28 +73,5 @@ public:
 };
 
 }
-
-#ifndef NDEBUG
-// FIXME: refactor?  why only NDEBUG
-#include "halGenome.h"
-namespace hal {
-inline std::ostream& operator<<(std::ostream& os, 
-                                const DNAIterator* dna)
-{
-  const Genome* genome = dna->getGenome();
-  os << "dna: ";
-  os << "Genome=" << genome->getName();
-  os << " Seq=" << dna->getSequence()->getName();
-  os << " idx=" << dna->getArrayIndex();
-
-  if (dna->getArrayIndex() >= 0 && 
-      dna->getArrayIndex() < (hal_index_t)genome->getSequenceLength())
-  {
-    os << " val=" << dna->getChar();
-  }
-  return os;
-}
-}
-#endif
 
 #endif

@@ -13,21 +13,14 @@
 #include <vector>
 #include <locale>
 #include <cassert>
-#include <sstream>
 #include "halDefs.h"
 
 namespace hal {
 
 inline bool compatibleWithVersion(const std::string& version)
 {
-  double myVersion, inVersion;
   // assume versions are strings tho we treat as floats for now.
-  std::stringstream ss, ss2;
-  ss << HAL_VERSION;
-  ss >> myVersion;
-  ss2 << version;
-  ss2 >> inVersion;
-  return int(myVersion) == int(inVersion);
+  return int(std::stod(HAL_VERSION)) == int(std::stod(version));
 }
 
 /** C++ style strtok-type function.  Can't remember why I wrote it */

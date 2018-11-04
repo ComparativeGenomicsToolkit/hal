@@ -64,9 +64,7 @@ void LodManager::loadLODFile(const string& lodPath,
   char* cbuffer = udcFileReadAll(cpath, NULL, 100000, &cbufSize);
   if (cbuffer == NULL)
   {
-    stringstream emes;
-    emes << "Error udc-opening " << lodPath;
-    throw hal_exception(emes.str());
+    throw hal_exception("Error udc-opening " + lodPath);
   }
   string cbufCpy(cbuffer);
   freeMem(cbuffer);
@@ -95,9 +93,7 @@ void LodManager::loadLODFile(const string& lodPath,
     ss >> minLen >> path;
     if (ifile.bad())
     {
-      stringstream emes;
-      emes << "Error parsing line " << lineNum << " of " << lodPath;
-      throw hal_exception(emes.str());
+        throw hal_exception("Error parsing line " + std::to_string(lineNum) + " of " + lodPath);
     }
     if (lineBuffer.length() == 0)
     {
@@ -106,11 +102,9 @@ void LodManager::loadLODFile(const string& lodPath,
     string fullHalPath;
     if (foundMax == true)
     {
-      stringstream emes;
-      emes << "Error on line " << lineNum << " of " << lodPath 
-           << ": Limit token (" << MaxLodToken << ") can only appear on"
-           << " final line.";
-        throw hal_exception(emes.str());
+        throw hal_exception("Error on line " + std::to_string(lineNum) + " of " + lodPath 
+                            + ": Limit token (" + MaxLodToken + ") can only appear on"
+                            + " final line.");
     }
     if (path == MaxLodToken)
     {
@@ -159,10 +153,8 @@ AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength,
   AlignmentConstPtr& alignment = mapIt->second.second;
   if (mapIt->first == _maxLodLowerBound)
   {
-    stringstream ss;
-    ss << "Query length " << queryLength << " above maximum LOD size of "
-       << getMaxQueryLength();
-    throw hal_exception(ss.str());
+      throw hal_exception("Query length " + std::to_string(queryLength) + " above maximum LOD size of "
+                          + std::to_string(getMaxQueryLength()));
   }
   if (alignment.get() == NULL)
   {
@@ -201,17 +193,13 @@ void LodManager::checkMap(const string& lodPath)
 {
   if (_map.size() == 0)
   {
-    stringstream ss;
-    ss << "No entries were found in " << lodPath;
-    throw hal_exception(ss.str());
+      throw hal_exception("No entries were found in " + lodPath);
   }
   AlignmentMap::const_iterator mapIt = _map.begin();
   if (mapIt->first != 0)
   {
-    stringstream ss;
-    ss << "No alignment with range value 0 found in " << lodPath << ". "
-       << "A record of the form \"0 pathToOriginalHALFile\" must be present";
-    throw hal_exception(ss.str());
+    throw hal_exception("No alignment with range value 0 found in " + lodPath + ". "
+                        + "A record of the form \"0 pathToOriginalHALFile\" must be present");
   }
   if (_maxLodLowerBound == 0)
   {
@@ -225,9 +213,7 @@ void LodManager::checkAlignment(hal_size_t minQuery,
 {
   if (alignment->getNumGenomes() == 0)
   {
-    stringstream ss;
-    ss << "No genomes found in base alignment specified in " << path;
-    throw hal_exception(ss.str());
+    throw hal_exception("No genomes found in base alignment specified in " + path);
   }
 
 #ifndef NDEBUG
@@ -242,10 +228,8 @@ void LodManager::checkAlignment(hal_size_t minQuery,
     alignment->closeGenome(genome);
     if (seqFound == false)
     {
-      stringstream ss;
-      ss << "HAL file for highest level of detail (0) in " << path 
-         << "must contain DNA sequence information.";
-      throw hal_exception(ss.str());
+      throw hal_exception("HAL file for highest level of detail (0) in " + path 
+                          + "must contain DNA sequence information.");
     }
   }
 #endif

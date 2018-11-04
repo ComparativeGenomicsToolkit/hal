@@ -68,9 +68,7 @@ void TopSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
   size_t numChildren = 9;
   for (size_t i = 0; i < numChildren; ++i)
   {
-    std::stringstream ss;
-    ss << i;
-    alignment->addLeafGenome(string("Leaf") + ss.str(), "Anc0", 0.1);
+    alignment->addLeafGenome("Leaf" + std::to_string(i), "Anc0", 0.1);
   }
   vector<Sequence::Info> seqVec(1);
   seqVec[0] = Sequence::Info("Sequence", 1000000, 5000, 10000);
@@ -505,9 +503,7 @@ void TopSegmentIsGapTest::createCallBack(AlignmentPtr alignment)
   // aligned with segment i in child.
   for (size_t i = 0; i < numSequences; ++i)
   {
-    stringstream ss;
-    ss << "Sequence" << i;
-    string name = ss.str();
+      string name = "Sequence" + std::to_string(i);
     seqVec[i] = Sequence::Info(name, 10, 5, 5);
   }
   parent1->setDimensions(seqVec);

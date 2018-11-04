@@ -5,7 +5,6 @@
  */
 #include <string>
 #include <iostream>
-#include <sstream>
 #include "halAlignmentTest.h"
 #include "halValidateTest.h"
 #include "halRandomData.h"

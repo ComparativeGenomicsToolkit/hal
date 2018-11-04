@@ -1,4 +1,3 @@
-* change use of "stringstream ss" to build string to using std::to_string
 * halValidate needs to have initSize, it is a bit tricky for halExport, you can't reallya pass the parser in because it only allows one "format", so I hacked it up.
 * Add a units suffix (G, M) to mmapInitSize
 * Drop mmap grow functionality, as it doesn't seem to work.  Maybe estimate the initial size from the input or just make it huge.
@@ -27,3 +26,5 @@ https://herbsutter.com/2012/06/21/reader-qa-why-dont-modern-smart-pointers-impli
 * hdf5DNAIterator structure could be collapsed with generic if genome provide a way to get an array
 of DNA.  Maybe pack DNA in mmap?
 * Using stTree with C-strings results in copying rather than sharing strings.
+* HAL_LOCK should be real function
+* C interface to blockViz is weird, with optional thowing an exception or returning a C string.
