@@ -24,11 +24,17 @@
 #ifdef ENABLE_UDC
 #include <pthread.h>
 static pthread_mutex_t HAL_MUTEX;
-#define HAL_LOCK pthread_mutex_lock(&HAL_MUTEX);
-#define HAL_UNLOCK pthread_mutex_unlock(&HAL_MUTEX);
+static inline void halLock() {
+    pthread_mutex_lock(&HAL_MUTEX);
+}
+static inline void halUnlock() {
+    pthread_mutex_unlock(&HAL_MUTEX);
+}
 #else
-#define HAL_LOCK
-#define HAL_UNLOCK
+static inline void halLock() {
+}
+static inline void halUnlock() {
+}
 #endif
 
 using namespace std;
@@ -88,7 +94,7 @@ extern "C" int halOpen(char* halFilePath, char **errStr)
 
 int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr)
 {
-  HAL_LOCK
+  halLock();
   int handle = -1;
   try
   {
@@ -145,13 +151,13 @@ int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr)
     *errStr = stString_copy(msg.c_str());
     handle = -1;
   }
-  HAL_UNLOCK
+  halUnlock();
   return handle;
 }
 
 extern "C" int halClose(int handle, char **errStr)
 {
-  HAL_LOCK
+  halLock();
   int ret = 0;
   try
   {
@@ -182,7 +188,7 @@ extern "C" int halClose(int handle, char **errStr)
     *errStr = stString_copy(msg.c_str());
     ret = -1;
   }
-  HAL_UNLOCK
+  halUnlock();
   return ret;
 }
 
@@ -240,7 +246,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
                                                       const char *coalescenceLimitName,
                                                       char **errStr)
 {
-  HAL_LOCK
+  halLock();
   hal_block_results_t* results = NULL;
   try
   {
@@ -337,7 +343,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     *errStr = stString_copy(msg.c_str());
     results = NULL;
   }
-  HAL_UNLOCK
+  halUnlock();
   return results;
 }
 
@@ -436,7 +442,7 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
                                int doDupes,
                                char **errStr)
 {
-  HAL_LOCK
+  halLock();
   hal_int_t numBytes = 0;
   try
   {
@@ -514,13 +520,13 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     *errStr = stString_copy(msg.c_str());
     numBytes = -1;
   }
-  HAL_UNLOCK
+  halUnlock();
   return numBytes;
 }
 
 extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
 {
-  HAL_LOCK
+  halLock();
   hal_species_t* head = NULL;
   try
   {
@@ -593,7 +599,7 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
     *errStr = stString_copy(msg.c_str());
     head = NULL;
   }
-  HAL_UNLOCK
+  halUnlock();
   return head;
 }
 
@@ -601,7 +607,7 @@ extern "C" struct hal_species_t *halGetPossibleCoalescenceLimits(int halHandle,
                                                                  const char *qSpecies,
                                                                  const char *tSpecies,
                                                                  char **errStr) {
-  HAL_LOCK
+  halLock();
   hal_species_t* head = NULL;
   try
   {
@@ -667,7 +673,7 @@ extern "C" struct hal_species_t *halGetPossibleCoalescenceLimits(int halHandle,
     *errStr = stString_copy(msg.c_str());
     head = NULL;
   }
-  HAL_UNLOCK
+  halUnlock();
   return head;
 }
 
@@ -686,7 +692,7 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
                                                  char* speciesName,
                                                  char **errStr)
 {
-  HAL_LOCK
+  halLock();
   hal_chromosome_t* head = NULL;
   try
   {
@@ -749,7 +755,7 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
     *errStr = stString_copy(msg.c_str());
     head = NULL;
   }
-  HAL_UNLOCK
+  halUnlock();
   return head;
 }
 
@@ -758,7 +764,7 @@ extern "C" char *halGetDna(int halHandle,
                            hal_int_t start, hal_int_t end,
                            char **errStr)
 {
-  HAL_LOCK
+  halLock();
   char* dna = NULL;
   try
   {
@@ -806,13 +812,13 @@ extern "C" char *halGetDna(int halHandle,
     *errStr = stString_copy(msg.c_str());
     dna = NULL;
   }
-  HAL_UNLOCK
+  halUnlock();
   return dna;
 }
 
 extern "C" hal_int_t halGetMaxLODQueryLength(int halHandle, char **errStr)
 {
-  HAL_LOCK
+  halLock();
   hal_int_t ret = 0;
   try
   {
@@ -845,7 +851,7 @@ extern "C" hal_int_t halGetMaxLODQueryLength(int halHandle, char **errStr)
     *errStr = stString_copy(msg.c_str());
     ret = -1;
   }
-  HAL_UNLOCK
+  halUnlock();
   return ret;
 }
 
@@ -1361,7 +1367,7 @@ extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
                                                        const char *genomeName,
                                                        char **errStr)
 {
-  HAL_LOCK
+  halLock();
   struct hal_metadata_t *ret = NULL;
   try {
     AlignmentConstPtr alignment = 
@@ -1409,7 +1415,7 @@ extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
     *errStr = stString_copy(msg.c_str());
     ret = NULL;
   }
-  HAL_UNLOCK
+  halUnlock();
   return ret;
 }
 
