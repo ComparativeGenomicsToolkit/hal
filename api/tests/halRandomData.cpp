@@ -82,7 +82,7 @@ void hal::createRandomAlignment(hal::AlignmentPtr emptyAlignment,
   createRandomTree(emptyAlignment,
                    meanDegree,
                    maxBranchLength,
-    maxGenomes);
+                   maxGenomes);
   
   createRandomDimensions(emptyAlignment,
                          minSegmentLength,

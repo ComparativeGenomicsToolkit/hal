@@ -150,21 +150,21 @@ void HDF5Alignment::defineOptions(CLParserPtr parser,
 
 /* initialize class from options */
 void HDF5Alignment::initializeFromOptions(CLParserConstPtr parser) {
-    _inMemory = parser->getFlagAlt("hdf5InMemory", "inMemory");
     _cprops.copy(H5::FileCreatPropList::DEFAULT);
+    _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
+    _aprops.copy(H5::FileAccPropList::DEFAULT);
+    _inMemory = parser->getFlagAlt("hdf5InMemory", "inMemory");
     if (_mode & CREATE_ACCESS) {
         // these are only available on create
         hsize_t chunk = parser->getOptionAlt<hsize_t>("hdf5Chunk", "chunk");
         _dcprops.setChunk(1, &chunk);
         _dcprops.setDeflate(parser->getOptionAlt<hsize_t>("hdf5Compression", "deflate"));
     }
-    _aprops.copy(H5::FileAccPropList::DEFAULT);
     _aprops.setCache(parser->getOptionAlt<hsize_t>("hdf5CacheMDC", "cacheMDC"),
                      parser->getOptionAlt<hsize_t>("hdf5CacheRDC", "cacheRDC"),
                      parser->getOptionAlt<hsize_t>("hdf5CacheBytes", "cacheBytes"),
                      parser->getOptionAlt<double>("hdf5CacheW0", "cacheW0"));
 
-    _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
 #ifdef ENABLE_UDC
     _udcCacheDir = parser->getOption<const string&>("udcCacheDir");
     if (not _udcCacheDir.empty()) {
