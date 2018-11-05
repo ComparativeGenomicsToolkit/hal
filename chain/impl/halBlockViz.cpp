@@ -79,6 +79,18 @@ static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
 
 static void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList);
 
+
+/* return an error in errStr if not NULL, otherwise throw and exception with
+ * the message. */
+static void handleError(const string& msg,
+                        char **errStr) {
+    if (errStr == NULL) {
+        throw hal_exception(msg);
+    } else {
+        *errStr = stString_copy(msg.c_str());
+    }
+}
+
 extern "C" int halOpenLOD(char *lodFilePath, char **errStr)
 {
   bool isHal = lodFilePath && strlen(lodFilePath) > 4 &&
@@ -133,23 +145,15 @@ int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr)
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    handle = -1;
+      halUnlock();
+      handleError("halOpenLodOrHal error: " + string(inputPath) + ": " + e.what(), errStr);
+      return -1;
   }
   catch(...)
   {
-      string msg = "Error opening " + string(inputPath);
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    handle = -1;
+      halUnlock();
+    handleError("halOpenLodOrHal error: " + string(inputPath) + ": Unknown exception", errStr);
+    return -1;
   }
   halUnlock();
   return handle;
@@ -164,29 +168,23 @@ extern "C" int halClose(int handle, char **errStr)
     HandleMap::iterator mapIt = handleMap.find(handle);
     if (mapIt == handleMap.end())
     {
-        throw hal_exception("error closing handle " + std::to_string(handle) + ": not found");
+        halUnlock();
+        handleError("halClose error on handle: " + std::to_string(handle) + ": not found", errStr);
+        return -1;
     }
     handleMap.erase(mapIt);
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    ret = -1;
+      halUnlock();
+      handleError("halClose error on handle: " + std::to_string(handle) + ": " + e.what(), errStr);
+      return -1;
   }
   catch(...)
   {
-      std::string msg = "Error closing " + std::to_string(handle);
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    ret = -1;
+    halUnlock();
+    handleError("halClose error on handle: " + std::to_string(handle) + ": unknown exception", errStr);
+    return -1;
   }
   halUnlock();
   return ret;
@@ -253,17 +251,21 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     hal_int_t rangeLength = tEnd - tStart;
     if (rangeLength < 0)
     {
-        throw hal_exception("Invalid query range [" + std::to_string(tStart) + "," + std::to_string(tEnd) + ")");
+        halUnlock();
+        handleError("halGetBlocksInTargetRange invalid query range [" + std::to_string(tStart) + "," + std::to_string(tEnd) + ")", errStr);
+        return NULL;
     }
     if (tReversed != 0 && mapBackAdjacencies != 0)
     {
-      throw hal_exception("tReversed can only be set when"
-                          "mapBackAdjacencies is 0");
+      halUnlock();
+      handleError("halGetBlocksInTargetRange tReversed can only be set when mapBackAdjacencies is 0", errStr);
+      return NULL;
     }
     if (tReversed != 0 && dupMode == HAL_QUERY_AND_TARGET_DUPS)
     {
-      throw hal_exception("tReversed cannot be set in conjunction with"
-                          " dupMode=HAL_QUERY_AND_TARGET_DUPS");
+        halUnlock();
+        handleError("tReversed cannot be set in conjunction with dupMode=HAL_QUERY_AND_TARGET_DUPS", errStr);
+        return NULL;
     }
     bool getSequenceString;
     switch (seqMode) 
@@ -287,11 +289,15 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     hal_index_t absEnd = tSequence->getStartPosition() + myEnd - 1;
     if (absStart > absEnd)
     {
-      throw hal_exception("Invalid range");
+        halUnlock();
+        handleError("halGetBlocksInTargetRange invalid range", errStr);
+        return NULL;
     }
     if (absEnd > tSequence->getEndPosition())
     {
-      throw hal_exception("Target end position outside of target sequence");
+        halUnlock();
+        handleError("halGetBlocksInTargetRange target end position outside of target sequence", errStr);
+        return NULL;
     }
     // We now know the query length so we can do a proper lod query
     if (tEnd == 0)
@@ -325,23 +331,15 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    std::string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    results = NULL;
+    halUnlock();
+    handleError("halGetBlocksInTargetRange error reading blocks: " + string(e.what()), errStr);
+    return NULL;
   }
   catch(...)
   {
-    string msg = "Error in hal block query";
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    results = NULL;
+    halUnlock();
+    handleError("halGetBlocksInTargetRange error reading blocks: unknown exception" , errStr);
+    return NULL;
   }
   halUnlock();
   return results;
@@ -449,7 +447,9 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     hal_int_t rangeLength = tEnd - tStart;
     if (rangeLength < 0)
     {
-        throw hal_exception("Invalid query range [" + std::to_string(tStart) + "," + std::to_string(tEnd) + ")");
+        halUnlock();
+        handleError("halGetMAF invalid query range [" + std::to_string(tStart) + "," + std::to_string(tEnd) + ")", errStr);
+        return -1;
     }
     AlignmentConstPtr alignment = 
        getExistingAlignment(halHandle, hal_size_t(0), true);
@@ -471,11 +471,15 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     hal_index_t absEnd = tSequence->getStartPosition() + myEnd - 1;
     if (absStart > absEnd)
     {
-      throw hal_exception("Invalid range");
+        halUnlock();
+        handleError("halGetMAF invalid range", errStr);
+        return -1;
     }
     if (absEnd > tSequence->getEndPosition())
     {
-      throw hal_exception("Target end position outside of target sequence");
+        halUnlock();
+        handleError("halGetMAF target end position outside of target sequence", errStr);
+        return -1;
     }
 
     stringstream mafBuffer;
@@ -502,23 +506,15 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    numBytes = -1;
+    halUnlock();
+    handleError("halGetMAF error writing MAF blocks: " + string(e.what()), errStr);
+    return -1;
   }
   catch(...)
   {
-    string msg = "Error in hal maf query";
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    numBytes = -1;
+    halUnlock();
+    handleError("halGetMAF error writing MAF blocks: unknown exception", errStr);
+    return -1;
   }
   halUnlock();
   return numBytes;
@@ -581,23 +577,15 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    head = NULL;
+    halUnlock();
+    handleError("halGetSpecies: " + string(e.what()), errStr);
+    return NULL;
   }
   catch(...)
   {
-    string msg = "Error in hal get species";
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    head = NULL;
+    halUnlock();
+    handleError("halGetSpecies: unknown exception", errStr);
+    return NULL;
   }
   halUnlock();
   return head;
@@ -655,23 +643,15 @@ extern "C" struct hal_species_t *halGetPossibleCoalescenceLimits(int halHandle,
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    head = NULL;
+      halUnlock();
+      handleError("halGetPossibleCoalescenceLimits: " + string(e.what()), errStr);
+      return NULL;
   }
   catch(...)
   {
-      string msg = "Error in getting possible coalescence limits";
-    if (errStr == NULL)
-    {
-        throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    head = NULL;
+      halUnlock();
+      handleError("halGetPossibleCoalescenceLimits: unknown exception", errStr);
+      return NULL;
   }
   halUnlock();
   return head;
@@ -704,8 +684,11 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
     {
-        throw hal_exception("Species with name " + string(speciesName) + " not found in alignment "
-                            + "with handle " + std::to_string(halHandle));
+    halUnlock();
+    handleError("halGetChroms: species with name " + string(speciesName)
+                + " not found in alignment with handle "
+                + std::to_string(halHandle), errStr);
+    return NULL;
     }
 
     hal_chromosome_t* prev = NULL;
@@ -737,23 +720,15 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    head = NULL;
+      halUnlock();
+      handleError("halGetChroms: " + string(e.what()) , errStr);
+      return NULL;
   }
   catch(...)
   {
-    string msg = "Error in hal get chroms";
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    head = NULL;
+      halUnlock();
+      handleError("halGetChroms: unknown exception", errStr);
+      return NULL;
   }
   halUnlock();
   return head;
@@ -772,20 +747,24 @@ extern "C" char *halGetDna(int halHandle,
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
     {
-        throw hal_exception("Species with name " + string(speciesName) + " not found in alignment "
-                          + "with handle " + std::to_string(halHandle));
+        throw hal_exception("halGetDna: species with name " + string(speciesName) + " not found in alignment with handle "
+                            + std::to_string(halHandle));
     }
     const Sequence* sequence = genome->getSequence(chromName);
     if (sequence == NULL)
-    {
-        throw hal_exception("Chromosome with name " + string(chromName) + " not found in species "
-                            + speciesName);
+        {
+            halUnlock();
+            handleError("halGetDna: chromosome with name " + string(chromName) + " not found in species "
+                        + speciesName, errStr);
+            return NULL;
     }    
     if (start > end || end > (hal_index_t)sequence->getSequenceLength())
     {
-        throw hal_exception("Specified range [" + std::to_string(start) + "," + std::to_string(end) + ") is invalid "
-                            + "for chromsome " + chromName + " in species " + speciesName
-                            + " which is of length " + std::to_string(sequence->getSequenceLength()));
+    halUnlock();
+    handleError("halGetDna: specified range [" + std::to_string(start) + "," + std::to_string(end) + ") is invalid "
+                + "for chromsome " + chromName + " in species " + speciesName
+                + " which is of length " + std::to_string(sequence->getSequenceLength()), errStr);
+    return NULL;
     }
     
     string buffer;
@@ -794,23 +773,15 @@ extern "C" char *halGetDna(int halHandle,
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    dna = NULL;
+    halUnlock();
+    handleError("halGetDna: " + string(e.what()), errStr);
+    return NULL;
   }
   catch(...)
   {
-    string msg = "Error in hal get dna";
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    dna = NULL;
+    halUnlock();
+    handleError("halGetDna: unknown exception", errStr);
+    return NULL;
   }
   halUnlock();
   return dna;
@@ -825,37 +796,30 @@ extern "C" hal_int_t halGetMaxLODQueryLength(int halHandle, char **errStr)
     HandleMap::iterator mapIt = handleMap.find(halHandle);
     if (mapIt == handleMap.end())
     {
-      throw hal_exception("error getting Max LOD Query Length.  handle " 
-                          + std::to_string(halHandle) + ": not found");
+    halUnlock();
+    handleError("halGetMaxLODQueryLength error getting Max LOD Query Length.  handle " 
+                + std::to_string(halHandle) + ": not found", errStr);
+    return -1;
     }
     ret = (hal_int_t)mapIt->second.second->getMaxQueryLength();
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    ret = -1;
+    halUnlock();
+    handleError("halGetMaxLODQueryLength: " + string(e.what()), errStr);
+    return -1;
   }
   catch(...)
   {
-
-      string msg = "Error getting Max LOD Query from handle " + halHandle;
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    ret = -1;
+    halUnlock();
+    handleError("halGetMaxLODQueryLength: unknown exception", errStr);
+    return -1;
   }
   halUnlock();
   return ret;
 }
 
-void checkHandle(int handle)
+static void checkHandle(int handle)
 {
   HandleMap::iterator mapIt = handleMap.find(handle);
   if (mapIt == handleMap.end())
@@ -868,9 +832,9 @@ void checkHandle(int handle)
   }
 }
 
-void checkGenomes(int halHandle, 
-                  AlignmentConstPtr alignment, const string& qSpecies,
-                  const string& tSpecies, const string& tChrom)
+static void checkGenomes(int halHandle, 
+                         AlignmentConstPtr alignment, const string& qSpecies,
+                         const string& tSpecies, const string& tChrom)
 {
   const Genome* qGenome = alignment->openGenome(qSpecies);
   if (qGenome == NULL)
@@ -893,35 +857,35 @@ void checkGenomes(int halHandle,
 }
 
 
-AlignmentConstPtr getExistingAlignment(int handle, hal_size_t queryLength,
-                                       bool needDNASequence)
+static AlignmentConstPtr getExistingAlignment(int handle, hal_size_t queryLength,
+                                              bool needDNASequence)
 {
   checkHandle(handle);
   HandleMap::iterator mapIt = handleMap.find(handle);
   return mapIt->second.second->getAlignment(queryLength, needDNASequence);
 }
 
-bool isAlignmentLod0(int handle, hal_size_t queryLength)
+static bool isAlignmentLod0(int handle, hal_size_t queryLength)
 {
   checkHandle(handle);
   HandleMap::iterator mapIt = handleMap.find(handle);
   return mapIt->second.second->isLod0(queryLength);
 }
 
-char* copyCString(const string& inString)
+static char* copyCString(const string& inString)
 {
   char* outString = (char*)malloc(inString.length() + 1);
   strcpy(outString, inString.c_str());
   return outString;
 }
 
-hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
-                                const Sequence* tSequence,
-                                hal_index_t absStart, hal_index_t absEnd,
-                                bool tReversed,
-                                const Genome* qGenome, bool getSequenceString,
-                                bool doDupes, bool doTargetDupes, 
-                                bool doAdjes, const char *coalescenceLimitName)
+static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
+                                       const Sequence* tSequence,
+                                       hal_index_t absStart, hal_index_t absEnd,
+                                       bool tReversed,
+                                       const Genome* qGenome, bool getSequenceString,
+                                       bool doDupes, bool doTargetDupes, 
+                                       bool doAdjes, const char *coalescenceLimitName)
 {
   const Genome* tGenome = tSequence->getGenome();
   string qGenomeName = qGenome->getName();
@@ -1005,9 +969,9 @@ hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   return results;
 }
 
-void readBlock(AlignmentConstPtr seqAlignment,
-               hal_block_t* cur,  
-               vector<MappedSegmentConstPtr>& fragments, 
+static void readBlock(AlignmentConstPtr seqAlignment,
+                      hal_block_t* cur,  
+                      vector<MappedSegmentConstPtr>& fragments, 
                bool getSequenceString, const string& genomeName)
 {
   MappedSegmentConstPtr firstQuerySeg = fragments.front();
@@ -1130,8 +1094,8 @@ struct DupeStartLess { bool operator()(const hal_target_dupe_list_t* d1,
   return d1 != NULL && d2 == NULL;
 }};
 
-hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
-                                           MappedSegmentConstSet& paraSet)
+static hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
+                                                  MappedSegmentConstSet& paraSet)
 {
   vector<hal_target_dupe_list_t*> tempList;
   vector<MappedSegmentConstPtr> fragments;
@@ -1214,8 +1178,8 @@ hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
   return head;
 }
 
-void readTargetRange(hal_target_dupe_list_t* cur,
-                     vector<MappedSegmentConstPtr>& fragments)
+static void readTargetRange(hal_target_dupe_list_t* cur,
+                            vector<MappedSegmentConstPtr>& fragments)
 {
   MappedSegmentConstPtr firstQuerySeg = fragments.front();
   MappedSegmentConstPtr lastQuerySeg = fragments.back();
@@ -1258,7 +1222,7 @@ void readTargetRange(hal_target_dupe_list_t* cur,
   strcpy(cur->qChrom, qSeqName.c_str());
 }
 
-void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
+static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList)
 {
   // sort based on target start coordinate
   std::sort(dupeList.begin(), dupeList.end(), DupeStartLess());
@@ -1332,7 +1296,7 @@ static bool areRangesCompatible(hal_target_range_t* range1,
   return true;
 }
 
-void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList)
+static void mergeCompatibleDupes(vector<hal_target_dupe_list_t*>& dupeList)
 {
   vector<hal_target_dupe_list_t*>::iterator i;
   vector<hal_target_dupe_list_t*>::iterator j;
@@ -1397,23 +1361,15 @@ extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
   }
   catch(exception& e)
   {
-    if (errStr == NULL)
-    {
-      throw hal_exception(string(e.what()));
-    }
-    string msg = "Exception caught: " + string(e.what());
-    *errStr = stString_copy(msg.c_str());
-    ret = NULL;
+    halUnlock();
+    handleError("halGetGenomeMetadata: " + string(e.what()), errStr);
+    return NULL;
   }
   catch(...)
   {
-      string msg = "Error getting Max LOD Query from handle " + std::to_string(halHandle);
-    if (errStr == NULL)
-    {
-      throw hal_exception(msg);
-    }
-    *errStr = stString_copy(msg.c_str());
-    ret = NULL;
+    halUnlock();
+    handleError("halGetGenomeMetadata: unknown exception", errStr);
+    return NULL;
   }
   halUnlock();
   return ret;
