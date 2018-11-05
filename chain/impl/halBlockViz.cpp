@@ -9,6 +9,9 @@
 #include <map>
 #include <sstream>
 #include <cmath>
+#include <cmath>
+#include <cerrno>
+#include <cstring>
 #include <limits>
 #include <algorithm>
 #include <stdlib.h>
@@ -23,12 +26,16 @@
 
 #ifdef ENABLE_UDC
 #include <pthread.h>
-static pthread_mutex_t HAL_MUTEX;
+static pthread_mutex_t HAL_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 static inline void halLock() {
-    pthread_mutex_lock(&HAL_MUTEX);
+    if (pthread_mutex_lock(&HAL_MUTEX) != 0) {
+        throw hal_exception("pthread_mutex_lock failed: " + std::string(std::strerror(errno)));
+    }
 }
 static inline void halUnlock() {
-    pthread_mutex_unlock(&HAL_MUTEX);
+    if (pthread_mutex_unlock(&HAL_MUTEX) != 0) {
+        throw hal_exception("pthread_mutex_unlock failed: " + std::string(std::strerror(errno)));
+    }
 }
 #else
 static inline void halLock() {
