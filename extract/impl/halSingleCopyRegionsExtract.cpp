@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     throw hal_exception("region too long, goes off the end of sequence or genome.");
   }
 
-  ColumnIteratorConstPtr colIt = referenceGenome->getColumnIterator(&targetGenomes,
+  ColumnIteratorPtr colIt = referenceGenome->getColumnIterator(&targetGenomes,
                                                                     0,
                                                                     start + seqStart,
                                                                     length == -1 ? seqEnd : seqStart + start + length - 1);

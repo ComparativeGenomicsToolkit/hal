@@ -63,22 +63,22 @@ public:
    MafBlock(hal_index_t maxLength = defaultMaxLength);
    ~MafBlock();
 
-   void initBlock(ColumnIteratorConstPtr col, bool fullNames, bool printTree);
-   void appendColumn(ColumnIteratorConstPtr col);
-   bool canAppendColumn(hal::ColumnIteratorConstPtr col);
+   void initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree);
+   void appendColumn(ColumnIteratorPtr col);
+   bool canAppendColumn(hal::ColumnIteratorPtr col);
    void setMaxLength(hal_index_t maxLen);
    
 protected:
    
    void resetEntries();
    void initEntry(MafBlockEntry* entry, const Sequence* sequence,
-                  DNAIteratorConstPtr dna, bool clearSequence = true);
+                  DNAIteratorPtr dna, bool clearSequence = true);
    void updateEntry(MafBlockEntry* entry, const Sequence* sequence,
-                    DNAIteratorConstPtr dna);
+                    DNAIteratorPtr dna);
    std::string getName(const Sequence* sequence) const;
-   stTree *buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries);
-   void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, bool modifyEntries);
-   stTree *getTreeNode(SegmentIteratorConstPtr segIt, bool modifyEntries);
+   stTree *buildTree(ColumnIteratorPtr colIt, bool modifyEntries);
+   void buildTreeR(BottomSegmentIteratorPtr botIt, stTree *tree, bool modifyEntries);
+   stTree *getTreeNode(SegmentIteratorPtr segIt, bool modifyEntries);
 
    std::ostream& printBlock(std::ostream& os) const;
    std::ostream& printBlockWithTree(std::ostream& os) const;
@@ -125,12 +125,12 @@ inline void MafBlockString::append(char c)
   if (_cap == 0)
   {
     _cap = 127;
-    _buf = (char*)malloc((_cap + 1) * sizeof(char));
+    _buf = (char*)malloc((_cap + 1) * sizeof(char)); // FIXME: check malloc
   }
   else if (_cap == _len)
   {
     _cap = (_cap + 1) * 2 - 1;
-    _buf = (char*)realloc(_buf, _cap + 1); 
+    _buf = (char*)realloc(_buf, _cap + 1);  // FIXME: check malloc
   }
   _buf[_len++] = c;
 }

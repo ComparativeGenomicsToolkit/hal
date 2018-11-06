@@ -343,8 +343,8 @@ void printSequences(ostream& os, AlignmentConstPtr alignment,
   }
   if (genome->getNumSequences() > 0)
   {
-    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-    SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorPtr seqEnd = genome->getSequenceEndIterator();
     for (; !seqIt->equals(seqEnd); seqIt->toNext())
     {
       if (!seqIt->equals(genome->getSequenceIterator()))
@@ -367,8 +367,8 @@ void printSequenceStats(ostream& os, AlignmentConstPtr alignment,
   }
   if (genome->getNumSequences() > 0)
   {
-    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-    SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorPtr seqEnd = genome->getSequenceEndIterator();
     os << "SequenceName, Length, NumTopSegments, NumBottomSegments" << endl;
 
     for (; !seqIt->equals(seqEnd); seqIt->toNext())
@@ -392,8 +392,8 @@ void printBedSequenceStats(ostream& os, AlignmentConstPtr alignment,
   }
   if (genome->getNumSequences() > 0)
   {
-    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-    SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorPtr seqEnd = genome->getSequenceEndIterator();
 
     for (; !seqIt->equals(seqEnd); seqIt->toNext())
     {
@@ -588,7 +588,7 @@ void printBaseComp(ostream& os, AlignmentConstPtr alignment,
     step = len - 1;
   }
 
-  DNAIteratorConstPtr dna = genome->getDNAIterator();
+  DNAIteratorPtr dna = genome->getDNAIterator();
   for (hal_size_t i = 0; i < len; i += step)
   {
     dna->jumpTo(i);
@@ -658,8 +658,8 @@ void printChromSizes(ostream& os, AlignmentConstPtr alignment,
   }
   if (genome->getNumSequences() > 0)
   {
-    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-    SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorPtr seqEnd = genome->getSequenceEndIterator();
     for (; !seqIt->equals(seqEnd); seqIt->toNext())
     {
       os << seqIt->getSequence()->getName() << '\t'
@@ -676,14 +676,14 @@ void printPercentID(ostream& os, AlignmentConstPtr alignment,
     throw hal_exception("Genome " + genomeName + " does not exist.");
   }
 
-  ColumnIteratorConstPtr colIt = refGenome->getColumnIterator();
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator();
   // A bit sloppy, but a mapping from genome to (# identical bases, # aligned sites)
   // The # of aligned sites is necessary since a) not all sites are aligned and
   // b) we don't consider anything containing N's to be aligned.
   map<const Genome *, pair<hal_size_t *, hal_size_t *> > genomeStats;
   while(1) {
     // Get DNA for this site in reference
-    DNAIteratorConstPtr refDnaIt = refGenome->getDNAIterator(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition());
+    DNAIteratorPtr refDnaIt = refGenome->getDNAIterator(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition());
     char refDna = toupper(refDnaIt->getChar());
     
     const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
@@ -698,7 +698,7 @@ void printPercentID(ostream& os, AlignmentConstPtr alignment,
       const ColumnIterator::DNASet *dnaSet = colMapIt->second;
       assert(dnaSet->size() == 1);
       for (hal_size_t i = 0; i < dnaSet->size(); i++) {
-        DNAIteratorConstPtr dnaIt = dnaSet->at(i);
+        DNAIteratorPtr dnaIt = dnaSet->at(i);
         char otherDna = toupper(dnaIt->getChar());
         if (refDna != 'N' && otherDna != 'N') {
           if (!tempGenomeStats.count(genome)) {
@@ -780,7 +780,7 @@ void printCoverage(ostream& os, AlignmentConstPtr alignment,
     throw hal_exception("Genome " + genomeName + " does not exist.");
   }
 
-  ColumnIteratorConstPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0,
                                                               NULL_INDEX, false,
                                                               false, false, true);
   map<const Genome *, vector<hal_size_t> *> histograms;
@@ -870,7 +870,7 @@ static void printSegments(ostream& os, AlignmentConstPtr alignment,
     throw hal_exception("Genome " + genomeName + " does not exist.");
   }
   hal_size_t numSegments = 0;
-  SegmentIteratorConstPtr segment;
+  SegmentIteratorPtr segment;
   if (top == true)
   {
     numSegments = genome->getNumTopSegments();
@@ -906,7 +906,7 @@ static void printAllCoverage(ostream& os, AlignmentConstPtr alignment)
   for (hal_size_t i = 0; i < leafGenomes.size(); i++) {
     const Genome *genome = leafGenomes[i];
     // Follow paralogies, but ignore ancestors.
-    ColumnIteratorConstPtr colIt = genome->getColumnIterator(NULL, 0, 0,
+    ColumnIteratorPtr colIt = genome->getColumnIterator(NULL, 0, 0,
                                                              NULL_INDEX, false,
                                                              true, false, true);
     colIt->setVisitCache(&visitCache);

@@ -404,7 +404,8 @@ Sequence* HDF5Genome::getSequence(const string& name)
 {
   loadSequenceNameCache();
   Sequence* sequence = NULL;
-  map<string, HDF5Sequence*>::iterator mapIt = _sequenceNameCache.find(name);
+  map<string, HDF5Sequence*>::iterator mapIt = 
+     _sequenceNameCache.find(name);
   if (mapIt != _sequenceNameCache.end())
   {
     sequence = mapIt->second;
@@ -414,15 +415,7 @@ Sequence* HDF5Genome::getSequence(const string& name)
 
 const Sequence* HDF5Genome::getSequence(const string& name) const
 {
-  loadSequenceNameCache();
-  const Sequence* sequence = NULL;
-  map<string, HDF5Sequence*>::const_iterator mapIt = 
-     _sequenceNameCache.find(name);
-  if (mapIt != _sequenceNameCache.end())
-  {
-    sequence = mapIt->second;
-  }
-  return sequence;
+    return const_cast<HDF5Genome*>(this)->getSequence(name);
 }
 
 Sequence* HDF5Genome::getSequenceBySite(hal_size_t position)
@@ -467,7 +460,7 @@ SequenceIteratorPtr HDF5Genome::getSequenceIterator(
   return SequenceIteratorPtr(newIt);
 }
 
-SequenceIteratorConstPtr HDF5Genome::getSequenceIterator(
+SequenceIteratorPtr HDF5Genome::getSequenceIterator(
   hal_index_t position) const
 {
   assert(position <= (hal_index_t)_sequenceNameArray.getSize());
@@ -475,10 +468,10 @@ SequenceIteratorConstPtr HDF5Genome::getSequenceIterator(
   // const iterator.  just save doubling up code.
   HDF5SequenceIterator* newIt = new HDF5SequenceIterator(
     const_cast<HDF5Genome*>(this), position);
-  return SequenceIteratorConstPtr(newIt);
+  return SequenceIteratorPtr(newIt);
 }
 
-SequenceIteratorConstPtr HDF5Genome::getSequenceEndIterator() const
+SequenceIteratorPtr HDF5Genome::getSequenceEndIterator() const
 {
   return getSequenceIterator(getNumSequences());
 }
@@ -537,7 +530,7 @@ TopSegmentIteratorPtr HDF5Genome::getTopSegmentIterator(hal_index_t position)
   return TopSegmentIteratorPtr(newIt);
 }
 
-TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
+TopSegmentIteratorPtr HDF5Genome::getTopSegmentIterator(
   hal_index_t position) const
 {
   assert(position <= (hal_index_t)getNumTopSegments());
@@ -547,7 +540,7 @@ TopSegmentIteratorConstPtr HDF5Genome::getTopSegmentIterator(
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
   TopSegmentIterator* newIt = new TopSegmentIterator(newSeg);
-  return TopSegmentIteratorConstPtr(newIt);
+  return TopSegmentIteratorPtr(newIt);
 }
 
 BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
@@ -562,7 +555,7 @@ BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
   return BottomSegmentIteratorPtr(newIt);
 }
 
-BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
+BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
   hal_index_t position) const
 {
   assert(position <= (hal_index_t)getNumBottomSegments());
@@ -572,7 +565,7 @@ BottomSegmentIteratorConstPtr HDF5Genome::getBottomSegmentIterator(
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
   BottomSegmentIterator* newIt = new BottomSegmentIterator(newSeg);
-  return BottomSegmentIteratorConstPtr(newIt);
+  return BottomSegmentIteratorPtr(newIt);
 }
 
 DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position)
@@ -582,21 +575,21 @@ DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position)
   return DNAIteratorPtr(newIt);
 }
 
-DNAIteratorConstPtr HDF5Genome::getDNAIterator(hal_index_t position) const
+DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position) const
 {
   assert(_dnaArray.getSize() == 0 || 
          position / 2 <= (hal_index_t)_dnaArray.getSize());
   HDF5Genome* genome = const_cast<HDF5Genome*>(this);
-  const HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, position);
-  return DNAIteratorConstPtr(newIt);
+  HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, position);
+  return DNAIteratorPtr(newIt);
 }
 
-DNAIteratorConstPtr HDF5Genome::getDNAEndIterator() const
+DNAIteratorPtr HDF5Genome::getDNAEndIterator() const
 {
   return getDNAIterator(getSequenceLength());
 }
 
-ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
+ColumnIteratorPtr HDF5Genome::getColumnIterator(
   const set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,
   bool noAncestors, bool reverseStrand, bool unique, bool onlyOrthologs) const
@@ -612,11 +605,11 @@ ColumnIteratorConstPtr HDF5Genome::getColumnIterator(
       throw hal_exception("HDF5Genome::getColumnIterator: input indices ("
                           + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
-  const ColumnIterator* newIt = 
+  ColumnIterator* newIt = 
      new ColumnIterator(this, targets, position, lastIdx, 
                         maxInsertLength, noDupes, noAncestors,
                         reverseStrand, unique, onlyOrthologs);
-  return ColumnIteratorConstPtr(newIt);
+  return ColumnIteratorPtr(newIt);
 }
 
 void HDF5Genome::getString(string& outString) const
@@ -656,7 +649,7 @@ RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position,
                                               bool atomic) const
 {
   assert(position >= 0 && position < (hal_index_t)getNumTopSegments());
-  TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
+  TopSegmentIteratorPtr top = getTopSegmentIterator(position);  
   Rearrangement* rea = new Rearrangement(this,
                                          gapLengthThreshold,
                                          nThreshold,
@@ -665,24 +658,24 @@ RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position,
   return RearrangementPtr(rea);
 }
 
-GappedTopSegmentIteratorConstPtr HDF5Genome::getGappedTopSegmentIterator(
+GappedTopSegmentIteratorPtr HDF5Genome::getGappedTopSegmentIterator(
   hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
-  TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
+  TopSegmentIteratorPtr top = getTopSegmentIterator(i);  
   GappedTopSegmentIterator* gt = 
      new GappedTopSegmentIterator(top, gapThreshold, atomic);
-  return GappedTopSegmentIteratorConstPtr(gt);
+  return GappedTopSegmentIteratorPtr(gt);
 }
 
-GappedBottomSegmentIteratorConstPtr HDF5Genome::getGappedBottomSegmentIterator(
+GappedBottomSegmentIteratorPtr HDF5Genome::getGappedBottomSegmentIterator(
   hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
   bool atomic) const
 {
-  BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
+  BottomSegmentIteratorPtr bot = getBottomSegmentIterator(i);  
   GappedBottomSegmentIterator* gb = 
      new GappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
                                             atomic);
-  return GappedBottomSegmentIteratorConstPtr(gb);
+  return GappedBottomSegmentIteratorPtr(gb);
 }
 
   

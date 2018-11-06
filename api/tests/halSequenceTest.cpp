@@ -47,8 +47,8 @@ void SequenceCreateTest::checkCallBack(AlignmentConstPtr alignment)
   hal_size_t lastStart = 0;
   hal_size_t lastLength = 0;
 
-  SequenceIteratorConstPtr seqIt = ancGenome->getSequenceIterator();
-  SequenceIteratorConstPtr endIt = ancGenome->getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = ancGenome->getSequenceIterator();
+  SequenceIteratorPtr endIt = ancGenome->getSequenceEndIterator();
   for (; seqIt != endIt; seqIt->toNext())
   {
     hal_size_t i = (hal_size_t)seqIt->getSequence()->getArrayIndex();
@@ -118,18 +118,18 @@ void SequenceIteratorTest::checkCallBack(AlignmentConstPtr alignment)
   hal_size_t numSequences = ancGenome->getNumSequences();
   CuAssertTrue(_testCase, numSequences = 1000);
 
-  SequenceIteratorConstPtr seqIt = ancGenome->getSequenceIterator();
-  SequenceIteratorConstPtr endIt = ancGenome->getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = ancGenome->getSequenceIterator();
+  SequenceIteratorPtr endIt = ancGenome->getSequenceEndIterator();
   for (; seqIt != endIt; seqIt->toNext())
   {
     const Sequence* seq = seqIt->getSequence();
     hal_size_t i = seq->getArrayIndex();
  
-    TopSegmentIteratorConstPtr tsIt = seq->getTopSegmentIterator();
+    TopSegmentIteratorPtr tsIt = seq->getTopSegmentIterator();
     hal_size_t numTopSegments = seq->getNumTopSegments();
     for (hal_size_t j = 0; j < numTopSegments; ++j)
     {
-      TopSegmentIteratorConstPtr gtsIt = 
+      TopSegmentIteratorPtr gtsIt = 
          ancGenome->getTopSegmentIterator((i-1) * 100 + j);
       const TopSegment* gsTopSegment = gtsIt->getTopSegment();
       const TopSegment* sqTopSegment = tsIt->getTopSegment();
@@ -139,11 +139,11 @@ void SequenceIteratorTest::checkCallBack(AlignmentConstPtr alignment)
       tsIt->toRight();
     }
 
-    BottomSegmentIteratorConstPtr bsIt = seq->getBottomSegmentIterator();
+    BottomSegmentIteratorPtr bsIt = seq->getBottomSegmentIterator();
     hal_size_t numBottomSegments = seq->getNumBottomSegments();
     for (hal_size_t j = 0; j < numBottomSegments; ++j)
     {
-      BottomSegmentIteratorConstPtr gbsIt = 
+      BottomSegmentIteratorPtr gbsIt = 
          ancGenome->getBottomSegmentIterator((i-1) * 100 + j);
       const BottomSegment* gsBottomSegment = gbsIt->getBottomSegment();
       const BottomSegment* sqBottomSegment = bsIt->getBottomSegment();
@@ -176,8 +176,8 @@ void SequenceUpdateTest::createCallBack(AlignmentPtr alignment)
   
   vector<Sequence::UpdateInfo> updateVec;
   for (size_t i = 0; i < numSequences / 2; ++i)
-  {
-    Sequence* sequence = ancGenome->getSequence("sequence" + std::to_string(i));
+      {
+    const Sequence* sequence = ancGenome->getSequence("sequence" + std::to_string(i));
     updateVec.push_back(Sequence::UpdateInfo(sequence->getName(), i * 7));
   }
   ancGenome->updateTopDimensions(updateVec);
@@ -185,7 +185,7 @@ void SequenceUpdateTest::createCallBack(AlignmentPtr alignment)
   updateVec.clear();
   for (size_t i = 0; i < numSequences / 3; ++i)
   {
-    Sequence* sequence = ancGenome->getSequence("sequence" + std::to_string(i));
+   const Sequence* sequence = ancGenome->getSequence("sequence" + std::to_string(i));
     updateVec.push_back(Sequence::UpdateInfo(sequence->getName(), i * 5));
   }
   ancGenome->updateBottomDimensions(updateVec);
@@ -204,8 +204,8 @@ void SequenceUpdateTest::checkCallBack(AlignmentConstPtr alignment)
   hal_size_t lastStart = 0;
   hal_size_t lastLength = 0;
 
-  SequenceIteratorConstPtr seqIt = ancGenome->getSequenceIterator();
-  SequenceIteratorConstPtr endIt = ancGenome->getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = ancGenome->getSequenceIterator();
+  SequenceIteratorPtr endIt = ancGenome->getSequenceEndIterator();
   for (; seqIt != endIt; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();

@@ -173,7 +173,7 @@ void hal::createRandomDimensions(hal::AlignmentPtr alignment,
     hal_size_t numTopSegments = 0;
     if (parent != NULL)
     {
-      BottomSegmentIteratorConstPtr it = parent->getBottomSegmentIterator();
+      BottomSegmentIteratorPtr it = parent->getBottomSegmentIterator();
       const BottomSegment* bseg = it->getBottomSegment();
       topSegSize = bseg->getLength();
       numTopSegments = length / topSegSize;

@@ -45,7 +45,7 @@ protected:
    virtual void visitEOF();
 
    void mapSegment();
-   void mapFragments(std::vector<MappedSegmentConstPtr>& fragments);
+   void mapFragments(std::vector<MappedSegmentPtr>& fragments);
    void write();
                       
 protected: 
@@ -63,10 +63,10 @@ protected:
    const Genome* _tgtGenome;
    const Sequence* _srcSequence;
    std::set<const Genome*> _tgtSet;
-   MappedSegmentConstSet _mappedSegments;
+   MappedSegmentSet _mappedSegments;
    hal_index_t _lastIndex;
 
-   SegmentIteratorConstPtr _segment;
+   SegmentIteratorPtr _segment;
    ValVec _cvals;
    WiggleTiles<double> _outVals;
    hal_index_t _cvIdx; 

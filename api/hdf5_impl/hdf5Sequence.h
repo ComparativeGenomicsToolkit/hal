@@ -60,22 +60,22 @@ public:
    TopSegmentIteratorPtr getTopSegmentIterator(
      hal_index_t position);
 
-   TopSegmentIteratorConstPtr getTopSegmentIterator(
+   TopSegmentIteratorPtr getTopSegmentIterator(
      hal_index_t position) const;
 
    BottomSegmentIteratorPtr getBottomSegmentIterator(
      hal_index_t position);
 
-   BottomSegmentIteratorConstPtr getBottomSegmentIterator(
+   BottomSegmentIteratorPtr getBottomSegmentIterator(
      hal_index_t position) const;
 
    DNAIteratorPtr getDNAIterator(hal_index_t position);
 
-   DNAIteratorConstPtr getDNAIterator(hal_index_t position) const;
+   DNAIteratorPtr getDNAIterator(hal_index_t position) const;
 
-   DNAIteratorConstPtr getDNAEndIterator() const;
+   DNAIteratorPtr getDNAEndIterator() const;
 
-   ColumnIteratorConstPtr getColumnIterator(const std::set<const Genome*>* targets,
+   ColumnIteratorPtr getColumnIterator(const std::set<const Genome*>* targets,
                                             hal_size_t maxInsertLength,
                                             hal_index_t position,
                                             hal_index_t lastPosition,
@@ -101,10 +101,10 @@ public:
                                      double nThreshold,
                                      bool atomic = false) const;
    
-   GappedTopSegmentIteratorConstPtr getGappedTopSegmentIterator(
+   GappedTopSegmentIteratorPtr getGappedTopSegmentIterator(
      hal_index_t i, hal_size_t gapThreshold, bool atomic) const;
 
-   GappedBottomSegmentIteratorConstPtr getGappedBottomSegmentIterator(
+   GappedBottomSegmentIteratorPtr getGappedBottomSegmentIterator(
      hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
      bool atomic) const;
 

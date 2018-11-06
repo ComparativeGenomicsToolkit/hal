@@ -233,7 +233,7 @@ void PhyloP::processSequence(const Sequence* sequence,
    * in advance when we get the iterator.  This will limit it following
    * duplications out of the desired range while we are iterating. */
   hal_size_t pos = start;
-  ColumnIteratorConstPtr colIt = 
+  ColumnIteratorPtr colIt = 
      sequence->getColumnIterator(&_targetSet,
                                  0, pos,
                                  last - 1);
@@ -312,7 +312,7 @@ double PhyloP::pval(const ColumnIterator::ColumnMap *cmap)
     for (ColumnIterator::DNASet::const_iterator j = dnaSet->begin(); 
          j != dnaSet->end(); ++j) 
     {
-      DNAIteratorConstPtr dna = *j;
+      DNAIteratorPtr dna = *j;
       char base = toupper(dna->getChar());
       if (_msa->ss->col_tuples[0][spec] == '*')
       {

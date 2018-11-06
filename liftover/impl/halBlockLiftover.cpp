@@ -84,12 +84,12 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     _refSeg->toRight(globalEnd);
   }
 
-  vector<MappedSegmentConstPtr> fragments;
-  MappedSegmentConstSet emptySet;
+  vector<MappedSegmentPtr> fragments;
+  MappedSegmentSet emptySet;
   set<hal_index_t> queryCutSet;
   set<hal_index_t> targetCutSet;
   
-  for (MappedSegmentConstSet::iterator i = _mappedSegments.begin();
+  for (MappedSegmentSet::iterator i = _mappedSegments.begin();
        i != _mappedSegments.end(); ++i)
   {
     BlockMapper::extractSegment(i, emptySet, fragments, &_mappedSegments, 
@@ -136,7 +136,7 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
   }
 }
 
-void BlockLiftover::readPSLInfo(vector<MappedSegmentConstPtr>& fragments, 
+void BlockLiftover::readPSLInfo(vector<MappedSegmentPtr>& fragments, 
                                 BedLine& outBedLine)
 {
   const Sequence* srcSequence = fragments[0]->getSource()->getSequence();

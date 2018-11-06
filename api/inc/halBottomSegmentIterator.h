@@ -36,21 +36,21 @@ public:
     BottomSegmentIteratorPtr copy();
 
    /** Return a new copy of the iterator */
-    BottomSegmentIteratorConstPtr copy() const;
+    BottomSegmentIteratorPtr copy() const;
 
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
     * @param ts Iterator to copy */
-    void copy(BottomSegmentIteratorConstPtr bs) const;
+    void copy(BottomSegmentIteratorPtr bs) const;
 
    /** Move the iterator to the parent segment of a given iterator
     * @param ts Iterator whose parent to move to */
-    void toParent(TopSegmentIteratorConstPtr ts) const; 
+    void toParent(TopSegmentIteratorPtr ts) const; 
 
    /** Move the iterator down to the bottom segment containing the
     * start position of the given iterator in the same genome
     * @param ts Top iterator to parse down on */
-    void toParseDown(TopSegmentIteratorConstPtr ts) const;
+    void toParseDown(TopSegmentIteratorPtr ts) const;
 
    /** DEPRECATED */
     BottomSegment* getBottomSegment() {
@@ -66,7 +66,7 @@ public:
     * take into account reverse state or offsets -- FIXME: too review). 
     * FIXME merge with operator==?? 
     * @param other Iterator to test equality to */
-    bool equals(BottomSegmentIteratorConstPtr other) const;
+    bool equals(BottomSegmentIteratorPtr other) const;
 
     /* equality operator */
     bool operator==(const BottomSegmentIterator& other) const {
@@ -106,8 +106,8 @@ private:
    BottomSegmentPtr _bottomSegment;
 };
 
-inline bool operator==(BottomSegmentIteratorConstPtr p1,
-                       BottomSegmentIteratorConstPtr p2) 
+inline bool operator==(BottomSegmentIteratorPtr p1,
+                       BottomSegmentIteratorPtr p2) 
 {
   if (p1.get() == NULL || p2.get() == NULL)
   {
@@ -116,8 +116,8 @@ inline bool operator==(BottomSegmentIteratorConstPtr p1,
   return p1->equals(p2);
 }
 
-inline bool operator!=(BottomSegmentIteratorConstPtr p1,
-                       BottomSegmentIteratorConstPtr p2)
+inline bool operator!=(BottomSegmentIteratorPtr p1,
+                       BottomSegmentIteratorPtr p2)
 {
   return !(p1 == p2);
 }

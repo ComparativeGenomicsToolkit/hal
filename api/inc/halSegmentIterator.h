@@ -69,7 +69,6 @@ public:
    virtual const Genome* getGenome() const;
    virtual Genome* getGenome();
    virtual const Sequence* getSequence() const;
-   virtual Sequence* getSequence();
    virtual hal_index_t getStartPosition() const;
    virtual hal_index_t getEndPosition() const;
    virtual hal_size_t getLength() const;
@@ -84,7 +83,7 @@ public:
    virtual bool isMissingData(double nThreshold) const;
    virtual bool isTop() const;
    virtual hal_size_t getMappedSegments(
-     MappedSegmentConstSet& outSegments,
+     MappedSegmentSet& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath = NULL,
      bool doDupes = true,
@@ -121,13 +120,13 @@ inline bool SegmentIterator::inRange() const
      (hal_index_t)getNumSegmentsInGenome();
 }
 
-inline bool operator<(SegmentIteratorConstPtr segmentIt,
+inline bool operator<(SegmentIteratorPtr segmentIt,
                       hal_index_t genomePos) 
 {
   return segmentIt->leftOf(genomePos);
 }
 
-inline bool operator>(SegmentIteratorConstPtr segmentIt,
+inline bool operator>(SegmentIteratorPtr segmentIt,
                       hal_index_t genomePos) 
 {
   return segmentIt->rightOf(genomePos);

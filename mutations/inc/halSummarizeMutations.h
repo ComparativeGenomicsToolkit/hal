@@ -35,7 +35,7 @@ protected:
    void analyzeGenomeRecursive(const std::string& genomeName);   
    void substitutionAnalysis(const Genome* genome, MutationsStats& stats);
    void rearrangementAnalysis(const Genome* genome, MutationsStats& stats);
-   void subsAndGapInserts(GappedTopSegmentIteratorConstPtr gappedTop, 
+   void subsAndGapInserts(GappedTopSegmentIteratorPtr gappedTop, 
                           MutationsStats& stats);
 
    typedef std::pair<std::string, std::string> StrPair;

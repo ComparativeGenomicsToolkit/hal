@@ -117,7 +117,7 @@ bool TopSegmentIterator::isCanonicalParalog() const
 //////////////////////////////////////////////////////////////////////////////
 // TOP SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void TopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs, 
+void TopSegmentIterator::toChild(BottomSegmentIteratorPtr bs, 
                                      hal_size_t child) const
 {
   _topSegment->setArrayIndex(bs->getGenome()->getChild(child),
@@ -132,7 +132,7 @@ void TopSegmentIterator::toChild(BottomSegmentIteratorConstPtr bs,
   assert (inRange() == true);
 }
 
-void TopSegmentIterator::toChildG(BottomSegmentIteratorConstPtr bs, 
+void TopSegmentIterator::toChildG(BottomSegmentIteratorPtr bs, 
                                       const Genome* childGenome) const
 {
   hal_index_t childIndex = bs->getGenome()->getChildIndex(childGenome);
@@ -143,7 +143,7 @@ void TopSegmentIterator::toChildG(BottomSegmentIteratorConstPtr bs,
 }
 
 
-void TopSegmentIterator::toParseUp(BottomSegmentIteratorConstPtr bs) const
+void TopSegmentIterator::toParseUp(BottomSegmentIteratorPtr bs) const
 { 
   const Genome* genome = bs->getGenome();
   hal_index_t index = bs->getTopParseIndex();
@@ -193,9 +193,9 @@ TopSegmentIteratorPtr TopSegmentIterator::copy()
   return newIt;
 }
 
-TopSegmentIteratorConstPtr TopSegmentIterator::copy() const
+TopSegmentIteratorPtr TopSegmentIterator::copy() const
 {
-  TopSegmentIteratorConstPtr newIt = 
+  TopSegmentIteratorPtr newIt = 
      getGenome()->getTopSegmentIterator(getArrayIndex());
   if (_reversed)
   {
@@ -205,7 +205,7 @@ TopSegmentIteratorConstPtr TopSegmentIterator::copy() const
   return newIt;
 }
 
-void TopSegmentIterator::copy(TopSegmentIteratorConstPtr ts) const
+void TopSegmentIterator::copy(TopSegmentIteratorPtr ts) const
 {
   _topSegment->setArrayIndex(ts->getGenome(), ts->getArrayIndex());
   _startOffset = ts->getStartOffset();
@@ -213,7 +213,7 @@ void TopSegmentIterator::copy(TopSegmentIteratorConstPtr ts) const
   _reversed = ts->getReversed();
 }
 
-bool TopSegmentIterator::equals(TopSegmentIteratorConstPtr other) const
+bool TopSegmentIterator::equals(TopSegmentIteratorPtr other) const
 {
   assert(getGenome() == other->getGenome());
   return getArrayIndex() == other->getArrayIndex();

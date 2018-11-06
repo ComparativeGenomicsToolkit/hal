@@ -64,7 +64,7 @@ void ChainGetBlocksSimpleTest::checkCallBack(AlignmentConstPtr alignment)
   BlockMapper mapper;
   mapper.init(parent, child, 0, 9, false, false, 0, true);
   mapper.map();
-  MappedSegmentConstSet& segMap = mapper.getMap();
+  MappedSegmentSet& segMap = mapper.getMap();
   CuAssertTrue(_testCase, segMap.size() == 1);
   MSRefSet::const_iterator mapIt = segMap.begin();
   
@@ -416,7 +416,7 @@ void ChainGetBlocksSimpleLiftoverTest::checkCallBack(
   BlockMapper mapper;
   mapper.init(parent, child, 0, 9, true, false, 0, false);
   mapper.map();
-  MappedSegmentConstSet& segMap = mapper.getMap();
+  MappedSegmentSet& segMap = mapper.getMap();
   CuAssertTrue(_testCase, segMap.size() == 1);
   MSRefSet::const_iterator mapIt = segMap.begin();
   

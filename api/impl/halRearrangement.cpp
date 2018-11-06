@@ -73,20 +73,20 @@ hal_size_t Rearrangement::getNumContainedGapBases() const
      _id == Deletion ? _leftParent->getNumGapBases() : _cur->getNumGapBases();
 }
 
-TopSegmentIteratorConstPtr Rearrangement::getLeftBreakpoint() const
+TopSegmentIteratorPtr Rearrangement::getLeftBreakpoint() const
 {
   assert(_cur->getReversed() == false);
   return _cur->getLeft();
 }
 
-TopSegmentIteratorConstPtr Rearrangement::getRightBreakpoint() const
+TopSegmentIteratorPtr Rearrangement::getRightBreakpoint() const
 {
   assert(_cur->getReversed() == false);
   return _cur->getRight();
 }
 
 bool Rearrangement::identifyFromLeftBreakpoint(
-  TopSegmentIteratorConstPtr topSegment)
+  TopSegmentIteratorPtr topSegment)
 {
   if (scanDuplicationCycle(topSegment) == true)
   {
@@ -156,7 +156,7 @@ bool Rearrangement::identifyFromLeftBreakpoint(
 /*
     if (_cur->getLeft()->getTopSegment()->getArrayIndex() == 1219)
     {
-      GappedBottomSegmentIteratorConstPtr bt = _leftParent->copy();
+      GappedBottomSegmentIteratorPtr bt = _leftParent->copy();
       cout << "bt copy " << bt << endl;
       bt->toRight();
       cout << "bt right " << bt << endl;
@@ -178,7 +178,7 @@ bool Rearrangement::identifyFromLeftBreakpoint(
 }
 
 bool Rearrangement::identifyDeletionFromLeftBreakpoint(
-  TopSegmentIteratorConstPtr topSegment)
+  TopSegmentIteratorPtr topSegment)
 {
   assert(topSegment->getReversed() == false);
   if (scanDeletionCycle(topSegment) == true &&
@@ -210,7 +210,7 @@ pair<hal_index_t, hal_index_t> Rearrangement::getDeletedRange() const
 }
 
 bool Rearrangement::identifyInsertionFromLeftBreakpoint(
-  TopSegmentIteratorConstPtr topSegment)
+  TopSegmentIteratorPtr topSegment)
 {
   assert(topSegment->getReversed() == false);
   if (scanInsertionCycle(topSegment) == true &&
@@ -325,7 +325,7 @@ double Rearrangement::getNThreshold() const
   return _nThreshold;
 }
 
-void Rearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
+void Rearrangement::resetStatus(TopSegmentIteratorPtr topSegment)
 {  
   _id = Invalid;
   assert(topSegment.get());
@@ -358,7 +358,7 @@ void Rearrangement::resetStatus(TopSegmentIteratorConstPtr topSegment)
 // genome.  In general, we can expect about half of segments to correspond
 // to such cases.   
 bool Rearrangement::scanNothingCycle(
-  TopSegmentIteratorConstPtr topSegment)
+  TopSegmentIteratorPtr topSegment)
 {
   assert(topSegment.get());
   resetStatus(topSegment);
@@ -434,7 +434,7 @@ bool Rearrangement::scanNothingCycle(
 // Segment is an inverted descendant of another Segment but 
 // otherwise no rearrangement.  
 bool Rearrangement::scanInversionCycle(
-  TopSegmentIteratorConstPtr topSegment)
+  TopSegmentIteratorPtr topSegment)
 {
   assert(topSegment.get());
   resetStatus(topSegment);
@@ -479,7 +479,7 @@ bool Rearrangement::scanInversionCycle(
 // It must be further verified that this segment has no parent to
 // distinguish between destination of transposition and insertion. 
 bool Rearrangement::scanInsertionCycle(
-  TopSegmentIteratorConstPtr topSegment)
+  TopSegmentIteratorPtr topSegment)
 {
   assert(topSegment.get());
   resetStatus(topSegment);
@@ -577,7 +577,7 @@ bool Rearrangement::scanInsertionCycle(
 // It must be further verified that this segment has no child to
 // distinguish between source of transposition and deletion. 
 bool Rearrangement::scanDeletionCycle(
-  TopSegmentIteratorConstPtr topSegment)
+  TopSegmentIteratorPtr topSegment)
 {
   assert(topSegment.get());
   resetStatus(topSegment);
@@ -585,7 +585,6 @@ bool Rearrangement::scanDeletionCycle(
 
   bool first = _cur->isFirst();
   bool last = _cur->isLast();
-
   if (_cur->hasParent() == false || (first && last))
   {
     return false;
@@ -659,7 +658,7 @@ bool Rearrangement::scanDeletionCycle(
 // NEED TO REVISE WITH STRONGER CRITERIA -- right now any operation
 // next to an endpoint can get confused with a translocation.  
 bool Rearrangement::scanTranslocationCycle(
-  TopSegmentIteratorConstPtr topSegment)
+  TopSegmentIteratorPtr topSegment)
 {
   assert(topSegment.get());
   resetStatus(topSegment);
@@ -692,7 +691,7 @@ bool Rearrangement::scanTranslocationCycle(
 
 // leaves duplication on _cur and _right
 bool Rearrangement::scanDuplicationCycle(
-    TopSegmentIteratorConstPtr topSegment)
+    TopSegmentIteratorPtr topSegment)
 {
   assert(topSegment.get());
   resetStatus(topSegment);

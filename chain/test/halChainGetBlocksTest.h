@@ -11,7 +11,7 @@
 #include "halAlignmentTest.h"
 #include "hal.h"
 
-typedef std::set<hal::MappedSegmentConstPtr,
+typedef std::set<hal::MappedSegmentPtr,
                  hal::MappedSegment::LessSource> MSRefSet;
 
 struct ChainGetBlocksSimpleTest : public AlignmentTest

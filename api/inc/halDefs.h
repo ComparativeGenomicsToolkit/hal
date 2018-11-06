@@ -82,6 +82,10 @@ extern const hal_index_t NULL_INDEX;
   typedef std::shared_ptr<T> T ## Ptr;                 \
   typedef std::shared_ptr<const T> T ## ConstPtr;
 
+#define HAL_FORWARD_DEC_MUTABLE_CLASS(T) \
+  class T;\
+  typedef std::shared_ptr<T> T ## Ptr;
+
 HAL_FORWARD_DEC_CLASS(Alignment)
 HAL_FORWARD_DEC_CLASS(CLParser)
 HAL_FORWARD_DEC_CLASS(Genome)
@@ -91,17 +95,17 @@ HAL_FORWARD_DEC_CLASS(BottomSegment)
 HAL_FORWARD_DEC_CLASS(Segment)
 HAL_FORWARD_DEC_CLASS(Sequence)
 HAL_FORWARD_DEC_CLASS(SlicedSegment)
-HAL_FORWARD_DEC_CLASS(MappedSegment)
-HAL_FORWARD_DEC_CLASS(SegmentIterator)
-HAL_FORWARD_DEC_CLASS(GappedSegmentIterator)
-HAL_FORWARD_DEC_CLASS(TopSegmentIterator)
-HAL_FORWARD_DEC_CLASS(GappedTopSegmentIterator)
-HAL_FORWARD_DEC_CLASS(BottomSegmentIterator)
-HAL_FORWARD_DEC_CLASS(GappedBottomSegmentIterator)
-HAL_FORWARD_DEC_CLASS(DNAIterator)
-HAL_FORWARD_DEC_CLASS(SequenceIterator)
-HAL_FORWARD_DEC_CLASS(ColumnIterator)
 HAL_FORWARD_DEC_CLASS(Rearrangement)
+HAL_FORWARD_DEC_MUTABLE_CLASS(MappedSegment)
+HAL_FORWARD_DEC_MUTABLE_CLASS(SegmentIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(GappedSegmentIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(TopSegmentIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(GappedTopSegmentIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(BottomSegmentIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(GappedBottomSegmentIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(DNAIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(SequenceIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(ColumnIterator)
 
 
 }

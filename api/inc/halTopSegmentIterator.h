@@ -39,30 +39,30 @@ public:
     TopSegmentIteratorPtr copy();
 
    /** Return a new copy of the iterator */
-     TopSegmentIteratorConstPtr copy() const;
+     TopSegmentIteratorPtr copy() const;
 
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
     * @param ts Iterator to copy */
-    void copy(TopSegmentIteratorConstPtr ts) const;
+    void copy(TopSegmentIteratorPtr ts) const;
 
    /** Move the iterator to the child of a given bottom segment
     * @param bs Bottom segment whose child will be moved to
     * @param child Index of child in bottom segment's genome */
-    void toChild(BottomSegmentIteratorConstPtr bs, 
+    void toChild(BottomSegmentIteratorPtr bs, 
                  hal_size_t child) const;
 
    /** Move the iterator to the child of a given bottom segment
     * @param bs Bottom segment whose child will be moved to
     * @param childGenome genome of child in bottom segment */
-    void toChildG(BottomSegmentIteratorConstPtr bs, 
+    void toChildG(BottomSegmentIteratorPtr bs, 
                   const Genome* childGenome) const;
    
    /** Given a bottom segment, move to the top segment that contains
     * its start position.  The genome remains unchanged.  The iterator
     * will be sliced accordingly (reversed state also taken into account)
     * @param bs Bottom segment to parse up from */
-    void toParseUp(BottomSegmentIteratorConstPtr bs) const;
+    void toParseUp(BottomSegmentIteratorPtr bs) const;
 
    /** DEPRECATED */
     TopSegment* getTopSegment() {
@@ -78,7 +78,7 @@ public:
     * take into account reverse state or offsets -- too review)
     * FIXME merge with operator==?? 
     * @param other Iterator to test equality to */
-    bool equals(TopSegmentIteratorConstPtr other) const;
+    bool equals(TopSegmentIteratorPtr other) const;
 
     /* equality operator */
     bool operator==(const TopSegmentIterator& other) const {
@@ -126,8 +126,8 @@ private:
    TopSegmentPtr _topSegment;
 };
 
-inline bool operator==(TopSegmentIteratorConstPtr p1,
-                       TopSegmentIteratorConstPtr p2) 
+inline bool operator==(TopSegmentIteratorPtr p1,
+                       TopSegmentIteratorPtr p2) 
 {
   if (p1.get() == NULL || p2.get() == NULL)
   {
@@ -136,8 +136,8 @@ inline bool operator==(TopSegmentIteratorConstPtr p1,
   return p1->equals(p2);
 }
 
-inline bool operator!=(TopSegmentIteratorConstPtr p1,
-                       TopSegmentIteratorConstPtr p2)
+inline bool operator!=(TopSegmentIteratorPtr p1,
+                       TopSegmentIteratorPtr p2)
 {
   return !(p1 == p2);
 }

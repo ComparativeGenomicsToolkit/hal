@@ -163,12 +163,12 @@ void WiggleLiftover::mapSegment()
     _segment->toRight(_cvals.back()._last);
   }
 
-  vector<MappedSegmentConstPtr> fragments;
-  MappedSegmentConstSet emptySet;
+  vector<MappedSegmentPtr> fragments;
+  MappedSegmentSet emptySet;
   set<hal_index_t> queryCutSet;
   set<hal_index_t> targetCutSet;
   
-  for (std::set<MappedSegmentConstPtr>::iterator i = _mappedSegments.begin();
+  for (std::set<MappedSegmentPtr>::iterator i = _mappedSegments.begin();
        i != _mappedSegments.end(); ++i)
   {
     BlockMapper::extractSegment(i, emptySet, fragments, &_mappedSegments, 
@@ -178,14 +178,14 @@ void WiggleLiftover::mapSegment()
   _cvals.clear();
 }
 
-void WiggleLiftover::mapFragments(vector<MappedSegmentConstPtr>& fragments)
+void WiggleLiftover::mapFragments(vector<MappedSegmentPtr>& fragments)
 {
   sort(fragments.begin(), fragments.end(), MappedSegment::LessSource());
   _cvIdx = 0;
   
   for (size_t i = 0; i < fragments.size() && _cvIdx < _cvals.size(); ++i)
   {
-    MappedSegmentConstPtr& seg = fragments[i];
+    MappedSegmentPtr& seg = fragments[i];
     for (size_t j = 0; j < seg->getLength() && _cvIdx < _cvals.size(); ++j)
     {
       hal_index_t pos = seg->getSource()->getStartPosition() + j;

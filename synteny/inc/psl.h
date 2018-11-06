@@ -42,7 +42,7 @@ struct PslBlock {
     
     
     
-    //void initBlock(ColumnIteratorConstPtr col);
+    //void initBlock(ColumnIteratorPtr col);
 };
 
 

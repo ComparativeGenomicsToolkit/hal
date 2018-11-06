@@ -27,12 +27,11 @@ public:
    
    // SEQUENCE ITERATOR METHODS
    SequenceIteratorPtr copy();
-   SequenceIteratorConstPtr copy() const;
+   SequenceIteratorPtr copy() const;
    void toNext() const;
    void toPrev() const;
-   Sequence* getSequence();
    const Sequence* getSequence() const;
-   bool equals(SequenceIteratorConstPtr other) const;
+   bool equals(SequenceIteratorPtr other) const;
 
 private:
    HDF5Sequence _sequence;

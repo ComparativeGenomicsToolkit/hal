@@ -106,7 +106,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
     writeHeader();
   }
 
-  ColumnIteratorConstPtr colIt = seq->getColumnIterator(&targets,
+  ColumnIteratorPtr colIt = seq->getColumnIterator(&targets,
                                                         _maxRefGap, 
                                                         startPosition,
                                                         lastPosition,
@@ -183,7 +183,7 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
     // they participate in that we haven't seen.
     for (hal_size_t i = 0; i < leafGenomes.size(); i++) {
         const Genome *genome = leafGenomes[i];
-        ColumnIteratorConstPtr colIt = genome->getColumnIterator(NULL,
+        ColumnIteratorPtr colIt = genome->getColumnIterator(NULL,
                                                                  0,
                                                                  0,
                                                                  NULL_INDEX,

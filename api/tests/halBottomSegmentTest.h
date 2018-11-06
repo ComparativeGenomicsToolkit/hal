@@ -20,7 +20,7 @@ struct BottomSegmentStruct {
    hal_index_t _topParseIndex;
    void setRandom(hal_size_t numChildren);
    void applyTo(hal::BottomSegmentIteratorPtr it) const;
-   void compareTo(hal::BottomSegmentIteratorConstPtr it,
+   void compareTo(hal::BottomSegmentIteratorPtr it,
      CuTest* testCase) const;
    void set(hal_index_t startPosition,
             hal_size_t length,

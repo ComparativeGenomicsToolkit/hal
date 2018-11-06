@@ -75,7 +75,7 @@ protected:
    const Sequence* _srcSequence;
    std::set<const Genome*> _tgtSet;
 
-   ColumnIteratorConstPtr _colIt;
+   ColumnIteratorPtr _colIt;
    std::set<std::string> _missedSet;
 };
 

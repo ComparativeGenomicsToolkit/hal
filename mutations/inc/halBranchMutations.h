@@ -47,8 +47,8 @@ public:
 protected:
 
    void writeInsertionOrInversion();
-   void writeSubstitutions(TopSegmentIteratorConstPtr first,
-                           TopSegmentIteratorConstPtr lastPlusOne);
+   void writeSubstitutions(TopSegmentIteratorPtr first,
+                           TopSegmentIteratorPtr lastPlusOne);
    void writeGapInsertions();
    void writeDeletion();
    void writeDeletionBreakPoint();
@@ -72,8 +72,8 @@ protected:
    std::string _parName;
 
    RearrangementPtr _rearrangement;
-   TopSegmentIteratorConstPtr _top;
-   BottomSegmentIteratorConstPtr _bottom1, _bottom2;
+   TopSegmentIteratorPtr _top;
+   BottomSegmentIteratorPtr _bottom1, _bottom2;
 };
 
 }

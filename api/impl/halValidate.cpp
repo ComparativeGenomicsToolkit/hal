@@ -52,7 +52,7 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
                             + std::to_string(bottomSegment->getArrayIndex()) + " out of range in genome "
                             + childGenome->getName());
       }
-      TopSegmentIteratorConstPtr topSegmentIteratr = 
+      TopSegmentIteratorPtr topSegmentIteratr = 
          childGenome->getTopSegmentIterator(childIndex);
       const TopSegment* childSegment = topSegmentIteratr->getTopSegment();
       if (childSegment->getLength() != bottomSegment->getLength())
@@ -106,7 +106,7 @@ void hal::validateBottomSegment(const BottomSegment* bottomSegment)
                             + " greater than the number of top segments, " 
                             + std::to_string(genome->getNumTopSegments()));
     }
-    TopSegmentIteratorConstPtr parseIterator = 
+    TopSegmentIteratorPtr parseIterator = 
        genome->getTopSegmentIterator(parseIndex);
     const TopSegment* parseSegment = parseIterator->getTopSegment();
     hal_offset_t parseOffset = bottomSegment->getTopParseOffset();
@@ -153,7 +153,7 @@ void hal::validateTopSegment(const TopSegment* topSegment)
                             + std::to_string(topSegment->getArrayIndex()) + " out of range in genome "
                             + parentGenome->getName());
     }
-    BottomSegmentIteratorConstPtr bottomSegmentIterator = 
+    BottomSegmentIteratorPtr bottomSegmentIterator = 
        parentGenome->getBottomSegmentIterator(parentIndex);
     const BottomSegment* parentSegment = 
        bottomSegmentIterator->getBottomSegment();
@@ -185,7 +185,7 @@ void hal::validateTopSegment(const TopSegment* topSegment)
                             + std::to_string(genome->getNumBottomSegments()) + " bottom segments");
     }
     hal_offset_t parseOffset = topSegment->getBottomParseOffset();
-    BottomSegmentIteratorConstPtr bottomSegmentIterator =
+    BottomSegmentIteratorPtr bottomSegmentIterator =
        genome->getBottomSegmentIterator(parseIndex);
     const BottomSegment* parseSegment = 
        bottomSegmentIterator->getBottomSegment();
@@ -206,7 +206,7 @@ void hal::validateTopSegment(const TopSegment* topSegment)
   const hal_index_t paralogyIndex = topSegment->getNextParalogyIndex();
   if (paralogyIndex != NULL_INDEX)
   {
-    TopSegmentIteratorConstPtr pti = 
+    TopSegmentIteratorPtr pti = 
        genome->getTopSegmentIterator(paralogyIndex);
     if (pti->getTopSegment()->getParentIndex() != topSegment->getParentIndex())
     {
@@ -228,7 +228,7 @@ void hal::validateTopSegment(const TopSegment* topSegment)
 void hal::validateSequence(const Sequence* sequence)
 {
   // Verify that the DNA sequence doesn't contain funny characters
-  DNAIteratorConstPtr dnaIt = sequence->getDNAIterator();
+  DNAIteratorPtr dnaIt = sequence->getDNAIterator();
   hal_size_t length = sequence->getSequenceLength();
   if (sequence->getGenome()->containsDNAArray() == true)
   {
@@ -247,7 +247,7 @@ void hal::validateSequence(const Sequence* sequence)
   if (sequence->getGenome()->getParent() != NULL)
   {
     hal_size_t totalTopLength = 0;
-    TopSegmentIteratorConstPtr topIt = sequence->getTopSegmentIterator();
+    TopSegmentIteratorPtr topIt = sequence->getTopSegmentIterator();
     hal_size_t numTopSegments = sequence->getNumTopSegments();
     for (hal_size_t i = 0; i < numTopSegments; ++i)
     {
@@ -267,7 +267,7 @@ void hal::validateSequence(const Sequence* sequence)
   if (sequence->getGenome()->getNumChildren() > 0)
   {
     hal_size_t totalBottomLength = 0;
-    BottomSegmentIteratorConstPtr bottomIt = 
+    BottomSegmentIteratorPtr bottomIt = 
        sequence->getBottomSegmentIterator();
     hal_size_t numBottomSegments = sequence->getNumBottomSegments();
     for (hal_size_t i = 0; i < numBottomSegments; ++i)
@@ -292,7 +292,7 @@ void hal::validateDuplications(const Genome* genome)
   {
     return;
   }
-  TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
+  TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator();
   vector<unsigned char> pcount(parent->getNumBottomSegments(), 0);
   for (; not topIt->atEnd(); topIt->toRight())
   {
@@ -331,8 +331,8 @@ void hal::validateGenome(const Genome* genome)
   hal_size_t totalBottom = 0;
   hal_size_t totalLength = 0;
   
-  SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-  SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+  SequenceIteratorPtr seqEnd = genome->getSequenceEndIterator();
   for (; seqIt != seqEnd; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();

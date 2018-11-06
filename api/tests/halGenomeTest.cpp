@@ -278,12 +278,12 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
   const Genome *leafGenome = alignment->openGenome("LeafGenome1");
   string ancSeq = "CAT";
   hal_index_t n = ancGenome->getSequenceLength();
-  DNAIteratorConstPtr dnaIt = ancGenome->getDNAIterator();
+  DNAIteratorPtr dnaIt = ancGenome->getDNAIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     CuAssertTrue(_testCase, dnaIt->getChar() == ancSeq[i]);
   }
-  TopSegmentIteratorConstPtr topIt = leafGenome->getTopSegmentIterator();
+  TopSegmentIteratorPtr topIt = leafGenome->getTopSegmentIterator();
   n = leafGenome->getNumTopSegments();
   for (; topIt->getArrayIndex() < n; topIt->toRight())
   {
@@ -299,7 +299,7 @@ void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
       CuAssertTrue(_testCase, topIt->getNextParalogyIndex() == 7);
     }
   }
-  BottomSegmentIteratorConstPtr botIt = ancGenome->getBottomSegmentIterator();
+  BottomSegmentIteratorPtr botIt = ancGenome->getBottomSegmentIterator();
   n = ancGenome->getNumBottomSegments();
   for (; botIt->getArrayIndex() < n; botIt->toRight())
   {

@@ -102,8 +102,8 @@ void SummarizeMutations::analyzeGenomeRecursive(const string& genomeName)
   else if (parent != NULL && 
            (!_targetSet || _targetSet->find(genomeName) != _targetSet->end()))
   {
-    TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
-    BottomSegmentIteratorConstPtr parIt = parent->getBottomSegmentIterator();
+    TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator();
+    BottomSegmentIteratorPtr parIt = parent->getBottomSegmentIterator();
 
     rearrangementAnalysis(genome, stats);
   }
@@ -140,8 +140,8 @@ void SummarizeMutations::substitutionAnalysis(const Genome* genome,
   string pname = parent != NULL ? parent->getName() : string();
   StrPair branchName(genome->getName(), pname);
 
-  BottomSegmentIteratorConstPtr bottom = genome->getBottomSegmentIterator();
-  TopSegmentIteratorConstPtr top = genome->getChild(0)->getTopSegmentIterator();
+  BottomSegmentIteratorPtr bottom = genome->getBottomSegmentIterator();
+  TopSegmentIteratorPtr top = genome->getChild(0)->getTopSegmentIterator();
   
   string gString, cString;
 
@@ -199,7 +199,7 @@ void SummarizeMutations::rearrangementAnalysis(const Genome* genome,
   StrPair branchName(genome->getName(), parent->getName());
 
   // do the gapped deletions by scanning the parent
-  GappedBottomSegmentIteratorConstPtr gappedBottom = 
+  GappedBottomSegmentIteratorPtr gappedBottom = 
      parent->getGappedBottomSegmentIterator(0, childIndex, _gapThreshold);
 
   while (gappedBottom->getRightArrayIndex() < 
@@ -213,7 +213,7 @@ void SummarizeMutations::rearrangementAnalysis(const Genome* genome,
     gappedBottom->toRight();
   }
 
-  GappedTopSegmentIteratorConstPtr gappedTop =
+  GappedTopSegmentIteratorPtr gappedTop =
      genome->getGappedTopSegmentIterator(0, _gapThreshold);
 
   RearrangementPtr r = genome->getRearrangement(0, _gapThreshold, _nThreshold);
@@ -252,7 +252,7 @@ void SummarizeMutations::rearrangementAnalysis(const Genome* genome,
 }
 
 void SummarizeMutations::subsAndGapInserts(
-  GappedTopSegmentIteratorConstPtr gappedTop, MutationsStats& stats)
+  GappedTopSegmentIteratorPtr gappedTop, MutationsStats& stats)
 {
   assert(gappedTop->getReversed() == false);
   hal_size_t numGaps = gappedTop->getNumGaps();
@@ -262,12 +262,12 @@ void SummarizeMutations::subsAndGapInserts(
   }
 
   string parent, child;
-  TopSegmentIteratorConstPtr l = gappedTop->getLeft();
-  TopSegmentIteratorConstPtr r = gappedTop->getRight();
-  BottomSegmentIteratorConstPtr p = 
+  TopSegmentIteratorPtr l = gappedTop->getLeft();
+  TopSegmentIteratorPtr r = gappedTop->getRight();
+  BottomSegmentIteratorPtr p = 
      l->getTopSegment()->getGenome()->getParent()->getBottomSegmentIterator();
 
-  for (TopSegmentIteratorConstPtr i = l->copy(); 
+  for (TopSegmentIteratorPtr i = l->copy(); 
        i->getTopSegment()->getArrayIndex() <= 
           r->getTopSegment()->getArrayIndex();
        i->toRight())

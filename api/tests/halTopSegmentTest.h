@@ -28,7 +28,7 @@ struct TopSegmentStruct {
             hal_index_t bottomParseIndex = hal::NULL_INDEX,
             hal_index_t nextParalogyIndex = hal::NULL_INDEX);
    void applyTo(hal::TopSegmentIteratorPtr it) const;
-   void compareTo(hal::TopSegmentIteratorConstPtr it,
+   void compareTo(hal::TopSegmentIteratorPtr it,
      CuTest* testCase) const;
 };
 

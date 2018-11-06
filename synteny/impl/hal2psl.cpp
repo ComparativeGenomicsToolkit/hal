@@ -38,8 +38,8 @@ std::vector<PslBlock> hal::Hal2Psl::convert2psl(hal::AlignmentConstPtr alignment
         _missedSet.clear();
         _tgtSet.clear();
         _tgtSet.insert(tgtGenome);
-        hal::SequenceIteratorConstPtr seqIt = srcGenome->getSequenceIterator();
-        hal::SequenceIteratorConstPtr seqEnd = srcGenome->getSequenceEndIterator();
+        hal::SequenceIteratorPtr seqIt = srcGenome->getSequenceIterator();
+        hal::SequenceIteratorPtr seqEnd = srcGenome->getSequenceEndIterator();
         for (; !seqIt->equals(seqEnd); seqIt->toNext()) {
           _outBedLines.clear();
           _srcSequence = seqIt->getSequence(); 

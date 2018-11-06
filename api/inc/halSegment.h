@@ -47,11 +47,8 @@ public:
    /** Get the containing genome */
    virtual Genome* getGenome() = 0;
 
-   /** Get the containing (read-only) sequence */
-   virtual const Sequence* getSequence() const = 0;
-
    /** Get the containing sequence */
-   virtual Sequence* getSequence() = 0;
+   virtual const Sequence* getSequence() const = 0;
 
    /** Get the start position of the segment. Note that the start position
     * is currently always in FORWARD GENOME coordinates.  That said,
@@ -135,7 +132,7 @@ public:
     * @param mrca The MRCA of the source and target genomes. By
     * default, it is computed automatically. */
    virtual hal_size_t getMappedSegments(
-     MappedSegmentConstSet& outSegments,
+     MappedSegmentSet& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath = NULL,
      bool doDupes = true,

@@ -32,11 +32,11 @@ SequenceIteratorPtr HDF5SequenceIterator::copy()
   return SequenceIteratorPtr(newIt);
 }
 
-SequenceIteratorConstPtr HDF5SequenceIterator::copy() const
+SequenceIteratorPtr HDF5SequenceIterator::copy() const
 {
   HDF5SequenceIterator* newIt = new HDF5SequenceIterator(
     _sequence._genome, _sequence._index);
-  return SequenceIteratorConstPtr(newIt);
+  return SequenceIteratorPtr(newIt);
 }
 
 void HDF5SequenceIterator:: toNext() const
@@ -49,15 +49,6 @@ void HDF5SequenceIterator::toPrev() const
   --_sequence._index;
 }
 
-Sequence* HDF5SequenceIterator::getSequence()
-{
-  assert(_sequence._index >= 0 && _sequence._index < 
-         (hal_index_t)_sequence._genome->_sequenceNameArray.getSize()); 
-  // don't return local sequence pointer.  give cached pointer from
-  // genome instead (so it will not expire when iterator moves!)
-  return _sequence._genome->getSequence(_sequence.getName());
-}
-
 const Sequence* HDF5SequenceIterator::getSequence() const
 {
   assert(_sequence._index >= 0 && _sequence._index < 
@@ -67,7 +58,7 @@ const Sequence* HDF5SequenceIterator::getSequence() const
   return _sequence._genome->getSequence(_sequence.getName());
 }
 
-bool HDF5SequenceIterator::equals(SequenceIteratorConstPtr other) const
+bool HDF5SequenceIterator::equals(SequenceIteratorPtr other) const
 {
   const HDF5SequenceIterator* h5Other = reinterpret_cast<
      const HDF5SequenceIterator*>(other.get());

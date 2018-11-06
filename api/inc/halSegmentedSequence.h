@@ -48,7 +48,7 @@ public:
 
    /** Get a const top segment iterator
     * @param position Index in segment array of returned iterator */
-   virtual TopSegmentIteratorConstPtr getTopSegmentIterator(
+   virtual TopSegmentIteratorPtr getTopSegmentIterator(
      hal_index_t position = 0) const = 0;
 
    /** Get a bottom segment iterator
@@ -58,7 +58,7 @@ public:
 
    /** Get a const bottom segment iterator
     * @param position Index in segment array of returned iterator */
-   virtual BottomSegmentIteratorConstPtr getBottomSegmentIterator(
+   virtual BottomSegmentIteratorPtr getBottomSegmentIterator(
      hal_index_t position = 0) const = 0;
 
    /** Get a DNA iterator
@@ -68,11 +68,11 @@ public:
 
    /** Get a const DNA iterator
     * @param position Index in genome of returned iterator */
-   virtual DNAIteratorConstPtr getDNAIterator(
+   virtual DNAIteratorPtr getDNAIterator(
      hal_index_t position = 0) const = 0;
 
    /** Get a DNA end iterator (one beyond last element in list) */
-   virtual DNAIteratorConstPtr getDNAEndIterator() const = 0;
+   virtual DNAIteratorPtr getDNAEndIterator() const = 0;
 
    /** Get a column iterator 
     * @param targets Only genomes in this set are visited
@@ -93,7 +93,7 @@ public:
     * reference base. In practice, this means paralogy edges are only
     * followed when moving down the tree for a particular column,
     * never up. */
-   virtual ColumnIteratorConstPtr getColumnIterator(
+   virtual ColumnIteratorPtr getColumnIterator(
      const std::set<const Genome*>* targets = NULL,
      hal_size_t maxInsertLength = 0,
      hal_index_t position = 0,
@@ -148,7 +148,7 @@ public:
     * the sequence from i.  A seperate function is needed to, say,
     * get the last iterator from a sequence  (not a big deal since
     * the functinality is already in the implementation (extendLeft)*/
-   virtual GappedTopSegmentIteratorConstPtr getGappedTopSegmentIterator(
+   virtual GappedTopSegmentIteratorPtr getGappedTopSegmentIterator(
      hal_index_t i, hal_size_t gapThreshold, bool atomic = false) const = 0;
 
    /** Get a gapped iterator  (experimental) 
@@ -156,7 +156,7 @@ public:
     * the sequence from i.  A seperate function is needed to, say,
     * get the last iterator from a sequence  (not a big deal since
     * the functinality is already in the implementation (extendLeft)*/
-   virtual GappedBottomSegmentIteratorConstPtr getGappedBottomSegmentIterator(
+   virtual GappedBottomSegmentIteratorPtr getGappedBottomSegmentIterator(
      hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
      bool atomic = false) const = 0;
 

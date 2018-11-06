@@ -81,7 +81,7 @@ rootInfo * findRoot(const Genome *genome,
     data->reversed = reversed;
     return data;
   }
-  TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
+  TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator();
   topIt->toSite(pos, false);
   bool parentReversed = topIt->getParentReversed() ? !reversed : reversed;
   if (!topIt->hasParent()) {
@@ -92,7 +92,7 @@ rootInfo * findRoot(const Genome *genome,
     data->reversed = reversed;
     return data;
   } else {
-    BottomSegmentIteratorConstPtr botIt = genome->getParent()->getBottomSegmentIterator();
+    BottomSegmentIteratorPtr botIt = genome->getParent()->getBottomSegmentIterator();
     botIt->toParent(topIt);
     hal_index_t parentPos = botIt->getStartPosition();
     hal_index_t offset = abs(pos - topIt->getStartPosition());
@@ -134,7 +134,7 @@ void buildTree(AlignmentConstPtr alignment, const Genome *genome,
   }
   stTree_setClientData(tree, data);
   if (genome->getNumChildren() == 0) {
-    DNAIteratorConstPtr dnaIt = genome->getDNAIterator(pos);
+    DNAIteratorPtr dnaIt = genome->getDNAIterator(pos);
     if (reversed) {
       dnaIt->toReverse();
     }
@@ -142,14 +142,14 @@ void buildTree(AlignmentConstPtr alignment, const Genome *genome,
     return;
   }
   data->dna = 'Z'; // signals an ancestor for the pruning process -- hacky
-  BottomSegmentIteratorConstPtr botIt = genome->getBottomSegmentIterator();
+  BottomSegmentIteratorPtr botIt = genome->getBottomSegmentIterator();
   botIt->toSite(pos, false);
   assert(botIt->getReversed() == false);
   for (hal_size_t i = 0; i < botIt->getNumChildren(); i++) {
     hal_index_t childIndex = botIt->getChildIndex(i);
     if (childIndex != NULL_INDEX) {
       const Genome *childGenome = genome->getChild(i);
-      TopSegmentIteratorConstPtr topIt = childGenome->getTopSegmentIterator();
+      TopSegmentIteratorPtr topIt = childGenome->getTopSegmentIterator();
       topIt->toChild(botIt, i);
       if (topIt->getNextParalogyIndex() != NULL_INDEX) {
         // Go through the paralogy cycle and add the
@@ -160,7 +160,7 @@ void buildTree(AlignmentConstPtr alignment, const Genome *genome,
         // possibly create more duplications than really
         // exist) Won't happen with the way the iterator
         // comparison is implemented now though.
-        TopSegmentIteratorConstPtr original = topIt->copy();
+        TopSegmentIteratorPtr original = topIt->copy();
         for (topIt->toNextParalogy(); !topIt->equals(original); topIt->toNextParalogy()) {
           // sanity check
           assert(topIt->getLength() == botIt->getLength());

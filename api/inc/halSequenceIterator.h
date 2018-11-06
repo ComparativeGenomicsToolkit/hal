@@ -27,7 +27,7 @@ public:
 
    /** Create a duplicate iterator referring to the same sequence
     * which itself is not copied */
-   virtual SequenceIteratorConstPtr copy() const = 0;
+   virtual SequenceIteratorPtr copy() const = 0;
 
    /** Move iterator to next sequence in the genome */
    virtual void toNext() const = 0;
@@ -36,17 +36,14 @@ public:
    virtual void toPrev() const = 0;
    
    /** Return pointer to the sequence */
-   virtual Sequence* getSequence() = 0;
-
-   /** Return pointer to the sequence */
    virtual const Sequence* getSequence() const = 0;
 
    /** Test if iterator points to same sequence as other iterator */
-   virtual bool equals(SequenceIteratorConstPtr p2) const = 0;
+   virtual bool equals(SequenceIteratorPtr p2) const = 0;
 };
 
-inline bool operator==(SequenceIteratorConstPtr p1,
-                       SequenceIteratorConstPtr p2) 
+inline bool operator==(SequenceIteratorPtr p1,
+                       SequenceIteratorPtr p2) 
 {
   if (p1.get() == NULL || p2.get() == NULL)
   {
@@ -55,8 +52,8 @@ inline bool operator==(SequenceIteratorConstPtr p1,
   return p1->equals(p2);
 }
 
-inline bool operator!=(SequenceIteratorConstPtr p1,
-                       SequenceIteratorConstPtr p2)
+inline bool operator!=(SequenceIteratorPtr p1,
+                       SequenceIteratorPtr p2)
 {
   return !(p1 == p2);
 }

@@ -105,11 +105,11 @@ int main(int argc, char** argv)
       }
     }
 
-    TopSegmentIteratorConstPtr top = genome->getTopSegmentIterator();
+    TopSegmentIteratorPtr top = genome->getTopSegmentIterator();
     top->toSite(start, false);
     // do slicing here;
     
-    GappedTopSegmentIteratorConstPtr gtop = 
+    GappedTopSegmentIteratorPtr gtop = 
        genome->getGappedTopSegmentIterator(top->getArrayIndex(), maxGap);
 
     // need to review!

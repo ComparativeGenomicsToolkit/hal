@@ -85,7 +85,7 @@ void BlockMapper::init(const Genome* refGenome, const Genome* queryGenome,
 
 void BlockMapper::map()
 {
-  SegmentIteratorConstPtr refSeg;
+  SegmentIteratorPtr refSeg;
   hal_index_t lastIndex;
   if ((_mrca == _refGenome) && (_refGenome != _queryGenome))
   {
@@ -129,7 +129,7 @@ void BlockMapper::map()
   if (_mapAdj)
   {
     assert(_targetReversed == false);
-    MappedSegmentConstSet::const_iterator i;
+    MappedSegmentSet::const_iterator i;
     for (i = _segSet.begin(); i != _segSet.end(); ++i)
     {
       if (_adjSet.find(*i) == _adjSet.end())
@@ -140,11 +140,11 @@ void BlockMapper::map()
   }
 }
 
-void BlockMapper::extractReferenceParalogies(MappedSegmentConstSet& outParalogies)
+void BlockMapper::extractReferenceParalogies(MappedSegmentSet& outParalogies)
 {
-  MappedSegmentConstSet::iterator i = _segSet.begin();
-  MappedSegmentConstSet::iterator j = _segSet.end();
-  MappedSegmentConstSet::iterator k;
+  MappedSegmentSet::iterator i = _segSet.begin();
+  MappedSegmentSet::iterator j = _segSet.end();
+  MappedSegmentSet::iterator k;
   hal_index_t iStart = NULL_INDEX;
   hal_index_t iEnd = NULL_INDEX;
   bool iIns = false;
@@ -223,17 +223,17 @@ void BlockMapper::extractReferenceParalogies(MappedSegmentConstSet& outParalogie
 }
 
   
-void BlockMapper::mapAdjacencies(MappedSegmentConstSet::const_iterator segIt)
+void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt)
 {
   assert(_segSet.empty() == false && segIt != _segSet.end());
-  MappedSegmentConstPtr mappedQuerySeg = *segIt;
+  MappedSegmentPtr mappedQuerySeg = *segIt;
   hal_index_t maxIndex;
   hal_index_t minIndex;
-  SegmentIteratorConstPtr queryIt = makeIterator(mappedQuerySeg, 
+  SegmentIteratorPtr queryIt = makeIterator(mappedQuerySeg, 
                                                  minIndex,
                                                  maxIndex);
-  MappedSegmentConstSet backResults;
-  MappedSegmentConstSet::const_iterator segNext = segIt;
+  MappedSegmentSet backResults;
+  MappedSegmentSet::const_iterator segNext = segIt;
   if (queryIt->getReversed())
   {
     segNext = segNext == _segSet.begin() ? _segSet.end() : --segNext;
@@ -276,7 +276,7 @@ void BlockMapper::mapAdjacencies(MappedSegmentConstSet::const_iterator segIt)
                          minIndex,
                          maxIndex);
 
-  MappedSegmentConstSet::const_iterator segPrev = segIt;
+  MappedSegmentSet::const_iterator segPrev = segIt;
   if (queryIt->getReversed())
   {
     ++segPrev;
@@ -314,9 +314,9 @@ void BlockMapper::mapAdjacencies(MappedSegmentConstSet::const_iterator segIt)
   }
 
   // flip the results and copy back to our main set.
-  for (MappedSegmentConstSet::iterator i = backResults.begin(); i != backResults.end(); ++i)
+  for (MappedSegmentSet::iterator i = backResults.begin(); i != backResults.end(); ++i)
   {
-    MappedSegmentConstPtr mseg = *i;
+    MappedSegmentPtr mseg = *i;
     if (mseg->getSequence() == _refSequence)
     {
       mseg->flip();
@@ -326,7 +326,7 @@ void BlockMapper::mapAdjacencies(MappedSegmentConstSet::const_iterator segIt)
         mseg->fullReverse();
       }
 
-      MappedSegmentConstSet::const_iterator j = _segSet.lower_bound(*i);
+      MappedSegmentSet::const_iterator j = _segSet.lower_bound(*i);
       bool overlaps = false;
       if (j != _segSet.begin())
       {
@@ -349,11 +349,11 @@ void BlockMapper::mapAdjacencies(MappedSegmentConstSet::const_iterator segIt)
   }
 }
 
-SegmentIteratorConstPtr BlockMapper::makeIterator(
-  MappedSegmentConstPtr mappedSegment, hal_index_t& minIndex,
+SegmentIteratorPtr BlockMapper::makeIterator(
+  MappedSegmentPtr mappedSegment, hal_index_t& minIndex,
   hal_index_t& maxIndex)
 {
-  SegmentIteratorConstPtr segIt;
+  SegmentIteratorPtr segIt;
   if (mappedSegment->isTop())
   {
     segIt = mappedSegment->getGenome()->getTopSegmentIterator(
@@ -469,10 +469,10 @@ bool BlockMapper::cutByNext(SlicedSegmentConstPtr queryIt,
   return wasCut;
 }
 
-void BlockMapper::extractSegment(MappedSegmentConstSet::iterator start, 
-                                 const MappedSegmentConstSet& paraSet,
-                                 vector<MappedSegmentConstPtr>& fragments,
-                                 MappedSegmentConstSet* startSet,
+void BlockMapper::extractSegment(MappedSegmentSet::iterator start, 
+                                 const MappedSegmentSet& paraSet,
+                                 vector<MappedSegmentPtr>& fragments,
+                                 MappedSegmentSet* startSet,
                                  const set<hal_index_t>& targetCutPoints,
                                  set<hal_index_t>& queryCutPoints)
 {
@@ -480,14 +480,14 @@ void BlockMapper::extractSegment(MappedSegmentConstSet::iterator start,
   fragments.push_back(*start);
   const Sequence* startSeq = (*start)->getSequence();
 
-  vector<MappedSegmentConstSet::iterator> vector1;
-  vector<MappedSegmentConstSet::iterator>* v1 = &vector1;
-  vector<MappedSegmentConstSet::iterator> vector2;
-  vector<MappedSegmentConstSet::iterator>* v2 = &vector2;
-  vector<MappedSegmentConstSet::iterator> toErase;
+  vector<MappedSegmentSet::iterator> vector1;
+  vector<MappedSegmentSet::iterator>* v1 = &vector1;
+  vector<MappedSegmentSet::iterator> vector2;
+  vector<MappedSegmentSet::iterator>* v2 = &vector2;
+  vector<MappedSegmentSet::iterator> toErase;
 
   v1->push_back(start);
-  MappedSegmentConstSet::iterator next = start;
+  MappedSegmentSet::iterator next = start;
   ++next;
 
   // equivalence class based on start set

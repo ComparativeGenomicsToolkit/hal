@@ -103,8 +103,8 @@ void getDimensions(AlignmentConstPtr outAlignment, const Genome* genome,
                    vector<Sequence::Info>& dimensions)
 {
   assert(dimensions.size() == 0);
-  SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-  SequenceIteratorConstPtr seqEndIt = genome->getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+  SequenceIteratorPtr seqEndIt = genome->getSequenceEndIterator();
 
   bool root = outAlignment->getParentName(genome->getName()).empty();
   bool leaf = outAlignment->getChildNames(genome->getName()).empty();     
@@ -122,7 +122,7 @@ void getDimensions(AlignmentConstPtr outAlignment, const Genome* genome,
 
 void copyGenome(const Genome* inGenome, Genome* outGenome)
 {
-  DNAIteratorConstPtr inDna = inGenome->getDNAIterator();
+  DNAIteratorPtr inDna = inGenome->getDNAIterator();
   DNAIteratorPtr outDna = outGenome->getDNAIterator();
   hal_size_t n = inGenome->getSequenceLength();
   assert(n == outGenome->getSequenceLength());
@@ -132,7 +132,7 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
     outDna->setChar(inDna->getChar());
   }
 
-  TopSegmentIteratorConstPtr inTop = inGenome->getTopSegmentIterator();
+  TopSegmentIteratorPtr inTop = inGenome->getTopSegmentIterator();
   TopSegmentIteratorPtr outTop = outGenome->getTopSegmentIterator();
   n = outGenome->getNumTopSegments();
   assert(n == 0 || n == inGenome->getNumTopSegments());
@@ -146,7 +146,7 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
     outTop->setNextParalogyIndex(inTop->getNextParalogyIndex());
   }
 
-  BottomSegmentIteratorConstPtr inBot = inGenome->getBottomSegmentIterator();
+  BottomSegmentIteratorPtr inBot = inGenome->getBottomSegmentIterator();
   BottomSegmentIteratorPtr outBot = outGenome->getBottomSegmentIterator();
   n = outGenome->getNumBottomSegments();
   assert(n == 0 || n == inGenome->getNumBottomSegments());

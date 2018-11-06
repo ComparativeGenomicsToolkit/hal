@@ -22,7 +22,7 @@ class GappedBottomSegmentIterator : virtual public GappedSegmentIterator
 {
 public:
     /** constructor */
-   GappedBottomSegmentIterator(BottomSegmentIteratorConstPtr left,
+   GappedBottomSegmentIterator(BottomSegmentIteratorPtr left,
                                hal_size_t childIndex,
                                hal_size_t gapThreshold,
                                bool atomic);
@@ -35,21 +35,21 @@ public:
    virtual GappedBottomSegmentIteratorPtr copy();
 
    /** Return a copy of the iterator */
-   virtual GappedBottomSegmentIteratorConstPtr copy() const;
+   virtual GappedBottomSegmentIteratorPtr copy() const;
 
    /** Copy another iterator into the current iterator (more efficient
     * than above methods since no new iterators are created */
-   virtual void copy(GappedBottomSegmentIteratorConstPtr ts) const;
+   virtual void copy(GappedBottomSegmentIteratorPtr ts) const;
 
    /** Move to parent */
-   virtual void toParent(GappedTopSegmentIteratorConstPtr ts) const;
+   virtual void toParent(GappedTopSegmentIteratorPtr ts) const;
 
    /** Test equality with other iterator 
     * @param other */
-   virtual bool equals(GappedBottomSegmentIteratorConstPtr other) const;
+   virtual bool equals(GappedBottomSegmentIteratorPtr other) const;
 
    /** Test if iterator abuts other iterator */
-   virtual bool adjacentTo(GappedBottomSegmentIteratorConstPtr other) const;
+   virtual bool adjacentTo(GappedBottomSegmentIteratorPtr other) const;
 
    /** Test if iterator has a child */
    virtual bool hasChild() const;
@@ -60,17 +60,17 @@ public:
    /** Return the rightmost segment of the iterator
     * (note that moving the returned iterator will corrupt the 
     * current gapped iterator.  this is a bug) */
-   virtual BottomSegmentIteratorConstPtr getLeft() const;
+   virtual BottomSegmentIteratorPtr getLeft() const;
 
    /** Reset the gapped iterator.
     * @param ts This will be the left segment of the current iterator. The 
     * right segment will be extended as far as possible */
-   virtual BottomSegmentIteratorConstPtr getRight() const;
+   virtual BottomSegmentIteratorPtr getRight() const;
 
    /** Reset the gapped iterator.
     * @param ts This will be the left segment of the current iterator. The 
     * right segment will be extended as far as possible */
-   virtual void setLeft(BottomSegmentIteratorConstPtr bs) const;
+   virtual void setLeft(BottomSegmentIteratorPtr bs) const;
 
     // SEGMENT INTERFACE
    virtual void setArrayIndex(Genome* genome, 
@@ -80,7 +80,6 @@ public:
    virtual const Genome* getGenome() const;
    virtual Genome* getGenome();
    virtual const Sequence* getSequence() const;
-   virtual Sequence* getSequence();
    virtual hal_index_t getStartPosition() const;
    virtual hal_index_t getEndPosition() const;
    virtual hal_size_t getLength() const;
@@ -95,7 +94,7 @@ public:
    virtual bool isMissingData(double nThreshold) const;
    virtual bool isTop() const;
    virtual hal_size_t getMappedSegments(
-     MappedSegmentConstSet& outSegments,
+     MappedSegmentSet& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
@@ -133,35 +132,35 @@ public:
 
 private:
    
-   bool compatible(BottomSegmentIteratorConstPtr left,
-                   BottomSegmentIteratorConstPtr right) const;
+   bool compatible(BottomSegmentIteratorPtr left,
+                   BottomSegmentIteratorPtr right) const;
 
    void extendRight() const;
    void extendLeft() const;
 
-   void toLeftNextUngapped(BottomSegmentIteratorConstPtr bs) const;
-   void toRightNextUngapped(BottomSegmentIteratorConstPtr bs) const;
-   void toLeftNextUngapped(TopSegmentIteratorConstPtr ts) const;
-   void toRightNextUngapped(TopSegmentIteratorConstPtr ts) const;
+   void toLeftNextUngapped(BottomSegmentIteratorPtr bs) const;
+   void toRightNextUngapped(BottomSegmentIteratorPtr bs) const;
+   void toLeftNextUngapped(TopSegmentIteratorPtr ts) const;
+   void toRightNextUngapped(TopSegmentIteratorPtr ts) const;
    
    // keep convention of other iterators where const-ness only applies
    // to the database and not the iterator...
-   mutable BottomSegmentIteratorConstPtr _left;
-   mutable BottomSegmentIteratorConstPtr _right;
-   mutable TopSegmentIteratorConstPtr _leftChild;
-   mutable TopSegmentIteratorConstPtr _rightChild;
-   mutable TopSegmentIteratorConstPtr _leftDup;
-   mutable TopSegmentIteratorConstPtr _rightDup;
-   mutable BottomSegmentIteratorConstPtr _temp;
-   mutable BottomSegmentIteratorConstPtr _temp2;
+   mutable BottomSegmentIteratorPtr _left;
+   mutable BottomSegmentIteratorPtr _right;
+   mutable TopSegmentIteratorPtr _leftChild;
+   mutable TopSegmentIteratorPtr _rightChild;
+   mutable TopSegmentIteratorPtr _leftDup;
+   mutable TopSegmentIteratorPtr _rightDup;
+   mutable BottomSegmentIteratorPtr _temp;
+   mutable BottomSegmentIteratorPtr _temp2;
    mutable hal_size_t _childIndex;
    mutable hal_size_t _gapThreshold;  
    mutable bool _atomic;
   
 };
 
-inline bool operator==(GappedBottomSegmentIteratorConstPtr p1,
-                       GappedBottomSegmentIteratorConstPtr p2) 
+inline bool operator==(GappedBottomSegmentIteratorPtr p1,
+                       GappedBottomSegmentIteratorPtr p2) 
 {
   if (p1.get() == NULL || p2.get() == NULL)
   {
@@ -170,8 +169,8 @@ inline bool operator==(GappedBottomSegmentIteratorConstPtr p1,
   return p1->equals(p2);
 }
 
-inline bool operator!=(GappedBottomSegmentIteratorConstPtr p1,
-                       GappedBottomSegmentIteratorConstPtr p2)
+inline bool operator!=(GappedBottomSegmentIteratorPtr p1,
+                       GappedBottomSegmentIteratorPtr p2)
 {
   return !(p1 == p2);
 }

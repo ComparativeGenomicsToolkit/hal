@@ -25,8 +25,8 @@ public:
    struct LinkedBottomIterator 
    {
       LinkedBottomIterator() : _topParse(NULL), _entry(NULL) {}
-      BottomSegmentIteratorConstPtr _it;
-      DNAIteratorConstPtr _dna;
+      BottomSegmentIteratorPtr _it;
+      DNAIteratorPtr _dna;
       LinkedTopIterator* _topParse;
       std::vector<LinkedTopIterator*> _children;
       Entry* _entry;
@@ -36,8 +36,8 @@ public:
    {
       LinkedTopIterator() : _bottomParse(NULL), _parent(NULL), _nextDup(NULL),
                             _entry(NULL){}
-      TopSegmentIteratorConstPtr _it;
-      DNAIteratorConstPtr _dna;
+      TopSegmentIteratorPtr _it;
+      DNAIteratorPtr _dna;
       LinkedBottomIterator* _bottomParse;
       LinkedBottomIterator* _parent;
       LinkedTopIterator* _nextDup;

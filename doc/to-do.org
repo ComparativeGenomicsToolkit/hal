@@ -6,7 +6,7 @@ note it would be nice to extend SegmentIterator but the crappy smart pointer int
 * Get rid of iterators implementing the types they are iterating over.  Add an explict get or operator*. This will allow  more inlining.
 * does this still make sense now that databases doesn't have constness defaultGappedBottomSegmentIterator.h - keep convention of other iterators where const-ness only applies to the database and not the iterator...
 * getSegment is duplicated in different places due to top/bottom/gapped/ungapped implementations.  Is this a good approach?
-* typedef containers for HAL objects (e.g. std::set<MappedSegmentConstPtr>) instead of repeating
+* typedef containers for HAL objects (e.g. std::set<MappedSegmentPtr>) instead of repeating
 * make more members private
 * change to std::shared_ptr
 * there should not be const pointers for iterators??  Check why const_pointer_cast is needed
@@ -26,5 +26,18 @@ https://herbsutter.com/2012/06/21/reader-qa-why-dont-modern-smart-pointers-impli
 * hdf5DNAIterator structure could be collapsed with generic if genome provide a way to get an array
 of DNA.  Maybe pack DNA in mmap?
 * Using stTree with C-strings results in copying rather than sharing strings.
-* HAL_LOCK should be real function
 * C interface to blockViz is weird, with optional thowing an exception or returning a C string.
+* api/mmap_impl/mmapGenome.h:
+    We request twice the segment length here because checking the length of
+    this segment requires reading the start position of the following segment.
+* lastColumn()  should be atEnd
+* Segment interface:
+- Why setArrayIndex vs creating new segment object?  This seems to so object can
+  be reused by iterator, it doesn't really represent a segment, can't cache.   So seems more like a function bag.
+- Function setArrayIndex is a bad name.
+- can't cache
+- segment is region of sequence with start and length -- determined by how much gapless alignment there is to its parent/children
+* Things that probably don't work very well:
+- hal::Rearrangement
+- inc/halChain.h
+- hal::GappedBottomSegmentIterator

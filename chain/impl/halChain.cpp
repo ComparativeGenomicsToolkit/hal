@@ -12,7 +12,7 @@
 using namespace std;
 using namespace hal;
 
-static void convertBlocks(TopSegmentIteratorConstPtr firstIt, 
+static void convertBlocks(TopSegmentIteratorPtr firstIt, 
                           Chain& outChain);
 
 ostream& hal::operator<<(ostream& os, const ChainBlock& b)
@@ -52,7 +52,7 @@ ostream& hal::operator<<(ostream& os, const Chain& c)
   return os;
 }
 
-void hal::gtIteratorToChain(GappedTopSegmentIteratorConstPtr top, 
+void hal::gtIteratorToChain(GappedTopSegmentIteratorPtr top, 
                             Chain& outChain,
                             hal_offset_t startOffset, 
                             hal_offset_t endOffset)
@@ -63,7 +63,7 @@ void hal::gtIteratorToChain(GappedTopSegmentIteratorConstPtr top,
   assert(tGenome != NULL);
 
   // should be an input parameter to avoid recreating each time.
-  GappedBottomSegmentIteratorConstPtr bottom = 
+  GappedBottomSegmentIteratorPtr bottom = 
      tGenome->getGappedBottomSegmentIterator(0, childIndex, 
                                              top->getGapThreshold(), 
                                              top->getAtomic());
@@ -115,20 +115,20 @@ void hal::gtIteratorToChain(GappedTopSegmentIteratorConstPtr top,
   assert(outChain._tEnd > outChain._tStart);
 
   // convert blocks
-  TopSegmentIteratorConstPtr firstIt = top->getLeft();
+  TopSegmentIteratorPtr firstIt = top->getLeft();
   convertBlocks(firstIt, outChain);
 }
 
-void convertBlocks(TopSegmentIteratorConstPtr firstIt, 
+void convertBlocks(TopSegmentIteratorPtr firstIt, 
                    Chain& outChain)
 {
-  TopSegmentIteratorConstPtr topIt = firstIt->copy();
+  TopSegmentIteratorPtr topIt = firstIt->copy();
   const Sequence* sequence = topIt->getSequence();
   // back to genome coordinates
   hal_index_t start = (hal_index_t)outChain._qStart +
      sequence->getStartPosition();
   hal_index_t end = (hal_index_t)outChain._qEnd + sequence->getStartPosition();
-  BottomSegmentIteratorConstPtr botIt =
+  BottomSegmentIteratorPtr botIt =
      topIt->getGenome()->getParent()->getBottomSegmentIterator();
 
   hal_index_t tPrev = NULL_INDEX;

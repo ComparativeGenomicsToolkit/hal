@@ -17,7 +17,7 @@ struct MappedSegmentMapUpTest : virtual public AlignmentTest
    void createCallBack(hal::AlignmentPtr alignment);
    virtual void checkCallBack(hal::AlignmentConstPtr alignment);
    void testTopSegment(hal::AlignmentConstPtr alignment,
-                       hal::TopSegmentIteratorConstPtr top,
+                       hal::TopSegmentIteratorPtr top,
                        const std::string& ancName);
 };
 
@@ -25,14 +25,14 @@ struct MappedSegmentParseTest : virtual public MappedSegmentMapUpTest
 {
    virtual void checkCallBack(hal::AlignmentConstPtr alignment);
    void testTopSegment(hal::AlignmentConstPtr alignment, 
-                       hal::TopSegmentIteratorConstPtr top);                   
+                       hal::TopSegmentIteratorPtr top);                   
 };
 
 struct MappedSegmentMapDownTest : public MappedSegmentMapUpTest
 {
    void checkCallBack(hal::AlignmentConstPtr alignment);
    void testBottomSegment(hal::AlignmentConstPtr alignment,
-                          hal::BottomSegmentIteratorConstPtr bottom,
+                          hal::BottomSegmentIteratorPtr bottom,
                           hal_size_t childIndex);
 
 };
@@ -41,7 +41,7 @@ struct MappedSegmentMapAcrossTest : public MappedSegmentMapUpTest
 {
    void checkCallBack(hal::AlignmentConstPtr alignment);
    void testTopSegment(hal::AlignmentConstPtr alignment,
-                       hal::TopSegmentIteratorConstPtr top);
+                       hal::TopSegmentIteratorPtr top);
 };
 
 struct MappedSegmentMapDupeTest : virtual public AlignmentTest

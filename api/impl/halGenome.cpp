@@ -25,8 +25,8 @@ void Genome::copyDimensions(Genome *dest) const
 {
   vector<Sequence::Info> dimensions;
   const Alignment *inAlignment = getAlignment();
-  SequenceIteratorConstPtr seqIt = getSequenceIterator();
-  SequenceIteratorConstPtr seqEndIt = getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = getSequenceIterator();
+  SequenceIteratorPtr seqEndIt = getSequenceEndIterator();
 
   bool root = inAlignment->getParentName(getName()).empty();
   bool leaf = inAlignment->getChildNames(getName()).empty();     
@@ -46,8 +46,8 @@ void Genome::copyDimensions(Genome *dest) const
 void Genome::copyTopDimensions(Genome *dest) const
 {
   vector<Sequence::UpdateInfo> dimensions;
-  SequenceIteratorConstPtr seqIt = getSequenceIterator();
-  SequenceIteratorConstPtr seqEndIt = getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = getSequenceIterator();
+  SequenceIteratorPtr seqEndIt = getSequenceEndIterator();
   for (; seqIt != seqEndIt; seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
@@ -67,8 +67,8 @@ void Genome::copyTopDimensions(Genome *dest) const
 void Genome::copyBottomDimensions(Genome *dest) const
 {
   vector<Sequence::UpdateInfo> dimensions;
-  SequenceIteratorConstPtr seqIt = getSequenceIterator();
-  SequenceIteratorConstPtr seqEndIt = getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = getSequenceIterator();
+  SequenceIteratorPtr seqEndIt = getSequenceEndIterator();
 
   for (; seqIt != seqEndIt; seqIt->toNext())
   {
@@ -91,7 +91,7 @@ void Genome::copyTopSegments(Genome *dest) const
   const Genome *inParent = getParent();
   const Genome *outParent = dest->getParent();
 
-  TopSegmentIteratorConstPtr inTop = getTopSegmentIterator();
+  TopSegmentIteratorPtr inTop = getTopSegmentIterator();
   TopSegmentIteratorPtr outTop = dest->getTopSegmentIterator();
   hal_size_t n = dest->getNumTopSegments();
   assert(n == 0 || n == getNumTopSegments());
@@ -101,8 +101,8 @@ void Genome::copyTopSegments(Genome *dest) const
     return;
   }
 
-  BottomSegmentIteratorConstPtr inParentBottomSegIt = inParent->getBottomSegmentIterator();
-  BottomSegmentIteratorConstPtr outParentBottomSegIt = outParent->getBottomSegmentIterator();
+  BottomSegmentIteratorPtr inParentBottomSegIt = inParent->getBottomSegmentIterator();
+  BottomSegmentIteratorPtr outParentBottomSegIt = outParent->getBottomSegmentIterator();
 
   for (; (hal_size_t)inTop->getArrayIndex() < n; inTop->toRight(),
          outTop->toRight())
@@ -177,8 +177,8 @@ void Genome::copyBottomSegments(Genome *dest) const
   // Go through each sequence in this genome, find the matching
   // sequence in the dest genome, then copy over the segments for each
   // sequence.
-  SequenceIteratorConstPtr seqIt = getSequenceIterator();
-  SequenceIteratorConstPtr seqEndIt = getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = getSequenceIterator();
+  SequenceIteratorPtr seqEndIt = getSequenceEndIterator();
 
   for (; seqIt != seqEndIt; seqIt->toNext())
   {
@@ -222,7 +222,7 @@ void Genome::copyBottomSegments(Genome *dest) const
 
 void Genome::copySequence(Genome *dest) const
 {
-  DNAIteratorConstPtr inDna = getDNAIterator();
+  DNAIteratorPtr inDna = getDNAIterator();
   DNAIteratorPtr outDna = dest->getDNAIterator();
   hal_size_t n = getSequenceLength();
   assert(n == dest->getSequenceLength());

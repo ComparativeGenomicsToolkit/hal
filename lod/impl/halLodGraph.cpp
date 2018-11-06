@@ -92,8 +92,8 @@ void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
 
 void LodGraph::scanGenome(const Genome* genome)
 {
-  SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-  SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+  SequenceIteratorPtr seqEnd = genome->getSequenceEndIterator();
   hal_index_t lastSampledPos = 0;
   hal_index_t halfStep = std::max((hal_index_t)1, (hal_index_t)_step / 2);
   for (; seqIt != seqEnd; seqIt->toNext())
@@ -131,7 +131,7 @@ void LodGraph::scanGenome(const Genome* genome)
         hal_size_t maxDelta = 0;     
         hal_size_t maxMinSeqLen = 0;
         hal_index_t tryPos = numProbe == 1 ? pos : minTry;
-        ColumnIteratorConstPtr colIt = 
+        ColumnIteratorPtr colIt = 
            sequence->getColumnIterator(&_genomes, 0, tryPos);
         do 
         {
@@ -175,7 +175,7 @@ void LodGraph::scanGenome(const Genome* genome)
   }
 }
 
-void LodGraph::evaluateColumn(ColumnIteratorConstPtr colIt,
+void LodGraph::evaluateColumn(ColumnIteratorPtr colIt,
                               hal_size_t& outDeltaMax,
                               hal_size_t& outNumGenomes,
                               hal_size_t& outMinSeqLen)
@@ -307,7 +307,7 @@ void LodGraph::addTelomeres(const Sequence* sequence)
   segSet->insert(segment);
 }
 
-void LodGraph::createColumn(ColumnIteratorConstPtr colIt)
+void LodGraph::createColumn(ColumnIteratorPtr colIt)
 {
   LodBlock* block = new LodBlock();
   const ColumnIterator::ColumnMap* colMap = colIt->getColumnMap();
@@ -538,8 +538,8 @@ bool LodGraph::checkCoverage() const
   // check the coverage and clean up
   for (covMapIt = covMap.begin(); covMapIt != covMap.end(); ++covMapIt)
   {
-    SequenceIteratorConstPtr seqIt = covMapIt->first->getSequenceIterator();
-    SequenceIteratorConstPtr seqEnd = covMapIt->first->getSequenceEndIterator();
+    SequenceIteratorPtr seqIt = covMapIt->first->getSequenceIterator();
+    SequenceIteratorPtr seqEnd = covMapIt->first->getSequenceEndIterator();
     for (; seqIt != seqEnd && success; seqIt->toNext())
     {
       const Sequence* sequence = seqIt->getSequence();

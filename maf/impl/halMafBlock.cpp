@@ -94,7 +94,7 @@ void MafBlock::resetEntries()
 }
 
 void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence, 
-                         DNAIteratorConstPtr dna, bool clearSequence)
+                         DNAIteratorPtr dna, bool clearSequence)
 {
   string sequenceName = getName(sequence);
   if (entry->_name != sequenceName || 
@@ -132,7 +132,7 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
 
 inline void MafBlock::updateEntry(MafBlockEntry* entry, 
                                   const Sequence* sequence,
-                                  DNAIteratorConstPtr dna)
+                                  DNAIteratorPtr dna)
 {
   if (dna.get() != NULL)
   {
@@ -192,7 +192,7 @@ static void prioritizeNodeInTree(stTree *node)
   prioritizeNodeInTree(parent);
 }
 
-stTree *MafBlock::getTreeNode(SegmentIteratorConstPtr segIt, bool modifyEntries)
+stTree *MafBlock::getTreeNode(SegmentIteratorPtr segIt, bool modifyEntries)
 {
   // Make sure the segment is sliced to only 1 base.
   assert(segIt->getStartPosition() == segIt->getEndPosition());
@@ -236,7 +236,7 @@ stTree *MafBlock::getTreeNode(SegmentIteratorConstPtr segIt, bool modifyEntries)
 
 // tree parameter represents node corresponding to the genome with
 // bottom segment botIt
-void MafBlock::buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, bool modifyEntries)
+void MafBlock::buildTreeR(BottomSegmentIteratorPtr botIt, stTree *tree, bool modifyEntries)
 {
   const Genome *genome = botIt->getGenome();
 
@@ -245,12 +245,12 @@ void MafBlock::buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, boo
   for (hal_size_t i = 0; i < botIt->getNumChildren(); i++) {
     if (botIt->hasChild(i)) {
       const Genome *child = genome->getChild(i);
-      TopSegmentIteratorConstPtr topIt = child->getTopSegmentIterator();
+      TopSegmentIteratorPtr topIt = child->getTopSegmentIterator();
       topIt->toChild(botIt, i);
       stTree *canonicalParalog = getTreeNode(topIt, modifyEntries);
       stTree_setParent(canonicalParalog, tree);
       if (topIt->hasParseDown()) {
-        BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
+        BottomSegmentIteratorPtr childBotIt = child->getBottomSegmentIterator();
         childBotIt->toParseDown(topIt);
         buildTreeR(childBotIt, canonicalParalog, modifyEntries);
       }
@@ -262,7 +262,7 @@ void MafBlock::buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, boo
           stTree *paralog = getTreeNode(topIt, modifyEntries);
           stTree_setParent(paralog, tree);
           if(topIt->hasParseDown()) {
-            BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
+            BottomSegmentIteratorPtr childBotIt = child->getBottomSegmentIterator();
             childBotIt->toParseDown(topIt);
             buildTreeR(childBotIt, paralog, modifyEntries);
           }
@@ -273,7 +273,7 @@ void MafBlock::buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree, boo
   }
 }
 
-stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
+stTree *MafBlock::buildTree(ColumnIteratorPtr colIt, bool modifyEntries)
 {
   // Get any base from the column to begin building the tree
   const ColumnMap *colMap = colIt->getColumnMap();
@@ -294,8 +294,8 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
   const Genome *genome = sequence->getGenome();
   
   // Get the bottom segment that is the common ancestor of all entries
-  TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
-  BottomSegmentIteratorConstPtr botIt;
+  TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator();
+  BottomSegmentIteratorPtr botIt;
   if (genome->getNumTopSegments() == 0) {
     // The reference is the root genome.
     botIt = genome->getBottomSegmentIterator();
@@ -329,7 +329,7 @@ stTree *MafBlock::buildTree(ColumnIteratorConstPtr colIt, bool modifyEntries)
   return tree;
 }
 
-void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames, bool printTree)
+void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree)
 {
   if (printTree && _tree != NULL) {
     stTree_destruct(_tree);
@@ -355,14 +355,14 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames, bool printT
       if (e == _entries.end() || e->first != sequence)
       {
         MafBlockEntry* entry = new MafBlockEntry(_stringBuffers);
-        initEntry(entry, sequence, DNAIteratorConstPtr());      
+        initEntry(entry, sequence, DNAIteratorPtr());      
         e = _entries.insert(Entries::value_type(sequence, entry));  
       }
       else
       {
         assert (e->first == sequence);
         assert (e->second->_name == getName(sequence));
-        initEntry(e->second, sequence, DNAIteratorConstPtr());
+        initEntry(e->second, sequence, DNAIteratorPtr());
       }
     }
 
@@ -424,7 +424,7 @@ void MafBlock::initBlock(ColumnIteratorConstPtr col, bool fullNames, bool printT
   }
 }
 
-void MafBlock::appendColumn(ColumnIteratorConstPtr col)
+void MafBlock::appendColumn(ColumnIteratorPtr col)
 {
   const ColumnMap* colMap = col->getColumnMap();
   Entries::iterator e = _entries.begin();
@@ -439,7 +439,7 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
     {
       while (e->first != sequence && e != _entries.end())
       {
-        updateEntry(e->second, NULL, DNAIteratorConstPtr());
+        updateEntry(e->second, NULL, DNAIteratorPtr());
         ++e;
       }
       assert(e != _entries.end());
@@ -452,7 +452,7 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
   
   for (; e != _entries.end(); ++e)
   {
-    updateEntry(e->second, NULL, DNAIteratorConstPtr());
+    updateEntry(e->second, NULL, DNAIteratorPtr());
   }
 }
 
@@ -461,7 +461,7 @@ void MafBlock::appendColumn(ColumnIteratorConstPtr col)
 // A: When for every sequence already in the column, the new column
 //    has either a gap or a contigugous base.  The new column also has
 //    no new sequences.  
-bool MafBlock::canAppendColumn(ColumnIteratorConstPtr col)
+bool MafBlock::canAppendColumn(ColumnIteratorPtr col)
 {
   const ColumnMap* colMap = col->getColumnMap();
   Entries::iterator e = _entries.begin();

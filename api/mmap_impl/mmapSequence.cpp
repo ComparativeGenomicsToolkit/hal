@@ -16,7 +16,7 @@ TopSegmentIteratorPtr MMapSequence::getTopSegmentIterator(
   return _genome->getTopSegmentIterator(idx);
 }
 
-TopSegmentIteratorConstPtr MMapSequence::getTopSegmentIterator(
+TopSegmentIteratorPtr MMapSequence::getTopSegmentIterator(
   hal_index_t position) const
 {
   hal_size_t idx = position + getTopSegmentArrayIndex();
@@ -30,7 +30,7 @@ BottomSegmentIteratorPtr MMapSequence::getBottomSegmentIterator(
   return _genome->getBottomSegmentIterator(idx);
 }
 
-BottomSegmentIteratorConstPtr MMapSequence::getBottomSegmentIterator(
+BottomSegmentIteratorPtr MMapSequence::getBottomSegmentIterator(
   hal_index_t position) const
 {
   hal_size_t idx = position + getBottomSegmentArrayIndex();
@@ -44,19 +44,19 @@ DNAIteratorPtr MMapSequence::getDNAIterator(hal_index_t position)
   return DNAIteratorPtr(newIt);
 }
 
-DNAIteratorConstPtr MMapSequence::getDNAIterator(hal_index_t position) const
+DNAIteratorPtr MMapSequence::getDNAIterator(hal_index_t position) const
 {
   hal_size_t idx = position + getStartPosition();
-  const MMapDNAIterator* newIt = new MMapDNAIterator(_genome, idx);
-  return DNAIteratorConstPtr(newIt);
+  MMapDNAIterator* newIt = new MMapDNAIterator(_genome, idx);
+  return DNAIteratorPtr(newIt);
 }
 
-DNAIteratorConstPtr MMapSequence::getDNAEndIterator() const
+DNAIteratorPtr MMapSequence::getDNAEndIterator() const
 {
   return getDNAIterator(getSequenceLength());
 }
 
-ColumnIteratorConstPtr MMapSequence::getColumnIterator(
+ColumnIteratorPtr MMapSequence::getColumnIterator(
   const std::set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,
   bool noAncestors, bool reverseStrand, bool unique, bool onlyOrthologs) const
@@ -77,11 +77,11 @@ ColumnIteratorConstPtr MMapSequence::getColumnIterator(
     throw hal_exception("MMapSequence::getColumnIterators: input indices ("
                         + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
-  const ColumnIterator* newIt = 
+  ColumnIterator* newIt = 
      new ColumnIterator(getGenome(), targets, idx, lastIdx, 
                         maxInsertLength, noDupes, noAncestors,
                         reverseStrand, unique, onlyOrthologs);
-  return ColumnIteratorConstPtr(newIt);
+  return ColumnIteratorPtr(newIt);
 }
 
 void MMapSequence::getString(std::string& outString) const
@@ -123,7 +123,7 @@ RearrangementPtr MMapSequence::getRearrangement(hal_index_t position,
                                                 double nThreshold,
                                                 bool atomic) const
 {
-  TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
+  TopSegmentIteratorPtr top = getTopSegmentIterator(position);  
   Rearrangement* rea = new Rearrangement(getGenome(),
                                          gapLengthThreshold,
                                          nThreshold,
@@ -132,23 +132,23 @@ RearrangementPtr MMapSequence::getRearrangement(hal_index_t position,
   return RearrangementPtr(rea);
 }
 
-GappedTopSegmentIteratorConstPtr MMapSequence::getGappedTopSegmentIterator(
+GappedTopSegmentIteratorPtr MMapSequence::getGappedTopSegmentIterator(
   hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
-  TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
+  TopSegmentIteratorPtr top = getTopSegmentIterator(i);  
   GappedTopSegmentIterator* gt = 
      new GappedTopSegmentIterator(top, gapThreshold, atomic);
-  return GappedTopSegmentIteratorConstPtr(gt);
+  return GappedTopSegmentIteratorPtr(gt);
 }
 
-GappedBottomSegmentIteratorConstPtr 
+GappedBottomSegmentIteratorPtr 
 MMapSequence::getGappedBottomSegmentIterator(
   hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
   bool atomic) const
 {
-  BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
+  BottomSegmentIteratorPtr bot = getBottomSegmentIterator(i);  
   GappedBottomSegmentIterator* gb = 
      new GappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
                                             atomic);
-  return GappedBottomSegmentIteratorConstPtr(gb);
+  return GappedBottomSegmentIteratorPtr(gb);
 }

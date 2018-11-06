@@ -51,7 +51,7 @@ void TopSegmentStruct::applyTo(TopSegmentIteratorPtr it) const
   seg->setBottomParseIndex(_bottomParseIndex);
 }
 
-void TopSegmentStruct::compareTo(TopSegmentIteratorConstPtr it, 
+void TopSegmentStruct::compareTo(TopSegmentIteratorPtr it, 
                                  CuTest* testCase) const
 {
   const TopSegment* seg = it->getTopSegment();
@@ -101,7 +101,7 @@ void TopSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
   const Genome* ancGenome = alignment->openGenome("Anc0");
   CuAssertTrue(_testCase, 
                ancGenome->getNumTopSegments() == _topSegments.size());
-  TopSegmentIteratorConstPtr tsIt = ancGenome->getTopSegmentIterator(0);
+  TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator(0);
   for (size_t i = 0; i < ancGenome->getNumTopSegments(); ++i)
   {
     CuAssertTrue(_testCase, 
@@ -173,7 +173,7 @@ void TopSegmentSequenceTest::createCallBack(AlignmentPtr alignment)
 void TopSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)
 {
   const Genome* ancGenome = alignment->openGenome("Anc0");
-  TopSegmentIteratorConstPtr tsIt = ancGenome->getTopSegmentIterator(100);
+  TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator(100);
   CuAssertTrue(_testCase, tsIt->getTopSegment()->getStartPosition() == 500);
   CuAssertTrue(_testCase, tsIt->getTopSegment()->getLength() == 9);
   string seq;
@@ -263,8 +263,8 @@ void TopSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
 
 void TopSegmentIteratorParseTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  BottomSegmentIteratorConstPtr bi;
-  TopSegmentIteratorConstPtr ti;
+  BottomSegmentIteratorPtr bi;
+  TopSegmentIteratorPtr ti;
 
   // case 1
   const Genome* case1 = alignment->openGenome("case1");
@@ -357,7 +357,7 @@ void TopSegmentIteratorToSiteTest::createCallBack(AlignmentPtr alignment)
 
 void TopSegmentIteratorToSiteTest::checkGenome(const Genome* genome)
 {
-  TopSegmentIteratorConstPtr ti = genome->getTopSegmentIterator();
+  TopSegmentIteratorPtr ti = genome->getTopSegmentIterator();
   for (hal_index_t pos = 0; 
        pos < (hal_index_t)genome->getSequenceLength(); ++pos)
   {
@@ -374,7 +374,7 @@ void TopSegmentIteratorToSiteTest::checkGenome(const Genome* genome)
 
 void TopSegmentIteratorToSiteTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  TopSegmentIteratorConstPtr bi;
+  TopSegmentIteratorPtr bi;
 
   // case 1
   const Genome* case1 = alignment->openGenome("case1");
@@ -426,8 +426,8 @@ void TopSegmentIteratorReverseTest::createCallBack(AlignmentPtr alignment)
 
 void TopSegmentIteratorReverseTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  BottomSegmentIteratorConstPtr bi;
-  TopSegmentIteratorConstPtr ti, ti2;
+  BottomSegmentIteratorPtr bi;
+  TopSegmentIteratorPtr ti, ti2;
 
   const Genome* parent1 = alignment->openGenome("parent1");
   const Genome* child1 = alignment->openGenome("child1");
@@ -560,8 +560,8 @@ void TopSegmentIsGapTest::createCallBack(AlignmentPtr alignment)
 
 void TopSegmentIsGapTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  BottomSegmentIteratorConstPtr bi;
-  TopSegmentIteratorConstPtr ti;
+  BottomSegmentIteratorPtr bi;
+  TopSegmentIteratorPtr ti;
 
   const Genome* child1 = alignment->openGenome("child1");
 

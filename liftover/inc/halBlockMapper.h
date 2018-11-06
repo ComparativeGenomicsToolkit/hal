@@ -35,15 +35,15 @@ public:
              bool mapTargetAdjacencies,
              const Genome *coalescenceLimit = NULL);
    void map();
-   void extractReferenceParalogies(MappedSegmentConstSet& outParalogies);
+   void extractReferenceParalogies(MappedSegmentSet& outParalogies);
 
-   const MappedSegmentConstSet& getMap() const;
-   MappedSegmentConstSet& getMap();
+   const MappedSegmentSet& getMap() const;
+   MappedSegmentSet& getMap();
 
-   static void extractSegment(MappedSegmentConstSet::iterator start, 
-                              const MappedSegmentConstSet& paraSet,                       
-                              std::vector<MappedSegmentConstPtr>& fragments,
-                              MappedSegmentConstSet* startSet,
+   static void extractSegment(MappedSegmentSet::iterator start, 
+                              const MappedSegmentSet& paraSet,                       
+                              std::vector<MappedSegmentPtr>& fragments,
+                              MappedSegmentSet* startSet,
                               const std::set<hal_index_t>& targetCutPoints,
                               std::set<hal_index_t>& queryCutPoints);
 
@@ -53,10 +53,10 @@ public:
 protected:
    
    void erase();
-   void mapAdjacencies(MappedSegmentConstSet::const_iterator setIt);
+   void mapAdjacencies(MappedSegmentSet::const_iterator setIt);
 
-   static SegmentIteratorConstPtr makeIterator(
-     MappedSegmentConstPtr mappedSegment, 
+   static SegmentIteratorPtr makeIterator(
+     MappedSegmentPtr mappedSegment, 
      hal_index_t& minIndex,
      hal_index_t& maxIndex);
 
@@ -66,12 +66,12 @@ protected:
                          SlicedSegmentConstPtr nextSeg,
                          bool right);
       
-   static bool equalTargetStart(const MappedSegmentConstPtr& s1,
-                                const MappedSegmentConstPtr& s2);
+   static bool equalTargetStart(const MappedSegmentPtr& s1,
+                                const MappedSegmentPtr& s2);
 protected:
 
-   MappedSegmentConstSet _segSet;
-   MappedSegmentConstSet _adjSet;
+   MappedSegmentSet _segSet;
+   MappedSegmentSet _adjSet;
    std::set<const Genome*> _downwardPath;
    std::set<const Genome*> _upwardPath;
    const Genome* _refGenome;
@@ -91,18 +91,18 @@ protected:
    static hal_size_t _maxAdjScan;
 };
 
-inline const MappedSegmentConstSet& BlockMapper::getMap() const
+inline const MappedSegmentSet& BlockMapper::getMap() const
 {
   return _segSet;
 }
 
-inline MappedSegmentConstSet& BlockMapper::getMap()
+inline MappedSegmentSet& BlockMapper::getMap()
 {
   return _segSet;
 }
 
-inline bool BlockMapper::equalTargetStart(const MappedSegmentConstPtr& s1,
-                                          const MappedSegmentConstPtr& s2)
+inline bool BlockMapper::equalTargetStart(const MappedSegmentPtr& s1,
+                                          const MappedSegmentPtr& s2)
 {
   hal_index_t p1 = std::min(s1->getStartPosition(), s1->getEndPosition());
   hal_index_t p2 = std::min(s2->getStartPosition(), s2->getEndPosition());

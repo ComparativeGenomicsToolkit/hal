@@ -74,13 +74,13 @@ static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
 
 static void readBlock(AlignmentConstPtr seqAlignment,
                       hal_block_t* cur, 
-                      vector<MappedSegmentConstPtr>& fragments,                                        bool getSequenceString, const string& genomeName);
+                      vector<MappedSegmentPtr>& fragments,                                        bool getSequenceString, const string& genomeName);
 
 static hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
-                                                  MappedSegmentConstSet& paraSet);
+                                                  MappedSegmentSet& paraSet);
 
 static void readTargetRange(hal_target_dupe_list_t* cur,
-                            vector<MappedSegmentConstPtr>& fragments);
+                            vector<MappedSegmentPtr>& fragments);
 
 static void cleanTargetDupesList(vector<hal_target_dupe_list_t*>& dupeList);
 
@@ -701,8 +701,8 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
     hal_chromosome_t* prev = NULL;
     if (genome->getNumSequences() > 0)
     {
-      SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-      SequenceIteratorConstPtr seqEnd = genome->getSequenceEndIterator();
+      SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+      SequenceIteratorPtr seqEnd = genome->getSequenceEndIterator();
       for (; seqIt != seqEnd; seqIt->toNext())
       {
         const Sequence* sequence = seqIt->getSequence();
@@ -927,15 +927,15 @@ static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                      tReversed, doDupes, 0, doAdjes, coalescenceLimit);
   }
   blockMapper.map();
-  MappedSegmentConstSet paraSet;
+  MappedSegmentSet paraSet;
   hal_size_t totalLength = 0;
   hal_size_t reversedLength = 0;
   if (doDupes == true && qGenome != tGenome)
   {
     blockMapper.extractReferenceParalogies(paraSet);
   }
-  MappedSegmentConstSet& segMap = blockMapper.getMap();
-  vector<MappedSegmentConstPtr> fragments;
+  MappedSegmentSet& segMap = blockMapper.getMap();
+  vector<MappedSegmentPtr> fragments;
   set<hal_index_t> queryCutSet;
   set<hal_index_t> targetCutSet;
   targetCutSet.insert(blockMapper.getAbsRefFirst());
@@ -944,7 +944,7 @@ static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   hal_block_results_t* results = 
      (hal_block_results_t*)calloc(1, sizeof(hal_block_results_t));
 
-  for (MappedSegmentConstSet::iterator segMapIt = segMap.begin();
+  for (MappedSegmentSet::iterator segMapIt = segMap.begin();
        segMapIt != segMap.end(); ++segMapIt)
   {
     assert((*segMapIt)->getSource()->getReversed() == false);
@@ -978,11 +978,11 @@ static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
 
 static void readBlock(AlignmentConstPtr seqAlignment,
                       hal_block_t* cur,  
-                      vector<MappedSegmentConstPtr>& fragments, 
+                      vector<MappedSegmentPtr>& fragments, 
                bool getSequenceString, const string& genomeName)
 {
-  MappedSegmentConstPtr firstQuerySeg = fragments.front();
-  MappedSegmentConstPtr lastQuerySeg = fragments.back();
+  MappedSegmentPtr firstQuerySeg = fragments.front();
+  MappedSegmentPtr lastQuerySeg = fragments.back();
   SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
   SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
   const Sequence* qSequence = firstQuerySeg->getSequence();
@@ -1102,18 +1102,18 @@ struct DupeStartLess { bool operator()(const hal_target_dupe_list_t* d1,
 }};
 
 static hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
-                                                  MappedSegmentConstSet& paraSet)
+                                                  MappedSegmentSet& paraSet)
 {
   vector<hal_target_dupe_list_t*> tempList;
-  vector<MappedSegmentConstPtr> fragments;
-  MappedSegmentConstSet emptySet;
+  vector<MappedSegmentPtr> fragments;
+  MappedSegmentSet emptySet;
   set<hal_index_t> queryCutSet;
   set<hal_index_t> targetCutSet;
   targetCutSet.insert(blockMapper.getAbsRefFirst());
   targetCutSet.insert(blockMapper.getAbsRefLast());
 
   // make a dupe list for each merged segment
-  for (MappedSegmentConstSet::iterator segMapIt = paraSet.begin();
+  for (MappedSegmentSet::iterator segMapIt = paraSet.begin();
        segMapIt != paraSet.end(); ++segMapIt)
   {
     assert((*segMapIt)->getSource()->getReversed() == false);
@@ -1186,10 +1186,10 @@ static hal_target_dupe_list_t* processTargetDupes(BlockMapper& blockMapper,
 }
 
 static void readTargetRange(hal_target_dupe_list_t* cur,
-                            vector<MappedSegmentConstPtr>& fragments)
+                            vector<MappedSegmentPtr>& fragments)
 {
-  MappedSegmentConstPtr firstQuerySeg = fragments.front();
-  MappedSegmentConstPtr lastQuerySeg = fragments.back();
+  MappedSegmentPtr firstQuerySeg = fragments.front();
+  MappedSegmentPtr lastQuerySeg = fragments.back();
   SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
   SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
   const Sequence* qSequence = firstQuerySeg->getSequence();

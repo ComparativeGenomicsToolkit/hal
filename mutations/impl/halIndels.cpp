@@ -36,7 +36,7 @@ static bool regionIsNotAmbiguous(const Genome* genome, hal_index_t startPos,
   if (startPos > endPos) {
     swap(startPos, endPos);
   }
-  DNAIteratorConstPtr dnaIt = genome->getDNAIterator(startPos);
+  DNAIteratorPtr dnaIt = genome->getDNAIterator(startPos);
   hal_index_t length = endPos - startPos;
   for (hal_size_t i = 0; i < (hal_size_t) length; i++) {
     if (dnaIt->getChar() == 'N') {
@@ -63,7 +63,7 @@ static bool deletionIsNotAmbiguous(const ColumnIterator::ColumnMap *colMap,
     }
     const ColumnIterator::DNASet *dnaSet = colMapIt->second;
     assert(dnaSet->size() == 1);
-    DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+    DNAIteratorPtr dnaIt = dnaSet->at(0);
     hal_index_t currPos = dnaIt->getArrayIndex();
     hal_index_t prevPos = (*prevPositions)[genome];
     if (!regionIsNotAmbiguous(genome, currPos, prevPos)) {
@@ -86,7 +86,7 @@ static bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
     }
     const ColumnIterator::DNASet *dnaSet = colMapIt->second;
     assert(dnaSet->size() == 1);
-    DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+    DNAIteratorPtr dnaIt = dnaSet->at(0);
     if (dnaIt->getChar() == 'N') {
       return false;
     }
@@ -106,7 +106,7 @@ static void updatePrevPos(const ColumnIterator::ColumnMap *colMap,
     const Genome *genome = colMapIt->first->getGenome();
     const ColumnIterator::DNASet *dnaSet = colMapIt->second;
     assert(dnaSet->size() == 1);
-    DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+    DNAIteratorPtr dnaIt = dnaSet->at(0);
     hal_index_t currPos = dnaIt->getArrayIndex();
     if (!prevPositions->count(genome)) {
       // initialize previous position map
@@ -132,7 +132,7 @@ static bool isContiguous(const ColumnIterator::ColumnMap *colMap,
     const Genome *genome = colMapIt->first->getGenome();
     const ColumnIterator::DNASet *dnaSet = colMapIt->second;
     assert(dnaSet->size() == 1);
-    DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+    DNAIteratorPtr dnaIt = dnaSet->at(0);
     hal_index_t currPos = dnaIt->getArrayIndex();
     if (!prevPositions->count(genome)) {
       // initialize previous position map
@@ -231,7 +231,7 @@ static hal_size_t getDeletedSize(const ColumnIterator::ColumnMap *colMap,
     const Genome *colGenome = colMapIt->first->getGenome();
     const ColumnIterator::DNASet *dnaSet = colMapIt->second;
     assert(dnaSet->size() == 1);
-    DNAIteratorConstPtr dnaIt = dnaSet->at(0);
+    DNAIteratorPtr dnaIt = dnaSet->at(0);
     hal_index_t currPos = dnaIt->getArrayIndex();
     if (!prevPositions->count(colGenome)) {
       // initialize previous position map
@@ -284,7 +284,7 @@ getIndel(hal_index_t refPos,
   if (refPos == 0) {
     return make_pair(NONE, 0);
   }
-  ColumnIteratorConstPtr colIt = refGenome->getColumnIterator(targets, 0, refPos - 1);
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator(targets, 0, refPos - 1);
   const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
   if (!isStrictSingleCopy(colMap, targets)) {
     // Make sure our assumptions hold about prevPos maps
@@ -338,7 +338,7 @@ static void printIndels(const Genome *refGenome,
 {
   hal_size_t refLength = refGenome->getSequenceLength();
   hal_size_t numSites = 0;
-  ColumnIteratorConstPtr colIt = refGenome->getColumnIterator(&targets);
+  ColumnIteratorPtr colIt = refGenome->getColumnIterator(&targets);
   // good flanking site
   PositionCache knownGoodSites;
   for (hal_index_t refPos = adjacentBases; refPos < refLength - adjacentBases;

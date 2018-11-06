@@ -88,7 +88,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
       delBreakBedStream == NULL)
   {
     assert(snpBedStream != NULL);
-    TopSegmentIteratorConstPtr last = _top->copy();
+    TopSegmentIteratorPtr last = _top->copy();
     last->toSite(end);
     last->toRight();
     writeSubstitutions(_top, last);
@@ -185,8 +185,8 @@ void BranchMutations::writeInsertionOrInversion()
   *_refStream << _parName << '\t' << _refName << '\n';
 }
 
-void BranchMutations::writeSubstitutions(TopSegmentIteratorConstPtr first,
-                                         TopSegmentIteratorConstPtr lastPlusOne)
+void BranchMutations::writeSubstitutions(TopSegmentIteratorPtr first,
+                                         TopSegmentIteratorPtr lastPlusOne)
 {
   if (_snpStream == NULL)
   {

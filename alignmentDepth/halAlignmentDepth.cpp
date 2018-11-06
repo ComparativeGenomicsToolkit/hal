@@ -293,7 +293,7 @@ void printSequence(ostream& outStream, const Sequence* sequence,
    * in advance when we get the iterator.  This will limit it following
    * duplications out of the desired range while we are iterating. */
   hal_size_t pos = start;
-  ColumnIteratorConstPtr colIt = sequence->getColumnIterator(&targetSet,
+  ColumnIteratorPtr colIt = sequence->getColumnIterator(&targetSet,
                                                              0, pos,
                                                              last - 1,
                                                              false,
@@ -407,8 +407,8 @@ void printGenome(ostream& outStream,
       length = genome->getSequenceLength() - start;
     }
 
-    SequenceIteratorConstPtr seqIt = genome->getSequenceIterator();
-    SequenceIteratorConstPtr seqEndIt = genome->getSequenceEndIterator();
+    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
+    SequenceIteratorPtr seqEndIt = genome->getSequenceEndIterator();
     hal_size_t runningLength = 0;
     for (; seqIt != seqEndIt; seqIt->toNext())
     {

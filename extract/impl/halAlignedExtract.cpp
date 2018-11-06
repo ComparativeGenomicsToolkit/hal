@@ -112,7 +112,7 @@ void extractAlignedRegions(const Genome* genome, ostream* bedStream,
   assert(genome && bedStream);
   if (genome->getNumTopSegments() > 0)
   {
-    TopSegmentIteratorConstPtr topSeg = genome->getTopSegmentIterator();
+    TopSegmentIteratorPtr topSeg = genome->getTopSegmentIterator();
     for (; (not topSeg->atEnd()); topSeg->toRight())
     {
       if ((topSeg->hasParent() && complement == false) ||
@@ -125,7 +125,7 @@ void extractAlignedRegions(const Genome* genome, ostream* bedStream,
                    << (1 + topSeg->getEndPosition() -
                        sequence->getStartPosition());
         if (!complement && viewParentCoords) {
-            BottomSegmentIteratorConstPtr botSeg = genome->getParent()->getBottomSegmentIterator();
+            BottomSegmentIteratorPtr botSeg = genome->getParent()->getBottomSegmentIterator();
             botSeg->toParent(topSeg);
             if (botSeg->getReversed()) {
                 // Ensure the parent segment coordinates always have start < end.

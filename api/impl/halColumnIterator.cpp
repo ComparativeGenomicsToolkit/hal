@@ -448,7 +448,7 @@ void ColumnIterator::recursiveUpdate(bool init) const
   }
 }
 
-bool ColumnIterator::handleDeletion(TopSegmentIteratorConstPtr 
+bool ColumnIterator::handleDeletion(TopSegmentIteratorPtr 
   inputTopIterator) const
 {
   if (_maxInsertionLength > 0 && inputTopIterator->hasParent() == true)
@@ -475,16 +475,9 @@ bool ColumnIterator::handleDeletion(TopSegmentIteratorConstPtr
         assert((hal_size_t)(deletedRange.second - deletedRange.first) ==
                _rearrangement->getLength() - 1);
 
-        BottomSegmentIteratorConstPtr bot = 
+        BottomSegmentIteratorPtr bot = 
            parent->getBottomSegmentIterator(0);
         bot->toParent(_top);
-        /*
-        cout << "deletion found in " << bot << endl;
-          cout << "pushing " 
-               << bot->getBottomSegment()->getSequence()->getName()
-               << "  " << deletedRange.first << " , " 
-               << deletedRange.second << endl;
-        */
         _indelStack.push(bot->getBottomSegment()->getSequence(), 
                          deletedRange.first, deletedRange.second);
 
@@ -495,7 +488,7 @@ bool ColumnIterator::handleDeletion(TopSegmentIteratorConstPtr
   return false;
 }
 
-bool ColumnIterator::handleInsertion(TopSegmentIteratorConstPtr 
+bool ColumnIterator::handleInsertion(TopSegmentIteratorPtr 
                                             inputTopIterator) const
 {
   if (_maxInsertionLength > 0 && inputTopIterator->hasParent() == true)
@@ -540,7 +533,7 @@ bool ColumnIterator::handleInsertion(TopSegmentIteratorConstPtr
 }
 
 // Builds a "gene"-tree node and labels it properly.
-static stTree *getTreeNode(SegmentIteratorConstPtr segIt)
+static stTree *getTreeNode(SegmentIteratorPtr segIt)
 {
   // Make sure the segment is sliced to only 1 base.
   assert(segIt->getStartPosition() == segIt->getEndPosition());
@@ -551,7 +544,7 @@ static stTree *getTreeNode(SegmentIteratorConstPtr segIt)
   std::string label(segIt->getGenome()->getName() + "." + seq->getName() + "|" + std::to_string(segIt->getStartPosition() - seq->getStartPosition()));
   stTree_setLabel(ret, label.c_str());
 
-  DNAIteratorConstPtr *dnaIt = new DNAIteratorConstPtr(genome->getDNAIterator(segIt->getStartPosition()));
+  DNAIteratorPtr *dnaIt = new DNAIteratorPtr(genome->getDNAIterator(segIt->getStartPosition()));
   if (segIt->getReversed()) {
     (*dnaIt)->toReverse();
   }
@@ -563,7 +556,7 @@ static stTree *getTreeNode(SegmentIteratorConstPtr segIt)
 // Recursive part of buildTree
 // tree parameter represents node corresponding to the genome with
 // bottom segment botIt
-static void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree)
+static void buildTreeR(BottomSegmentIteratorPtr botIt, stTree *tree)
 {
   const Genome *genome = botIt->getGenome();
 
@@ -572,12 +565,12 @@ static void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree)
   for (hal_size_t i = 0; i < botIt->getNumChildren(); i++) {
     if (botIt->hasChild(i)) {
       const Genome *child = genome->getChild(i);
-      TopSegmentIteratorConstPtr topIt = child->getTopSegmentIterator();
+      TopSegmentIteratorPtr topIt = child->getTopSegmentIterator();
       topIt->toChild(botIt, i);
       stTree *canonicalParalog = getTreeNode(topIt);
       stTree_setParent(canonicalParalog, tree);
       if (topIt->hasParseDown()) {
-        BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
+        BottomSegmentIteratorPtr childBotIt = child->getBottomSegmentIterator();
         childBotIt->toParseDown(topIt);
         buildTreeR(childBotIt, canonicalParalog);
       }
@@ -588,7 +581,7 @@ static void buildTreeR(BottomSegmentIteratorConstPtr botIt, stTree *tree)
           stTree *paralog = getTreeNode(topIt);
           stTree_setParent(paralog, tree);
           if(topIt->hasParseDown()) {
-            BottomSegmentIteratorConstPtr childBotIt = child->getBottomSegmentIterator();
+            BottomSegmentIteratorPtr childBotIt = child->getBottomSegmentIterator();
             childBotIt->toParseDown(topIt);
             buildTreeR(childBotIt, paralog);
           }
@@ -630,8 +623,8 @@ stTree *ColumnIterator::getTree() const
     const Genome *genome = sequence->getGenome();
 
     // Get the bottom segment that is the common ancestor of all entries
-    TopSegmentIteratorConstPtr topIt = genome->getTopSegmentIterator();
-    BottomSegmentIteratorConstPtr botIt;
+    TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator();
+    BottomSegmentIteratorPtr botIt;
     if (genome->getNumTopSegments() == 0) {
       // The reference is the root genome.
       botIt = genome->getBottomSegmentIterator();
@@ -682,7 +675,7 @@ static void clearTree_R(stTree *tree)
   {
     clearTree_R(stTree_getChild(tree, i));
   }
-  delete (DNAIteratorConstPtr *) stTree_getClientData(tree);
+  delete (DNAIteratorPtr *) stTree_getClientData(tree);
 }
 
 void ColumnIterator::clearTree() const
@@ -972,7 +965,7 @@ void ColumnIterator::nextFreeIndex() const
   _stack.top()->_index = index;
 }
 
-bool ColumnIterator::colMapInsert(DNAIteratorConstPtr dnaIt) const
+bool ColumnIterator::colMapInsert(DNAIteratorPtr dnaIt) const
 {
   const Sequence* sequence = dnaIt->getSequence();
   const Genome* genome = dnaIt->getGenome();

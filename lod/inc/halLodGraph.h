@@ -68,7 +68,7 @@ protected:
    /** Check maxium distance of this column to any other sampled position.
     * Also count the number of genomes it aligns to.  This information
     * will be used to prioritize probed columns*/
-   void evaluateColumn(ColumnIteratorConstPtr colIt, hal_size_t& outDeltaMax,
+   void evaluateColumn(ColumnIteratorPtr colIt, hal_size_t& outDeltaMax,
                        hal_size_t& outNumGenomes, hal_size_t& outMinSeqLen);
 
    /* Test if this is the best column based on stats collected above */
@@ -82,7 +82,7 @@ protected:
    void addTelomeres(const Sequence* sequence);
 
    /** Add a single column iterator as  a block */
-   void createColumn(ColumnIteratorConstPtr colIt);
+   void createColumn(ColumnIteratorPtr colIt);
 
    /** Add an entire sequence as unaliged segment */
    void createUnaligedSegment(const Sequence* sequence);

@@ -160,7 +160,7 @@ TopSegmentIteratorPtr HDF5Sequence::getTopSegmentIterator(
   return _genome->getTopSegmentIterator(idx);
 }
 
-TopSegmentIteratorConstPtr HDF5Sequence::getTopSegmentIterator(
+TopSegmentIteratorPtr HDF5Sequence::getTopSegmentIterator(
   hal_index_t position) const
 {
   hal_size_t idx = position + getTopSegmentArrayIndex();
@@ -174,7 +174,7 @@ BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
   return _genome->getBottomSegmentIterator(idx);
 }
 
-BottomSegmentIteratorConstPtr HDF5Sequence::getBottomSegmentIterator(
+BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
   hal_index_t position) const
 {
   hal_size_t idx = position + getBottomSegmentArrayIndex();
@@ -188,20 +188,20 @@ DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position)
   return DNAIteratorPtr(newIt);
 }
 
-DNAIteratorConstPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
+DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
 {
   hal_size_t idx = position + getStartPosition();
   HDF5Genome* genome = const_cast<HDF5Genome*>(_genome);
-  const HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, idx);
-  return DNAIteratorConstPtr(newIt);
+  HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, idx);
+  return DNAIteratorPtr(newIt);
 }
 
-DNAIteratorConstPtr HDF5Sequence::getDNAEndIterator() const
+DNAIteratorPtr HDF5Sequence::getDNAEndIterator() const
 {
   return getDNAIterator(getSequenceLength());
 }
 
-ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
+ColumnIteratorPtr HDF5Sequence::getColumnIterator(
   const std::set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,
   bool noAncestors, bool reverseStrand, bool unique, bool onlyOrthologs) const
@@ -222,11 +222,11 @@ ColumnIteratorConstPtr HDF5Sequence::getColumnIterator(
     throw hal_exception("HDF5Sequence::getColumnIterators: input indices ("
                         + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
-  const ColumnIterator* newIt = 
+  ColumnIterator* newIt = 
      new ColumnIterator(getGenome(), targets, idx, lastIdx, 
                         maxInsertLength, noDupes, noAncestors,
                         reverseStrand, unique, onlyOrthologs);
-  return ColumnIteratorConstPtr(newIt);
+  return ColumnIteratorPtr(newIt);
 }
 
 void HDF5Sequence::getString(std::string& outString) const
@@ -268,7 +268,7 @@ RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position,
                                                 double nThreshold,
                                                 bool atomic) const
 {
-  TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
+  TopSegmentIteratorPtr top = getTopSegmentIterator(position);  
   Rearrangement* rea = new Rearrangement(getGenome(),
                                          gapLengthThreshold,
                                          nThreshold,
@@ -277,25 +277,25 @@ RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position,
   return RearrangementPtr(rea);
 }
 
-GappedTopSegmentIteratorConstPtr HDF5Sequence::getGappedTopSegmentIterator(
+GappedTopSegmentIteratorPtr HDF5Sequence::getGappedTopSegmentIterator(
   hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
-  TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
+  TopSegmentIteratorPtr top = getTopSegmentIterator(i);  
   GappedTopSegmentIterator* gt = 
      new GappedTopSegmentIterator(top, gapThreshold, atomic);
-  return GappedTopSegmentIteratorConstPtr(gt);
+  return GappedTopSegmentIteratorPtr(gt);
 }
 
-GappedBottomSegmentIteratorConstPtr 
+GappedBottomSegmentIteratorPtr 
 HDF5Sequence::getGappedBottomSegmentIterator(
   hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
   bool atomic) const
 {
-  BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
+  BottomSegmentIteratorPtr bot = getBottomSegmentIterator(i);  
   GappedBottomSegmentIterator* gb = 
      new GappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
                                             atomic);
-  return GappedBottomSegmentIteratorConstPtr(gb);
+  return GappedBottomSegmentIteratorPtr(gb);
 }
 // LOCAL
 

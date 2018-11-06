@@ -28,14 +28,14 @@ protected:
    void visitBegin();
 
    void cleanTargetParalogies();
-   void readPSLInfo(std::vector<MappedSegmentConstPtr>& fragments, 
+   void readPSLInfo(std::vector<MappedSegmentPtr>& fragments, 
                     BedLine& outBedLine);
 
    
 protected: 
    
-   MappedSegmentConstSet _mappedSegments;
-   SegmentIteratorConstPtr _refSeg;
+   MappedSegmentSet _mappedSegments;
+   SegmentIteratorPtr _refSeg;
    hal_index_t _lastIndex;
    std::set<const Genome*> _downwardPath;
    const Genome *_mrca;

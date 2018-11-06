@@ -42,7 +42,6 @@ public:
    const Genome* getGenome() const;
    Genome* getGenome();
    const Sequence* getSequence() const;
-   Sequence* getSequence();
    hal_index_t getStartPosition() const;
    hal_index_t getEndPosition() const;
    hal_size_t getLength() const;
@@ -57,7 +56,7 @@ public:
    bool isMissingData(double nThreshold) const;
    bool isTop() const;
    hal_size_t getMappedSegments(
-     MappedSegmentConstSet& outSegments,
+     MappedSegmentSet& outSegments,
      const Genome* tgtGenome,
      const std::set<const Genome*>* genomesOnPath,
      bool doDupes,
@@ -153,11 +152,6 @@ inline Genome* HDF5BottomSegment::getGenome()
 }
 
 inline const Sequence* HDF5BottomSegment::getSequence() const
-{
-  return _genome->getSequenceBySite(getStartPosition());
-}
-
-inline Sequence* HDF5BottomSegment::getSequence()
 {
   return _genome->getSequenceBySite(getStartPosition());
 }
@@ -276,7 +270,7 @@ inline bool HDF5BottomSegment::isTop() const
 }
 
 inline hal_size_t HDF5BottomSegment::getMappedSegments(
-  MappedSegmentConstSet& outSegments,
+  MappedSegmentSet& outSegments,
   const Genome* tgtGenome,
   const std::set<const Genome*>* genomesOnPath,
   bool doDupes,

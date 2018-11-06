@@ -17,7 +17,7 @@ using namespace std;
 using namespace hal;
 
 GappedTopSegmentIterator::GappedTopSegmentIterator(
-  TopSegmentIteratorConstPtr left,
+  TopSegmentIteratorPtr left,
   hal_size_t gapThreshold,
   bool atomic) :
   _gapThreshold(gapThreshold),
@@ -81,11 +81,6 @@ const Sequence* GappedTopSegmentIterator::getSequence() const
   assert(_left->getTopSegment()->getSequence() ==
          _right->getTopSegment()->getSequence());
   return _left->getTopSegment()->getSequence();
-}
-
-Sequence* GappedTopSegmentIterator::getSequence()
-{
-  throw hal_exception("getSequence not supported in gapped iterators");
 }
 
 hal_index_t GappedTopSegmentIterator::getStartPosition() const
@@ -152,7 +147,7 @@ bool GappedTopSegmentIterator::isMissingData(double nThreshold) const
     return false;
   }
   hal_index_t start = min(_left->getStartPosition(), _right->getEndPosition());
-  DNAIteratorConstPtr di = _left->getGenome()->getDNAIterator(start);
+  DNAIteratorPtr di = _left->getGenome()->getDNAIterator(start);
   hal_size_t length = getLength();
   size_t maxNs = nThreshold * (double)length;
   size_t Ns = 0;
@@ -182,7 +177,7 @@ bool GappedTopSegmentIterator::isTop() const
 }
 
 hal_size_t GappedTopSegmentIterator::getMappedSegments(
-  MappedSegmentConstSet& outSegments,
+  MappedSegmentSet& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes,
@@ -393,9 +388,9 @@ GappedTopSegmentIteratorPtr GappedTopSegmentIterator::copy()
   return GappedTopSegmentIteratorPtr(newIt);
 }
 
-GappedTopSegmentIteratorConstPtr GappedTopSegmentIterator::copy() const
+GappedTopSegmentIteratorPtr GappedTopSegmentIterator::copy() const
 {
-  const GappedTopSegmentIterator* newIt =
+  GappedTopSegmentIterator* newIt =
      new GappedTopSegmentIterator(_left, _gapThreshold, _atomic);
   newIt->_left->copy(_left);
   newIt->_right->copy(_right);
@@ -405,11 +400,11 @@ GappedTopSegmentIteratorConstPtr GappedTopSegmentIterator::copy() const
   assert(hasNextParalogy() == newIt->hasNextParalogy());
   assert(getParentReversed() == newIt->getParentReversed());
 
-  return GappedTopSegmentIteratorConstPtr(newIt);
+  return GappedTopSegmentIteratorPtr(newIt);
 }
 
 void GappedTopSegmentIterator::copy(
-  GappedTopSegmentIteratorConstPtr ts) const
+  GappedTopSegmentIteratorPtr ts) const
 {
   _left->copy(ts->getLeft());
   _right->copy(ts->getRight());
@@ -446,7 +441,7 @@ void GappedTopSegmentIterator::toNextParalogy() const
 
 
 void GappedTopSegmentIterator::toChild(
-  GappedBottomSegmentIteratorConstPtr bs) const
+  GappedBottomSegmentIteratorPtr bs) const
 {
   _leftParent->copy(bs->getLeft());
   _rightParent->copy(bs->getRight());
@@ -462,7 +457,7 @@ void GappedTopSegmentIterator::toChild(
 }
 
 bool GappedTopSegmentIterator::equals(
-  GappedTopSegmentIteratorConstPtr other) const
+  GappedTopSegmentIteratorPtr other) const
 {
   _temp->copy(_left);
   toRightNextUngapped(_temp);
@@ -480,7 +475,7 @@ bool GappedTopSegmentIterator::equals(
 }
 
 bool GappedTopSegmentIterator::adjacentTo(
-  GappedTopSegmentIteratorConstPtr other) const
+  GappedTopSegmentIteratorPtr other) const
 {
   _temp->copy(_left);
   toLeftNextUngapped(_temp);
@@ -567,18 +562,18 @@ bool GappedTopSegmentIterator::getParentReversed() const
   return false;
 }
 
-TopSegmentIteratorConstPtr GappedTopSegmentIterator::getLeft() const
+TopSegmentIteratorPtr GappedTopSegmentIterator::getLeft() const
 {
   return _left;
 }
 
-TopSegmentIteratorConstPtr GappedTopSegmentIterator::getRight() const
+TopSegmentIteratorPtr GappedTopSegmentIterator::getRight() const
 {
   return _right;
 }
 
 void 
-GappedTopSegmentIterator::setLeft(TopSegmentIteratorConstPtr ti) const
+GappedTopSegmentIterator::setLeft(TopSegmentIteratorPtr ti) const
 {
   if (ti->getStartOffset() != 0 || ti->getEndOffset() != 0)
   {
@@ -631,8 +626,8 @@ bool GappedTopSegmentIterator::isCanonicalParalog() const
 // INTERNAL METHODS
 //////////////////////////////////////////////////////////////////////////////
 bool GappedTopSegmentIterator::compatible(
-  TopSegmentIteratorConstPtr left,
-  TopSegmentIteratorConstPtr right) const
+  TopSegmentIteratorPtr left,
+  TopSegmentIteratorPtr right) const
 {
   assert(left->hasParent() && right->hasParent());
   assert(left->equals(right) == false);
@@ -792,7 +787,7 @@ void GappedTopSegmentIterator::extendLeft() const
 }
 
 void GappedTopSegmentIterator::toLeftNextUngapped(
-  BottomSegmentIteratorConstPtr bs) const
+  BottomSegmentIteratorPtr bs) const
 {
   while (bs->hasChild(_childIndex) == false && 
          bs->getLength() <= _gapThreshold)
@@ -807,7 +802,7 @@ void GappedTopSegmentIterator::toLeftNextUngapped(
 }
 
 void GappedTopSegmentIterator::toRightNextUngapped(
-  BottomSegmentIteratorConstPtr bs) const
+  BottomSegmentIteratorPtr bs) const
 {
   while (bs->hasChild(_childIndex) == false &&
          bs->getLength() <= _gapThreshold)
@@ -822,7 +817,7 @@ void GappedTopSegmentIterator::toRightNextUngapped(
 }
    
 void GappedTopSegmentIterator::toLeftNextUngapped(
-  TopSegmentIteratorConstPtr ts) const
+  TopSegmentIteratorPtr ts) const
 {
   while (ts->hasParent() == false && 
          ts->getLength() <= _gapThreshold)
@@ -837,7 +832,7 @@ void GappedTopSegmentIterator::toLeftNextUngapped(
 }
 
 void GappedTopSegmentIterator::toRightNextUngapped(
-  TopSegmentIteratorConstPtr ts) const
+  TopSegmentIteratorPtr ts) const
 {
   while (ts->hasParent() == false &&
          ts->getLength() <= _gapThreshold)

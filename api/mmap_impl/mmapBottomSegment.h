@@ -31,7 +31,6 @@ class MMapBottomSegment : public BottomSegment
     const Genome* getGenome() const;
     Genome* getGenome();
     const Sequence* getSequence() const;
-    Sequence* getSequence();
     hal_index_t getStartPosition() const { return _data->getStartPosition(); };
     hal_index_t getEndPosition() const;
     hal_size_t getLength() const;
@@ -46,7 +45,7 @@ class MMapBottomSegment : public BottomSegment
     bool isMissingData(double nThreshold) const;
     bool isTop() const;
     hal_size_t getMappedSegments(
-        MappedSegmentConstSet& outSegments,
+        MappedSegmentSet& outSegments,
         const Genome* tgtGenome,
         const std::set<const Genome*>* genomesOnPath,
         bool doDupes,
@@ -102,11 +101,6 @@ inline hal_size_t MMapBottomSegment::getLength() const
 }
 
 inline const Sequence* MMapBottomSegment::getSequence() const
-{
-  return _genome->getSequenceBySite(getStartPosition());
-}
-
-inline Sequence* MMapBottomSegment::getSequence()
 {
   return _genome->getSequenceBySite(getStartPosition());
 }
@@ -179,7 +173,7 @@ inline bool MMapBottomSegment::isTop() const
 }
 
 inline hal_size_t MMapBottomSegment::getMappedSegments(
-  MappedSegmentConstSet& outSegments,
+  MappedSegmentSet& outSegments,
   const Genome* tgtGenome,
   const std::set<const Genome*>* genomesOnPath,
   bool doDupes,

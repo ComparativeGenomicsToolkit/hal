@@ -158,7 +158,8 @@ Sequence* MMapGenome::getSequence(const string& name)
 {
   loadSequenceNameCache();
   Sequence* sequence = NULL;
-  map<string, MMapSequence*>::iterator mapIt = _sequenceNameCache.find(name);
+  map<string, MMapSequence*>::iterator mapIt = 
+     _sequenceNameCache.find(name);
   if (mapIt != _sequenceNameCache.end())
   {
     sequence = mapIt->second;
@@ -168,15 +169,7 @@ Sequence* MMapGenome::getSequence(const string& name)
 
 const Sequence* MMapGenome::getSequence(const string& name) const
 {
-  loadSequenceNameCache();
-  const Sequence* sequence = NULL;
-  map<string, MMapSequence*>::const_iterator mapIt = 
-     _sequenceNameCache.find(name);
-  if (mapIt != _sequenceNameCache.end())
-  {
-    sequence = mapIt->second;
-  }
-  return sequence;
+    return const_cast<MMapGenome*>(this)->getSequence(name);
 }
 
 Sequence* MMapGenome::getSequenceBySite(hal_size_t position)
@@ -220,17 +213,17 @@ SequenceIteratorPtr MMapGenome::getSequenceIterator(
   return SequenceIteratorPtr(newIt);
 }
 
-SequenceIteratorConstPtr MMapGenome::getSequenceIterator(
+SequenceIteratorPtr MMapGenome::getSequenceIterator(
   hal_index_t position) const
 {
   // genome effectively gets re-consted when returned in the
   // const iterator.  just save doubling up code.
   MMapSequenceIterator* newIt = new MMapSequenceIterator(
     const_cast<MMapGenome*>(this), position);
-  return SequenceIteratorConstPtr(newIt);
+  return SequenceIteratorPtr(newIt);
 }
 
-SequenceIteratorConstPtr MMapGenome::getSequenceEndIterator() const
+SequenceIteratorPtr MMapGenome::getSequenceEndIterator() const
 {
   return getSequenceIterator(getNumSequences());
 }
@@ -291,14 +284,14 @@ TopSegmentIteratorPtr MMapGenome::getTopSegmentIterator(hal_index_t segmentIndex
   return TopSegmentIteratorPtr(newIt);
 }
 
-TopSegmentIteratorConstPtr MMapGenome::getTopSegmentIterator(hal_index_t segmentIndex) const
+TopSegmentIteratorPtr MMapGenome::getTopSegmentIterator(hal_index_t segmentIndex) const
 {
   MMapGenome *genome = const_cast<MMapGenome*>(this);
   MMapTopSegment *newSeg = new MMapTopSegment(genome, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
   TopSegmentIterator* newIt = new TopSegmentIterator(newSeg);
-  return TopSegmentIteratorConstPtr(newIt);
+  return TopSegmentIteratorPtr(newIt);
 }
 
 BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmentIndex)
@@ -310,14 +303,14 @@ BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmen
   return BottomSegmentIteratorPtr(newIt);
 }
 
-BottomSegmentIteratorConstPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmentIndex) const
+BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmentIndex) const
 {
   MMapGenome* genome = const_cast<MMapGenome*>(this);
   MMapBottomSegment* newSeg = new MMapBottomSegment(genome, segmentIndex);
   // ownership of newSeg is passed into newIt, whose lifespan is 
   // governed by the returned smart pointer
   BottomSegmentIterator* newIt = new BottomSegmentIterator(newSeg);
-  return BottomSegmentIteratorConstPtr(newIt);
+  return BottomSegmentIteratorPtr(newIt);
 }
 
 DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position)
@@ -326,19 +319,19 @@ DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position)
   return DNAIteratorPtr(newIt);
 }
 
-DNAIteratorConstPtr MMapGenome::getDNAIterator(hal_index_t position) const
+DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position) const
 {
   MMapGenome* genome = const_cast<MMapGenome*>(this);
-  const MMapDNAIterator* newIt = new MMapDNAIterator(genome, position);
-  return DNAIteratorConstPtr(newIt);
+  MMapDNAIterator* newIt = new MMapDNAIterator(genome, position);
+  return DNAIteratorPtr(newIt);
 }
 
-DNAIteratorConstPtr MMapGenome::getDNAEndIterator() const
+DNAIteratorPtr MMapGenome::getDNAEndIterator() const
 {
   return getDNAIterator(getSequenceLength());
 }
 
-ColumnIteratorConstPtr MMapGenome::getColumnIterator(
+ColumnIteratorPtr MMapGenome::getColumnIterator(
   const set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,
   bool noAncestors, bool reverseStrand, bool unique, bool onlyOrthologs) const
@@ -354,11 +347,11 @@ ColumnIteratorConstPtr MMapGenome::getColumnIterator(
     throw hal_exception("MMapGenome::getColumnIterator: input indices ("
                         + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
-  const ColumnIterator* newIt = 
+  ColumnIterator* newIt = 
      new ColumnIterator(this, targets, position, lastIdx, 
                         maxInsertLength, noDupes, noAncestors,
                         reverseStrand, unique, onlyOrthologs);
-  return ColumnIteratorConstPtr(newIt);
+  return ColumnIteratorPtr(newIt);
 }
 
 void MMapGenome::getString(string& outString) const
@@ -398,7 +391,7 @@ RearrangementPtr MMapGenome::getRearrangement(hal_index_t position,
                                               bool atomic) const
 {
   assert(position >= 0 && position < (hal_index_t)getNumTopSegments());
-  TopSegmentIteratorConstPtr top = getTopSegmentIterator(position);  
+  TopSegmentIteratorPtr top = getTopSegmentIterator(position);  
   Rearrangement* rea = new Rearrangement(this,
                                          gapLengthThreshold,
                                          nThreshold,
@@ -407,24 +400,24 @@ RearrangementPtr MMapGenome::getRearrangement(hal_index_t position,
   return RearrangementPtr(rea);
 }
 
-GappedTopSegmentIteratorConstPtr MMapGenome::getGappedTopSegmentIterator(
+GappedTopSegmentIteratorPtr MMapGenome::getGappedTopSegmentIterator(
   hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
-  TopSegmentIteratorConstPtr top = getTopSegmentIterator(i);  
+  TopSegmentIteratorPtr top = getTopSegmentIterator(i);  
   GappedTopSegmentIterator* gt = 
      new GappedTopSegmentIterator(top, gapThreshold, atomic);
-  return GappedTopSegmentIteratorConstPtr(gt);
+  return GappedTopSegmentIteratorPtr(gt);
 }
 
-GappedBottomSegmentIteratorConstPtr MMapGenome::getGappedBottomSegmentIterator(
+GappedBottomSegmentIteratorPtr MMapGenome::getGappedBottomSegmentIterator(
   hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
   bool atomic) const
 {
-  BottomSegmentIteratorConstPtr bot = getBottomSegmentIterator(i);  
+  BottomSegmentIteratorPtr bot = getBottomSegmentIterator(i);  
   GappedBottomSegmentIterator* gb = 
      new GappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
                                             atomic);
-  return GappedBottomSegmentIteratorConstPtr(gb);
+  return GappedBottomSegmentIteratorPtr(gb);
 }
 
 void MMapGenome::rename(const std::string &name) {

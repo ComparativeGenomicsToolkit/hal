@@ -76,7 +76,7 @@ void Extract4d::visitLine()
 // Check if the 4d site is still a 4d site in all aligned regions.
 static bool is4dSiteConserved(const Sequence *sequence, hal_index_t pos, bool reversed)
 {
-  ColumnIteratorConstPtr colIt = sequence->getColumnIterator(NULL, 0, pos, NULL_INDEX, false, true, reversed);
+  ColumnIteratorPtr colIt = sequence->getColumnIterator(NULL, 0, pos, NULL_INDEX, false, true, reversed);
   bool isConserved = true;
   const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
   for (ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
@@ -84,7 +84,7 @@ static bool is4dSiteConserved(const Sequence *sequence, hal_index_t pos, bool re
     const ColumnIterator::DNASet *dnaSet = colMapIt->second;
     for (hal_size_t j = 0; j < dnaSet->size(); j++) {
       char c1, c2;
-      DNAIteratorConstPtr dna = dnaSet->at(j);
+      DNAIteratorPtr dna = dnaSet->at(j);
       if ((dna->getReversed() && dna->getArrayIndex() > colMapIt->first->getEndPosition() - 2) ||
           (!dna->getReversed() && dna->getArrayIndex() < colMapIt->first->getStartPosition() + 2)) {
         isConserved = false;
@@ -146,7 +146,7 @@ void Extract4d::extractBlocks4d(bool conserved)
       --end;
       swap(start, end);
     }
-    DNAIteratorConstPtr dna = _refSequence->getDNAIterator(start);
+    DNAIteratorPtr dna = _refSequence->getDNAIterator(start);
     if (reversed)
     {
       dna->toReverse();

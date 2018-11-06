@@ -55,12 +55,12 @@ int main(int argc, char** argv)
     for (hal_size_t i = 0; i < numSamples; i++) {
         // Sample (with replacement) a random position in the reference genome.
         hal_index_t pos = st_randomInt64(0, ref->getSequenceLength());
-        SegmentIteratorConstPtr refSeg = ref->getTopSegmentIterator();
+        SegmentIteratorPtr refSeg = ref->getTopSegmentIterator();
         refSeg->toSite(pos, true);
         assert(refSeg->getLength() == 1);
         for (size_t j = 0; j < leafGenomes.size(); j++) {
             const Genome *leafGenome = leafGenomes[j];
-            MappedSegmentConstSet segments;
+            MappedSegmentSet segments;
             refSeg->getMappedSegments(segments, leafGenome, NULL,
                                       true, 0, NULL, NULL);
             vector<hal_size_t> &histogram = coverage[leafGenome];

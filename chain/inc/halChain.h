@@ -53,7 +53,7 @@ std::ostream& operator<<(std::ostream&, const Chain& c);
  * @param endOffset bases to skip at end (gapped iterators don't support this
  * natively.
  */
-void gtIteratorToChain(GappedTopSegmentIteratorConstPtr gt, Chain& outChain,
+void gtIteratorToChain(GappedTopSegmentIteratorPtr gt, Chain& outChain,
                        hal_offset_t startOffset = 0, 
                        hal_offset_t endOffset = 0);
 

@@ -61,11 +61,6 @@ const Sequence* SegmentIterator::getSequence() const
   return getSegment()->getSequence();
 }
 
-Sequence* SegmentIterator::getSequence()
-{
-  return getSegment()->getSequence();
-}
-
 hal_index_t SegmentIterator::getStartPosition() const
 {
   assert (inRange() == true);
@@ -175,7 +170,7 @@ bool SegmentIterator::isTop() const
 }
 
 hal_size_t SegmentIterator::getMappedSegments(
-  MappedSegmentConstSet& outSegments,
+  MappedSegmentSet& outSegments,
   const Genome* tgtGenome,
   const set<const Genome*>* genomesOnPath,
   bool doDupes,

@@ -40,11 +40,10 @@ public:
    const Genome* getGenome() const;
    Genome* getGenome();
    const Sequence* getSequence() const;
-   Sequence* getSequence();
    hal_index_t getArrayIndex() const;
 
-   bool equals(DNAIteratorConstPtr& other) const;
-   bool leftOf(DNAIteratorConstPtr& other) const;
+   bool equals(DNAIteratorPtr& other) const;
+   bool leftOf(DNAIteratorPtr& other) const;
 
    void readString(std::string& outString, hal_size_t length) const;
 
@@ -142,17 +141,12 @@ inline const Sequence* HDF5DNAIterator::getSequence() const
   return _genome->getSequenceBySite(_index);
 }
 
-inline Sequence* HDF5DNAIterator::getSequence()
-{
-  return _genome->getSequenceBySite(_index);
-}
-
 inline hal_index_t HDF5DNAIterator::getArrayIndex() const
 {
   return _index;
 }
 
-inline bool HDF5DNAIterator::equals(DNAIteratorConstPtr& other) const
+inline bool HDF5DNAIterator::equals(DNAIteratorPtr& other) const
 {
   const HDF5DNAIterator* h5Other = reinterpret_cast<
      const HDF5DNAIterator*>(other.get());
@@ -160,7 +154,7 @@ inline bool HDF5DNAIterator::equals(DNAIteratorConstPtr& other) const
   return _index == h5Other->_index;
 }
 
-inline bool HDF5DNAIterator::leftOf(DNAIteratorConstPtr& other) const
+inline bool HDF5DNAIterator::leftOf(DNAIteratorPtr& other) const
 {
   const HDF5DNAIterator* h5Other = reinterpret_cast<
      const HDF5DNAIterator*>(other.get());

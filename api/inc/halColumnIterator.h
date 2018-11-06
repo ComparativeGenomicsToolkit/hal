@@ -58,7 +58,7 @@ public:
    };
    /// @endcond
 
-   typedef std::vector<DNAIteratorConstPtr> DNASet;
+   typedef std::vector<DNAIteratorPtr> DNASet;
    typedef std::map<const Sequence*, DNASet*, SequenceLess> ColumnMap;
 
    /** Move column iterator one column to the right along reference
@@ -79,8 +79,8 @@ public:
                        bool clearCache = false) const;
 
    /** Use this method to bound iteration loops.  When the column iterator
-    * is retrieved from the sequence or genome, the last column is specfied.
-    * toRight() cna then be called until lastColumn is true.  */
+    * is retrieved from the sequence or genome, the last column is specified.
+    * toRight() can then be called until lastColumn is true.  */
    virtual bool lastColumn() const;
    
    /** Get a pointer to the reference genome for the column iterator */
@@ -141,8 +141,8 @@ private:
 private:
 
    void recursiveUpdate(bool init) const;
-   bool handleDeletion(TopSegmentIteratorConstPtr inputTopIterator) const;
-   bool handleInsertion(TopSegmentIteratorConstPtr inputTopIterator) const;
+   bool handleDeletion(TopSegmentIteratorPtr inputTopIterator) const;
+   bool handleInsertion(TopSegmentIteratorPtr inputTopIterator) const;
 
    void updateParent(LinkedTopIterator* topIt) const;
    void updateChild(LinkedBottomIterator* bottomIt, hal_size_t index) const;
@@ -153,7 +153,7 @@ private:
    bool parentInScope(const Genome*) const;
    bool childInScope(const Genome*, hal_size_t child) const;
    void nextFreeIndex() const;
-   bool colMapInsert(DNAIteratorConstPtr dnaIt) const;
+   bool colMapInsert(DNAIteratorPtr dnaIt) const;
 
    void resetColMap() const;
    void eraseColMap() const;
@@ -180,8 +180,8 @@ private:
    mutable bool _reversed;
 
    mutable ColumnMap _colMap;
-   mutable TopSegmentIteratorConstPtr _top;
-   mutable TopSegmentIteratorConstPtr _next;
+   mutable TopSegmentIteratorPtr _top;
+   mutable TopSegmentIteratorPtr _next;
    mutable VisitCache _visitCache;
    mutable bool _break;
    mutable const Sequence* _prevRefSequence;

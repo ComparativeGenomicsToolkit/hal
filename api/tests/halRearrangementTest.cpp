@@ -218,8 +218,8 @@ void RearrangementInsertionTest::createCallBack(AlignmentPtr alignment)
 
 void RearrangementInsertionTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  BottomSegmentIteratorConstPtr bi;
-  TopSegmentIteratorConstPtr ti;
+  BottomSegmentIteratorPtr bi;
+  TopSegmentIteratorPtr ti;
 
   const Genome* child = alignment->openGenome("child");
   
@@ -281,8 +281,8 @@ void RearrangementSimpleInversionTest::createCallBack(AlignmentPtr alignment)
 void 
 RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  BottomSegmentIteratorConstPtr bi;
-  TopSegmentIteratorConstPtr ti;
+  BottomSegmentIteratorPtr bi;
+  TopSegmentIteratorPtr ti;
 
   const Genome* child = alignment->openGenome("child");
   
@@ -367,8 +367,8 @@ void RearrangementGappedInversionTest::createCallBack(AlignmentPtr alignment)
 void 
 RearrangementGappedInversionTest::checkCallBack(AlignmentConstPtr alignment)
 {
-  BottomSegmentIteratorConstPtr bi;
-  TopSegmentIteratorConstPtr ti;
+  BottomSegmentIteratorPtr bi;
+  TopSegmentIteratorPtr ti;
 
   const Genome* child = alignment->openGenome("child");
     

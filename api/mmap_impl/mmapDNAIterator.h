@@ -23,11 +23,10 @@ public:
     const Genome* getGenome() const;
     Genome* getGenome();
     const Sequence* getSequence() const;
-    Sequence* getSequence();
     hal_index_t getArrayIndex() const;
 
-    bool equals(DNAIteratorConstPtr& other) const;
-    bool leftOf(DNAIteratorConstPtr& other) const;
+    bool equals(DNAIteratorPtr& other) const;
+    bool leftOf(DNAIteratorPtr& other) const;
 
     void readString(std::string& outString, hal_size_t length) const;
 
@@ -120,17 +119,12 @@ inline const Sequence* MMapDNAIterator::getSequence() const
   return _genome->getSequenceBySite(_index);
 }
 
-inline Sequence* MMapDNAIterator::getSequence()
-{
-  return _genome->getSequenceBySite(_index);
-}
-
 inline hal_index_t MMapDNAIterator::getArrayIndex() const
 {
   return _index;
 }
 
-inline bool MMapDNAIterator::equals(DNAIteratorConstPtr& other) const
+inline bool MMapDNAIterator::equals(DNAIteratorPtr& other) const
 {
   const MMapDNAIterator* mmOther = reinterpret_cast<
      const MMapDNAIterator*>(other.get());
@@ -138,7 +132,7 @@ inline bool MMapDNAIterator::equals(DNAIteratorConstPtr& other) const
   return _index == mmOther->_index;
 }
 
-inline bool MMapDNAIterator::leftOf(DNAIteratorConstPtr& other) const
+inline bool MMapDNAIterator::leftOf(DNAIteratorPtr& other) const
 {
   const MMapDNAIterator* mmOther = reinterpret_cast<
      const MMapDNAIterator*>(other.get());

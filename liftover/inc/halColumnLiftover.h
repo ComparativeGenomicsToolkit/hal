@@ -35,7 +35,7 @@ protected:
    
 protected: 
    
-   ColumnIteratorConstPtr _colIt;
+   ColumnIteratorPtr _colIt;
    std::set<std::string> _missedSet;
    bool _outParalogy;
 };

@@ -12,12 +12,11 @@ public:
 
     // SEQUENCE ITERATOR METHODS
     SequenceIteratorPtr copy() { return SequenceIteratorPtr(new MMapSequenceIterator(_genome, _index)); };
-    SequenceIteratorConstPtr copy() const { return SequenceIteratorConstPtr(new MMapSequenceIterator(_genome, _index)); };
+    SequenceIteratorPtr copy() const { return SequenceIteratorPtr(new MMapSequenceIterator(_genome, _index)); };
     void toNext() const { _sequence._data += 1; };
     void toPrev() const { _sequence._data -= 1; };
-    Sequence* getSequence() { return &_sequence; };
     const Sequence* getSequence() const { return &_sequence; };
-    bool equals(SequenceIteratorConstPtr other) const {
+    bool equals(SequenceIteratorPtr other) const {
         const MMapSequenceIterator* mmapOther = reinterpret_cast<
             const MMapSequenceIterator*>(other.get());
         assert(_sequence.getGenome() == mmapOther->_sequence.getGenome());

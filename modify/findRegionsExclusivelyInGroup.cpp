@@ -47,10 +47,10 @@ int main(int argc, char *argv[])
   const Genome *referenceGenome = alignment->openGenome(referenceGenomeName);
   // FIXME tmp
   ostream &os = cout;
-  SequenceIteratorConstPtr seqIt = referenceGenome->getSequenceIterator();
-  SequenceIteratorConstPtr seqItEnd = referenceGenome->getSequenceEndIterator();
+  SequenceIteratorPtr seqIt = referenceGenome->getSequenceIterator();
+  SequenceIteratorPtr seqItEnd = referenceGenome->getSequenceEndIterator();
   for (; seqIt != seqItEnd; seqIt->toNext()) {
-    ColumnIteratorConstPtr colIt = seqIt->getSequence()->getColumnIterator(NULL, 0, 0, NULL_INDEX, false, true);
+    ColumnIteratorPtr colIt = seqIt->getSequence()->getColumnIterator(NULL, 0, 0, NULL_INDEX, false, true);
     bool inRegion = false;
     BedLine curBedLine;
     while (1) {

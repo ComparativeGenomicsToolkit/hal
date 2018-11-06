@@ -59,22 +59,22 @@ public:
    virtual hal_size_t getNumContainedGapBases() const;
 
    /** Left breakpoint is specified by the first base of the returned segment */
-   virtual TopSegmentIteratorConstPtr getLeftBreakpoint() const;
+   virtual TopSegmentIteratorPtr getLeftBreakpoint() const;
 
    /** Right breakpoint is specified by the last base of the returned
     * segment. If the rearrangement is a deletion, only the left
     * breakpoint is set. */
-   virtual TopSegmentIteratorConstPtr getRightBreakpoint() const;
+   virtual TopSegmentIteratorPtr getRightBreakpoint() const;
 
    /** Identify the rearrangement by scanning along the genome, skipping 
     * gaps until the matching breeakpoint is found.  If no matching breakpint
     * is found, the rearrangement cannot be identified and false is returned */
-   virtual bool identifyFromLeftBreakpoint(TopSegmentIteratorConstPtr
+   virtual bool identifyFromLeftBreakpoint(TopSegmentIteratorPtr
                                            topSegment);
 
    /** Test if segment at given index corresponds to a deletion 
     * (shortcut method used by column iterator) */
-   virtual bool identifyDeletionFromLeftBreakpoint(TopSegmentIteratorConstPtr
+   virtual bool identifyDeletionFromLeftBreakpoint(TopSegmentIteratorPtr
                                                    topSegment);
 
    /** Get the range in the parent that was deleted.  Only valid to call 
@@ -85,7 +85,7 @@ public:
    /** Test if segment at given index corresponds to a breakpoint right
     * before an insertion 
     * (shortcut method used by column iterator) */
-   virtual bool identifyInsertionFromLeftBreakpoint(TopSegmentIteratorConstPtr
+   virtual bool identifyInsertionFromLeftBreakpoint(TopSegmentIteratorPtr
                                                     topSegment);
 
    /** Get the range in the parent that was inserted.  Only valid to call 
@@ -132,14 +132,14 @@ public:
    
 private:
    
-   virtual void resetStatus(TopSegmentIteratorConstPtr topSegment);
+   virtual void resetStatus(TopSegmentIteratorPtr topSegment);
    
-   virtual bool scanNothingCycle(TopSegmentIteratorConstPtr topSegment);
-   virtual bool scanInversionCycle(TopSegmentIteratorConstPtr topSegment);
-   virtual bool scanInsertionCycle(TopSegmentIteratorConstPtr topSegment);
-   virtual bool scanDeletionCycle(TopSegmentIteratorConstPtr topSegment);
-   virtual bool scanTranslocationCycle(TopSegmentIteratorConstPtr topSegment);
-   virtual bool scanDuplicationCycle(TopSegmentIteratorConstPtr topSegment);
+   virtual bool scanNothingCycle(TopSegmentIteratorPtr topSegment);
+   virtual bool scanInversionCycle(TopSegmentIteratorPtr topSegment);
+   virtual bool scanInsertionCycle(TopSegmentIteratorPtr topSegment);
+   virtual bool scanDeletionCycle(TopSegmentIteratorPtr topSegment);
+   virtual bool scanTranslocationCycle(TopSegmentIteratorPtr topSegment);
+   virtual bool scanDuplicationCycle(TopSegmentIteratorPtr topSegment);
 
 private:
    
@@ -147,10 +147,10 @@ private:
    bool _atomic;
    double _nThreshold;
 
-   GappedTopSegmentIteratorConstPtr _left, _cur, _next, _right;
-   GappedBottomSegmentIteratorConstPtr _leftParent, _curParent, _nextParent,
+   GappedTopSegmentIteratorPtr _left, _cur, _next, _right;
+   GappedBottomSegmentIteratorPtr _leftParent, _curParent, _nextParent,
    _rightParent;
-   TopSegmentIteratorConstPtr _top;
+   TopSegmentIteratorPtr _top;
    
    hal_size_t _childIndex;
    const Genome* _genome;
