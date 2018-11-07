@@ -431,7 +431,7 @@ bool Rearrangement::scanNothingCycle(
   return last && first ? _cur->getParentReversed() : true;
 }
 
-// Segment is an inverted descendant of another Segment but 
+// Segment is an reversed descendant of another Segment but 
 // otherwise no rearrangement.  
 bool Rearrangement::scanInversionCycle(
   TopSegmentIteratorPtr topSegment)

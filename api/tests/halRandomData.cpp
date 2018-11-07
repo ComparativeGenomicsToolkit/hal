@@ -352,8 +352,8 @@ void hal::createRandomSegment(Genome* genome,
   
   else
   {    
-    bool inverted = exponEvent(branchLength);
-    topSegment->setParentReversed(inverted);
+    bool reversed = exponEvent(branchLength);
+    topSegment->setParentReversed(reversed);
     botIter->toParent(topIter);
     botIter->getString(buffer);
 
@@ -362,7 +362,7 @@ void hal::createRandomSegment(Genome* genome,
     assert(botSegment->getArrayIndex() == parentIdx);
     assert(botSegment->getLength() == topSegment->getLength());
     botSegment->setChildIndex(indexInParent, topSegment->getArrayIndex());
-    botSegment->setChildReversed(indexInParent, inverted);
+    botSegment->setChildReversed(indexInParent, reversed);
 
     set<pair<hal_index_t, hal_index_t> >::iterator setIt;
     pair<hal_index_t, hal_index_t> key(botSegment->getArrayIndex(), 0);

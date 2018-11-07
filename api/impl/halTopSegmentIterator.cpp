@@ -33,88 +33,6 @@ void TopSegmentIterator::print(ostream& os) const
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// TOP SEGMENT INTERFACE
-//////////////////////////////////////////////////////////////////////////////
-hal_index_t TopSegmentIterator::getParentIndex() const
-{
-  return _topSegment->getParentIndex();
-}
-
-bool TopSegmentIterator::hasParent() const
-{
-  assert(inRange() == true);
-  return _topSegment->getParentIndex() != NULL_INDEX;
-}
-
-void TopSegmentIterator::setParentIndex(hal_index_t parIdx)
-{
-  _topSegment->setParentIndex(parIdx);
-}
-
-bool TopSegmentIterator::getParentReversed() const
-{
-  return _topSegment->getParentReversed();
-}
-
-void TopSegmentIterator::setParentReversed(bool isReversed)
-{
-  _topSegment->setParentReversed(isReversed);
-}
-
-hal_index_t TopSegmentIterator::getBottomParseIndex() const
-{
-  return _topSegment->getBottomParseIndex();
-}
-
-void TopSegmentIterator::setBottomParseIndex(hal_index_t botParseIdx)
-{
-  _topSegment->setBottomParseIndex(botParseIdx);
-}
-
-hal_offset_t TopSegmentIterator::getBottomParseOffset() const
-{
-  return _topSegment->getBottomParseOffset();
-}
-
-bool TopSegmentIterator::hasParseDown() const
-{
-  assert (inRange() == true);
-  assert (_topSegment->getBottomParseIndex() == NULL_INDEX ||
-          _topSegment->getGenome()->getNumChildren() > 0);
-  return _topSegment->getBottomParseIndex() != NULL_INDEX;
-}
-
-hal_index_t TopSegmentIterator::getNextParalogyIndex() const
-{
-  return _topSegment->getNextParalogyIndex();
-}
-
-bool TopSegmentIterator::hasNextParalogy() const
-{
-  return _topSegment->hasNextParalogy();
-}
-
-void TopSegmentIterator::setNextParalogyIndex(hal_index_t parIdx)
-{
-  _topSegment->setNextParalogyIndex(parIdx);
-}
-
-hal_index_t TopSegmentIterator::getLeftParentIndex() const
-{
-  return _topSegment->getLeftParentIndex();
-}
-
-hal_index_t TopSegmentIterator::getRightParentIndex() const
-{
-  return _topSegment->getRightParentIndex();
-}
-
-bool TopSegmentIterator::isCanonicalParalog() const
-{
-  return _topSegment->isCanonicalParalog();
-}
-
-//////////////////////////////////////////////////////////////////////////////
 // TOP SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
 void TopSegmentIterator::toChild(BottomSegmentIteratorPtr bs, 
@@ -199,12 +117,6 @@ void TopSegmentIterator::copy(TopSegmentIteratorPtr ts)
   _startOffset = ts->getStartOffset();
   _endOffset = ts->getEndOffset();
   _reversed = ts->getReversed();
-}
-
-bool TopSegmentIterator::equals(TopSegmentIteratorPtr other) const
-{
-  assert(getGenome() == other->getGenome());
-  return getArrayIndex() == other->getArrayIndex();
 }
 
 void TopSegmentIterator::toNextParalogy()

@@ -11,8 +11,8 @@
 #include "halDefs.h"
 #include "halSegmentIterator.h"
 #include "halTopSegment.h"
-#include "halGenome.h"
 #include "halSegmentIterator.h"
+#include "halGenome.h"
 
 namespace hal {
 
@@ -29,7 +29,12 @@ public:
    TopSegmentIterator(TopSegment* topSegment,
                       hal_offset_t startOffset = 0, 
                       hal_offset_t endOffset = 0,
-                      bool inverted = false);
+                      bool reversed = false) :
+       SegmentIterator(startOffset, endOffset, reversed),
+       _topSegment(topSegment) {
+    
+   }
+      
 
     /* destructor */
     virtual ~TopSegmentIterator() {
@@ -75,7 +80,11 @@ public:
     * take into account reverse state or offsets -- too review)
     * FIXME merge with operator==?? 
     * @param other Iterator to test equality to */
-    bool equals(TopSegmentIteratorPtr other) const;
+    bool equals(TopSegmentIteratorPtr other) const {
+        assert(getGenome() == other->getGenome());
+        return getArrayIndex() == other->getArrayIndex();
+    }
+
 
     /* equality operator */
     bool operator==(const TopSegmentIterator& other) const {
@@ -94,31 +103,71 @@ public:
     void toNextParalogy();
 
     // FIXME: document or change way getting segment works
-    virtual SegmentPtr getSegment();
-    virtual SegmentConstPtr getSegment() const;
+    virtual SegmentPtr getSegment() {
+        return _topSegment;
+    }
+    virtual SegmentConstPtr getSegment() const {
+        return _topSegment;
+    }
     
     // SEGMENT INTERFACE OVERRIDE
     virtual void print(std::ostream& os) const;
    // TOP SEGMENT INTERFACE
-   virtual hal_index_t getParentIndex() const;
-   virtual bool hasParent() const;
-   virtual void setParentIndex(hal_index_t parIdx);
-   virtual bool getParentReversed() const;
-   virtual void setParentReversed(bool isReversed);
-   virtual hal_index_t getBottomParseIndex() const;
-   virtual void setBottomParseIndex(hal_index_t botParseIdx);
-   virtual hal_offset_t getBottomParseOffset() const;
-   virtual bool hasParseDown() const;
-   virtual hal_index_t getNextParalogyIndex() const;
-   virtual bool hasNextParalogy() const;
-   virtual void setNextParalogyIndex(hal_index_t parIdx);
-   virtual hal_index_t getLeftParentIndex() const;
-   virtual hal_index_t getRightParentIndex() const;
-   virtual bool isCanonicalParalog() const;
+    virtual hal_index_t getParentIndex() const {
+  return _topSegment->getParentIndex();
+    }
+    virtual bool hasParent() const {
+        assert(inRange());
+        return _topSegment->getParentIndex() != NULL_INDEX;
+    }
+    virtual void setParentIndex(hal_index_t parIdx) {
+        _topSegment->setParentIndex(parIdx);
+    }
+    virtual bool getParentReversed() const {
+        return _topSegment->getParentReversed();
+    }
+    virtual void setParentReversed(bool isReversed) {
+        _topSegment->setParentReversed(isReversed);
+    }
+    virtual hal_index_t getBottomParseIndex() const {
+        return _topSegment->getBottomParseIndex();
+    }
+    virtual void setBottomParseIndex(hal_index_t botParseIdx) {
+        _topSegment->setBottomParseIndex(botParseIdx);
+    }
+    virtual hal_offset_t getBottomParseOffset() const {
+        return _topSegment->getBottomParseOffset();
+    }
+    virtual bool hasParseDown() const {
+        assert (inRange() == true);
+        assert (_topSegment->getBottomParseIndex() == NULL_INDEX ||
+                _topSegment->getGenome()->getNumChildren() > 0);
+        return _topSegment->getBottomParseIndex() != NULL_INDEX;
+    }
+    virtual hal_index_t getNextParalogyIndex() const {
+        return _topSegment->getNextParalogyIndex();
+    }
+    virtual bool hasNextParalogy() const {
+        return _topSegment->hasNextParalogy();
+    }
+    virtual void setNextParalogyIndex(hal_index_t parIdx) {
+        _topSegment->setNextParalogyIndex(parIdx);
+    }
+    virtual hal_index_t getLeftParentIndex() const {
+        return _topSegment->getLeftParentIndex();
+    }
+    virtual hal_index_t getRightParentIndex() const {
+        return _topSegment->getRightParentIndex();
+    }
+    virtual bool isCanonicalParalog() const {
+        return _topSegment->isCanonicalParalog();
+    }
 
 
 private:
-   virtual hal_size_t getNumSegmentsInGenome() const;
+    hal_size_t getNumSegmentsInGenome() const {
+        return getGenome()->getNumTopSegments();
+    }
 
    TopSegmentPtr _topSegment;
 };
@@ -138,34 +187,6 @@ inline bool operator!=(TopSegmentIteratorPtr p1,
 {
   return !(p1 == p2);
 }
-
-inline TopSegmentIterator::TopSegmentIterator(TopSegment* topSegment, 
-                                             hal_offset_t startOffset, 
-                                             hal_offset_t endOffset,
-                                             bool reversed) :
-    SegmentIterator(startOffset, endOffset, reversed),
-    _topSegment(topSegment)
-{
-
 }
-
-inline SegmentPtr TopSegmentIterator::getSegment()
-{
-  return _topSegment;
-}
-
-inline SegmentConstPtr TopSegmentIterator::getSegment() const
-{
-  return _topSegment;
-}
-
-inline hal_size_t TopSegmentIterator::getNumSegmentsInGenome() const
-{
-  return getGenome()->getNumTopSegments();
-}
-
-
-}
-
 
 #endif

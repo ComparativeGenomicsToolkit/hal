@@ -110,7 +110,7 @@ protected:
    bool _reversed;
 };
 
-HAL_FORWARD_DEC_CLASS(SegmentIterator)
+HAL_FORWARD_DEC_MUTABLE_CLASS(SegmentIterator)
 
 inline bool SegmentIterator::inRange() const
 {

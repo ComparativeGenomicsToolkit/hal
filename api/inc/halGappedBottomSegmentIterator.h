@@ -103,7 +103,7 @@ public:
     
 
 
-   // SEGMENT ITERATOR IrNTERFACE
+   // SEGMENT ITERATOR INTERFACE
    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX);
    virtual void toRight(hal_index_t rightCutoff = NULL_INDEX);
    virtual void toReverse();
