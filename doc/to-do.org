@@ -41,3 +41,4 @@ of DNA.  Maybe pack DNA in mmap?
 - hal::Rearrangement
 - inc/halChain.h
 - hal::GappedBottomSegmentIterator
+* Document why SlicedSegment vs Segment
