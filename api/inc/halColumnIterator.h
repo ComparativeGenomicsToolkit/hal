@@ -63,7 +63,7 @@ public:
 
    /** Move column iterator one column to the right along reference
     * genoem sequence */
-   virtual void toRight() const;
+   virtual void toRight();
 
    /** Move column iterator to arbitrary site in genome -- effectively
     * resetting the iterator (convenience function to avoid creation of
@@ -76,7 +76,7 @@ public:
     * ends up not at "columnIndex" but at the next unvisited column.*/
    virtual void toSite(hal_index_t columnIndex, 
                        hal_index_t lastIndex,
-                       bool clearCache = false) const;
+                       bool clearCache = false);
 
    /** Use this method to bound iteration loops.  When the column iterator
     * is retrieved from the sequence or genome, the last column is specified.
@@ -109,7 +109,7 @@ public:
     * circumstances, calling this method every 1M bases or so will help
     * reduce memory as well as speed up queries on the column map. Perhaps
     * this should eventually be built in and made transparent? */
-   virtual void defragment() const;
+   virtual void defragment();
 
    /** Check whether the column iterator's left-most reference coordinate
     * is within the iterator's range, ie is "canonical".  This can be used
@@ -129,9 +129,9 @@ public:
    // temp -- probably want to have a "global column iterator" object
    // instead
    typedef std::map<const Genome*, PositionCache*> VisitCache;
-   virtual VisitCache *getVisitCache() const;
-   virtual void setVisitCache(VisitCache *visitCache) const;
-   virtual void clearVisitCache() const;
+    virtual VisitCache *getVisitCache();
+   virtual void setVisitCache(VisitCache *visitCache);
+   virtual void clearVisitCache();
 
 private:
 
@@ -140,56 +140,53 @@ private:
    typedef ColumnIteratorStack::Entry StackEntry;
 private:
 
-   void recursiveUpdate(bool init) const;
-   bool handleDeletion(TopSegmentIteratorPtr inputTopIterator) const;
-   bool handleInsertion(TopSegmentIteratorPtr inputTopIterator) const;
+   void recursiveUpdate(bool init);
+   bool handleDeletion(TopSegmentIteratorPtr inputTopIterator);
+   bool handleInsertion(TopSegmentIteratorPtr inputTopIterator);
 
-   void updateParent(LinkedTopIterator* topIt) const;
-   void updateChild(LinkedBottomIterator* bottomIt, hal_size_t index) const;
-   void updateNextTopDup(LinkedTopIterator* topIt) const;
-   void updateParseUp(LinkedBottomIterator* bottomIt) const;
-   void updateParseDown(LinkedTopIterator* topIt) const;
+   void updateParent(LinkedTopIterator* topIt);
+   void updateChild(LinkedBottomIterator* bottomIt, hal_size_t index);
+   void updateNextTopDup(LinkedTopIterator* topIt);
+   void updateParseUp(LinkedBottomIterator* bottomIt);
+   void updateParseDown(LinkedTopIterator* topIt);
 
    bool parentInScope(const Genome*) const;
    bool childInScope(const Genome*, hal_size_t child) const;
-   void nextFreeIndex() const;
-   bool colMapInsert(DNAIteratorPtr dnaIt) const;
+   void nextFreeIndex();
+   bool colMapInsert(DNAIteratorPtr dnaIt);
 
-   void resetColMap() const;
-   void eraseColMap() const;
+   void resetColMap();
+   void eraseColMap();
 
-   void clearTree() const;
+    stTree *buildTree() const;
+   void clearTree();
 
 private:
 
-   // everything's mutable to keep const behaviour consistent with
-   // other iterators (which provide both const and non-const access)
-   // the fact that this iterator has no writable interface makes it
-   // seem like a dumb excercise though. 
-   mutable std::set<const Genome*> _targets;
-   mutable std::set<const Genome*> _scope;
-   mutable ColumnIteratorStack _stack;
-   mutable ColumnIteratorStack _indelStack;
-   mutable const Sequence* _ref;
-   mutable size_t _curInsertionLength;
+   std::set<const Genome*> _targets;
+   std::set<const Genome*> _scope;
+   ColumnIteratorStack _stack;
+   ColumnIteratorStack _indelStack;
+   const Sequence* _ref;
+   size_t _curInsertionLength;
 
-   mutable RearrangementPtr _rearrangement;
-   mutable hal_size_t _maxInsertionLength;
-   mutable bool _noDupes;
-   mutable bool _noAncestors;
-   mutable bool _reversed;
+   RearrangementPtr _rearrangement;
+   hal_size_t _maxInsertionLength;
+   bool _noDupes;
+   bool _noAncestors;
+   bool _reversed;
 
-   mutable ColumnMap _colMap;
-   mutable TopSegmentIteratorPtr _top;
-   mutable TopSegmentIteratorPtr _next;
-   mutable VisitCache _visitCache;
-   mutable bool _break;
-   mutable const Sequence* _prevRefSequence;
-   mutable hal_index_t _prevRefIndex;
-   mutable hal_index_t _leftmostRefPos;
-   mutable stTree *_tree;
-   mutable bool _unique;
-   mutable bool _onlyOrthologs;
+   ColumnMap _colMap;
+   TopSegmentIteratorPtr _top;
+   TopSegmentIteratorPtr _next;
+   VisitCache _visitCache;
+   bool _break;
+   const Sequence* _prevRefSequence;
+   hal_index_t _prevRefIndex;
+   hal_index_t _leftmostRefPos;
+    mutable stTree *_treeCache;
+   bool _unique;
+   bool _onlyOrthologs;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const ColumnIterator& cit)

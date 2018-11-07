@@ -146,7 +146,7 @@ private:
    stTree* _tree;
     mutable std::map<std::string, stTree*> _nodeMap;
    bool _dirty;
-   mutable std::map<std::string, HDF5Genome*> _openGenomes;
+    mutable std::map<std::string, HDF5Genome*> _openGenomes;
 };
 
 }

@@ -26,7 +26,10 @@ class Genome : public SegmentedSequence
 {
 public:
     /* Constructor */
-    Genome(Alignment *alignment, const std::string &name) : _alignment(alignment), _parentCache(NULL), _name(name), _numChildren(alignment->getChildNames(name).size()) {};
+    Genome(Alignment *alignment, const std::string &name) :
+        _alignment(alignment), _name(name),
+        _numChildren(alignment->getChildNames(name).size()),
+        _parentCache(NULL) {};
 
     /** Destructor */
     virtual ~Genome() {
@@ -192,10 +195,10 @@ public:
 
 protected:
    Alignment *_alignment;
-   mutable Genome* _parentCache;
-   mutable std::vector<Genome*> _childCache;
    std::string _name;
-   mutable hal_index_t _numChildren;
+    hal_index_t _numChildren;
+       mutable Genome* _parentCache;
+    mutable std::vector<Genome*> _childCache;
 
 };
 

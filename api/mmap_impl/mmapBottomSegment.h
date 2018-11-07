@@ -22,12 +22,6 @@ class MMapBottomSegment : public BottomSegment
         _data = _genome->getBottomSegmentPointer(arrayIndex);
         _index = arrayIndex;
     };
-    void setArrayIndex(const Genome *genome, hal_index_t arrayIndex) const {
-        const MMapGenome *mGenome = dynamic_cast<const MMapGenome *>(genome);
-        _genome = const_cast<MMapGenome *>(mGenome);
-        _data = _genome->getBottomSegmentPointer(arrayIndex);
-        _index = arrayIndex;
-    };
     const Genome* getGenome() const;
     Genome* getGenome();
     const Sequence* getSequence() const;
@@ -75,9 +69,9 @@ class MMapBottomSegment : public BottomSegment
     MMapBottomSegmentData *getNextData() const {
         return (MMapBottomSegmentData *) (((char *) _data) + MMapBottomSegmentData::getSize(_genome));
     };
-    mutable MMapBottomSegmentData *_data;
-    mutable MMapGenome *_genome;
-    mutable hal_index_t _index;
+    MMapBottomSegmentData *_data;
+    MMapGenome *_genome;
+    hal_index_t _index;
 };
 
 inline const Genome* MMapBottomSegment::getGenome() const

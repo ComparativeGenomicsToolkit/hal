@@ -11,10 +11,9 @@ public:
     };
 
     // SEQUENCE ITERATOR METHODS
-    SequenceIteratorPtr copy() { return SequenceIteratorPtr(new MMapSequenceIterator(_genome, _index)); };
-    SequenceIteratorPtr copy() const { return SequenceIteratorPtr(new MMapSequenceIterator(_genome, _index)); };
-    void toNext() const { _sequence._data += 1; };
-    void toPrev() const { _sequence._data -= 1; };
+    SequenceIteratorPtr clone() const { return SequenceIteratorPtr(new MMapSequenceIterator(_genome, _index)); };
+    void toNext() { _sequence._data += 1; };
+    void toPrev() { _sequence._data -= 1; };
     const Sequence* getSequence() const { return &_sequence; };
     bool equals(SequenceIteratorPtr other) const {
         const MMapSequenceIterator* mmapOther = reinterpret_cast<
@@ -25,7 +24,7 @@ public:
 
 private:
     MMapGenome *_genome;
-    mutable MMapSequence _sequence;
+    MMapSequence _sequence;
     hal_index_t _index;
 };
 }

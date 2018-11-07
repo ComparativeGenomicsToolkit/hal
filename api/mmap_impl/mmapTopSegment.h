@@ -17,17 +17,11 @@ class MMapTopSegment : public TopSegment
         };
 
     // SEGMENT INTERFACE
-    void setArrayIndex(Genome *genome, hal_index_t arrayIndex) {
+    void setArrayIndex( Genome *genome, hal_index_t arrayIndex) {
         _genome = dynamic_cast<MMapGenome *>(genome);
         _data = _genome->getTopSegmentPointer(arrayIndex);
         _index = arrayIndex;
-    };
-    void setArrayIndex(const Genome *genome, hal_index_t arrayIndex) const {
-        const MMapGenome *mGenome = dynamic_cast<const MMapGenome *>(genome);
-        _genome = const_cast<MMapGenome *>(mGenome);
-        _data = _genome->getTopSegmentPointer(arrayIndex);
-        _index = arrayIndex;
-    };
+    }
     const Genome* getGenome() const;
     Genome* getGenome();
     const Sequence* getSequence() const;
@@ -72,9 +66,9 @@ class MMapTopSegment : public TopSegment
     bool isCanonicalParalog() const;
 
     private:
-    mutable MMapTopSegmentData *_data;
-    mutable MMapGenome *_genome;
-    mutable hal_index_t _index;
+    MMapTopSegmentData *_data;
+    MMapGenome *_genome;
+    hal_index_t _index;
 };
 
 inline const Genome* MMapTopSegment::getGenome() const

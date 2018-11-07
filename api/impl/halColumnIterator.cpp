@@ -28,7 +28,7 @@ ColumnIterator::ColumnIterator(const Genome* reference,
   _noDupes(noDupes),
   _noAncestors(noAncestors),
   _reversed(reverseStrand),
-  _tree(NULL),
+  _treeCache(NULL),
   _unique(unique),
   _onlyOrthologs(onlyOrthologs)
 {
@@ -39,12 +39,12 @@ ColumnIterator::ColumnIterator(const Genome* reference,
   if (reference->getNumTopSegments() > 0)
   {
     _top = reference->getTopSegmentIterator(0);
-    _next = _top->copy();
+    _next = _top->clone();
   }
   else if (reference->getChild(0) != NULL)
   {
     _top = reference->getChild(0)->getTopSegmentIterator(0);
-    _next = _top->copy();
+    _next = _top->clone();
   }
 
   if (_maxInsertionLength > 0)
@@ -85,7 +85,7 @@ ColumnIterator::~ColumnIterator()
   clearTree();
 }
 
-void ColumnIterator::toRight() const
+void ColumnIterator::toRight()
 {
   clearTree();
 
@@ -175,7 +175,7 @@ void ColumnIterator::toRight() const
 
 void ColumnIterator::toSite(hal_index_t columnIndex, 
                                    hal_index_t lastColumnIndex,
-                                   bool clearCache) const
+                                   bool clearCache) 
 {
   clearTree();
 
@@ -233,7 +233,7 @@ hal_index_t ColumnIterator::getArrayIndex() const
   return _stack[0]->_index;
 }
 
-void ColumnIterator::defragment() const
+void ColumnIterator::defragment()
 {
   ColumnMap::iterator i = _colMap.begin();
   ColumnMap::iterator next;
@@ -261,12 +261,12 @@ bool ColumnIterator::isCanonicalOnRef() const
      _leftmostRefPos <= _stack[0]->_lastIndex;
 }
 
-ColumnIterator::VisitCache *ColumnIterator::getVisitCache() const
+ColumnIterator::VisitCache *ColumnIterator::getVisitCache()
 {
     return &_visitCache;
 }
 
-void ColumnIterator::clearVisitCache() const
+void ColumnIterator::clearVisitCache()
 {
     for (VisitCache::iterator i = _visitCache.begin();
          i != _visitCache.end(); ++i)
@@ -276,7 +276,7 @@ void ColumnIterator::clearVisitCache() const
     _visitCache.clear();
 }
 
-void ColumnIterator::setVisitCache(ColumnIterator::VisitCache *visitCache) const
+void ColumnIterator::setVisitCache(ColumnIterator::VisitCache *visitCache)
 {
     clearVisitCache();
     _visitCache = *visitCache;
@@ -302,14 +302,8 @@ void ColumnIterator::print(ostream& os) const
 // if init is specified, all the initial iterators are created
 // then moved to the index (in the stack).  if init is false,
 // all the existing iterators are moved to the right.
-void ColumnIterator::recursiveUpdate(bool init) const
+void ColumnIterator::recursiveUpdate(bool init)
 {
-/*  cout <<"update " << _stack.top()->_sequence->getName() << " "
-       <<_stack.top()->_firstIndex << "," 
-       <<_stack.top()->_index << ","
-       <<_stack.top()->_lastIndex << endl;
-*/
-
   resetColMap();
   clearTree();
   _break = false;
@@ -448,8 +442,7 @@ void ColumnIterator::recursiveUpdate(bool init) const
   }
 }
 
-bool ColumnIterator::handleDeletion(TopSegmentIteratorPtr 
-  inputTopIterator) const
+bool ColumnIterator::handleDeletion(TopSegmentIteratorPtr inputTopIterator)
 {
   if (_maxInsertionLength > 0 && inputTopIterator->hasParent() == true)
   {
@@ -488,8 +481,7 @@ bool ColumnIterator::handleDeletion(TopSegmentIteratorPtr
   return false;
 }
 
-bool ColumnIterator::handleInsertion(TopSegmentIteratorPtr 
-                                            inputTopIterator) const
+bool ColumnIterator::handleInsertion(TopSegmentIteratorPtr inputTopIterator)
 {
   if (_maxInsertionLength > 0 && inputTopIterator->hasParent() == true)
   {
@@ -592,18 +584,8 @@ static void buildTreeR(BottomSegmentIteratorPtr botIt, stTree *tree)
   }
 }
 
-// Build a gene-tree from a column iterator.
-stTree *ColumnIterator::getTree() const
-{
-  if (_onlyOrthologs || _noDupes) {
-    // Because the tree-finding code goes all the way up the column
-    // tree and I'm too lazy to make it smarter.
-    throw hal_exception("Cannot get the tree for a column iterator "
-                        "which only displays orthologs.");
-  }
-  if (_tree != NULL) {
-    return _tree;
-  } else {
+// Build cached gene-tree from a column iterator.
+stTree *ColumnIterator::buildTree() const {
     // Get any base from the column to begin building the tree
     const ColumnIterator::ColumnMap *colMap = getColumnMap();
     ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin();
@@ -664,9 +646,22 @@ stTree *ColumnIterator::getTree() const
     }
 
     assert(tree != NULL);
-    _tree = tree;
     return tree;
+}
+
+// Build a gene-tree from a column iterator.
+stTree *ColumnIterator::getTree() const
+{
+  if (_onlyOrthologs || _noDupes) {
+    // Because the tree-finding code goes all the way up the column
+    // tree and I'm too lazy to make it smarter.
+    throw hal_exception("Cannot get the tree for a column iterator "
+                        "which only displays orthologs.");
   }
+  if (_treeCache == NULL) {
+      _treeCache = buildTree();
+  }
+  return _treeCache;
 }
 
 static void clearTree_R(stTree *tree)
@@ -678,17 +673,17 @@ static void clearTree_R(stTree *tree)
   delete (DNAIteratorPtr *) stTree_getClientData(tree);
 }
 
-void ColumnIterator::clearTree() const
+void ColumnIterator::clearTree()
 {
-  if (_tree != NULL)
+  if (_treeCache != NULL)
   {
-    clearTree_R(_tree);
-    stTree_destruct(_tree);
-    _tree = NULL;
+    clearTree_R(_treeCache);
+    stTree_destruct(_treeCache);
+    _treeCache = NULL;
   }
 }
 
-void ColumnIterator::updateParent(LinkedTopIterator* topIt) const
+void ColumnIterator::updateParent(LinkedTopIterator* topIt)
 {
   const Genome* genome = topIt->_it->getTopSegment()->getGenome();
   if (!_break && topIt->_it->hasParent() && parentInScope(genome) &&
@@ -752,7 +747,7 @@ void ColumnIterator::updateParent(LinkedTopIterator* topIt) const
 }
 
 void ColumnIterator::updateChild(LinkedBottomIterator* bottomIt, 
-                                        hal_size_t index) const
+                                        hal_size_t index)
 {
   const Genome* genome = bottomIt->_it->getBottomSegment()->getGenome();
   if (!_break && bottomIt->_it->hasChild(index) && childInScope(genome, index))
@@ -785,15 +780,6 @@ void ColumnIterator::updateChild(LinkedBottomIterator* bottomIt,
     }
     handleInsertion(bottomIt->_children[index]->_it);
 
-/*    cout << "updating genome " << childGenome->getName() 
-         << " (son of " << genome->getName() << ")"
-         << " parent index " 
-         << bottomIt->_dna->getArrayIndex()
-         << " index " << bottomIt->_children[index]->_dna->getArrayIndex()
-         << endl;
-    cout << "parent it " << bottomIt->_it << endl;
-    cout << "child it " << bottomIt->_children[index]->_it << endl << endl;
-*/
     //recurse on paralgous siblings
     updateNextTopDup(bottomIt->_children[index]);
 
@@ -802,7 +788,7 @@ void ColumnIterator::updateChild(LinkedBottomIterator* bottomIt,
   }
 }
 
-void ColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
+void ColumnIterator::updateNextTopDup(LinkedTopIterator* topIt)
 {
   assert (topIt->_it.get() != NULL);
   const Genome* genome =  topIt->_it->getTopSegment()->getGenome();
@@ -829,7 +815,7 @@ void ColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
     
     // advance the dups's iterator to match currentTopIt's (which should
     // have already been updated)
-    currentTopIt->_nextDup->_it = currentTopIt->_it->copy();
+    currentTopIt->_nextDup->_it = currentTopIt->_it->clone();
     currentTopIt->_nextDup->_it->toNextParalogy();
     currentTopIt->_nextDup->_dna->jumpTo(
       currentTopIt->_nextDup->_it->getStartPosition());
@@ -855,7 +841,6 @@ void ColumnIterator::updateNextTopDup(LinkedTopIterator* topIt) const
 }
 
 void ColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
-   const
 {
   if (!_break && bottomIt->_it->hasParseUp())
   {
@@ -889,7 +874,7 @@ void ColumnIterator::updateParseUp(LinkedBottomIterator* bottomIt)
   }
 }
  
-void ColumnIterator::updateParseDown(LinkedTopIterator* topIt) const
+void ColumnIterator::updateParseDown(LinkedTopIterator* topIt)
 {
   if (!_break && topIt->_it->hasParseDown())
   {
@@ -943,13 +928,13 @@ void ColumnIterator::updateParseDown(LinkedTopIterator* topIt) const
 // moves index "right" until unvisited base is found
 // if none exists in the current range, index is left one
 // spot out of bounds (invalid) and return false.
-void ColumnIterator::nextFreeIndex() const
+void ColumnIterator::nextFreeIndex()
 {
   hal_index_t index = _stack.top()->_index;
 
   if (_unique == true || _stack.size() > 1)
   {
-    VisitCache::iterator cacheIt = 
+    const VisitCache::iterator cacheIt = 
        _visitCache.find(_stack.top()->_sequence->getGenome());
     if (cacheIt != _visitCache.end())
     {
@@ -965,8 +950,7 @@ void ColumnIterator::nextFreeIndex() const
   _stack.top()->_index = index;
 }
 
-bool ColumnIterator::colMapInsert(DNAIteratorPtr dnaIt) const
-{
+bool ColumnIterator::colMapInsert(DNAIteratorPtr dnaIt) {
   const Sequence* sequence = dnaIt->getSequence();
   const Genome* genome = dnaIt->getGenome();
   assert(sequence != NULL);
@@ -1038,7 +1022,7 @@ bool ColumnIterator::colMapInsert(DNAIteratorPtr dnaIt) const
   return !found;
 }
 
-void ColumnIterator::resetColMap() const
+void ColumnIterator::resetColMap()
 {
   for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
   {
@@ -1046,7 +1030,7 @@ void ColumnIterator::resetColMap() const
   }
 }
 
-void ColumnIterator::eraseColMap() const
+void ColumnIterator::eraseColMap()
 {
   for (ColumnMap::iterator i = _colMap.begin(); i != _colMap.end(); ++i)
   {

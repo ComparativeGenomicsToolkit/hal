@@ -63,11 +63,11 @@ public:
                                 const std::string& childName,
                                 double upperBranchLength) = 0;
 
-   /** Open an existing genome for reading and updating
+   /** Open an exsting genome for reading
     * @param name Name of genome to open */
    virtual const Genome* openGenome(const std::string& name) const = 0;
 
-   /** Open an exsting genome for reading
+   /** Open an existing genome for reading and updating
     * @param name Name of genome to open */
    virtual Genome* openGenome(const std::string& name) = 0;
 

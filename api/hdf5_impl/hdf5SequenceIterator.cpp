@@ -25,26 +25,19 @@ HDF5SequenceIterator::~HDF5SequenceIterator()
 
 }
    
-SequenceIteratorPtr HDF5SequenceIterator::copy()
+SequenceIteratorPtr HDF5SequenceIterator::clone() const
 {
   HDF5SequenceIterator* newIt = new HDF5SequenceIterator(
     _sequence._genome, _sequence._index);
   return SequenceIteratorPtr(newIt);
 }
 
-SequenceIteratorPtr HDF5SequenceIterator::copy() const
-{
-  HDF5SequenceIterator* newIt = new HDF5SequenceIterator(
-    _sequence._genome, _sequence._index);
-  return SequenceIteratorPtr(newIt);
-}
-
-void HDF5SequenceIterator:: toNext() const
+void HDF5SequenceIterator:: toNext()
 {
   ++_sequence._index;
 }
 
-void HDF5SequenceIterator::toPrev() const
+void HDF5SequenceIterator::toPrev()
 {
   --_sequence._index;
 }

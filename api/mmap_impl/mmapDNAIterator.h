@@ -14,12 +14,12 @@ public:
 
     char getChar() const;
     void setChar(char c);
-    void toLeft() const;
-    void toRight() const;
-    void jumpTo(hal_size_t index) const;
-    void toReverse() const;
+    void toLeft();
+    void toRight();
+    void jumpTo(hal_size_t index);
+    void toReverse();
     bool getReversed() const;
-    void setReversed(bool reversed) const;
+    void setReversed(bool reversed);
     const Genome* getGenome() const;
     Genome* getGenome();
     const Sequence* getSequence() const;
@@ -28,16 +28,16 @@ public:
     bool equals(DNAIteratorPtr& other) const;
     bool leftOf(DNAIteratorPtr& other) const;
 
-    void readString(std::string& outString, hal_size_t length) const;
+    void readString(std::string& outString, hal_size_t length);
 
     void writeString(const std::string& inString, hal_size_t length);
 
     bool inRange() const;
 
 private:
-    mutable hal_index_t _index;
-    mutable MMapGenome *_genome;
-    mutable bool _reversed;
+    hal_index_t _index;
+    MMapGenome *_genome;
+    bool _reversed;
 };
 
 inline bool MMapDNAIterator::inRange() const
@@ -74,22 +74,22 @@ inline void MMapDNAIterator::setChar(char c)
   *_genome->getDNA(_index, 1) = c;
 }
 
-inline void MMapDNAIterator::toLeft() const
+inline void MMapDNAIterator::toLeft()
 {
   _reversed ? ++_index : --_index;
 }
 
-inline void MMapDNAIterator::toRight() const
+inline void MMapDNAIterator::toRight()
 {
   _reversed ? --_index : ++_index;
 }
 
-inline void MMapDNAIterator::jumpTo(hal_size_t index) const
+inline void MMapDNAIterator::jumpTo(hal_size_t index)
 {
   _index = index;
 }
 
-inline void MMapDNAIterator::toReverse() const
+inline void MMapDNAIterator::toReverse()
 {
   _reversed = !_reversed;
 }
@@ -99,7 +99,7 @@ inline bool MMapDNAIterator::getReversed() const
   return _reversed;
 }
 
-inline void MMapDNAIterator::setReversed(bool reversed) const
+inline void MMapDNAIterator::setReversed(bool reversed)
 {
   _reversed = reversed;
 }
@@ -141,7 +141,7 @@ inline bool MMapDNAIterator::leftOf(DNAIteratorPtr& other) const
 }
 
 inline void MMapDNAIterator::readString(std::string& outString,
-                                        hal_size_t length) const
+                                        hal_size_t length)
 {
   assert(length == 0 || inRange() == true);
   outString.resize(length);

@@ -36,33 +36,30 @@ public:
     }
    
    /** Return a new copy of the iterator */
-    TopSegmentIteratorPtr copy();
-
-   /** Return a new copy of the iterator */
-     TopSegmentIteratorPtr copy() const;
+     TopSegmentIteratorPtr clone() const;
 
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
     * @param ts Iterator to copy */
-    void copy(TopSegmentIteratorPtr ts) const;
+    void copy(TopSegmentIteratorPtr ts);
 
    /** Move the iterator to the child of a given bottom segment
     * @param bs Bottom segment whose child will be moved to
     * @param child Index of child in bottom segment's genome */
     void toChild(BottomSegmentIteratorPtr bs, 
-                 hal_size_t child) const;
+                 hal_size_t child);
 
    /** Move the iterator to the child of a given bottom segment
     * @param bs Bottom segment whose child will be moved to
     * @param childGenome genome of child in bottom segment */
     void toChildG(BottomSegmentIteratorPtr bs, 
-                  const Genome* childGenome) const;
+                  const Genome* childGenome);
    
    /** Given a bottom segment, move to the top segment that contains
     * its start position.  The genome remains unchanged.  The iterator
     * will be sliced accordingly (reversed state also taken into account)
     * @param bs Bottom segment to parse up from */
-    void toParseUp(BottomSegmentIteratorPtr bs) const;
+    void toParseUp(BottomSegmentIteratorPtr bs);
 
    /** DEPRECATED */
     TopSegment* getTopSegment() {
@@ -94,7 +91,7 @@ public:
    /** Move iterator to next paralgous segment.  Iterator will be reversed
    * if the next segment is in a different orientation wrt their common
    * parent */
-    void toNextParalogy() const;
+    void toNextParalogy();
 
     // FIXME: document or change way getting segment works
     virtual SegmentPtr getSegment();

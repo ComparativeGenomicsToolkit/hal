@@ -88,7 +88,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
       delBreakBedStream == NULL)
   {
     assert(snpBedStream != NULL);
-    TopSegmentIteratorPtr last = _top->copy();
+    TopSegmentIteratorPtr last = _top->clone();
     last->toSite(end);
     last->toRight();
     writeSubstitutions(_top, last);

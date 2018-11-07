@@ -26,10 +26,9 @@ public:
    ~HDF5SequenceIterator();
    
    // SEQUENCE ITERATOR METHODS
-   SequenceIteratorPtr copy();
-   SequenceIteratorPtr copy() const;
-   void toNext() const;
-   void toPrev() const;
+   SequenceIteratorPtr clone() const;
+   void toNext();
+   void toPrev();
    const Sequence* getSequence() const;
    bool equals(SequenceIteratorPtr other) const;
 

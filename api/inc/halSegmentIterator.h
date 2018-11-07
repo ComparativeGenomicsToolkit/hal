@@ -35,14 +35,14 @@ public:
     * genome position (DNA coordinate) specified by leftCutoff
     * the segment iterator is sliced to begin at this position 
     * (if the iterator is reversed, it moves in opposite direction) */
-    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const;
+    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX);
 
    /** move iterator one segment to the right 
     * @param rightCutoff If the right segment contains the 
     * genome position (DNA coordinate) specified by rightCutoff
     * the segment iterator is sliced to end at this position 
     * (if the iterator is reversed, it moves in opposite direction) */
-    virtual void toRight(hal_index_t rightCutoff = NULL_INDEX) const;
+    virtual void toRight(hal_index_t rightCutoff = NULL_INDEX);
 
    /** move iterator to position of dna site in *genome*
     * @param position index of site in genome
@@ -51,7 +51,7 @@ public:
     * entire segment. 
     * NOTE*** this function requires up to log2(N) time in current hdf5 imp.
     * though it should be faster on average*/
-    virtual void toSite(hal_index_t position, bool slice = true) const;
+    virtual void toSite(hal_index_t position, bool slice = true);
 
     /** has the iterator reach the end of the traversal in the direction of
      * movement? */
@@ -64,8 +64,6 @@ public:
    // SEGMENT INTERFACE
    virtual void setArrayIndex(Genome* genome, 
                               hal_index_t arrayIndex);
-   virtual void setArrayIndex(const Genome* genome, 
-                              hal_index_t arrayIndex) const;
    virtual const Genome* getGenome() const;
    virtual Genome* getGenome();
    virtual const Sequence* getSequence() const;
@@ -96,20 +94,20 @@ public:
 
     
    // SLICED SEGMENT INTERFACE 
-   virtual void toReverse() const;
-   virtual void toReverseInPlace() const;
+   virtual void toReverse();
+   virtual void toReverseInPlace();
    virtual hal_offset_t getStartOffset() const;
    virtual hal_offset_t getEndOffset() const;
    virtual void slice(hal_offset_t startOffset ,
-                      hal_offset_t endOffset ) const;
+                      hal_offset_t endOffset );
    virtual bool getReversed() const;
 protected:
    virtual bool inRange() const;
    virtual hal_size_t getNumSegmentsInGenome() const;
    
-   mutable hal_offset_t _startOffset;
-   mutable hal_offset_t _endOffset;
-   mutable bool _reversed;
+   hal_offset_t _startOffset;
+   hal_offset_t _endOffset;
+   bool _reversed;
 };
 
 HAL_FORWARD_DEC_CLASS(SegmentIterator)

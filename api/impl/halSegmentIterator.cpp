@@ -35,12 +35,6 @@ void SegmentIterator::setArrayIndex(Genome* genome,
   getSegment()->setArrayIndex(genome, arrayIndex);
 }
 
-void SegmentIterator::setArrayIndex(const Genome* genome, 
-                                         hal_index_t arrayIndex) const
-{
-  getSegment()->setArrayIndex(genome, arrayIndex);
-}
-
 const Genome* SegmentIterator::getGenome() const
 {
   return getSegment()->getGenome();
@@ -241,13 +235,13 @@ void SegmentIterator::print(ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 // SLICED SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void SegmentIterator::toReverse() const
+void SegmentIterator::toReverse()
 {
   assert (inRange() == true);
   _reversed = !_reversed;
 }
 
-void SegmentIterator::toReverseInPlace() const
+void SegmentIterator::toReverseInPlace()
 {
   assert (inRange() == true);
   _reversed = !_reversed;
@@ -265,7 +259,7 @@ hal_offset_t SegmentIterator::getEndOffset() const
 }
 
 void SegmentIterator::slice(hal_offset_t startOffset, 
-                                   hal_offset_t endOffset) const
+                            hal_offset_t endOffset)
 {
   assert(startOffset < getSegment()->getLength());
   assert(endOffset < getSegment()->getLength());
@@ -282,7 +276,7 @@ bool SegmentIterator::getReversed() const
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void SegmentIterator::toLeft(hal_index_t leftCutoff) const
+void SegmentIterator::toLeft(hal_index_t leftCutoff)
 {
   if (_reversed == false)
   {
@@ -331,7 +325,7 @@ void SegmentIterator::toLeft(hal_index_t leftCutoff) const
          _startOffset + _endOffset <= getSegment()->getLength());
 }
 
-void SegmentIterator::toRight(hal_index_t rightCutoff) const  
+void SegmentIterator::toRight(hal_index_t rightCutoff)
 {
   if (_reversed == false)
   {
@@ -380,9 +374,9 @@ void SegmentIterator::toRight(hal_index_t rightCutoff) const
           _startOffset + _endOffset <= getSegment()->getLength());
 }
 
-void SegmentIterator::toSite(hal_index_t position, bool slice) const
+void SegmentIterator::toSite(hal_index_t position, bool slice)
 {
-  const Genome* genome = getGenome();
+    Genome* genome = getGenome();
   hal_index_t len = (hal_index_t)genome->getSequenceLength();
   hal_index_t nseg = (hal_index_t)getNumSegmentsInGenome();
   

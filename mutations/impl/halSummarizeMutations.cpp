@@ -267,7 +267,7 @@ void SummarizeMutations::subsAndGapInserts(
   BottomSegmentIteratorPtr p = 
      l->getTopSegment()->getGenome()->getParent()->getBottomSegmentIterator();
 
-  for (TopSegmentIteratorPtr i = l->copy(); 
+  for (TopSegmentIteratorPtr i = l->clone(); 
        i->getTopSegment()->getArrayIndex() <= 
           r->getTopSegment()->getArrayIndex();
        i->toRight())

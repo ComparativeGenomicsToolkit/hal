@@ -51,14 +51,14 @@ public:
 
    /** Flip the mapping direction.  This segment becomes the source, and
     * the source becomes this.*/
-   virtual void flip() const;
+   virtual void flip();
 
    /** Reverse both segments.  Also swap their start and end offsets. 
     * Note that toReverse() does not reverse the source segment.*/
-   virtual void fullReverse() const;
+   virtual void fullReverse();
    
    /** Return of a copy of the mapped segment */
-   virtual MappedSegmentPtr copy() const;
+   virtual MappedSegmentPtr clone() const;
 
    /** Test if mapped segment can be merged to the right with input 
     * segment.  will return false if the right coordinate of this is in
@@ -92,10 +92,8 @@ public:
     virtual void print(std::ostream& os) const;
 
    // SEGMENT INTERFACE
-   virtual void setArrayIndex(Genome* genome, 
+   virtual void setArrayIndex( Genome* genome, 
                               hal_index_t arrayIndex);
-   virtual void setArrayIndex(const Genome* genome, 
-                              hal_index_t arrayIndex) const;
    virtual const Genome* getGenome() const;
    virtual Genome* getGenome();
    virtual const Sequence* getSequence() const;
@@ -122,12 +120,12 @@ public:
      const Genome *mrca = NULL) const;
 
    // SLICED SEGMENT INTERFACE 
-   virtual void toReverse() const;
-   virtual void toReverseInPlace() const;
+   virtual void toReverse();
+   virtual void toReverseInPlace();
    virtual hal_offset_t getStartOffset() const;
    virtual hal_offset_t getEndOffset() const;
-   virtual void slice(hal_offset_t startOffset ,
-                      hal_offset_t endOffset ) const;
+   virtual void slice(hal_offset_t startOffset,
+                      hal_offset_t endOffset );
    virtual bool getReversed() const;
 
    // INTERNAL METHODS
@@ -250,13 +248,13 @@ private:
    BottomSegmentIteratorPtr targetAsBottom() const;
    TopSegmentIteratorPtr sourceAsTop() const;
    BottomSegmentIteratorPtr sourceAsBottom() const;
-   SegmentIteratorPtr sourceCopy() const;
+   SegmentIteratorPtr sourceclone() const;
 
    
 private:
 
-   mutable SegmentIteratorPtr _source;
-   mutable SegmentIteratorPtr _target;
+   SegmentIteratorPtr _source;
+   SegmentIteratorPtr _target;
 };
 }
 
@@ -282,12 +280,12 @@ hal::BottomSegmentIteratorPtr hal::MappedSegment::sourceAsBottom() const
     return std::dynamic_pointer_cast<BottomSegmentIterator>(_source);
 }
 
-inline hal::SegmentIteratorPtr hal::MappedSegment::sourceCopy() const
+inline hal::SegmentIteratorPtr hal::MappedSegment::sourceclone() const
 {
   if (_source->isTop()) {
-    return sourceAsTop()->copy();
+    return sourceAsTop()->clone();
   } else {
-      return sourceAsBottom()->copy();
+      return sourceAsBottom()->clone();
   }
 }
 

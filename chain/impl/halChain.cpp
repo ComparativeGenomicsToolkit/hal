@@ -122,7 +122,7 @@ void hal::gtIteratorToChain(GappedTopSegmentIteratorPtr top,
 void convertBlocks(TopSegmentIteratorPtr firstIt, 
                    Chain& outChain)
 {
-  TopSegmentIteratorPtr topIt = firstIt->copy();
+  TopSegmentIteratorPtr topIt = firstIt->clone();
   const Sequence* sequence = topIt->getSequence();
   // back to genome coordinates
   hal_index_t start = (hal_index_t)outChain._qStart +

@@ -39,15 +39,15 @@ Rearrangement::Rearrangement(const Genome* childGenome,
   // just allocating here -- need to be properly init
   _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold, _atomic);
   assert(_cur->getGapThreshold() == _gapThreshold);
-  _next = _cur->copy();
-  _left = _cur->copy();
-  _right = _left->copy();
+  _next = _cur->clone();
+  _left = _cur->clone();
+  _right = _left->clone();
   _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold,
     _atomic);
-  _rightParent = _leftParent->copy();
-  _curParent = _leftParent->copy();
-  _nextParent = _leftParent->copy();
-  _top = _cur->getLeft()->copy();
+  _rightParent = _leftParent->clone();
+  _curParent = _leftParent->clone();
+  _nextParent = _leftParent->clone();
+  _top = _cur->getLeft()->clone();
 }
 
 // Rearrangement Interface Methods
@@ -156,7 +156,7 @@ bool Rearrangement::identifyFromLeftBreakpoint(
 /*
     if (_cur->getLeft()->getTopSegment()->getArrayIndex() == 1219)
     {
-      GappedBottomSegmentIteratorPtr bt = _leftParent->copy();
+      GappedBottomSegmentIteratorPtr bt = _leftParent->clone();
       cout << "bt copy " << bt << endl;
       bt->toRight();
       cout << "bt right " << bt << endl;
@@ -288,15 +288,15 @@ void Rearrangement::setGapLengthThreshold(hal_size_t threshold)
 {
   _gapThreshold = threshold;
   _cur = _genome->getGappedTopSegmentIterator(0, _gapThreshold, _atomic);
-  _next = _cur->copy();
-  _left = _cur->copy();
-  _right = _left->copy();
+  _next = _cur->clone();
+  _left = _cur->clone();
+  _right = _left->clone();
   _leftParent = _parent->getGappedBottomSegmentIterator(0, 0, _gapThreshold,
     _atomic);
-  _rightParent = _leftParent->copy();
-  _curParent = _leftParent->copy();
-  _nextParent = _leftParent->copy();
-  _top = _cur->getLeft()->copy();
+  _rightParent = _leftParent->clone();
+  _curParent = _leftParent->clone();
+  _nextParent = _leftParent->clone();
+  _top = _cur->getLeft()->clone();
 }
 
 bool Rearrangement::getAtomic() const

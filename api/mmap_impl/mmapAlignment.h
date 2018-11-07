@@ -70,8 +70,7 @@ class MMapAlignment : public Alignment {
     };
 
     const Genome* openGenome(const std::string& name) const {
-        Genome *genome = _openGenome(name);
-        return const_cast<const Genome *>(genome);
+        return const_cast<const Genome *>(_openGenome(name));
     };
 
     Genome* openGenome(const std::string& name) {
@@ -191,7 +190,6 @@ class MMapAlignment : public Alignment {
     };
 
 private:
-    mutable std::map<std::string, MMapGenome *> _openGenomes;
     void initializeFromOptions(CLParserConstPtr parser);
     void create();
     void open();
@@ -218,6 +216,7 @@ private:
         _data->setNewickString(this, newickString);
         free(newickString);
     };
+    mutable std::map<std::string, MMapGenome *> _openGenomes;
     std::string _alignmentPath;
     unsigned _mode;
     size_t _initSize;

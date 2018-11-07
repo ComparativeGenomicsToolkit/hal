@@ -31,18 +31,15 @@ public:
     virtual ~GappedBottomSegmentIterator() {
     }
 
-    /** Return a copy of the iterator */
-   virtual GappedBottomSegmentIteratorPtr copy();
-
    /** Return a copy of the iterator */
-   virtual GappedBottomSegmentIteratorPtr copy() const;
+   virtual GappedBottomSegmentIteratorPtr clone() const;
 
    /** Copy another iterator into the current iterator (more efficient
     * than above methods since no new iterators are created */
-   virtual void copy(GappedBottomSegmentIteratorPtr ts) const;
+   virtual void copy(GappedBottomSegmentIteratorPtr ts);
 
    /** Move to parent */
-   virtual void toParent(GappedTopSegmentIteratorPtr ts) const;
+   virtual void toParent(GappedTopSegmentIteratorPtr ts);
 
    /** Test equality with other iterator 
     * @param other */
@@ -70,13 +67,11 @@ public:
    /** Reset the gapped iterator.
     * @param ts This will be the left segment of the current iterator. The 
     * right segment will be extended as far as possible */
-   virtual void setLeft(BottomSegmentIteratorPtr bs) const;
+   virtual void setLeft(BottomSegmentIteratorPtr bs);
 
     // SEGMENT INTERFACE
-   virtual void setArrayIndex(Genome* genome, 
+   virtual void setArrayIndex( Genome* genome, 
                               hal_index_t arrayIndex);
-   virtual void setArrayIndex(const Genome* genome, 
-                              hal_index_t arrayIndex) const;
    virtual const Genome* getGenome() const;
    virtual Genome* getGenome();
    virtual const Sequence* getSequence() const;
@@ -109,15 +104,15 @@ public:
 
 
    // SEGMENT ITERATOR IrNTERFACE
-   virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX) const;
-   virtual void toRight(hal_index_t rightCutoff = NULL_INDEX) const;
-   virtual void toReverse() const;
-   virtual void toReverseInPlace() const;
-   virtual void toSite(hal_index_t position, bool slice = true) const;
+   virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX);
+   virtual void toRight(hal_index_t rightCutoff = NULL_INDEX);
+   virtual void toReverse();
+   virtual void toReverseInPlace();
+   virtual void toSite(hal_index_t position, bool slice = true);
    virtual hal_offset_t getStartOffset() const;
    virtual hal_offset_t getEndOffset() const;
    virtual void slice(hal_offset_t startOffset,
-                      hal_offset_t endOffset) const;
+                      hal_offset_t endOffset);
    virtual bool getReversed() const;
 
    // GAPPED SEGMENT ITERATOR INTERFACE
@@ -135,8 +130,8 @@ private:
    bool compatible(BottomSegmentIteratorPtr left,
                    BottomSegmentIteratorPtr right) const;
 
-   void extendRight() const;
-   void extendLeft() const;
+   void extendRight();
+   void extendLeft();
 
    void toLeftNextUngapped(BottomSegmentIteratorPtr bs) const;
    void toRightNextUngapped(BottomSegmentIteratorPtr bs) const;
@@ -145,17 +140,17 @@ private:
    
    // keep convention of other iterators where const-ness only applies
    // to the database and not the iterator...
-   mutable BottomSegmentIteratorPtr _left;
-   mutable BottomSegmentIteratorPtr _right;
-   mutable TopSegmentIteratorPtr _leftChild;
-   mutable TopSegmentIteratorPtr _rightChild;
-   mutable TopSegmentIteratorPtr _leftDup;
-   mutable TopSegmentIteratorPtr _rightDup;
-   mutable BottomSegmentIteratorPtr _temp;
+   BottomSegmentIteratorPtr _left;
+   BottomSegmentIteratorPtr _right;
+   TopSegmentIteratorPtr _leftChild;
+   TopSegmentIteratorPtr _rightChild;
+   TopSegmentIteratorPtr _leftDup;
+   TopSegmentIteratorPtr _rightDup;
+   mutable BottomSegmentIteratorPtr _temp;  // FIXME: this is hacky
    mutable BottomSegmentIteratorPtr _temp2;
-   mutable hal_size_t _childIndex;
-   mutable hal_size_t _gapThreshold;  
-   mutable bool _atomic;
+   hal_size_t _childIndex;
+   hal_size_t _gapThreshold;  
+   bool _atomic;
   
 };
 

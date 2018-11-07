@@ -29,7 +29,7 @@ public:
     * @param genome Smart pointer to genome to which segment belongs
     * @param array HDF5 array containg segment
     * @param index Index of segment in the array */
-   HDF5BottomSegment(HDF5Genome* genome,
+   HDF5BottomSegment( HDF5Genome* genome,
                      HDF5ExternalArray* array,
                      hal_index_t index);
 
@@ -38,7 +38,6 @@ public:
 
    // SEGMENT INTERFACE
    void setArrayIndex(Genome* genome, hal_index_t arrayIndex);
-   void setArrayIndex(const Genome* genome, hal_index_t arrayIndex) const;
    const Genome* getGenome() const;
    Genome* getGenome();
    const Sequence* getSequence() const;
@@ -94,9 +93,9 @@ private:
    static const size_t firstChildOffset;
    static const size_t totalSize(hal_size_t numChildren);
 
-   mutable HDF5ExternalArray* _array;
-   mutable hal_index_t _index;
-   mutable HDF5Genome* _genome;
+   HDF5ExternalArray* _array;
+   hal_index_t _index;
+    HDF5Genome* _genome;
 };
 
 
@@ -109,17 +108,6 @@ inline void HDF5BottomSegment::setArrayIndex(Genome* genome,
   _array = &_genome->_bottomArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;  
-}
-
-inline void HDF5BottomSegment::setArrayIndex(const Genome* genome, 
-                                             hal_index_t arrayIndex) const
-{
-  const HDF5Genome* h5Genome = dynamic_cast<const HDF5Genome*>(genome);
-  assert(h5Genome != NULL);
-  _genome = const_cast<HDF5Genome*>(h5Genome);
-  _array = &_genome->_bottomArray;
-  assert(arrayIndex < (hal_index_t)_array->getSize());
-  _index = arrayIndex;
 }
 
 inline hal_index_t HDF5BottomSegment::getStartPosition() const
@@ -148,7 +136,7 @@ inline const Genome* HDF5BottomSegment::getGenome() const
 
 inline Genome* HDF5BottomSegment::getGenome()
 {
-  return _genome;
+    return _genome;
 }
 
 inline const Sequence* HDF5BottomSegment::getSequence() const

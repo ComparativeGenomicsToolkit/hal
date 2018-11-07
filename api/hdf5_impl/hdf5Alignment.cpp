@@ -487,19 +487,7 @@ void HDF5Alignment::removeGenome(const string& name)
 
 const Genome* HDF5Alignment::openGenome(const string& name) const
 {
-  map<string, HDF5Genome*>::iterator mapit = _openGenomes.find(name);
-  if (mapit != _openGenomes.end())
-  {
-    return mapit->second;
-  }
-  HDF5Genome* genome = NULL;
-  if (_nodeMap.find(name) != _nodeMap.end())
-  {
-    genome = new HDF5Genome(name, const_cast<HDF5Alignment*>(this), 
-                            _file, _dcprops, _inMemory);
-    _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
-  }
-  return genome;
+    return const_cast<HDF5Alignment*>(this)->openGenome(name);
 }
 
 Genome* HDF5Alignment::openGenome(const string& name)

@@ -780,7 +780,7 @@ void HDF5Genome::loadSequencePosCache() const
   if (_sequenceNameCache.size() > 0)
   {
     assert(_sequenceNameCache.size() == numSequences);
-    map<std::string, HDF5Sequence*>::iterator i;
+    map<std::string, HDF5Sequence*>::const_iterator i;
     for (i = _sequenceNameCache.begin(); i != _sequenceNameCache.end(); ++i)
     {
       if (i->second->getSequenceLength() > 0)

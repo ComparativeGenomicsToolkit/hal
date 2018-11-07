@@ -387,7 +387,7 @@ SegmentIteratorPtr BlockMapper::makeIterator(
   return segIt;
 }
 
-bool BlockMapper::cutByNext(SlicedSegmentConstPtr queryIt, 
+bool BlockMapper::cutByNext(SlicedSegmentPtr queryIt, 
                             SlicedSegmentConstPtr nextSeg,
                             bool right)
 {

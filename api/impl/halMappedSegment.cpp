@@ -78,12 +78,12 @@ bool MappedSegment::equals(const MappedSegmentPtr& other) const
   return res == 0;
 }
 
-void MappedSegment::flip() const
+void MappedSegment::flip()
 {
   swap(_source, _target);
 }
 
-void MappedSegment::fullReverse() const
+void MappedSegment::fullReverse()
 {
   _source->slice(_source->getEndOffset(), _source->getStartOffset());
   _source->toReverse();
@@ -92,24 +92,24 @@ void MappedSegment::fullReverse() const
   assert(_source->getLength() == _target->getLength());
 }
 
-MappedSegmentPtr MappedSegment::copy() const
+MappedSegmentPtr MappedSegment::clone() const
 {
   SegmentIteratorPtr srcCpy;
   if (_source->isTop())
   {
-    srcCpy = std::dynamic_pointer_cast<TopSegmentIterator>(_source)->copy();
+    srcCpy = std::dynamic_pointer_cast<TopSegmentIterator>(_source)->clone();
   }
   else
   {
-    srcCpy = std::dynamic_pointer_cast<BottomSegmentIterator>(_source)->copy();
+    srcCpy = std::dynamic_pointer_cast<BottomSegmentIterator>(_source)->clone();
   }
   SegmentIteratorPtr srcIt = std::dynamic_pointer_cast<SegmentIterator>(srcCpy);
 
   SegmentIteratorPtr tgtCpy;
   if (_target->isTop())
   {
-      tgtCpy = std::dynamic_pointer_cast<TopSegmentIterator>(_target)->copy();
-  } else { tgtCpy = std::dynamic_pointer_cast<BottomSegmentIterator>(_target)->copy();
+      tgtCpy = std::dynamic_pointer_cast<TopSegmentIterator>(_target)->clone();
+  } else { tgtCpy = std::dynamic_pointer_cast<BottomSegmentIterator>(_target)->clone();
   }
   SegmentIteratorPtr tgtIt = 
      std::static_pointer_cast<SegmentIterator>(tgtCpy);
@@ -286,7 +286,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
     if ((hal_size_t)bot->getArrayIndex() <
         bot->getGenome()->getNumBottomSegments()-1)
     {
-      bot = bot->copy();
+      bot = bot->clone();
       bot->slice(0,0);
       bot->toRight();
       ub = bot->getTopParseIndex();
@@ -309,7 +309,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
     if ((hal_size_t)top->getArrayIndex() < 
         top->getGenome()->getNumTopSegments()-1)
     {
-      top = top->copy();
+      top = top->clone();
       top->slice(0,0);
       top->toRight();
       ub = top->getBottomParseIndex();
@@ -383,13 +383,13 @@ hal_size_t MappedSegment::map(const SegmentIterator* source,
   SegmentIteratorPtr startTarget;
   if (source->isTop())
   {
-    startSource = dynamic_cast<const TopSegmentIterator*>(source)->copy();
-    startTarget = dynamic_cast<const TopSegmentIterator*>(source)->copy();
+    startSource = dynamic_cast<const TopSegmentIterator*>(source)->clone();
+    startTarget = dynamic_cast<const TopSegmentIterator*>(source)->clone();
   }
   else
   {
-    startSource = dynamic_cast<const BottomSegmentIterator*>(source)->copy();
-    startTarget = dynamic_cast<const BottomSegmentIterator*>(source)->copy();
+    startSource = dynamic_cast<const BottomSegmentIterator*>(source)->clone();
+    startTarget = dynamic_cast<const BottomSegmentIterator*>(source)->clone();
   }
   
   MappedSegmentPtr newMappedSeg(new MappedSegment(startSource, startTarget)); 
@@ -682,18 +682,18 @@ hal_size_t MappedSegment::mapUp(
     top->toParseUp(bottom);
     do
     {
-      TopSegmentIteratorPtr topNew = top->copy();
+      TopSegmentIteratorPtr topNew = top->clone();
       
       // we map the new target back to see how the offsets have 
       // changed.  these changes are then applied to the source segment
       // as deltas
-      BottomSegmentIteratorPtr bottomBack = bottom->copy();
+      BottomSegmentIteratorPtr bottomBack = bottom->clone();
       bottomBack->toParseDown(topNew);
       hal_index_t startBack = (hal_index_t)bottomBack->getStartOffset();
       hal_index_t endBack = (hal_index_t)bottomBack->getEndOffset();
       assert(startBack >= startOffset);
       assert(endBack >= endOffset);
-      SegmentIteratorPtr newSource = mappedSeg->sourceCopy();
+      SegmentIteratorPtr newSource = mappedSeg->sourceclone();
       hal_index_t startDelta = startBack - startOffset;
       hal_index_t endDelta = endBack - endOffset;
       assert((hal_index_t)newSource->getLength() > startDelta + endDelta);
@@ -759,18 +759,18 @@ hal_size_t MappedSegment::mapDown(
     bottom->toParseDown(top);
     do
     {
-      BottomSegmentIteratorPtr bottomNew = bottom->copy();
+      BottomSegmentIteratorPtr bottomNew = bottom->clone();
       
       // we map the new target back to see how the offsets have 
       // changed.  these changes are then applied to the source segment
       // as deltas
-      TopSegmentIteratorPtr topBack = top->copy();
+      TopSegmentIteratorPtr topBack = top->clone();
       topBack->toParseUp(bottomNew);
       hal_index_t startBack = (hal_index_t)topBack->getStartOffset();
       hal_index_t endBack = (hal_index_t)topBack->getEndOffset();
       assert(startBack >= startOffset);
       assert(endBack >= endOffset);
-      SegmentIteratorPtr newSource = mappedSeg->sourceCopy();
+      SegmentIteratorPtr newSource = mappedSeg->sourceclone();
       hal_index_t startDelta = startBack - startOffset;
       hal_index_t endDelta = endBack - endOffset;
       assert((hal_index_t)newSource->getLength() > startDelta + endDelta);
@@ -814,17 +814,17 @@ hal_size_t MappedSegment::mapSelf(
     SegmentIteratorPtr source = mappedSeg->_source;
     TopSegmentIteratorPtr top =
         std::dynamic_pointer_cast<TopSegmentIterator>(target);
-    TopSegmentIteratorPtr topCopy = top->copy();
+    TopSegmentIteratorPtr topCopy = top->clone();
     do
     {
-        // FIXME: why isn't copy() polymorphic?
+        // FIXME: why isn't clone() polymorphic?
         SegmentIteratorPtr newSource;
         if (source->isTop()) {
-            newSource = std::dynamic_pointer_cast<TopSegmentIterator>(source)->copy();
+            newSource = std::dynamic_pointer_cast<TopSegmentIterator>(source)->clone();
         } else {
-            newSource = std::dynamic_pointer_cast<BottomSegmentIterator>(source)->copy();
+            newSource = std::dynamic_pointer_cast<BottomSegmentIterator>(source)->clone();
         }
-      TopSegmentIteratorPtr newTop = topCopy->copy();
+      TopSegmentIteratorPtr newTop = topCopy->clone();
       MappedSegmentPtr newMappedSeg(
         new MappedSegment(newSource, newTop));
       assert(newMappedSeg->getGenome() == mappedSeg->getGenome());
@@ -852,18 +852,18 @@ hal_size_t MappedSegment::mapSelf(
     top->toParseUp(bottom);
     do
     {
-      TopSegmentIteratorPtr topNew = top->copy();
+      TopSegmentIteratorPtr topNew = top->clone();
       
       // we map the new target back to see how the offsets have 
       // changed.  these changes are then applied to the source segment
       // as deltas
-      BottomSegmentIteratorPtr bottomBack = bottom->copy();
+      BottomSegmentIteratorPtr bottomBack = bottom->clone();
       bottomBack->toParseDown(topNew);
       hal_index_t startBack = (hal_index_t)bottomBack->getStartOffset();
       hal_index_t endBack = (hal_index_t)bottomBack->getEndOffset();
       assert(startBack >= startOffset);
       assert(endBack >= endOffset);
-      SegmentIteratorPtr newSource = mappedSeg->sourceCopy();
+      SegmentIteratorPtr newSource = mappedSeg->sourceclone();
       hal_index_t startDelta = startBack - startOffset;
       hal_index_t endDelta = endBack - endOffset;
       assert((hal_index_t)newSource->getLength() > startDelta + endDelta);
@@ -1014,7 +1014,7 @@ MappedSegment::clipAagainstB(MappedSegmentPtr segA,
   }
   // FIXME: my are these cast from const?
   MappedSegmentPtr left = const_pointer_cast<MappedSegment>(segA);
-  MappedSegmentPtr middle = const_pointer_cast<MappedSegment>(segA->copy());
+  MappedSegmentPtr middle = const_pointer_cast<MappedSegment>(segA->clone());
   MappedSegmentPtr right;
 
   hal_index_t startO = segA->getStartOffset();
@@ -1025,7 +1025,7 @@ MappedSegment::clipAagainstB(MappedSegmentPtr segA,
   hal_index_t middleSize = length - leftSize - rightSize;
   if (rightSize > 0)
   {
-      right = const_pointer_cast<MappedSegment>(segA->copy());
+      right = const_pointer_cast<MappedSegment>(segA->clone());
   }
 
   assert (overlapCat == AOverlapsLeftOfB || overlapCat == BOverlapsLeftOfA ||
@@ -1093,10 +1093,6 @@ void MappedSegment::insertAndBreakOverlaps(
   MappedSegmentPtr seg,
   MappedSegmentSet& results)
 {
-  // MappedSegmentPtr blin = seg->copy();
-  // blin->slice(seg->getStartOffset(), 
-  //             seg->getEndOffset());
-  // results.insert(blin); return;
   assert(seg->getLength() == seg->getSource()->getLength());
   list<MappedSegmentPtr> inputSegs;
   vector<MappedSegmentPtr> clippedSegs;
@@ -1154,13 +1150,7 @@ void MappedSegment::insertAndBreakOverlaps(
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
 void MappedSegment::setArrayIndex(Genome* genome, 
-                                         hal_index_t arrayIndex)
-{
-  _target->setArrayIndex(genome, arrayIndex);
-}
-
-void MappedSegment::setArrayIndex(const Genome* genome, 
-                                         hal_index_t arrayIndex) const
+                                  hal_index_t arrayIndex)
 {
   _target->setArrayIndex(genome, arrayIndex);
 }
@@ -1291,13 +1281,13 @@ void MappedSegment::print(ostream& os) const
 // SLICED SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
 
-void MappedSegment::toReverse() const
+void MappedSegment::toReverse()
 {
   assert(_target->getLength() == _source->getLength());
   _target->toReverse();
 }
 
-void MappedSegment::toReverseInPlace() const
+void MappedSegment::toReverseInPlace()
 {
   assert(_target->getLength() == _source->getLength());
   _target->toReverseInPlace();
@@ -1316,7 +1306,7 @@ hal_offset_t MappedSegment::getEndOffset() const
 }
 
 void MappedSegment::slice(hal_offset_t startOffset ,
-                                 hal_offset_t endOffset ) const
+                                 hal_offset_t endOffset )
 {
   assert(_source->getLength() == _target->getLength());
   hal_index_t startDelta = startOffset - _target->getStartOffset();

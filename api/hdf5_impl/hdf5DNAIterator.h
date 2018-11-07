@@ -31,12 +31,12 @@ public:
    
    char getChar() const;
    void setChar(char c);
-   void toLeft() const;
-   void toRight() const;
-   void jumpTo(hal_size_t index) const;
-   void toReverse() const;
+   void toLeft();
+   void toRight();
+   void jumpTo(hal_size_t index);
+   void toReverse();
    bool getReversed() const;
-   void setReversed(bool reversed) const;
+   void setReversed(bool reversed);
    const Genome* getGenome() const;
    Genome* getGenome();
    const Sequence* getSequence() const;
@@ -45,7 +45,7 @@ public:
    bool equals(DNAIteratorPtr& other) const;
    bool leftOf(DNAIteratorPtr& other) const;
 
-   void readString(std::string& outString, hal_size_t length) const;
+   void readString(std::string& outString, hal_size_t length);
 
    void writeString(const std::string& inString, hal_size_t length);
 
@@ -53,9 +53,9 @@ public:
    
 
 private:
-   mutable hal_index_t _index;
-   mutable HDF5Genome* _genome;
-   mutable bool _reversed;
+   hal_index_t _index;
+   HDF5Genome* _genome;
+   bool _reversed;
 };
 
 inline bool HDF5DNAIterator::inRange() const
@@ -96,22 +96,22 @@ inline void HDF5DNAIterator::setChar(char c)
   assert(getChar() == !_reversed ? c : reverseComplement(c));
 }
 
-inline void HDF5DNAIterator::toLeft() const
+inline void HDF5DNAIterator::toLeft()
 {
   _reversed ? ++_index : --_index;
 }
 
-inline void HDF5DNAIterator::toRight() const
+inline void HDF5DNAIterator::toRight()
 {
   _reversed ? --_index : ++_index;
 }
 
-inline void HDF5DNAIterator::jumpTo(hal_size_t index) const
+inline void HDF5DNAIterator::jumpTo(hal_size_t index)
 {
   _index = static_cast<hal_index_t>(index);
 }
 
-inline void HDF5DNAIterator::toReverse() const
+inline void HDF5DNAIterator::toReverse()
 {
   _reversed = !_reversed;
 }
@@ -121,7 +121,7 @@ inline bool HDF5DNAIterator::getReversed() const
   return _reversed;
 }
 
-inline void HDF5DNAIterator::setReversed(bool reversed) const
+inline void HDF5DNAIterator::setReversed(bool reversed)
 {
   _reversed = reversed;
 }
@@ -163,7 +163,7 @@ inline bool HDF5DNAIterator::leftOf(DNAIteratorPtr& other) const
 }
 
 inline void HDF5DNAIterator::readString(std::string& outString,
-                                        hal_size_t length) const
+                                        hal_size_t length)
 {
   assert(length == 0 || inRange() == true);
   outString.resize(length);

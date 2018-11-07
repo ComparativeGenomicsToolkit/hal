@@ -138,10 +138,10 @@ private:
    static const size_t bottomSegmentArrayIndexOffset;
    static const size_t totalSize;
    
-   mutable HDF5ExternalArray* _idxArray;
-   mutable HDF5ExternalArray* _nameArray;
-   mutable hal_index_t _index;
-   mutable HDF5Genome* _genome;
+   HDF5ExternalArray* _idxArray;
+   HDF5ExternalArray* _nameArray;
+   hal_index_t _index;
+   HDF5Genome* _genome;
 };
 
 }

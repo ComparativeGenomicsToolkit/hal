@@ -33,14 +33,6 @@ public:
     */
    virtual void setArrayIndex(Genome* genome, hal_index_t arrayIndex) = 0;
 
-   /** Set the current array index of the segment.  This writes no information
-    * to the database, but just moves the position of the segment
-    * @param genome Genome whose array we want to move segment to
-    * @param arrayIndex Index in genomes array (in genome segment coordinates) 
-    */
-   virtual void setArrayIndex(const Genome* genome, hal_index_t arrayIndex) 
-   const = 0;
- 
    /** Get the containing (read-only) genome */
    virtual const Genome* getGenome() const = 0;
 

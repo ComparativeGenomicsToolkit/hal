@@ -403,7 +403,7 @@ void hal::validateAlignment(AlignmentConstPtr alignment)
     bfQueue.pop_back();
     if (name.empty() == false)
     {
-      const Genome* genome = alignment->openGenome(name);
+        const Genome* genome = alignment->openGenome(name);
       if (genome == NULL)
       {
         throw hal_exception("Failure to open genome " + name);

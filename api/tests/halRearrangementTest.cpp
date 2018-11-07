@@ -101,7 +101,7 @@ void makeInsGap(TopSegmentIteratorPtr ti)
     }
     bi->getReversed() ? bi->toLeft() : bi->toRight();
   }
-  TopSegmentIteratorPtr topIt = ti->copy();
+  TopSegmentIteratorPtr topIt = ti->clone();
   topIt->getTopSegment()->setParentIndex(NULL_INDEX);
   topIt->toRight();
   while (not topIt->atEnd())
@@ -116,8 +116,8 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
 {
   Genome* parent = botIt->getBottomSegment()->getGenome();
   Genome* genome = parent->getChild(0);
-  BottomSegmentIteratorPtr bi = botIt->copy();
-  BottomSegmentIteratorPtr bi2 = botIt->copy();
+  BottomSegmentIteratorPtr bi = botIt->clone();
+  BottomSegmentIteratorPtr bi2 = botIt->clone();
   TopSegmentIteratorPtr ti =  genome->getTopSegmentIterator();
   TopSegmentIteratorPtr ti2 =  genome->getTopSegmentIterator();
   assert(bi->hasChild(0) == true);
@@ -130,7 +130,7 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
   {
     hal_index_t prevIndex2 = bi->getBottomSegment()->getChildIndex(0);
     bool prevReversed2 = bi->getBottomSegment()->getChildReversed(0);
-    bi2 = bi->copy();
+    bi2 = bi->clone();
     assert(bi2->getReversed() == false);
     bi2->toLeft();
     bi->getBottomSegment()->setChildIndex(0, prevIndex);
@@ -149,7 +149,7 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
     }
     else
     {
-      ti2 = ti->copy();
+      ti2 = ti->clone();
       if (ti->getTopSegment()->isLast() == false)
       {
         ti2->getReversed() ? ti2->toLeft() : ti2->toRight();

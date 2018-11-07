@@ -32,25 +32,22 @@ public:
     ~BottomSegmentIterator() {
     }
 
-    /** Return a new copy of the iterator */
-    BottomSegmentIteratorPtr copy();
-
    /** Return a new copy of the iterator */
-    BottomSegmentIteratorPtr copy() const;
+    BottomSegmentIteratorPtr clone() const;
 
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
     * @param ts Iterator to copy */
-    void copy(BottomSegmentIteratorPtr bs) const;
+    void copy(BottomSegmentIteratorPtr bs);
 
    /** Move the iterator to the parent segment of a given iterator
     * @param ts Iterator whose parent to move to */
-    void toParent(TopSegmentIteratorPtr ts) const; 
+    void toParent(TopSegmentIteratorPtr ts); 
 
    /** Move the iterator down to the bottom segment containing the
     * start position of the given iterator in the same genome
     * @param ts Top iterator to parse down on */
-    void toParseDown(TopSegmentIteratorPtr ts) const;
+    void toParseDown(TopSegmentIteratorPtr ts);
 
    /** DEPRECATED */
     BottomSegment* getBottomSegment() {

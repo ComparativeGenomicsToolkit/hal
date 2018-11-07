@@ -28,14 +28,14 @@ GappedTopSegmentIterator::GappedTopSegmentIterator(
   assert(genome && parent);
   assert(atomic == false || _gapThreshold == 0);
   _childIndex = parent->getChildIndex(genome);
-  _left = left->copy();
-  _right = left->copy();
-  _temp = left->copy();
-  _temp2 = left->copy();
-  _leftDup = left->copy();
-  _rightDup = left->copy();
+  _left = left->clone();
+  _right = left->clone();
+  _temp = left->clone();
+  _temp2 = left->clone();
+  _leftDup = left->clone();
+  _rightDup = left->clone();
   _leftParent = parent->getBottomSegmentIterator();
-  _rightParent = _leftParent->copy();
+  _rightParent = _leftParent->clone();
   setLeft(left);
 }
 
@@ -54,14 +54,7 @@ SegmentConstPtr GappedTopSegmentIterator::getSegment() const
 // SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
 void GappedTopSegmentIterator::setArrayIndex(Genome* genome, 
-                                                    hal_index_t arrayIndex)
-{
-  setLeft(genome->getTopSegmentIterator(arrayIndex));
-}
-
-void GappedTopSegmentIterator::setArrayIndex(const Genome* genome, 
-                                                    hal_index_t arrayIndex) 
-  const
+                                             hal_index_t arrayIndex)
 {
   setLeft(genome->getTopSegmentIterator(arrayIndex));
 }
@@ -215,7 +208,7 @@ void GappedTopSegmentIterator::print(std::ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void GappedTopSegmentIterator::toLeft(hal_index_t leftCutoff) const
+void GappedTopSegmentIterator::toLeft(hal_index_t leftCutoff)
 {
   assert(_right->getReversed() == _left->getReversed());
   assert(_left->equals(_right) || _left->getReversed() || 
@@ -236,7 +229,7 @@ void GappedTopSegmentIterator::toLeft(hal_index_t leftCutoff) const
   }
 }
 
-void GappedTopSegmentIterator::toRight(hal_index_t rightCutoff) const
+void GappedTopSegmentIterator::toRight(hal_index_t rightCutoff)
 {
   assert(_right->getReversed() == _left->getReversed());
   assert(_left->equals(_right) || _left->getReversed() || 
@@ -257,7 +250,7 @@ void GappedTopSegmentIterator::toRight(hal_index_t rightCutoff) const
   }
 }
 
-void GappedTopSegmentIterator::toReverse() const
+void GappedTopSegmentIterator::toReverse()
 {
   assert(_right->getReversed() == _left->getReversed());
   assert(_left->equals(_right) || _left->getReversed() || 
@@ -269,7 +262,7 @@ void GappedTopSegmentIterator::toReverse() const
   swap(_left, _right);
 }
 
-void GappedTopSegmentIterator::toReverseInPlace() const
+void GappedTopSegmentIterator::toReverseInPlace()
 {
   assert(_right->getReversed() == _left->getReversed());
   assert(_left->equals(_right) || _left->getReversed() || 
@@ -282,7 +275,7 @@ void GappedTopSegmentIterator::toReverseInPlace() const
 }
 
 void GappedTopSegmentIterator::toSite(hal_index_t position, 
-                                             bool slice) const
+                                      bool slice)
 {
   throw hal_exception("tosite not currently supported in gapped iterators");
 }
@@ -298,7 +291,7 @@ hal_offset_t GappedTopSegmentIterator::getEndOffset() const
 }
 
 void GappedTopSegmentIterator::slice(hal_offset_t startOffset,
-                                            hal_offset_t endOffset) const
+                                            hal_offset_t endOffset)
 {
   throw hal_exception("slice not currently supported in gapped iterators");
 }
@@ -374,21 +367,7 @@ hal_index_t GappedTopSegmentIterator::getRightArrayIndex() const
 //////////////////////////////////////////////////////////////////////////////
 // GAPPED TOP SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-GappedTopSegmentIteratorPtr GappedTopSegmentIterator::copy()
-{
-  GappedTopSegmentIterator* newIt =
-     new GappedTopSegmentIterator(_left, _gapThreshold, _atomic);
-  newIt->_left->copy(_left);
-  newIt->_right->copy(_right);
-  newIt->_childIndex = _childIndex;
-  newIt->_gapThreshold = _gapThreshold;
-  assert(hasParent() == newIt->hasParent());
-  assert(hasNextParalogy() == newIt->hasNextParalogy());
-  assert(getParentReversed() == newIt->getParentReversed());
-  return GappedTopSegmentIteratorPtr(newIt);
-}
-
-GappedTopSegmentIteratorPtr GappedTopSegmentIterator::copy() const
+GappedTopSegmentIteratorPtr GappedTopSegmentIterator::clone() const
 {
   GappedTopSegmentIterator* newIt =
      new GappedTopSegmentIterator(_left, _gapThreshold, _atomic);
@@ -404,7 +383,7 @@ GappedTopSegmentIteratorPtr GappedTopSegmentIterator::copy() const
 }
 
 void GappedTopSegmentIterator::copy(
-  GappedTopSegmentIteratorPtr ts) const
+  GappedTopSegmentIteratorPtr ts)
 {
   _left->copy(ts->getLeft());
   _right->copy(ts->getRight());
@@ -417,6 +396,7 @@ void GappedTopSegmentIterator::copy(
 
 bool GappedTopSegmentIterator::hasNextParalogy() const
 {
+    // FIXME: this is rather hacky
   _temp->copy(_left);
   _temp2->copy(_right);
 
@@ -441,7 +421,7 @@ void GappedTopSegmentIterator::toNextParalogy() const
 
 
 void GappedTopSegmentIterator::toChild(
-  GappedBottomSegmentIteratorPtr bs) const
+  GappedBottomSegmentIteratorPtr bs)
 {
   _leftParent->copy(bs->getLeft());
   _rightParent->copy(bs->getRight());
@@ -573,7 +553,7 @@ TopSegmentIteratorPtr GappedTopSegmentIterator::getRight() const
 }
 
 void 
-GappedTopSegmentIterator::setLeft(TopSegmentIteratorPtr ti) const
+GappedTopSegmentIterator::setLeft(TopSegmentIteratorPtr ti)
 {
   if (ti->getStartOffset() != 0 || ti->getEndOffset() != 0)
   {
@@ -724,7 +704,7 @@ bool GappedTopSegmentIterator::compatible(
   return true;
 }
 
-void GappedTopSegmentIterator::extendRight() const
+void GappedTopSegmentIterator::extendRight()
 {
   _right->copy(_left);
   if (_atomic == true ||
@@ -755,7 +735,7 @@ void GappedTopSegmentIterator::extendRight() const
   }
 }
 
-void GappedTopSegmentIterator::extendLeft() const
+void GappedTopSegmentIterator::extendLeft()
 {
   _left->copy(_right);
   if (_atomic == true ||

@@ -21,19 +21,16 @@ public:
    /** Destructor */
     virtual ~SequenceIterator() {
     }
-   /** Create a duplicate iterator referring to the same sequence
-    * which itself is not copied */
-   virtual SequenceIteratorPtr copy() = 0;
 
    /** Create a duplicate iterator referring to the same sequence
     * which itself is not copied */
-   virtual SequenceIteratorPtr copy() const = 0;
+   virtual SequenceIteratorPtr clone() const = 0;
 
    /** Move iterator to next sequence in the genome */
-   virtual void toNext() const = 0;
+   virtual void toNext() = 0;
 
    /** Move iterator to previous sequence in the genome */
-   virtual void toPrev() const = 0;
+   virtual void toPrev() = 0;
    
    /** Return pointer to the sequence */
    virtual const Sequence* getSequence() const = 0;

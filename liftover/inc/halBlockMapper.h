@@ -60,9 +60,7 @@ protected:
      hal_index_t& minIndex,
      hal_index_t& maxIndex);
 
-   // note queryIt passed by reference.  the pointer can be modified. 
-   // ick.
-   static bool cutByNext(SlicedSegmentConstPtr queryIt, 
+   static bool cutByNext(SlicedSegmentPtr queryIt, 
                          SlicedSegmentConstPtr nextSeg,
                          bool right);
       

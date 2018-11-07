@@ -135,7 +135,7 @@ hal_index_t BottomSegmentIterator::getRightChildIndex(hal_size_t i) const
 //////////////////////////////////////////////////////////////////////////////
 // BOTTOM SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void BottomSegmentIterator::toParent(TopSegmentIteratorPtr ts) const
+void BottomSegmentIterator::toParent(TopSegmentIteratorPtr ts)
 {
   _bottomSegment->setArrayIndex(ts->getGenome()->getParent(),
                                 ts->getParentIndex());
@@ -150,9 +150,9 @@ void BottomSegmentIterator::toParent(TopSegmentIteratorPtr ts) const
 }
 
 void 
-BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr ts) const
+BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr ts)
 {
-  const Genome* genome = ts->getGenome();
+    Genome* genome = ts->getGenome();
   hal_index_t index = ts->getBottomParseIndex();
   
   _bottomSegment->setArrayIndex(genome, index);
@@ -188,7 +188,7 @@ BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr ts) const
   assert (inRange() == true);
 }
 
-BottomSegmentIteratorPtr BottomSegmentIterator::copy()
+BottomSegmentIteratorPtr BottomSegmentIterator::clone() const
 {
   assert (inRange() == true);
   BottomSegmentIteratorPtr newIt = 
@@ -201,20 +201,7 @@ BottomSegmentIteratorPtr BottomSegmentIterator::copy()
   return newIt;
 }
 
-BottomSegmentIteratorPtr BottomSegmentIterator::copy() const
-{
-  assert (inRange() == true);
-  BottomSegmentIteratorPtr newIt = 
-     getGenome()->getBottomSegmentIterator(getArrayIndex());
-  if (_reversed)
-  {
-    newIt->toReverse();
-  }
-  newIt->slice(_startOffset, _endOffset);
-  return newIt;
-}
-
-void BottomSegmentIterator::copy(BottomSegmentIteratorPtr bs) const
+void BottomSegmentIterator::copy(BottomSegmentIteratorPtr bs)
 {
   assert(bs.get() != NULL);
   _bottomSegment->setArrayIndex(bs->getGenome(), bs->getArrayIndex());

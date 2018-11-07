@@ -179,14 +179,14 @@ GappedSegmentSimpleIteratorTest2::checkCallBack(AlignmentConstPtr alignment)
     CuAssertTrue(_testCase, 
                  (size_t)bsIt->getBottomSegment()->getArrayIndex() == i + 4);
 
-    GappedBottomSegmentIteratorPtr gappedParent = gbsIt->copy();
+    GappedBottomSegmentIteratorPtr gappedParent = gbsIt->clone();
     gappedParent->toParent(gtsIt);
     if (gappedParent->getReversed())
     {
       gappedParent->toReverse();
     }
     CuAssertTrue(_testCase, gappedParent->equals(gbsIt));
-    GappedTopSegmentIteratorPtr gappedChild = gtsIt->copy();
+    GappedTopSegmentIteratorPtr gappedChild = gtsIt->clone();
     gappedChild->toChild(gbsIt);
     if (gappedChild->getReversed())
     {
@@ -324,7 +324,7 @@ GappedSegmentIteratorIndelTest::checkCallBack(AlignmentConstPtr alignment)
     CuAssertTrue(_testCase, 
                  (size_t)bsIt->getBottomSegment()->getArrayIndex() == i + 19);
 
-    GappedBottomSegmentIteratorPtr gappedParent = gbsIt->copy();
+    GappedBottomSegmentIteratorPtr gappedParent = gbsIt->clone();
     gappedParent->toParent(gtsIt);
     if (gappedParent->getReversed())
     {
@@ -332,7 +332,7 @@ GappedSegmentIteratorIndelTest::checkCallBack(AlignmentConstPtr alignment)
     }
     CuAssertTrue(_testCase,
                  gappedParent->equals(gbsIt));
-    GappedTopSegmentIteratorPtr gappedChild = gtsIt->copy();
+    GappedTopSegmentIteratorPtr gappedChild = gtsIt->clone();
     gappedChild->toChild(gbsIt);
     if (gappedChild->getReversed())
     {
