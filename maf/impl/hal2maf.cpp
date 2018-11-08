@@ -239,8 +239,6 @@ int main(int argc, char** argv)
       }
     }
     ostream& mafStream = mafPath != "stdout" ? mafFileStream : cout;
-    void* v = malloc(100000000);
-    cerr<<"allocated " << (long)(v) << endl;
 
     MafExport mafExport;
     mafExport.setMaxRefGap(maxRefGap);
