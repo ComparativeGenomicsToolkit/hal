@@ -6,7 +6,7 @@ class MMapString : public MMapArray<char> {
     public:
     MMapString(MMapAlignment *alignment, const std::string &string) : MMapArray(alignment), _string(string) { set(_string); };
     MMapString(MMapAlignment *alignment, size_t offset) : MMapArray(alignment, offset) { read(); };
-    const char *c_str() { return getSlice(0, getLength() - 1); }
+    const char *c_str() { return getSlice(0, getLength()); }
     const std::string &get() { return _string; }
     size_t set(const std::string &string) {
         _string = string;

@@ -43,7 +43,7 @@ class MMapAlignment : public Alignment {
     size_t allocateNewArray(size_t size) const { return _file->allocMem(size, false); };
     void *resolveOffset(size_t offset, size_t len) const { return _file->toPtr(offset, len); };
 
-    void close() { _file->close(); }
+    void close();
 
     const std::string& getStorageFormat() const {
         return STORAGE_FORMAT_MMAP;

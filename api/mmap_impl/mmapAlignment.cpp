@@ -35,6 +35,15 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
     }
 }
 
+void MMapAlignment::close() {
+    // Free the memory used by all open genomes.
+    for (auto kv : _openGenomes) {
+        delete kv.second;
+    }
+    // Close the actual file.
+    _file->close();
+}
+
 void MMapAlignment::defineOptions(CLParserPtr parser,
                                   unsigned mode) {
     if (mode & CREATE_ACCESS) {

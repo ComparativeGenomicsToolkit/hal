@@ -76,10 +76,11 @@ private:
        for (auto kv : _map) {
            MMapString key{_alignment, *_keys[i]};
            MMapString value{_alignment, *_values[i]};
-           key.set(kv.first);
-           value.set(kv.second);
+           *_keys[i] = key.set(kv.first);
+           *_values[i] = value.set(kv.second);
            i++;
        }
+       _dirty = false;
    };
 };
 }
