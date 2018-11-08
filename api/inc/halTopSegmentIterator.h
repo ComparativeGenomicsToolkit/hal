@@ -103,11 +103,11 @@ public:
     void toNextParalogy();
 
     // FIXME: document or change way getting segment works
-    virtual SegmentPtr getSegment() {
-        return _topSegment;
+    virtual Segment* getSegment() {
+        return _topSegment.get();
     }
-    virtual SegmentConstPtr getSegment() const {
-        return _topSegment;
+    virtual const Segment* getSegment() const {
+        return _topSegment.get();
     }
     
     // SEGMENT INTERFACE OVERRIDE

@@ -86,11 +86,11 @@ public:
     }
     
     // FIXME: document or change way getting segment works
-    virtual SegmentPtr getSegment() {
-        return _bottomSegment;
+    virtual Segment* getSegment() {
+        return _bottomSegment.get();
     }
-    virtual SegmentConstPtr getSegment() const {
-        return _bottomSegment;
+    virtual const Segment* getSegment() const {
+        return _bottomSegment.get();
     }
     
     // SEGMENT INTERFACE OVERRIDE

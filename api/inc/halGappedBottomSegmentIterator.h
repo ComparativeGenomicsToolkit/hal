@@ -98,8 +98,8 @@ public:
      const Genome *mrca) const;
    virtual void print(std::ostream& os) const;
 
-    virtual SegmentPtr getSegment();
-    virtual SegmentConstPtr getSegment() const;
+    virtual Segment* getSegment();
+    virtual const Segment* getSegment() const;
     
 
 

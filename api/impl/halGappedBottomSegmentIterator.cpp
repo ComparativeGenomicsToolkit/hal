@@ -49,13 +49,13 @@ GappedBottomSegmentIterator::GappedBottomSegmentIterator(
   extendRight();
 }
 
-SegmentPtr GappedBottomSegmentIterator::getSegment()
+Segment* GappedBottomSegmentIterator::getSegment()
 {
-    return const_pointer_cast<Segment>(_left->getSegment());
+    return const_cast<Segment*>(_left->getSegment());
 
 }
 
-SegmentConstPtr GappedBottomSegmentIterator::getSegment() const
+const Segment* GappedBottomSegmentIterator::getSegment() const
 {
     return _left->getSegment();
 }

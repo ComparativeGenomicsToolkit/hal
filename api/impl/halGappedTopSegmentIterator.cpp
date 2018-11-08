@@ -39,13 +39,13 @@ GappedTopSegmentIterator::GappedTopSegmentIterator(
   setLeft(left);
 }
 
-SegmentPtr GappedTopSegmentIterator::getSegment()
+Segment* GappedTopSegmentIterator::getSegment()
 {
-    return const_pointer_cast<Segment>(_left->getSegment());
+    return const_cast<Segment*>(_left->getSegment());
 
 }
 
-SegmentConstPtr GappedTopSegmentIterator::getSegment() const
+const Segment* GappedTopSegmentIterator::getSegment() const
 {
     return _left->getSegment();
 }

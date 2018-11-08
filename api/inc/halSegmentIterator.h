@@ -58,8 +58,8 @@ public:
     virtual bool atEnd() const;
     
     // FIXME: document or change way getting segment works
-    virtual SegmentPtr getSegment() = 0;
-   virtual SegmentConstPtr getSegment() const = 0;
+    virtual Segment* getSegment() = 0;
+   virtual const Segment* getSegment() const = 0;
 
    // SEGMENT INTERFACE
    virtual void setArrayIndex(Genome* genome, 

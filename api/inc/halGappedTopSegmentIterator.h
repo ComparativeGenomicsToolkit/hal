@@ -84,10 +84,10 @@ public:
    virtual bool isCanonicalParalog() const;
 
     /* get the current segment */
-    virtual SegmentPtr getSegment();
+    virtual Segment* getSegment();
 
     /* get the current segment */
-    virtual SegmentConstPtr getSegment() const;
+    virtual const Segment* getSegment() const;
     
    // SEGMENT INTERFACE
    virtual void setArrayIndex(Genome* genome, 
