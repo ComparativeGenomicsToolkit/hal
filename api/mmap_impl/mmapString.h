@@ -1,7 +1,6 @@
 #ifndef _MMAP_STRING_H
 #define _MMAP_STRING_H
 #include "mmapArray.h"
-#include <iostream>
 namespace hal {
 class MMapString : public MMapArray<char> {
     public:

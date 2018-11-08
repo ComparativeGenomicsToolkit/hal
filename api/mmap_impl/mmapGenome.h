@@ -4,6 +4,7 @@
 #include "halGenome.h"
 #include "mmapAlignment.h"
 #include "mmapString.h"
+#include "mmapMetaData.h"
 #include "mmapTopSegmentData.h"
 #include "mmapBottomSegmentData.h"
 namespace hal {
@@ -40,12 +41,13 @@ class MMapGenome : public Genome {
     friend class MMapDNAIterator;
 public:
     MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex) :
-        Genome(alignment, data->getName(alignment)), _alignment(alignment), _data(data), _arrayIndex(arrayIndex) {
+        Genome(alignment, data->getName(alignment)), _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _metaData(_alignment, _data->_metadataOffset) {
         _name = _data->getName(_alignment);
     };
     MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex, const std::string &name) :
-        Genome(alignment, name), _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name) {
+        Genome(alignment, name), _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name), _metaData(_alignment) {
         _data->initializeName(_alignment, _name);
+        _data->_metadataOffset = _metaData.getOffset();
     };
 
     MMapTopSegmentData *getTopSegmentPointer(hal_index_t index) { return _data->getTopSegmentData(_alignment, index); };
@@ -171,6 +173,7 @@ private:
     void deleteSequenceCache();
     void loadSequencePosCache() const;
     void loadSequenceNameCache() const;
+    MMapMetaData _metaData;
 };
 
 inline std::string MMapGenomeData::getName(MMapAlignment *alignment) const {

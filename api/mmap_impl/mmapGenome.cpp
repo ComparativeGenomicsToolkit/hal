@@ -230,14 +230,12 @@ SequenceIteratorPtr MMapGenome::getSequenceEndIterator() const
 
 MetaData* MMapGenome::getMetaData()
 {
-    // TODO
-    throw hal_exception("All metadata functions currently unimplemented");
+    return &_metaData;
 }
 
 const MetaData* MMapGenome::getMetaData() const
 {
-    // TODO
-    throw hal_exception("All metadata functions currently unimplemented");
+    return &_metaData;
 }
 
 bool MMapGenome::containsDNAArray() const
