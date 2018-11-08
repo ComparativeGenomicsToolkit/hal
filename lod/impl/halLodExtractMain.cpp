@@ -10,50 +10,48 @@
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(CREATE_ACCESS);
-  optionsParser->addArgument("inHalPath", "Input hal file");
-  optionsParser->addArgument("outHalPath", "output hal file");
-  optionsParser->addArgument("scale", "Scale factor for interpolation");
-  optionsParser->addOption("root", 
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("inHalPath", "Input hal file");
+  optionsParser.addArgument("outHalPath", "output hal file");
+  optionsParser.addArgument("scale", "Scale factor for interpolation");
+  optionsParser.addOption("root", 
                            "Name of root genome of tree to extract (root if "
                            "empty)", "\"\"");
-  optionsParser->addOption("outTree", 
+  optionsParser.addOption("outTree", 
                            "Phylogenetic tree of output HAL file.  Must "
                            "contain only genomes from the input HAL file. "
                            "(input\'s tree used if empty)", "\"\"");
-  optionsParser->addOption("probeFrac", 
+  optionsParser.addOption("probeFrac", 
                            "Fraction of bases in step-interval to sample while "
                            "looking for most aligned column.",
                            0.035);
-  optionsParser->addOption("minSeqFrac", 
+  optionsParser.addOption("minSeqFrac", 
                            "Minumum sequence length to sample as fraction of "
                            "step size: ie sequences with length <= floor("
                            "minSeqFrac * step) are ignored.",
                            // Note: needs to be manually synched with 
                            // value in halLodInterpolate.py
                            0.5);
-  optionsParser->addOptionFlag("keepSequences",
+  optionsParser.addOptionFlag("keepSequences",
                                "Write the sequence strings to the output "
                                "file.", false);
-  optionsParser->addOptionFlag("allSequences", 
+  optionsParser.addOptionFlag("allSequences", 
                                "Sample all sequences (chromsomes / contigs /"
                                " etc.) no matter how small they are.  "
                                "By default, small sequences may be skipped if "
                                "they fall within the step size.", false);
-  optionsParser->setDescription("Generate a new HAL file at a coarser "
+  optionsParser.setDescription("Generate a new HAL file at a coarser "
                                 "Level of Detail (LOD) by interpolation. "
                                 "The scale parameter is used to estimate "
                                 "the interpolation step-size so that the "
                                 "output has \"scale\" fewer blocks than the"
                                 " input.");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+  CLParser optionsParser(CREATE_ACCESS);
+  initParser(optionsParser);
   string inHalPath;
   string outHalPath;
   string rootName;
@@ -65,16 +63,16 @@ int main(int argc, char** argv)
   double minSeqFrac;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    inHalPath = optionsParser->getArgument<string>("inHalPath");
-    outHalPath = optionsParser->getArgument<string>("outHalPath");
-    rootName = optionsParser->getOption<string>("root");
-    outTree = optionsParser->getOption<string>("outTree");
-    scale = optionsParser->getArgument<double>("scale");
-    keepSequences = optionsParser->getFlag("keepSequences");
-    allSequences = optionsParser->getFlag("allSequences");
-    probeFrac = optionsParser->getOption<double>("probeFrac");
-    minSeqFrac = optionsParser->getOption<double>("minSeqFrac");
+    optionsParser.parseOptions(argc, argv);
+    inHalPath = optionsParser.getArgument<string>("inHalPath");
+    outHalPath = optionsParser.getArgument<string>("outHalPath");
+    rootName = optionsParser.getOption<string>("root");
+    outTree = optionsParser.getOption<string>("outTree");
+    scale = optionsParser.getArgument<double>("scale");
+    keepSequences = optionsParser.getFlag("keepSequences");
+    allSequences = optionsParser.getFlag("allSequences");
+    probeFrac = optionsParser.getOption<double>("probeFrac");
+    minSeqFrac = optionsParser.getOption<double>("minSeqFrac");
     if (allSequences == true)
     {
       minSeqFrac = 0.;
@@ -83,18 +81,18 @@ int main(int argc, char** argv)
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
   try
   {
-      AlignmentConstPtr inAlignment(openHalAlignment(inHalPath, optionsParser));
+      AlignmentConstPtr inAlignment(openHalAlignment(inHalPath, &optionsParser));
     if (inAlignment->getNumGenomes() == 0)
     {
       throw hal_exception("Input hal alignment is empty");
     }
 
-    AlignmentPtr outAlignment(openHalAlignment(outHalPath, optionsParser, hal::CREATE_ACCESS));
+    AlignmentPtr outAlignment(openHalAlignment(outHalPath, &optionsParser, hal::CREATE_ACCESS));
     
     if (outAlignment->getNumGenomes() != 0)
     {

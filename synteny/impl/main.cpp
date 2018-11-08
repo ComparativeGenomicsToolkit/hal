@@ -5,7 +5,7 @@
  */
 
 #include "hal.h"
-#include "halCLParserInstance.h"
+#include "halCLParser.h"
 
 #include "psl_io.h"
 #include "psl_merger.h"
@@ -14,22 +14,20 @@
 using namespace hal;
 
 
-static CLParserPtr initParser() {
-  auto optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "input psl file from liftover");
-  optionsParser->addOption("queryGenome", "source genome", "\"\"");
-  optionsParser->addOption("targetGenome", "reference genome name", "\"\"");
-  optionsParser->addArgument("outPslPath", "output psl file ffor synteny blocks");
-  optionsParser->addOption("minBlockSize", 
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "input psl file from liftover");
+  optionsParser.addOption("queryGenome", "source genome", "\"\"");
+  optionsParser.addOption("targetGenome", "reference genome name", "\"\"");
+  optionsParser.addArgument("outPslPath", "output psl file ffor synteny blocks");
+  optionsParser.addOption("minBlockSize", 
                            "lower bound on synteny block length",
                            5000);
-  optionsParser->addOption("maxAnchorDistance", 
+  optionsParser.addOption("maxAnchorDistance", 
                            "upper bound on distance for syntenic psl blocks", 
                            5000);
-  optionsParser->addOption("queryChromosome",
+  optionsParser.addOption("queryChromosome",
                             "chromosome to infer synteny",
                              "\"\""); 
-  return optionsParser;
     
 }
 
@@ -44,9 +42,9 @@ const Genome* openGenomeOrThrow(const Alignment* alignment,
 }
 
 const Alignment* openAlignmentOrThrow(const std::string& halFile,
-                                      const CLParserPtr& optionsParser){
+                                      const CLParser&optionsParser){
     
-    auto alignment = openHalAlignment(halFile, optionsParser);
+    auto alignment = openHalAlignment(halFile, &optionsParser);
     if (alignment->getNumGenomes() == 0){
       throw hal_exception("hal alignment is empty");
     }
@@ -70,7 +68,8 @@ const Alignment* openAlignmentOrThrow(const std::string& halFile,
 
 
 int main(int argc, char *argv[]) {
-    CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
     std::string halFile;
     std::string outPslPath;
     std::string queryGenomeName;
@@ -79,19 +78,19 @@ int main(int argc, char *argv[]) {
     hal_size_t minBlockSize;
     hal_size_t maxAnchorDistance;
     try {
-        optionsParser->parseOptions(argc, argv);
-        halFile = optionsParser->getArgument<std::string>("halFile");
-        queryGenomeName = optionsParser->getOption<std::string>("queryGenome");
-        targetGenomeName = optionsParser->getOption<std::string>("targetGenome");
-        outPslPath = optionsParser->getArgument<std::string>("outPslPath");
-        minBlockSize = optionsParser->getOption<hal_size_t>("minBlockSize");
-        maxAnchorDistance = optionsParser->getOption<hal_size_t>("maxAnchorDistance");
-        queryChromosome = optionsParser->getOption<std::string>("queryChromosome");
-        optionsParser->setDescription("convert psl alignments into synteny blocks");
+        optionsParser.parseOptions(argc, argv);
+        halFile = optionsParser.getArgument<std::string>("halFile");
+        queryGenomeName = optionsParser.getOption<std::string>("queryGenome");
+        targetGenomeName = optionsParser.getOption<std::string>("targetGenome");
+        outPslPath = optionsParser.getArgument<std::string>("outPslPath");
+        minBlockSize = optionsParser.getOption<hal_size_t>("minBlockSize");
+        maxAnchorDistance = optionsParser.getOption<hal_size_t>("maxAnchorDistance");
+        queryChromosome = optionsParser.getOption<std::string>("queryChromosome");
+        optionsParser.setDescription("convert psl alignments into synteny blocks");
     }
     catch(std::exception& e) {
         std::cerr << e.what() << std::endl;
-        optionsParser->printUsage(std::cerr);
+        optionsParser.printUsage(std::cerr);
         exit(1);
     }
     

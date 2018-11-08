@@ -23,42 +23,40 @@ static void extractTree(const Alignment* inAlignment,
 static void extract(const Alignment* inAlignment,
                     AlignmentPtr outAlignment, const string& rootName);
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(CREATE_ACCESS);
-  optionsParser->addArgument("inHalPath", "input hal file");
-  optionsParser->addArgument("outHalPath", "output hal file");
-  optionsParser->addOption("outputFormat", "format for output hal file (same as input file by default)", "");
-  optionsParser->addOption("root", "root of subtree to extract", "\"\"");
-  return optionsParser;
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("inHalPath", "input hal file");
+  optionsParser.addArgument("outHalPath", "output hal file");
+  optionsParser.addOption("outputFormat", "format for output hal file (same as input file by default)", "");
+  optionsParser.addOption("root", "root of subtree to extract", "\"\"");
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
-
+  CLParser optionsParser(CREATE_ACCESS);
+  initParser(optionsParser);
+  
   string inHalPath;
   string outHalPath;
   string rootName;
   string outputFormat;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    inHalPath = optionsParser->getArgument<string>("inHalPath");
-    outHalPath = optionsParser->getArgument<string>("outHalPath");
-    rootName = optionsParser->getOption<string>("root");
-    outputFormat = optionsParser->getOption<string>("outputFormat");
+    optionsParser.parseOptions(argc, argv);
+    inHalPath = optionsParser.getArgument<string>("inHalPath");
+    outHalPath = optionsParser.getArgument<string>("outHalPath");
+    rootName = optionsParser.getOption<string>("root");
+    outputFormat = optionsParser.getOption<string>("outputFormat");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
   try
   {
-    const Alignment* inAlignment = openHalAlignment(inHalPath, optionsParser);
+    const Alignment* inAlignment = openHalAlignment(inHalPath, &optionsParser);
     if (inAlignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");
@@ -70,7 +68,7 @@ int main(int argc, char** argv)
     }
 
 
-    AlignmentPtr outAlignment(openHalAlignment(outHalPath, optionsParser, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS,
+    AlignmentPtr outAlignment(openHalAlignment(outHalPath, &optionsParser, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS,
                                                outputFormat));
     if (outAlignment->getNumGenomes() != 0)
     {

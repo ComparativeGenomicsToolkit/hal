@@ -6,18 +6,27 @@
 #include <iostream>
 #include <cassert>
 #include "halCLParser.h"
+#include "hdf5Alignment.h"
+#include "mmapAlignment.h"
 
 using namespace std;
 using namespace hal;
 
 size_t CLParser::lineWidth = 85;
 
-CLParser::CLParser() :
+CLParser::CLParser(unsigned mode) :
   _prefix("--"),
   _maxArgLen(0),
   _maxOptLen(0)
 {
-  addOptionFlag("help", "display this help page", false);
+    addOptionFlag("help", "display this help page", false);
+    HDF5Alignment::defineOptions(this, mode);
+    MMapAlignment::defineOptions(this, mode);
+    addOption("format", "choose the back-end storage format.", STORAGE_FORMAT_HDF5);
+#ifdef ENABLE_UDC
+  // this can be used by multiple storage formats
+    addOption("udcCacheDir", "udc cache path for *input* hal file(s).", "\"\"");
+#endif
 }
 
 void CLParser::setOptionPrefix(const string& prefix)

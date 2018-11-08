@@ -1,6 +1,7 @@
 // Find clean indels
 // TODO: merge into halBranchMutations
 #include "hal.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
@@ -13,20 +14,17 @@ enum indelType {
   DELETION
 };
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addArgument("refGenome", 
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "input hal file");
+  optionsParser.addArgument("refGenome", 
                              "name of reference genome.");
-  optionsParser->addOption("adjacentBases", "# of adjacent bases to examine "
+  optionsParser.addOption("adjacentBases", "# of adjacent bases to examine "
                            "while filtering", 5);
-  optionsParser->setDescription("Count (filtered) insertions/deletions in the "
+  optionsParser.setDescription("Count (filtered) insertions/deletions in the "
                                 "branch above the reference genome.");
-  optionsParser->addOptionFlag("onlyExtantTargets",
+  optionsParser.addOptionFlag("onlyExtantTargets",
                                "Use only extant genomes for 'sibling'/outgroup",
                                false);
-  return optionsParser;
 }
 
 // check (inclusive) interval startPos--endPos for Ns.
@@ -453,26 +451,27 @@ findMinPathUnder(const Genome *parent,
 
 int main(int argc, char *argv[])
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
   string halPath, refGenomeName;
   hal_size_t adjacentBases;
   bool onlyExtantTargets;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    refGenomeName = optionsParser->getArgument<string>("refGenome");
-    adjacentBases = optionsParser->getOption<hal_size_t>("adjacentBases");
-    onlyExtantTargets = optionsParser->getFlag("onlyExtantTargets");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    refGenomeName = optionsParser.getArgument<string>("refGenome");
+    adjacentBases = optionsParser.getOption<hal_size_t>("adjacentBases");
+    onlyExtantTargets = optionsParser.getFlag("onlyExtantTargets");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
-  AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+  AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
   const Genome *refGenome = alignment->openGenome(refGenomeName);
   if (refGenome == NULL) {
     throw hal_exception("Genome " + refGenomeName + " does not exist");

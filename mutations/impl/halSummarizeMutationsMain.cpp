@@ -8,42 +8,41 @@
 #include <iostream>
 #include <fstream>
 #include "halSummarizeMutations.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addOption("rootGenome", 
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "input hal file");
+  optionsParser.addOption("rootGenome", 
                            "name of root genome (none if empty)", 
                            "\"\"");
-  optionsParser->addOption("targetGenomes",
+  optionsParser.addOption("targetGenomes",
                            "comma-separated (no spaces) list of target genomes "
                            "(others are excluded) (vist all if empty)",
                            "\"\"");
-  optionsParser->addOption("maxGap", 
+  optionsParser.addOption("maxGap", 
                            "maximum indel length to be considered a gap.  Gaps "
                            " can be nested within other rearrangements.", 
                            20);
-  optionsParser->addOption("maxNFraction",
+  optionsParser.addOption("maxNFraction",
                            "maximum fraction of Ns in a rearranged segment "
                            "for it to not be ignored as missing data.",
                            1.0);
-  optionsParser->addOptionFlag("justSubs", "just count substitutions. "
+  optionsParser.addOptionFlag("justSubs", "just count substitutions. "
                                " Note results are total subs between genome "
                                " and all children, rather than branch results "
                                " when using the normal interface.  For tuning "
                                " and performance checking only", false);
-  optionsParser->setDescription("Print summary table of mutation events "
+  optionsParser.setDescription("Print summary table of mutation events "
                                 "in the alignemt.");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
 
   string halPath;
   string rootGenomeName;
@@ -54,13 +53,13 @@ int main(int argc, char** argv)
   bool justSubs;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    rootGenomeName = optionsParser->getOption<string>("rootGenome");
-    targetGenomes = optionsParser->getOption<string>("targetGenomes");
-    maxGap = optionsParser->getOption<hal_size_t>("maxGap");
-    nThreshold = optionsParser->getOption<double>("maxNFraction");
-    justSubs = optionsParser->getFlag("justSubs");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    rootGenomeName = optionsParser.getOption<string>("rootGenome");
+    targetGenomes = optionsParser.getOption<string>("targetGenomes");
+    maxGap = optionsParser.getOption<hal_size_t>("maxGap");
+    nThreshold = optionsParser.getOption<double>("maxNFraction");
+    justSubs = optionsParser.getFlag("justSubs");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -72,13 +71,13 @@ int main(int argc, char** argv)
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
   try
   {
-      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignmenet is empty");

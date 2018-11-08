@@ -15,6 +15,7 @@
 #include "hal.h"
 
 namespace hal {
+    class CLParser;
 
 /** This is a container that keeps track of LOD alignments as generated
  * by halLodExtract.py
@@ -35,12 +36,26 @@ public:
     * Paths that contain ":/" are assumed to be
     * web addressed of some sort and considered absolute. */
    void loadLODFile(const std::string& lodPath,
-                    CLParserConstPtr options = halCLParserInstance());
+                    const CLParser* options);
+
+   /** Load series of alignments specified in the lodPath file.  With
+    * default CLParser options.
+    *
+    * If the paths of the HAL files are relative (do not begin with /) then
+    * they will be concatenated to the directory of lodPath.  If they 
+    * are absolute (beginning with /) then they will be opened directly.
+    * Paths that contain ":/" are assumed to be
+    * web addressed of some sort and considered absolute. */
+   void loadLODFile(const std::string& lodPath);
 
    /** Just use the given HAL file for everything.  Same as if we gave a
     * lodFile containing only "0 halPath"*/
    void loadSingeHALFile(const std::string& halPath,
-                         CLParserConstPtr options = halCLParserInstance());
+                         const CLParser* options);
+
+   /** Just use the given HAL file for everything.  Same as if we gave a
+    * lodFile containing only "0 halPath"*/
+   void loadSingeHALFile(const std::string& halPath);
 
    const Alignment* getAlignment(hal_size_t queryLength, 
                                   bool needDNA);
@@ -70,7 +85,7 @@ protected:
    typedef std::pair<std::string, AlignmentConstPtr> PathAlign;
    typedef std::map<hal_size_t, PathAlign> AlignmentMap;
 
-   CLParserConstPtr _options;
+   const CLParser* _options;
    AlignmentMap _map;
    hal_size_t _maxLodLowerBound;
 };

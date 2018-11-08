@@ -9,6 +9,7 @@
 #include <fstream>
 #include <algorithm>
 #include "hal.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
@@ -26,34 +27,32 @@ static void printGenome(ostream& outStream,
 
 static const hal_size_t StringBufferSize = 1024;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("inHalPath", "input hal file");
-  optionsParser->addArgument("genome", "genome to export");
-  optionsParser->addOption("outFaPath", "output fasta file (stdout if none)",
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("inHalPath", "input hal file");
+  optionsParser.addArgument("genome", "genome to export");
+  optionsParser.addOption("outFaPath", "output fasta file (stdout if none)",
                            "stdout");
-  optionsParser->addOption("lineWidth", "Line width for output", 80);
-  optionsParser->addOption("sequence", "sequence name to export ("
+  optionsParser.addOption("lineWidth", "Line width for output", 80);
+  optionsParser.addOption("sequence", "sequence name to export ("
                            "all sequences by default)", 
                            "\"\"");
-   optionsParser->addOption("start",
+   optionsParser.addOption("start",
                            "coordinate within reference genome (or sequence"
                            " if specified) to start at",
                            0);
-  optionsParser->addOption("length",
+  optionsParser.addOption("length",
                            "length of the reference genome (or sequence"
                            " if specified) to convert.  If set to 0,"
                            " the entire thing is converted",
                            0);
-  optionsParser->setDescription("Export single genome from hal database to "
+  optionsParser.setDescription("Export single genome from hal database to "
                                 "fasta file.");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+  initParser(optionsParser);
 
   string halPath;
   string faPath;
@@ -64,25 +63,25 @@ int main(int argc, char** argv)
   hal_size_t length;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("inHalPath");
-    genomeName = optionsParser->getArgument<string>("genome");
-    faPath = optionsParser->getOption<string>("outFaPath");
-    lineWidth = optionsParser->getOption<hal_size_t>("lineWidth");
-    sequenceName = optionsParser->getOption<string>("sequence");
-    start = optionsParser->getOption<hal_size_t>("start");
-    length = optionsParser->getOption<hal_size_t>("length");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("inHalPath");
+    genomeName = optionsParser.getArgument<string>("genome");
+    faPath = optionsParser.getOption<string>("outFaPath");
+    lineWidth = optionsParser.getOption<hal_size_t>("lineWidth");
+    sequenceName = optionsParser.getOption<string>("sequence");
+    start = optionsParser.getOption<hal_size_t>("start");
+    length = optionsParser.getOption<hal_size_t>("length");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
   try
   {
-      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");

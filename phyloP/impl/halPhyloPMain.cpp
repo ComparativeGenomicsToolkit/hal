@@ -24,30 +24,29 @@ static void printGenome(PhyloP *phyloP,
                         hal_size_t start, hal_size_t length, hal_size_t step);
 
 
-static CLParserPtr initParser()
+static void initParser(CLParser& optionsParser) {
 {
   /** It is convenient to use the HAL command line parser for the command
    * line because it automatically adds some comman options.  Using the 
    * parser is by no means required however */
-  CLParserPtr optionsParser = hdf5CLParserInstance(false);
-  optionsParser->addArgument("halPath", "input hal file");
-  optionsParser->addArgument("refGenome", "reference genome to scan");
-  optionsParser->addArgument("modPath", "input neutral model file");
-  optionsParser->addArgument("outWiggle", "output wig file (or \"stdout\""
+  optionsParser.addArgument("halPath", "input hal file");
+  optionsParser.addArgument("refGenome", "reference genome to scan");
+  optionsParser.addArgument("modPath", "input neutral model file");
+  optionsParser.addArgument("outWiggle", "output wig file (or \"stdout\""
                              " to pipe to standard output)");
-  optionsParser->addOption("refSequence", "sequence name to export ("
+  optionsParser.addOption("refSequence", "sequence name to export ("
                            "all sequences by default)", 
                            "\"\"");
-  optionsParser->addOption("start",
+  optionsParser.addOption("start",
                            "coordinate within reference genome (or sequence"
                            " if specified) to start at",
                            0);
-  optionsParser->addOption("length",
+  optionsParser.addOption("length",
                            "length of the reference genome (or sequence"
                            " if specified) to convert.  If set to 0,"
                            " the entire thing is converted",
                            0);
-  optionsParser->addOption("dupType",
+  optionsParser.addOption("dupType",
                            "Which duplications to mask according to dupMask "
                            "option. Choices are: "
                            "\"all\": Any duplicated region; or "
@@ -55,30 +54,31 @@ static CLParserPtr initParser()
                            "alignments from the same species do not contain"
                            " the same base.",
                            "ambiguous");
-  optionsParser->addOption("dupMask",
+  optionsParser.addOption("dupMask",
                            "What to do with duplicated regions. Choices are: "
                            "\"hard\": mask entire alignment column if any "
                            "duplications occur; or "
                            "\"soft\": mask species where duplications occur.",
                            "soft");
-  optionsParser->addOption("step", "step size", 1);
-  optionsParser->addOption("refBed", "Bed file with coordinates to "
+  optionsParser.addOption("step", "step size", 1);
+  optionsParser.addOption("refBed", "Bed file with coordinates to "
                            "annotate in the reference genome (or \"stdin\") "
                            "to stream from standard input", "\"\"");
-  optionsParser->addOption("subtree", "Partition the tree into the subtree "
+  optionsParser.addOption("subtree", "Partition the tree into the subtree "
 			   "beneath the node given (including the branch "
 			   "leading up to this node), and test for "
 			   "conservation/acceleration in this subtree "
 			   "relative to the rest of the tree", "\"\"");
-  optionsParser->addOption("prec", "Number of decimal places in wig output", 3);
+  optionsParser.addOption("prec", "Number of decimal places in wig output", 3);
   
-  optionsParser->setDescription("Make PhyloP wiggle plot for a genome.");
+  optionsParser.setDescription("Make PhyloP wiggle plot for a genome.");
   return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser)
   string modPath;
   string halPath;
   string wigPath;
@@ -94,26 +94,26 @@ int main(int argc, char** argv)
   hal_size_t prec;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    modPath = optionsParser->getArgument<string>("modPath");
-    halPath = optionsParser->getArgument<string>("halPath");
-    refGenomeName = optionsParser->getArgument<string>("refGenome");
-    wigPath = optionsParser->getArgument<string>("outWiggle");
-    refSequenceName = optionsParser->getOption<string>("refSequence");
-    start = optionsParser->getOption<hal_size_t>("start");
-    length = optionsParser->getOption<hal_size_t>("length");
-    step = optionsParser->getOption<hal_size_t>("step");
-    dupType = optionsParser->getOption<string>("dupType");
-    dupMask = optionsParser->getOption<string>("dupMask");
-    subtree = optionsParser->getOption<string>("subtree");
+    optionsParser.parseOptions(argc, argv);
+    modPath = optionsParser.getArgument<string>("modPath");
+    halPath = optionsParser.getArgument<string>("halPath");
+    refGenomeName = optionsParser.getArgument<string>("refGenome");
+    wigPath = optionsParser.getArgument<string>("outWiggle");
+    refSequenceName = optionsParser.getOption<string>("refSequence");
+    start = optionsParser.getOption<hal_size_t>("start");
+    length = optionsParser.getOption<hal_size_t>("length");
+    step = optionsParser.getOption<hal_size_t>("step");
+    dupType = optionsParser.getOption<string>("dupType");
+    dupMask = optionsParser.getOption<string>("dupMask");
+    subtree = optionsParser.getOption<string>("subtree");
     std::transform(dupMask.begin(), dupMask.end(), dupMask.begin(), ::tolower);
-    refBedPath = optionsParser->getOption<string>("refBed");
-    prec = optionsParser->getOption<hal_size_t>("prec");
+    refBedPath = optionsParser.getOption<string>("refBed");
+    prec = optionsParser.getOption<hal_size_t>("prec");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 

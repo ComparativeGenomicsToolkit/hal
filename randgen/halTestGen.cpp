@@ -11,15 +11,13 @@
 #include "hal.h"
 #include "halTopSegmentTest.h"
 #include "halBottomSegmentTest.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "output hal file");
-  return optionsParser;
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "output hal file");
 }
 
 static void setDNA(Genome* genome, char base = 'g');
@@ -42,17 +40,18 @@ static void indelLeaf(Alignment* alignment,
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser(CREATE_ACCESS);
+    initParser(optionsParser);
   string halPath;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
@@ -61,7 +60,7 @@ int main(int argc, char** argv)
     const hal_size_t genomeLength = 5000;
     hal_size_t segSize;
     
-    AlignmentPtr alignment(openHalAlignment(halPath, optionsParser, hal::CREATE_ACCESS));
+    AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser, hal::CREATE_ACCESS));
     
     createRoot(alignment.get(), "root", 1, genomeLength);
     

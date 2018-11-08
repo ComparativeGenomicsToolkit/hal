@@ -1,11 +1,13 @@
 #ifndef _MMAPALIGNMENT_H
 #define _MMAPALIGNMENT_H
 #include <deque>
+#include <map>
 #include "halAlignment.h"
 #include "mmapFile.h"
 #include "sonLib.h"
 
 namespace hal {
+    class CLParser;
 class MMapAlignment;
 class MMapGenome;
 class MMapAlignmentData {
@@ -34,9 +36,9 @@ class MMapAlignment : public Alignment {
     /* constructor from command line options */
     MMapAlignment(const std::string& alignmentPath,
                   unsigned mode,
-                  CLParserConstPtr parser);
+                  const CLParser* parser);
 
-    static void defineOptions(CLParserPtr parser,
+    static void defineOptions(CLParser* parser,
                               unsigned mode);
 
     // Allocate new array and return the offset.
@@ -190,7 +192,7 @@ class MMapAlignment : public Alignment {
     };
 
 private:
-    void initializeFromOptions(CLParserConstPtr parser);
+    void initializeFromOptions(const CLParser* parser);
     void create();
     void open();
     Genome *_openGenome(const std::string &name) const;

@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include "halStats.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
@@ -48,73 +49,73 @@ static void printAllCoverage(ostream& os, const Alignment* alignment);
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->setDescription("Retrieve basic statistics from a hal database");
-  optionsParser->addArgument("halFile", "path to hal file to analyze");
-  optionsParser->addOptionFlag("genomes", "print only a list of genomes "
+    CLParser optionsParser;
+  optionsParser.setDescription("Retrieve basic statistics from a hal database");
+  optionsParser.addArgument("halFile", "path to hal file to analyze");
+  optionsParser.addOptionFlag("genomes", "print only a list of genomes "
                                "in alignment", false);
-  optionsParser->addOption("sequences", "print list of sequences in given "
+  optionsParser.addOption("sequences", "print list of sequences in given "
                            "genome", "\"\"");
-  optionsParser->addOption("sequenceStats", "print stats for each sequence in "
+  optionsParser.addOption("sequenceStats", "print stats for each sequence in "
                            "given genome", "\"\"");
-  optionsParser->addOption("bedSequences", "print sequences of given genome "
+  optionsParser.addOption("bedSequences", "print sequences of given genome "
                            "in bed format",
                            "\"\"");
-  optionsParser->addOptionFlag("tree", "print only the NEWICK tree", false);
-  optionsParser->addOptionFlag("branches", "print list of branches. "
+  optionsParser.addOptionFlag("tree", "print only the NEWICK tree", false);
+  optionsParser.addOptionFlag("branches", "print list of branches. "
                                "Each branch is specified by the child genome", 
                                false);
-  optionsParser->addOption("span", "print branches on path (or spanning tree) "
+  optionsParser.addOption("span", "print branches on path (or spanning tree) "
                            "between comma "
                            "separated list of genomes", "\"\"");
-  optionsParser->addOption("spanRoot", "print genomes on path" 
+  optionsParser.addOption("spanRoot", "print genomes on path" 
                            "(or spanning tree) between comma "
                            "separated list of genomes.  Different from --span"
                            "only in that the spanning tree root is also "
                            "given", "\"\"");
-  optionsParser->addOption("children", "print names of children of given "
+  optionsParser.addOption("children", "print names of children of given "
                            "genome", "\"\"");
-  optionsParser->addOptionFlag("root", "print root genome name", false);
-  optionsParser->addOption("parent", "print name of parent of given genome",
+  optionsParser.addOptionFlag("root", "print root genome name", false);
+  optionsParser.addOption("parent", "print name of parent of given genome",
                            "\"\"");
-  optionsParser->addOption("branchLength", "print branch length between "
+  optionsParser.addOption("branchLength", "print branch length between "
                            "given genome and its parent in the tree",
                            "\"\"");
-  optionsParser->addOption("numSegments", "print numTopSegments "
+  optionsParser.addOption("numSegments", "print numTopSegments "
                            "numBottomSegments for given genome.",
                            "\"\"");
-  optionsParser->addOption("baseComp", "print base composition for given "
+  optionsParser.addOption("baseComp", "print base composition for given "
                            "genome by sampling every step bases. Parameter "
                            "value is of the form genome,step.  Ex: "
                            "--baseComp human,1000.  The ouptut is of the form "
                            "fraction_of_As fraction_of_Gs fraction_of_Cs "
                            "fraction_of_Ts.", 
                            "\"\"");
-  optionsParser->addOption("genomeMetaData", "print metadata for given genome, "
+  optionsParser.addOption("genomeMetaData", "print metadata for given genome, "
                            "one entry per line, tab-seperated.", "\"\"");
-  optionsParser->addOptionFlag("metaData", "print metadata for the entire alignment", false);
-  optionsParser->addOption("chromSizes", "print the name and length of each"
+  optionsParser.addOptionFlag("metaData", "print metadata for the entire alignment", false);
+  optionsParser.addOption("chromSizes", "print the name and length of each"
                            " sequence in a given genome.  This is a subset"
                            " of the"
                            " information returned by --sequenceStats but is"
                            " useful because it is in the format used by"
                            " wigToBigWig", 
                            "\"\"");
-  optionsParser->addOption("percentID",
+  optionsParser.addOption("percentID",
                            "print % ID of a genome with all other genomes."
                            "Only non-duplicated and unambiguous sites are"
                            "considered",
                            "\"\"");
-  optionsParser->addOption("coverage",
+  optionsParser.addOption("coverage",
                            "print histogram of coverage of a genome with"
                            " all genomes", "\"\"");
-  optionsParser->addOption("topSegments",
+  optionsParser.addOption("topSegments",
                            "print coordinates of all top segments of given"
                            " genome in BED format.", "\"\"");
-  optionsParser->addOption("bottomSegments",
+  optionsParser.addOption("bottomSegments",
                            "print coordinates of all bottom segments of given"
                            " genome in BED format.", "\"\"");
-  optionsParser->addOptionFlag("allCoverage",
+  optionsParser.addOptionFlag("allCoverage",
                                "print histogram of coverage from all genomes to"
                                " all genomes", false);
 
@@ -144,30 +145,30 @@ int main(int argc, char** argv)
   bool allCoverage;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    path = optionsParser->getArgument<string>("halFile");
-    listGenomes = optionsParser->getFlag("genomes");
-    sequencesFromGenome = optionsParser->getOption<string>("sequences");
-    sequenceStatsFromGenome = optionsParser->getOption<string>("sequenceStats");
-    bedSequencesFromGenome = optionsParser->getOption<string>("bedSequences");
-    tree = optionsParser->getFlag("tree");
-    spanGenomes = optionsParser->getOption<string>("span");
-    spanRootGenomes = optionsParser->getOption<string>("spanRoot");
-    branches = optionsParser->getFlag("branches");
-    childrenFromGenome = optionsParser->getOption<string>("children");
-    parentFromGenome = optionsParser->getOption<string>("parent");
-    printRoot = optionsParser->getFlag("root");
-    nameForBL = optionsParser->getOption<string>("branchLength");
-    numSegmentsGenome = optionsParser->getOption<string>("numSegments");
-    baseCompPair = optionsParser->getOption<string>("baseComp");
-    genomeMetaData = optionsParser->getOption<string>("genomeMetaData");
-    metaData = optionsParser->getFlag("metaData");
-    chromSizesFromGenome = optionsParser->getOption<string>("chromSizes");
-    percentID = optionsParser->getOption<string>("percentID");
-    coverage = optionsParser->getOption<string>("coverage");
-    topSegments = optionsParser->getOption<string>("topSegments");
-    bottomSegments = optionsParser->getOption<string>("bottomSegments");
-    allCoverage = optionsParser->getFlag("allCoverage");
+    optionsParser.parseOptions(argc, argv);
+    path = optionsParser.getArgument<string>("halFile");
+    listGenomes = optionsParser.getFlag("genomes");
+    sequencesFromGenome = optionsParser.getOption<string>("sequences");
+    sequenceStatsFromGenome = optionsParser.getOption<string>("sequenceStats");
+    bedSequencesFromGenome = optionsParser.getOption<string>("bedSequences");
+    tree = optionsParser.getFlag("tree");
+    spanGenomes = optionsParser.getOption<string>("span");
+    spanRootGenomes = optionsParser.getOption<string>("spanRoot");
+    branches = optionsParser.getFlag("branches");
+    childrenFromGenome = optionsParser.getOption<string>("children");
+    parentFromGenome = optionsParser.getOption<string>("parent");
+    printRoot = optionsParser.getFlag("root");
+    nameForBL = optionsParser.getOption<string>("branchLength");
+    numSegmentsGenome = optionsParser.getOption<string>("numSegments");
+    baseCompPair = optionsParser.getOption<string>("baseComp");
+    genomeMetaData = optionsParser.getOption<string>("genomeMetaData");
+    metaData = optionsParser.getFlag("metaData");
+    chromSizesFromGenome = optionsParser.getOption<string>("chromSizes");
+    percentID = optionsParser.getOption<string>("percentID");
+    coverage = optionsParser.getOption<string>("coverage");
+    topSegments = optionsParser.getOption<string>("topSegments");
+    bottomSegments = optionsParser.getOption<string>("bottomSegments");
+    allCoverage = optionsParser.getFlag("allCoverage");
 
     size_t optCount = listGenomes == true ? 1 : 0;
     if (sequencesFromGenome != "\"\"") ++optCount;
@@ -205,12 +206,12 @@ int main(int argc, char** argv)
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
   try
   {
-      AlignmentConstPtr alignment(openHalAlignment(path, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(path, &optionsParser));
       // FIXME: why are strings of '""' used for no value instead of empty strings.
     if (listGenomes == true && alignment->getNumGenomes() > 0)
     {

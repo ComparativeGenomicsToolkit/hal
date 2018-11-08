@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include "halChain.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
@@ -20,21 +21,21 @@ using namespace hal;
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->setDescription("Rertrieve chain (pairwise alignment) "
+    CLParser optionsParser;
+  optionsParser.setDescription("Rertrieve chain (pairwise alignment) "
                                 "information from a hal database.\n"
                                 "WARNING: THIS TOOL WAS NEVER FINISHED OR"
                                 " TESTED. USE AT OWN RISK. PLEASE "
                                 "CONSIDER halLiftover --outPSL INSTEAD.");
-  optionsParser->addArgument("halFile", "path to hal file to analyze");
-  optionsParser->addArgument("genome", "(query) genome to process");
-  optionsParser->addOption("sequence", "sequence name in query genome ("
+  optionsParser.addArgument("halFile", "path to hal file to analyze");
+  optionsParser.addArgument("genome", "(query) genome to process");
+  optionsParser.addOption("sequence", "sequence name in query genome ("
                            "all sequences if not specified)", "\"\"");
-  optionsParser->addOption("start", "start position in query genome", 0);
-  optionsParser->addOption("length", "maximum length of chain to output.", 0);
-  optionsParser->addOption("chainFile", "path for output file.  stdout if not"
+  optionsParser.addOption("start", "start position in query genome", 0);
+  optionsParser.addOption("length", "maximum length of chain to output.", 0);
+  optionsParser.addOption("chainFile", "path for output file.  stdout if not"
                            " specified", "\"\"");
-  optionsParser->addOption("maxGap", 
+  optionsParser.addOption("maxGap", 
                            "maximum indel length to be considered a gap within"
                            " a chain.", 
                            20);
@@ -49,19 +50,19 @@ int main(int argc, char** argv)
   hal_size_t maxGap;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    genomeName = optionsParser->getArgument<string>("genome");
-    sequenceName = optionsParser->getOption<string>("sequence");
-    start = optionsParser->getOption<hal_size_t>("start");
-    length = optionsParser->getOption<hal_size_t>("length");
-    chainPath = optionsParser->getOption<string>("chainFile");
-    maxGap = optionsParser->getOption<hal_size_t>("maxGap");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    genomeName = optionsParser.getArgument<string>("genome");
+    sequenceName = optionsParser.getOption<string>("sequence");
+    start = optionsParser.getOption<hal_size_t>("start");
+    length = optionsParser.getOption<hal_size_t>("length");
+    chainPath = optionsParser.getOption<string>("chainFile");
+    maxGap = optionsParser.getOption<hal_size_t>("maxGap");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
   try
@@ -69,7 +70,7 @@ int main(int argc, char** argv)
     cerr << "WARNING: THIS TOOL WAS NEVER FINISHED OR TESTED. USE AT OWN RISK."
          << " PLEASE CONSIDER halLiftover --outPSL INSTEAD." <<endl;  
 
-    AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+    AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     
     
     const Genome* genome = alignment->openGenome(genomeName);

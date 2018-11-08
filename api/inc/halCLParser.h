@@ -13,6 +13,7 @@
 #include <sstream>
 #include <iostream>
 #include "halDefs.h"
+#include "halAlignmentInstance.h"
 
 namespace hal {
 
@@ -31,7 +32,7 @@ class CLParser
 {
 public:
    
-   CLParser();
+    CLParser(unsigned mode = READ_ACCESS);
 
     /** Destructor */
     ~CLParser() {

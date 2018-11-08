@@ -4,35 +4,33 @@
 using namespace hal;
 using namespace std;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
-  optionsParser->setDescription("Rename the sequences of a genome in-place.");
-  optionsParser->addArgument("halFile", "hal file");
-  optionsParser->addArgument("genome", "genome to rename the sequences of");
-  optionsParser->addArgument("renameFile",
+static void initParser(CLParser& optionsParser) {
+  optionsParser.setDescription("Rename the sequences of a genome in-place.");
+  optionsParser.addArgument("halFile", "hal file");
+  optionsParser.addArgument("genome", "genome to rename the sequences of");
+  optionsParser.addArgument("renameFile",
                              "Tab-separated file. First column: existing "
                              "sequence name, second column: new sequence name."
                              " Any sequences not provided will stay the same.");
-  return optionsParser;
 }
 
 int main(int argc, char *argv[])
 {
-  CLParserPtr optParser = initParser();
+  CLParser optionsParser(WRITE_ACCESS);
+  initParser(optionsParser);
   string halPath, renamePath, genomeName;
   try {
-    optParser->parseOptions(argc, argv);
-    halPath = optParser->getArgument<string>("halFile");
-    genomeName = optParser->getArgument<string>("genome");
-    renamePath = optParser->getArgument<string>("renameFile");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    genomeName = optionsParser.getArgument<string>("genome");
+    renamePath = optionsParser.getArgument<string>("renameFile");
   } catch (exception &e) {
     cerr << e.what() << endl;
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
 
-  AlignmentPtr alignment(openHalAlignment(halPath, optParser));
+  AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser));
   Genome *genome = alignment->openGenome(genomeName);
   if (genome == NULL) {
       throw hal_exception("Genome " + genomeName + " not found in alignment");

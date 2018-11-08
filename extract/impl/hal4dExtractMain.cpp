@@ -8,39 +8,38 @@
 #include <iostream>
 #include <fstream>
 #include "hal4dExtract.h"
+#include "halCLParser.h"
 
 
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->setDescription("Extract Fourfold-Degenerate codon positions"
+static void initParser(CLParser& optionsParser) {
+  optionsParser.setDescription("Extract Fourfold-Degenerate codon positions"
                                 " from a BED file that contains exons");
-  optionsParser->addArgument("halPath", "input hal file");
-  optionsParser->addArgument("refGenome", "name of reference genome");
-  optionsParser->addArgument("inBed", "path to bed file containing coding"
+  optionsParser.addArgument("halPath", "input hal file");
+  optionsParser.addArgument("refGenome", "name of reference genome");
+  optionsParser.addArgument("inBed", "path to bed file containing coding"
                              " exons in refGenome (or \"stdin\" to pipe from"
                              " standard input)");
-  optionsParser->addArgument("outBed", "output path for bed file that "
+  optionsParser.addArgument("outBed", "output path for bed file that "
                             "will only contain 4d sites (or \"stdout\" to "
                             "pipe to standard output)");
-  optionsParser->addOption("bedVersion", "version of input bed file.  will be"
+  optionsParser.addOption("bedVersion", "version of input bed file.  will be"
                            " automatically detected if not specified",
                            -1);
-  optionsParser->addOptionFlag("append",
+  optionsParser.addOptionFlag("append",
                                "append to instead of overwrite output file.",
                                false);
-  optionsParser->addOptionFlag("conserved",
+  optionsParser.addOptionFlag("conserved",
                                "ensure 4d sites are 4d sites in all leaf genomes",
                                false);
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
 
   string halPath;
   string genomeName;
@@ -51,25 +50,25 @@ int main(int argc, char** argv)
   bool conserved;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halPath");
-    genomeName = optionsParser->getArgument<string>("refGenome");
-    inBedPath = optionsParser->getArgument<string>("inBed");
-    outBedPath = optionsParser->getArgument<string>("outBed");
-    bedVersion = optionsParser->getOption<int>("bedVersion");
-    append = optionsParser->getFlag("append");
-    conserved = optionsParser->getFlag("conserved");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halPath");
+    genomeName = optionsParser.getArgument<string>("refGenome");
+    inBedPath = optionsParser.getArgument<string>("inBed");
+    outBedPath = optionsParser.getArgument<string>("outBed");
+    bedVersion = optionsParser.getOption<int>("bedVersion");
+    append = optionsParser.getFlag("append");
+    conserved = optionsParser.getFlag("conserved");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
   try
   {
-      AlignmentConstPtr inAlignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr inAlignment(openHalAlignment(halPath, &optionsParser));
     if (inAlignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");

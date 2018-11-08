@@ -14,56 +14,54 @@
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addArgument("srcGenome", "source genome name");
-  optionsParser->addArgument("srcBed", "path of input bed file.  set as stdin "
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "input hal file");
+  optionsParser.addArgument("srcGenome", "source genome name");
+  optionsParser.addArgument("srcBed", "path of input bed file.  set as stdin "
                              "to stream from standard input");
-  optionsParser->addArgument("tgtGenome", "target genome name");
-  optionsParser->addArgument("tgtBed", "path of output bed file.  set as stdout"
+  optionsParser.addArgument("tgtGenome", "target genome name");
+  optionsParser.addArgument("tgtBed", "path of output bed file.  set as stdout"
                              " to stream to standard output.");
-  optionsParser->addOptionFlag("noDupes", "do not map between duplications in"
+  optionsParser.addOptionFlag("noDupes", "do not map between duplications in"
                                " graph.", false);
-  optionsParser->addOptionFlag("append", "append results to tgtBed", false);
-  optionsParser->addOption("inBedVersion", "bed version of input file "
+  optionsParser.addOptionFlag("append", "append results to tgtBed", false);
+  optionsParser.addOption("inBedVersion", "bed version of input file "
                            "as integer between 3 and 9 or 12 reflecting "
                            "the number of columns (see bed "
                            "format specification for more details). Will "
                            "be autodetected by default.", 0);
-  optionsParser->addOption("outBedVersion", "bed version of output file "
+  optionsParser.addOption("outBedVersion", "bed version of output file "
                            "as integer between 3 and 9 or 12 reflecting "
                            "the number of columns (see bed "
                            "format specification for more details). Will "
                            "be same as input by default.", 0);
-  optionsParser->addOption("coalescenceLimit", "coalescence limit genome:"
+  optionsParser.addOption("coalescenceLimit", "coalescence limit genome:"
                            " the genome at or above the MRCA of source"
                            " and target at which we stop looking for"
                            " homologies (default: MRCA)",
                            "");
-  optionsParser->addOptionFlag("outPSL", "write output in PSL instead of "
+  optionsParser.addOptionFlag("outPSL", "write output in PSL instead of "
                                "bed format. overrides --outBedVersion when "
                                "specified.", false);
-  optionsParser->addOptionFlag("outPSLWithName", "write output as input BED name followed by PSL line instead of "
+  optionsParser.addOptionFlag("outPSLWithName", "write output as input BED name followed by PSL line instead of "
                                "bed format. overrides --outBedVersion when "
                                "specified.", false);
-  optionsParser->addOptionFlag("keepExtra", "keep extra columns. these are "
+  optionsParser.addOptionFlag("keepExtra", "keep extra columns. these are "
                                "columns in the input beyond the specified or "
                                "detected bed version, and which are cut by "
                                "default.", false);
-  optionsParser->addOptionFlag("tab", "input is tab-separated. this allows"
+  optionsParser.addOptionFlag("tab", "input is tab-separated. this allows"
                                " column entries to contain spaces.  if this"
                                " flag is not set, both spaces and tabs are"
                                " used to separate input columns.", false);
-  optionsParser->setDescription("Map BED genome interval coordinates between "
+  optionsParser.setDescription("Map BED genome interval coordinates between "
                                 "two genomes.");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
 
   string halPath;
   string srcGenomeName;
@@ -81,26 +79,26 @@ int main(int argc, char** argv)
   bool tab;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    srcGenomeName = optionsParser->getArgument<string>("srcGenome");
-    srcBedPath =  optionsParser->getArgument<string>("srcBed");
-    tgtGenomeName = optionsParser->getArgument<string>("tgtGenome");
-    tgtBedPath =  optionsParser->getArgument<string>("tgtBed");
-    coalescenceLimitName = optionsParser->getOption<string>("coalescenceLimit");
-    noDupes = optionsParser->getFlag("noDupes");
-    append = optionsParser->getFlag("append");
-    inBedVersion = optionsParser->getOption<int>("inBedVersion");
-    outBedVersion = optionsParser->getOption<int>("outBedVersion");
-    keepExtra = optionsParser->getFlag("keepExtra");
-    outPSL = optionsParser->getFlag("outPSL");
-    outPSLWithName = optionsParser->getFlag("outPSLWithName");
-    tab = optionsParser->getFlag("tab");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    srcGenomeName = optionsParser.getArgument<string>("srcGenome");
+    srcBedPath =  optionsParser.getArgument<string>("srcBed");
+    tgtGenomeName = optionsParser.getArgument<string>("tgtGenome");
+    tgtBedPath =  optionsParser.getArgument<string>("tgtBed");
+    coalescenceLimitName = optionsParser.getOption<string>("coalescenceLimit");
+    noDupes = optionsParser.getFlag("noDupes");
+    append = optionsParser.getFlag("append");
+    inBedVersion = optionsParser.getOption<int>("inBedVersion");
+    outBedVersion = optionsParser.getOption<int>("outBedVersion");
+    keepExtra = optionsParser.getFlag("keepExtra");
+    outPSL = optionsParser.getFlag("outPSL");
+    outPSLWithName = optionsParser.getFlag("outPSLWithName");
+    tab = optionsParser.getFlag("tab");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
@@ -115,7 +113,7 @@ int main(int argc, char** argv)
       outBedVersion = 12;
     }
 
-    AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+    AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignment is empty");

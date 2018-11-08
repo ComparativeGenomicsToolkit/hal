@@ -1,28 +1,27 @@
 #include "hal.h"
 #include "markAncestors.h"
+#include "halCLParser.h"
+#include "halAlignmentInstance.h"
 
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
-  optionsParser->addArgument("mainFile", "destination tree");
-  optionsParser->addArgument("appendFile", "alignment containing the tree to be"
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("mainFile", "destination tree");
+  optionsParser.addArgument("appendFile", "alignment containing the tree to be"
                              " appended");
-  optionsParser->addArgument("parentName", "node to be added to");
-  optionsParser->addArgument("rootName", "name of subtree root");
-  optionsParser->addOption("bridgeFile", "alignment containing parent,"
+  optionsParser.addArgument("parentName", "node to be added to");
+  optionsParser.addArgument("rootName", "name of subtree root");
+  optionsParser.addOption("bridgeFile", "alignment containing parent,"
                            " subtree root, and its future siblings, if any "
                            "(required if not merging appended and appendee "
                            "nodes)", "");
-  optionsParser->addOption("branchLength", "branch length between appended and "
+  optionsParser.addOption("branchLength", "branch length between appended and "
                            "appendee nodes", 0.0);
-  optionsParser->addOptionFlag("noMarkAncestors", "don't mark ancestors for"
+  optionsParser.addOptionFlag("noMarkAncestors", "don't mark ancestors for"
                                " update", false);
-  optionsParser->addOptionFlag("merge", "merge appended root and node that is appended to",
+  optionsParser.addOptionFlag("merge", "merge appended root and node that is appended to",
                                false);
-  return optionsParser;
 }
 
 void addSubtree(Alignment* mainAlignment, const Alignment* appendAlignment, 
@@ -49,34 +48,35 @@ void addSubtree(Alignment* mainAlignment, const Alignment* appendAlignment,
 
 int main(int argc, char *argv[])
 {
-  CLParserPtr optParser = initParser();
+  CLParser optionsParser(WRITE_ACCESS);
+  initParser(optionsParser);
   string mainPath, appendPath, bridgePath, parentName, rootName;
   double branchLength;
   bool noMarkAncestors;
   bool merge;
   try {
-    optParser->parseOptions(argc, argv);
-    mainPath = optParser->getArgument<string>("mainFile");
-    appendPath = optParser->getArgument<string>("appendFile");
-    bridgePath = optParser->getOption<string>("bridgeFile");
-    parentName = optParser->getArgument<string>("parentName");
-    rootName = optParser->getArgument<string>("rootName");
-    branchLength = optParser->getOption<double>("branchLength");
-    noMarkAncestors = optParser->getFlag("noMarkAncestors");
-    merge = optParser->getFlag("merge");
+    optionsParser.parseOptions(argc, argv);
+    mainPath = optionsParser.getArgument<string>("mainFile");
+    appendPath = optionsParser.getArgument<string>("appendFile");
+    bridgePath = optionsParser.getOption<string>("bridgeFile");
+    parentName = optionsParser.getArgument<string>("parentName");
+    rootName = optionsParser.getArgument<string>("rootName");
+    branchLength = optionsParser.getOption<double>("branchLength");
+    noMarkAncestors = optionsParser.getFlag("noMarkAncestors");
+    merge = optionsParser.getFlag("merge");
   } catch (exception &e) {
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
-  AlignmentPtr mainAlignment(openHalAlignment(mainPath, optParser));
-  AlignmentConstPtr appendAlignment(openHalAlignment(appendPath, optParser));
+  AlignmentPtr mainAlignment(openHalAlignment(mainPath, &optionsParser));
+  AlignmentConstPtr appendAlignment(openHalAlignment(appendPath, &optionsParser));
   AlignmentConstPtr bridgeAlignment;
 
   if (!merge) {
     if (bridgePath == "") {
       throw hal_exception("need a bridge alignment if not merging nodes");
     }
-    bridgeAlignment = AlignmentConstPtr(openHalAlignment(bridgePath, optParser));
+    bridgeAlignment = AlignmentConstPtr(openHalAlignment(bridgePath, &optionsParser));
     Genome *mainAppendedRoot = mainAlignment->addLeafGenome(rootName,
                                                             parentName,
                                                             branchLength);

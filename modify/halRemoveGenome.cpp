@@ -1,34 +1,33 @@
 #include "hal.h"
 #include "markAncestors.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
-  optionsParser->addArgument("inFile", "existing tree");
-  optionsParser->addArgument("deleteNode", "(leaf) genome to delete");
-  optionsParser->addOptionFlag("noMarkAncestors", "don't mark ancestors for"
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("inFile", "existing tree");
+  optionsParser.addArgument("deleteNode", "(leaf) genome to delete");
+  optionsParser.addOptionFlag("noMarkAncestors", "don't mark ancestors for"
                                " update", false);
-  return optionsParser;
 }
 
 int main(int argc, char *argv[])
 {
-  CLParserPtr optParser = initParser();
+  CLParser optionsParser(WRITE_ACCESS);
+  initParser(optionsParser);
   string inPath, deleteNode;
   bool noMarkAncestors;
   try {
-    optParser->parseOptions(argc, argv);
-    inPath = optParser->getArgument<string>("inFile");
-    deleteNode = optParser->getArgument<string>("deleteNode");
-    noMarkAncestors = optParser->getFlag("noMarkAncestors");
+    optionsParser.parseOptions(argc, argv);
+    inPath = optionsParser.getArgument<string>("inFile");
+    deleteNode = optionsParser.getArgument<string>("deleteNode");
+    noMarkAncestors = optionsParser.getFlag("noMarkAncestors");
   } catch (exception &e) {
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
-  AlignmentPtr alignment(openHalAlignment(inPath, optParser));
+  AlignmentPtr alignment(openHalAlignment(inPath, &optionsParser));
   if (!noMarkAncestors) {
     markAncestorsForUpdate(alignment.get(), deleteNode);
   }

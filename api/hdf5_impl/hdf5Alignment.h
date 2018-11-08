@@ -33,10 +33,10 @@ public:
                  bool inMemory=false);
    HDF5Alignment(const std::string& alignmentPath,
                  unsigned mode,
-                 CLParserConstPtr parser);
+                 const CLParser* parser);
    ~HDF5Alignment();
 
-    static void defineOptions(CLParserPtr parser,
+    static void defineOptions(CLParser* parser,
                               unsigned mode);
 
 
@@ -112,7 +112,7 @@ private:
     }
     HDF5Alignment(const HDF5Alignment&) {
     }
-    void initializeFromOptions(CLParserConstPtr parser);
+    void initializeFromOptions(const CLParser* parser);
     void create();
     void open();
     void setInMemory();

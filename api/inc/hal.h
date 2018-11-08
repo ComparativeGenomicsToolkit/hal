@@ -62,7 +62,6 @@
 #include "halCommon.h"
 #include "halPositionCache.h"
 #include "halAlignmentInstance.h"
-#include "halCLParserInstance.h"
 #include "halAlignment.h"
 #include "halCLParser.h"
 #include "halGenome.h"

@@ -2,35 +2,34 @@
 // after an ancestorsML run).
 #include <fstream>
 #include "hal.h"
+#include "halAlignmentInstance.h"
 
 using namespace hal;
 using namespace std;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
-  optionsParser->setDescription("Write changes to a hal sequence from a TSV "
+static void initParser(CLParser& optionsParser) {
+  optionsParser.setDescription("Write changes to a hal sequence from a TSV "
                                 "containing fields "
                                 "genomeName\tpos\toldChar\tnewChar. Note that "
                                 "the position is in genome coordinates!");
-  optionsParser->addArgument("inFile", "hal file");
-  optionsParser->addArgument("tsvFile", "tsv file");
-  return optionsParser;
+  optionsParser.addArgument("inFile", "hal file");
+  optionsParser.addArgument("tsvFile", "tsv file");
 }
 
 int main(int argc, char *argv[])
 {
-  CLParserPtr optParser = initParser();
+    CLParser optionsParser(WRITE_ACCESS);
+    initParser(optionsParser);
   string inPath, tsvFile;
   try {
-    optParser->parseOptions(argc, argv);
-    inPath = optParser->getArgument<string>("inFile");
-    tsvFile = optParser->getArgument<string>("tsvFile");
+    optionsParser.parseOptions(argc, argv);
+    inPath = optionsParser.getArgument<string>("inFile");
+    tsvFile = optionsParser.getArgument<string>("tsvFile");
   } catch (exception &e) {
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
-  AlignmentPtr alignment(openHalAlignment(inPath, optParser));
+  AlignmentPtr alignment(openHalAlignment(inPath, &optionsParser));
 
   ifstream tsv(tsvFile.c_str());
   string line;

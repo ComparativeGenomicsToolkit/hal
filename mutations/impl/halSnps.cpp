@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include "hal.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
@@ -20,50 +21,48 @@ static void countSnps(const Genome* refGenome,
                       map<const Genome *, hal_size_t> *numOrthologousPairs,
                       bool unique, hal_size_t minSpeciesForSnp);
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addArgument("refGenome",
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "input hal file");
+  optionsParser.addArgument("refGenome",
                              "name of reference genome.");
-  optionsParser->addArgument("targetGenomes",
+  optionsParser.addArgument("targetGenomes",
                              "names of query genomes, comma-separated.");
-  optionsParser->addOption("tsv",
+  optionsParser.addOption("tsv",
                            "path of tsv file to write snps to in reference "
                            "genome coordinates, and containing the base "
                            "assignments for each genome",
                            "\"\"");
-  optionsParser->addOptionFlag("noDupes",
+  optionsParser.addOptionFlag("noDupes",
                                "do not consider paralogies while mapping",
                                false);
-  optionsParser->addOption("refSequence",
+  optionsParser.addOption("refSequence",
                            "name of reference sequence within reference genome"
                            " (all sequences if empty)",
                            "\"\"");
-  optionsParser->addOption("start",
+  optionsParser.addOption("start",
                            "coordinate within reference genome (or sequence"
                            " if specified) to start at",
                            0);
-  optionsParser->addOption("length",
+  optionsParser.addOption("length",
                            "length of the reference genome (or sequence"
                            " if specified) to convert.  If set to 0,"
                            " the entire thing is converted",
                            0);
-  optionsParser->addOption("minSpeciesForSnp", "minimum number of "
+  optionsParser.addOption("minSpeciesForSnp", "minimum number of "
                            "species that must have a different base than the "
                            "reference for a SNP to be reported in the TSV", 1);
-  optionsParser->addOptionFlag("unique",
+  optionsParser.addOptionFlag("unique",
                                "Whether to ignore columns that are not "
                                "canonical on the reference genome", false);
-  optionsParser->setDescription("Count snps between orthologous positions "
+  optionsParser.setDescription("Count snps between orthologous positions "
                                 "in multiple genomes.  Outputs "
                                 "targetGenome totalSnps totalCleanOrthologousPairs");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
 
   string halPath;
   string refGenomeName;
@@ -77,28 +76,28 @@ int main(int argc, char** argv)
   hal_size_t minSpeciesForSnp;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    refGenomeName = optionsParser->getArgument<string>("refGenome");
-    targetGenomesString = optionsParser->getArgument<string>("targetGenomes");
-    tsvPath = optionsParser->getOption<string>("tsv");
-    noDupes = optionsParser->getFlag("noDupes");
-    refSequenceName = optionsParser->getOption<string>("refSequence");
-    start = optionsParser->getOption<hal_index_t>("start");
-    length = optionsParser->getOption<hal_size_t>("length");
-    minSpeciesForSnp = optionsParser->getOption<hal_size_t>("minSpeciesForSnp");
-    unique = optionsParser->getFlag("unique");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    refGenomeName = optionsParser.getArgument<string>("refGenome");
+    targetGenomesString = optionsParser.getArgument<string>("targetGenomes");
+    tsvPath = optionsParser.getOption<string>("tsv");
+    noDupes = optionsParser.getFlag("noDupes");
+    refSequenceName = optionsParser.getOption<string>("refSequence");
+    start = optionsParser.getOption<hal_index_t>("start");
+    length = optionsParser.getOption<hal_size_t>("length");
+    minSpeciesForSnp = optionsParser.getOption<hal_size_t>("minSpeciesForSnp");
+    unique = optionsParser.getFlag("unique");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
   try
   {
-      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignment is empty");

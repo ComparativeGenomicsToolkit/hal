@@ -1,24 +1,23 @@
 #include "hal.h"
 #include "markAncestors.h"
+#include "halCLParser.h"
+#include "halAlignmentInstance.h"
 
 using namespace hal;
 using namespace std;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
-  optionsParser->addArgument("inFile", "existing tree");
-  optionsParser->addOption("bottomAlignmentFile", "hal file containing an "
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("inFile", "existing tree");
+  optionsParser.addOption("bottomAlignmentFile", "hal file containing an "
                            "alignment of the genome and its children. "
                            "Required for non-leaf genomes.", "\"\"");
-  optionsParser->addOption("topAlignmentFile", "hal file containing an "
+  optionsParser.addOption("topAlignmentFile", "hal file containing an "
                            "alignment of the genome, its parent, and "
                            "its siblings. Required if the genome to be "
                            "replaced is not the root.", "\"\"");
-  optionsParser->addArgument("genomeName", "name of genome to be replaced");
-  optionsParser->addOptionFlag("noMarkAncestors", "don't mark ancestors for"
+  optionsParser.addArgument("genomeName", "name of genome to be replaced");
+  optionsParser.addOptionFlag("noMarkAncestors", "don't mark ancestors for"
                                " update", false);
-  return optionsParser;
 }
 
 void copyFromTopAlignment(const Alignment* topAlignment,
@@ -77,21 +76,22 @@ void copyFromBottomAlignment(const Alignment* bottomAlignment,
 
 int main(int argc, char *argv[])
 {
-  CLParserPtr optParser = initParser();
+    CLParser optionsParser(WRITE_ACCESS);
+    initParser(optionsParser);
   string inPath, bottomAlignmentFile, topAlignmentFile, genomeName;
   bool noMarkAncestors;
   try {
-    optParser->parseOptions(argc, argv);
-    inPath = optParser->getArgument<string>("inFile");
-    bottomAlignmentFile = optParser->getOption<string>("bottomAlignmentFile");
-    topAlignmentFile = optParser->getOption<string>("topAlignmentFile");
-    genomeName = optParser->getArgument<string>("genomeName");
-    noMarkAncestors = optParser->getFlag("noMarkAncestors");
+    optionsParser.parseOptions(argc, argv);
+    inPath = optionsParser.getArgument<string>("inFile");
+    bottomAlignmentFile = optionsParser.getOption<string>("bottomAlignmentFile");
+    topAlignmentFile = optionsParser.getOption<string>("topAlignmentFile");
+    genomeName = optionsParser.getArgument<string>("genomeName");
+    noMarkAncestors = optionsParser.getFlag("noMarkAncestors");
   } catch (exception &e) {
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
-  AlignmentPtr mainAlignment(openHalAlignment(inPath, optParser));
+  AlignmentPtr mainAlignment(openHalAlignment(inPath, &optionsParser));
   AlignmentConstPtr bottomAlignment;
   AlignmentConstPtr topAlignment;
   bool useTopAlignment = mainAlignment->getRootName() != genomeName;
@@ -103,8 +103,7 @@ int main(int argc, char *argv[])
       throw hal_exception("Cannot replace non-root genome without a top "
                           "alignment file.");
     }
-    topAlignment = AlignmentConstPtr(openHalAlignment(topAlignmentFile,
-                                                      optParser));
+    topAlignment = AlignmentConstPtr(openHalAlignment(topAlignmentFile, &optionsParser));
     const Genome *topReplacedGenome = topAlignment->openGenome(genomeName);
     topReplacedGenome->copyDimensions(mainReplacedGenome);
     topReplacedGenome->copySequence(mainReplacedGenome);
@@ -116,7 +115,7 @@ int main(int argc, char *argv[])
       throw hal_exception("Cannot replace non-leaf genome without a bottom "
                           "alignment file.");
     }
-    bottomAlignment = AlignmentConstPtr(openHalAlignment(bottomAlignmentFile, optParser));
+    bottomAlignment = AlignmentConstPtr(openHalAlignment(bottomAlignmentFile, &optionsParser));
     const Genome *botReplacedGenome = bottomAlignment->openGenome(genomeName);
     botReplacedGenome->copyDimensions(mainReplacedGenome);
     botReplacedGenome->copySequence(mainReplacedGenome);

@@ -10,6 +10,7 @@
 #include <fstream>
 #include <deque>
 #include "halCommon.h"
+#include "halCLParser.h"
 #include "halAlignmentInstance.h"
 #include "hdf5Alignment.h"
 #include "mmapAlignment.h"
@@ -85,9 +86,9 @@ hal::mmapAlignmentInstance(const std::string& alignmentPath,
 }
 
 Alignment* hal::openHalAlignment(const std::string& path,
-                                CLParserConstPtr options,
-                                unsigned mode,
-                                const std::string& overrideFormat)
+                                 const CLParser* options,
+                                 unsigned mode,
+                                 const std::string& overrideFormat)
 {
     /* FIXME: detect which kind of file it is here (maybe by extension?) */
     const std::string& fmt((overrideFormat.empty()) ? options->getOption<const std::string&>("format")

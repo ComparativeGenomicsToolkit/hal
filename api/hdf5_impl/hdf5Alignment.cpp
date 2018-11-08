@@ -12,6 +12,7 @@
 #include <algorithm>
 #include "halCommon.h"
 #include "halSequenceIterator.h"
+#include "halCLParser.h"
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
@@ -87,7 +88,7 @@ HDF5Alignment::HDF5Alignment(const string& alignmentPath,
 
 HDF5Alignment::HDF5Alignment(const std::string& alignmentPath,
                              unsigned mode,
-                             CLParserConstPtr parser):
+                             const CLParser* parser):
     _alignmentPath(alignmentPath),
     _mode(halDefaultAccessMode(mode)),
     _file(NULL),
@@ -112,7 +113,7 @@ HDF5Alignment::~HDF5Alignment()
   close();
 }
 
-void HDF5Alignment::defineOptions(CLParserPtr parser,
+void HDF5Alignment::defineOptions(CLParser* parser,
                                   unsigned mode)
 {
   if (mode & CREATE_ACCESS)
@@ -149,7 +150,7 @@ void HDF5Alignment::defineOptions(CLParserPtr parser,
 }
 
 /* initialize class from options */
-void HDF5Alignment::initializeFromOptions(CLParserConstPtr parser) {
+void HDF5Alignment::initializeFromOptions(const CLParser* parser) {
     _cprops.copy(H5::FileCreatPropList::DEFAULT);
     _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
     _aprops.copy(H5::FileAccPropList::DEFAULT);

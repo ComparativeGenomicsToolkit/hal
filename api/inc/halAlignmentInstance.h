@@ -9,7 +9,6 @@
 
 #include "halDefs.h"
 #include "halAlignment.h"
-#include "halCLParser.h"
 
 /*
  * for HDF5, we don't include hdf5 from our interface headers.
@@ -22,6 +21,7 @@ class DSetCreatPropList;
 
 /** HAL API namespace */
 namespace hal {
+    class CLParser;
 
 /**
  * Constants defining the storage format.
@@ -92,7 +92,7 @@ hdf5AlignmentInstance(const std::string& alignmentPath,
 Alignment*
 hdf5AlignmentInstance(const std::string& alignmentPath,
                       unsigned mode,
-                      CLParserConstPtr parser);
+                      const CLParser* parser);
 
 /** Get an instance of an mmap-implemented Alignment.
  * @param alignmentPath Path to file or URL for UDC access.
@@ -115,9 +115,9 @@ mmapAlignmentInstance(const std::string& alignmentPath,
  * command that both input and output HALs.
  */
 Alignment* openHalAlignment(const std::string& path,
-                              CLParserConstPtr options,
-                              unsigned mode = hal::READ_ACCESS,
-                              const std::string& overrideFormat = ""); 
+                            const CLParser* options,
+                            unsigned mode = hal::READ_ACCESS,
+                            const std::string& overrideFormat = ""); 
 }
 
 #endif

@@ -6,46 +6,44 @@
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(CREATE_ACCESS);
-  optionsParser->addArgument("halFile", "hal tree");
-  optionsParser->addArgument("referenceGenome", "genome to create the BED file "
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "hal tree");
+  optionsParser.addArgument("referenceGenome", "genome to create the BED file "
                              "for");
-  optionsParser->addOption("targetGenomes", "genomes to check for homologous "
+  optionsParser.addOption("targetGenomes", "genomes to check for homologous "
                            "duplicated sites (comma-separated, default=leaves)",
                            "");
-  optionsParser->addOption("refSequence", "sequence to traverse", "");
-  optionsParser->addOption("start", "start position within the sequence "
+  optionsParser.addOption("refSequence", "sequence to traverse", "");
+  optionsParser.addOption("start", "start position within the sequence "
                            "(within entire genome if --refSequence is not "
                            "set)", 0);
-  optionsParser->addOption("length", "length to traverse (default: until end "
+  optionsParser.addOption("length", "length to traverse (default: until end "
                            "of genome/sequence)", -1);
-  optionsParser->addOptionFlag("requireAllTargets", "require the regions to be present in all target genomes", false);
-  return optionsParser;
+  optionsParser.addOptionFlag("requireAllTargets", "require the regions to be present in all target genomes", false);
 }
 
 int main(int argc, char *argv[])
 {
   string halPath, referenceGenomeName, targetGenomesUnsplit, refSequence;
   hal_index_t start, length;
-  CLParserPtr optParser = initParser();
+  CLParser optionsParser(CREATE_ACCESS);
+  initParser(optionsParser);
   bool requireAllTargets = false;
   try {
-    optParser->parseOptions(argc, argv);
-    halPath = optParser->getArgument<string>("halFile");
-    referenceGenomeName = optParser->getArgument<string>("referenceGenome");
-    targetGenomesUnsplit = optParser->getOption<string>("targetGenomes");
-    refSequence = optParser->getOption<string>("refSequence");
-    start = optParser->getOption<hal_index_t>("start");
-    length = optParser->getOption<hal_index_t>("length");
-    requireAllTargets = optParser->getFlag("requireAllTargets");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    referenceGenomeName = optionsParser.getArgument<string>("referenceGenome");
+    targetGenomesUnsplit = optionsParser.getOption<string>("targetGenomes");
+    refSequence = optionsParser.getOption<string>("refSequence");
+    start = optionsParser.getOption<hal_index_t>("start");
+    length = optionsParser.getOption<hal_index_t>("length");
+    requireAllTargets = optionsParser.getFlag("requireAllTargets");
   } catch (exception &e) {
     cerr << e.what() << endl;
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
-  AlignmentConstPtr alignment(openHalAlignment(halPath, optParser));
+  AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
   vector<string> targetGenomeNames;
   if (targetGenomesUnsplit != "") {
     // Target genomes provided

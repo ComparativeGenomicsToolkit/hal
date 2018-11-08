@@ -12,38 +12,37 @@
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addArgument("srcGenome", "source genome name");
-  optionsParser->addArgument("srcWig", "path of input .wig file.  set as stdin "
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "input hal file");
+  optionsParser.addArgument("srcGenome", "source genome name");
+  optionsParser.addArgument("srcWig", "path of input .wig file.  set as stdin "
                              "to stream from standard input");
-  optionsParser->addArgument("tgtGenome", "target genome name");
-  optionsParser->addArgument("tgtWig", "path of output .wig file.  set as stdout"
+  optionsParser.addArgument("tgtGenome", "target genome name");
+  optionsParser.addArgument("tgtWig", "path of output .wig file.  set as stdout"
                              " to stream to standard output.");
-  optionsParser->addOptionFlag("noDupes", "do not map between duplications in"
+  optionsParser.addOptionFlag("noDupes", "do not map between duplications in"
                                " graph.", false);
-  optionsParser->addOptionFlag("append", "append/merge results into tgtWig.  "
+  optionsParser.addOptionFlag("append", "append/merge results into tgtWig.  "
                                "Note that the entire tgtWig file will be loaded into"
                                " memory then overwritten, so this data can be lost "
                                "in event of a crash", false);
-/*  optionsParser->addOptionFlag("unique",
+  #if 0
+  optionsParser.addOptionFlag("unique",
                                "only map block if its left-most paralog is in"
                                "the input.  this "
                                "is used to insure that the same column isnt "
                                "sampled twice (due to ducplications) by mafs "
                                "generated on distinct ranges.",
                                false);
-*/
-  optionsParser->setDescription("Map wiggle genome annotation between two"
+#endif
+  optionsParser.setDescription("Map wiggle genome annotation between two"
                                 " genomes.");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
 
   string halPath;
   string srcGenomeName;
@@ -55,27 +54,27 @@ int main(int argc, char** argv)
   bool unique;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    srcGenomeName = optionsParser->getArgument<string>("srcGenome");
-    srcWigPath =  optionsParser->getArgument<string>("srcWig");
-    tgtGenomeName = optionsParser->getArgument<string>("tgtGenome");
-    tgtWigPath =  optionsParser->getArgument<string>("tgtWig");
-    noDupes = optionsParser->getFlag("noDupes");
-    append = optionsParser->getFlag("append");
-    //  unique = optionsParser->getFlag("unique");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    srcGenomeName = optionsParser.getArgument<string>("srcGenome");
+    srcWigPath =  optionsParser.getArgument<string>("srcWig");
+    tgtGenomeName = optionsParser.getArgument<string>("tgtGenome");
+    tgtWigPath =  optionsParser.getArgument<string>("tgtWig");
+    noDupes = optionsParser.getFlag("noDupes");
+    append = optionsParser.getFlag("append");
+    //  unique = optionsParser.getFlag("unique");
     unique = false;
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
   try
   {
-      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignmnet is empty");

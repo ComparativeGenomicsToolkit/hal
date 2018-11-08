@@ -13,24 +13,24 @@ using namespace hal;
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "path to hal file to validate");
-  optionsParser->setDescription("Check if hal database is valid");
+      CLParser optionsParser;
+        optionsParser.addArgument("halFile", "path to hal file to validate");
+  optionsParser.setDescription("Check if hal database is valid");
   string path;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    path = optionsParser->getArgument<string>("halFile");
+    optionsParser.parseOptions(argc, argv);
+    path = optionsParser.getArgument<string>("halFile");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
   try
   {
-      AlignmentConstPtr alignment(openHalAlignment(path, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(path, &optionsParser));
     validateAlignment(alignment.get());
   }
   catch(hal_exception& e)

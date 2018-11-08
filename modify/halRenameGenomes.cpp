@@ -4,33 +4,31 @@
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
-  optionsParser->setDescription("Rename genomes in a HAL file in-place.");
-  optionsParser->addArgument("halFile", "hal file");
-  optionsParser->addArgument("renameFile",
+static void initParser(CLParser& optionsParser) {
+  optionsParser.setDescription("Rename genomes in a HAL file in-place.");
+  optionsParser.addArgument("halFile", "hal file");
+  optionsParser.addArgument("renameFile",
                              "Tab-separated file. First column: existing genome"
                              " name, second column: new genome name. Any "
                              "genomes not provided will stay the same.");
-  return optionsParser;
 }
 
 int main(int argc, char *argv[])
 {
-  CLParserPtr optParser = initParser();
+  CLParser optionsParser(WRITE_ACCESS);
+  initParser(optionsParser);
   string halPath, renamePath;
   try {
-    optParser->parseOptions(argc, argv);
-    halPath = optParser->getArgument<string>("halFile");
-    renamePath = optParser->getArgument<string>("renameFile");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    renamePath = optionsParser.getArgument<string>("renameFile");
   } catch (exception &e) {
     cerr << e.what() << endl;
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
 
-  AlignmentPtr alignment(openHalAlignment(halPath, optParser));
+  AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser));
   map<string, string> renameMap = ingestRenameFile(renamePath);
 
   // Check that the alignment has all the old genome names, and none

@@ -14,31 +14,28 @@
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(CREATE_ACCESS);
-  optionsParser->addArgument("mafFile", "output maf file");
-  optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addOption("refGenome", "name of reference genome in MAF "
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("mafFile", "output maf file");
+  optionsParser.addArgument("halFile", "input hal file");
+  optionsParser.addOption("refGenome", "name of reference genome in MAF "
                            "(first found if empty)",
                            "\"\"");
-  optionsParser->addOption("targetGenomes",
+  optionsParser.addOption("targetGenomes",
                            "comma-separated (no spaces) list of target genomes "
                            "(others are excluded) (vist all if empty)",
                            "\"\"");
-  optionsParser->addOptionFlag("append",
+  optionsParser.addOptionFlag("append",
                                "append maf as subtree to existing alignment."
                                " reference must alaready be present in hal"
                                " dabase as a leaf.",
                                false);
                            
-  optionsParser->setDescription("import maf into hal database.");
-  return optionsParser;
+  optionsParser.setDescription("import maf into hal database.");
 }
 
-int main(int argc, char** argv)
-{
-  CLParserPtr optionsParser = initParser();
+int main(int argc, char** argv) {
+    CLParser optionsParser(CREATE_ACCESS);
+initParser(optionsParser);
   string halPath;
   string mafPath;
   string refGenomeName;
@@ -46,17 +43,17 @@ int main(int argc, char** argv)
   bool append;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    mafPath = optionsParser->getArgument<string>("mafFile");
-    refGenomeName = optionsParser->getOption<string>("refGenome");
-    targetGenomes = optionsParser->getOption<string>("targetGenomes");
-    append = optionsParser->getFlag("append");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    mafPath = optionsParser.getArgument<string>("mafFile");
+    refGenomeName = optionsParser.getOption<string>("refGenome");
+    targetGenomes = optionsParser.getOption<string>("targetGenomes");
+    append = optionsParser.getFlag("append");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 //  try
@@ -83,7 +80,7 @@ int main(int argc, char** argv)
     AlignmentPtr alignment;
     if (append == true)
     {
-        alignment = AlignmentPtr(openHalAlignment(halPath, optionsParser));
+        alignment = AlignmentPtr(openHalAlignment(halPath, &optionsParser));
       if (alignment->openGenome(refGenomeName) == NULL)
       {
         throw hal_exception("Reference genome " + refGenomeName + " not found "
@@ -97,7 +94,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        alignment = AlignmentPtr(openHalAlignment(halPath, optionsParser));
+        alignment = AlignmentPtr(openHalAlignment(halPath, &optionsParser));
     }
     
     vector<string> targetNames;

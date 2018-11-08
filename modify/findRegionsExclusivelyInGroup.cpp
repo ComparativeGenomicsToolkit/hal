@@ -4,36 +4,34 @@
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "hal tree");
-  optionsParser->addArgument("referenceGenome", "genome to create the BED file "
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "hal tree");
+  optionsParser.addArgument("referenceGenome", "genome to create the BED file "
                              "for");
-  optionsParser->addArgument("ingroupGenomes", "list of 'ingroup' genomes (comma-separated)");
-  optionsParser->addOption("minIngroupGenomes", "minimum number of ingroup genomes that a region must appear in (default: all)", -1);
-  optionsParser->addOption("maxOutgroupGenomes", "maximum number of outgroup genomes that a region is allowed to be in (default: 0)", 0);
-  return optionsParser;
+  optionsParser.addArgument("ingroupGenomes", "list of 'ingroup' genomes (comma-separated)");
+  optionsParser.addOption("minIngroupGenomes", "minimum number of ingroup genomes that a region must appear in (default: all)", -1);
+  optionsParser.addOption("maxOutgroupGenomes", "maximum number of outgroup genomes that a region is allowed to be in (default: 0)", 0);
 }
 
 int main(int argc, char *argv[])
 {
   string halPath, referenceGenomeName, ingroupGenomesUnsplit;
   int minIngroupGenomes, maxOutgroupGenomes;
-  CLParserPtr optParser = initParser();
+  CLParser optionsParser;
+  initParser(optionsParser);
   try {
-    optParser->parseOptions(argc, argv);
-    halPath = optParser->getArgument<string>("halFile");
-    referenceGenomeName = optParser->getArgument<string>("referenceGenome");
-    ingroupGenomesUnsplit = optParser->getArgument<string>("ingroupGenomes");
-    minIngroupGenomes = optParser->getOption<int>("minIngroupGenomes");
-    maxOutgroupGenomes = optParser->getOption<int>("maxOutgroupGenomes");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    referenceGenomeName = optionsParser.getArgument<string>("referenceGenome");
+    ingroupGenomesUnsplit = optionsParser.getArgument<string>("ingroupGenomes");
+    minIngroupGenomes = optionsParser.getOption<int>("minIngroupGenomes");
+    maxOutgroupGenomes = optionsParser.getOption<int>("maxOutgroupGenomes");
   } catch (exception &e) {
     cerr << e.what() << endl;
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
-  AlignmentConstPtr alignment(openHalAlignment(halPath, optParser));
+  AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
   vector<string> ingroupGenomeNames;
   ingroupGenomeNames = chopString(ingroupGenomesUnsplit, ",");
   set <const Genome *>ingroupGenomes;

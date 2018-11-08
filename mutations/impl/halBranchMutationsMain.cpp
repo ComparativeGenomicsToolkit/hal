@@ -8,69 +8,68 @@
 #include <iostream>
 #include <fstream>
 #include "halBranchMutations.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halFile", "input hal file");
-  optionsParser->addArgument("refGenome", 
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "input hal file");
+  optionsParser.addArgument("refGenome", 
                              "name of reference genome (analyzed branch is "
                              "this genome and its parent).");
-  optionsParser->addOption("refFile", 
+  optionsParser.addOption("refFile", 
                            "bed file to write structural "
                            "rearrangements in reference genome coordinates "
                            "(or stdout)",
                            "\"\"");
-  optionsParser->addOption("parentFile", 
+  optionsParser.addOption("parentFile", 
                            "bed file to write rearrangements "
                            "(deletions and duplications) in "
                            "reference's parent genome coordinates (or stdout)",
                            "\"\"");
-  optionsParser->addOption("snpFile", 
+  optionsParser.addOption("snpFile", 
                            "bed file write point mutations to "
                            "in reference genome coordinates (or stdout)",
                            "\"\"");
-  optionsParser->addOption("delBreakFile", 
+  optionsParser.addOption("delBreakFile", 
                            "bed file write deletion breakpoints to "
                            "in reference genome coordinates (or stdout)",
                            "\"\"");
-  optionsParser->addOption("refSequence",
+  optionsParser.addOption("refSequence",
                            "name of reference sequence within reference genome"
                            " (all sequences if empty)",
                            "\"\"");
-  optionsParser->addOption("refTargets",
+  optionsParser.addOption("refTargets",
                            "bed file coordinates of intervals in the reference "
                            "genome to analyze",
                            "\"\"");
-  optionsParser->addOption("start",
+  optionsParser.addOption("start",
                            "coordinate within reference genome (or sequence"
                            " if specified) to start at",
                            0);
-  optionsParser->addOption("length",
+  optionsParser.addOption("length",
                            "length of the reference genome (or sequence"
                            " if specified) to convert.  If set to 0,"
                            " the entire thing is converted",
                            0);
-  optionsParser->addOption("maxGap", 
+  optionsParser.addOption("maxGap", 
                            "maximum indel length to be considered a gap.  Gaps "
                            " can be nested within other rearrangements.", 
                            20);
-  optionsParser->addOption("maxNFraction",
+  optionsParser.addOption("maxNFraction",
                            "maximum fraction of Ns in a rearranged segment "
                            "for it to not be ignored as missing data.",
                            1.0);
                            
-  optionsParser->setDescription("Identify mutations on branch between given "
+  optionsParser.setDescription("Identify mutations on branch between given "
                                 "genome and its parent.");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
 
   string halPath;
   string refBedPath;
@@ -86,30 +85,30 @@ int main(int argc, char** argv)
   double nThreshold;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    refGenomeName = optionsParser->getArgument<string>("refGenome");
-    refBedPath = optionsParser->getOption<string>("refFile");
-    parentBedPath = optionsParser->getOption<string>("parentFile");
-    snpBedPath = optionsParser->getOption<string>("snpFile");
-    delBreakBedPath = optionsParser->getOption<string>("delBreakFile");
-    refSequenceName = optionsParser->getOption<string>("refSequence");
-    refTargetsPath = optionsParser->getOption<string>("refTargets");
-    start = optionsParser->getOption<hal_index_t>("start");
-    length = optionsParser->getOption<hal_size_t>("length");
-    maxGap = optionsParser->getOption<hal_size_t>("maxGap");
-    nThreshold = optionsParser->getOption<double>("maxNFraction");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    refGenomeName = optionsParser.getArgument<string>("refGenome");
+    refBedPath = optionsParser.getOption<string>("refFile");
+    parentBedPath = optionsParser.getOption<string>("parentFile");
+    snpBedPath = optionsParser.getOption<string>("snpFile");
+    delBreakBedPath = optionsParser.getOption<string>("delBreakFile");
+    refSequenceName = optionsParser.getOption<string>("refSequence");
+    refTargetsPath = optionsParser.getOption<string>("refTargets");
+    start = optionsParser.getOption<hal_index_t>("start");
+    length = optionsParser.getOption<hal_size_t>("length");
+    maxGap = optionsParser.getOption<hal_size_t>("maxGap");
+    nThreshold = optionsParser.getOption<double>("maxNFraction");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
   try
   {
-      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignmenet is empty");

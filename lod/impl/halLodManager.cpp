@@ -11,6 +11,7 @@
 #include <fstream>
 #include <algorithm>
 #include "halLodManager.h"
+#include "halCLParser.h"
 
 #ifdef ENABLE_UDC
 extern "C" {
@@ -52,7 +53,7 @@ LodManager::~LodManager()
 }
 
 void LodManager::loadLODFile(const string& lodPath,
-                             CLParserConstPtr options)
+                             const CLParser* options)
 {
     _options = options;
   _map.clear();
@@ -124,8 +125,13 @@ void LodManager::loadLODFile(const string& lodPath,
   checkMap(lodPath);
 }
 
+void LodManager::loadLODFile(const string& lodPath) {
+    CLParser options;
+    loadLODFile(lodPath, &options);
+}
+
 void LodManager::loadSingeHALFile(const string& halPath,
-                                  CLParserConstPtr options)
+                                  const CLParser* options)
 {
     _options = options;
   _map.clear();
@@ -133,6 +139,11 @@ void LodManager::loadSingeHALFile(const string& halPath,
                 0, PathAlign(halPath, AlignmentConstPtr())));
   _maxLodLowerBound = (hal_size_t)numeric_limits<hal_index_t>::max();
   checkMap(halPath);
+}
+
+void LodManager::loadSingeHALFile(const string& halPath) {
+    CLParser options;
+    loadSingeHALFile(halPath, &options);
 }
 
 const Alignment* LodManager::getAlignment(hal_size_t queryLength,

@@ -1,18 +1,19 @@
 #include "hal.h"
+#include "halCLParser.h"
 
 using namespace std;
 using namespace hal;
 
 int main(int argc, char** argv)
 {
-    CLParserPtr optionsParser = halCLParserInstance();
-    optionsParser->setDescription("Calculate coverage by sampling bases.");
-    optionsParser->addArgument("halFile", "path to hal file to analyze");
-    optionsParser->addArgument("refGenome", "genome to calculate coverage on");
-    optionsParser->addOption("numSamples",
+    CLParser optionsParser;
+    optionsParser.setDescription("Calculate coverage by sampling bases.");
+    optionsParser.addArgument("halFile", "path to hal file to analyze");
+    optionsParser.addArgument("refGenome", "genome to calculate coverage on");
+    optionsParser.addOption("numSamples",
                              "Number of bases to sample when calculating coverage",
                              1000000);
-    optionsParser->addOption("seed",
+    optionsParser.addOption("seed",
                              "Random seed (integer)",
                              0);
     string path;
@@ -21,16 +22,16 @@ int main(int argc, char** argv)
     int64_t seed;
     try
     {
-        optionsParser->parseOptions(argc, argv);
-        path = optionsParser->getArgument<string>("halFile");
-        refGenome = optionsParser->getArgument<string>("refGenome");
-        numSamples = optionsParser->getOption<hal_size_t>("numSamples");
-        seed = optionsParser->getOption<int64_t>("seed");
+        optionsParser.parseOptions(argc, argv);
+        path = optionsParser.getArgument<string>("halFile");
+        refGenome = optionsParser.getArgument<string>("refGenome");
+        numSamples = optionsParser.getOption<hal_size_t>("numSamples");
+        seed = optionsParser.getOption<int64_t>("seed");
     }
     catch(exception& e)
     {
         cerr << e.what() << endl;
-        optionsParser->printUsage(cerr);
+        optionsParser.printUsage(cerr);
         exit(1);
     }
 
@@ -41,7 +42,7 @@ int main(int argc, char** argv)
     }
     st_randomSeed(seed);
 
-    AlignmentConstPtr alignment(openHalAlignment(path, optionsParser));
+    AlignmentConstPtr alignment(openHalAlignment(path, &optionsParser));
     const Genome *ref = alignment->openGenome(refGenome);
     vector<const Genome *> leafGenomes = getLeafGenomes(alignment.get());
 

@@ -1,5 +1,6 @@
 #include "mmapAlignment.h"
 #include "mmapGenome.h"
+#include "halCLParser.h"
 
 using namespace hal;
 using namespace std;
@@ -22,7 +23,7 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
 
 MMapAlignment::MMapAlignment(const std::string& alignmentPath,
                              unsigned mode,
-                             CLParserConstPtr parser):
+                             const CLParser* parser):
     _alignmentPath(alignmentPath),
     _mode(halDefaultAccessMode(mode)), _initSize(0), _growSize(0),
     _file(NULL), _data(NULL), _tree(NULL) {
@@ -44,7 +45,7 @@ void MMapAlignment::close() {
     _file->close();
 }
 
-void MMapAlignment::defineOptions(CLParserPtr parser,
+void MMapAlignment::defineOptions(CLParser* parser,
                                   unsigned mode) {
     if (mode & CREATE_ACCESS) {
       parser->addOption("mmapInitSize", "mmap HAL file initial size", MMAP_DEFAULT_INIT_SIZE);
@@ -55,7 +56,7 @@ void MMapAlignment::defineOptions(CLParserPtr parser,
 }
 
 /* initialize class from options */
-void MMapAlignment::initializeFromOptions(CLParserConstPtr parser) {
+void MMapAlignment::initializeFromOptions(const CLParser* parser) {
     if (_mode & CREATE_ACCESS) {
         _initSize = parser->get<size_t>("mmapInitSize");
     }

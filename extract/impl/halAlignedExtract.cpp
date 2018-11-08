@@ -17,29 +17,27 @@ static void extractAlignedRegions(const Genome* genome,
                                   bool complement,
                                   bool viewParentCoords);
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->setDescription("Extract aligned regions of genome (with its"
+static void initParser(CLParser& optionsParser) {
+  optionsParser.setDescription("Extract aligned regions of genome (with its"
                                 " parent) and output to bed file");
-  optionsParser->addArgument("halPath", "input hal file");
-  optionsParser->addArgument("genome", "name of genome to scan"
+  optionsParser.addArgument("halPath", "input hal file");
+  optionsParser.addArgument("genome", "name of genome to scan"
                              " (can't be root)");
-  optionsParser->addOption("alignedFile", "path to bed file to write to", 
+  optionsParser.addOption("alignedFile", "path to bed file to write to", 
                            "stdout");
-  optionsParser->addOptionFlag("complement", "extract the regions of the "
+  optionsParser.addOptionFlag("complement", "extract the regions of the "
                                "genome that are *unaligned* to the parent. "
                                "ie all intervals that are not returned with"
                                " the default setting.", false);
-  optionsParser->addOptionFlag("viewParentCoords", "view the corresponding parent "
+  optionsParser.addOptionFlag("viewParentCoords", "view the corresponding parent "
                                "coordinates for aligned regions", false);
 
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
 
   string halPath;
   string genomeName;
@@ -48,23 +46,23 @@ int main(int argc, char** argv)
   bool viewParentCoords;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halPath");
-    genomeName = optionsParser->getArgument<string>("genome");
-    outBedPath = optionsParser->getOption<string>("alignedFile");
-    complement = optionsParser->getFlag("complement");
-    viewParentCoords = optionsParser->getFlag("viewParentCoords");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halPath");
+    genomeName = optionsParser.getArgument<string>("genome");
+    outBedPath = optionsParser.getOption<string>("alignedFile");
+    complement = optionsParser.getFlag("complement");
+    viewParentCoords = optionsParser.getFlag("viewParentCoords");
   }
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
   try
   {
-      AlignmentConstPtr inAlignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr inAlignment(openHalAlignment(halPath, &optionsParser));
     if (inAlignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignment is empty");

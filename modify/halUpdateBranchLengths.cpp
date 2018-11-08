@@ -1,16 +1,14 @@
 #include "hal.h"
 #include "sonLibTree.h"
+#include "halAlignmentInstance.h"
 
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
-{
-  CLParserPtr optionsParser = halCLParserInstance(WRITE_ACCESS);
-  optionsParser->addArgument("halFile", "hal file");
-  optionsParser->addArgument("newickTree", "newick tree (must be identical,"
+static void initParser(CLParser& optionsParser) {
+  optionsParser.addArgument("halFile", "hal file");
+  optionsParser.addArgument("newickTree", "newick tree (must be identical,"
                              " except for the branch lengths");
-  return optionsParser;
 }
 
 void updateBranches(Alignment* alignment, Genome *genome, stTree *newTree)
@@ -41,17 +39,18 @@ void updateBranches(Alignment* alignment, Genome *genome, stTree *newTree)
 int main(int argc, char *argv[])
 {
   string halPath, newickTree;
-  CLParserPtr optParser = initParser();
+    CLParser optionsParser(WRITE_ACCESS);
+    initParser(optionsParser);
   try {
-    optParser->parseOptions(argc, argv);
-    halPath = optParser->getArgument<string>("halFile");
-    newickTree = optParser->getArgument<string>("newickTree");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    newickTree = optionsParser.getArgument<string>("newickTree");
   } catch (exception &e) {
     cerr << e.what() << endl;
-    optParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     return 1;
   }
-  AlignmentPtr alignment(openHalAlignment(halPath, optParser));
+  AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser));
   stTree *newTree = stTree_parseNewickString(newickTree.c_str());
   // recursively update branches
   updateBranches(alignment.get(),

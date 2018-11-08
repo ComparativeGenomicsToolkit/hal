@@ -52,55 +52,53 @@ static void printGenome(ostream& outStream,
 
 static const hal_size_t StringBufferSize = 1024;
 
-static CLParserPtr initParser()
-{
+static void initParser(CLParser& optionsParser) {
   /** It is convenient to use the HAL command line parser for the command
    * line because it automatically adds some comman options.  Using the 
    * parser is by no means required however */
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->addArgument("halPath", "input hal file");
-  optionsParser->addArgument("refGenome", "reference genome to scan");
-  optionsParser->addOption("outWiggle", "output wig file (stdout if none)",
+  optionsParser.addArgument("halPath", "input hal file");
+  optionsParser.addArgument("refGenome", "reference genome to scan");
+  optionsParser.addOption("outWiggle", "output wig file (stdout if none)",
                            "stdout");
-  optionsParser->addOption("refSequence", "sequence name to export ("
+  optionsParser.addOption("refSequence", "sequence name to export ("
                            "all sequences by default)", 
                            "\"\"");
-   optionsParser->addOption("start",
+   optionsParser.addOption("start",
                            "coordinate within reference genome (or sequence"
                            " if specified) to start at",
                            0);
-  optionsParser->addOption("length",
+  optionsParser.addOption("length",
                            "length of the reference genome (or sequence"
                            " if specified) to convert.  If set to 0,"
                            " the entire thing is converted",
                            0);
-  optionsParser->addOption("rootGenome", 
+  optionsParser.addOption("rootGenome", 
                            "name of root genome (none if empty)", 
                            "\"\"");
-  optionsParser->addOption("targetGenomes",
+  optionsParser.addOption("targetGenomes",
                            "comma-separated (no spaces) list of target genomes "
                            "(others are excluded) (vist all if empty)",
                            "\"\"");
-  optionsParser->addOption("step", "step size", 1);
-  optionsParser->addOptionFlag("countDupes",
+  optionsParser.addOption("step", "step size", 1);
+  optionsParser.addOptionFlag("countDupes",
                                "count each other *position* each base aligns "
                                "to, rather than the number of unique genomes, "
                                "including paralogies so a genome can be "
                                "counted  multiple times.  This will give the "
                                "height of the MAF column created with hal2maf.",
                                false);
-  optionsParser->addOptionFlag("noAncestors", 
+  optionsParser.addOptionFlag("noAncestors", 
                                "do not count ancestral genomes.", false);
-  optionsParser->setDescription("Make alignment depth wiggle plot for a genome. "
+  optionsParser.setDescription("Make alignment depth wiggle plot for a genome. "
                                 "By default, this is a count of the number of "
                                 "other unique genomes each base aligns to, "
                                 "including ancestral genomes.");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = initParser();
+    CLParser optionsParser;
+    initParser(optionsParser);
 
   string halPath;
   string wigPath;
@@ -115,18 +113,18 @@ int main(int argc, char** argv)
   bool noAncestors;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halPath");
-    refGenomeName = optionsParser->getArgument<string>("refGenome");
-    wigPath = optionsParser->getOption<string>("outWiggle");
-    refSequenceName = optionsParser->getOption<string>("refSequence");
-    start = optionsParser->getOption<hal_size_t>("start");
-    length = optionsParser->getOption<hal_size_t>("length");
-    rootGenomeName = optionsParser->getOption<string>("rootGenome");
-    targetGenomes = optionsParser->getOption<string>("targetGenomes");
-    step = optionsParser->getOption<hal_size_t>("step");
-    countDupes = optionsParser->getFlag("countDupes");
-    noAncestors = optionsParser->getFlag("noAncestors");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halPath");
+    refGenomeName = optionsParser.getArgument<string>("refGenome");
+    wigPath = optionsParser.getOption<string>("outWiggle");
+    refSequenceName = optionsParser.getOption<string>("refSequence");
+    start = optionsParser.getOption<hal_size_t>("start");
+    length = optionsParser.getOption<hal_size_t>("length");
+    rootGenomeName = optionsParser.getOption<string>("rootGenome");
+    targetGenomes = optionsParser.getOption<string>("targetGenomes");
+    step = optionsParser.getOption<hal_size_t>("step");
+    countDupes = optionsParser.getFlag("countDupes");
+    noAncestors = optionsParser.getFlag("noAncestors");
 
     if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
     {
@@ -137,7 +135,7 @@ int main(int argc, char** argv)
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
 
@@ -147,7 +145,7 @@ int main(int argc, char** argv)
      * via a path to a .hal file.  Options don't necessarily need to
      * come from the optionsParser -- see other interfaces in 
      * hal/api/inc/halAlignmentInstance.h */
-      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");

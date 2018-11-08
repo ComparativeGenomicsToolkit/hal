@@ -5,24 +5,23 @@
 using namespace std;
 using namespace hal;
 
-static CLParserPtr initParser()
+static void initParser(CLParser& optionsParser) {
 {
-  CLParserPtr optionsParser = hdf5CLParserInstance(true);
-  optionsParser->addArgument("halFile", "hal tree");
-  optionsParser->addArgument("genome", "(ancestor) genome to modify");
-  optionsParser->addArgument("model", "phyloP model file");
-  optionsParser->addOption("startPos", "start position", 0);
-  optionsParser->addOption("endPos", "end position", -1);
-  optionsParser->addOption("sequence", "Sequence name. IMPORTANT: if "
+  optionsParser.addArgument("halFile", "hal tree");
+  optionsParser.addArgument("genome", "(ancestor) genome to modify");
+  optionsParser.addArgument("model", "phyloP model file");
+  optionsParser.addOption("startPos", "start position", 0);
+  optionsParser.addOption("endPos", "end position", -1);
+  optionsParser.addOption("sequence", "Sequence name. IMPORTANT: if "
                            "sequence name is not provided but startPos or "
                            "endPos are, they will be assumed to be in "
                            "genome coordinates", "");
-  optionsParser->addOption("thresholdN", "threshold below which an N is output", 0.9);
-  optionsParser->addOption("bed", "bed file to scan", "");
-  optionsParser->addOptionFlag("outputPosts", "output posterior"
+  optionsParser.addOption("thresholdN", "threshold below which an N is output", 0.9);
+  optionsParser.addOption("bed", "bed file to scan", "");
+  optionsParser.addOptionFlag("outputPosts", "output posterior"
                                " probabilities for reference in wig"
                                " format", false);
-  optionsParser->addOptionFlag("printWrites", "print base changes", false);
+  optionsParser.addOptionFlag("printWrites", "print base changes", false);
   return optionsParser;
 }
 
@@ -30,7 +29,9 @@ static CLParserPtr initParser()
 int main(int argc, char *argv[])
 {
   string halPath, genomeName, modPath, sequenceName, bedPath;
-  CLParserPtr optParser = initParser();
+  CLParser optionsParser;
+  initParser(optionsParser);
+static void initParser(CLParser& optionsParser)
   bool printWrites = false, outputPosts = false;
   hal_index_t startPos = 0;
   hal_index_t endPos = -1;

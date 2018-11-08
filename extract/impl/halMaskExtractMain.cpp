@@ -14,16 +14,16 @@ using namespace hal;
 
 int main(int argc, char** argv)
 {
-  CLParserPtr optionsParser = halCLParserInstance();
-  optionsParser->setDescription("Write masked intervals of genome into bed "
+    CLParser optionsParser;
+  optionsParser.setDescription("Write masked intervals of genome into bed "
                                 "file");
-  optionsParser->addArgument("halFile", "path to hal file to analyze");
-  optionsParser->addArgument("genome", "name of genome to process");
-  optionsParser->addOption("maskFile", "path to bed file to write to", 
+  optionsParser.addArgument("halFile", "path to hal file to analyze");
+  optionsParser.addArgument("genome", "name of genome to process");
+  optionsParser.addOption("maskFile", "path to bed file to write to", 
                            "stdout");
-  optionsParser->addOption("extend", "extend masked regions by given num. "
+  optionsParser.addOption("extend", "extend masked regions by given num. "
                            "of bases.", 0);
-  optionsParser->addOption("extendPct", "extend masked regions by percentage"
+  optionsParser.addOption("extendPct", "extend masked regions by percentage"
                            " of their lengths", 0);
 
   string halPath;
@@ -33,12 +33,12 @@ int main(int argc, char** argv)
   double extendPct;
   try
   {
-    optionsParser->parseOptions(argc, argv);
-    halPath = optionsParser->getArgument<string>("halFile");
-    genomeName = optionsParser->getArgument<string>("genome");
-    bedPath = optionsParser->getOption<string>("maskFile");
-    extend = optionsParser->getOption<hal_size_t>("extend");
-    extendPct = optionsParser->getOption<double>("extendPct");
+    optionsParser.parseOptions(argc, argv);
+    halPath = optionsParser.getArgument<string>("halFile");
+    genomeName = optionsParser.getArgument<string>("genome");
+    bedPath = optionsParser.getOption<string>("maskFile");
+    extend = optionsParser.getOption<hal_size_t>("extend");
+    extendPct = optionsParser.getOption<double>("extendPct");
 
     if (extend != 0 && extendPct != 0.)
     {
@@ -48,12 +48,12 @@ int main(int argc, char** argv)
   catch(exception& e)
   {
     cerr << e.what() << endl;
-    optionsParser->printUsage(cerr);
+    optionsParser.printUsage(cerr);
     exit(1);
   }
   try
   {
-      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
+      AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
 
     const Genome* genome = alignment->openGenome(genomeName);
     if (genome == NULL)

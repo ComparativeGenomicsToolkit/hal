@@ -88,7 +88,6 @@ extern const hal_index_t NULL_INDEX;
   typedef std::shared_ptr<T> T ## Ptr;
 
 HAL_FORWARD_DEC_CLASS(Alignment)
-HAL_FORWARD_DEC_CLASS(CLParser)
 HAL_FORWARD_DEC_CLASS(Genome)
 HAL_FORWARD_DEC_CLASS(MetaData)
 HAL_FORWARD_DEC_CLASS(TopSegment)
