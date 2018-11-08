@@ -150,9 +150,9 @@ Genome *MMapAlignment::_openGenome(const string &name) const {
             break;
         }
     }
-    if (genome == NULL) {
-        throw hal_exception("Genome " + name + " not found in alignment");
+    if (genome != NULL) {
+        // This genome exists. Save it so we only "open" it once.
+        _openGenomes[name] = genome;
     }
-    _openGenomes[name] = genome;
     return genome;
 }
