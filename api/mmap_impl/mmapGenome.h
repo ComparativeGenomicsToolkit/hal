@@ -3,6 +3,7 @@
 #include <map>
 #include "halGenome.h"
 #include "mmapAlignment.h"
+#include "mmapString.h"
 #include "mmapTopSegmentData.h"
 #include "mmapBottomSegmentData.h"
 namespace hal {
@@ -16,10 +17,10 @@ public:
     char *getDNA(MMapAlignment *alignment, size_t start, size_t length) const;
     std::string getName(MMapAlignment *alignment) const;
     void setName(MMapAlignment *alignment, const std::string &name);
+    void initializeName(MMapAlignment *alignment, const std::string &name);
     MMapTopSegmentData *getTopSegmentData(MMapAlignment *alignment, hal_index_t index);
     MMapBottomSegmentData *getBottomSegmentData(MMapAlignment *alignment, MMapGenome *genome, hal_index_t index);
 private:
-    hal_size_t _nameLength;
     hal_size_t _totalSequenceLength;
     hal_size_t _numSequences;
     hal_size_t _numMetadata;
@@ -44,7 +45,7 @@ public:
     };
     MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex, const std::string &name) :
         Genome(alignment, name), _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name) {
-        _data->setName(_alignment, _name);
+        _data->initializeName(_alignment, _name);
     };
 
     MMapTopSegmentData *getTopSegmentPointer(hal_index_t index) { return _data->getTopSegmentData(_alignment, index); };
@@ -173,14 +174,17 @@ private:
 };
 
 inline std::string MMapGenomeData::getName(MMapAlignment *alignment) const {
-    return (const char *) alignment->resolveOffset(_nameOffset, _nameLength);
+    return MMapString(alignment, _nameOffset).c_str();
+}
+
+inline void MMapGenomeData::initializeName(MMapAlignment *alignment, const std::string &nameStr) {
+    MMapString name{alignment, nameStr};
+    _nameOffset = name.getOffset();
 }
 
 inline void MMapGenomeData::setName(MMapAlignment *alignment, const std::string &newName) {
-    size_t size = newName.size() + 1;
-    _nameOffset = alignment->allocateNewArray(sizeof(char) * size);
-    strncpy((char *) alignment->resolveOffset(_nameOffset, size), newName.c_str(), size);
-    _nameLength = size;
+    MMapString name{alignment, _nameOffset};
+    _nameOffset = name.set(newName);
 }
 
 inline MMapTopSegmentData *MMapGenomeData::getTopSegmentData(MMapAlignment *alignment, hal_index_t index) {
