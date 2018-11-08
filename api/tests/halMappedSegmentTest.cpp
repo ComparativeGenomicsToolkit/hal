@@ -19,7 +19,7 @@
 using namespace std;
 using namespace hal;
 
-void MappedSegmentMapUpTest::createCallBack(AlignmentPtr alignment)
+void MappedSegmentMapUpTest::createCallBack(Alignment* alignment)
 {
   vector<Sequence::Info> seqVec(1);
   
@@ -195,7 +195,7 @@ void MappedSegmentMapUpTest::createCallBack(AlignmentPtr alignment)
 
 }
 
-void MappedSegmentMapUpTest::testTopSegment(AlignmentConstPtr alignment,
+void MappedSegmentMapUpTest::testTopSegment(const Alignment* alignment,
                                             TopSegmentIteratorPtr top,
                                             const string& ancName)
 {
@@ -230,7 +230,7 @@ void MappedSegmentMapUpTest::testTopSegment(AlignmentConstPtr alignment,
                mseg->getReversed() == bottom->getReversed());
 }
 
-void MappedSegmentMapUpTest::checkCallBack(AlignmentConstPtr alignment)
+void MappedSegmentMapUpTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* child1 = alignment->openGenome("child1");
@@ -264,7 +264,7 @@ void MappedSegmentMapUpTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
-void MappedSegmentParseTest::testTopSegment(AlignmentConstPtr alignment,
+void MappedSegmentParseTest::testTopSegment(const Alignment* alignment,
                                             TopSegmentIteratorPtr top)
 {
   const Genome* parent = alignment->openGenome("parent");
@@ -310,7 +310,7 @@ void MappedSegmentParseTest::testTopSegment(AlignmentConstPtr alignment,
   }
 }
 
-void MappedSegmentParseTest::checkCallBack(AlignmentConstPtr alignment)
+void MappedSegmentParseTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* g1 = alignment->openGenome("g1");
@@ -332,7 +332,7 @@ void MappedSegmentParseTest::checkCallBack(AlignmentConstPtr alignment)
 }
 
 void MappedSegmentMapDownTest::testBottomSegment(
-  AlignmentConstPtr alignment,
+  const Alignment* alignment,
   BottomSegmentIteratorPtr bottom,
   hal_size_t childIndex)
 {
@@ -360,7 +360,7 @@ void MappedSegmentMapDownTest::testBottomSegment(
                mseg->getReversed() == top->getReversed());
 }
 
-void MappedSegmentMapDownTest::checkCallBack(AlignmentConstPtr alignment)
+void MappedSegmentMapDownTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* parent = alignment->openGenome("parent");
@@ -376,7 +376,7 @@ void MappedSegmentMapDownTest::checkCallBack(AlignmentConstPtr alignment)
   testBottomSegment(alignment, bottom, 1);
 }
 
-void MappedSegmentMapAcrossTest::testTopSegment(AlignmentConstPtr alignment,
+void MappedSegmentMapAcrossTest::testTopSegment(const Alignment* alignment,
                                                 TopSegmentIteratorPtr top)
 {
   const Genome* parent = top->getGenome()->getParent();
@@ -406,7 +406,7 @@ void MappedSegmentMapAcrossTest::testTopSegment(AlignmentConstPtr alignment,
                mseg->getReversed() == sister->getReversed());
 }
 
-void MappedSegmentMapAcrossTest::checkCallBack(AlignmentConstPtr alignment)
+void MappedSegmentMapAcrossTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* child1 = alignment->openGenome("child1");
@@ -425,7 +425,7 @@ void MappedSegmentMapAcrossTest::checkCallBack(AlignmentConstPtr alignment)
   testTopSegment(alignment, top);
 }
 
-void MappedSegmentMapDupeTest::createCallBack(AlignmentPtr alignment)
+void MappedSegmentMapDupeTest::createCallBack(Alignment* alignment)
 {
   vector<Sequence::Info> seqVec(1);
   
@@ -477,7 +477,7 @@ void MappedSegmentMapDupeTest::createCallBack(AlignmentPtr alignment)
   ts.applyTo(ti);
 }
 
-void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
+void MappedSegmentMapDupeTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* parent = alignment->openGenome("parent");
@@ -541,7 +541,7 @@ void MappedSegmentMapDupeTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, found[2] == true);
 }
 
-void MappedSegmentMapExtraParalogsTest::createCallBack(AlignmentPtr alignment)
+void MappedSegmentMapExtraParalogsTest::createCallBack(Alignment* alignment)
 {
   vector<Sequence::Info> seqVec(1);
 
@@ -629,7 +629,7 @@ void MappedSegmentMapExtraParalogsTest::createCallBack(AlignmentPtr alignment)
   parent->fixParseInfo();
 }
 
-void MappedSegmentMapExtraParalogsTest::checkCallBack(AlignmentConstPtr alignment)
+void MappedSegmentMapExtraParalogsTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
 
@@ -694,7 +694,7 @@ void MappedSegmentMapExtraParalogsTest::checkCallBack(AlignmentConstPtr alignmen
   }
 }
 
-void  MappedSegmentColCompareTest::checkCallBack(AlignmentConstPtr alignment)
+void  MappedSegmentColCompareTest::checkCallBack(const Alignment* alignment)
 {
   if (alignment->getNumGenomes() == 0)
   {
@@ -876,29 +876,29 @@ void MappedSegmentColCompareTest::compareArrays()
   }
 }
 
-void MappedSegmentColCompareTestCheck1::createCallBack(AlignmentPtr alignment)
+void MappedSegmentColCompareTestCheck1::createCallBack(Alignment* alignment)
 {
   MappedSegmentMapUpTest::createCallBack(alignment);
 }
 
 void 
-MappedSegmentColCompareTestCheck1::checkCallBack(AlignmentConstPtr alignment)
+MappedSegmentColCompareTestCheck1::checkCallBack(const Alignment* alignment)
 {
   MappedSegmentColCompareTest::checkCallBack(alignment);
 }
 
-void MappedSegmentColCompareTestCheck2::createCallBack(AlignmentPtr alignment)
+void MappedSegmentColCompareTestCheck2::createCallBack(Alignment* alignment)
 {
   MappedSegmentMapDupeTest::createCallBack(alignment);
 }
 
 void 
-MappedSegmentColCompareTestCheck2::checkCallBack(AlignmentConstPtr alignment)
+MappedSegmentColCompareTestCheck2::checkCallBack(const Alignment* alignment)
 {
   MappedSegmentColCompareTest::checkCallBack(alignment);
 }
 
-void MappedSegmentColCompareTest1::createCallBack(AlignmentPtr alignment)
+void MappedSegmentColCompareTest1::createCallBack(Alignment* alignment)
 {
   createRandomAlignment(alignment, 
                         2, // meanDegree
@@ -911,7 +911,7 @@ void MappedSegmentColCompareTest1::createCallBack(AlignmentPtr alignment)
                         1101); // seed
 }
 
-void MappedSegmentColCompareTest2::createCallBack(AlignmentPtr alignment)
+void MappedSegmentColCompareTest2::createCallBack(Alignment* alignment)
 {
   createRandomAlignment(alignment, 
                         1.25, 
@@ -924,9 +924,9 @@ void MappedSegmentColCompareTest2::createCallBack(AlignmentPtr alignment)
                         23);
 }
 
-void MappedSegmentColCompareTest3::createCallBack(AlignmentPtr alignment)
+void MappedSegmentColCompareTest3::createCallBack(Alignment* alignment)
 {
-  createRandomAlignment(alignment, 
+    createRandomAlignment(alignment,
                         1.5, 
                         0.7,
                         12,

@@ -42,7 +42,7 @@ void PhyloP::clear()
 
 }
 
-void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
+void PhyloP::init(const Alignment* alignment, const string& modFilePath,
                   ostream* outStream,
                   bool softMaskDups, 
                   const string& dupType,

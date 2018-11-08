@@ -135,7 +135,7 @@ void LodManager::loadSingeHALFile(const string& halPath,
   checkMap(halPath);
 }
 
-AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength,
+const Alignment* LodManager::getAlignment(hal_size_t queryLength,
                                            bool needDNA)
 {
   assert(_map.size() > 0);
@@ -158,11 +158,11 @@ AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength,
   }
   if (alignment.get() == NULL)
   {
-    alignment = openHalAlignment(mapIt->second.first, _options);
-    checkAlignment(mapIt->first, mapIt->second.first, alignment);
+      alignment = AlignmentConstPtr(openHalAlignment(mapIt->second.first, _options));
+      checkAlignment(mapIt->first, mapIt->second.first, alignment.get());
   }
   assert(mapIt->second.second.get() != NULL);
-  return alignment;
+  return alignment.get();
 }
 
 bool LodManager::isLod0(hal_size_t queryLength) const
@@ -209,7 +209,7 @@ void LodManager::checkMap(const string& lodPath)
 
 void LodManager::checkAlignment(hal_size_t minQuery,
                                 const string& path,
-                                AlignmentConstPtr alignment)
+                                const Alignment* alignment)
 {
   if (alignment->getNumGenomes() == 0)
   {

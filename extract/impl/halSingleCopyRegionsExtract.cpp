@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     optParser->printUsage(cerr);
     return 1;
   }
-  AlignmentConstPtr alignment = openHalAlignment(halPath, optParser);
+  AlignmentConstPtr alignment(openHalAlignment(halPath, optParser));
   vector<string> targetGenomeNames;
   if (targetGenomesUnsplit != "") {
     // Target genomes provided

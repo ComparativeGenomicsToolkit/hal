@@ -53,16 +53,16 @@ static HandleMap handleMap;
 static int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr);
 static void checkHandle(int handle);
 static void checkGenomes(int halHandle, 
-                         AlignmentConstPtr alignment, const string& qSpecies,
+                         const Alignment* alignment, const string& qSpecies,
                          const string& tSpecies, const string& tChrom);
 
-static AlignmentConstPtr getExistingAlignment(int handle,
+static const Alignment* getExistingAlignment(int handle,
                                               hal_size_t queryLength,
                                               bool needSequence);
 static bool isAlignmentLod0(int handle, hal_size_t queryLength);
 static char* copyCString(const string& inString);
 
-static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
+static hal_block_results_t* readBlocks(const Alignment* seqAlignment,
                                        const Sequence* tSequence,
                                        hal_index_t absStart, 
                                        hal_index_t absEnd,
@@ -72,7 +72,7 @@ static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
                                        bool doDupes, bool doTargetDupes,
                                        bool doAdjes, const char *coalescenceLimitName);
 
-static void readBlock(AlignmentConstPtr seqAlignment,
+static void readBlock(const Alignment* seqAlignment,
                       hal_block_t* cur, 
                       vector<MappedSegmentPtr>& fragments,                                        bool getSequenceString, const string& genomeName);
 
@@ -283,9 +283,8 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
       getSequenceString = isAlignmentLod0(halHandle, hal_size_t(rangeLength)); 
     }
       
-    AlignmentConstPtr alignment = getExistingAlignment(
-      halHandle, hal_size_t(rangeLength), getSequenceString);
-    checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
+    AlignmentConstPtr alignment(getExistingAlignment(halHandle, hal_size_t(rangeLength), getSequenceString));
+    checkGenomes(halHandle, alignment.get(), qSpecies, tSpecies, tChrom);
 
     const Genome* qGenome = alignment->openGenome(qSpecies);
     const Genome* tGenome = alignment->openGenome(tSpecies);
@@ -309,9 +308,8 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
     // We now know the query length so we can do a proper lod query
     if (tEnd == 0)
     {
-      alignment = getExistingAlignment(halHandle, absEnd - absStart, 
-                                       false);
-      checkGenomes(halHandle, alignment, qSpecies, tSpecies, tChrom);
+        alignment = AlignmentConstPtr(getExistingAlignment(halHandle, absEnd - absStart, false));
+        checkGenomes(halHandle, alignment.get(), qSpecies, tSpecies, tChrom);
       qGenome = alignment->openGenome(qSpecies);
       tGenome = alignment->openGenome(tSpecies);
       tSequence = tGenome->getSequence(tSequence->getName());
@@ -325,11 +323,10 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
       // getting rid of it since it allows us to easily revert back to 
       // the previous functionaly of allowing lod-blocks to acces lod-0
       // sequence
-      seqAlignment = getExistingAlignment(halHandle, absEnd - absStart, 
-                                          true);
+        seqAlignment = AlignmentConstPtr(getExistingAlignment(halHandle, absEnd - absStart, true));
     }
 
-    results = readBlocks(seqAlignment, tSequence, absStart, absEnd, 
+    results = readBlocks(seqAlignment.get(), tSequence, absStart, absEnd, 
                          tReversed != 0,
                          qGenome,
                          getSequenceString, dupMode != HAL_NO_DUPS, 
@@ -458,14 +455,13 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
         handleError("halGetMAF invalid query range [" + std::to_string(tStart) + "," + std::to_string(tEnd) + ")", errStr);
         return -1;
     }
-    AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, hal_size_t(0), true);
+    AlignmentConstPtr alignment(getExistingAlignment(halHandle, hal_size_t(0), true));
 
     set<const Genome*> qGenomeSet;
     for (hal_species_t* qSpecies = qSpeciesNames; qSpecies != NULL;
          qSpecies = qSpecies->next)
     {
-      checkGenomes(halHandle, alignment, qSpecies->name, tSpecies, tChrom);
+        checkGenomes(halHandle, alignment.get(), qSpecies->name, tSpecies, tChrom);
       const Genome* qGenome = alignment->openGenome(qSpecies->name);
       qGenomeSet.insert(qGenome);
     }
@@ -496,7 +492,7 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     mafExport.setMaxRefGap(hal_size_t(maxRefGap));
     mafExport.setMaxBlockLength(hal_index_t(maxBlockLength));
 
-    mafExport.convertSegmentedSequence(mafBuffer, alignment, tGenome, 
+    mafExport.convertSegmentedSequence(mafBuffer, alignment.get(), tGenome, 
                                        absStart, 1 + absEnd - absStart,
                                        qGenomeSet);
     // if these buffers are very big, it is my intuition that 
@@ -534,9 +530,8 @@ extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
   try
   {
     // read the lowest level of detail because it's fastest
-    AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
-                            false);
+      AlignmentConstPtr alignment(getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                                                       false));
     hal_species_t* prev = NULL;
     if (alignment->getNumGenomes() > 0)
     {
@@ -607,9 +602,8 @@ extern "C" struct hal_species_t *halGetPossibleCoalescenceLimits(int halHandle,
   try
   {
     // read the lowest level of detail because it's fastest
-    AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
-                            false);
+      AlignmentConstPtr alignment(getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                                                       false));
     hal_species_t* prev = NULL;
     const Genome *qGenome = alignment->openGenome(qSpecies);
     const Genome *tGenome = alignment->openGenome(tSpecies);
@@ -684,9 +678,8 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
   try
   {
     // read the lowest level of detail because it's fastest
-    AlignmentConstPtr alignment = 
-       getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
-                            false);
+      AlignmentConstPtr alignment(getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                                                       false));
 
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
@@ -750,7 +743,7 @@ extern "C" char *halGetDna(int halHandle,
   char* dna = NULL;
   try
   {
-    AlignmentConstPtr alignment = getExistingAlignment(halHandle, 0, true);
+      AlignmentConstPtr alignment(getExistingAlignment(halHandle, 0, true));
     const Genome* genome = alignment->openGenome(speciesName);
     if (genome == NULL)
     {
@@ -840,7 +833,7 @@ static void checkHandle(int handle)
 }
 
 static void checkGenomes(int halHandle, 
-                         AlignmentConstPtr alignment, const string& qSpecies,
+                         const Alignment* alignment, const string& qSpecies,
                          const string& tSpecies, const string& tChrom)
 {
   const Genome* qGenome = alignment->openGenome(qSpecies);
@@ -864,7 +857,7 @@ static void checkGenomes(int halHandle,
 }
 
 
-static AlignmentConstPtr getExistingAlignment(int handle, hal_size_t queryLength,
+static const Alignment* getExistingAlignment(int handle, hal_size_t queryLength,
                                               bool needDNASequence)
 {
   checkHandle(handle);
@@ -886,7 +879,7 @@ static char* copyCString(const string& inString)
   return outString;
 }
 
-static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
+static hal_block_results_t* readBlocks(const Alignment* seqAlignment,
                                        const Sequence* tSequence,
                                        hal_index_t absStart, hal_index_t absEnd,
                                        bool tReversed,
@@ -976,7 +969,7 @@ static hal_block_results_t* readBlocks(AlignmentConstPtr seqAlignment,
   return results;
 }
 
-static void readBlock(AlignmentConstPtr seqAlignment,
+static void readBlock(const Alignment* seqAlignment,
                       hal_block_t* cur,  
                       vector<MappedSegmentPtr>& fragments, 
                bool getSequenceString, const string& genomeName)
@@ -1341,9 +1334,8 @@ extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle,
   halLock();
   struct hal_metadata_t *ret = NULL;
   try {
-    AlignmentConstPtr alignment = 
-      getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
-                           false);
+      AlignmentConstPtr alignment(getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), 
+                                                       false));
 
     const Genome *genome = alignment->openGenome(genomeName);
     if (genome == NULL) {

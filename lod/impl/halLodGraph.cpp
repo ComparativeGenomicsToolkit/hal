@@ -42,14 +42,14 @@ void LodGraph::erase()
   _telomeres.clear();
 }
 
-void LodGraph::build(AlignmentConstPtr alignment, const Genome* parent,
+void LodGraph::build(const Alignment* alignment, const Genome* parent,
                      const vector<const Genome*>& children, 
                      const Genome* grandParent,
                      hal_size_t step, bool allSequences, double probeFrac,
                      double minSeqFrac)
 {
   erase();
-  _alignment = alignment;
+  _alignment = AlignmentConstPtr(alignment);
   _parent = parent;
   _grandParent = grandParent;
   _step = step;

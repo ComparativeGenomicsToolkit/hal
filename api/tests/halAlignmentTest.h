@@ -11,6 +11,8 @@
 #include "halAlignment.h"
 #include "allTests.h"
 
+using namespace hal;
+
 class AlignmentTest
 {
 public:
@@ -19,8 +21,8 @@ public:
    virtual ~AlignmentTest() {
    }
    void check(CuTest *testCase);   
-   virtual void createCallBack(hal::AlignmentPtr alignment) {}
-   virtual void checkCallBack(hal::AlignmentConstPtr alignment) {}
+    virtual void createCallBack(Alignment* alignment) {}
+   virtual void checkCallBack(const Alignment* alignment) {}
    CuTest* _testCase;
    std::string _createPath;
    std::string _checkPath;

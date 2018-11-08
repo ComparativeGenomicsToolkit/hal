@@ -28,11 +28,11 @@ void MafWriteGenomes::convert(const string& mafPath,
                               const string& refGenomeName,
                               const set<string>& targets,
                               const DimMap& dimMap,
-                              AlignmentPtr alignment)
+                              Alignment* alignment)
 {
   _refName = refGenomeName;
   _dimMap = &dimMap;
-  _alignment = alignment;
+  _alignment = AlignmentPtr(alignment);
   _topSegment = TopSegmentIteratorPtr();
   _paraTop = TopSegmentIteratorPtr();
   _bottomSegment = BottomSegmentIteratorPtr();

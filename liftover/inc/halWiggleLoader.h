@@ -26,7 +26,7 @@ public:
    WiggleLoader();
    virtual ~WiggleLoader();
 
-   void load(AlignmentConstPtr alignment, 
+   void load(const Alignment* alignment, 
              const Genome* genome,
              std::istream* inputFile,
              WiggleTiles<double>* vals);

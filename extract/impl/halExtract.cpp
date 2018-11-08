@@ -11,16 +11,16 @@
 using namespace std;
 using namespace hal;
 
-static void getDimensions(AlignmentConstPtr outAlignment, const Genome* genome,
+static void getDimensions(const Alignment* outAlignment, const Genome* genome,
                           vector<Sequence::Info>& dimensions);
 
 static void copyGenome(const Genome* inGenome, Genome* outGenome);
 
-static void extractTree(const AlignmentConstPtr inAlignment,
+static void extractTree(const Alignment* inAlignment,
                         AlignmentPtr outAlignment, 
                         const string& rootName);
 
-static void extract(const AlignmentConstPtr inAlignment,
+static void extract(const Alignment* inAlignment,
                     AlignmentPtr outAlignment, const string& rootName);
 
 static CLParserPtr initParser()
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 
   try
   {
-    AlignmentConstPtr inAlignment = openHalAlignment(inHalPath, optionsParser);
+    const Alignment* inAlignment = openHalAlignment(inHalPath, optionsParser);
     if (inAlignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");
@@ -70,8 +70,8 @@ int main(int argc, char** argv)
     }
 
 
-    AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS,
-                                                 outputFormat);
+    AlignmentPtr outAlignment(openHalAlignment(outHalPath, optionsParser, READ_ACCESS | WRITE_ACCESS | CREATE_ACCESS,
+                                               outputFormat));
     if (outAlignment->getNumGenomes() != 0)
     {
       throw hal_exception("output hal alignmenet cannot be initialized");
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
   return 0;
 }
 
-void getDimensions(AlignmentConstPtr outAlignment, const Genome* genome, 
+void getDimensions(const Alignment* outAlignment, const Genome* genome, 
                    vector<Sequence::Info>& dimensions)
 {
   assert(dimensions.size() == 0);
@@ -179,7 +179,7 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
   }
 }
 
-static void extractTree(const AlignmentConstPtr inAlignment,
+static void extractTree(const Alignment* inAlignment,
                         AlignmentPtr outAlignment, 
                         const string& rootName)
 {
@@ -214,7 +214,7 @@ static void extractTree(const AlignmentConstPtr inAlignment,
 }
 
 
-void extract(const AlignmentConstPtr inAlignment,
+void extract(const Alignment* inAlignment,
              AlignmentPtr outAlignment, const string& rootName)
 {
   const Genome* genome = inAlignment->openGenome(rootName);
@@ -222,7 +222,7 @@ void extract(const AlignmentConstPtr inAlignment,
   assert(newGenome != NULL);
 
   vector<Sequence::Info> dimensions;
-  getDimensions(outAlignment, genome, dimensions);
+  getDimensions(outAlignment.get(), genome, dimensions);
   newGenome->setDimensions(dimensions);
 
   cout << "Extracting " << genome->getName() << endl;

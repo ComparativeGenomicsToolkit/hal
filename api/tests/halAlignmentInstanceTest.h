@@ -11,9 +11,9 @@
 #include "halAlignmentInstance.h"
 
 using namespace hal;
-AlignmentPtr getTestAlignmentInstances(const std::string& storageFormat,
-                                       const std::string& alignmentPath,
-                                       unsigned mode);
+Alignment* getTestAlignmentInstances(const std::string& storageFormat,
+                                     const std::string& alignmentPath,
+                                     unsigned mode);
 
 
 #endif

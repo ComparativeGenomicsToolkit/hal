@@ -75,7 +75,7 @@ int main(int argc, char** argv)
 
   try
   {
-    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
+      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignmnet is empty");
@@ -118,7 +118,7 @@ int main(int argc, char** argv)
       ifstream tgtWig(tgtWigPath.c_str());
       if (tgtWig)
       {
-        liftover.preloadOutput(alignment, tgtGenome, &tgtWig);
+        liftover.preloadOutput(alignment.get(), tgtGenome, &tgtWig);
       }
     }
 
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
       }
     }
 
-    liftover.convert(alignment, srcGenome, srcWigPtr, tgtGenome, tgtWigPtr,
+    liftover.convert(alignment.get(), srcGenome, srcWigPtr, tgtGenome, tgtWigPtr,
                      !noDupes, unique);
   }
   catch(hal_exception& e)

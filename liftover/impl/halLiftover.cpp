@@ -24,7 +24,7 @@ Liftover::~Liftover()
 
 }
 
-void Liftover::convert(AlignmentConstPtr alignment,
+void Liftover::convert(const Alignment* alignment,
                        const Genome* srcGenome,
                        istream* inBedStream,
                        const Genome* tgtGenome,

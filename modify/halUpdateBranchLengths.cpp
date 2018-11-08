@@ -13,7 +13,7 @@ static CLParserPtr initParser()
   return optionsParser;
 }
 
-void updateBranches(AlignmentPtr alignment, Genome *genome, stTree *newTree)
+void updateBranches(Alignment* alignment, Genome *genome, stTree *newTree)
 {
   if (genome->getNumChildren() == 0) {
     return;
@@ -51,9 +51,9 @@ int main(int argc, char *argv[])
     optParser->printUsage(cerr);
     return 1;
   }
-  AlignmentPtr alignment = openHalAlignment(halPath, optParser);
+  AlignmentPtr alignment(openHalAlignment(halPath, optParser));
   stTree *newTree = stTree_parseNewickString(newickTree.c_str());
   // recursively update branches
-  updateBranches(alignment,
+  updateBranches(alignment.get(),
                  alignment->openGenome(alignment->getRootName()), newTree);
 }

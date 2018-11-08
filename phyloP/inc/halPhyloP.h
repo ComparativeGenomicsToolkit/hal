@@ -42,7 +42,7 @@ public:
     * subtree relative to rest of tree. The subtree includes all children
     * of the named node as well as the branch leading to the node.
     */
-   void init(AlignmentConstPtr alignment, const std::string& modFilePath,
+   void init(const Alignment* alignment, const std::string& modFilePath,
              std::ostream* outStream,
              bool softMaskDups = true, 
              const std::string& dupType = "ambiguous",
@@ -63,7 +63,7 @@ protected:
 
 protected:
 
-   hal::AlignmentConstPtr _alignment;
+   AlignmentConstPtr _alignment;
    TreeModel* _mod;
    TreeModel* _modcpy;
    std::set<const Genome*> _targetSet;

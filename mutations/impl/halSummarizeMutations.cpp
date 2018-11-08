@@ -60,7 +60,7 @@ void SummarizeMutations::printCsv(ostream& outStream) const
   outStream << endl;
 }
 
-void SummarizeMutations::analyzeAlignment(AlignmentConstPtr alignment,
+void SummarizeMutations::analyzeAlignment(const Alignment* alignment,
                                           hal_size_t gapThreshold,
                                           double nThreshold, bool justSubs,
                                           const set<string>* targetSet)
@@ -70,7 +70,7 @@ void SummarizeMutations::analyzeAlignment(AlignmentConstPtr alignment,
   _justSubs = justSubs;
   _targetSet = targetSet;
   _branchMap.clear();
-  _alignment = alignment;
+  _alignment = AlignmentConstPtr(alignment);
   
   if (_alignment->getNumGenomes() > 0)
   {

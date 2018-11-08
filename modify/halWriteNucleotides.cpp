@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     optParser->printUsage(cerr);
     return 1;
   }
-  AlignmentPtr alignment = openHalAlignment(inPath, optParser);
+  AlignmentPtr alignment(openHalAlignment(inPath, optParser));
 
   ifstream tsv(tsvFile.c_str());
   string line;

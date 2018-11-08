@@ -62,7 +62,7 @@ void TopSegmentStruct::compareTo(TopSegmentIteratorPtr it,
   CuAssertTrue(testCase, _bottomParseIndex == seg->getBottomParseIndex());
 }
 
-void TopSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
+void TopSegmentSimpleIteratorTest::createCallBack(Alignment* alignment)
 {
   Genome* ancGenome = alignment->addRootGenome("Anc0", 0);
   size_t numChildren = 9;
@@ -96,7 +96,7 @@ void TopSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
   }
 }
 
-void TopSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
+void TopSegmentSimpleIteratorTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* ancGenome = alignment->openGenome("Anc0");
   CuAssertTrue(_testCase, 
@@ -158,7 +158,7 @@ void TopSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
-void TopSegmentSequenceTest::createCallBack(AlignmentPtr alignment)
+void TopSegmentSequenceTest::createCallBack(Alignment* alignment)
 {
   Genome* ancGenome = alignment->addRootGenome("Anc0", 0);
   vector<Sequence::Info> seqVec(1);
@@ -170,7 +170,7 @@ void TopSegmentSequenceTest::createCallBack(AlignmentPtr alignment)
   tsIt->getTopSegment()->setCoordinates(500, 9);
 }
 
-void TopSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)
+void TopSegmentSequenceTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* ancGenome = alignment->openGenome("Anc0");
   TopSegmentIteratorPtr tsIt = ancGenome->getTopSegmentIterator(100);
@@ -184,7 +184,7 @@ void TopSegmentSequenceTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, seq == "GAATGTGTG");
 }
 
-void TopSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
+void TopSegmentIteratorParseTest::createCallBack(Alignment* alignment)
 {
  vector<Sequence::Info> seqVec(1);
   
@@ -261,7 +261,7 @@ void TopSegmentIteratorParseTest::createCallBack(AlignmentPtr alignment)
   bs.applyTo(bi);
 }
 
-void TopSegmentIteratorParseTest::checkCallBack(AlignmentConstPtr alignment)
+void TopSegmentIteratorParseTest::checkCallBack(const Alignment* alignment)
 {
   BottomSegmentIteratorPtr bi;
   TopSegmentIteratorPtr ti;
@@ -312,7 +312,7 @@ void TopSegmentIteratorParseTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, bi->getStartPosition() == ti->getStartPosition());
 }
 
-void TopSegmentIteratorToSiteTest::createCallBack(AlignmentPtr alignment)
+void TopSegmentIteratorToSiteTest::createCallBack(Alignment* alignment)
 {
   vector<Sequence::Info> seqVec(1);
   
@@ -372,7 +372,7 @@ void TopSegmentIteratorToSiteTest::checkGenome(const Genome* genome)
   }
 }
 
-void TopSegmentIteratorToSiteTest::checkCallBack(AlignmentConstPtr alignment)
+void TopSegmentIteratorToSiteTest::checkCallBack(const Alignment* alignment)
 {
   TopSegmentIteratorPtr bi;
 
@@ -385,7 +385,7 @@ void TopSegmentIteratorToSiteTest::checkCallBack(AlignmentConstPtr alignment)
   checkGenome(case2);
 }
 
-void TopSegmentIteratorReverseTest::createCallBack(AlignmentPtr alignment)
+void TopSegmentIteratorReverseTest::createCallBack(Alignment* alignment)
 {
   vector<Sequence::Info> seqVec(1);
   
@@ -424,7 +424,7 @@ void TopSegmentIteratorReverseTest::createCallBack(AlignmentPtr alignment)
   bs.applyTo(bi);
 }
 
-void TopSegmentIteratorReverseTest::checkCallBack(AlignmentConstPtr alignment)
+void TopSegmentIteratorReverseTest::checkCallBack(const Alignment* alignment)
 {
   BottomSegmentIteratorPtr bi;
   TopSegmentIteratorPtr ti, ti2;
@@ -485,7 +485,7 @@ void TopSegmentIteratorReverseTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, ti->getLength() == 5);
 }
 
-void TopSegmentIsGapTest::createCallBack(AlignmentPtr alignment)
+void TopSegmentIsGapTest::createCallBack(Alignment* alignment)
 {
   size_t numSequences = 3;
   vector<Sequence::Info> seqVec(numSequences);
@@ -558,7 +558,7 @@ void TopSegmentIsGapTest::createCallBack(AlignmentPtr alignment)
   ti->getTopSegment()->setParentIndex(NULL_INDEX);
 }
 
-void TopSegmentIsGapTest::checkCallBack(AlignmentConstPtr alignment)
+void TopSegmentIsGapTest::checkCallBack(const Alignment* alignment)
 {
   BottomSegmentIteratorPtr bi;
   TopSegmentIteratorPtr ti;

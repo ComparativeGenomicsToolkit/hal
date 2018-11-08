@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     optParser->printUsage(cerr);
     return 1;
   }
-  AlignmentConstPtr alignment = openHalAlignment(halPath, optParser);
+  AlignmentConstPtr alignment(openHalAlignment(halPath, optParser));
   vector<string> ingroupGenomeNames;
   ingroupGenomeNames = chopString(ingroupGenomesUnsplit, ",");
   set <const Genome *>ingroupGenomes;

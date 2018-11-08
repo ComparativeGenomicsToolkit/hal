@@ -23,7 +23,7 @@ public:
    Liftover();
    virtual ~Liftover();
 
-   void convert(AlignmentConstPtr alignment,
+   void convert(const Alignment* alignment,
                 const Genome* srcGenome,
                 std::istream* inputFile,
                 const Genome* tgtGenome,

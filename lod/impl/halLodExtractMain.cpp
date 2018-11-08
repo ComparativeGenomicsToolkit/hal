@@ -88,13 +88,13 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr inAlignment = openHalAlignment(inHalPath, optionsParser);
+      AlignmentConstPtr inAlignment(openHalAlignment(inHalPath, optionsParser));
     if (inAlignment->getNumGenomes() == 0)
     {
       throw hal_exception("Input hal alignment is empty");
     }
 
-    AlignmentPtr outAlignment = openHalAlignment(outHalPath, optionsParser, hal::CREATE_ACCESS);
+    AlignmentPtr outAlignment(openHalAlignment(outHalPath, optionsParser, hal::CREATE_ACCESS));
     
     if (outAlignment->getNumGenomes() != 0)
     {
@@ -114,7 +114,7 @@ int main(int argc, char** argv)
     }
 
     LodExtract lodExtract;
-    lodExtract.createInterpolatedAlignment(inAlignment, outAlignment,
+    lodExtract.createInterpolatedAlignment(inAlignment.get(), outAlignment.get(),
                                            scale, outTree, rootName,
                                            keepSequences, allSequences,
                                            probeFrac, minSeqFrac);

@@ -77,7 +77,7 @@ void MafExport::writeHeader()
 }
 
 void MafExport::convertSegmentedSequence(ostream& mafStream,
-                                         AlignmentConstPtr alignment,
+                                         const Alignment* alignment,
                                          const SegmentedSequence* seq,
                                          hal_index_t startPosition,
                                          hal_size_t length,
@@ -100,7 +100,7 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
   hal_index_t lastPosition = startPosition + (hal_index_t)(length - 1);
 
   _mafStream = &mafStream;
-  _alignment = alignment;
+  _alignment = AlignmentConstPtr(alignment);
   if (!_append)
   {
     writeHeader();
@@ -165,13 +165,13 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
 }
 
 void MafExport::convertEntireAlignment(ostream& mafStream,
-                                       AlignmentConstPtr alignment)
+                                       const Alignment* alignment)
 {
     hal_size_t appendCount = 0;
     size_t numBlocks = 0;
 
     _mafStream = &mafStream;
-    _alignment = alignment;
+    _alignment = AlignmentConstPtr(alignment);
 
     writeHeader();
 

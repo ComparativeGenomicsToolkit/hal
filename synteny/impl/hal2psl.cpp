@@ -9,7 +9,9 @@
 #include "psl.h"
 
 
-void hal::Hal2Psl::storePslResults(std::vector<PslBlock>& pslBlocks){
+using namespace hal;
+
+void Hal2Psl::storePslResults(std::vector<PslBlock>& pslBlocks){
     
     BedList::iterator i = _outBedLines.begin();
     for (; i != _outBedLines.end(); ++i)
@@ -23,9 +25,9 @@ void hal::Hal2Psl::storePslResults(std::vector<PslBlock>& pslBlocks){
     }
     
 }
-std::vector<PslBlock> hal::Hal2Psl::convert2psl(hal::AlignmentConstPtr alignment,
-                       const hal::Genome* srcGenome,
-                       const hal::Genome* tgtGenome,
+std::vector<PslBlock> Hal2Psl::convert2psl(const Alignment* alignment,
+                       const Genome* srcGenome,
+                       const Genome* tgtGenome,
                        const std::string srcChrom){
     
     std::vector<PslBlock> pslBlocks;
@@ -38,8 +40,8 @@ std::vector<PslBlock> hal::Hal2Psl::convert2psl(hal::AlignmentConstPtr alignment
         _missedSet.clear();
         _tgtSet.clear();
         _tgtSet.insert(tgtGenome);
-        hal::SequenceIteratorPtr seqIt = srcGenome->getSequenceIterator();
-        hal::SequenceIteratorPtr seqEnd = srcGenome->getSequenceEndIterator();
+        SequenceIteratorPtr seqIt = srcGenome->getSequenceIterator();
+        SequenceIteratorPtr seqEnd = srcGenome->getSequenceEndIterator();
         for (; !seqIt->equals(seqEnd); seqIt->toNext()) {
           _outBedLines.clear();
           _srcSequence = seqIt->getSequence(); 
@@ -64,14 +66,14 @@ std::vector<PslBlock> hal::Hal2Psl::convert2psl(hal::AlignmentConstPtr alignment
 }
 
 
-void hal::Hal2Psl::makeUpPsl(const std::vector<hal::PSLInfo>& vpsl,
-                             const std::vector<hal::BedBlock>& blocks, 
+void Hal2Psl::makeUpPsl(const std::vector<PSLInfo>& vpsl,
+                             const std::vector<BedBlock>& blocks, 
                              const char strand,
                              const hal_index_t start,
                              const std::string chrName,
                              std::vector<PslBlock>& pslBlocks){
   assert(vpsl.size() == 1);
-  const hal::PSLInfo& psl = vpsl[0];
+  const PSLInfo& psl = vpsl[0];
 
   for (size_t i = 0; i < blocks.size(); ++i) {
     PslBlock b = PslBlock();

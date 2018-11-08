@@ -39,7 +39,7 @@ public:
     * entire graph is stored in memory in a special structure (ie not within
     * HAL).  The step parameter dictates how coarse-grained the interpolation
     * is:  every step bases are sampled.  */
-   void build(AlignmentConstPtr alignment, const Genome* parent,
+   void build(const Alignment* alignment, const Genome* parent,
               const std::vector<const Genome*>& children, 
               const Genome* grandParent,
               hal_size_t step, bool allSequences, double probeFrac,

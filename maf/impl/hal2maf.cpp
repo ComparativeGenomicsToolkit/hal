@@ -149,7 +149,7 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
+      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignmenet is empty");
@@ -239,6 +239,8 @@ int main(int argc, char** argv)
       }
     }
     ostream& mafStream = mafPath != "stdout" ? mafFileStream : cout;
+    void* v = malloc(100000000);
+    cerr<<"allocated " << (long)(v) << endl;
 
     MafExport mafExport;
     mafExport.setMaxRefGap(maxRefGap);
@@ -268,14 +270,14 @@ int main(int argc, char** argv)
         }
       }
       istream& bedStream = refTargetsPath != "stdin" ? bedFileStream : cin;
-      MafBed mafBed(mafStream, alignment, refGenome, targetSet, mafExport);
+      MafBed mafBed(mafStream, alignment.get(), refGenome, targetSet, mafExport);
       mafBed.scan(&bedStream);
     }
     else
     {
       if(global)
       {
-        mafExport.convertEntireAlignment(mafStream, alignment);
+        mafExport.convertEntireAlignment(mafStream, alignment.get());
       }
       else if (start == 0 && length == 0 && ref->getSequenceLength() == 0)
       {
@@ -286,7 +288,7 @@ int main(int argc, char** argv)
       }
       else
       {
-        mafExport.convertSegmentedSequence(mafStream, alignment, ref, 
+        mafExport.convertSegmentedSequence(mafStream, alignment.get(), ref, 
                                            start, length, targetSet);
       }
     }

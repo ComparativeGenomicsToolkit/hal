@@ -19,7 +19,7 @@ extern "C" {
 using namespace std;
 using namespace hal;
 
-void MetaDataTest::createCallBack(hal::AlignmentPtr alignment)
+void MetaDataTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -41,7 +41,7 @@ void MetaDataTest::createCallBack(hal::AlignmentPtr alignment)
   CuAssertTrue(_testCase, meta->getMap().size() == 3);
 }
 
-void MetaDataTest::checkCallBack(hal::AlignmentConstPtr alignment)
+void MetaDataTest::checkCallBack(const Alignment* alignment)
 {
   const MetaData* meta = alignment->getMetaData();
   

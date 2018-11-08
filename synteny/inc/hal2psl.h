@@ -19,11 +19,11 @@
 #include "halBlockLiftover.h"
 
 namespace hal {
-class Hal2Psl : public hal::BlockLiftover {
+class Hal2Psl : public BlockLiftover {
     
     void storePslResults(std::vector<PslBlock>& pslBlocks);
-    void makeUpPsl(const std::vector<hal::PSLInfo>& vpsl,
-                   const std::vector<hal::BedBlock>& blocks, 
+    void makeUpPsl(const std::vector<PSLInfo>& vpsl,
+                   const std::vector<BedBlock>& blocks, 
                    const char strand,
                    const hal_index_t start,
                    const std::string chrName,
@@ -32,9 +32,9 @@ class Hal2Psl : public hal::BlockLiftover {
     public:
 
     Hal2Psl(){}
-    std::vector<PslBlock> convert2psl(hal::AlignmentConstPtr alignment,
-                       const hal::Genome* srcGenome,
-                       const hal::Genome* tgtGenome,
+    std::vector<PslBlock> convert2psl(const Alignment* alignment,
+                       const Genome* srcGenome,
+                       const Genome* tgtGenome,
                        const std::string srcChrom);
 };
 }

@@ -75,6 +75,7 @@ namespace hal {
 
 extern const hal_index_t NULL_INDEX;
 
+// SHARED POINTER SUPPORT [FIXME needed?]
 
 // FORWARD DECLARATIONS
 #define HAL_FORWARD_DEC_CLASS(T) \

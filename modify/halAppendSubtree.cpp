@@ -25,7 +25,7 @@ static CLParserPtr initParser()
   return optionsParser;
 }
 
-void addSubtree(AlignmentPtr mainAlignment, AlignmentConstPtr appendAlignment, 
+void addSubtree(Alignment* mainAlignment, const Alignment* appendAlignment, 
                 string currNode)
 {
   Genome *outGenome = mainAlignment->openGenome(currNode);
@@ -68,15 +68,15 @@ int main(int argc, char *argv[])
     optParser->printUsage(cerr);
     return 1;
   }
-  AlignmentPtr mainAlignment = openHalAlignment(mainPath, optParser);
-  AlignmentConstPtr appendAlignment = openHalAlignment(appendPath, optParser);
+  AlignmentPtr mainAlignment(openHalAlignment(mainPath, optParser));
+  AlignmentConstPtr appendAlignment(openHalAlignment(appendPath, optParser));
   AlignmentConstPtr bridgeAlignment;
 
   if (!merge) {
     if (bridgePath == "") {
       throw hal_exception("need a bridge alignment if not merging nodes");
     }
-    bridgeAlignment = openHalAlignment(bridgePath, optParser);
+    bridgeAlignment = AlignmentConstPtr(openHalAlignment(bridgePath, optParser));
     Genome *mainAppendedRoot = mainAlignment->addLeafGenome(rootName,
                                                             parentName,
                                                             branchLength);
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     }
     assert(branchLength == 0.0);
   }
-  addSubtree(mainAlignment, appendAlignment, rootName);
+  addSubtree(mainAlignment.get(), appendAlignment.get(), rootName);
 
   // Need proper bottom segments for parent genome
   Genome *mainParentGenome = mainAlignment->openGenome(parentName);
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   }
 
   if (!noMarkAncestors) {
-    markAncestorsForUpdate(mainAlignment, rootName);
+    markAncestorsForUpdate(mainAlignment.get(), rootName);
   }
   return 0;
 }

@@ -147,7 +147,7 @@ int main(int argc, char** argv)
      * via a path to a .hal file.  Options don't necessarily need to
      * come from the optionsParser -- see other interfaces in 
      * hal/api/inc/halAlignmentInstance.h */
-    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
+      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("input hal alignmenet is empty");

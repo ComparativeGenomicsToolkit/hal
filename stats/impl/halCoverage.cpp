@@ -41,9 +41,9 @@ int main(int argc, char** argv)
     }
     st_randomSeed(seed);
 
-    AlignmentConstPtr alignment = openHalAlignment(path, optionsParser);
+    AlignmentConstPtr alignment(openHalAlignment(path, optionsParser));
     const Genome *ref = alignment->openGenome(refGenome);
-    vector<const Genome *> leafGenomes = getLeafGenomes(alignment);
+    vector<const Genome *> leafGenomes = getLeafGenomes(alignment.get());
 
     map<const Genome *, vector<hal_size_t> > coverage;
     for (size_t i = 0; i < leafGenomes.size(); i++) {

@@ -36,7 +36,7 @@ void validateDuplications(const Genome* genome);
 
 /** Go through an alignment, and throw an excpetion if anything
  * appears out of whack. */
-void validateAlignment(AlignmentConstPtr alignment);
+void validateAlignment(const Alignment* alignment);
 
 }
 #endif

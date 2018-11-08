@@ -41,7 +41,7 @@ BranchMutations::~BranchMutations()
 
 }
 
-void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
+void BranchMutations::analyzeBranch(const Alignment* alignment,
                                     hal_size_t gapThreshold,
                                     double nThreshold,
                                     ostream* refBedStream,
@@ -65,7 +65,7 @@ void BranchMutations::analyzeBranch(AlignmentConstPtr alignment,
   _reference = reference;
   _start = startPosition;
   _length = length;
-  _alignment = alignment;
+  _alignment = AlignmentConstPtr(alignment);
   _maxGap = gapThreshold;
   _nThreshold = nThreshold;
   _refStream = refBedStream;

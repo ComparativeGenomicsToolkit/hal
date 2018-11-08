@@ -21,8 +21,8 @@ static CLParserPtr initParser()
   return optionsParser;
 }
 
-void copyFromTopAlignment(AlignmentConstPtr topAlignment,
-                          AlignmentPtr mainAlignment, const string &genomeName)
+void copyFromTopAlignment(const Alignment* topAlignment,
+                          Alignment* mainAlignment, const string &genomeName)
 {
   Genome *mainReplacedGenome = mainAlignment->openGenome(genomeName);
   const Genome *topReplacedGenome = topAlignment->openGenome(genomeName);
@@ -50,8 +50,8 @@ void copyFromTopAlignment(AlignmentConstPtr topAlignment,
   }
 }
 
-void copyFromBottomAlignment(AlignmentConstPtr bottomAlignment,
-                             AlignmentPtr mainAlignment,
+void copyFromBottomAlignment(const Alignment* bottomAlignment,
+                             Alignment* mainAlignment,
                              const string &genomeName)
 {
   // Copy genome & bottom segments for the genome that's being replaced
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     optParser->printUsage(cerr);
     return 1;
   }
-  AlignmentPtr mainAlignment = openHalAlignment(inPath, optParser);
+  AlignmentPtr mainAlignment(openHalAlignment(inPath, optParser));
   AlignmentConstPtr bottomAlignment;
   AlignmentConstPtr topAlignment;
   bool useTopAlignment = mainAlignment->getRootName() != genomeName;
@@ -103,8 +103,8 @@ int main(int argc, char *argv[])
       throw hal_exception("Cannot replace non-root genome without a top "
                           "alignment file.");
     }
-    topAlignment = openHalAlignment(topAlignmentFile,
-                                    optParser);
+    topAlignment = AlignmentConstPtr(openHalAlignment(topAlignmentFile,
+                                                      optParser));
     const Genome *topReplacedGenome = topAlignment->openGenome(genomeName);
     topReplacedGenome->copyDimensions(mainReplacedGenome);
     topReplacedGenome->copySequence(mainReplacedGenome);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
       throw hal_exception("Cannot replace non-leaf genome without a bottom "
                           "alignment file.");
     }
-    bottomAlignment = openHalAlignment(bottomAlignmentFile, optParser);
+    bottomAlignment = AlignmentConstPtr(openHalAlignment(bottomAlignmentFile, optParser));
     const Genome *botReplacedGenome = bottomAlignment->openGenome(genomeName);
     botReplacedGenome->copyDimensions(mainReplacedGenome);
     botReplacedGenome->copySequence(mainReplacedGenome);
@@ -125,10 +125,10 @@ int main(int argc, char *argv[])
     throw hal_exception("Root genome is also a leaf genome.");
   }
   if (useBottomAlignment) {
-    copyFromBottomAlignment(bottomAlignment, mainAlignment, genomeName);
+    copyFromBottomAlignment(bottomAlignment.get(), mainAlignment.get(), genomeName);
   }
   if (useTopAlignment) {
-    copyFromTopAlignment(topAlignment, mainAlignment, genomeName);
+    copyFromTopAlignment(topAlignment.get(), mainAlignment.get(), genomeName);
   }
 
   // Clear update flag if present, since the genome has just been updated.
@@ -138,6 +138,6 @@ int main(int argc, char *argv[])
   }
 
   if (!noMarkAncestors) {
-    markAncestorsForUpdate(mainAlignment, genomeName);
+    markAncestorsForUpdate(mainAlignment.get(), genomeName);
   }
 }

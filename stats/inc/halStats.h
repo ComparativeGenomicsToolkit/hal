@@ -25,16 +25,16 @@ class HalStats
 public:
 
    HalStats();
-   HalStats(hal::AlignmentConstPtr alignment); 
+   HalStats(const Alignment* alignment); 
    virtual ~HalStats();
 
    void printCsv(std::ostream& outStream) const;
-   void readAlignment(hal::AlignmentConstPtr alignment);
+   void readAlignment(const Alignment* alignment);
 
 protected:
 
-   void readGenomeRecursive(hal::AlignmentConstPtr alignment,
-                            const hal::Genome* genome);
+   void readGenomeRecursive(const Alignment* alignment,
+                            const Genome* genome);
 
    std::string _tree;
    std::vector<GenomeStats> _genomeStatsVec;

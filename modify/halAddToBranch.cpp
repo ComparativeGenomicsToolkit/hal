@@ -47,11 +47,11 @@ int main(int argc, char *argv[])
     optParser->printUsage(cerr);
     return 1;
   }
-  AlignmentPtr mainAlignment = openHalAlignment(inPath, optParser);
-  AlignmentConstPtr botAlignment = openHalAlignment(botAlignmentPath,
-                                                    optParser);
-  AlignmentConstPtr topAlignment = openHalAlignment(topAlignmentPath,
-                                                    optParser);
+  AlignmentPtr mainAlignment(openHalAlignment(inPath, optParser));
+  AlignmentConstPtr botAlignment(openHalAlignment(botAlignmentPath,
+                                                  optParser));
+  AlignmentConstPtr topAlignment(openHalAlignment(topAlignmentPath,
+                                                  optParser));
   mainAlignment->insertGenome(insertName, parentName, childName,
                               upperBranchLength);
   mainAlignment->addLeafGenome(leafName, insertName, leafBranchLength);
@@ -102,6 +102,6 @@ int main(int argc, char *argv[])
   const Genome *inLeafGenome = botAlignment->openGenome(leafName);
   inLeafGenome->copy(outLeafGenome);
   if (!noMarkAncestors) {
-    markAncestorsForUpdate(mainAlignment, insertName);
+    markAncestorsForUpdate(mainAlignment.get(), insertName);
   }
 }

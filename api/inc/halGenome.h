@@ -129,9 +129,7 @@ public:
     * storeDNAArrays was set to false in setDimensions */
    virtual bool containsDNAArray() const = 0;
 
-   /** Get a pointer to the alignment object that contains the genome.
-    * Be careful not to free this pointer or put it inside an 
-    * AlignmentConstPtr object since its memory is already spoken for */
+   /** Get a pointer to the alignment object that contains the genome. */
    virtual const Alignment* getAlignment() const = 0;
 
    /** Copy all information from this genome to another. The genomes

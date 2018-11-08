@@ -34,8 +34,8 @@ public:
    LodExtract();
    ~LodExtract();
 
-   void createInterpolatedAlignment(AlignmentConstPtr inAlignment,
-                                    AlignmentPtr outAlignment,
+   void createInterpolatedAlignment(const Alignment* inAlignment,
+                                    Alignment* outAlignment,
                                     double scale,
                                     const std::string& tree,
                                     const std::string& rootName,

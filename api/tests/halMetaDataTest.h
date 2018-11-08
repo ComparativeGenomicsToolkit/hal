@@ -12,10 +12,12 @@
 #include "halMetaData.h"
 #include "allTests.h"
 
+using namespace hal;
+
 struct MetaDataTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 #endif

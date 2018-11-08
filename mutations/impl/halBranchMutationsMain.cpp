@@ -109,7 +109,7 @@ int main(int argc, char** argv)
 
   try
   {
-    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
+      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignmenet is empty");
@@ -303,7 +303,7 @@ int main(int argc, char** argv)
           {
             start = refSequence->getStartPosition() + start;
             BranchMutations mutations;
-            mutations.analyzeBranch(alignment, maxGap, nThreshold,
+            mutations.analyzeBranch(alignment.get(), maxGap, nThreshold,
                                     refBedStream, parentBedStream,
                                     snpBedStream, delBreakBedStream,
                                     refGenome, start, length);
@@ -315,7 +315,7 @@ int main(int argc, char** argv)
     else
     {
       BranchMutations mutations;
-      mutations.analyzeBranch(alignment, maxGap, nThreshold,
+      mutations.analyzeBranch(alignment.get(), maxGap, nThreshold,
                               refBedStream, parentBedStream,
                               snpBedStream, delBreakBedStream,
                               refGenome, start, length);

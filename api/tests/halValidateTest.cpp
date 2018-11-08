@@ -19,7 +19,7 @@ using namespace std;
 using namespace hal;
 
 
-void ValidateSmallTest::createCallBack(AlignmentPtr alignment)
+void ValidateSmallTest::createCallBack(Alignment* alignment)
 {
   createRandomAlignment(alignment, 
                         0.75, 
@@ -32,12 +32,12 @@ void ValidateSmallTest::createCallBack(AlignmentPtr alignment)
                         
 }
 
-void ValidateSmallTest::checkCallBack(AlignmentConstPtr alignment)
+void ValidateSmallTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
 }
 
-void ValidateMediumTest::createCallBack(AlignmentPtr alignment)
+void ValidateMediumTest::createCallBack(Alignment* alignment)
 {
   createRandomAlignment(alignment, 
                         1.25, 
@@ -50,12 +50,12 @@ void ValidateMediumTest::createCallBack(AlignmentPtr alignment)
                         
 }
 
-void ValidateMediumTest::checkCallBack(AlignmentConstPtr alignment)
+void ValidateMediumTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
 }
 
-void ValidateLargeTest::createCallBack(AlignmentPtr alignment)
+void ValidateLargeTest::createCallBack(Alignment* alignment)
 {
   createRandomAlignment(alignment, 
                         2, 
@@ -68,7 +68,7 @@ void ValidateLargeTest::createCallBack(AlignmentPtr alignment)
                         
 }
 
-void ValidateLargeTest::checkCallBack(AlignmentConstPtr alignment)
+void ValidateLargeTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
 }

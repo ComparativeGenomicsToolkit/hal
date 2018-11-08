@@ -11,12 +11,12 @@ using namespace std;
 using namespace hal;
 
 
-void MafBlockCreateTest::createCallBack(AlignmentPtr alignment)
+void MafBlockCreateTest::createCallBack(Alignment* alignment)
 {
   
 }
 
-void MafBlockCreateTest::checkCallBack(AlignmentConstPtr alignment)
+void MafBlockCreateTest::checkCallBack(const Alignment* alignment)
 {
  
 }

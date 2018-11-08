@@ -15,7 +15,7 @@
 using namespace std;
 using namespace hal;
 
-void GappedSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
+void GappedSegmentSimpleIteratorTest::createCallBack(Alignment* alignment)
 {
   addIdenticalParentChild(alignment, 2, 100, 5);
   Genome* parent = alignment->openGenome(alignment->getRootName());
@@ -36,7 +36,7 @@ void GappedSegmentSimpleIteratorTest::createCallBack(AlignmentPtr alignment)
 }
 
 void 
-GappedSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
+GappedSegmentSimpleIteratorTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* child = alignment->openGenome("child");
   const Genome* parent = alignment->openGenome("parent");
@@ -119,7 +119,7 @@ GappedSegmentSimpleIteratorTest::checkCallBack(AlignmentConstPtr alignment)
 
 }
 
-void GappedSegmentSimpleIteratorTest2::createCallBack(AlignmentPtr alignment)
+void GappedSegmentSimpleIteratorTest2::createCallBack(Alignment* alignment)
 {
   addIdenticalParentChild(alignment, 2, 100, 5);
   Genome* parent = alignment->openGenome(alignment->getRootName());
@@ -146,7 +146,7 @@ void GappedSegmentSimpleIteratorTest2::createCallBack(AlignmentPtr alignment)
 }
 
 void 
-GappedSegmentSimpleIteratorTest2::checkCallBack(AlignmentConstPtr alignment)
+GappedSegmentSimpleIteratorTest2::checkCallBack(const Alignment* alignment)
 {
   const Genome* child = alignment->openGenome("child");
   const Genome* parent = alignment->openGenome("parent");
@@ -257,7 +257,7 @@ GappedSegmentSimpleIteratorTest2::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
-void GappedSegmentIteratorIndelTest::createCallBack(AlignmentPtr alignment)
+void GappedSegmentIteratorIndelTest::createCallBack(Alignment* alignment)
 {
   addIdenticalParentChild(alignment, 1, 20, 5);
   Genome* parent = alignment->openGenome(alignment->getRootName());
@@ -290,7 +290,7 @@ void GappedSegmentIteratorIndelTest::createCallBack(AlignmentPtr alignment)
 }
 
 void 
-GappedSegmentIteratorIndelTest::checkCallBack(AlignmentConstPtr alignment)
+GappedSegmentIteratorIndelTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* child = alignment->openGenome("child");
   const Genome* parent = alignment->openGenome("parent");

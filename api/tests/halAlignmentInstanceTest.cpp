@@ -11,9 +11,9 @@
 using namespace std;
 using namespace hal;
 
-AlignmentPtr getTestAlignmentInstances(const std::string& storageFormat,
-                                       const std::string& alignmentPath,
-                                       unsigned mode) {
+Alignment* getTestAlignmentInstances(const std::string& storageFormat,
+                                     const std::string& alignmentPath,
+                                     unsigned mode) {
     if (storageFormat == STORAGE_FORMAT_HDF5) {
         return hdf5AlignmentInstance(alignmentPath, mode,
                                      hdf5DefaultFileCreatPropList(),

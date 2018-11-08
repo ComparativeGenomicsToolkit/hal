@@ -25,7 +25,7 @@ extern "C" {
 using namespace std;
 using namespace hal;
 
-void GenomeMetaTest::createCallBack(AlignmentPtr alignment)
+void GenomeMetaTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -36,7 +36,7 @@ void GenomeMetaTest::createCallBack(AlignmentPtr alignment)
   ancMeta->set("Young", "Jeezy");
 }
 
-void GenomeMetaTest::checkCallBack(AlignmentConstPtr alignment)
+void GenomeMetaTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   const MetaData* ancMeta = ancGenome->getMetaData();
@@ -47,7 +47,7 @@ void GenomeMetaTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
 }
 
-void GenomeCreateTest::createCallBack(AlignmentPtr alignment)
+void GenomeCreateTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -71,7 +71,7 @@ void GenomeCreateTest::createCallBack(AlignmentPtr alignment)
   leaf3Genome->setDimensions(seqVec);
 }
 
-void GenomeCreateTest::checkCallBack(AlignmentConstPtr alignment)
+void GenomeCreateTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* dudGenome = alignment->openGenome("Zebra");
   CuAssertTrue(_testCase, dudGenome == NULL);
@@ -99,7 +99,7 @@ void GenomeCreateTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, leaf3Genome->getNumBottomSegments() == 0);
 }
 
-void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
+void GenomeUpdateTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -112,7 +112,7 @@ void GenomeUpdateTest::createCallBack(AlignmentPtr alignment)
   ancGenome->setDimensions(seqVec);  
 }
 
-void GenomeUpdateTest::checkCallBack(AlignmentConstPtr alignment)
+void GenomeUpdateTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
@@ -121,7 +121,7 @@ void GenomeUpdateTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, ancGenome->getNumBottomSegments() == 2000001);
 }
 
-void GenomeStringTest::createCallBack(AlignmentPtr alignment)
+void GenomeStringTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -135,7 +135,7 @@ void GenomeStringTest::createCallBack(AlignmentPtr alignment)
   ancGenome->setString(_string);
 }
 
-void GenomeStringTest::checkCallBack(AlignmentConstPtr alignment)
+void GenomeStringTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
@@ -144,7 +144,7 @@ void GenomeStringTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, genomeString == _string);
 }
 
-void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
+void GenomeCopyTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -154,8 +154,8 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
   // when copying bottom segments, and two genomes can't have the same
   // name in the same alignment)
   _path = getTempFile();
-  _secondAlignment = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               WRITE_ACCESS | CREATE_ACCESS);
+  _secondAlignment = AlignmentPtr(getTestAlignmentInstances(alignment->getStorageFormat(), _path,
+                                                            WRITE_ACCESS | CREATE_ACCESS));
 
   Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
   Genome *leafGenome = alignment->addLeafGenome("LeafGenome1",
@@ -260,13 +260,13 @@ void GenomeCopyTest::createCallBack(AlignmentPtr alignment)
   _secondAlignment->close();
 }
 
-void GenomeCopyTest::checkCallBack(hal::AlignmentConstPtr alignment)
+void GenomeCopyTest::checkCallBack(const Alignment* alignment)
 {
   // FIXME: halAlignment->open() fails miserably but
   // openHalAlignmentReadOnly works? Probably some state isn't cleared
   // on close.
-  AlignmentPtr tmp = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               WRITE_ACCESS);
+    AlignmentPtr tmp(getTestAlignmentInstances(alignment->getStorageFormat(), _path,
+                                               WRITE_ACCESS));
   _secondAlignment = tmp;
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
@@ -401,7 +401,7 @@ void setBottomSegments(Genome *genome, hal_size_t width) {
 // "Sequence1" positions, and "Sequence2" to "Sequence2", but try
 // copying the segments to an alignment with "Sequence2" before
 // "Sequence1" in the ordering.
-void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(AlignmentPtr alignment)
+void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -411,8 +411,8 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(AlignmentPtr 
   // when copying bottom segments, and two genomes can't have the same
   // name in the same alignment)
   _path = getTempFile();
-  _secondAlignment = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               CREATE_ACCESS);
+  _secondAlignment = AlignmentPtr(getTestAlignmentInstances(alignment->getStorageFormat(), _path,
+                                                            CREATE_ACCESS));
 
   Genome *rootGenome = alignment->addRootGenome("root", 0);
   Genome *internalGenome = alignment->addLeafGenome("internal",
@@ -516,13 +516,13 @@ void checkTopSegments(Genome *genome, hal_size_t width, CuTest *testCase) {
   
 }
 
-void GenomeCopySegmentsWhenSequencesOutOfOrderTest::checkCallBack(hal::AlignmentConstPtr alignment)
+void GenomeCopySegmentsWhenSequencesOutOfOrderTest::checkCallBack(const Alignment* alignment)
 {
   // FIXME: halAlignment->open() fails miserably but
   // openHalAlignmentReadOnly works? Probably some state isn't cleared
   // on close.
-  AlignmentPtr tmp = getTestAlignmentInstances(alignment->getStorageFormat(), _path,
-                                               WRITE_ACCESS);
+    AlignmentPtr tmp(getTestAlignmentInstances(alignment->getStorageFormat(), _path,
+                                               WRITE_ACCESS));
   _secondAlignment = tmp;
 
   Genome *copyRootGenome = _secondAlignment->openGenome("root");
@@ -539,7 +539,7 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::checkCallBack(hal::Alignment
 
   checkBottomSegments(copyInternalGenome, 10, _testCase);
 
-  validateAlignment(_secondAlignment);
+  validateAlignment(_secondAlignment.get());
 
   _secondAlignment->close();
   remove(_path.c_str());

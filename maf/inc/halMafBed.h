@@ -22,7 +22,7 @@ class MafBed : public BedScanner
 {
 public:
 
-   MafBed(std::ostream& mafStream, AlignmentConstPtr alignment,
+   MafBed(std::ostream& mafStream, const Alignment* alignment,
           const Genome* refGenome,
           std::set<const Genome*>& targetSet,
           MafExport& mafExport);

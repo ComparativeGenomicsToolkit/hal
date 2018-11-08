@@ -12,55 +12,57 @@
 #include "hal.h"
 #include "allTests.h"
 
+using namespace hal;
+
 struct ColumnIteratorBaseTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ColumnIteratorDepthTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
-   void checkGenome(const hal::Genome* genome);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
+   void checkGenome(const Genome* genome);
 };
 
 struct ColumnIteratorDupTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
-   void checkGenome(const hal::Genome* genome);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
+   void checkGenome(const Genome* genome);
 };
 
 struct ColumnIteratorInvTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
-   void checkGenome(const hal::Genome* genome);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
+   void checkGenome(const Genome* genome);
 };
 
 struct ColumnIteratorGapTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ColumnIteratorMultiGapTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ColumnIteratorMultiGapInvTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ColumnIteratorPositionCacheTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 #endif

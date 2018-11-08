@@ -22,7 +22,7 @@ public:
    virtual ~BranchMutations();
 
    void printCsv(std::ostream& outStream) const;
-   void analyzeBranch(AlignmentConstPtr alignment,
+   void analyzeBranch(const Alignment* alignment,
                       hal_size_t gapThreshold,
                       double nThreshold,
                       std::ostream* refBedStream,

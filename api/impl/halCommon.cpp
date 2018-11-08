@@ -216,7 +216,7 @@ void hal::getGenomesInSubTree(const Genome* root,
   }
 }
 
-vector<const Genome *> hal::getLeafGenomes(AlignmentConstPtr alignment)
+vector<const Genome *> hal::getLeafGenomes(const Alignment* alignment)
 {
     // Load in all leaves from alignment
     vector<string> leafNames = alignment->getLeafNamesBelow(alignment->getRootName());

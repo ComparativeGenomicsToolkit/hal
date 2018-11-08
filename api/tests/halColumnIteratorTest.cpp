@@ -19,12 +19,12 @@
 using namespace std;
 using namespace hal;
 
-void ColumnIteratorBaseTest::createCallBack(AlignmentPtr alignment)
+void ColumnIteratorBaseTest::createCallBack(Alignment* alignment)
 {
   createRandomAlignment(alignment, 10, 1e-10, 3, 77, 77, 10, 10);
 }
 
-void ColumnIteratorBaseTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorBaseTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* genome = alignment->openGenome(alignment->getRootName());
@@ -56,7 +56,7 @@ void ColumnIteratorBaseTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
-void ColumnIteratorDepthTest::createCallBack(AlignmentPtr alignment)
+void ColumnIteratorDepthTest::createCallBack(Alignment* alignment)
 {
   double branchLength = 1e-10;
 
@@ -152,7 +152,7 @@ void ColumnIteratorDepthTest::checkGenome(const Genome* genome)
   }
 }
 
-void ColumnIteratorDepthTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorDepthTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* genome = alignment->openGenome("grandpa");
@@ -165,7 +165,7 @@ void ColumnIteratorDepthTest::checkCallBack(AlignmentConstPtr alignment)
   checkGenome(genome);
 }
 
-void ColumnIteratorDupTest::createCallBack(AlignmentPtr alignment)
+void ColumnIteratorDupTest::createCallBack(Alignment* alignment)
 {
   double branchLength = 1e-10;
 
@@ -301,7 +301,7 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
   }
 }
 
-void ColumnIteratorDupTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorDupTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* genome = alignment->openGenome("dad");
@@ -312,7 +312,7 @@ void ColumnIteratorDupTest::checkCallBack(AlignmentConstPtr alignment)
   checkGenome(genome);
 }
 
-void ColumnIteratorInvTest::createCallBack(AlignmentPtr alignment)
+void ColumnIteratorInvTest::createCallBack(Alignment* alignment)
 {
   double branchLength = 1e-10;
 
@@ -507,14 +507,14 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
   }
 }
 
-void ColumnIteratorInvTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorInvTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* genome = alignment->openGenome("son1");
   checkGenome(genome);
 }
 
-void ColumnIteratorGapTest::createCallBack(AlignmentPtr alignment)
+void ColumnIteratorGapTest::createCallBack(Alignment* alignment)
 {
   double branchLength = 1e-10;
 
@@ -567,7 +567,7 @@ void ColumnIteratorGapTest::createCallBack(AlignmentPtr alignment)
   dad->setString("ACGTGGGG");
 }
 
-void ColumnIteratorGapTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorGapTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* dad = alignment->openGenome("dad");
@@ -599,7 +599,7 @@ void ColumnIteratorGapTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
-void ColumnIteratorMultiGapTest::createCallBack(AlignmentPtr alignment)
+void ColumnIteratorMultiGapTest::createCallBack(Alignment* alignment)
 {
   double branchLength = 1e-10;
 
@@ -695,7 +695,7 @@ void ColumnIteratorMultiGapTest::createCallBack(AlignmentPtr alignment)
   dad->setString("ACGTGGGG");
 }
 
-void ColumnIteratorMultiGapTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorMultiGapTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
 
@@ -808,7 +808,7 @@ void ColumnIteratorMultiGapTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
-void ColumnIteratorMultiGapInvTest::createCallBack(AlignmentPtr alignment)
+void ColumnIteratorMultiGapInvTest::createCallBack(Alignment* alignment)
 {
   double branchLength = 1e-10;
 
@@ -904,7 +904,7 @@ void ColumnIteratorMultiGapInvTest::createCallBack(AlignmentPtr alignment)
   dad->setString("ACGTGGGG");
 }
 
-void ColumnIteratorMultiGapInvTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorMultiGapInvTest::checkCallBack(const Alignment* alignment)
 {
   validateAlignment(alignment);
   const Genome* dad = alignment->openGenome("dad");
@@ -1008,12 +1008,12 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
-void ColumnIteratorPositionCacheTest::createCallBack(AlignmentPtr alignment)
+void ColumnIteratorPositionCacheTest::createCallBack(Alignment* alignment)
 {
     alignment->addRootGenome("foobar");
 }
 
-void ColumnIteratorPositionCacheTest::checkCallBack(AlignmentConstPtr alignment)
+void ColumnIteratorPositionCacheTest::checkCallBack(const Alignment* alignment)
 {
   size_t trials = 10;
   size_t sizes[] = {10, 100, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 1000000};

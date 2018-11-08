@@ -50,8 +50,8 @@ void AlignmentTest::check(CuTest* testCase)
 {
   _testCase = testCase;
   try {
-      checkOne(testCase, hal::STORAGE_FORMAT_HDF5);
-      checkOne(testCase, hal::STORAGE_FORMAT_MMAP);
+      checkOne(testCase, STORAGE_FORMAT_HDF5);
+      checkOne(testCase, STORAGE_FORMAT_MMAP);
   } catch (const exception &e) {
       CuFail(testCase, stString_print("Caught exception while testing: %s", e.what()));
   }
@@ -63,15 +63,15 @@ void AlignmentTest::checkOne(CuTest* testCase,
     string alignmentPath = getTempFile();
 
     // test with created
-    AlignmentPtr calignment = getTestAlignmentInstances(storageFormat, alignmentPath, CREATE_ACCESS);
+    AlignmentPtr calignment(getTestAlignmentInstances(storageFormat, alignmentPath, CREATE_ACCESS));
     _createPath = alignmentPath;
-    createCallBack(calignment);
+    createCallBack(calignment.get());
     calignment->close();
     
     // test with existing alignment
-    AlignmentPtr ralignment = getTestAlignmentInstances(storageFormat, alignmentPath, READ_ACCESS);
+    AlignmentPtr ralignment(getTestAlignmentInstances(storageFormat, alignmentPath, READ_ACCESS));
     _checkPath = alignmentPath;
-    checkCallBack(ralignment);
+    checkCallBack(ralignment.get());
     ralignment->close();
 
     ::unlink(alignmentPath.c_str());
@@ -80,7 +80,7 @@ void AlignmentTest::checkOne(CuTest* testCase,
 
 class AlignmentTestTrees : public AlignmentTest {
     public:
-    void createCallBack(hal::AlignmentPtr alignment)
+    void createCallBack(Alignment* alignment)
     {
       hal_size_t alignmentSize = alignment->getNumGenomes();
       CuAssertTrue(_testCase, alignmentSize == 0);
@@ -97,7 +97,7 @@ class AlignmentTestTrees : public AlignmentTest {
       alignment->updateBranchLength("Root", "Leaf2", 5.1);
     }
 
-    void checkCallBack(hal::AlignmentConstPtr alignment)
+    void checkCallBack(const Alignment* alignment)
     {
       CuAssertTrue(_testCase, alignment->getRootName() == "NewRoot");
       CuAssertTrue(_testCase, alignment->getNewickTree() == 

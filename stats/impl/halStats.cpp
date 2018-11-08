@@ -16,7 +16,7 @@ HalStats::HalStats()
 
 }
 
-HalStats::HalStats(AlignmentConstPtr alignment)
+HalStats::HalStats(const Alignment* alignment)
 {
   readAlignment(alignment);
 }
@@ -43,7 +43,7 @@ void HalStats::printCsv(ostream& outStream) const
   outStream << endl;
 }
 
-void HalStats::readAlignment(AlignmentConstPtr alignment)
+void HalStats::readAlignment(const Alignment* alignment)
 {
   _tree.clear();
   _genomeStatsVec.clear();
@@ -57,7 +57,7 @@ void HalStats::readAlignment(AlignmentConstPtr alignment)
   }
 }
 
-void HalStats::readGenomeRecursive(AlignmentConstPtr alignment,
+void HalStats::readGenomeRecursive(const Alignment* alignment,
                                    const Genome* genome)
 {
   assert(genome != NULL);

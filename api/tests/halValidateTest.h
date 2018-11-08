@@ -12,22 +12,24 @@
 #include "hal.h"
 #include "allTests.h"
 
+using namespace hal;
+
 struct ValidateSmallTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ValidateMediumTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ValidateLargeTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 #endif

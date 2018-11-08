@@ -12,45 +12,47 @@
 #include "halGenome.h"
 #include "allTests.h"
 
+using namespace hal;
+
 struct GenomeMetaTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct GenomeCreateTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct GenomeUpdateTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct GenomeStringTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
    std::string _string;
 };
 
 struct GenomeCopyTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
    std::string _path;
-   hal::AlignmentPtr _secondAlignment;
+   AlignmentPtr _secondAlignment;
 };
 
 struct GenomeCopySegmentsWhenSequencesOutOfOrderTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
    std::string _path;
-   hal::AlignmentPtr _secondAlignment;
+   AlignmentPtr _secondAlignment;
 };
 
 #endif

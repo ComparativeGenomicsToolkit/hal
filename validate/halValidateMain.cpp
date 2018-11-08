@@ -30,8 +30,8 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr alignment = openHalAlignment(path, optionsParser);
-    validateAlignment(alignment);
+      AlignmentConstPtr alignment(openHalAlignment(path, optionsParser));
+    validateAlignment(alignment.get());
   }
   catch(hal_exception& e)
   {

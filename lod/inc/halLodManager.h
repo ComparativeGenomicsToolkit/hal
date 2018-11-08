@@ -42,7 +42,7 @@ public:
    void loadSingeHALFile(const std::string& halPath,
                          CLParserConstPtr options = halCLParserInstance());
 
-   AlignmentConstPtr getAlignment(hal_size_t queryLength, 
+   const Alignment* getAlignment(hal_size_t queryLength, 
                                   bool needDNA);
 
    /** Check if query length corresponds to LOD 0 (ie original HAL) */
@@ -64,7 +64,7 @@ protected:
                            const std::string& halPath);
    void checkMap(const std::string& lodPath);
    void checkAlignment(hal_size_t minQuery, const std::string& path,
-                       AlignmentConstPtr alignment);
+                       const Alignment* alignment);
    void preloadAlignments();
 
    typedef std::pair<std::string, AlignmentConstPtr> PathAlign;

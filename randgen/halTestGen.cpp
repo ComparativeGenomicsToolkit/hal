@@ -24,20 +24,20 @@ static CLParserPtr initParser()
 
 static void setDNA(Genome* genome, char base = 'g');
 static void writeParseInfo(Genome* genome);
-static void createRoot(AlignmentPtr alignment, const string& name,
+static void createRoot(Alignment* alignment, const string& name,
                        hal_size_t numBot, hal_size_t botWidth);
-static void addLeaf(AlignmentPtr alignment, const string& name,
+static void addLeaf(Alignment* alignment, const string& name,
                     hal_size_t numTop);
-static void invertLeaf(AlignmentPtr alignment, 
+static void invertLeaf(Alignment* alignment, 
                        hal_index_t firstTop, hal_index_t lastTop);
-static void dupLeaf(AlignmentPtr alignment,
+static void dupLeaf(Alignment* alignment,
                     hal_size_t dupLen, hal_index_t sourceIdx,
                     const vector<hal_index_t>& tgtIdx,
                     const vector<bool>& tgtRev);
-static void transLeaf(AlignmentPtr alignment,
+static void transLeaf(Alignment* alignment,
                       hal_size_t len, hal_index_t srcIdx,
                       hal_index_t tgtIdx);
-static void indelLeaf(AlignmentPtr alignment,
+static void indelLeaf(Alignment* alignment,
                       hal_index_t firstTop, hal_index_t lastTop);
 
 int main(int argc, char** argv)
@@ -61,41 +61,41 @@ int main(int argc, char** argv)
     const hal_size_t genomeLength = 5000;
     hal_size_t segSize;
     
-    AlignmentPtr alignment = openHalAlignment(halPath, optionsParser, hal::CREATE_ACCESS);
+    AlignmentPtr alignment(openHalAlignment(halPath, optionsParser, hal::CREATE_ACCESS));
     
-    createRoot(alignment, "root", 1, genomeLength);
+    createRoot(alignment.get(), "root", 1, genomeLength);
     
     segSize = 10;
-    addLeaf(alignment, "1inv_1000_1500", genomeLength / segSize);
-    invertLeaf(alignment, 1000 / segSize, (1500 - segSize) / segSize);
+    addLeaf(alignment.get(), "1inv_1000_1500", genomeLength / segSize);
+    invertLeaf(alignment.get(), 1000 / segSize, (1500 - segSize) / segSize);
 
     segSize = 20;
-    addLeaf(alignment, "2inv_1200_1400", genomeLength / segSize);
-    invertLeaf(alignment, 1200 / segSize, (1400 - segSize) / segSize);
+    addLeaf(alignment.get(), "2inv_1200_1400", genomeLength / segSize);
+    invertLeaf(alignment.get(), 1200 / segSize, (1400 - segSize) / segSize);
 
     segSize = 100;
-    addLeaf(alignment, "3dup_200_500_600_800r", genomeLength / segSize);
+    addLeaf(alignment.get(), "3dup_200_500_600_800r", genomeLength / segSize);
     vector<hal_index_t> tgtIdx(3);
     vector<bool> tgtRev(3, false);
     tgtIdx[0] = 500 / segSize;
     tgtIdx[1] = 600 / segSize;
     tgtIdx[2] = 800 /segSize;
     tgtRev[2] = true;
-    dupLeaf(alignment, 1, 200 / segSize, tgtIdx, tgtRev);
+    dupLeaf(alignment.get(), 1, 200 / segSize, tgtIdx, tgtRev);
 
     segSize = 5;
-    addLeaf(alignment, "4swap_20_920to3000_3900", genomeLength / segSize);
-    transLeaf(alignment, 900 / segSize, 20 / segSize, 3000 / segSize);
+    addLeaf(alignment.get(), "4swap_20_920to3000_3900", genomeLength / segSize);
+    transLeaf(alignment.get(), 900 / segSize, 20 / segSize, 3000 / segSize);
 
     segSize = 1000;
-    addLeaf(alignment, "5gap_0_1000", genomeLength / segSize);
-    indelLeaf(alignment, 0 / segSize, (1000 - segSize) / segSize);
+    addLeaf(alignment.get(), "5gap_0_1000", genomeLength / segSize);
+    indelLeaf(alignment.get(), 0 / segSize, (1000 - segSize) / segSize);
 
     segSize = 500;
-    addLeaf(alignment, "6inv_2500_5000", genomeLength / segSize);
-    invertLeaf(alignment, 2500 / segSize, (5000 - segSize) / segSize);
+    addLeaf(alignment.get(), "6inv_2500_5000", genomeLength / segSize);
+    invertLeaf(alignment.get(), 2500 / segSize, (5000 - segSize) / segSize);
 
-    validateAlignment(alignment);
+    validateAlignment(alignment.get());
     alignment->close();
   }
   catch(hal_exception& e)
@@ -118,7 +118,7 @@ void setDNA(Genome* genome, char base)
   genome->setString(dna);
 }
 
-void createRoot(AlignmentPtr alignment, const string& name,
+void createRoot(Alignment* alignment, const string& name,
                 hal_size_t numBot, hal_size_t botWidth)
 {
   assert(alignment->getNumGenomes() == 0);
@@ -128,7 +128,7 @@ void createRoot(AlignmentPtr alignment, const string& name,
   setDNA(root);
 }
 
-void addLeaf(AlignmentPtr alignment, const string& name,
+void addLeaf(Alignment* alignment, const string& name,
              hal_size_t numTop)
 {
   Genome* lastLeaf = alignment->openGenome(alignment->getRootName());
@@ -167,7 +167,7 @@ void addLeaf(AlignmentPtr alignment, const string& name,
   writeParseInfo(lastLeaf);
 }
 
-void invertLeaf(AlignmentPtr alignment, 
+void invertLeaf(Alignment* alignment, 
                 hal_index_t firstTop, hal_index_t lastTop)
 {
   Genome* leaf = alignment->openGenome(alignment->getRootName());
@@ -194,7 +194,7 @@ void invertLeaf(AlignmentPtr alignment,
   }
 }
 
-void dupLeaf(AlignmentPtr alignment,
+void dupLeaf(Alignment* alignment,
              hal_size_t dupLen, hal_index_t sourceIdx,
              const vector<hal_index_t>& tgtIdx,
              const vector<bool>& tgtRev)
@@ -231,7 +231,7 @@ void dupLeaf(AlignmentPtr alignment,
   }
 }
 
-void transLeaf(AlignmentPtr alignment,
+void transLeaf(Alignment* alignment,
                hal_size_t len, hal_index_t srcIdx,
                hal_index_t tgtIdx)
 {
@@ -262,7 +262,7 @@ void transLeaf(AlignmentPtr alignment,
   }
 }
 
-void indelLeaf(AlignmentPtr alignment,
+void indelLeaf(Alignment* alignment,
                hal_index_t firstTop, hal_index_t lastTop)
 {
   Genome* leaf = alignment->openGenome(alignment->getRootName());

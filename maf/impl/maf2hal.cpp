@@ -83,7 +83,7 @@ int main(int argc, char** argv)
     AlignmentPtr alignment;
     if (append == true)
     {
-      alignment = openHalAlignment(halPath, optionsParser);
+        alignment = AlignmentPtr(openHalAlignment(halPath, optionsParser));
       if (alignment->openGenome(refGenomeName) == NULL)
       {
         throw hal_exception("Reference genome " + refGenomeName + " not found "
@@ -97,7 +97,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        alignment = openHalAlignment(halPath, optionsParser);
+        alignment = AlignmentPtr(openHalAlignment(halPath, optionsParser));
     }
     
     vector<string> targetNames;
@@ -145,7 +145,7 @@ int main(int argc, char** argv)
 
     MafWriteGenomes writer;
     writer.convert(mafPath, refGenomeName, targetSet, dScan.getDimensions(),
-                   alignment);
+                   alignment.get());
 
 
   }try{}

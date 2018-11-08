@@ -14,7 +14,7 @@
 using namespace std;
 using namespace hal;
 
-void addIdenticalParentChild(hal::AlignmentPtr alignment,
+void addIdenticalParentChild(Alignment* alignment,
                              size_t numSequences,
                              size_t numSegmentsPerSequence,
                              size_t segmentLength)
@@ -163,7 +163,7 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
   }
 }
 
-void makeInversion(hal::TopSegmentIteratorPtr ti, hal_size_t len)
+void makeInversion(TopSegmentIteratorPtr ti, hal_size_t len)
 {
   Genome* child = ti->getTopSegment()->getGenome();
   Genome* parent = child->getParent();
@@ -180,7 +180,7 @@ void makeInversion(hal::TopSegmentIteratorPtr ti, hal_size_t len)
   }
 }
 
-void RearrangementInsertionTest::createCallBack(AlignmentPtr alignment)
+void RearrangementInsertionTest::createCallBack(Alignment* alignment)
 {
   size_t numSequences = 3;
   size_t numSegmentsPerSequence = 10;
@@ -216,7 +216,7 @@ void RearrangementInsertionTest::createCallBack(AlignmentPtr alignment)
   // insertion larger than gap threshold but that contains gaps
 }
 
-void RearrangementInsertionTest::checkCallBack(AlignmentConstPtr alignment)
+void RearrangementInsertionTest::checkCallBack(const Alignment* alignment)
 {
   BottomSegmentIteratorPtr bi;
   TopSegmentIteratorPtr ti;
@@ -247,7 +247,7 @@ void RearrangementInsertionTest::checkCallBack(AlignmentConstPtr alignment)
   
 }
 
-void RearrangementSimpleInversionTest::createCallBack(AlignmentPtr alignment)
+void RearrangementSimpleInversionTest::createCallBack(Alignment* alignment)
 {
   size_t numSequences = 3;
   size_t numSegmentsPerSequence = 10;
@@ -279,7 +279,7 @@ void RearrangementSimpleInversionTest::createCallBack(AlignmentPtr alignment)
 }
 
 void 
-RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
+RearrangementSimpleInversionTest::checkCallBack(const Alignment* alignment)
 {
   BottomSegmentIteratorPtr bi;
   TopSegmentIteratorPtr ti;
@@ -309,7 +309,7 @@ RearrangementSimpleInversionTest::checkCallBack(AlignmentConstPtr alignment)
   while (r->identifyNext() == true);
 }
 
-void RearrangementGappedInversionTest::createCallBack(AlignmentPtr alignment)
+void RearrangementGappedInversionTest::createCallBack(Alignment* alignment)
 {
   size_t numSequences = 3;
   size_t numSegmentsPerSequence = 10;
@@ -365,7 +365,7 @@ void RearrangementGappedInversionTest::createCallBack(AlignmentPtr alignment)
 }
 
 void 
-RearrangementGappedInversionTest::checkCallBack(AlignmentConstPtr alignment)
+RearrangementGappedInversionTest::checkCallBack(const Alignment* alignment)
 {
   BottomSegmentIteratorPtr bi;
   TopSegmentIteratorPtr ti;

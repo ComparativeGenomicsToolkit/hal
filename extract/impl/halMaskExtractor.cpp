@@ -25,12 +25,12 @@ MaskExtractor::~MaskExtractor()
 
 }
 
-void MaskExtractor::extract(AlignmentConstPtr alignment, 
+void MaskExtractor::extract(const Alignment* alignment, 
                             const Genome* genome,
                             ostream* bedStream, 
                             hal_size_t extend, double extendPct)
 {
-  _alignment = alignment;
+    _alignment = AlignmentConstPtr(alignment);
   _genome = genome;
   _bedStream = bedStream;
   _extend = extend;

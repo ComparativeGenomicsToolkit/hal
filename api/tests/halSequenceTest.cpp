@@ -17,7 +17,7 @@ using namespace std;
 using namespace hal;
 
 
-void SequenceCreateTest::createCallBack(AlignmentPtr alignment)
+void SequenceCreateTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -34,7 +34,7 @@ void SequenceCreateTest::createCallBack(AlignmentPtr alignment)
   ancGenome->setDimensions(seqVec);
 }
 
-void SequenceCreateTest::checkCallBack(AlignmentConstPtr alignment)
+void SequenceCreateTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   
@@ -93,7 +93,7 @@ void SequenceCreateTest::checkCallBack(AlignmentConstPtr alignment)
                ancGenome->getNumBottomSegments() == numBottomSegments);
 }
 
-void SequenceIteratorTest::createCallBack(AlignmentPtr alignment)
+void SequenceIteratorTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -111,7 +111,7 @@ void SequenceIteratorTest::createCallBack(AlignmentPtr alignment)
   ancGenome->setDimensions(seqVec);
 }
 
-void SequenceIteratorTest::checkCallBack(AlignmentConstPtr alignment)
+void SequenceIteratorTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   
@@ -155,7 +155,7 @@ void SequenceIteratorTest::checkCallBack(AlignmentConstPtr alignment)
   }
 }
 
-void SequenceUpdateTest::createCallBack(AlignmentPtr alignment)
+void SequenceUpdateTest::createCallBack(Alignment* alignment)
 {
   hal_size_t alignmentSize = alignment->getNumGenomes();
   CuAssertTrue(_testCase, alignmentSize == 0);
@@ -191,7 +191,7 @@ void SequenceUpdateTest::createCallBack(AlignmentPtr alignment)
   ancGenome->updateBottomDimensions(updateVec);
 }
 
-void SequenceUpdateTest::checkCallBack(AlignmentConstPtr alignment)
+void SequenceUpdateTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* ancGenome = alignment->openGenome("AncGenome");
   

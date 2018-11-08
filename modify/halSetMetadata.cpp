@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  AlignmentPtr alignment = openHalAlignment(halPath, optParser);
+  AlignmentPtr alignment(openHalAlignment(halPath, optParser));
   if (genomeName == "") {
     // No genome to set metadata for, so set the alignment-wide metadata.
     MetaData *metadata = alignment->getMetaData();

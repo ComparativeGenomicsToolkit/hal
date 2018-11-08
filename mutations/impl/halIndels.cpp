@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
+  AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
   const Genome *refGenome = alignment->openGenome(refGenomeName);
   if (refGenome == NULL) {
     throw hal_exception("Genome " + refGenomeName + " does not exist");

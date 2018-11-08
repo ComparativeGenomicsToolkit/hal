@@ -62,7 +62,7 @@ static inline void mutateString(string& buffer, double branchLength)
   }
 }
 
-void hal::createRandomAlignment(hal::AlignmentPtr emptyAlignment,
+void hal::createRandomAlignment(Alignment* emptyAlignment,
                                 double meanDegree,
                                 double maxBranchLength,
                                 hal_size_t maxGenomes,
@@ -116,7 +116,7 @@ void hal::createRandomAlignment(hal::AlignmentPtr emptyAlignment,
 }
                            
 
-void hal::createRandomTree(hal::AlignmentPtr emptyAlignment,
+void hal::createRandomTree(Alignment* emptyAlignment,
                            double meanDegree,
                            double maxBranchLength,
                            hal_size_t maxGenomes)
@@ -150,7 +150,7 @@ void hal::createRandomTree(hal::AlignmentPtr emptyAlignment,
   }
 }
 
-void hal::createRandomDimensions(hal::AlignmentPtr alignment,
+void hal::createRandomDimensions(Alignment* alignment,
                                  hal_size_t minSegmentLength,
                                  hal_size_t maxSegmentLength,
                                  hal_size_t minSegments,
@@ -253,7 +253,7 @@ void hal::createRandomDimensions(hal::AlignmentPtr alignment,
   }
 }
 
-void hal::createRandomGenome(AlignmentPtr alignment, Genome* genome)
+void hal::createRandomGenome(Alignment* alignment, Genome* genome)
 {
   Genome* parent = genome->getParent();
   set<pair<hal_index_t, hal_index_t> > edgeSet;

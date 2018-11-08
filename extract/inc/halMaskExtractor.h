@@ -21,7 +21,7 @@ public:
    MaskExtractor();
    virtual ~MaskExtractor();
 
-   void extract(AlignmentConstPtr alignment, 
+   void extract(const Alignment* alignment, 
                 const Genome* genome, std::ostream* bedStream, 
                 hal_size_t extend, double extendPct);
 

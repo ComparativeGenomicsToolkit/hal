@@ -15,7 +15,7 @@ using namespace std;
 using namespace hal;
 
 
-void ChainGetBlocksSimpleTest::createCallBack(AlignmentPtr alignment)
+void ChainGetBlocksSimpleTest::createCallBack(Alignment* alignment)
 {
   vector<Sequence::Info> seqVec(1);
   
@@ -55,7 +55,7 @@ void ChainGetBlocksSimpleTest::createCallBack(AlignmentPtr alignment)
   ts.applyTo(ti);
 }
 
-void ChainGetBlocksSimpleTest::checkCallBack(AlignmentConstPtr alignment)
+void ChainGetBlocksSimpleTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* parent = alignment->openGenome("parent");
   const Genome* child = alignment->openGenome("child2");
@@ -82,7 +82,7 @@ void ChainGetBlocksSimpleTest::checkCallBack(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, queSeg->getLength() == 10);    
 }
 
-void ChainGetBlocksInversionTest::checkCallBack(AlignmentConstPtr alignment)
+void ChainGetBlocksInversionTest::checkCallBack(const Alignment* alignment)
 {
   const Genome* parent = alignment->openGenome("parent");
   const Genome* child = alignment->openGenome("child1");
@@ -111,7 +111,7 @@ void ChainGetBlocksInversionTest::checkCallBack(AlignmentConstPtr alignment)
 }
 
 void ChainGetBlocksOffsetTest::checkCallBack(
-  AlignmentConstPtr alignment)
+  const Alignment* alignment)
 {
   const Genome* parent = alignment->openGenome("parent");
   const Genome* child = alignment->openGenome("child2");
@@ -170,7 +170,7 @@ void ChainGetBlocksOffsetTest::checkCallBack(
 }
 
 void ChainGetBlocksInversionOffsetTest::checkCallBack(
-  AlignmentConstPtr alignment)
+  const Alignment* alignment)
 {
   const Genome* parent = alignment->openGenome("parent");
   const Genome* child = alignment->openGenome("child1");
@@ -229,7 +229,7 @@ void ChainGetBlocksInversionOffsetTest::checkCallBack(
 }
 
 void ChainGetBlocksOffsetQRefTest::checkCallBack(
-  AlignmentConstPtr alignment)
+  const Alignment* alignment)
 {
   const Genome* parent = alignment->openGenome("parent");
   const Genome* child = alignment->openGenome("child2");
@@ -288,7 +288,7 @@ void ChainGetBlocksOffsetQRefTest::checkCallBack(
 }
 
 void ChainGetBlocksInversionOffsetQRefTest::checkCallBack(
-  AlignmentConstPtr alignment)
+  const Alignment* alignment)
 {
   const Genome* parent = alignment->openGenome("parent");
   const Genome* child = alignment->openGenome("child1");
@@ -348,7 +348,7 @@ void ChainGetBlocksInversionOffsetQRefTest::checkCallBack(
 
  
 void ChainGetBlocksInversionOffsetQSisTest::checkCallBack(
-  AlignmentConstPtr alignment)
+  const Alignment* alignment)
 {
   const Genome* child1 = alignment->openGenome("child1");
   const Genome* child2 = alignment->openGenome("child2");
@@ -407,7 +407,7 @@ void ChainGetBlocksInversionOffsetQSisTest::checkCallBack(
 }
 
 void ChainGetBlocksSimpleLiftoverTest::checkCallBack(
-  AlignmentConstPtr alignment)
+  const Alignment* alignment)
 {
   const Genome* parent = alignment->openGenome("parent");
   const Genome* child = alignment->openGenome("child2");

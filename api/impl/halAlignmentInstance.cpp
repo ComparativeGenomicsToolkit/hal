@@ -64,40 +64,38 @@ const H5::DSetCreatPropList& hal::hdf5DefaultDSetCreatPropList() {
                            
 
 
-AlignmentPtr
+Alignment*
 hal::hdf5AlignmentInstance(const std::string& alignmentPath,
                            unsigned mode,
                            const H5::FileCreatPropList& fileCreateProps,
                            const H5::FileAccPropList& fileAccessProps,
                            const H5::DSetCreatPropList& datasetCreateProps,
                            bool inMemory) {
-  HDF5Alignment* al = new HDF5Alignment(alignmentPath, mode, fileCreateProps,
-                                        fileAccessProps, datasetCreateProps,
-                                        inMemory);
-  return AlignmentPtr(al);
+  return new HDF5Alignment(alignmentPath, mode, fileCreateProps,
+                           fileAccessProps, datasetCreateProps,
+                           inMemory);
 }
 
-AlignmentPtr 
+Alignment* 
 hal::mmapAlignmentInstance(const std::string& alignmentPath,
                            unsigned mode,
                            size_t initSize,
                            size_t growSize) {
-    MMapAlignment *al = new MMapAlignment(alignmentPath, mode, initSize, growSize);
-    return AlignmentPtr(al);
+    return new MMapAlignment(alignmentPath, mode, initSize, growSize);
 }
 
-AlignmentPtr hal::openHalAlignment(const std::string& path,
-                                   CLParserConstPtr options,
-                                   unsigned mode,
-                                   const std::string& overrideFormat)
+Alignment* hal::openHalAlignment(const std::string& path,
+                                CLParserConstPtr options,
+                                unsigned mode,
+                                const std::string& overrideFormat)
 {
     /* FIXME: detect which kind of file it is here (maybe by extension?) */
     const std::string& fmt((overrideFormat.empty()) ? options->getOption<const std::string&>("format")
                            : overrideFormat);
     if (fmt == STORAGE_FORMAT_HDF5) {
-        return AlignmentPtr(new HDF5Alignment(path, mode, options));
+        return new HDF5Alignment(path, mode, options);
     } else if (fmt == STORAGE_FORMAT_MMAP) {
-        return AlignmentPtr(new MMapAlignment(path, mode, options));
+        return new MMapAlignment(path, mode, options);
     } else {
         throw hal_exception("invalid --format argument " + fmt
                             + ", expected one of " + STORAGE_FORMAT_HDF5

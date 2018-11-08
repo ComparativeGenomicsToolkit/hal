@@ -24,7 +24,7 @@ public:
    virtual ~MafExport();
 
    void convertSegmentedSequence(std::ostream& mafStream,
-                                 AlignmentConstPtr alignment,
+                                 const Alignment* alignment,
                                  const SegmentedSequence* seq,
                                  hal_index_t startPosition,
                                  hal_size_t length,
@@ -35,7 +35,7 @@ public:
    // this may change in the future. Likewise, maxRefGap has no
    // effect, although noDupes will work.
    void convertEntireAlignment(std::ostream& mafStream,
-                               AlignmentConstPtr alignment);
+                               const Alignment* alignment);
 
    void setMaxRefGap(hal_size_t maxRefGap);
    void setNoDupes(bool noDupes);

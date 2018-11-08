@@ -24,7 +24,7 @@ public:
    virtual ~SummarizeMutations();
 
    void printCsv(std::ostream& outStream) const;
-   void analyzeAlignment(hal::AlignmentConstPtr alignment,
+   void analyzeAlignment(const Alignment* alignment,
                          hal_size_t gapThreshold,
                          double nThreshold,
                          bool justSubs,
@@ -42,7 +42,7 @@ protected:
    typedef std::map<StrPair, MutationsStats> BranchMap;
 
    BranchMap _branchMap;
-   hal::AlignmentConstPtr _alignment;
+   AlignmentConstPtr _alignment;
    hal_size_t _gapThreshold;
    double _nThreshold;
    bool _justSubs;

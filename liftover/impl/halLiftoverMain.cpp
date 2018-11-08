@@ -115,7 +115,7 @@ int main(int argc, char** argv)
       outBedVersion = 12;
     }
 
-    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
+    AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
     if (alignment->getNumGenomes() == 0)
     {
       throw hal_exception("hal alignment is empty");
@@ -186,7 +186,7 @@ int main(int argc, char** argv)
     }
     
     BlockLiftover liftover;
-    liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
+    liftover.convert(alignment.get(), srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
                      inBedVersion, outBedVersion, keepExtra, !noDupes,
                      outPSL, outPSLWithName, inLocale, coalescenceLimit);
     

@@ -28,9 +28,9 @@ int main(int argc, char *argv[])
     optParser->printUsage(cerr);
     return 1;
   }
-  AlignmentPtr alignment = openHalAlignment(inPath, optParser);
+  AlignmentPtr alignment(openHalAlignment(inPath, optParser));
   if (!noMarkAncestors) {
-    markAncestorsForUpdate(alignment, deleteNode);
+    markAncestorsForUpdate(alignment.get(), deleteNode);
   }
   alignment->removeGenome(deleteNode);
   return 0;

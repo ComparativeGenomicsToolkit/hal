@@ -11,7 +11,7 @@
 using namespace std;
 using namespace hal;
 
-void setupSharedAlignment(AlignmentPtr alignment)
+void setupSharedAlignment(Alignment* alignment)
 {
   Genome *root = alignment->addRootGenome("root");
   Genome *child1 = alignment->addLeafGenome("child1", "root", 1);
@@ -246,7 +246,7 @@ void setupSharedAlignment(AlignmentPtr alignment)
   leaf3->fixParseInfo();
 }
 
-void BedLiftoverTest::testOneBranchLifts(AlignmentConstPtr alignment)
+void BedLiftoverTest::testOneBranchLifts(const Alignment* alignment)
 {
   BlockLiftover liftover;
   const Genome *root = alignment->openGenome("root");
@@ -299,7 +299,7 @@ void BedLiftoverTest::testOneBranchLifts(AlignmentConstPtr alignment)
   CuAssertTrue(_testCase, streamResults.size() == 3);
 }
 
-void BedLiftoverTest::testMultiBranchLifts(AlignmentConstPtr alignment)
+void BedLiftoverTest::testMultiBranchLifts(const Alignment* alignment)
 {
   BlockLiftover liftover;
   const Genome *root = alignment->openGenome("root");
@@ -352,12 +352,12 @@ void BedLiftoverTest::testMultiBranchLifts(AlignmentConstPtr alignment)
   
 }
 
-void BedLiftoverTest::createCallBack(AlignmentPtr alignment)
+void BedLiftoverTest::createCallBack(Alignment* alignment)
 {
   setupSharedAlignment(alignment);
 }
 
-void BedLiftoverTest::checkCallBack(AlignmentConstPtr alignment)
+void BedLiftoverTest::checkCallBack(const Alignment* alignment)
 {
   testOneBranchLifts(alignment);
   testMultiBranchLifts(alignment);
@@ -375,7 +375,7 @@ void WiggleLiftoverTest::checkWigHasEntry(vector<string> &wig,
 }
 */
 
-void WiggleLiftoverTest::testOneBranchLifts(AlignmentConstPtr alignment)
+void WiggleLiftoverTest::testOneBranchLifts(const Alignment* alignment)
 {
 /*  WiggleLiftover liftover;
   const Genome *root = alignment->openGenome("root");
@@ -403,16 +403,16 @@ void WiggleLiftoverTest::testOneBranchLifts(AlignmentConstPtr alignment)
 */
 }
 
-void WiggleLiftoverTest::testMultiBranchLifts(AlignmentConstPtr alignment)
+void WiggleLiftoverTest::testMultiBranchLifts(const Alignment* alignment)
 {
 }
 
-void WiggleLiftoverTest::createCallBack(AlignmentPtr alignment)
+void WiggleLiftoverTest::createCallBack(Alignment* alignment)
 {
   setupSharedAlignment(alignment);
 }
 
-void WiggleLiftoverTest::checkCallBack(AlignmentConstPtr alignment)
+void WiggleLiftoverTest::checkCallBack(const Alignment* alignment)
 {
   testOneBranchLifts(alignment);
   testMultiBranchLifts(alignment);

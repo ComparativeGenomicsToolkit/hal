@@ -11,48 +11,50 @@
 #include "halAlignmentTest.h"
 #include "hal.h"
 
-typedef std::set<hal::MappedSegmentPtr,
-                 hal::MappedSegment::LessSource> MSRefSet;
+using namespace hal;
+
+typedef std::set<MappedSegmentPtr,
+                 MappedSegment::LessSource> MSRefSet;
 
 struct ChainGetBlocksSimpleTest : public AlignmentTest
 {
-   void createCallBack(hal::AlignmentPtr alignment);
-   virtual void checkCallBack(hal::AlignmentConstPtr alignment);
+   void createCallBack(Alignment* alignment);
+   virtual void checkCallBack(const Alignment* alignment);
 };
 
 struct ChainGetBlocksInversionTest : public ChainGetBlocksSimpleTest
 {
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ChainGetBlocksOffsetTest : public ChainGetBlocksSimpleTest
 {
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ChainGetBlocksInversionOffsetTest : public ChainGetBlocksSimpleTest
 {
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ChainGetBlocksOffsetQRefTest : public ChainGetBlocksSimpleTest
 {
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ChainGetBlocksInversionOffsetQRefTest : public ChainGetBlocksSimpleTest
 {
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ChainGetBlocksInversionOffsetQSisTest : public ChainGetBlocksSimpleTest
 {
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 struct ChainGetBlocksSimpleLiftoverTest : public ChainGetBlocksSimpleTest
 {
-   void checkCallBack(hal::AlignmentConstPtr alignment);
+   void checkCallBack(const Alignment* alignment);
 };
 
 

@@ -11,9 +11,11 @@
 #include "psl_merger.h"
 #include "hal2psl.h"
 
+using namespace hal;
 
-static hal::CLParserPtr initParser() {
-  auto optionsParser = hal::halCLParserInstance();
+
+static CLParserPtr initParser() {
+  auto optionsParser = halCLParserInstance();
   optionsParser->addArgument("halFile", "input psl file from liftover");
   optionsParser->addOption("queryGenome", "source genome", "\"\"");
   optionsParser->addOption("targetGenome", "reference genome name", "\"\"");
@@ -31,9 +33,9 @@ static hal::CLParserPtr initParser() {
     
 }
 
-const hal::Genome* openGenomeOrThrow(const hal::AlignmentConstPtr& alignment,
-                                    const std::string& genomeName) {
-    const hal::Genome* genome = alignment->openGenome(genomeName);
+const Genome* openGenomeOrThrow(const Alignment* alignment,
+                                const std::string& genomeName) {
+    const Genome* genome = alignment->openGenome(genomeName);
     if (genome == NULL){
         throw hal_exception(std::string("Reference genome, ") + genomeName + 
                             ", not found in alignment");
@@ -41,10 +43,10 @@ const hal::Genome* openGenomeOrThrow(const hal::AlignmentConstPtr& alignment,
     return genome;
 }
 
-hal::AlignmentConstPtr openAlignmentOrThrow(const std::string& halFile,
-                                         const hal::CLParserPtr& optionsParser){
+const Alignment* openAlignmentOrThrow(const std::string& halFile,
+                                      const CLParserPtr& optionsParser){
     
-    auto alignment = hal::openHalAlignment(halFile, optionsParser);
+    auto alignment = openHalAlignment(halFile, optionsParser);
     if (alignment->getNumGenomes() == 0){
       throw hal_exception("hal alignment is empty");
     }
@@ -68,7 +70,7 @@ hal::AlignmentConstPtr openAlignmentOrThrow(const std::string& halFile,
 
 
 int main(int argc, char *argv[]) {
-    hal::CLParserPtr optionsParser = initParser();
+    CLParserPtr optionsParser = initParser();
     std::string halFile;
     std::string outPslPath;
     std::string queryGenomeName;
@@ -100,7 +102,7 @@ int main(int argc, char *argv[]) {
     auto queryGenome = openGenomeOrThrow(alignment, queryGenomeName);    
     
     
-    auto hal2psl = hal::Hal2Psl();
+    auto hal2psl = Hal2Psl();
     //std::cout << "reading hal " << std::endl;                  
     auto blocks = hal2psl.convert2psl(alignment, queryGenome,
                         targetGenome, queryChromosome);

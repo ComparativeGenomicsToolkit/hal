@@ -53,7 +53,7 @@ int main(int argc, char** argv)
   }
   try
   {
-    AlignmentConstPtr alignment = openHalAlignment(halPath, optionsParser);
+      AlignmentConstPtr alignment(openHalAlignment(halPath, optionsParser));
 
     const Genome* genome = alignment->openGenome(genomeName);
     if (genome == NULL)
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
     }
 
     MaskExtractor mask;
-    mask.extract(alignment, genome, bedStream, extend, extendPct);
+    mask.extract(alignment.get(), genome, bedStream, extend, extendPct);
 
     if (newBed)
     {

@@ -22,7 +22,7 @@ class PhyloPBed : public BedScanner
 {
 public:
 
-   PhyloPBed(AlignmentConstPtr alignment,
+   PhyloPBed(const Alignment* alignment,
              const Genome* refGenome, const Sequence* refSequence,
              hal_index_t start, hal_size_t length, hal_size_t step,
              PhyloP& phyloP, std::ostream& outStream);

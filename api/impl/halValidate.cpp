@@ -393,7 +393,7 @@ void hal::validateGenome(const Genome* genome)
   validateDuplications(genome);
 }
 
-void hal::validateAlignment(AlignmentConstPtr alignment)
+void hal::validateAlignment(const Alignment* alignment)
 {
   deque<string> bfQueue;
   bfQueue.push_back(alignment->getRootName());

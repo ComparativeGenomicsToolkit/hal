@@ -79,7 +79,7 @@ const H5::DSetCreatPropList& hdf5DefaultDSetCreatPropList();
  * Default to results from hdf5DefaultDSetCreatPropList().
  * @param inMemory Store all data in memory (overrides and disables hdf5 cache)
  */
-AlignmentPtr
+Alignment*
 hdf5AlignmentInstance(const std::string& alignmentPath,
                       unsigned mode,
                       const H5::FileCreatPropList& fileCreateProps,
@@ -89,7 +89,7 @@ hdf5AlignmentInstance(const std::string& alignmentPath,
 
 /** Get an instance of an HDF5-implemented Alignment from command options
  */
-AlignmentPtr
+Alignment*
 hdf5AlignmentInstance(const std::string& alignmentPath,
                       unsigned mode,
                       CLParserConstPtr parser);
@@ -100,7 +100,7 @@ hdf5AlignmentInstance(const std::string& alignmentPath,
  * @param initSize Initial size to allocate when creating new file (CREATE_ACCESS)
  * @param growSize Addition size to allocate when growing file.
  */
-AlignmentPtr 
+Alignment* 
 mmapAlignmentInstance(const std::string& alignmentPath,
                       unsigned mode = hal::READ_ACCESS,
                       size_t initSize = hal::MMAP_DEFAULT_INIT_SIZE,
@@ -114,7 +114,7 @@ mmapAlignmentInstance(const std::string& alignmentPath,
  * @param overrideFormat If not empty, this overrides any format in options.  Used for
  * command that both input and output HALs.
  */
-AlignmentPtr openHalAlignment(const std::string& path,
+Alignment* openHalAlignment(const std::string& path,
                               CLParserConstPtr options,
                               unsigned mode = hal::READ_ACCESS,
                               const std::string& overrideFormat = ""); 
