@@ -113,8 +113,8 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     outBedLine._end -= seqStart;
     outBedLine._strand = (*i)->getReversed() ? '-' : '+';
 
-    SlicedSegmentConstPtr srcFront = fragments.front()->getSource();
-    SlicedSegmentConstPtr srcBack = fragments.back()->getSource();
+    const SlicedSegment* srcFront = fragments.front()->getSource();
+    const SlicedSegment* srcBack = fragments.back()->getSource();
     outBedLine._srcStart = min(min(srcFront->getStartPosition(), 
                                    srcFront->getEndPosition()),
                                min(srcBack->getStartPosition(),

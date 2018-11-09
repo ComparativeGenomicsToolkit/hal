@@ -68,8 +68,8 @@ void ChainGetBlocksSimpleTest::checkCallBack(const Alignment* alignment)
   CuAssertTrue(_testCase, segMap.size() == 1);
   MSRefSet::const_iterator mapIt = segMap.begin();
   
-  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
-  SlicedSegmentConstPtr queSeg = (*mapIt);
+  const SlicedSegment* refSeg = (*mapIt)->getSource();
+  const SlicedSegment* queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 0);  
@@ -96,8 +96,8 @@ void ChainGetBlocksInversionTest::checkCallBack(const Alignment* alignment)
   CuAssertTrue(_testCase, segMap.size() == 1);
   MSRefSet::const_iterator mapIt = segMap.begin();
   
-  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
-  SlicedSegmentConstPtr queSeg = (*mapIt);
+  const SlicedSegment* refSeg = (*mapIt)->getSource();
+  const SlicedSegment* queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 0);  
@@ -126,8 +126,8 @@ void ChainGetBlocksOffsetTest::checkCallBack(
   
   MSRefSet::const_iterator mapIt = segMap.begin();
   
-  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
-  SlicedSegmentConstPtr queSeg = (*mapIt);
+  const SlicedSegment* refSeg = (*mapIt)->getSource();
+  const SlicedSegment* queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 0);  
@@ -141,7 +141,7 @@ void ChainGetBlocksOffsetTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 1);  
@@ -155,7 +155,7 @@ void ChainGetBlocksOffsetTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 5);  
@@ -185,8 +185,8 @@ void ChainGetBlocksInversionOffsetTest::checkCallBack(
   
   MSRefSet::const_iterator mapIt = segMap.begin();
  
-  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
-  SlicedSegmentConstPtr queSeg = (*mapIt);
+  const SlicedSegment* refSeg = (*mapIt)->getSource();
+  const SlicedSegment* queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 0);  
@@ -200,7 +200,7 @@ void ChainGetBlocksInversionOffsetTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 1);  
@@ -214,7 +214,7 @@ void ChainGetBlocksInversionOffsetTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 5);  
@@ -244,8 +244,8 @@ void ChainGetBlocksOffsetQRefTest::checkCallBack(
   
   MSRefSet::const_iterator mapIt = segMap.begin();
  
-  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
-  SlicedSegmentConstPtr queSeg = (*mapIt);
+  const SlicedSegment* refSeg = (*mapIt)->getSource();
+  const SlicedSegment* queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 0);  
@@ -259,7 +259,7 @@ void ChainGetBlocksOffsetQRefTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 1);  
@@ -273,7 +273,7 @@ void ChainGetBlocksOffsetQRefTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 5);  
@@ -303,8 +303,8 @@ void ChainGetBlocksInversionOffsetQRefTest::checkCallBack(
   
   MSRefSet::const_iterator mapIt = segMap.begin();
  
-  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
-  SlicedSegmentConstPtr queSeg = (*mapIt);
+  const SlicedSegment* refSeg = (*mapIt)->getSource();
+  const SlicedSegment* queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 0);  
@@ -318,7 +318,7 @@ void ChainGetBlocksInversionOffsetQRefTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 1);  
@@ -332,7 +332,7 @@ void ChainGetBlocksInversionOffsetQRefTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 5);  
@@ -363,8 +363,8 @@ void ChainGetBlocksInversionOffsetQSisTest::checkCallBack(
   
   MSRefSet::const_iterator mapIt = segMap.begin();
  
-  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
-  SlicedSegmentConstPtr queSeg = (*mapIt);
+  const SlicedSegment* refSeg = (*mapIt)->getSource();
+  const SlicedSegment* queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child1);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 0);  
@@ -378,7 +378,7 @@ void ChainGetBlocksInversionOffsetQSisTest::checkCallBack(
 
   ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child1);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 1);  
@@ -392,7 +392,7 @@ void ChainGetBlocksInversionOffsetQSisTest::checkCallBack(
 
  ++mapIt;
   refSeg = (*mapIt)->getSource();
-  queSeg = (*mapIt);
+  queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == child1);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 5);  
@@ -420,8 +420,8 @@ void ChainGetBlocksSimpleLiftoverTest::checkCallBack(
   CuAssertTrue(_testCase, segMap.size() == 1);
   MSRefSet::const_iterator mapIt = segMap.begin();
   
-  SlicedSegmentConstPtr refSeg = (*mapIt)->getSource();
-  SlicedSegmentConstPtr queSeg = (*mapIt);
+  const SlicedSegment* refSeg = (*mapIt)->getSource();
+  const SlicedSegment* queSeg = (*mapIt).get();
 
   CuAssertTrue(_testCase, refSeg->getGenome() == parent);  
   CuAssertTrue(_testCase, refSeg->getStartPosition() == 9);  

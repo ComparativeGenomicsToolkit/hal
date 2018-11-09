@@ -226,12 +226,12 @@ void BlockMapper::extractReferenceParalogies(MappedSegmentSet& outParalogies)
 void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt)
 {
   assert(_segSet.empty() == false && segIt != _segSet.end());
-  MappedSegmentPtr mappedQuerySeg = *segIt;
+  MappedSegmentPtr mappedQuerySeg(*segIt);
   hal_index_t maxIndex;
   hal_index_t minIndex;
   SegmentIteratorPtr queryIt = makeIterator(mappedQuerySeg, 
-                                                 minIndex,
-                                                 maxIndex);
+                                            minIndex,
+                                            maxIndex);
   MappedSegmentSet backResults;
   MappedSegmentSet::const_iterator segNext = segIt;
   if (queryIt->getReversed())
@@ -316,11 +316,11 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt)
   // flip the results and copy back to our main set.
   for (MappedSegmentSet::iterator i = backResults.begin(); i != backResults.end(); ++i)
   {
-    MappedSegmentPtr mseg = *i;
+      MappedSegmentPtr mseg(*i);
     if (mseg->getSequence() == _refSequence)
     {
       mseg->flip();
-      SlicedSegmentConstPtr refSeg = mseg->getSource();
+      const SlicedSegment* refSeg = mseg->getSource();
       if (refSeg->getReversed())
       {
         mseg->fullReverse();
@@ -342,15 +342,15 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt)
       }
       if (overlaps == false)
       {
-        _segSet.insert(mseg);
-        _adjSet.insert(mseg);
+          _segSet.insert(mseg);
+          _adjSet.insert(mseg);
       }
     }
   }
 }
 
 SegmentIteratorPtr BlockMapper::makeIterator(
-  MappedSegmentPtr mappedSegment, hal_index_t& minIndex,
+  MappedSegmentPtr& mappedSegment, hal_index_t& minIndex,
   hal_index_t& maxIndex)
 {
   SegmentIteratorPtr segIt;
@@ -387,19 +387,20 @@ SegmentIteratorPtr BlockMapper::makeIterator(
   return segIt;
 }
 
-bool BlockMapper::cutByNext(SlicedSegmentPtr queryIt, 
+// FIXME: these Ptrs should be by ref, but it cases type problems or maybe it doesn't
+bool BlockMapper::cutByNext(SlicedSegmentPtr query, 
                             SlicedSegmentConstPtr nextSeg,
                             bool right)
 {
-  assert(queryIt->getGenome() == nextSeg->getGenome());
-  assert(queryIt->isTop() == nextSeg->isTop());
+  assert(query->getGenome() == nextSeg->getGenome());
+  assert(query->isTop() == nextSeg->isTop());
   bool wasCut = false;
 
-  if (queryIt->getArrayIndex() == nextSeg->getArrayIndex())
+  if (query->getArrayIndex() == nextSeg->getArrayIndex())
   {
-    hal_offset_t so1 = queryIt->getStartOffset();
-    hal_offset_t eo1 = queryIt->getEndOffset();
-    if (queryIt->getReversed())
+    hal_offset_t so1 = query->getStartOffset();
+    hal_offset_t eo1 = query->getEndOffset();
+    if (query->getReversed())
     {
       swap(so1, eo1);
     }
@@ -415,31 +416,31 @@ bool BlockMapper::cutByNext(SlicedSegmentPtr queryIt,
       }
       else
       {
-        hal_index_t e1 = max(queryIt->getEndPosition(), 
-                             queryIt->getStartPosition());
+        hal_index_t e1 = max(query->getEndPosition(), 
+                             query->getStartPosition());
         hal_index_t s2 = min(nextSeg->getEndPosition(), 
                              nextSeg->getStartPosition());
-        // end position of queryIt overlaps next seg.  so we cut it.
+        // end position of query overlaps next seg.  so we cut it.
         if (e1 >= s2)
         {
           hal_index_t delta = 1 + e1 - s2;
-          assert(delta < (hal_index_t)queryIt->getLength());
+          assert(delta < (hal_index_t)query->getLength());
           hal_offset_t newEndOffset = eo1 + delta;
           hal_offset_t newStartOffset = so1;
-          if (queryIt->getReversed() == true)
+          if (query->getReversed() == true)
           {
             swap(newEndOffset, newStartOffset);
           }
-          queryIt->slice(newStartOffset, newEndOffset);
+          query->slice(newStartOffset, newEndOffset);
         }
       }
     }
     else
     {
-      hal_index_t s1 = min(queryIt->getEndPosition(), 
-                           queryIt->getStartPosition());
-      hal_index_t e1 = max(queryIt->getEndPosition(), 
-                           queryIt->getStartPosition());
+      hal_index_t s1 = min(query->getEndPosition(), 
+                           query->getStartPosition());
+      hal_index_t e1 = max(query->getEndPosition(), 
+                           query->getStartPosition());
       hal_index_t e2 = max(nextSeg->getEndPosition(), 
                            nextSeg->getStartPosition());
 
@@ -450,18 +451,18 @@ bool BlockMapper::cutByNext(SlicedSegmentPtr queryIt,
       }
       else
       {
-        // end position of queryIt overlaps next seg.  so we cut it.
+        // end position of query overlaps next seg.  so we cut it.
         if (s1 <= e2)
         {
           hal_index_t delta = 1 + e2 - s1;
-          assert(delta < (hal_index_t)queryIt->getLength());
+          assert(delta < (hal_index_t)query->getLength());
           hal_offset_t newStartOffset = so1 + delta;
           hal_offset_t newEndOffset = eo1;
-          if (queryIt->getReversed() == true)
+          if (query->getReversed() == true)
           {
             swap(newEndOffset, newStartOffset);
           }
-          queryIt->slice(newStartOffset, newEndOffset);
+          query->slice(newStartOffset, newEndOffset);
         }
       }
     }

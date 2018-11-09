@@ -42,3 +42,7 @@ of DNA.  Maybe pack DNA in mmap?
 - inc/halChain.h
 - hal::GappedBottomSegmentIterator
 * Document why SlicedSegment vs Segment
+* writing a custom MappedSegmentSet that hits smart pointer would be really nice
+* Change confusing is-a relationships to has-a:
+** MappedSegement could have reference to source and target, not be source and get target
+* 

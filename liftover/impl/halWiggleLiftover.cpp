@@ -180,7 +180,7 @@ void WiggleLiftover::mapSegment()
 
 void WiggleLiftover::mapFragments(vector<MappedSegmentPtr>& fragments)
 {
-  sort(fragments.begin(), fragments.end(), MappedSegment::LessSource());
+  sort(fragments.begin(), fragments.end(), MappedSegment::LessSourcePtr());
   _cvIdx = 0;
   
   for (size_t i = 0; i < fragments.size() && _cvIdx < _cvals.size(); ++i)

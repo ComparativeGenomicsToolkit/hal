@@ -976,8 +976,8 @@ static void readBlock(const Alignment* seqAlignment,
 {
   MappedSegmentPtr firstQuerySeg = fragments.front();
   MappedSegmentPtr lastQuerySeg = fragments.back();
-  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
-  SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
+  const SlicedSegment* firstRefSeg = firstQuerySeg->getSource();
+  const SlicedSegment* lastRefSeg = lastQuerySeg->getSource();
   const Sequence* qSequence = firstQuerySeg->getSequence();
   const Sequence* tSequence = firstRefSeg->getSequence(); 
   assert(qSequence == lastQuerySeg->getSequence());
@@ -1183,8 +1183,8 @@ static void readTargetRange(hal_target_dupe_list_t* cur,
 {
   MappedSegmentPtr firstQuerySeg = fragments.front();
   MappedSegmentPtr lastQuerySeg = fragments.back();
-  SlicedSegmentConstPtr firstRefSeg = firstQuerySeg->getSource();
-  SlicedSegmentConstPtr lastRefSeg = lastQuerySeg->getSource();
+  const SlicedSegment* firstRefSeg = firstQuerySeg->getSource();
+  const SlicedSegment* lastRefSeg = lastQuerySeg->getSource();
   const Sequence* qSequence = firstQuerySeg->getSequence();
   const Sequence* tSequence = firstRefSeg->getSequence(); 
   assert(qSequence == lastQuerySeg->getSequence());

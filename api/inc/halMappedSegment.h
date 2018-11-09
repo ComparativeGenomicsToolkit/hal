@@ -32,22 +32,29 @@ public:
     }
 
     /** Get the original segment from which this segment was mapped */
-   virtual SlicedSegmentConstPtr getSource() const;
+    virtual SlicedSegment* getSource() const {
+        return _source.get();
+    }
+
+    /** Get the original segment from which this segment was mapped */
+    virtual SlicedSegmentPtr getSourcePtr() const {
+        return _source;
+    }
 
    /** Comparison used to store in stl sets and maps.  We sort based
     * on the coordinate of the mapped segemnt's (target) interval as the primary
     * index and the target genome as the secondary index.  */
-   virtual bool lessThan(const MappedSegmentPtr& other) const;
+   virtual bool lessThan(const MappedSegment* other) const;
 
    /** Comparison used to store in STL containers.  We sort based
     * on the coordinate of the *Source* genome interval as the primary
     * index and the target genome as the secondary index.  */
-   virtual bool lessThanBySource(const MappedSegmentPtr& other) const;
+   virtual bool lessThanBySource(const MappedSegment* other) const;
 
    /** Comparison used to determine uniqueness in lists.  Tests lessThan
     * in both directions.  Note that equality is the same regardless of 
     * whether or not we use the source segment as our primary index. */
-   virtual bool equals(const MappedSegmentPtr& other) const;
+   virtual bool equals(const MappedSegment* other) const;
 
    /** Flip the mapping direction.  This segment becomes the source, and
     * the source becomes this.*/
@@ -58,7 +65,7 @@ public:
    virtual void fullReverse();
    
    /** Return of a copy of the mapped segment */
-   virtual MappedSegmentPtr clone() const;
+   virtual MappedSegment* clone() const;
 
    /** Test if mapped segment can be merged to the right with input 
     * segment.  will return false if the right coordinate of this is in
@@ -68,24 +75,46 @@ public:
      const std::set<hal_index_t>* cutSet = NULL,
      const std::set<hal_index_t>* sourceCutSet = NULL) const;
 
+    // FIXME: are non-ptr functors needed?
    /** Functor for sorted STL containers, sorting by origin as primary 
     * index */
-   struct LessSource { bool operator()(const MappedSegmentPtr& ms1,
-                                       const MappedSegmentPtr& ms2) const {
-     return ms1->lessThanBySource(ms2); }
+   struct LessSource { bool operator()(const MappedSegment& ms1,
+                                       const MappedSegment& ms2) const {
+     return ms1.lessThanBySource(&ms2); }
+   };
+
+   /** Functor for sorted STL containers, sorting by origin as primary 
+    * index */
+   struct LessSourcePtr { bool operator()(const MappedSegmentPtr& ms1,
+                                          const MappedSegmentPtr& ms2) const {
+       return ms1->lessThanBySource(ms2.get());
+   }
    };
 
    /** Functor for sorted STL containers, sorting  by target as primary 
     * index */
-   struct Less { bool operator()(const MappedSegmentPtr& ms1,
+   struct Less { bool operator()(const MappedSegment& ms1,
+                                 const MappedSegment& ms2) const {
+     return ms1.lessThan(&ms2); }
+   };
+ 
+   /** Functor for sorted STL containers, sorting  by target as primary 
+    * index */
+   struct LessPtr { bool operator()(const MappedSegmentPtr& ms1,
                                  const MappedSegmentPtr& ms2) const {
-     return ms1->lessThan(ms2); }
+       return ms1->lessThan(ms2.get()); }
    };
  
    /** Functor for STL sorted lists to test for uniqueness */
-   struct EqualTo { bool operator()(const MappedSegmentPtr& ms1,
+   struct EqualTo { bool operator()(const MappedSegment& ms1,
+                                    const MappedSegment& ms2) const {
+     return ms1.equals(&ms2); }
+   };
+
+   /** Functor for STL sorted lists to test for uniqueness */
+   struct EqualToPtr { bool operator()(const MappedSegmentPtr& ms1,
                                     const MappedSegmentPtr& ms2) const {
-     return ms1->equals(ms2); }
+       return ms1->equals(ms2.get()); }
    };
 
    // NEEDS TO BE ADDED TO SEGMENT INTERFACE
@@ -158,11 +187,11 @@ private:
                      AOverlapsLeftOfB, BOverlapsLeftOfA };
  
    static
-   OverlapCat slowOverlap(const SlicedSegmentConstPtr& s1, 
-                          const SlicedSegmentConstPtr& s2);
+   OverlapCat slowOverlap(const SlicedSegment* s1, 
+                          const SlicedSegment* s2);
 
    static
-   void getOverlapBounds(const MappedSegmentPtr& seg, 
+   void getOverlapBounds(MappedSegmentPtr& seg, 
                          MappedSegmentSet& results, 
                          MappedSegmentSet::iterator& leftBound, 
                          MappedSegmentSet::iterator& rightBound);
@@ -242,7 +271,7 @@ private:
    static 
    hal_size_t mapSelf(MappedSegmentPtr mappedSeg, 
                       std::list<MappedSegmentPtr>& results,
-                    hal_size_t minLength);
+                      hal_size_t minLength);
    
    TopSegmentIteratorPtr targetAsTop() const;
    BottomSegmentIteratorPtr targetAsBottom() const;

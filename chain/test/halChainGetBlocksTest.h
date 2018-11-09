@@ -14,7 +14,7 @@
 using namespace hal;
 
 typedef std::set<MappedSegmentPtr,
-                 MappedSegment::LessSource> MSRefSet;
+                 MappedSegment::LessSourcePtr> MSRefSet;
 
 struct ChainGetBlocksSimpleTest : public AlignmentTest
 {

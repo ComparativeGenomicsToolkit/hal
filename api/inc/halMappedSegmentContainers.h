@@ -15,6 +15,8 @@ namespace hal {
      * from the class definition since the compare function references
      * MappedSegment. */
     struct MappedSegmentLess {
+        bool operator()(const hal::MappedSegment& m1,
+                        const hal::MappedSegment& m2) const;
         bool operator()(const hal::MappedSegmentPtr& m1,
                         const hal::MappedSegmentPtr& m2) const;
     };

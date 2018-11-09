@@ -26,9 +26,14 @@ MappedSegment::MappedSegment(
   assert(_source->getLength() == _target->getLength());
 }
 
+bool hal::MappedSegmentLess::operator()(const hal::MappedSegment& m1,
+                                        const hal::MappedSegment& m2) const {
+    return m1.lessThan(&m2);
+}
+
 bool hal::MappedSegmentLess::operator()(const hal::MappedSegmentPtr& m1,
                                         const hal::MappedSegmentPtr& m2) const {
-    return m1->lessThan(m2);
+    return m1->lessThan(m2.get());
 }
 
 
@@ -36,44 +41,36 @@ bool hal::MappedSegmentLess::operator()(const hal::MappedSegmentPtr& m1,
 //////////////////////////////////////////////////////////////////////////////
 // MAPPED SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-SlicedSegmentConstPtr MappedSegment::getSource() const
+bool MappedSegment::lessThan(const MappedSegment* other) const
 {
-  return _source;
-}
-
-bool MappedSegment::lessThan(const MappedSegmentPtr& other) const
-{
-  MappedSegmentPtr od = std::dynamic_pointer_cast<MappedSegment>(other);
-  assert(od.get() != NULL);
-  int res = fastComp(_target, od->_target);
+  assert(other != NULL);
+  int res = fastComp(_target, other->_target);
   if (res == 0)
   {
-    res = fastComp(_source, od->_source);
+    res = fastComp(_source, other->_source);
   }
   return res == -1;
 }
 
 bool MappedSegment::lessThanBySource(
-  const MappedSegmentPtr& other) const
+  const MappedSegment* other) const
 {
-    MappedSegmentPtr od = std::dynamic_pointer_cast<MappedSegment>(other);
-  assert(od.get() != NULL);
-  int res = fastComp(_source, od->_source);
+  assert(other != NULL);
+  int res = fastComp(_source, other->_source);
   if (res == 0)
   {
-    res = fastComp(_target, od->_target);
+    res = fastComp(_target, other->_target);
   }
   return res == -1;
 }
 
-bool MappedSegment::equals(const MappedSegmentPtr& other) const
+bool MappedSegment::equals(const MappedSegment* other) const
 {
-    MappedSegmentPtr od = other;
-  assert(od.get() != NULL);
-  int res = fastComp(_source, od->_source);
+  assert(other != NULL);
+  int res = fastComp(_source, other->_source);
   if (res == 0)
   {
-    res = fastComp(_target, od->_target);
+    res = fastComp(_target, other->_target);
   }
   return res == 0;
 }
@@ -92,7 +89,7 @@ void MappedSegment::fullReverse()
   assert(_source->getLength() == _target->getLength());
 }
 
-MappedSegmentPtr MappedSegment::clone() const
+MappedSegment* MappedSegment::clone() const
 {
   SegmentIteratorPtr srcCpy;
   if (_source->isTop())
@@ -129,7 +126,7 @@ MappedSegmentPtr MappedSegment::clone() const
          newSeg->_source->getEndPosition() == _source->getEndPosition());
   assert(newSeg->_source.get() != _source.get() &&
          newSeg->_target.get() != _target.get());
-  return MappedSegmentPtr(newSeg);
+  return newSeg;
 }
 
 bool MappedSegment::canMergeRightWith(
@@ -139,10 +136,12 @@ bool MappedSegment::canMergeRightWith(
 {
   //return false;
   bool ret = false;
-  SlicedSegmentConstPtr ref = this->getSource();
-  SlicedSegmentConstPtr nextRef = next->getSource();
-//  assert(ref->getReversed() == false);
-//  assert(nextRef->getReversed() == false);
+  const SlicedSegment* ref = this->getSource();
+  const SlicedSegment* nextRef = next->getSource();
+#if 0
+  assert(ref->getReversed() == false);
+  assert(nextRef->getReversed() == false);
+#endif
   assert(ref->getSequence() == nextRef->getSequence());
   assert(this->getGenome() == next->getGenome());
   hal_index_t sourceCut;
@@ -435,7 +434,7 @@ hal_size_t MappedSegment::map(const SegmentIterator* source,
   list<MappedSegmentPtr>::iterator outIt = output.begin();
   for (; outIt != output.end(); ++outIt)
   {
-    insertAndBreakOverlaps(*outIt, results);
+      insertAndBreakOverlaps(*outIt, results);
   }
 
   return output.size();
@@ -476,7 +475,7 @@ hal_size_t MappedSegment::mapRecursiveParalogies(
   for (; i != input.end(); ++i)
   {
     assert((*i)->getGenome() == curGenome);
-    mapSelf((*i), paralogs, minLength);
+    mapSelf(*i, paralogs, minLength);
   }
 
   if (nextGenome != coalescenceLimit) {
@@ -487,7 +486,7 @@ hal_size_t MappedSegment::mapRecursiveParalogies(
     for (; i != input.end(); ++i)
     {
       assert((*i)->getGenome() == curGenome);
-      mapUp((*i), nextSegments, true, minLength);
+      mapUp(*i, nextSegments, true, minLength);
     }
 
     // Recurse on the mapped segments.
@@ -499,8 +498,8 @@ hal_size_t MappedSegment::mapRecursiveParalogies(
   mapRecursiveDown(paralogs, paralogsMappedToSrc, srcGenome, namesOnPath, false, minLength);
 
   results.splice(results.begin(), paralogsMappedToSrc);
-  results.sort(MappedSegment::LessSource());
-  results.unique(MappedSegment::EqualTo());
+  results.sort(MappedSegment::LessSourcePtr());
+  results.unique(MappedSegment::EqualToPtr());
   return results.size();
 }
 
@@ -537,7 +536,7 @@ hal_size_t MappedSegment::mapRecursiveUp(
   for (; i != inputPtr->end(); ++i)
   {
     assert((*i)->getGenome() == curGenome);
-    mapUp((*i), *outputPtr, true, minLength);
+    mapUp(*i, *outputPtr, true, minLength);
   }
   
   if (nextGenome != tgtGenome)
@@ -553,8 +552,8 @@ hal_size_t MappedSegment::mapRecursiveUp(
     results = *outputPtr;
   }
 
-  results.sort(MappedSegment::LessSource());
-  results.unique(MappedSegment::EqualTo());
+  results.sort(MappedSegment::LessSourcePtr());
+  results.unique(MappedSegment::EqualToPtr());
   return results.size();
 }
 
@@ -615,7 +614,7 @@ hal_size_t MappedSegment::mapRecursiveDown(
   for (; i != inputPtr->end(); ++i)
   {
     assert((*i)->getGenome() == curGenome);
-    mapDown((*i), nextChildIndex, *outputPtr, minLength);
+    mapDown(*i, nextChildIndex, *outputPtr, minLength);
   }
 
   // Find paralogs.
@@ -627,7 +626,7 @@ hal_size_t MappedSegment::mapRecursiveDown(
     for (; i != inputPtr->end(); ++i)
     {
       assert((*i)->getGenome() == nextGenome);
-      mapSelf((*i), *outputPtr, minLength);
+      mapSelf(*i, *outputPtr, minLength);
     }
   }
 
@@ -644,13 +643,14 @@ hal_size_t MappedSegment::mapRecursiveDown(
     results = *outputPtr;
   }
 
-  results.sort(MappedSegment::LessSource());
-  results.unique(MappedSegment::EqualTo());
+  results.sort(MappedSegment::LessSourcePtr());
+  results.unique(MappedSegment::EqualToPtr());
   return results.size();
 }
 
+    // note: takes smart pointer as it maybe added to the results
 hal_size_t MappedSegment::mapUp(
-  MappedSegmentPtr mappedSeg, 
+    MappedSegmentPtr mappedSeg, 
   list<MappedSegmentPtr>& results,
   bool doDupes,
   hal_size_t minLength)
@@ -700,8 +700,7 @@ hal_size_t MappedSegment::mapUp(
       newSource->slice(newSource->getStartOffset() + startDelta, 
                        newSource->getEndOffset() + endDelta);
 
-      MappedSegmentPtr newMappedSeg(
-        new MappedSegment(newSource, topNew));
+      MappedSegmentPtr newMappedSeg(new MappedSegment(newSource, topNew));
 
       assert(newMappedSeg->isTop() == true);
       assert(newMappedSeg->getSource()->getGenome() == 
@@ -724,8 +723,9 @@ hal_size_t MappedSegment::mapUp(
   return added;
 }
 
+    // note: takes smart pointer as it maybe added to the results
 hal_size_t MappedSegment::mapDown(
-  MappedSegmentPtr mappedSeg, 
+    MappedSegmentPtr mappedSeg, 
   hal_size_t childIndex,
   list<MappedSegmentPtr>& results,
   hal_size_t minLength)
@@ -744,7 +744,7 @@ hal_size_t MappedSegment::mapDown(
     {
       top->toChild(bottom, childIndex);
       mappedSeg->_target = std::dynamic_pointer_cast<SegmentIterator>(top);
-      results.push_back(mappedSeg);
+      results.push_back(MappedSegmentPtr(mappedSeg));
       ++added;
     }
   }
@@ -777,12 +777,10 @@ hal_size_t MappedSegment::mapDown(
       newSource->slice(newSource->getStartOffset() + startDelta, 
                        newSource->getEndOffset() + endDelta);
       
-      MappedSegmentPtr newMappedSeg(
-        new MappedSegment(newSource, bottomNew));
+      MappedSegmentPtr newMappedSeg(new MappedSegment(newSource, bottomNew));
 
       assert(newMappedSeg->isTop() == false);
-      assert(newMappedSeg->getSource()->getGenome() == 
-             mappedSeg->getSource()->getGenome());
+      assert(newMappedSeg->getSource()->getGenome() == mappedSeg->getSource()->getGenome());
 
       added += mapDown(newMappedSeg, childIndex, results, minLength);
 
@@ -802,8 +800,9 @@ hal_size_t MappedSegment::mapDown(
   return added;
 }
 
+// note: takes smart pointer as it maybe added to the results
 hal_size_t MappedSegment::mapSelf(
-  MappedSegmentPtr mappedSeg, 
+    MappedSegmentPtr mappedSeg, 
   list<MappedSegmentPtr>& results,
   hal_size_t minLength)
 {
@@ -869,9 +868,8 @@ hal_size_t MappedSegment::mapSelf(
       assert((hal_index_t)newSource->getLength() > startDelta + endDelta);
       newSource->slice(newSource->getStartOffset() + startDelta, 
                        newSource->getEndOffset() + endDelta);
-
-      MappedSegmentPtr newMappedSeg(
-        new MappedSegment(newSource, topNew));
+      
+      MappedSegmentPtr newMappedSeg(new MappedSegment(newSource, topNew));
 
       assert(newMappedSeg->isTop() == true);
       assert(newMappedSeg->getSource()->getGenome() == 
@@ -895,8 +893,8 @@ hal_size_t MappedSegment::mapSelf(
 }
 
 MappedSegment::OverlapCat MappedSegment::slowOverlap(
-  const SlicedSegmentConstPtr& sA, 
-  const SlicedSegmentConstPtr& sB)
+    const SlicedSegment* sA, 
+  const SlicedSegment* sB)
 {
   hal_index_t startA = sA->getStartPosition();
   hal_index_t endA = sA->getEndPosition();
@@ -936,7 +934,7 @@ MappedSegment::OverlapCat MappedSegment::slowOverlap(
 }
 
 void MappedSegment::getOverlapBounds(
-  const MappedSegmentPtr& seg, 
+  MappedSegmentPtr& seg, 
   MappedSegmentSet& results, 
   MappedSegmentSet::iterator& leftBound, 
   MappedSegmentSet::iterator& rightBound)
@@ -948,7 +946,7 @@ void MappedSegment::getOverlapBounds(
   }
   else
   {
-    MappedSegmentSet::iterator i = results.lower_bound(seg);
+      MappedSegmentSet::iterator i = results.lower_bound(seg);
     leftBound = i;
     if (leftBound != results.begin())
     {
@@ -972,7 +970,7 @@ void MappedSegment::getOverlapBounds(
     for (; leftBound != results.begin(); --leftBound)
     {
       if (leftBound != results.end() && 
-          slowOverlap(seg, *leftBound) == Disjoint)
+          slowOverlap(seg.get(), leftBound->get()) == Disjoint)
       {
         break;
       }
@@ -982,7 +980,7 @@ void MappedSegment::getOverlapBounds(
     {
       for (++rightBound; rightBound != results.end(); ++rightBound)
       {
-        if (slowOverlap(seg, *rightBound) == Disjoint)
+          if (slowOverlap(seg.get(), rightBound->get()) == Disjoint)
         {
           break;
         }
@@ -993,9 +991,9 @@ void MappedSegment::getOverlapBounds(
 
 void 
 MappedSegment::clipAagainstB(MappedSegmentPtr segA,
-                                    MappedSegmentPtr segB,
-                                    OverlapCat overlapCat,
-                                    vector<MappedSegmentPtr>& clippedSegs)
+                             MappedSegmentPtr segB,
+                             OverlapCat overlapCat,
+                             vector<MappedSegmentPtr>& clippedSegs)
 {
   assert(overlapCat != Same && overlapCat != Disjoint && 
          overlapCat != BContainsA);
@@ -1012,9 +1010,8 @@ MappedSegment::clipAagainstB(MappedSegmentPtr segA,
   {
     swap(startB, endB);
   }
-  // FIXME: my are these cast from const?
-  MappedSegmentPtr left = const_pointer_cast<MappedSegment>(segA);
-  MappedSegmentPtr middle = const_pointer_cast<MappedSegment>(segA->clone());
+  MappedSegmentPtr left = segA;
+  MappedSegmentPtr middle = MappedSegmentPtr(segA->clone());
   MappedSegmentPtr right;
 
   hal_index_t startO = segA->getStartOffset();
@@ -1025,7 +1022,7 @@ MappedSegment::clipAagainstB(MappedSegmentPtr segA,
   hal_index_t middleSize = length - leftSize - rightSize;
   if (rightSize > 0)
   {
-      right = const_pointer_cast<MappedSegment>(segA->clone());
+      right = MappedSegmentPtr(segA->clone());
   }
 
   assert (overlapCat == AOverlapsLeftOfB || overlapCat == BOverlapsLeftOfA ||
@@ -1049,7 +1046,7 @@ MappedSegment::clipAagainstB(MappedSegmentPtr segA,
   }
   else
   {
-      middle = const_pointer_cast<MappedSegment>(segA);
+      middle = segA;
   }
     
   leftSlice = leftSize;
@@ -1112,7 +1109,7 @@ void MappedSegment::insertAndBreakOverlaps(
   {
     for (inputIt = inputSegs.begin(); inputIt != inputSegs.end(); ++inputIt)
     {
-      oc = slowOverlap(*inputIt, *resIt);
+        oc = slowOverlap(inputIt->get(), resIt->get());
       if (oc == AContainsB || oc == AOverlapsLeftOfB || oc == BOverlapsLeftOfA)
       {
         clippedSegs.clear();
@@ -1131,7 +1128,7 @@ void MappedSegment::insertAndBreakOverlaps(
     for (; resIt != rightBound; ++resIt)
     {
       assert((*resIt)->getLength() == (*resIt)->getSource()->getLength());
-      oc = slowOverlap(*resIt, *inputIt);
+      oc = slowOverlap(resIt->get(), inputIt->get());
       //assert(oc == Same || oc == Disjoint || oc == AContainsB);
       if (oc == AContainsB)
       {

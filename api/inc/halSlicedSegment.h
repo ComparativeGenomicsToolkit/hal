@@ -61,16 +61,16 @@ public:
    virtual bool getReversed() const = 0;
 };
 
-inline bool operator<(SlicedSegmentConstPtr segmentIt,
+inline bool operator<(const SlicedSegment& segmentIt,
                       hal_index_t genomePos) 
 {
-  return segmentIt->leftOf(genomePos);
+  return segmentIt.leftOf(genomePos);
 }
 
-inline bool operator>(SlicedSegmentConstPtr segmentIt,
+inline bool operator>(const SlicedSegment& segmentIt,
                       hal_index_t genomePos) 
 {
-  return segmentIt->rightOf(genomePos);
+  return segmentIt.rightOf(genomePos);
 }
 
 }

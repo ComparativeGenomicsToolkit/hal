@@ -56,11 +56,11 @@ protected:
    void mapAdjacencies(MappedSegmentSet::const_iterator setIt);
 
    static SegmentIteratorPtr makeIterator(
-     MappedSegmentPtr mappedSegment, 
+     MappedSegmentPtr& mappedSegment, 
      hal_index_t& minIndex,
      hal_index_t& maxIndex);
 
-   static bool cutByNext(SlicedSegmentPtr queryIt, 
+   static bool cutByNext(SlicedSegmentPtr query, 
                          SlicedSegmentConstPtr nextSeg,
                          bool right);
       

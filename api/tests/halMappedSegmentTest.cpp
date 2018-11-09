@@ -817,7 +817,7 @@ void  MappedSegmentColCompareTest::createBlockArray()
   {
     MappedSegmentPtr mseg = *i;
     CuAssertTrue(_testCase, mseg->getLength() == mseg->getSource()->getLength());
-    SlicedSegmentConstPtr refSeg = mseg->getSource();
+    SlicedSegmentConstPtr refSeg = mseg->getSourcePtr();
     hal_index_t refDelta = refSeg->getReversed() ? -1 : 1;
     CuAssertTrue(_testCase, refDelta == 1);
     hal_index_t mDelta = mseg->getReversed() ? -1 : 1;
@@ -1014,6 +1014,7 @@ CuSuite* halMappedSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck1);
   SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck2);
   SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
+  // FIXME: why are these disabled?
   //SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);
   //SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest3);
   return suite;
