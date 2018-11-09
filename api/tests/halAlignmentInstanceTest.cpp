@@ -21,7 +21,9 @@ Alignment* getTestAlignmentInstances(const std::string& storageFormat,
                                      hdf5DefaultDSetCreatPropList());
 
     } else if (storageFormat == hal::STORAGE_FORMAT_MMAP) {
-        return mmapAlignmentInstance(alignmentPath, mode);
+        // We use a default init size of only 1GiB here, because the test
+        // alignments we create are relatively small.
+        return mmapAlignmentInstance(alignmentPath, mode, 1024*1024*1024);
     } else {
         throw hal_exception("invalid storage format: " + storageFormat);
     }
