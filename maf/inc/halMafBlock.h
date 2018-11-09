@@ -21,13 +21,48 @@ namespace hal {
 // used to use std::string but appending was too slow
 // though sometimes i think instruments' cpu profiler has been lying
 // to me and i did all this for nothing. 
-struct MafBlockString
+class MafBlockString
 {
-   MafBlockString();
-   ~MafBlockString();
-   void append(char c);
-   void clear();
-   char* str();
+    public:
+    MafBlockString() :
+        _buf(NULL),
+        _cap(1024),
+        _len(0) {
+        _buf = (char*)malloc((_cap + 1));
+        if (_buf == NULL) {
+            mallocFailure();
+        }
+    }
+    ~MafBlockString() {
+        free(_buf);
+    }
+   void append(char c) {
+       assert(_cap >= _len);
+       if (_cap == _len) {
+           growBuf();
+       }
+       _buf[_len++] = c;
+   }
+
+    void clear() {
+        _len = 0;
+    }
+    const char* str() {
+        _buf[_len] = '\0';
+        return _buf;
+    }
+    private:
+    void growBuf() {
+        // always allow for zero-byte terminator
+        _cap = (_cap + 1) * 2 - 1;
+        _buf = (char*)realloc(_buf, _cap + 1);
+        if (_buf == NULL) {
+            mallocFailure();
+        }
+    }
+   void mallocFailure() {
+       throw hal_exception("can't malloc " + std::to_string(_cap) + " bytes");
+   }
    char* _buf;
    size_t _cap;
    size_t _len;
@@ -65,7 +100,7 @@ public:
 
    void initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree);
    void appendColumn(ColumnIteratorPtr col);
-   bool canAppendColumn(hal::ColumnIteratorPtr col);
+   bool canAppendColumn(ColumnIteratorPtr col);
    void setMaxLength(hal_index_t maxLen);
    
 protected:
@@ -106,49 +141,6 @@ std::ostream& operator<<(std::ostream& os,
 std::istream& operator>>(std::istream& is, hal::MafBlockEntry& mafBlockEntry);
 std::ostream& operator<<(std::ostream& os, const hal::MafBlock& mafBlock);
 std::istream& operator>>(std::istream& is, hal::MafBlock& mafBlock);
-
-inline MafBlockString::MafBlockString() :
-  _buf(NULL),
-  _cap(0),
-  _len(0)
-{
-}
-
-inline MafBlockString::~MafBlockString()
-{
-  free(_buf);
-}
-
-inline void MafBlockString::append(char c)
-{
-  assert(_cap >= _len);
-  if (_cap == 0)
-  {
-    _cap = 127;
-    _buf = (char*)malloc((_cap + 1) * sizeof(char)); // FIXME: check malloc
-  }
-  else if (_cap == _len)
-  {
-    _cap = (_cap + 1) * 2 - 1;
-    _buf = (char*)realloc(_buf, _cap + 1);  // FIXME: check malloc
-  }
-  _buf[_len++] = c;
-}
-
-inline void MafBlockString::clear()
-{
-  if (_cap > 0)
-  {
-    _len = 0;
-  }
-}
-
-inline char* MafBlockString::str()
-{
-  assert(_cap > 0);
-  _buf[_len] = '\0';
-  return _buf;
-}
 
 inline MafBlockEntry::MafBlockEntry(std::vector<MafBlockString*>& buffers) : 
   _buffers(buffers), _lastUsed(0), _genome(NULL)
