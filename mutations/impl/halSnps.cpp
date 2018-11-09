@@ -373,7 +373,7 @@ static void countSnps(const Genome* refGenome,
                                                               start,
                                                               lastPos,
                                                               !doDupes,
-                                                              true);
+                                                              false);
   while (1)
   {
     if (unique && !colIt->isCanonicalOnRef()) {
