@@ -53,7 +53,7 @@ protected:
 
 protected:
 
-   AlignmentConstPtr _alignment;
+   const Alignment* _alignment;
    std::ostream* _mafStream;
    MafBlock _mafBlock;
    hal_size_t _maxRefGap;
