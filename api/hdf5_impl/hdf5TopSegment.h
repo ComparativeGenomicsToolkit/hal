@@ -14,14 +14,8 @@
 
 namespace hal {
 
-class HDF5TopSegmentIterator;
-class HDF5BottomSegmentIterator;
-
 class HDF5TopSegment : public TopSegment
 {
-   friend class HDF5TopSegmentIterator;
-   friend class HDF5BottomSegmentIterator;
-
 public:
 
    /** Constructor 

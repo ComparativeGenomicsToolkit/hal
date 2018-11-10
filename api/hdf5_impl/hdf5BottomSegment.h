@@ -15,15 +15,9 @@
 
 namespace hal {
 
-class HDF5TopSegmentIterator;
-class HDF5BottomSegmentIterator;
-
 class HDF5BottomSegment : public BottomSegment
 {
 public:
-
-   friend class HDF5TopSegmentIterator;
-   friend class HDF5BottomSegmentIterator;
 
     /** Constructor 
     * @param genome Smart pointer to genome to which segment belongs

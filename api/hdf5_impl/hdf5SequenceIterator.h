@@ -15,11 +15,8 @@
 
 namespace hal {
 
-class HDF5BottomSegmentIterator;
-
 class HDF5SequenceIterator : public SequenceIterator
 {
-   friend class HDF5BottomSegmentIterator;
 public:
    
    HDF5SequenceIterator(HDF5Genome* genome, hal_index_t index);
