@@ -35,41 +35,41 @@ void TopSegmentIterator::print(ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 // TOP SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void TopSegmentIterator::toChild(BottomSegmentIteratorPtr bs, 
-                                     hal_size_t child)
+void TopSegmentIterator::toChild(const BottomSegmentIteratorPtr& botSegIt, 
+                                 hal_size_t child)
 {
-  _topSegment->setArrayIndex(bs->getGenome()->getChild(child),
-                             bs->getChildIndex(child));
-  _startOffset = bs->getStartOffset();
-  _endOffset = bs->getEndOffset();
-  _reversed = bs->getReversed();
-  if (bs->getChildReversed(child) == true)
+  _topSegment->setArrayIndex(botSegIt->getGenome()->getChild(child),
+                             botSegIt->getChildIndex(child));
+  _startOffset = botSegIt->getStartOffset();
+  _endOffset = botSegIt->getEndOffset();
+  _reversed = botSegIt->getReversed();
+  if (botSegIt->getChildReversed(child) == true)
   {
     toReverse();
   }
   assert (inRange() == true);
 }
 
-void TopSegmentIterator::toChildG(BottomSegmentIteratorPtr bs, 
+void TopSegmentIterator::toChildG(const BottomSegmentIteratorPtr& botSegIt, 
                                   const Genome* childGenome)
 {
-  hal_index_t childIndex = bs->getGenome()->getChildIndex(childGenome);
+  hal_index_t childIndex = botSegIt->getGenome()->getChildIndex(childGenome);
   assert(childIndex != NULL_INDEX);
-  toChild(bs, childIndex);
+  toChild(botSegIt, childIndex);
   assert (inRange() == true);
   assert(getGenome() == childGenome);
 }
 
 
-void TopSegmentIterator::toParseUp(BottomSegmentIteratorPtr bs)
+void TopSegmentIterator::toParseUp(const BottomSegmentIteratorPtr& botSegIt)
 { 
-    Genome* genome = bs->getGenome();
-  hal_index_t index = bs->getTopParseIndex();
+    Genome* genome = botSegIt->getGenome();
+  hal_index_t index = botSegIt->getTopParseIndex();
 
   _topSegment->setArrayIndex(genome, index);
-  _reversed = bs->getReversed();
+  _reversed = botSegIt->getReversed();
 
-  hal_index_t startPos = bs->getStartPosition();
+  hal_index_t startPos = botSegIt->getStartPosition();
 
   while (startPos >= _topSegment->getStartPosition() + 
          (hal_index_t)_topSegment->getLength())
@@ -82,8 +82,8 @@ void TopSegmentIterator::toParseUp(BottomSegmentIteratorPtr bs)
     _startOffset = startPos - _topSegment->getStartPosition();    
     hal_index_t topEnd = _topSegment->getStartPosition() + 
        (hal_index_t)_topSegment->getLength();
-    hal_index_t botEnd = bs->getStartPosition() + 
-       (hal_index_t)bs->getLength();
+    hal_index_t botEnd = botSegIt->getStartPosition() + 
+       (hal_index_t)botSegIt->getLength();
     _endOffset = max((hal_index_t)0, topEnd - botEnd);
   }
   else
@@ -91,8 +91,8 @@ void TopSegmentIterator::toParseUp(BottomSegmentIteratorPtr bs)
     _startOffset = _topSegment->getStartPosition() + _topSegment->getLength() -
        1 - startPos;
     hal_index_t topEnd = _topSegment->getStartPosition();
-    hal_index_t botEnd = bs->getStartPosition() - 
-       (hal_index_t)bs->getLength() + 1;
+    hal_index_t botEnd = botSegIt->getStartPosition() - 
+       (hal_index_t)botSegIt->getLength() + 1;
     _endOffset = max((hal_index_t)0, botEnd - topEnd);  
   }
   assert (_startOffset + _endOffset <= _topSegment->getLength());
@@ -111,12 +111,12 @@ TopSegmentIteratorPtr TopSegmentIterator::clone() const
   return newIt;
 }
 
-void TopSegmentIterator::copy(TopSegmentIteratorPtr ts)
+void TopSegmentIterator::copy(const TopSegmentIteratorPtr& topSegIt)
 {
-  _topSegment->setArrayIndex(ts->getGenome(), ts->getArrayIndex());
-  _startOffset = ts->getStartOffset();
-  _endOffset = ts->getEndOffset();
-  _reversed = ts->getReversed();
+  _topSegment->setArrayIndex(topSegIt->getGenome(), topSegIt->getArrayIndex());
+  _startOffset = topSegIt->getStartOffset();
+  _endOffset = topSegIt->getEndOffset();
+  _reversed = topSegIt->getReversed();
 }
 
 void TopSegmentIterator::toNextParalogy()

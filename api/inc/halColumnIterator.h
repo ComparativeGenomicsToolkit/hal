@@ -141,8 +141,8 @@ private:
 private:
 
    void recursiveUpdate(bool init);
-   bool handleDeletion(TopSegmentIteratorPtr inputTopSegIt);
-   bool handleInsertion(TopSegmentIteratorPtr inputTopSegIt);
+   bool handleDeletion(const TopSegmentIteratorPtr& inputTopSegIt);
+   bool handleInsertion(const TopSegmentIteratorPtr& inputTopSegIt);
 
    void updateParent(LinkedTopIterator* linkTopIt);
    void updateChild(LinkedBottomIterator* linkBotIt, hal_size_t index);

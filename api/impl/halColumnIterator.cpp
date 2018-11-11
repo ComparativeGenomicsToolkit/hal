@@ -442,7 +442,7 @@ void ColumnIterator::recursiveUpdate(bool init)
   }
 }
 
-bool ColumnIterator::handleDeletion(TopSegmentIteratorPtr inputTopSegIt)
+bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr& inputTopSegIt)
 {
   if (_maxInsertionLength > 0 && inputTopSegIt->hasParent() == true)
   {
@@ -481,7 +481,7 @@ bool ColumnIterator::handleDeletion(TopSegmentIteratorPtr inputTopSegIt)
   return false;
 }
 
-bool ColumnIterator::handleInsertion(TopSegmentIteratorPtr inputTopSegIt)
+bool ColumnIterator::handleInsertion(const TopSegmentIteratorPtr& inputTopSegIt)
 {
   if (_maxInsertionLength > 0 && inputTopSegIt->hasParent() == true)
   {

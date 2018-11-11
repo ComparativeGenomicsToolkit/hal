@@ -40,7 +40,7 @@ void BottomSegmentIterator::print(ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 // BOTTOM SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void BottomSegmentIterator::toParent(TopSegmentIteratorPtr topSegIt)
+void BottomSegmentIterator::toParent(const TopSegmentIteratorPtr& topSegIt)
 {
   _bottomSegment->setArrayIndex(topSegIt->getGenome()->getParent(),
                                 topSegIt->getParentIndex());
@@ -55,7 +55,7 @@ void BottomSegmentIterator::toParent(TopSegmentIteratorPtr topSegIt)
 }
 
 void 
-BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr topSegIt)
+BottomSegmentIterator::toParseDown(const TopSegmentIteratorPtr& topSegIt)
 {
     Genome* genome = topSegIt->getGenome();
   hal_index_t index = topSegIt->getBottomParseIndex();
@@ -106,7 +106,7 @@ BottomSegmentIteratorPtr BottomSegmentIterator::clone() const
   return botSegIt;
 }
 
-void BottomSegmentIterator::copy(BottomSegmentIteratorPtr botSegIt)
+void BottomSegmentIterator::copy(const BottomSegmentIteratorPtr& botSegIt)
 {
   assert(botSegIt.get() != NULL);
   _bottomSegment->setArrayIndex(botSegIt->getGenome(), botSegIt->getArrayIndex());

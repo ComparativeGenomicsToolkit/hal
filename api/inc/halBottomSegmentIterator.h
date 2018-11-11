@@ -44,16 +44,16 @@ public:
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
     * @param botSegIt Iterator to copy */
-    void copy(BottomSegmentIteratorPtr botSegIt);
+    void copy(const BottomSegmentIteratorPtr& botSegIt);
 
    /** Move the iterator to the parent segment of a given iterator
     * @param topSegIt Iterator whose parent to move to */
-    void toParent(TopSegmentIteratorPtr topSegIt); 
+    void toParent(const TopSegmentIteratorPtr& topSegIt); 
 
    /** Move the iterator down to the bottom segment containing the
     * start position of the given iterator in the same genome
     * @param topSegIt Top iterator to parse down on */
-    void toParseDown(TopSegmentIteratorPtr topSegIt);
+    void toParseDown(const TopSegmentIteratorPtr& topSegIt);
 
    /** DEPRECATED */
     BottomSegment* getBottomSegment() {
@@ -65,11 +65,21 @@ public:
         return  _bottomSegment.get();
     }
 
+    /** return a pointer to the current BottomSegment (terse) */
+    BottomSegment* bs() {
+       return _bottomSegment.get();
+     }
+
+   /** return a pointer to the current BottomSegment (terse) */
+   const BottomSegment* bs() const {
+       return _bottomSegment.get();
+   }
+
    /** Test equality with other iterator (current implementation does not
     * take into account reverse state or offsets -- FIXME: too review). 
     * FIXME merge with operator==?? 
     * @param other Iterator to test equality to */
-    bool equals(BottomSegmentIteratorPtr other) const {
+    bool equals(const BottomSegmentIteratorPtr& other) const {
         assert(_bottomSegment->getGenome() == other->getGenome());
         return getArrayIndex() == other->getArrayIndex();
     }

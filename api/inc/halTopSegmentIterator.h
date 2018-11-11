@@ -46,25 +46,25 @@ public:
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
     * @param ts Iterator to copy */
-    void copy(TopSegmentIteratorPtr ts);
+    void copy(const TopSegmentIteratorPtr& topSegIt);
 
    /** Move the iterator to the child of a given bottom segment
     * @param bs Bottom segment whose child will be moved to
     * @param child Index of child in bottom segment's genome */
-    void toChild(BottomSegmentIteratorPtr bs, 
+    void toChild(const BottomSegmentIteratorPtr& botSegIt, 
                  hal_size_t child);
 
    /** Move the iterator to the child of a given bottom segment
     * @param bs Bottom segment whose child will be moved to
     * @param childGenome genome of child in bottom segment */
-    void toChildG(BottomSegmentIteratorPtr bs, 
+    void toChildG(const BottomSegmentIteratorPtr& botSegIt, 
                   const Genome* childGenome);
    
    /** Given a bottom segment, move to the top segment that contains
     * its start position.  The genome remains unchanged.  The iterator
     * will be sliced accordingly (reversed state also taken into account)
     * @param bs Bottom segment to parse up from */
-    void toParseUp(BottomSegmentIteratorPtr bs);
+    void toParseUp(const BottomSegmentIteratorPtr& botSegIt);
 
    /** DEPRECATED */
     TopSegment* getTopSegment() {
@@ -80,7 +80,7 @@ public:
     * take into account reverse state or offsets -- too review)
     * FIXME merge with operator==?? 
     * @param other Iterator to test equality to */
-    bool equals(TopSegmentIteratorPtr other) const {
+    bool equals(const TopSegmentIteratorPtr& other) const {
         assert(getGenome() == other->getGenome());
         return getArrayIndex() == other->getArrayIndex();
     }
@@ -110,6 +110,16 @@ public:
         return _topSegment.get();
     }
     
+   /** return a pointer to the current TopSegment (terse) */
+   TopSegment* ts() {
+       return _topSegment.get();
+   }
+
+   /** return a pointer to the current TopSegment (terse) */
+   const TopSegment* ts() const {
+       return _topSegment.get();
+   }
+   
     // SEGMENT INTERFACE OVERRIDE
     virtual void print(std::ostream& os) const;
    // TOP SEGMENT INTERFACE

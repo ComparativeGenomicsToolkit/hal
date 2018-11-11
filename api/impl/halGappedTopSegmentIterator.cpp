@@ -383,7 +383,7 @@ GappedTopSegmentIteratorPtr GappedTopSegmentIterator::clone() const
 }
 
 void GappedTopSegmentIterator::copy(
-  GappedTopSegmentIteratorPtr gapTopSegIt)
+  const GappedTopSegmentIteratorPtr& gapTopSegIt)
 {
   _left->copy(gapTopSegIt->getLeft());
   _right->copy(gapTopSegIt->getRight());
@@ -421,7 +421,7 @@ void GappedTopSegmentIterator::toNextParalogy() const
 
 
 void GappedTopSegmentIterator::toChild(
-  GappedBottomSegmentIteratorPtr gapBotSegIt)
+  const GappedBottomSegmentIteratorPtr& gapBotSegIt)
 {
   _leftParent->copy(gapBotSegIt->getLeft());
   _rightParent->copy(gapBotSegIt->getRight());
@@ -437,7 +437,7 @@ void GappedTopSegmentIterator::toChild(
 }
 
 bool GappedTopSegmentIterator::equals(
-  GappedTopSegmentIteratorPtr other) const
+  const GappedTopSegmentIteratorPtr& other) const
 {
   _temp->copy(_left);
   toRightNextUngapped(_temp);
@@ -455,7 +455,7 @@ bool GappedTopSegmentIterator::equals(
 }
 
 bool GappedTopSegmentIterator::adjacentTo(
-  GappedTopSegmentIteratorPtr other) const
+  const GappedTopSegmentIteratorPtr& other) const
 {
   _temp->copy(_left);
   toLeftNextUngapped(_temp);
@@ -553,7 +553,7 @@ TopSegmentIteratorPtr GappedTopSegmentIterator::getRight() const
 }
 
 void 
-GappedTopSegmentIterator::setLeft(TopSegmentIteratorPtr topSegIt)
+GappedTopSegmentIterator::setLeft(const TopSegmentIteratorPtr& topSegIt)
 {
   if (topSegIt->getStartOffset() != 0 || topSegIt->getEndOffset() != 0)
   {

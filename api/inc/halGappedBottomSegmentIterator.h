@@ -101,8 +101,6 @@ public:
     virtual Segment* getSegment();
     virtual const Segment* getSegment() const;
     
-
-
    // SEGMENT ITERATOR INTERFACE
    virtual void toLeft(hal_index_t leftCutoff = NULL_INDEX);
    virtual void toRight(hal_index_t rightCutoff = NULL_INDEX);

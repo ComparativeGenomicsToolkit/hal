@@ -36,18 +36,18 @@ public:
 
    /** Copy another iterator into the current iterator (more efficient
     * than above methods since no new iterators are created */
-   virtual void copy(GappedTopSegmentIteratorPtr gapTopSegIt);
+   virtual void copy(const GappedTopSegmentIteratorPtr& gapTopSegIt);
 
    /** Move to child of given iterator 
     * @param bs Move to child of this iterator */
-   virtual void toChild(GappedBottomSegmentIteratorPtr gapBotSegIt);
+   virtual void toChild(const GappedBottomSegmentIteratorPtr& gapBotSegIt);
 
    /** Test equality with other iterator 
     * @param other */
-   virtual bool equals(GappedTopSegmentIteratorPtr other) const;
+   virtual bool equals(const GappedTopSegmentIteratorPtr& other) const;
 
    /** Test if iterator abuts other iterator */
-   virtual bool adjacentTo(GappedTopSegmentIteratorPtr other) const;
+   virtual bool adjacentTo(const GappedTopSegmentIteratorPtr& other) const;
 
    /** Test if iterator has a parent */
    virtual bool hasParent() const;
@@ -74,7 +74,7 @@ public:
    /** Reset the gapped iterator.
     * @param ts This will be the left segment of the current iterator. The 
     * right segment will be extended as far as possible */
-   virtual void setLeft(TopSegmentIteratorPtr topSegIt);
+   virtual void setLeft(const TopSegmentIteratorPtr& topSegIt);
 
    /** For every set of paralogous top segments in a given genome, we identify a
     * unique segment as the canonical reference.  This is the segment that 
@@ -89,7 +89,7 @@ public:
     /* get the current segment */
     virtual const Segment* getSegment() const;
     
-   // SEGMENT INTERFACE
+ // SEGMENT INTERFACE
    virtual void setArrayIndex(Genome* genome, 
                               hal_index_t arrayIndex);
    virtual const Genome* getGenome() const;
