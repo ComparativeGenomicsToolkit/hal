@@ -1,0 +1,13 @@
+
+- Variable naming for consistency, which maybe prefixed (e.g. fredSegIt)
+  SequenceIterator: seqIt
+  TopSegment: topSeg
+  TopSegmentIterator: topSegIt
+  BottomSegment: botSeg
+  BottomSegmentIterator: botSegIt
+  GappedTopSegmentIterator: gapTopSegIt
+  GappedBottomSegmentIterator: gapBotSegIt
+  DNAIterator: dnaIt
+  ColumnIterator: colit
+  LinkedTopIterator: linkTopIt
+  LinkedBotIterator: linkBotIt

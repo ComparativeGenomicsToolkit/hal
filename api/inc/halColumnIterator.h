@@ -141,14 +141,14 @@ private:
 private:
 
    void recursiveUpdate(bool init);
-   bool handleDeletion(TopSegmentIteratorPtr inputTopIterator);
-   bool handleInsertion(TopSegmentIteratorPtr inputTopIterator);
+   bool handleDeletion(TopSegmentIteratorPtr inputTopSegIt);
+   bool handleInsertion(TopSegmentIteratorPtr inputTopSegIt);
 
-   void updateParent(LinkedTopIterator* topIt);
-   void updateChild(LinkedBottomIterator* bottomIt, hal_size_t index);
-   void updateNextTopDup(LinkedTopIterator* topIt);
-   void updateParseUp(LinkedBottomIterator* bottomIt);
-   void updateParseDown(LinkedTopIterator* topIt);
+   void updateParent(LinkedTopIterator* linkTopIt);
+   void updateChild(LinkedBottomIterator* linkBotIt, hal_size_t index);
+   void updateNextTopDup(LinkedTopIterator* linkTopIt);
+   void updateParseUp(LinkedBottomIterator* linkBotIt);
+   void updateParseDown(LinkedTopIterator* linkTopIt);
 
    bool parentInScope(const Genome*) const;
    bool childInScope(const Genome*, hal_size_t child) const;

@@ -71,7 +71,7 @@ public:
     * segment.  will return false if the right coordinate of this is in
     * either (optional) cutSet.*/
    virtual bool canMergeRightWith(
-     const MappedSegmentPtr& next,
+     const MappedSegmentPtr& nextSeg,
      const std::set<hal_index_t>* cutSet = NULL,
      const std::set<hal_index_t>* sourceCutSet = NULL) const;
 
@@ -168,8 +168,8 @@ public:
                          const Genome *mrca);
 private:
 
-   MappedSegment(SegmentIteratorPtr source,
-                 SegmentIteratorPtr target);
+   MappedSegment(SegmentIteratorPtr sourceSegIt,
+                 SegmentIteratorPtr targetSegIt);
 
    static 
    int fastComp(const SegmentIteratorPtr& s1, 

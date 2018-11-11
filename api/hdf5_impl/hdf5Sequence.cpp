@@ -192,8 +192,8 @@ DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
 {
   hal_size_t idx = position + getStartPosition();
   HDF5Genome* genome = const_cast<HDF5Genome*>(_genome);
-  HDF5DNAIterator* newIt = new HDF5DNAIterator(genome, idx);
-  return DNAIteratorPtr(newIt);
+  HDF5DNAIterator* dnaIt = new HDF5DNAIterator(genome, idx);
+  return DNAIteratorPtr(dnaIt);
 }
 
 DNAIteratorPtr HDF5Sequence::getDNAEndIterator() const
@@ -222,11 +222,11 @@ ColumnIteratorPtr HDF5Sequence::getColumnIterator(
     throw hal_exception("HDF5Sequence::getColumnIterators: input indices ("
                         + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
-  ColumnIterator* newIt = 
+  ColumnIterator* colIt = 
      new ColumnIterator(getGenome(), targets, idx, lastIdx, 
                         maxInsertLength, noDupes, noAncestors,
                         reverseStrand, unique, onlyOrthologs);
-  return ColumnIteratorPtr(newIt);
+  return ColumnIteratorPtr(colIt);
 }
 
 void HDF5Sequence::getString(std::string& outString) const
@@ -280,10 +280,10 @@ RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position,
 GappedTopSegmentIteratorPtr HDF5Sequence::getGappedTopSegmentIterator(
   hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
-  TopSegmentIteratorPtr top = getTopSegmentIterator(i);  
-  GappedTopSegmentIterator* gt = 
-     new GappedTopSegmentIterator(top, gapThreshold, atomic);
-  return GappedTopSegmentIteratorPtr(gt);
+  TopSegmentIteratorPtr topSegIt = getTopSegmentIterator(i);  
+  GappedTopSegmentIterator* gapTopSegIt = 
+     new GappedTopSegmentIterator(topSegIt, gapThreshold, atomic);
+  return GappedTopSegmentIteratorPtr(gapTopSegIt);
 }
 
 GappedBottomSegmentIteratorPtr 
@@ -291,11 +291,11 @@ HDF5Sequence::getGappedBottomSegmentIterator(
   hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
   bool atomic) const
 {
-  BottomSegmentIteratorPtr bot = getBottomSegmentIterator(i);  
-  GappedBottomSegmentIterator* gb = 
-     new GappedBottomSegmentIterator(bot, childIdx, gapThreshold, 
+  BottomSegmentIteratorPtr botSegIt = getBottomSegmentIterator(i);  
+  GappedBottomSegmentIterator* gapBotSegIt = 
+     new GappedBottomSegmentIterator(botSegIt, childIdx, gapThreshold, 
                                             atomic);
-  return GappedBottomSegmentIteratorPtr(gb);
+  return GappedBottomSegmentIteratorPtr(gapBotSegIt);
 }
 // LOCAL
 

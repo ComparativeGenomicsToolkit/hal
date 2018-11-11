@@ -420,11 +420,11 @@ void HDF5Alignment::removeGenome(const string& name)
 
     BottomSegment_t *bottomSegments =(BottomSegment_t*)malloc(sizeof(BottomSegment_t)*n);
     assert(bottomSegments != NULL);
-    BottomSegmentIteratorPtr oldBot = parentGenome->getBottomSegmentIterator();
-    for (size_t i = 0; (hal_size_t)oldBot->getArrayIndex() < n; oldBot->toRight(), i++)
+    BottomSegmentIteratorPtr oldBotIt = parentGenome->getBottomSegmentIterator();
+    for (size_t i = 0; (hal_size_t)oldBotIt->getArrayIndex() < n; oldBotIt->toRight(), i++)
     {
-      bottomSegments[i].start = oldBot->getStartPosition();
-      bottomSegments[i].length = oldBot->getLength();
+      bottomSegments[i].start = oldBotIt->getStartPosition();
+      bottomSegments[i].length = oldBotIt->getLength();
       bottomSegments[i].children =(ChildInfo_t*)malloc(sizeof(ChildInfo_t) *
                                                        (childNames.size() - 1));
       assert(bottomSegments[i].children != NULL);
@@ -438,10 +438,10 @@ void HDF5Alignment::removeGenome(const string& name)
           newChild--;
           continue;
         }
-        bottomSegments[i].children[newChild].childIndex = oldBot->getChildIndex(oldChild);
-        bottomSegments[i].children[newChild].reversed = oldBot->getChildReversed(oldChild);
+        bottomSegments[i].children[newChild].childIndex = oldBotIt->getChildIndex(oldChild);
+        bottomSegments[i].children[newChild].reversed = oldBotIt->getChildReversed(oldChild);
       }
-      bottomSegments[i].topParseIndex = oldBot->getTopParseIndex();
+      bottomSegments[i].topParseIndex = oldBotIt->getTopParseIndex();
     }
     // Reset the bottom segments. updateBottomDimensions will change the
     // number of children in the bottom segment array to the correct value
@@ -458,20 +458,20 @@ void HDF5Alignment::removeGenome(const string& name)
     parentGenome->updateBottomDimensions(newBottomDimensions);
     ((HDF5Genome *)parentGenome)->resetBranchCaches();
     // Copy the bottom segments back
-    BottomSegmentIteratorPtr newBot = parentGenome->getBottomSegmentIterator();
-    for (size_t i = 0; (hal_size_t)newBot->getArrayIndex() < n;
-         newBot->toRight(), i++)
+    BottomSegmentIteratorPtr botSegIt = parentGenome->getBottomSegmentIterator();
+    for (size_t i = 0; (hal_size_t)botSegIt->getArrayIndex() < n;
+         botSegIt->toRight(), i++)
     {
-      newBot->setCoordinates(bottomSegments[i].start, bottomSegments[i].length);
+      botSegIt->setCoordinates(bottomSegments[i].start, bottomSegments[i].length);
       for (hal_index_t child = 0; child < ((hal_index_t) childNames.size()) - 1; child++)
       {
-        newBot->setChildIndex(child,
+        botSegIt->setChildIndex(child,
                               bottomSegments[i].children[child].childIndex);
-        newBot->setChildReversed(child,
+        botSegIt->setChildReversed(child,
                                  bottomSegments[i].children[child].reversed);
       }
       free(bottomSegments[i].children);
-      newBot->setTopParseIndex(bottomSegments[i].topParseIndex);
+      botSegIt->setTopParseIndex(bottomSegments[i].topParseIndex);
     }
     free(bottomSegments);
   }

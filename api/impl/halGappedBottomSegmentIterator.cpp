@@ -19,7 +19,7 @@ using namespace std;
 using namespace hal;
 
 GappedBottomSegmentIterator::GappedBottomSegmentIterator(
-  BottomSegmentIteratorPtr left,
+  BottomSegmentIteratorPtr leftBotSegIt,
   hal_size_t childIndex,
   hal_size_t gapThreshold,
   bool atomic) :
@@ -27,21 +27,21 @@ GappedBottomSegmentIterator::GappedBottomSegmentIterator(
   _gapThreshold(gapThreshold),
   _atomic(atomic)
 {
-  if (left->getStartOffset() != 0 || left->getEndOffset() != 0)
+  if (leftBotSegIt->getStartOffset() != 0 || leftBotSegIt->getEndOffset() != 0)
   {
     throw hal_exception("offset not currently supported in gapped iterators");
   }
   const Genome* child = 
-     left->getBottomSegment()->getGenome()->getChild(_childIndex);
+     leftBotSegIt->getBottomSegment()->getGenome()->getChild(_childIndex);
   if (child == NULL)
   {
     throw hal_exception("can't init GappedBottomIterator with no child genome");
   }
   assert(_atomic == false || _gapThreshold == 0);
-  _left = left->clone();
-  _right = left->clone();
-  _temp = left->clone();
-  _temp2 = left->clone();
+  _left = leftBotSegIt->clone();
+  _right = leftBotSegIt->clone();
+  _temp = leftBotSegIt->clone();
+  _temp2 = leftBotSegIt->clone();
   _leftChild = child->getTopSegmentIterator();
   _rightChild = _leftChild->clone();
   _leftDup = _leftChild->clone();
@@ -385,37 +385,37 @@ hal_index_t GappedBottomSegmentIterator::getRightArrayIndex() const
 //////////////////////////////////////////////////////////////////////////////
 GappedBottomSegmentIteratorPtr GappedBottomSegmentIterator::clone() const
 {
-  GappedBottomSegmentIterator* newIt =
+  GappedBottomSegmentIterator* gapBotSegIt =
      new GappedBottomSegmentIterator(_left, _childIndex, _gapThreshold,
        _atomic);
-  newIt->_left->copy(_left);
-  newIt->_right->copy(_right);
-  newIt->_childIndex = _childIndex;
-  newIt->_gapThreshold = _gapThreshold;
-  assert(hasChild() == newIt->hasChild());
-  assert(getChildReversed() == newIt->getChildReversed());
-  return GappedBottomSegmentIteratorPtr(newIt);
+  gapBotSegIt->_left->copy(_left);
+  gapBotSegIt->_right->copy(_right);
+  gapBotSegIt->_childIndex = _childIndex;
+  gapBotSegIt->_gapThreshold = _gapThreshold;
+  assert(hasChild() == gapBotSegIt->hasChild());
+  assert(getChildReversed() == gapBotSegIt->getChildReversed());
+  return GappedBottomSegmentIteratorPtr(gapBotSegIt);
 }
 
 
 void GappedBottomSegmentIterator::copy(
-  GappedBottomSegmentIteratorPtr ts)
+  GappedBottomSegmentIteratorPtr gapBotSegIt)
 {
-  _left->copy(ts->getLeft());
-  _right->copy(ts->getRight());
-  _childIndex = ts->getChildIndex();
-  _gapThreshold = ts->getGapThreshold();
-  assert(hasChild() == ts->hasChild());
-  assert(getChildReversed() == ts->getChildReversed());
+  _left->copy(gapBotSegIt->getLeft());
+  _right->copy(gapBotSegIt->getRight());
+  _childIndex = gapBotSegIt->getChildIndex();
+  _gapThreshold = gapBotSegIt->getGapThreshold();
+  assert(hasChild() == gapBotSegIt->hasChild());
+  assert(getChildReversed() == gapBotSegIt->getChildReversed());
 }
 
 void GappedBottomSegmentIterator::toParent(
-  GappedTopSegmentIteratorPtr ts)
+  GappedTopSegmentIteratorPtr gapTopSegIt)
 {
-  TopSegmentIteratorPtr leftChild = ts->getLeft()->clone();
-  TopSegmentIteratorPtr rightChild = ts->getRight()->clone();
+  TopSegmentIteratorPtr leftChild = gapTopSegIt->getLeft()->clone();
+  TopSegmentIteratorPtr rightChild = gapTopSegIt->getRight()->clone();
 
-  const Genome* child = ts->getLeft()->getTopSegment()->getGenome();
+  const Genome* child = gapTopSegIt->getLeft()->getTopSegment()->getGenome();
   const Genome* parent = child->getParent();
   _childIndex = parent->getChildIndex(child);
 
@@ -555,7 +555,7 @@ BottomSegmentIteratorPtr GappedBottomSegmentIterator::getRight() const
 }
 
 void 
-GappedBottomSegmentIterator::setLeft(BottomSegmentIteratorPtr bi)
+GappedBottomSegmentIterator::setLeft(BottomSegmentIteratorPtr botSegIt)
 {
   throw hal_exception("setLeft not currently supported in bottom iterator");
 }
@@ -564,14 +564,14 @@ GappedBottomSegmentIterator::setLeft(BottomSegmentIteratorPtr bi)
 // INTERNAL METHODS
 //////////////////////////////////////////////////////////////////////////////
 bool GappedBottomSegmentIterator::compatible(
-  BottomSegmentIteratorPtr left,
-  BottomSegmentIteratorPtr right) const
+  BottomSegmentIteratorPtr leftBotSegIt,
+  BottomSegmentIteratorPtr rightBotSegIt) const
 {
-  assert(left->hasChild(_childIndex) && right->hasChild(_childIndex));
-  assert(left->equals(right) == false);
+  assert(leftBotSegIt->hasChild(_childIndex) && rightBotSegIt->hasChild(_childIndex));
+  assert(leftBotSegIt->equals(rightBotSegIt) == false);
   
-  _leftChild->toChild(left, _childIndex);
-  _rightChild->toChild(right, _childIndex);
+  _leftChild->toChild(leftBotSegIt, _childIndex);
+  _rightChild->toChild(rightBotSegIt, _childIndex);
 
   if (_leftChild->getTopSegment()->getParentReversed() != 
       _rightChild->getTopSegment()->getParentReversed())
@@ -591,8 +591,8 @@ bool GappedBottomSegmentIterator::compatible(
     return false;
   }
   
-  if (left->getBottomSegment()->getSequence() != 
-      right->getBottomSegment()->getSequence() ||
+  if (leftBotSegIt->getBottomSegment()->getSequence() != 
+      rightBotSegIt->getBottomSegment()->getSequence() ||
       _leftChild->getTopSegment()->getSequence() != 
       _rightChild->getTopSegment()->getSequence())
   {
@@ -617,8 +617,8 @@ bool GappedBottomSegmentIterator::compatible(
     }
   }
 
-  _leftChild->toChild(left, _childIndex);
-  _rightChild->toChild(right, _childIndex);
+  _leftChild->toChild(leftBotSegIt, _childIndex);
+  _rightChild->toChild(rightBotSegIt, _childIndex);
   if (_leftChild->hasNextParalogy() == true)
   {
     _leftDup->copy(_leftChild);
@@ -728,63 +728,64 @@ void GappedBottomSegmentIterator::extendLeft()
 }
 
 void GappedBottomSegmentIterator::toLeftNextUngapped(
-  BottomSegmentIteratorPtr bs) const
+  BottomSegmentIteratorPtr botSegIt) const
 {
-    // FIXME: these should operate on self and copies be made
-  while (bs->hasChild(_childIndex) == false && 
-         bs->getLength() <= _gapThreshold)
+    // FIXME: should be methods of BottomSegmentIterator?
+    // FIXME: these are identical in halGappedTopSegmentIterator.
+  while (botSegIt->hasChild(_childIndex) == false && 
+         botSegIt->getLength() <= _gapThreshold)
   {
-    if ((!bs->getReversed() && bs->getBottomSegment()->isFirst()) ||
-         (bs->getReversed() && bs->getBottomSegment()->isLast()))
+    if ((!botSegIt->getReversed() && botSegIt->getBottomSegment()->isFirst()) ||
+         (botSegIt->getReversed() && botSegIt->getBottomSegment()->isLast()))
     {
       break;
     }
-    bs->toLeft();
+    botSegIt->toLeft();
   }
 }
 
 void GappedBottomSegmentIterator::toRightNextUngapped(
-  BottomSegmentIteratorPtr bs) const
+  BottomSegmentIteratorPtr botSegIt) const
 {
-  while (bs->hasChild(_childIndex) == false &&
-         bs->getLength() <= _gapThreshold)
+  while (botSegIt->hasChild(_childIndex) == false &&
+         botSegIt->getLength() <= _gapThreshold)
   {
-    if ((!bs->getReversed() && bs->getBottomSegment()->isLast()) ||
-         (bs->getReversed() && bs->getBottomSegment()->isFirst()))
+    if ((!botSegIt->getReversed() && botSegIt->getBottomSegment()->isLast()) ||
+         (botSegIt->getReversed() && botSegIt->getBottomSegment()->isFirst()))
     {
       break;
     }
-    bs->toRight();
+    botSegIt->toRight();
   }
 }
 
 void GappedBottomSegmentIterator::toLeftNextUngapped(
-  TopSegmentIteratorPtr ts) const
+  TopSegmentIteratorPtr topSeqIt) const
 {
-  while (ts->hasParent() == false && 
-         ts->getLength() <= _gapThreshold)
+  while (topSeqIt->hasParent() == false && 
+         topSeqIt->getLength() <= _gapThreshold)
   {
-    if ((!ts->getReversed() && ts->getTopSegment()->isFirst()) ||
-         (ts->getReversed() && ts->getTopSegment()->isLast()))
+    if ((!topSeqIt->getReversed() && topSeqIt->getTopSegment()->isFirst()) ||
+         (topSeqIt->getReversed() && topSeqIt->getTopSegment()->isLast()))
     {
       break;
     }
-    ts->toLeft();
+    topSeqIt->toLeft();
   }
 }
 
 void GappedBottomSegmentIterator::toRightNextUngapped(
-  TopSegmentIteratorPtr ts) const
+  TopSegmentIteratorPtr topSeqIt) const
 {
-  while (ts->hasParent() == false &&
-         ts->getLength() <= _gapThreshold)
+  while (topSeqIt->hasParent() == false &&
+         topSeqIt->getLength() <= _gapThreshold)
   {
-    if ((!ts->getReversed() && ts->getTopSegment()->isLast()) ||
-         (ts->getReversed() && ts->getTopSegment()->isFirst()))
+    if ((!topSeqIt->getReversed() && topSeqIt->getTopSegment()->isLast()) ||
+         (topSeqIt->getReversed() && topSeqIt->getTopSegment()->isFirst()))
     {
       break;
     }
-    ts->toRight();
+    topSeqIt->toRight();
   }
 }
    

@@ -22,7 +22,7 @@ class GappedTopSegmentIterator : virtual public GappedSegmentIterator
 {
 public:
     /** constructor */
-    GappedTopSegmentIterator(TopSegmentIteratorPtr left,
+    GappedTopSegmentIterator(TopSegmentIteratorPtr leftTopSegIt,
                              hal_size_t gapThreshold,
                              bool atomic);
 
@@ -36,11 +36,11 @@ public:
 
    /** Copy another iterator into the current iterator (more efficient
     * than above methods since no new iterators are created */
-   virtual void copy(GappedTopSegmentIteratorPtr ts);
+   virtual void copy(GappedTopSegmentIteratorPtr gapTopSegIt);
 
    /** Move to child of given iterator 
     * @param bs Move to child of this iterator */
-   virtual void toChild(GappedBottomSegmentIteratorPtr bs);
+   virtual void toChild(GappedBottomSegmentIteratorPtr gapBotSegIt);
 
    /** Test equality with other iterator 
     * @param other */
@@ -74,7 +74,7 @@ public:
    /** Reset the gapped iterator.
     * @param ts This will be the left segment of the current iterator. The 
     * right segment will be extended as far as possible */
-   virtual void setLeft(TopSegmentIteratorPtr ts);
+   virtual void setLeft(TopSegmentIteratorPtr topSegIt);
 
    /** For every set of paralogous top segments in a given genome, we identify a
     * unique segment as the canonical reference.  This is the segment that 
@@ -142,16 +142,16 @@ public:
 
 private:
    
-   bool compatible(TopSegmentIteratorPtr left,
-                   TopSegmentIteratorPtr right) const;
+   bool compatible(TopSegmentIteratorPtr leftTopSegIt,
+                   TopSegmentIteratorPtr rightTopSegIt) const;
 
    void extendRight();
    void extendLeft();
 
-   void toLeftNextUngapped(BottomSegmentIteratorPtr bs) const;
-   void toRightNextUngapped(BottomSegmentIteratorPtr bs) const;
-   void toLeftNextUngapped(TopSegmentIteratorPtr ts) const;
-   void toRightNextUngapped(TopSegmentIteratorPtr ts) const;
+   void toLeftNextUngapped(BottomSegmentIteratorPtr botSegIt) const;
+   void toRightNextUngapped(BottomSegmentIteratorPtr botSegIt) const;
+   void toLeftNextUngapped(TopSegmentIteratorPtr topSeqIt) const;
+   void toRightNextUngapped(TopSegmentIteratorPtr topSeqIt) const;
    
    // keep convention of other iterators where const-ness only applies
    // to the database and not the iterator...

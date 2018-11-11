@@ -184,12 +184,12 @@ void Genome::copyBottomSegments(Genome *dest) const
   {
     const Sequence *inSeq = seqIt->getSequence();
     const Sequence *outSeq = dest->getSequence(inSeq->getName());
-    BottomSegmentIteratorPtr inBot = const_pointer_cast<BottomSegmentIterator>(inSeq->getBottomSegmentIterator());
-    BottomSegmentIteratorPtr outBot = const_pointer_cast<BottomSegmentIterator>(outSeq->getBottomSegmentIterator());
+    BottomSegmentIteratorPtr inBotSegIt = const_pointer_cast<BottomSegmentIterator>(inSeq->getBottomSegmentIterator());
+    BottomSegmentIteratorPtr outBotSegIt = const_pointer_cast<BottomSegmentIterator>(outSeq->getBottomSegmentIterator());
 
     if (inSeq->getName() != outSeq->getName()) {
       // This check is important enough that it can't be an assert.
-      throw hal_exception("When copying bottom segments: segment #" + std::to_string(inBot->getArrayIndex()) + " of source genome is from sequence " + inBot->getSequence()->getName() + ", but segment #" + std::to_string(outBot->getArrayIndex()) + " is from sequence " + outBot->getSequence()->getName());
+      throw hal_exception("When copying bottom segments: segment #" + std::to_string(inBotSegIt->getArrayIndex()) + " of source genome is from sequence " + inBotSegIt->getSequence()->getName() + ", but segment #" + std::to_string(outBotSegIt->getArrayIndex()) + " is from sequence " + outBotSegIt->getSequence()->getName());
     }
 
     if (inSeq->getNumBottomSegments() != outSeq->getNumBottomSegments()) {
@@ -197,24 +197,24 @@ void Genome::copyBottomSegments(Genome *dest) const
     }
 
     hal_index_t inSegmentEnd = inSeq->getBottomSegmentArrayIndex() + inSeq->getNumBottomSegments();
-    for (; inBot->getArrayIndex() < inSegmentEnd; inBot->toRight(),
-           outBot->toRight())
+    for (; inBotSegIt->getArrayIndex() < inSegmentEnd; inBotSegIt->toRight(),
+           outBotSegIt->toRight())
     {
-      hal_index_t outStartPosition = inBot->getStartPosition() - inSeq->getStartPosition() + outSeq->getStartPosition();
+      hal_index_t outStartPosition = inBotSegIt->getStartPosition() - inSeq->getStartPosition() + outSeq->getStartPosition();
 
 
       if (dest->getSequenceBySite(outStartPosition) != outSeq) {
-          throw hal_exception("When copying bottom segments from " + getName() + " to " + dest->getName() + ": expected destination sequence " + outSeq->getName() + " for segment # " + std::to_string(inBot->getArrayIndex()) + " but got " + dest->getSequenceBySite(outStartPosition)->getName());
+          throw hal_exception("When copying bottom segments from " + getName() + " to " + dest->getName() + ": expected destination sequence " + outSeq->getName() + " for segment # " + std::to_string(inBotSegIt->getArrayIndex()) + " but got " + dest->getSequenceBySite(outStartPosition)->getName());
       }
-      outBot->setCoordinates(outStartPosition, inBot->getLength());
+      outBotSegIt->setCoordinates(outStartPosition, inBotSegIt->getLength());
       for(hal_size_t inChild = 0; inChild < inNc; inChild++) {
         hal_size_t outChild = inChildToOutChild[inChild];
         if (outChild != outNc) {
-          outBot->setChildIndex(outChild, inBot->getChildIndex(inChild));
-          outBot->setChildReversed(outChild, inBot->getChildReversed(inChild));
+          outBotSegIt->setChildIndex(outChild, inBotSegIt->getChildIndex(inChild));
+          outBotSegIt->setChildReversed(outChild, inBotSegIt->getChildReversed(inChild));
         }
       }
-      outBot->setTopParseIndex(inBot->getTopParseIndex());
+      outBotSegIt->setTopParseIndex(inBotSegIt->getTopParseIndex());
     }
   }
 }
@@ -252,16 +252,15 @@ void Genome::fixParseInfo()
   
   // copied from CactusHalConverter::updateRootParseInfo() in
   // cactus2hal/src/cactusHalConverter.cpp 
-  BottomSegmentIteratorPtr bottomIterator = 
-    getBottomSegmentIterator();
-  TopSegmentIteratorPtr topIterator = getTopSegmentIterator();
+  BottomSegmentIteratorPtr botSegIt = getBottomSegmentIterator();
+  TopSegmentIteratorPtr topSegIt = getTopSegmentIterator();
   int top = 0, bot = 0;
-  while ((not bottomIterator->atEnd()) && (not topIterator->atEnd()))
+  while ((not botSegIt->atEnd()) && (not topSegIt->atEnd()))
   {
     bool bright = false;
     bool tright = false;
-    BottomSegment* bseg = bottomIterator->getBottomSegment();
-    TopSegment* tseg = topIterator->getTopSegment();
+    BottomSegment* bseg = botSegIt->getBottomSegment();
+    TopSegment* tseg = topSegIt->getTopSegment();
     hal_index_t bstart = bseg->getStartPosition();
     hal_index_t bendidx = bstart + (hal_index_t)bseg->getLength();
     hal_index_t tstart = tseg->getStartPosition();
@@ -289,12 +288,12 @@ void Genome::fixParseInfo()
     if (bright == true)
     {
       bot += 1;
-      bottomIterator->toRight();
+      botSegIt->toRight();
     }
     if (tright == true)
     {
       top += 1;
-      topIterator->toRight();
+      topSegIt->toRight();
     }
   }
 }

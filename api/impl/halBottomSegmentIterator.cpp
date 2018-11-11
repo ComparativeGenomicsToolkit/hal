@@ -40,14 +40,14 @@ void BottomSegmentIterator::print(ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 // BOTTOM SEGMENT ITERATOR INTERFACE
 //////////////////////////////////////////////////////////////////////////////
-void BottomSegmentIterator::toParent(TopSegmentIteratorPtr ts)
+void BottomSegmentIterator::toParent(TopSegmentIteratorPtr topSegIt)
 {
-  _bottomSegment->setArrayIndex(ts->getGenome()->getParent(),
-                                ts->getParentIndex());
-  _startOffset = ts->getStartOffset();
-  _endOffset = ts->getEndOffset();
-  _reversed = ts->getReversed();
-  if (ts->getParentReversed() == true)
+  _bottomSegment->setArrayIndex(topSegIt->getGenome()->getParent(),
+                                topSegIt->getParentIndex());
+  _startOffset = topSegIt->getStartOffset();
+  _endOffset = topSegIt->getEndOffset();
+  _reversed = topSegIt->getReversed();
+  if (topSegIt->getParentReversed() == true)
   {
     toReverse();
   }
@@ -55,15 +55,15 @@ void BottomSegmentIterator::toParent(TopSegmentIteratorPtr ts)
 }
 
 void 
-BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr ts)
+BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr topSegIt)
 {
-    Genome* genome = ts->getGenome();
-  hal_index_t index = ts->getBottomParseIndex();
+    Genome* genome = topSegIt->getGenome();
+  hal_index_t index = topSegIt->getBottomParseIndex();
   
   _bottomSegment->setArrayIndex(genome, index);
-  _reversed = ts->getReversed();
+  _reversed = topSegIt->getReversed();
   
-  hal_index_t startPos = ts->getStartPosition();
+  hal_index_t startPos = topSegIt->getStartPosition();
   while (startPos >= _bottomSegment->getStartPosition() + 
          (hal_index_t)_bottomSegment->getLength())
   {
@@ -75,8 +75,8 @@ BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr ts)
     _startOffset = startPos - _bottomSegment->getStartPosition();    
     hal_index_t topEnd = _bottomSegment->getStartPosition() + 
        (hal_index_t)_bottomSegment->getLength();
-    hal_index_t botEnd = ts->getStartPosition() + 
-       (hal_index_t)ts->getLength();
+    hal_index_t botEnd = topSegIt->getStartPosition() + 
+       (hal_index_t)topSegIt->getLength();
     _endOffset = max((hal_index_t)0, topEnd - botEnd);
   }
   else
@@ -85,8 +85,8 @@ BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr ts)
        _bottomSegment->getLength() - 1
        - startPos;
     hal_index_t topEnd = _bottomSegment->getStartPosition();
-    hal_index_t botEnd = ts->getStartPosition() - 
-       (hal_index_t)ts->getLength() + 1;
+    hal_index_t botEnd = topSegIt->getStartPosition() - 
+       (hal_index_t)topSegIt->getLength() + 1;
     _endOffset = max((hal_index_t)0, botEnd - topEnd);  
   }
   assert (_startOffset + _endOffset <= _bottomSegment->getLength());
@@ -96,23 +96,23 @@ BottomSegmentIterator::toParseDown(TopSegmentIteratorPtr ts)
 BottomSegmentIteratorPtr BottomSegmentIterator::clone() const
 {
   assert (inRange() == true);
-  BottomSegmentIteratorPtr newIt = 
+  BottomSegmentIteratorPtr botSegIt = 
      getGenome()->getBottomSegmentIterator(getArrayIndex());
   if (_reversed)
   {
-    newIt->toReverse();
+    botSegIt->toReverse();
   }
-  newIt->slice(_startOffset, _endOffset);
-  return newIt;
+  botSegIt->slice(_startOffset, _endOffset);
+  return botSegIt;
 }
 
-void BottomSegmentIterator::copy(BottomSegmentIteratorPtr bs)
+void BottomSegmentIterator::copy(BottomSegmentIteratorPtr botSegIt)
 {
-  assert(bs.get() != NULL);
-  _bottomSegment->setArrayIndex(bs->getGenome(), bs->getArrayIndex());
-  _startOffset = bs->getStartOffset();
-  _endOffset = bs->getEndOffset();
-  _reversed = bs->getReversed();
+  assert(botSegIt.get() != NULL);
+  _bottomSegment->setArrayIndex(botSegIt->getGenome(), botSegIt->getArrayIndex());
+  _startOffset = botSegIt->getStartOffset();
+  _endOffset = botSegIt->getEndOffset();
+  _reversed = botSegIt->getReversed();
 }
 
 

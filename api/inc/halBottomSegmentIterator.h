@@ -43,17 +43,17 @@ public:
 
    /** Copy an input iterator.  More efficient than the above methods
     * as no new iterator needs to be allocated 
-    * @param ts Iterator to copy */
-    void copy(BottomSegmentIteratorPtr bs);
+    * @param botSegIt Iterator to copy */
+    void copy(BottomSegmentIteratorPtr botSegIt);
 
    /** Move the iterator to the parent segment of a given iterator
-    * @param ts Iterator whose parent to move to */
-    void toParent(TopSegmentIteratorPtr ts); 
+    * @param topSegIt Iterator whose parent to move to */
+    void toParent(TopSegmentIteratorPtr topSegIt); 
 
    /** Move the iterator down to the bottom segment containing the
     * start position of the given iterator in the same genome
-    * @param ts Top iterator to parse down on */
-    void toParseDown(TopSegmentIteratorPtr ts);
+    * @param topSegIt Top iterator to parse down on */
+    void toParseDown(TopSegmentIteratorPtr topSegIt);
 
    /** DEPRECATED */
     BottomSegment* getBottomSegment() {

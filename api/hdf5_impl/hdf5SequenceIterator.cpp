@@ -27,9 +27,9 @@ HDF5SequenceIterator::~HDF5SequenceIterator()
    
 SequenceIteratorPtr HDF5SequenceIterator::clone() const
 {
-  HDF5SequenceIterator* newIt = new HDF5SequenceIterator(
+  HDF5SequenceIterator* seqIt = new HDF5SequenceIterator(
     _sequence._genome, _sequence._index);
-  return SequenceIteratorPtr(newIt);
+  return SequenceIteratorPtr(seqIt);
 }
 
 void HDF5SequenceIterator:: toNext()
