@@ -16,9 +16,8 @@
 #include <H5Cpp.h>
 #include "allTests.h"
 #include "hdf5ExternalArray.h"
-#include "hdf5DNA.h"
+#include "hdf5Genome.h"
 #include "hdf5Test.h"
-#include "hdf5DNA.h"
 #include "halCommon.h"
 extern "C" {
 #include "commonC.h"
@@ -75,15 +74,14 @@ void hdf5DNAPackingTest(CuTest *testCase)
   for (size_t i = 0; i < len; ++i)
   {
     unsigned char c = packedArray[i/2];
-    HDF5DNA::pack(array[i], i, c);
-    packedArray[i/2] = c;
-    c = HDF5DNA::unpack(i, packedArray[i/2]);
+    packedArray[i/2] = dnaPack(array[i], i, c);
+    c = dnaUnpack(i, packedArray[i/2]);
     CuAssertTrue(testCase, c == array[i]);
   }
 
   for (size_t i = 0; i < len; ++i)
   {
-    unsigned char c = HDF5DNA::unpack(i, packedArray[i/2]);
+    unsigned char c = dnaUnpack(i, packedArray[i/2]);
     CuAssertTrue(testCase, c == array[i]);
   }
 
@@ -92,9 +90,8 @@ void hdf5DNAPackingTest(CuTest *testCase)
     size_t j = rand() % 5000;
     array[j] = idxToDNA(rand());
     unsigned char c = packedArray[j/2];
-    HDF5DNA::pack(array[j], j, c);
-    packedArray[j/2] = c;
-    c = HDF5DNA::unpack(j, packedArray[j/2]);
+    packedArray[j/2] = dnaPack(array[j], j, c);
+    c = dnaUnpack(j, packedArray[j/2]);
     CuAssertTrue(testCase, c == array[j]);     
   }
 }
@@ -107,7 +104,7 @@ void hdf5DNATypeTest(CuTest *testCase)
     setup();
     try 
     {
-      PredType datatype = HDF5DNA::dataType();
+      PredType datatype = HDF5Genome::dnaDataType();
       H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
 
       HDF5ExternalArray myArray;
@@ -121,8 +118,8 @@ void hdf5DNATypeTest(CuTest *testCase)
       for (hsize_t i = 0; i < NEVEN / 2; ++i)
       {
         unsigned char value = 0U;
-        HDF5DNA::pack(idxToDNA(i * 2), i * 2, value);
-        HDF5DNA::pack(idxToDNA((i * 2) + 1), (i * 2) + 1, value);
+        value = dnaPack(idxToDNA(i * 2), i * 2, value);
+        value = dnaPack(idxToDNA((i * 2) + 1), (i * 2) + 1, value);
         myArray.setValue(i, 0, value);
       }
       myArray.write();
@@ -135,8 +132,8 @@ void hdf5DNATypeTest(CuTest *testCase)
       for (hsize_t i = 0; i < NEVEN / 2; ++i)
       {
         unsigned char value = readArray.getValue<unsigned char>(i, 0);
-        char v1 = HDF5DNA::unpack(0, value);
-        char v2 = HDF5DNA::unpack(1, value);
+        char v1 = dnaUnpack(0, value);
+        char v2 = dnaUnpack(1, value);
         CuAssertTrue(testCase, v1 == idxToDNA(i * 2));
         CuAssertTrue(testCase, v2 == idxToDNA((i * 2) + 1));
       }

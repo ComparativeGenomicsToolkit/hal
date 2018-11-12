@@ -54,3 +54,4 @@ of DNA.  Maybe pack DNA in mmap?
   MMapTopSegment::isMissingData
 - only difference is drive ones have specific implemented of DNAIterator, which could
   be inlined.  However, if DNAIterator is generic, this goes away
+* halCommon.h could be split into an DNA operations module.

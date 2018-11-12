@@ -167,6 +167,28 @@ bool isUrl(const std::string alignmentPath);
 /* get the file size from the OS */
 size_t getFileStatSize(int fd);
 
+/* map of character to encoding for both upper and lower case */
+extern const uint8_t dnaPackMap[256];
+
+/* map of 4-bit encoding to character */
+extern const char dnaUnpackMap[16];
+
+/** Unpack a DNA character.  It stored two characters per byte (one per
+ *  nibble). Bit 1 is set for capital letter bits 2,3,4 determine character
+ *  in the order (a,c,g,t,n).
+*/
+inline char dnaUnpack(hal_index_t index, unsigned char packedChar)
+{
+    uint8_t code = (index & 1) ? (packedChar & 0x0F) : (packedChar >> 4);
+    return dnaUnpackMap[code];
+}
+
+/** Pack a DNA character */
+inline unsigned char dnaPack(char unpackedChar, hal_index_t index, unsigned char packedChar)
+{
+    uint8_t code = dnaPackMap[uint8_t(unpackedChar)];
+    return (index & 1) ? ((packedChar & 0xF0) | code) : ((packedChar & 0x0F) | (code << 4));
+}
     
 }
 

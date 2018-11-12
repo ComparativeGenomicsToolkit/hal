@@ -7,7 +7,6 @@
 #include <algorithm>
 #include "H5Cpp.h"
 #include "hdf5Genome.h"
-#include "hdf5DNA.h"
 #include "hdf5TopSegment.h"
 #include "hdf5BottomSegment.h"
 #include "hdf5Sequence.h"
@@ -32,11 +31,6 @@ const string HDF5Genome::sequenceNameArrayName = "SEQNAME_ARRAY";
 const string HDF5Genome::metaGroupName = "Meta";
 const string HDF5Genome::rupGroupName = "Rup";
 const double HDF5Genome::dnaChunkScale = 10.;
-
-// FIXME: temporary location until made generic
-constexpr uint8_t hal::HDF5DNA::pack_map[256];
-constexpr char hal::HDF5DNA::unpack_map[16];
-
 
 HDF5Genome::HDF5Genome(const string& name,
                        HDF5Alignment* alignment,
@@ -163,7 +157,7 @@ void HDF5Genome::setDimensions(
     DSetCreatPropList dnaDC;
     dnaDC.copy(_dcprops);
     dnaDC.setChunk(1, &chunk);
-    _dnaArray.create(&_group, dnaArrayName, HDF5DNA::dataType(), 
+    _dnaArray.create(&_group, dnaArrayName, dnaDataType(), 
                      arrayLength, &dnaDC, _numChunksInArrayBuffer);
   }
   if (totalSeq > 0)

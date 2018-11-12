@@ -13,7 +13,6 @@
 #include "halCommon.h"
 #include "hdf5ExternalArray.h"
 #include "hdf5Genome.h"
-#include "hdf5DNA.h"
 
 namespace hal {
 
@@ -69,7 +68,7 @@ inline char HDF5DNAIterator::getChar() const
 {
   assert(inRange() == true);
   char c = _genome->_dnaArray.getValue<char>(_index / 2, 0);
-  c = HDF5DNA::unpack(_index, c);
+  c = dnaUnpack(_index, c);
   if (_reversed)
   {
     c = reverseComplement(c);
@@ -92,7 +91,7 @@ inline void HDF5DNAIterator::setChar(char c)
     c = reverseComplement(c);
   }
   char* old = _genome->_dnaArray.getUpdate(_index / 2);
-  HDF5DNA::pack(c, _index, (unsigned char&)*old);
+  *old = dnaPack(c, _index, *old);
   assert(getChar() == !_reversed ? c : reverseComplement(c));
 }
 

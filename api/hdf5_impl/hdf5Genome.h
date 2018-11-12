@@ -42,6 +42,11 @@ public:
 
    virtual ~HDF5Genome();
 
+    static H5::PredType dnaDataType() {
+        return H5::PredType::NATIVE_UINT8;
+    }
+
+    
    // GENOME INTERFACE
 
    const std::string& getName() const;
