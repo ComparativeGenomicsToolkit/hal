@@ -33,6 +33,11 @@ const string HDF5Genome::metaGroupName = "Meta";
 const string HDF5Genome::rupGroupName = "Rup";
 const double HDF5Genome::dnaChunkScale = 10.;
 
+// FIXME: temporary location until made generic
+constexpr uint8_t hal::HDF5DNA::pack_map[256];
+constexpr char hal::HDF5DNA::unpack_map[16];
+
+
 HDF5Genome::HDF5Genome(const string& name,
                        HDF5Alignment* alignment,
                        PortableH5Location* h5Parent,

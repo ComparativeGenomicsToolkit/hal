@@ -117,6 +117,7 @@ inline bool isMasked(char c)
 /** test if 3rd codon position is 4-fold degenerate given first 2 positions */
 inline bool isFourfoldDegenerate(char c1, char c2)
 {
+    // FIXME: this could be faster by lookup or just comparing to both upper and lower.
   char x1 = std::toupper((char)c1);
   char x2 = std::toupper((char)c2);
   if (x2 == 'T' || x2 == 'G')

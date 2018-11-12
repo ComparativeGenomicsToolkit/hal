@@ -45,4 +45,12 @@ of DNA.  Maybe pack DNA in mmap?
 * writing a custom MappedSegmentSet that hits smart pointer would be really nice
 * Change confusing is-a relationships to has-a:
 ** MappedSegement could have reference to source and target, not be source and get target
-* 
+* six almost identical implementations of Segment.isMissingData
+  HDF5BottomSegment::isMissingData  hdf5s idential
+  HDF5TopSegment::isMissingData
+  GappedBottomSegmentIterator::isMissingData gapped identical
+  GappedTopSegmentIterator::isMissingData
+  MMapBottomSegment::isMissingData  mmaps idential
+  MMapTopSegment::isMissingData
+- only difference is drive ones have specific implemented of DNAIterator, which could
+  be inlined.  However, if DNAIterator is generic, this goes away

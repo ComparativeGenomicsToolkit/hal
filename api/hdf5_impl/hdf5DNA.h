@@ -19,9 +19,15 @@ class HDF5DNA
 {
 public:
    static H5::PredType dataType();
-   static char unpack(hal_index_t index, unsigned char packedChar);
-   static void pack(char unpackedChar, hal_index_t index, 
-                    unsigned char& packedChar);
+   static inline char unpack(hal_index_t index, unsigned char packedChar);
+   static inline void pack(char unpackedChar, hal_index_t index, 
+                           unsigned char& packedChar);
+private:
+    /* map of character to encoding for both upper and lower case */
+    static constexpr uint8_t pack_map[256] = {4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 4, 11, 4, 4, 4, 10, 4, 4, 4, 4, 4, 4, 12, 4, 4, 4, 4, 4, 9, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 3, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4};
+
+    /* map of 8 bit encoding to character */
+    static constexpr char unpack_map[16] = {'a', 't', 'g', 'c', 'n', '\x00', '\x00', '\x00', 'A', 'T', 'G', 'C', 'N', '\x00', '\x00', '\x00'};
 };
 
 // inline members
@@ -30,62 +36,19 @@ inline H5::PredType HDF5DNA::dataType()
   return H5::PredType::NATIVE_UINT8;
 }
 
-// we store two characters per byte. bit 1 is set for capital letter
+// we store two characters per byte (one per nibble). bit 1 is set for capital letter
 // bits 2,3,4 determine character (acgtn).
 inline char HDF5DNA::unpack(hal_index_t index, unsigned char packedChar)
 {
-  if (index % 2 == 0)
-  {
-    packedChar = packedChar >> 4;
-  }
-  bool capital = packedChar & 8U;
-  char val;
-  packedChar &= 7U;
-  switch(packedChar)
-  {
-  case 0U : val = 'a'; break;
-  case 1U : val = 'c'; break;
-  case 2U : val = 'g'; break;
-  case 3U : val = 't'; break;
-  case 4U : val = 'n'; break;
-  default : val = 'x'; break;
-  }
-  if (capital)
-  {
-    val = std::toupper(val);
-  }
-  return val;
+    uint8_t code = (index & 1) ? (packedChar & 0x0F) : (packedChar >> 4);
+    return unpack_map[code];
 }
 
 inline void HDF5DNA::pack(char unpackedChar, hal_index_t index, 
                           unsigned char& packedChar)
 {
-  unsigned char val = 0U;
-  if (std::isupper(unpackedChar))
-  {
-    val = 8U;
-  }
-  unpackedChar = std::tolower(unpackedChar);
-  switch(unpackedChar) 
-  {
-  case 'a' : val |= 0U; break;
-  case 'c' : val |= 1U; break;
-  case 'g' : val |= 2U; break;
-  case 't' : val |= 3U; break;
-  case 'n' : val |= 4U; break;
-  default : val |= 5U; break;
-  }
-  
-  if (index % 2 == 0)
-  {
-    val = val << 4;
-    packedChar &= 15U;
-  }
-  else
-  {
-    packedChar &= 240U;
-  }
-  packedChar |= val;
+    uint8_t code = pack_map[uint8_t(unpackedChar)];
+    packedChar = (index & 1) ? ((packedChar & 0xF0) | code) : ((packedChar & 0x0F) | (code << 4));
 }
 
 }
