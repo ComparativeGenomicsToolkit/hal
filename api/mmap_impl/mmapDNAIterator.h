@@ -49,7 +49,8 @@ inline bool MMapDNAIterator::inRange() const
 inline char MMapDNAIterator::getChar() const
 {
   assert(inRange() == true);
-  char c = *_genome->getDNA(_index, 1);
+  char c = *_genome->getDNA(_index / 2, 1);
+  c = dnaUnpack(_index, c);
   if (_reversed)
   {
     c = reverseComplement(c);
@@ -71,7 +72,9 @@ inline void MMapDNAIterator::setChar(char c)
   {
     c = reverseComplement(c);
   }
-  *_genome->getDNA(_index, 1) = c;
+  char *basePtr = _genome->getDNA(_index / 2, 1);
+  *basePtr = dnaPack(c, _index, *basePtr);
+  assert(getChar() == !_reversed ? c : reverseComplement(c));
 }
 
 inline void MMapDNAIterator::toLeft()

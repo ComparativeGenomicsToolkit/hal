@@ -90,8 +90,8 @@ inline void HDF5DNAIterator::setChar(char c)
   {
     c = reverseComplement(c);
   }
-  char* old = _genome->_dnaArray.getUpdate(_index / 2);
-  *old = dnaPack(c, _index, *old);
+  char* basePtr = _genome->_dnaArray.getUpdate(_index / 2);
+  *basePtr = dnaPack(c, _index, *basePtr);
   assert(getChar() == !_reversed ? c : reverseComplement(c));
 }
 

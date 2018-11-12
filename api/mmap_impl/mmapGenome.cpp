@@ -17,6 +17,7 @@ void MMapGenome::setDimensions(
   const vector<Sequence::Info>& sequenceDimensions,
   bool storeDNAArrays)
 {
+    // FIXME: should we check storeDNAArrays??
     hal_size_t totalSequenceLength = 0;
 
     // Copy segment dimensions to use the external interface
@@ -37,9 +38,10 @@ void MMapGenome::setDimensions(
             Sequence::UpdateInfo(i->_name, i->_numBottomSegments));
     }
 
-    // Write the new DNA/sequence information.
+    // Write the new DNA/sequence information, allocating one base per nibble
+    hal_size_t dnaLength = (totalSequenceLength+1) / 2;
     _data->_totalSequenceLength = totalSequenceLength;
-    _data->_dnaOffset = _alignment->allocateNewArray(sizeof(char) * totalSequenceLength);
+    _data->_dnaOffset = _alignment->allocateNewArray(dnaLength);
     // Reverse space for the sequence data (plus an extra at the end
     // to indicate the end position of the sequence iterator).
     _data->_sequencesOffset = _alignment->allocateNewArray(sizeof(MMapSequenceData) * sequenceDimensions.size() + 1);

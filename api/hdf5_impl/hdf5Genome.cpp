@@ -136,7 +136,7 @@ void HDF5Genome::setDimensions(
   }
   catch (H5::Exception&){}
 
-  if (_totalSequenceLength > 0 && storeDNAArrays == true)
+  if (_totalSequenceLength > 0 && storeDNAArrays)
   {
     hal_size_t arrayLength = _totalSequenceLength / 2;
     if (_totalSequenceLength % 2)
