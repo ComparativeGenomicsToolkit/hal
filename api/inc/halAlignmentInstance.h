@@ -106,6 +106,12 @@ mmapAlignmentInstance(const std::string& alignmentPath,
                       size_t initSize = hal::MMAP_DEFAULT_INIT_SIZE,
                       size_t growSize = hal::MMAP_DEFAULT_GROW_SIZE);
 
+/** Attempt to detect HAL alignment format, or return empty string if it doesn't 
+ * appear to be a hal file */
+    const std::string& detectHalAlignmentFormat(const std::string& path,
+                                                const CLParser* options=NULL);
+
+    
 /** Get an alignment instance from a file by automatically detecting which 
  * implementation to use.  (will currently (and probably forever more) 
  * just return an HDF5 instance since that's all that exists) 
@@ -115,7 +121,7 @@ mmapAlignmentInstance(const std::string& alignmentPath,
  * command that both input and output HALs.
  */
 Alignment* openHalAlignment(const std::string& path,
-                            const CLParser* options,
+                            const CLParser* options = NULL,
                             unsigned mode = hal::READ_ACCESS,
                             const std::string& overrideFormat = ""); 
 }

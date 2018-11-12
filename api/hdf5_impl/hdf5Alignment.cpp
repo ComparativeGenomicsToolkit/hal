@@ -45,7 +45,11 @@ const hsize_t HDF5Alignment::DefaultCacheRDCBytes = 15728640;
 const double HDF5Alignment::DefaultCacheW0 = 0.75;
 const bool HDF5Alignment::DefaultInMemory = false;
 
-
+/* check if first bit of file has HDF5 header */
+bool hal::HDF5Alignment::isHdf5File(const std::string& initialBytes) {
+    static const std::string HDF5_MAGIC = "\x89HDF\r";
+    return initialBytes.compare(0, HDF5_MAGIC.size(), HDF5_MAGIC) == 0;
+}
 
 /* construction default flags */
 static int hdf5DefaultFlags(unsigned mode) {

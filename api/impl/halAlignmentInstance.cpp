@@ -14,6 +14,12 @@
 #include "halAlignmentInstance.h"
 #include "hdf5Alignment.h"
 #include "mmapAlignment.h"
+#ifdef ENABLE_UDC
+extern "C" {
+#include "common.h"
+#include "udc.h"
+}
+#endif
 
 using namespace std;
 using namespace H5;
@@ -61,10 +67,6 @@ const H5::DSetCreatPropList& hal::hdf5DefaultDSetCreatPropList() {
     return datasetCreateProps;
 }
 
-
-                           
-
-
 Alignment*
 hal::hdf5AlignmentInstance(const std::string& alignmentPath,
                            unsigned mode,
@@ -85,18 +87,85 @@ hal::mmapAlignmentInstance(const std::string& alignmentPath,
     return new MMapAlignment(alignmentPath, mode, initSize, growSize);
 }
 
+static const int DETECT_INITIAL_NUM_BYTES = 64;
+
+static std::string udcGetInitialBytes(const std::string& path,
+                                      const CLParser* options) {
+#ifdef ENABLE_UDC
+    const std::string& udcCacheDir = (options != NULL)
+        ? options->getOption<const std::string&>("udcCacheDir") : "";
+    struct udcFile* udcFile = udcFileOpen(const_cast<char*>(path.c_str()),
+                                          (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
+    char buf[DETECT_INITIAL_NUM_BYTES];
+    bits64 bytesRead = udcRead(udcFile, buf, DETECT_INITIAL_NUM_BYTES);
+    udcFileClose(&udcFile);
+    return string(buf, 0, bytesRead);
+#else
+    throw hal_exception("URL to HAL file supplied however UDC is not compiled into HAL library: " + path);
+#endif
+}
+
+static std::string localGetInitialBytes(const std::string& path) {
+    std::ifstream halFh;
+    halFh.exceptions(ifstream::badbit);
+    halFh.open(path);
+    char buf[DETECT_INITIAL_NUM_BYTES];
+    halFh.read(buf, DETECT_INITIAL_NUM_BYTES);
+    return string(buf, 0, halFh.gcount());
+}
+
+const std::string& hal::detectHalAlignmentFormat(const std::string& path,
+                                                 const CLParser* options) {
+    std::string initialBytes;
+    if (isUrl(path)) {
+        initialBytes = udcGetInitialBytes(path, options);
+    } else {
+        initialBytes = localGetInitialBytes(path);
+    }
+    if (HDF5Alignment::isHdf5File(initialBytes)) {
+        return STORAGE_FORMAT_HDF5;
+    } else if (MMapFile::isMmapFile(initialBytes)) {
+        return STORAGE_FORMAT_MMAP;
+    } else {
+        static const string empty;
+        return empty;
+    }
+}
+
+
 Alignment* hal::openHalAlignment(const std::string& path,
                                  const CLParser* options,
                                  unsigned mode,
                                  const std::string& overrideFormat)
 {
-    /* FIXME: detect which kind of file it is here (maybe by extension?) */
-    const std::string& fmt((overrideFormat.empty()) ? options->getOption<const std::string&>("format")
-                           : overrideFormat);
+    std::string fmt;
+    if (not overrideFormat.empty()) {
+        fmt = overrideFormat;
+    } else if ((mode & CREATE_ACCESS) == 0) {
+        fmt = detectHalAlignmentFormat(path, options);
+        if (fmt.empty()) {
+            throw hal_exception("unable to determine HAL storage format of " + path);
+        }
+    } else if (options != NULL) {
+        fmt = options->getOption<const std::string&>("format");
+    } else {
+        fmt = STORAGE_FORMAT_HDF5;
+    }
     if (fmt == STORAGE_FORMAT_HDF5) {
-        return new HDF5Alignment(path, mode, options);
+        if (options == NULL) {
+            return new HDF5Alignment(path, mode,
+                                     hdf5DefaultFileCreatPropList(),
+                                     hdf5DefaultFileAccPropList(),
+                                     hdf5DefaultDSetCreatPropList());
+        } else {
+            return new HDF5Alignment(path, mode, options);
+        }
     } else if (fmt == STORAGE_FORMAT_MMAP) {
-        return new MMapAlignment(path, mode, options);
+        if (options == NULL) {
+            return new MMapAlignment(path, mode);
+        } else {
+            return new MMapAlignment(path, mode, options);
+        }
     } else {
         throw hal_exception("invalid --format argument " + fmt
                             + ", expected one of " + STORAGE_FORMAT_HDF5

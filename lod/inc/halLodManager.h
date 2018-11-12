@@ -36,26 +36,12 @@ public:
     * Paths that contain ":/" are assumed to be
     * web addressed of some sort and considered absolute. */
    void loadLODFile(const std::string& lodPath,
-                    const CLParser* options);
-
-   /** Load series of alignments specified in the lodPath file.  With
-    * default CLParser options.
-    *
-    * If the paths of the HAL files are relative (do not begin with /) then
-    * they will be concatenated to the directory of lodPath.  If they 
-    * are absolute (beginning with /) then they will be opened directly.
-    * Paths that contain ":/" are assumed to be
-    * web addressed of some sort and considered absolute. */
-   void loadLODFile(const std::string& lodPath);
+                    const CLParser* options=NULL);
 
    /** Just use the given HAL file for everything.  Same as if we gave a
     * lodFile containing only "0 halPath"*/
    void loadSingeHALFile(const std::string& halPath,
-                         const CLParser* options);
-
-   /** Just use the given HAL file for everything.  Same as if we gave a
-    * lodFile containing only "0 halPath"*/
-   void loadSingeHALFile(const std::string& halPath);
+                         const CLParser* options=NULL);
 
    const Alignment* getAlignment(hal_size_t queryLength, 
                                   bool needDNA);
@@ -73,7 +59,7 @@ public:
    /** Token that specifies upper limit for LODs, that sits in path field */
    static const std::string MaxLodToken;
    
-protected:
+private:
 
    std::string resolvePath(const std::string& lodPath, 
                            const std::string& halPath);

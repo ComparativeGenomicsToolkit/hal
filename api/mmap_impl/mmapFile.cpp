@@ -1,11 +1,11 @@
 #include "mmapFile.h"
 #include <string.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include "halCommon.h"
 #ifdef ENABLE_UDC
 extern "C" {
 #include "common.h"
@@ -18,20 +18,9 @@ extern "C" {
 static const std::string FORMAT_NAME = "HAL-MMAP";
 static const std::string MMAP_VERSION = "1.0";
 
-
-/* is file a URL that requires UDC? */
-static bool isUdcUrl(const std::string alignmentPath) {
-    return (alignmentPath.find("http:") == 0) or (alignmentPath.find("https:") == 0)
-        or (alignmentPath.find("ftp:") == 0);
-}
-
-/* get the file size from the OS */
-static size_t getFileStatSize(int fd) {
-    struct stat fileStat;
-    if (::fstat(fd, &fileStat) < 0) {
-        throw hal_errno_exception("stat failed", errno);
-    }
-    return fileStat.st_size;
+/* check if first bit of file has MMAP header */
+bool hal::MMapFile::isMmapFile(const std::string& initialBytes) {
+    return initialBytes.compare(0, FORMAT_NAME.size(), FORMAT_NAME) == 0;
 }
 
 /* constructor, used only by derived classes */
@@ -374,7 +363,7 @@ hal::MMapFile *hal::MMapFile::factory(const std::string& alignmentPath,
                                       size_t initSize,
                                       size_t growSize,
                                       const std::string& udcCacheDir) {
-    if (isUdcUrl(alignmentPath)) {
+    if (isUrl(alignmentPath)) {
         if (mode & (CREATE_ACCESS | WRITE_ACCESS)) {
             throw hal_exception("create or write access not support with URL: " + alignmentPath);
         }

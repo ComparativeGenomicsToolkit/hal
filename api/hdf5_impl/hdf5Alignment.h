@@ -25,6 +25,9 @@ class HDF5Genome;
 class HDF5Alignment : public Alignment
 {
 public:
+    /* check if first bit of file has HDF5 header */
+    static bool isHdf5File(const std::string& initialBytes);
+       
    HDF5Alignment(const std::string& alignmentPath,
                  unsigned mode,
                  const H5::FileCreatPropList& fileCreateProps,

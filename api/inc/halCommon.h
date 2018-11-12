@@ -160,6 +160,13 @@ void getGenomesInSubTree(const Genome* root,
 /* Get all leaf genomes in the alignment, in no particular order. */
 std::vector<const Genome *> getLeafGenomes(const Alignment* alignment);
 
+/* is file a URL that requires UDC? */
+bool isUrl(const std::string alignmentPath);
+
+/* get the file size from the OS */
+size_t getFileStatSize(int fd);
+
+    
 }
 
 #endif

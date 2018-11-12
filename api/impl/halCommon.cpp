@@ -5,6 +5,7 @@
  */
 #include <map>
 #include <cassert>
+#include <sys/stat.h>
 #include "halCommon.h"
 #include "halAlignment.h"
 #include "halGenome.h"
@@ -228,3 +229,19 @@ vector<const Genome *> hal::getLeafGenomes(const Alignment* alignment)
     }
     return leafGenomes;
 }
+
+/* is file a URL that requires UDC? */
+bool hal::isUrl(const std::string alignmentPath) {
+    return (alignmentPath.find("http:") == 0) or (alignmentPath.find("https:") == 0)
+        or (alignmentPath.find("ftp:") == 0);
+}
+
+/* get the file size from the OS */
+size_t hal::getFileStatSize(int fd) {
+    struct stat fileStat;
+    if (::fstat(fd, &fileStat) < 0) {
+        throw hal_errno_exception("stat failed", errno);
+    }
+    return fileStat.st_size;
+}
+

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "halBlockViz.h"
+#include "halAlignmentInstance.h"
 
 #ifdef ENABLE_UDC
 #ifdef __cplusplus
@@ -114,14 +115,14 @@ static void printStats(FILE* file, int handle)
 
 static int openWrapper(char* path)
 {
-  if (strcmp(path + strlen(path) - 3, "hal") == 0)
-  {
-    return halOpen(path, NULL);
-  }
-  int handle = halOpenLOD(path, NULL);
-  hal_int_t maxQuery = halGetMaxLODQueryLength(handle, NULL);
-  printf("Max LOD query: %lu\n", maxQuery);
-  return handle;
+    if (not hal::detectHalAlignmentFormat(path).empty()) {
+        return halOpen(path, NULL);
+    } else {
+        int handle = halOpenLOD(path, NULL);
+        hal_int_t maxQuery = halGetMaxLODQueryLength(handle, NULL);
+        printf("Max LOD query: %lu\n", maxQuery);
+        return handle;
+    }
 }
 
 #ifdef ENABLE_UDC

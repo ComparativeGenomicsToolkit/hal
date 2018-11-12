@@ -30,6 +30,8 @@ namespace hal {
         friend class MMapAlignment;
         public:
 
+        /* check if first bit of file has MMAP header */
+        static bool isMmapFile(const std::string& initialBytes);
        
         std::string getStorageFormat() const {
             return STORAGE_FORMAT_MMAP;

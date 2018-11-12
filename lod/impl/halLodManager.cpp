@@ -35,9 +35,10 @@ const unsigned long LodManager::MaxAgeSec = 432000;
 // hal/lod/halLodInterpolate.py)
 const string LodManager::MaxLodToken = "max";
 
-LodManager::LodManager()
-{
-
+LodManager::LodManager():
+    _options(NULL),
+    _maxLodLowerBound((hal_size_t)numeric_limits<hal_index_t>::max()) {
+  // FIXME: the way options work is weird.
 }
 
 LodManager::~LodManager()
@@ -125,11 +126,6 @@ void LodManager::loadLODFile(const string& lodPath,
   checkMap(lodPath);
 }
 
-void LodManager::loadLODFile(const string& lodPath) {
-    CLParser options;
-    loadLODFile(lodPath, &options);
-}
-
 void LodManager::loadSingeHALFile(const string& halPath,
                                   const CLParser* options)
 {
@@ -139,11 +135,6 @@ void LodManager::loadSingeHALFile(const string& halPath,
                 0, PathAlign(halPath, AlignmentConstPtr())));
   _maxLodLowerBound = (hal_size_t)numeric_limits<hal_index_t>::max();
   checkMap(halPath);
-}
-
-void LodManager::loadSingeHALFile(const string& halPath) {
-    CLParser options;
-    loadSingeHALFile(halPath, &options);
 }
 
 const Alignment* LodManager::getAlignment(hal_size_t queryLength,
