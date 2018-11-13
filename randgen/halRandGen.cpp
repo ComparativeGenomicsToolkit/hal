@@ -11,7 +11,7 @@
 #include "halCLParser.h"
 #include "hal.h"
 #include "halRandomData.h"
-
+#include <random>
 
 using namespace std;
 using namespace hal;
@@ -29,10 +29,10 @@ struct RandOptions {
    string _halFile;
 };
 
-static const RandOptions defaultSm = {0.75, 0.1, 5, 10, 1000, 5, 10, 2000000, ""};
-static const RandOptions defaultMed = {1.25,  0.7, 20, 2, 50, 1000, 50000, 2000000, ""};
-static const RandOptions defaultBig = {2,  0.7, 50, 2, 500, 100, 5000, 2000000, ""};
-static const RandOptions defaultLrg = {2, 1, 100, 2, 10, 10000, 500000, 2000000, ""};
+static const RandOptions defaultSm = {0.75, 0.1, 5, 10, 1000, 5, 10, -1, ""};
+static const RandOptions defaultMed = {1.25,  0.7, 20, 2, 50, 1000, 50000, -1, ""};
+static const RandOptions defaultBig = {2,  0.7, 50, 2, 500, 100, 5000, -1, ""};
+static const RandOptions defaultLrg = {2, 1, 100, 2, 10, 10000, 500000, -1, ""};
 
 static void initParser(CLParser& optionsParser) {
     optionsParser.setDescription("Generate a random HAL alignment file");
@@ -100,20 +100,24 @@ int main(int argc, char** argv)
         optionsParser.printUsage(cerr);
         exit(1);
     }
+
+    std::mt19937 rng;
+    if (options._seed >= 0) {
+        rng.seed(options._seed);
+    }
         
   try
   {
       AlignmentPtr alignment(openHalAlignment(options._halFile, &optionsParser, hal::CREATE_ACCESS));
     // call the crappy unit-test simulator 
-    createRandomAlignment(alignment.get(),
+      createRandomAlignment(rng, alignment.get(),
                           options._meanDegree,
                           options._maxBranchLength,
                           options._maxGenomes,
                           options._minSegmentLength,
                           options._maxSegmentLength,
                           options._minSegments,
-                          options._maxSegments,
-                          options._seed);
+                          options._maxSegments);
     
     alignment->close();
   }

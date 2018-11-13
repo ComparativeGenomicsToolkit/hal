@@ -10,6 +10,7 @@
 #include "halRandomData.h"
 #include "halGappedTopSegmentIterator.h"
 #include "halGappedBottomSegmentIterator.h"
+#include <random>
 
 extern "C" {
 #include "commonC.h"
@@ -18,10 +19,12 @@ extern "C" {
 using namespace std;
 using namespace hal;
 
+static std::mt19937 rng;
+
 
 void ValidateSmallTest::createCallBack(Alignment* alignment)
 {
-  createRandomAlignment(alignment, 
+    createRandomAlignment(rng, alignment, 
                         0.75, 
                         0.1,
                         5,
@@ -39,7 +42,8 @@ void ValidateSmallTest::checkCallBack(const Alignment* alignment)
 
 void ValidateMediumTest::createCallBack(Alignment* alignment)
 {
-  createRandomAlignment(alignment, 
+    createRandomAlignment(rng,
+                          alignment, 
                         1.25, 
                         0.7,
                         20,
@@ -57,7 +61,8 @@ void ValidateMediumTest::checkCallBack(const Alignment* alignment)
 
 void ValidateLargeTest::createCallBack(Alignment* alignment)
 {
-  createRandomAlignment(alignment, 
+    createRandomAlignment(rng,
+                          alignment, 
                         2, 
                         1,
                         100,

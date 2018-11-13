@@ -14,10 +14,12 @@
 #include "halBottomSegmentTest.h"
 #include "halTopSegmentTest.h"
 #include "hal.h"
-
+#include <random>
 
 using namespace std;
 using namespace hal;
+
+static std::mt19937 rng;
 
 void MappedSegmentMapUpTest::createCallBack(Alignment* alignment)
 {
@@ -900,40 +902,38 @@ MappedSegmentColCompareTestCheck2::checkCallBack(const Alignment* alignment)
 
 void MappedSegmentColCompareTest1::createCallBack(Alignment* alignment)
 {
-  createRandomAlignment(alignment, 
+    createRandomAlignment(rng, alignment, 
                         2, // meanDegree
                         0.1, // maxBranchLength
                         6, // maxGenomes
                         10, // minSegmentLength
                         1000, // maxSegmentLength
                         5, // minSegments
-                        10, // maxSegments
-                        1101); // seed
+                          10); // maxSegments
 }
 
 void MappedSegmentColCompareTest2::createCallBack(Alignment* alignment)
 {
-  createRandomAlignment(alignment, 
+    createRandomAlignment(rng, alignment, 
                         1.25, 
                         0.7,
                         8,
                         2,
                         50,
                         10,
-                        500,
-                        23);
+                        500);
 }
 
 void MappedSegmentColCompareTest3::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(alignment,
+    createRandomAlignment(rng, alignment,
                         1.5, 
                         0.7,
                         12,
                         1,
                         100,
-                        50,
-                        1000);
+                          50,
+                          1000);
 }
 
 void halMappedSegmentMapUpTest(CuTest *testCase)
