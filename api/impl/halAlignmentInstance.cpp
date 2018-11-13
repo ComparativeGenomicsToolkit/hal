@@ -107,8 +107,10 @@ static std::string udcGetInitialBytes(const std::string& path,
 
 static std::string localGetInitialBytes(const std::string& path) {
     std::ifstream halFh;
-    halFh.exceptions(ifstream::badbit);
     halFh.open(path);
+    if (not halFh) {
+        throw hal_errno_exception(path, "can't open HAL file", errno);
+    }
     char buf[DETECT_INITIAL_NUM_BYTES];
     halFh.read(buf, DETECT_INITIAL_NUM_BYTES);
     return string(buf, 0, halFh.gcount());

@@ -67,7 +67,7 @@ class hal_errno_exception: public hal_exception {
     hal_errno_exception(const std::string& fileName,
                         const std::string& msg,
                         int errnum):
-        hal_exception(fileName + ": " + msg + ":" + std::strerror(errnum)) {
+        hal_exception(fileName + ": " + msg + ": " + std::strerror(errnum)) {
     }
 };
 

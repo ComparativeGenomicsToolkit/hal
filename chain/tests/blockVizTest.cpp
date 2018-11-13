@@ -77,7 +77,7 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
 
 static void printBlock(FILE* file, struct hal_block_t* b)
 {
-  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: tgt : %0.10s query: %0.10s\n", 
+  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: tgt : %.10s query: %.10s\n", 
           b->qChrom, b->tStart, b->qStart, b->size, b->strand, b->tSequence, b->qSequence);
 }
 

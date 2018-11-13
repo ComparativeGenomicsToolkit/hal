@@ -51,13 +51,15 @@ blockVizHdf5Tests: ${testHdf5Hal} ${progs}
 blockVizMmapTests: ${testMmapHal} ${progs}
 	${binDir}/blockVizTest ${testMmapHal} Genome_2 Genome_0 Genome_0_seq 0 3000 1
 
+randGenArgs = --preset small --seed 0 --minSegmentLength 3000  --maxSegmentLength 5000
+
 ${testHdf5Hal}: ${progs}
 	@mkdir -p $(dir $@)
-	${binDir}/halRandGen --preset small --seed 0 --format hdf5 $@
+	${binDir}/halRandGen ${randGenArgs} --format hdf5 $@
 
 ${testMmapHal}: ${progs}
 	@mkdir -p $(dir $@)
-	${binDir}/halRandGen --preset small --seed 0 --format mmap $@
+	${binDir}/halRandGen ${randGenArgs} --preset small --seed 0 --format mmap $@
 
 include ${rootDir}/rules.mk
 
