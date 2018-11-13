@@ -230,8 +230,8 @@ void LodManager::checkAlignment(hal_size_t minQuery,
     alignment->closeGenome(genome);
     if (seqFound == false)
     {
-      throw hal_exception("HAL file for highest level of detail (0) in " + path 
-                          + "must contain DNA sequence information.");
+      throw hal_exception("HAL file for highest level of detail (0) in genome "
+                          + name + " (" + path + ") must contain DNA sequence information.");
     }
   }
 #endif
