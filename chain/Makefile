@@ -26,35 +26,36 @@ progs = ${binDir}/hal2chain ${binDir}/halChainTests ${binDir}/blockVizBed \
     ${binDir}/blockVizMaf ${binDir}/blockVizTest ${binDir}/blockVizTime \
     ${binDir}/halChainTests
 
-testTmpDir = tests.tmp
+testTmpDir = test.tmp
 
 all: libs progs
 libs: ${libHalChain}
 progs: ${progs}
 
 clean: 
-	rm -f ${libHalChain} ${objs} ${progs} ${depends} ${testTmpDir}
+	rm -f ${libHalChain} ${objs} ${progs} ${depends}
+	rm -rf ${testTmpDir}
 
 testHdf5Hal = ${testTmpDir}/small.haf5.hal
 testMmapHal = ${testTmpDir}/small.mmap.hal
 
 test: halChainTests blockVizHdf5Tests blockVizMmapTests
 
-halChainTests:
+halChainTests: ${progs}
 	${binDir}/halChainTests
 
-blockVizHdf5Tests: ${testHdf5Hal}
+blockVizHdf5Tests: ${testHdf5Hal} ${progs}
 	${binDir}/blockVizTest ${testHdf5Hal} Genome_4 Genome_0 Genome_0_seq 0 3000
 
 
-blockVizMmapTests: ${testMmapHal}
+blockVizMmapTests: ${testMmapHal} ${progs}
 	${binDir}/blockVizTest ${testMmapHal} Genome_4 Genome_0 Genome_0_seq 0 3000
 
-${testHdf5Hal}:
+${testHdf5Hal}: ${progs}
 	@mkdir -p $(dir $@)
 	${binDir}/halRandGen --preset small --seed 0 --format hdf5 $@
 
-${testMmapHal}:
+${testMmapHal}: ${progs}
 	@mkdir -p $(dir $@)
 	${binDir}/halRandGen --preset small --seed 0 --format mmap $@
 

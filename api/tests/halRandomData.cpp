@@ -55,8 +55,31 @@ static inline void mutateString(mt19937& rng, string& buffer, double branchLengt
   }
 }
 
+static void createRandomAlignmentGenome(mt19937& rng,
+                                        Alignment* newAlignment,
+                                        deque<string>& genomeNameQueue) {
+    Genome* genome = newAlignment->openGenome(genomeNameQueue.back());
+    genomeNameQueue.pop_back();
+
+    createRandomGenome(rng, newAlignment, genome);
+  
+    vector<string> childNames = newAlignment->getChildNames(genome->getName());
+    for (size_t i = 0; i < childNames.size(); ++i)
+    {
+      genomeNameQueue.push_front(childNames[i]);
+    }
+
+    Genome* parent = genome->getParent();
+    if (parent != NULL)
+    {
+      newAlignment->closeGenome(parent);
+    }
+    newAlignment->closeGenome(genome);
+}
+                                       
+
 void hal::createRandomAlignment(mt19937& rng,
-                                Alignment* emptyAlignment,
+                                Alignment* newAlignment,
                                 double meanDegree,
                                 double maxBranchLength,
                                 hal_size_t maxGenomes,
@@ -65,118 +88,111 @@ void hal::createRandomAlignment(mt19937& rng,
                                 hal_size_t minSegments,
                                 hal_size_t maxSegments)
 {
-  createRandomTree(rng, emptyAlignment,
+  createRandomTree(rng, newAlignment,
                    meanDegree,
                    maxBranchLength,
                    maxGenomes);
   
-  createRandomDimensions(rng, emptyAlignment,
+  createRandomDimensions(rng, newAlignment,
                          minSegmentLength,
                          maxSegmentLength,
                          minSegments,
                          maxSegments);
 
-  deque<string> bfQueue;
-  bfQueue.push_front(emptyAlignment->getRootName());
+  deque<string> genomeNameQueue;
+  genomeNameQueue.push_front(newAlignment->getRootName());
 
-  while (bfQueue.empty() == false)
-  {
-    Genome* genome = emptyAlignment->openGenome(bfQueue.back());
-    bfQueue.pop_back();
-
-    createRandomGenome(rng, emptyAlignment, genome);
-  
-    vector<string> childNames = emptyAlignment->getChildNames(genome->getName());
-    for (size_t i = 0; i < childNames.size(); ++i)
-    {
-      bfQueue.push_front(childNames[i]);
-    }
-
-    Genome* parent = genome->getParent();
-    if (parent != NULL)
-    {
-      emptyAlignment->closeGenome(parent);
-    }
-    emptyAlignment->closeGenome(genome);
+  while (not genomeNameQueue.empty()) {
+      createRandomAlignmentGenome(rng, newAlignment, genomeNameQueue);
   }
 }
                            
 
+static void createRandomTreeGenome(mt19937& rng,
+                                   Alignment* newAlignment,
+                                   double meanDegree,
+                                   double maxBranchLength,
+                                   hal_size_t maxGenomes,
+                                   size_t& genomeCount,
+                                   deque<string>& genomeNameQueue) {
+    Genome* genome = newAlignment->openGenome(genomeNameQueue.back());
+    genomeNameQueue.pop_back();
+    hal_size_t numChildren = (hal_size_t)(uniformDbl(rng, 0.0, 2.0 * meanDegree) + 0.5);
+    if (genomeCount + numChildren >= maxGenomes) {
+        numChildren = maxGenomes - genomeCount;
+    }
+
+    for (hal_size_t i = 0; i < numChildren; ++i) {
+        string childName = "Genome_" + std::to_string(genomeCount++);
+        newAlignment->addLeafGenome(childName,
+                                    genome->getName(),
+                                    uniformDbl(rng, 1e-5, maxBranchLength));
+        genomeNameQueue.push_front(childName);
+    }
+ }
+
 void hal::createRandomTree(mt19937& rng,
-                           Alignment* emptyAlignment,
+                           Alignment* newAlignment,
                            double meanDegree,
                            double maxBranchLength,
                            hal_size_t maxGenomes)
 {
-  assert(emptyAlignment->getNumGenomes() == 0);
+  assert(newAlignment->getNumGenomes() == 0);
   
-  emptyAlignment->addRootGenome("Genome_0");
+  newAlignment->addRootGenome("Genome_0");
   
-  deque<string> bfQueue;
-  bfQueue.push_front(emptyAlignment->getRootName());
+  deque<string> genomeNameQueue;
+  genomeNameQueue.push_front(newAlignment->getRootName());
   size_t genomeCount = 1;
   
-  while (bfQueue.empty() == false)
-  {
-    Genome* genome = emptyAlignment->openGenome(bfQueue.back());
-    bfQueue.pop_back();
-    hal_size_t numChildren = (hal_size_t)(uniformDbl(rng, 0.0, 2.0 * meanDegree) + 0.5);
-    if (genomeCount + numChildren >= maxGenomes)
-    {
-      numChildren = maxGenomes - genomeCount;
-    }
-
-    for (hal_size_t i = 0; i < numChildren; ++i)
-    {
-        string childName = "Genome_" + std::to_string(genomeCount++);
-      emptyAlignment->addLeafGenome(childName,
-                                    genome->getName(),
-                                    uniformDbl(rng, 1e-5, maxBranchLength));
-      bfQueue.push_front(childName);
-    }
+  while (not genomeNameQueue.empty()) {
+      createRandomTreeGenome(rng, newAlignment,
+                             meanDegree,
+                             maxBranchLength,
+                             maxGenomes,
+                             genomeCount,
+                             genomeNameQueue);
   }
 }
 
-void hal::createRandomDimensions(mt19937& rng,
-                                 Alignment* alignment,
-                                 hal_size_t minSegmentLength,
-                                 hal_size_t maxSegmentLength,
-                                 hal_size_t minSegments,
-                                 hal_size_t maxSegments)
-{
-  deque<string> bfQueue;
-  bfQueue.push_front(alignment->getRootName());
+static hal_size_t calcNumTopSegments(Genome* parent,
+                                     hal_size_t length,
+                                     hal_size_t& topSegSize) {
+   hal_size_t numTopSegments = 0;
+   if (parent != NULL) {
+       BottomSegmentIteratorPtr it = parent->getBottomSegmentIterator();
+       const BottomSegment* bseg = it->getBottomSegment();
+       topSegSize = bseg->getLength();
+       numTopSegments = length / topSegSize;
+       if (length % topSegSize != 0) {
+           ++numTopSegments;
+       }
+   }
+   return numTopSegments;
+}
 
-  while (bfQueue.empty() == false)
-  {
-    Genome* genome = alignment->openGenome(bfQueue.back());
+static void createGenomeDimensions(mt19937& rng,
+                                   Alignment* alignment,
+                                   hal_size_t minSegmentLength,
+                                   hal_size_t maxSegmentLength,
+                                   hal_size_t minSegments,
+                                   hal_size_t maxSegments,
+                                   deque<string>& genomeNameQueue) {
+    Genome* genome = alignment->openGenome(genomeNameQueue.back());
     assert(genome != NULL);
-    bfQueue.pop_back();
+    genomeNameQueue.pop_back();
     
     Genome* parent = genome->getParent();
     hal_size_t botSegSize = uniformInt(rng, minSegmentLength, maxSegmentLength);
     hal_size_t numBottomSegments = uniformInt(rng, minSegments, maxSegments);
     hal_size_t length = numBottomSegments * botSegSize;
     hal_size_t topSegSize = 0;
-    hal_size_t numTopSegments = 0;
-    if (parent != NULL)
-    {
-      BottomSegmentIteratorPtr it = parent->getBottomSegmentIterator();
-      const BottomSegment* bseg = it->getBottomSegment();
-      topSegSize = bseg->getLength();
-      numTopSegments = length / topSegSize;
-      if (length % topSegSize != 0)
-      {
-        ++numTopSegments;
-      }
-    }
+    hal_size_t numTopSegments = calcNumTopSegments(parent, length, topSegSize);
     vector<string> childNames = alignment->getChildNames(genome->getName());
-    if (childNames.empty())
-    {
+    if (childNames.empty()) {
       numBottomSegments = 0;
     }
-    if (numBottomSegments == 0 && numTopSegments == 0)
-    {
+    if (numBottomSegments == 0 && numTopSegments == 0) {
       length = 0;
     }
 
@@ -236,27 +252,50 @@ void hal::createRandomDimensions(mt19937& rng,
 
     for (size_t i = 0; i < childNames.size(); ++i)
     {
-      bfQueue.push_front(childNames[i]);
+      genomeNameQueue.push_front(childNames[i]);
     }
+}
+
+void hal::createRandomDimensions(mt19937& rng,
+                                 Alignment* alignment,
+                                 hal_size_t minSegmentLength,
+                                 hal_size_t maxSegmentLength,
+                                 hal_size_t minSegments,
+                                 hal_size_t maxSegments)
+{
+    deque<string> genomeNameQueue;
+    genomeNameQueue.push_front(alignment->getRootName());
+
+  while (not genomeNameQueue.empty()) {
+      createGenomeDimensions(rng, alignment,
+                             minSegmentLength,
+                             maxSegmentLength,
+                             minSegments,
+                             maxSegments,
+                             genomeNameQueue);
   }
 }
 
-void hal::createRandomGenome(mt19937& rng, Alignment* alignment, Genome* genome)
-{
-  Genome* parent = genome->getParent();
-  set<pair<hal_index_t, hal_index_t> > edgeSet;
-  if (parent == NULL)
-  {
+static void createRandomRootGenome(mt19937& rng,
+                                   Alignment* alignment,
+                                   Genome* genome) {
     DNAIteratorPtr dnaIt = genome->getDNAIterator();
     hal_size_t length = genome->getSequenceLength();
     for (hal_size_t i = 0; i < length; ++i)
     {
       dnaIt->setChar(randDNA(rng));
-      dnaIt->toRight();
+      for (hal_size_t i = 0; i < length; ++i) {
+          dnaIt->setChar(randDNA(rng));
+          dnaIt->toRight();
+      }
     }
-  }
-  else
-  {
+}
+
+static void createRandomDescendantGenome(mt19937& rng,
+                                         Alignment* alignment,
+                                         Genome* genome,
+                                         Genome* parent) {
+   set<pair<hal_index_t, hal_index_t> > edgeSet;
     vector<string> parentChildNames = 
        alignment->getChildNames(parent->getName());
     hal_size_t indexInParent = parentChildNames.size() ;
@@ -280,6 +319,17 @@ void hal::createRandomGenome(mt19937& rng, Alignment* alignment, Genome* genome)
                           edgeSet, topIter, botIter, branchLength);
       topIter->toRight();
     }
+}
+
+void hal::createRandomGenome(mt19937& rng,
+                             Alignment* alignment,
+                             Genome* genome)
+{
+  Genome* parent = genome->getParent();
+  if (parent == NULL) {
+      createRandomRootGenome(rng, alignment, genome);
+  } else {
+      createRandomDescendantGenome(rng, alignment, genome, parent);
   }
 }
 
