@@ -37,7 +37,11 @@ class MMapAlignment : public Alignment {
     MMapAlignment(const std::string& alignmentPath,
                   unsigned mode,
                   const CLParser* parser);
-
+    ~MMapAlignment() {
+        if (_tree != NULL) {
+            stTree_destruct(_tree);
+        }
+    };
     static void defineOptions(CLParser* parser,
                               unsigned mode);
 
