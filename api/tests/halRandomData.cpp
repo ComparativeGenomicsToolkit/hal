@@ -82,17 +82,44 @@ void hal::createRandomAlignment(mt19937& rng,
                                 Alignment* newAlignment,
                                 double meanDegree,
                                 double maxBranchLength,
+                                hal_size_t minGenomes,
                                 hal_size_t maxGenomes,
                                 hal_size_t minSegmentLength,
                                 hal_size_t maxSegmentLength,
                                 hal_size_t minSegments,
                                 hal_size_t maxSegments)
 {
-  createRandomTree(rng, newAlignment,
-                   meanDegree,
-                   maxBranchLength,
-                   maxGenomes);
-  
+    if (meanDegree <= 0.0) {
+        throw hal_exception("createRandomAlignment: meanDegree must be > 0.0");
+    }
+    if (maxBranchLength <= 0.0) {
+        throw hal_exception("createRandomAlignment: maxBranchLength must be > 0.0");
+    }
+    if (minGenomes <= 0) {
+        throw hal_exception("createRandomAlignment: minGenomes must be > 0");
+    }
+    if (minGenomes > maxGenomes) {
+        throw hal_exception("createRandomAlignment: minGenomes must be <= maxGenomes");
+    }
+    if (minSegmentLength <= 0) {
+        throw hal_exception("createRandomAlignment: minSegmentLength must be > 0");
+    }
+    if (minSegmentLength > maxSegmentLength) {
+        throw hal_exception("createRandomAlignment: minSegmentLength must be <= maxSegmentLength");
+    }
+    if (minSegments <= 0) {
+        throw hal_exception("createRandomAlignment: minSegments must be > 0");
+    }
+    if (minSegments > maxSegments) {
+        throw hal_exception("createRandomAlignment: minSegments must be <= maxSegments");
+    }
+
+    createRandomTree(rng, newAlignment,
+                     meanDegree,
+                     maxBranchLength,
+                     minGenomes,
+                     maxGenomes);
+    
   createRandomDimensions(rng, newAlignment,
                          minSegmentLength,
                          maxSegmentLength,
@@ -112,6 +139,7 @@ static void createRandomTreeGenome(mt19937& rng,
                                    Alignment* newAlignment,
                                    double meanDegree,
                                    double maxBranchLength,
+                                   hal_size_t minGenomes,
                                    hal_size_t maxGenomes,
                                    size_t& genomeCount,
                                    deque<string>& genomeNameQueue) {
@@ -120,6 +148,9 @@ static void createRandomTreeGenome(mt19937& rng,
     hal_size_t numChildren = (hal_size_t)(uniformDbl(rng, 0.0, 2.0 * meanDegree) + 0.5);
     if (genomeCount + numChildren >= maxGenomes) {
         numChildren = maxGenomes - genomeCount;
+    }
+    if (genomeCount + numChildren < minGenomes) {
+        numChildren = minGenomes;
     }
 
     for (hal_size_t i = 0; i < numChildren; ++i) {
@@ -135,6 +166,7 @@ void hal::createRandomTree(mt19937& rng,
                            Alignment* newAlignment,
                            double meanDegree,
                            double maxBranchLength,
+                           hal_size_t minGenomes,
                            hal_size_t maxGenomes)
 {
   assert(newAlignment->getNumGenomes() == 0);
@@ -149,6 +181,7 @@ void hal::createRandomTree(mt19937& rng,
       createRandomTreeGenome(rng, newAlignment,
                              meanDegree,
                              maxBranchLength,
+                             minGenomes,
                              maxGenomes,
                              genomeCount,
                              genomeNameQueue);

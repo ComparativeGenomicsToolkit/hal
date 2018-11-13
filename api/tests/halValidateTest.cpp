@@ -24,14 +24,7 @@ static std::mt19937 rng;
 
 void ValidateSmallTest::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(rng, alignment, 
-                        0.75, 
-                        0.1,
-                        5,
-                        10,
-                        1000,
-                        5,
-                        10);
+    createRandomAlignment(rng, alignment, 0.75, 0.1, 2, 5, 10, 1000, 5, 10);
                         
 }
 
@@ -42,15 +35,7 @@ void ValidateSmallTest::checkCallBack(const Alignment* alignment)
 
 void ValidateMediumTest::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(rng,
-                          alignment, 
-                        1.25, 
-                        0.7,
-                        20,
-                        2,
-                        50,
-                        1000,
-                        50000);
+    createRandomAlignment(rng, alignment, 1.25, 0.7, 10, 20, 2, 50, 1000, 50000);
                         
 }
 
@@ -61,15 +46,8 @@ void ValidateMediumTest::checkCallBack(const Alignment* alignment)
 
 void ValidateLargeTest::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(rng,
-                          alignment, 
-                        2, 
-                        1,
-                        100,
-                        2,
-                        10,
-                        10000,
-                        500000);
+    createRandomAlignment(rng, alignment, 2.0, 1.0, 50, 100, 2, 10, 10000,
+                          500000);
                         
 }
 

@@ -20,6 +20,7 @@ using namespace H5;
 struct RandOptions {
    double _meanDegree;
    double _maxBranchLength;
+   hal_size_t _minGenomes;
    hal_size_t _maxGenomes;
    hal_size_t _minSegmentLength;
    hal_size_t _maxSegmentLength;
@@ -29,21 +30,22 @@ struct RandOptions {
    string _halFile;
 };
 
-static const RandOptions defaultSm = {0.75, 0.1, 5, 10, 1000, 5, 10, -1, ""};
-static const RandOptions defaultMed = {1.25,  0.7, 20, 2, 50, 1000, 50000, -1, ""};
-static const RandOptions defaultBig = {2,  0.7, 50, 2, 500, 100, 5000, -1, ""};
-static const RandOptions defaultLrg = {2, 1, 100, 2, 10, 10000, 500000, -1, ""};
+static const RandOptions defaultSm =  {0.75,  0.1,  2,   5,  250,   1000,      5,     10, -1, ""};
+static const RandOptions defaultMed = {1.25,  0.7,  8,  20,  500,   2000,    100,    500, -1, ""};
+static const RandOptions defaultBig = {2.00,  0.7, 20,  50,  1000,  8000,    400,   5000, -1, ""};
+static const RandOptions defaultLrg = {2.00,  1.0, 50, 100,  5000, 10000,  10000,  50000, -1, ""};
 
 static void initParser(CLParser& optionsParser) {
     optionsParser.setDescription("Generate a random HAL alignment file");
     optionsParser.addOption("preset", "one of small, medium, big, large [medium]", "medium");
-    optionsParser.addOption("meanDegree", "[" + std::to_string(defaultMed._meanDegree), defaultMed._meanDegree);
-    optionsParser.addOption("maxBranchLength", "[" + std::to_string(defaultMed._maxBranchLength), defaultMed._maxBranchLength);
-    optionsParser.addOption("maxGenomes", "[" + std::to_string(defaultMed._maxGenomes), defaultMed._maxGenomes);
-    optionsParser.addOption("minSegmentLength", "[" + std::to_string(defaultMed._minSegmentLength), defaultMed._minSegmentLength);
-    optionsParser.addOption("maxSegmentLength", "[" + std::to_string(defaultMed._maxSegmentLength), defaultMed._maxSegmentLength);
-    optionsParser.addOption("maxSegments", "[" + std::to_string(defaultMed._maxSegments), defaultMed._maxSegments);
-    optionsParser.addOption("minSegments", "[" + std::to_string(defaultMed._minSegments), defaultMed._minSegments);
+    optionsParser.addOption("meanDegree", "[" + std::to_string(defaultMed._meanDegree) + "]", defaultMed._meanDegree);
+    optionsParser.addOption("maxBranchLength", "[" + std::to_string(defaultMed._maxBranchLength) + "]", defaultMed._maxBranchLength);
+    optionsParser.addOption("minGenomes", "[" + std::to_string(defaultMed._minGenomes) + "]", defaultMed._minGenomes);
+    optionsParser.addOption("maxGenomes", "[" + std::to_string(defaultMed._maxGenomes) + "]", defaultMed._maxGenomes);
+    optionsParser.addOption("minSegmentLength", "[" + std::to_string(defaultMed._minSegmentLength) + "]", defaultMed._minSegmentLength);
+    optionsParser.addOption("maxSegmentLength", "[" + std::to_string(defaultMed._maxSegmentLength) + "]", defaultMed._maxSegmentLength);
+    optionsParser.addOption("maxSegments", "[" + std::to_string(defaultMed._maxSegments) + "]", defaultMed._maxSegments);
+    optionsParser.addOption("minSegments", "[" + std::to_string(defaultMed._minSegments) + "]", defaultMed._minSegments);
     optionsParser.addOption("seed", "[system time]\n", 0);
     optionsParser.addArgument("halFile", "path to toutput HAL alignment file");
 }
@@ -75,14 +77,15 @@ static RandOptions getPresetDefault(const CLParser* optionsParser) {
 static RandOptions parseProgOptions(const CLParser* optionsParser)
 {
     RandOptions options = getPresetDefault(optionsParser);
-    updateOption(optionsParser, "--meanDegree", options._meanDegree);
-    updateOption(optionsParser, "--maxBranchLength", options._maxBranchLength);
-    updateOption(optionsParser, "--maxGenoems", options._maxGenomes);
-    updateOption(optionsParser, "--minSegmentLength", options._minSegmentLength);
-    updateOption(optionsParser, "--maxSegmentLength", options._maxSegmentLength);
-    updateOption(optionsParser, "--minSegments", options._minSegments);
-    updateOption(optionsParser, "--maxSegments", options._maxSegments);
-    updateOption(optionsParser, "--seed", options._seed);
+    updateOption(optionsParser, "meanDegree", options._meanDegree);
+    updateOption(optionsParser, "maxBranchLength", options._maxBranchLength);
+    updateOption(optionsParser, "minGenomes", options._minGenomes);
+    updateOption(optionsParser, "maxGenomes", options._maxGenomes);
+    updateOption(optionsParser, "minSegmentLength", options._minSegmentLength);
+    updateOption(optionsParser, "maxSegmentLength", options._maxSegmentLength);
+    updateOption(optionsParser, "minSegments", options._minSegments);
+    updateOption(optionsParser, "maxSegments", options._maxSegments);
+    updateOption(optionsParser, "seed", options._seed);
     options._halFile = optionsParser->getArgument<string>("halFile");
     return options;
 }
@@ -110,14 +113,11 @@ int main(int argc, char** argv)
   {
       AlignmentPtr alignment(openHalAlignment(options._halFile, &optionsParser, hal::CREATE_ACCESS));
     // call the crappy unit-test simulator 
-      createRandomAlignment(rng, alignment.get(),
-                          options._meanDegree,
-                          options._maxBranchLength,
-                          options._maxGenomes,
-                          options._minSegmentLength,
-                          options._maxSegmentLength,
-                          options._minSegments,
-                          options._maxSegments);
+      createRandomAlignment(rng, alignment.get(), options._meanDegree,
+                            options._maxBranchLength, options._minGenomes,
+                            options._maxGenomes, options._minSegmentLength,
+                            options._maxSegmentLength, options._minSegments,
+                            options._maxSegments);
     
     alignment->close();
   }

@@ -902,38 +902,17 @@ MappedSegmentColCompareTestCheck2::checkCallBack(const Alignment* alignment)
 
 void MappedSegmentColCompareTest1::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(rng, alignment, 
-                        2, // meanDegree
-                        0.1, // maxBranchLength
-                        6, // maxGenomes
-                        10, // minSegmentLength
-                        1000, // maxSegmentLength
-                        5, // minSegments
-                          10); // maxSegments
+    createRandomAlignment(rng, alignment, 2, 0.1, 2, 6, 10, 1000, 5, 10);
 }
 
 void MappedSegmentColCompareTest2::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(rng, alignment, 
-                        1.25, 
-                        0.7,
-                        8,
-                        2,
-                        50,
-                        10,
-                        500);
+    createRandomAlignment(rng, alignment, 1.25, 0.7, 2, 8, 2, 50, 10, 500);
 }
 
 void MappedSegmentColCompareTest3::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(rng, alignment,
-                        1.5, 
-                        0.7,
-                        12,
-                        1,
-                        100,
-                          50,
-                          1000);
+    createRandomAlignment(rng, alignment, 1.5, 0.7, 6, 12, 1, 100, 50, 1000);
 }
 
 void halMappedSegmentMapUpTest(CuTest *testCase)

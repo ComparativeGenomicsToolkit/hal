@@ -45,11 +45,11 @@ halChainTests: ${progs}
 	${binDir}/halChainTests
 
 blockVizHdf5Tests: ${testHdf5Hal} ${progs}
-	${binDir}/blockVizTest ${testHdf5Hal} Genome_4 Genome_0 Genome_0_seq 0 3000
+	${binDir}/blockVizTest ${testHdf5Hal} Genome_2 Genome_0 Genome_0_seq 0 3000 1
 
 
 blockVizMmapTests: ${testMmapHal} ${progs}
-	${binDir}/blockVizTest ${testMmapHal} Genome_4 Genome_0 Genome_0_seq 0 3000
+	${binDir}/blockVizTest ${testMmapHal} Genome_2 Genome_0 Genome_0_seq 0 3000 1
 
 ${testHdf5Hal}: ${progs}
 	@mkdir -p $(dir $@)

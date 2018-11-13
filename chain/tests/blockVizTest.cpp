@@ -77,7 +77,7 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
 
 static void printBlock(FILE* file, struct hal_block_t* b)
 {
-  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: tgt : %s query: %s\n", 
+  fprintf(file, "chr:%s, tSt:%ld, qSt:%ld, size:%ld, strand:%c: tgt : %0.10s query: %0.10s\n", 
           b->qChrom, b->tStart, b->qStart, b->size, b->strand, b->tSequence, b->qSequence);
 }
 
@@ -199,7 +199,9 @@ int main(int argc, char** argv)
 
     // printStats(stdout, handle);
     hal_seqmode_type_t sm = HAL_NO_SEQUENCE;
-    if (args.doSeq != 0) sm = HAL_LOD0_SEQUENCE;
+    if (args.doSeq != 0) {
+        sm = HAL_LOD0_SEQUENCE;
+    }
     struct hal_block_results_t* results = 
        halGetBlocksInTargetRange(handle, 
                                  args.qSpecies,

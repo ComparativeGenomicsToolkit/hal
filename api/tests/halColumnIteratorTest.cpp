@@ -24,7 +24,7 @@ static std::mt19937 rng;
 
 void ColumnIteratorBaseTest::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(rng, alignment, 10, 1e-10, 3, 77, 77, 10, 10);
+    createRandomAlignment(rng, alignment, 10, 1e-10, 2, 3, 77, 77, 10, 10);
 }
 
 void ColumnIteratorBaseTest::checkCallBack(const Alignment* alignment)
