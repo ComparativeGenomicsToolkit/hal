@@ -32,7 +32,7 @@ halMafTests:
 	${binDir}/halMafTests
 
 naiveLiftUpTests:
-	pytest impl/naiveLiftUp.py
+	python2 -m pytest impl/naiveLiftUp.py
 
 include ${rootDir}/rules.mk
 
