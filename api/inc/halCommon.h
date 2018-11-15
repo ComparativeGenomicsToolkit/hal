@@ -21,7 +21,7 @@ namespace hal {
 
     /** fast conversion of a character to upper case */
     inline char fastUpper(char c) {
-        return to_upper_map[c];
+        return to_upper_map[unsigned(c)];
     }
     
 inline bool compatibleWithVersion(const std::string& version)

@@ -253,6 +253,11 @@ const Alignment* MMapGenome::getAlignment() const
   return _alignment;
 }
 
+Alignment* MMapGenome::getAlignment()
+{
+  return _alignment;
+}
+
 // SEGMENTED SEQUENCE INTERFACE
 
 const string& MMapGenome::getName() const

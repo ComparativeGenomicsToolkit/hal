@@ -132,6 +132,9 @@ public:
    /** Get a pointer to the alignment object that contains the genome. */
    virtual const Alignment* getAlignment() const = 0;
 
+   /** Get a pointer to the alignment object that contains the genome. */
+   virtual Alignment* getAlignment() = 0;
+
    /** Copy all information from this genome to another. The genomes
     * must be in different alignments. The genome must not have
     * uninitialized data.

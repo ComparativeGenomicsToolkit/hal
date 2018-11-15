@@ -6,8 +6,6 @@
 #include <iostream>
 #include "halAlignmentInstance.h"
 
-struct udcFile;
-
 namespace hal {
     /* header for the file */
     struct mmapHeader {
@@ -37,6 +35,8 @@ namespace hal {
             return STORAGE_FORMAT_MMAP;
         }
 
+        virtual bool isUdcProtocol() const = 0;
+        
         inline size_t getRootOffset() const;
         inline void *toPtr(size_t offset,
                            size_t accessSize);

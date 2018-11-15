@@ -54,6 +54,9 @@ class MMapAlignment : public Alignment {
     const std::string& getStorageFormat() const {
         return STORAGE_FORMAT_MMAP;
     }
+    MMapFile* getMMapFile() {
+        return _file;
+    }
 
     Genome* addLeafGenome(const std::string& name,
                           const std::string& parentName,

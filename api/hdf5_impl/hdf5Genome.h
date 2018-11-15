@@ -84,7 +84,9 @@ public:
 
    bool containsDNAArray() const;
 
-   const Alignment* getAlignment() const;
+    const Alignment* getAlignment() const;  // can't be inlined due to mutual include
+
+    Alignment* getAlignment();  // can't be inlined due to mutual include
 
    void rename(const std::string &newName);
 

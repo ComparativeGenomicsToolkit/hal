@@ -107,11 +107,32 @@ public:
 
    /** Get the HDF5 Datatype */
    const H5::DataType& getDataType() const;
-   
-private:
 
-   /** Read chunk from file */
+    /** get the current buffered start */
+    hsize_t getBufStart() const {
+        return _bufStart;
+    }
+   /** Get index of last element in memory buffer (close-ended) */
+    hsize_t getBufEnd() const {
+        return _bufEnd;
+    }
+
+   /** get in-memory buffer */
+    char* getBuf() {
+        return _buf;
+    }
+
+    /* flag as dirty if buffer has been modified directly */
+    void setDirty() {
+        _dirty = true;
+    }
+
+    /** Read chunk from file */
    void page(hsize_t i);
+
+    
+
+private:
 
    /** Pointer to file that owns this dataset */
    H5::PortableH5Location* _file;
@@ -132,7 +153,7 @@ private:
    /** Index of first element in memory buffer */
    hsize_t _bufStart;
    /** Index of last element in memory buffer */
-   hsize_t _bufEnd;
+    hsize_t _bufEnd;  // DANGER: close-ended
    /** Number of elements in memory buffer */
    hsize_t _bufSize;
    /** In-memory buffer */

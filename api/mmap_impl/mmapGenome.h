@@ -11,6 +11,7 @@ namespace hal {
 class MMapBottomSegmentData;
 class MMapSequence;
 class MMapSequenceData;
+class MmapAlignment;
 
 class MMapGenomeData {
     friend class MMapGenome;
@@ -59,6 +60,9 @@ public:
 
     const std::string& getName() const;
 
+    size_t getTotalSequenceLength() const {
+        return _data->_totalSequenceLength;
+    }
     void setDimensions(
         const std::vector<hal::Sequence::Info>& sequenceDimensions,
         bool storeDNAArrays);
@@ -92,7 +96,9 @@ public:
 
     bool containsDNAArray() const;
 
-    const Alignment* getAlignment() const;
+    const Alignment* getAlignment() const;   // can't be inlined due to mutual include
+
+    Alignment* getAlignment();  // can't be inlined due to mutual include
 
     void rename(const std::string &newName);
 
@@ -157,9 +163,12 @@ public:
 
     MMapAlignment *_alignment;
     MMapSequenceData *getSequenceData(size_t i) const;
-private:
-    char *getDNA(size_t start, size_t length) { return _data->getDNA(_alignment, start, length); }
 
+    char *getDNA(size_t start, size_t length) {
+        return _data->getDNA(_alignment, start, length);
+    }
+
+private:
     // Index within the alignment's genome array.
     MMapGenomeData *_data;
     size_t _arrayIndex;

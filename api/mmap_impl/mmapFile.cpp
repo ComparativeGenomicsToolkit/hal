@@ -115,6 +115,9 @@ namespace hal {
                       size_t growSize);
         virtual void close();
         virtual ~MMapFileLocal();
+        virtual bool isUdcProtocol() const {
+            return false;
+        }
 
         private:
         int openFile();
@@ -296,6 +299,9 @@ namespace hal {
                     const std::string& udcCacheDir);
         virtual void close();
         virtual ~MMapFileUdc();
+        virtual bool isUdcProtocol() const {
+            return true;
+        }
 
         protected:
         virtual void fetch(size_t offset,

@@ -495,6 +495,11 @@ const Alignment* HDF5Genome::getAlignment() const
   return _alignment;
 }
 
+Alignment* HDF5Genome::getAlignment()
+{
+  return _alignment;
+}
+
 // SEGMENTED SEQUENCE INTERFACE
 
 const string& HDF5Genome::getName() const
