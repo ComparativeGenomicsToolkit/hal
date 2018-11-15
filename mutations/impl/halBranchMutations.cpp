@@ -23,8 +23,8 @@ const string BranchMutations::gapDeletionBedTag = "GD";
 const string BranchMutations::gapDeletionBreakBedTag = "GDB";
 string BranchMutations::substitutionBedTag(char parent, char child)
 {
-  assert(parent == toupper(parent));
-  assert(child == toupper(child));
+  assert(parent == fastUpper(parent));
+  assert(child == fastUpper(child));
   assert(isNucleotide(parent) && parent != 'N' && 
          isNucleotide(child) && child != 'N');
   return string("S_") + parent + child;
@@ -212,8 +212,8 @@ void BranchMutations::writeSubstitutions(TopSegmentIteratorPtr first,
       for (hal_index_t i = 0; i < (hal_index_t)tstring.length(); ++i)
       {
         pos = i + _top->getStartPosition();
-        char c = toupper(tstring[i]);
-        char p = toupper(bstring[i]);
+        char c = fastUpper(tstring[i]);
+        char p = fastUpper(bstring[i]);
 
         if (pos >= _start && pos < _start + _length && 
             c != 'N' && p != 'N' && c != p)

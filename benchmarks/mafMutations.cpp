@@ -100,8 +100,8 @@ size_t countBlock(vector<string> block, size_t rows)
       char b = block[i][j];
       if (a != '-' && b != '-')
       {
-        a = toupper(a);
-        b = toupper(b);
+        a = fastUpper(a);
+        b = fastUpper(b);
         if (a != b)
         {
           ++count;

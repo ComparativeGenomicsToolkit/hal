@@ -17,6 +17,13 @@
 
 namespace hal {
 
+    extern const char to_upper_map[128];
+
+    /** fast conversion of a character to upper case */
+    inline char fastUpper(char c) {
+        return to_upper_map[c];
+    }
+    
 inline bool compatibleWithVersion(const std::string& version)
 {
   // assume versions are strings tho we treat as floats for now.
@@ -79,8 +86,8 @@ inline bool isNucleotide(char c)
 inline bool isTransition(char c1, char c2)
 {
   assert(isNucleotide(c1) && isNucleotide(c2));
-  char x = std::toupper((char)c1);
-  char y = std::toupper((char)c2);
+  char x = fastUpper((char)c1);
+  char y = fastUpper((char)c2);
   switch(x)
   {
   case 'A' : return y == 'G';
@@ -94,13 +101,13 @@ inline bool isTransition(char c1, char c2)
 
 inline bool isSubstitution(char c1, char c2)
 {
-  return std::toupper(c1) != std::toupper(c2);
+  return fastUpper(c1) != fastUpper(c2);
 }
 
 inline bool isTransversion(char c1, char c2)
 {
-  char x = std::toupper((char)c1);
-  char y = std::toupper((char)c2);
+  char x = fastUpper((char)c1);
+  char y = fastUpper((char)c2);
   return (x != y && x != 'N' && y != 'N' && !isTransition(c1, c2));
 }
 
@@ -117,9 +124,8 @@ inline bool isMasked(char c)
 /** test if 3rd codon position is 4-fold degenerate given first 2 positions */
 inline bool isFourfoldDegenerate(char c1, char c2)
 {
-    // FIXME: this could be faster by lookup or just comparing to both upper and lower.
-  char x1 = std::toupper((char)c1);
-  char x2 = std::toupper((char)c2);
+  char x1 = fastUpper(c1);
+  char x2 = fastUpper(c2);
   if (x2 == 'T' || x2 == 'G')
   {
     return x1 == 'C' || x1 == 'G';

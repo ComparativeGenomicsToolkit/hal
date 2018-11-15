@@ -50,9 +50,9 @@ int main(int argc, char *argv[])
     lineStream >> newChar;
     Genome *genome = alignment->openGenome(genomeName);
     DNAIteratorPtr dnaIt = genome->getDNAIterator(pos);
-    if (toupper(dnaIt->getChar()) != prevChar) {
+    if (fastUpper(dnaIt->getChar()) != prevChar) {
       dnaIt->toReverse();
-      if (toupper(dnaIt->getChar()) != prevChar) {
+      if (fastUpper(dnaIt->getChar()) != prevChar) {
         throw hal_exception("previous nucleotide " + string(1, dnaIt->getChar()) + " does not match expected " + string(1, prevChar) + "! Aborting early. Your hal file could be invalid now.");
       }
     }

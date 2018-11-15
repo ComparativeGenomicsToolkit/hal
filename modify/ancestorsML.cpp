@@ -343,7 +343,7 @@ void writeNucleotides(stTree *tree, const Alignment* alignment,
   if (data->reversed) {
     dnaIt->toReverse();
   }
-  char dna = toupper(dnaIt->getChar());
+  char dna = fastUpper(dnaIt->getChar());
   if (data->dna != dna) {
     if (printWrites) {
       cout << genome->getName() << "\t" << data->pos << "\t" << string(1, dna) << "\t" << string(1, data->dna) << endl;

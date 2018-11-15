@@ -57,3 +57,4 @@ of DNA.  Maybe pack DNA in mmap?
 * halCommon.h could be split into an DNA operations module.
 * how come Genome is_a SegementSequence instead of has_a bunch of SgementedSequences?
 Joel: Not entirely sure, but I think so you can work entirely within genome coordinates, and not have to care about sequences.  column iterators for example, would be annoying if you had to iterate through sequences, then through columns within that sequence
+* 
