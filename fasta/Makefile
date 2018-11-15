@@ -1,6 +1,6 @@
 rootDir = ..
 include ${rootDir}/include.mk
-modObjDir = ${objDir}/
+modObjDir = ${objDir}/fasta
 
 hal2fasta_srcs = hal2fasta.cpp 
 hal2fasta_objs = ${hal2fasta_srcs:%.cpp=${modObjDir}/%.o}
