@@ -86,7 +86,7 @@ void makeInsGap(TopSegmentIteratorPtr ti)
   Genome* genome = ti->getTopSegment()->getGenome();
   Genome* parent = genome->getParent();
   BottomSegmentIteratorPtr bi = parent->getBottomSegmentIterator();
-  assert(ti->hasParent() == true);
+  assert(ti->ts()->hasParent() == true);
   bi->toParent(ti);
   while (not bi->atEnd())
   {
@@ -120,7 +120,7 @@ void makeDelGap(BottomSegmentIteratorPtr botIt)
   BottomSegmentIteratorPtr bi2 = botIt->clone();
   TopSegmentIteratorPtr ti =  genome->getTopSegmentIterator();
   TopSegmentIteratorPtr ti2 =  genome->getTopSegmentIterator();
-  assert(bi->hasChild(0) == true);
+  assert(bi->bs()->hasChild(0) == true);
   hal_index_t prevIndex = bi->getBottomSegment()->getChildIndex(0);
   bool prevReversed = bi->getBottomSegment()->getChildReversed(0);
   ti->toChild(bi, 0);
@@ -203,7 +203,7 @@ void RearrangementInsertionTest::createCallBack(Alignment* alignment)
   size_t count = 0;
   for (bi = parent->getBottomSegmentIterator(); not bi->atEnd(); bi->toRight())
   {
-    if (bi->hasChild(0))
+    if (bi->bs()->hasChild(0))
     {
       bi->getBottomSegment()->setChildReversed(0, count % 2);
       TopSegmentIteratorPtr ti = child->getTopSegmentIterator();

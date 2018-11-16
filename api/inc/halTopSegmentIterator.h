@@ -21,8 +21,7 @@ namespace hal {
  * interface and some new methods for jumping around the genome.  
  * Always hidden in smart pointers in the public interface. 
  */
-class TopSegmentIterator : public virtual TopSegment,
-                           public virtual SegmentIterator
+class TopSegmentIterator : public virtual SegmentIterator
 {
 public:
     /* constructor */
@@ -120,59 +119,7 @@ public:
        return _topSegment.get();
    }
    
-    // SEGMENT INTERFACE OVERRIDE
     virtual void print(std::ostream& os) const;
-   // TOP SEGMENT INTERFACE
-    virtual hal_index_t getParentIndex() const {
-  return _topSegment->getParentIndex();
-    }
-    virtual bool hasParent() const {
-        assert(inRange());
-        return _topSegment->getParentIndex() != NULL_INDEX;
-    }
-    virtual void setParentIndex(hal_index_t parIdx) {
-        _topSegment->setParentIndex(parIdx);
-    }
-    virtual bool getParentReversed() const {
-        return _topSegment->getParentReversed();
-    }
-    virtual void setParentReversed(bool isReversed) {
-        _topSegment->setParentReversed(isReversed);
-    }
-    virtual hal_index_t getBottomParseIndex() const {
-        return _topSegment->getBottomParseIndex();
-    }
-    virtual void setBottomParseIndex(hal_index_t botParseIdx) {
-        _topSegment->setBottomParseIndex(botParseIdx);
-    }
-    virtual hal_offset_t getBottomParseOffset() const {
-        return _topSegment->getBottomParseOffset();
-    }
-    virtual bool hasParseDown() const {
-        assert (inRange() == true);
-        assert (_topSegment->getBottomParseIndex() == NULL_INDEX ||
-                _topSegment->getGenome()->getNumChildren() > 0);
-        return _topSegment->getBottomParseIndex() != NULL_INDEX;
-    }
-    virtual hal_index_t getNextParalogyIndex() const {
-        return _topSegment->getNextParalogyIndex();
-    }
-    virtual bool hasNextParalogy() const {
-        return _topSegment->hasNextParalogy();
-    }
-    virtual void setNextParalogyIndex(hal_index_t parIdx) {
-        _topSegment->setNextParalogyIndex(parIdx);
-    }
-    virtual hal_index_t getLeftParentIndex() const {
-        return _topSegment->getLeftParentIndex();
-    }
-    virtual hal_index_t getRightParentIndex() const {
-        return _topSegment->getRightParentIndex();
-    }
-    virtual bool isCanonicalParalog() const {
-        return _topSegment->isCanonicalParalog();
-    }
-
 
 private:
     hal_size_t getNumSegmentsInGenome() const {

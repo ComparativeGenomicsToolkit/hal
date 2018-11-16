@@ -118,23 +118,23 @@ void Genome::copyTopSegments(Genome *dest) const
 #endif
 
     outTop->setCoordinates(inTop->getStartPosition(), inTop->getLength());
-    outTop->setParentIndex(inTop->getParentIndex());
-    outTop->setParentReversed(inTop->getParentReversed());
-    outTop->setBottomParseIndex(inTop->getBottomParseIndex());
-    outTop->setNextParalogyIndex(inTop->getNextParalogyIndex());
+    outTop->ts()->setParentIndex(inTop->ts()->getParentIndex());
+    outTop->ts()->setParentReversed(inTop->ts()->getParentReversed());
+    outTop->ts()->setBottomParseIndex(inTop->ts()->getBottomParseIndex());
+    outTop->ts()->setNextParalogyIndex(inTop->ts()->getNextParalogyIndex());
 
     // Check that the sequences from the bottom segments we point to are the same. If not, correct the indices so that they are.
-    if (inTop->getParentIndex() != NULL_INDEX) {
+    if (inTop->ts()->getParentIndex() != NULL_INDEX) {
       inParentBottomSegIt->toParent(inTop);
 
       const Sequence *inParentSequence = inParentBottomSegIt->getSequence();
 
       const Sequence *outParentSequence = outParent->getSequence(inParentSequence->getName());
 
-      hal_index_t inParentSegmentOffset = inTop->getParentIndex() - inParentSequence->getBottomSegmentArrayIndex();
+      hal_index_t inParentSegmentOffset = inTop->ts()->getParentIndex() - inParentSequence->getBottomSegmentArrayIndex();
       hal_index_t outParentSegmentIndex = inParentSegmentOffset + outParentSequence->getBottomSegmentArrayIndex();
 
-      outTop->setParentIndex(outParentSegmentIndex);
+      outTop->ts()->setParentIndex(outParentSegmentIndex);
     }
   }
 }
@@ -210,11 +210,11 @@ void Genome::copyBottomSegments(Genome *dest) const
       for(hal_size_t inChild = 0; inChild < inNc; inChild++) {
         hal_size_t outChild = inChildToOutChild[inChild];
         if (outChild != outNc) {
-          outBotSegIt->setChildIndex(outChild, inBotSegIt->getChildIndex(inChild));
-          outBotSegIt->setChildReversed(outChild, inBotSegIt->getChildReversed(inChild));
+          outBotSegIt->bs()->setChildIndex(outChild, inBotSegIt->bs()->getChildIndex(inChild));
+          outBotSegIt->bs()->setChildReversed(outChild, inBotSegIt->bs()->getChildReversed(inChild));
         }
       }
-      outBotSegIt->setTopParseIndex(inBotSegIt->getTopParseIndex());
+      outBotSegIt->bs()->setTopParseIndex(inBotSegIt->bs()->getTopParseIndex());
     }
   }
 }

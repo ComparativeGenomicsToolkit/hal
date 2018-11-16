@@ -186,10 +186,10 @@ void invertLeaf(Alignment* alignment,
     TopSegmentIteratorPtr top = leaf->getTopSegmentIterator(firstTop + i);
     BottomSegmentIteratorPtr bot =
        parent->getBottomSegmentIterator(lastTop - i);
-    top->setParentIndex(bot->getArrayIndex());
-    top->setParentReversed(true);
-    bot->setChildIndex(0, top->getArrayIndex());
-    bot->setChildReversed(0, true);
+    top->ts()->setParentIndex(bot->getArrayIndex());
+    top->ts()->setParentReversed(true);
+    bot->bs()->setChildIndex(0, top->getArrayIndex());
+    bot->bs()->setChildReversed(0, true);
   }
 }
 
@@ -215,17 +215,17 @@ void dupLeaf(Alignment* alignment,
     hal_index_t prevIdx = i == 0 ? sourceIdx : tgtIdx[i-1];
     TopSegmentIteratorPtr prev = leaf->getTopSegmentIterator(prevIdx);
     BottomSegmentIteratorPtr bot =
-       parent->getBottomSegmentIterator(top->getParentIndex());
+       parent->getBottomSegmentIterator(top->ts()->getParentIndex());
     
-    top->setParentIndex(prev->getParentIndex());
-    top->setParentReversed(tgtRev[i]);
-    bot->setChildIndex(0, NULL_INDEX);
+    top->ts()->setParentIndex(prev->ts()->getParentIndex());
+    top->ts()->setParentReversed(tgtRev[i]);
+    bot->bs()->setChildIndex(0, NULL_INDEX);
 
-    prev->setNextParalogyIndex(top->getArrayIndex());
-    top->setNextParalogyIndex(NULL_INDEX);
+    prev->ts()->setNextParalogyIndex(top->getArrayIndex());
+    top->ts()->setNextParalogyIndex(NULL_INDEX);
     if (i == tgtIdx.size() - 1)
     {
-      top->setNextParalogyIndex(sourceIdx);
+      top->ts()->setNextParalogyIndex(sourceIdx);
     }
   }
 }
@@ -254,10 +254,10 @@ void transLeaf(Alignment* alignment,
     BottomSegmentIteratorPtr tbot =
        parent->getBottomSegmentIterator(tgtIdx + i);
     
-    top->setParentIndex(tbot->getArrayIndex());
-    tbot->setChildIndex(0, top->getArrayIndex());
-    ttop->setParentIndex(bot->getArrayIndex());
-    bot->setChildIndex(0, ttop->getArrayIndex());
+    top->ts()->setParentIndex(tbot->getArrayIndex());
+    tbot->bs()->setChildIndex(0, top->getArrayIndex());
+    ttop->ts()->setParentIndex(bot->getArrayIndex());
+    bot->bs()->setChildIndex(0, ttop->getArrayIndex());
   }
 }
 
@@ -281,8 +281,8 @@ void indelLeaf(Alignment* alignment,
     TopSegmentIteratorPtr top = leaf->getTopSegmentIterator(firstTop + i);
     BottomSegmentIteratorPtr bot =
        parent->getBottomSegmentIterator(lastTop - i);
-    top->setParentIndex(NULL_INDEX);
-    bot->setChildIndex(0, NULL_INDEX);
+    top->ts()->setParentIndex(NULL_INDEX);
+    bot->bs()->setChildIndex(0, NULL_INDEX);
   }
 }
 

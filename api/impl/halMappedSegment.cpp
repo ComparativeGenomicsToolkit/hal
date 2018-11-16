@@ -282,7 +282,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
   {
     BottomSegmentIteratorPtr bot =
         std::dynamic_pointer_cast<BottomSegmentIterator>(s2);
-    hal_index_t lb = bot->getTopParseIndex();
+    hal_index_t lb = bot->bs()->getTopParseIndex();
     hal_index_t ub = lb;
     if ((hal_size_t)bot->getArrayIndex() <
         bot->getGenome()->getNumBottomSegments()-1)
@@ -290,7 +290,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
       bot = bot->clone();
       bot->slice(0,0);
       bot->toRight();
-      ub = bot->getTopParseIndex();
+      ub = bot->bs()->getTopParseIndex();
     }
     if (s1->getArrayIndex() < lb)
     {
@@ -305,7 +305,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
   {
     TopSegmentIteratorPtr top =
         std::dynamic_pointer_cast<TopSegmentIterator>(s2);
-    hal_index_t lb = top->getBottomParseIndex();
+    hal_index_t lb = top->ts()->getBottomParseIndex();
     hal_index_t ub = lb;
     if ((hal_size_t)top->getArrayIndex() < 
         top->getGenome()->getNumTopSegments()-1)
@@ -313,7 +313,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
       top = top->clone();
       top->slice(0,0);
       top->toRight();
-      ub = top->getBottomParseIndex();
+      ub = top->ts()->getBottomParseIndex();
     }
     if (s1->getArrayIndex() < lb)
     {
@@ -664,8 +664,8 @@ hal_size_t MappedSegment::mapUp(
   {
     BottomSegmentIteratorPtr botSegIt = parent->getBottomSegmentIterator();
     TopSegmentIteratorPtr topSegIt = mappedSeg->targetAsTop();
-    if (topSegIt->hasParent() == true && topSegIt->getLength() >= minLength &&
-        (doDupes == true || topSegIt->isCanonicalParalog() == true))
+    if (topSegIt->ts()->hasParent() == true && topSegIt->getLength() >= minLength &&
+        (doDupes == true || topSegIt->ts()->isCanonicalParalog() == true))
     {
       botSegIt->toParent(topSegIt);
       mappedSeg->_target = std::dynamic_pointer_cast<SegmentIterator>(botSegIt);
@@ -742,7 +742,7 @@ hal_size_t MappedSegment::mapDown(
     BottomSegmentIteratorPtr botSegIt =
         std::dynamic_pointer_cast<BottomSegmentIterator>(targetSegIt);
 
-    if (botSegIt->hasChild(childIndex) == true && botSegIt->getLength() >= minLength)
+    if (botSegIt->bs()->hasChild(childIndex) == true && botSegIt->getLength() >= minLength)
     {
       topSegIt->toChild(botSegIt, childIndex);
       mappedSeg->_target = std::dynamic_pointer_cast<SegmentIterator>(topSegIt);
@@ -833,12 +833,12 @@ hal_size_t MappedSegment::mapSelf(
              mappedSeg->getSource()->getGenome());
       results.push_back(newMappedSeg);
       ++added;
-      if (topCopy->hasNextParalogy())
+      if (topCopy->ts()->hasNextParalogy())
       {
         topCopy->toNextParalogy();
       }
     } 
-    while (topCopy->hasNextParalogy() == true && 
+    while (topCopy->ts()->hasNextParalogy() == true && 
            topCopy->getLength() >= minLength &&
            topCopy->getArrayIndex() != top->getArrayIndex());
   }

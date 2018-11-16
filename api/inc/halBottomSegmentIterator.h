@@ -21,8 +21,7 @@ namespace hal {
  * interface and some new methods for jumping around the genome.  
  * Always hidden in smart pointers in the public interface. 
  */
-class BottomSegmentIterator : public virtual BottomSegment,
-                              public virtual SegmentIterator
+class BottomSegmentIterator : public virtual SegmentIterator
 {
 public:
     /** constructor */
@@ -55,12 +54,12 @@ public:
     * @param topSegIt Top iterator to parse down on */
     void toParseDown(const TopSegmentIteratorPtr& topSegIt);
 
-   /** DEPRECATED */
+   /** DEPRECATED: FIXME: or not  */
     BottomSegment* getBottomSegment() {
         return  _bottomSegment.get();
     }
 
-   /** DEPRECATED */
+   /** DEPRECATED FIXME: or not */
     const BottomSegment* getBottomSegment() const {
         return  _bottomSegment.get();
     }
@@ -103,55 +102,8 @@ public:
         return _bottomSegment.get();
     }
     
-    // SEGMENT INTERFACE OVERRIDE
     virtual void print(std::ostream& os) const;
 
-   // BOTTOM SEGMENT INTERFACE
-    virtual hal_size_t getNumChildren() const {
-        return _bottomSegment->getNumChildren();
-    }
-    virtual hal_index_t getChildIndex(hal_size_t i) const {
-          return _bottomSegment->getChildIndex(i);
-    }
-    virtual hal_index_t getChildIndexG(const Genome* childGenome) const {
-          return _bottomSegment->getChildIndexG(childGenome);
-    }
-    virtual bool hasChild(hal_size_t child) const {
-        return _bottomSegment->hasChild(child);
-    }
-    virtual bool hasChildG(const Genome* childGenome) const {
-        return _bottomSegment->hasChildG(childGenome);
-
-    }
-    virtual void setChildIndex(hal_size_t i, hal_index_t childIndex) {
-        _bottomSegment->setChildIndex(i, childIndex);
-    }
-    virtual bool getChildReversed(hal_size_t i) const {
-          return _bottomSegment->getChildReversed(i);
-    }
-    virtual void setChildReversed(hal_size_t child, bool isReversed) {
-        _bottomSegment->setChildReversed(child, isReversed);
-    }
-    virtual hal_index_t getTopParseIndex() const {
-        return _bottomSegment->getTopParseIndex();
-    }
-    virtual void setTopParseIndex(hal_index_t parseIndex) {
-        _bottomSegment->setTopParseIndex(parseIndex);
-    }
-    virtual hal_offset_t getTopParseOffset() const {
-        return _bottomSegment->getTopParseOffset();
-    }
-    virtual bool hasParseUp() const {
-        return _bottomSegment->hasParseUp();
-    }
-    virtual hal_index_t getLeftChildIndex(hal_size_t i) const {
-          assert(_startOffset == 0 && _endOffset == 0);
-          return _bottomSegment->getLeftChildIndex(i);
-    }
-    virtual hal_index_t getRightChildIndex(hal_size_t i) const {
-        assert(_startOffset == 0 && _endOffset == 0);
-        return _bottomSegment->getRightChildIndex(i);
-    }
 private:
     virtual hal_size_t getNumSegmentsInGenome() const {
         return getGenome()->getNumBottomSegments();

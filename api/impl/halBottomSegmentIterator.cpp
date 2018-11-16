@@ -28,11 +28,11 @@ void BottomSegmentIterator::print(ostream& os) const
   
   if (ai != NULL_INDEX && !offRight)
   {
-    os << " numChilds=" << getNumChildren();
-    for (hal_size_t i = 0; i < getNumChildren(); ++i)
+    os << " numChilds=" << bs()->getNumChildren();
+    for (hal_size_t i = 0; i < bs()->getNumChildren(); ++i)
     {
-      os << " cI[" << i << "]=" << getChildIndex(i);
-      os << " cR[" << i << "]=" << getChildReversed(i);
+      os << " cI[" << i << "]=" << bs()->getChildIndex(i);
+      os << " cR[" << i << "]=" << bs()->getChildReversed(i);
     }
   }
 }
@@ -43,11 +43,11 @@ void BottomSegmentIterator::print(ostream& os) const
 void BottomSegmentIterator::toParent(const TopSegmentIteratorPtr& topSegIt)
 {
   _bottomSegment->setArrayIndex(topSegIt->getGenome()->getParent(),
-                                topSegIt->getParentIndex());
+                                topSegIt->ts()->getParentIndex());
   _startOffset = topSegIt->getStartOffset();
   _endOffset = topSegIt->getEndOffset();
   _reversed = topSegIt->getReversed();
-  if (topSegIt->getParentReversed() == true)
+  if (topSegIt->ts()->getParentReversed() == true)
   {
     toReverse();
   }
@@ -58,7 +58,7 @@ void
 BottomSegmentIterator::toParseDown(const TopSegmentIteratorPtr& topSegIt)
 {
     Genome* genome = topSegIt->getGenome();
-  hal_index_t index = topSegIt->getBottomParseIndex();
+  hal_index_t index = topSegIt->ts()->getBottomParseIndex();
   
   _bottomSegment->setArrayIndex(genome, index);
   _reversed = topSegIt->getReversed();

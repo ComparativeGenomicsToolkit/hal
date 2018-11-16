@@ -113,8 +113,8 @@ void extractAlignedRegions(const Genome* genome, ostream* bedStream,
     TopSegmentIteratorPtr topSeg = genome->getTopSegmentIterator();
     for (; (not topSeg->atEnd()); topSeg->toRight())
     {
-      if ((topSeg->hasParent() && complement == false) ||
-          (!topSeg->hasParent() && complement == true))
+      if ((topSeg->ts()->hasParent() && complement == false) ||
+          (!topSeg->ts()->hasParent() && complement == true))
       {
         const Sequence* sequence = topSeg->getSequence();
         *bedStream << sequence->getName() << '\t'
@@ -134,7 +134,7 @@ void extractAlignedRegions(const Genome* genome, ostream* bedStream,
                        << parentSequence->getName() << '\t'
                        << botSeg->getStartPosition() - parentSequence->getStartPosition() << '\t'
                        << 1 + botSeg->getEndPosition() - parentSequence->getStartPosition() << '\t'
-                       << (topSeg->getParentReversed() ? "-" : "+");
+                       << (topSeg->ts()->getParentReversed() ? "-" : "+");
         }
         *bedStream << '\n';
       }

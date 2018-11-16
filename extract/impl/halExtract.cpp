@@ -138,10 +138,10 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
           outTop->toRight())
   {
     outTop->setCoordinates(inTop->getStartPosition(), inTop->getLength());
-    outTop->setParentIndex(inTop->getParentIndex());
-    outTop->setParentReversed(inTop->getParentReversed());
-    outTop->setBottomParseIndex(inTop->getBottomParseIndex());
-    outTop->setNextParalogyIndex(inTop->getNextParalogyIndex());
+    outTop->ts()->setParentIndex(inTop->ts()->getParentIndex());
+    outTop->ts()->setParentReversed(inTop->ts()->getParentReversed());
+    outTop->ts()->setBottomParseIndex(inTop->ts()->getBottomParseIndex());
+    outTop->ts()->setNextParalogyIndex(inTop->ts()->getNextParalogyIndex());
   }
 
   BottomSegmentIteratorPtr inBot = inGenome->getBottomSegmentIterator();
@@ -156,16 +156,16 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
     outBot->setCoordinates(inBot->getStartPosition(), inBot->getLength());
     for (hal_size_t child = 0; child < nc; ++child)
     {
-      outBot->setChildIndex(child, inBot->getChildIndex(child));
-      outBot->setChildReversed(child, inBot->getChildReversed(child));
+      outBot->bs()->setChildIndex(child, inBot->bs()->getChildIndex(child));
+      outBot->bs()->setChildReversed(child, inBot->bs()->getChildReversed(child));
     }
     if (outGenome->getAlignment()->getRootName() == outGenome->getName())
     {
-      outBot->setTopParseIndex(NULL_INDEX);
+      outBot->bs()->setTopParseIndex(NULL_INDEX);
     }
     else
     {
-      outBot->setTopParseIndex(inBot->getTopParseIndex());
+      outBot->bs()->setTopParseIndex(inBot->bs()->getTopParseIndex());
     }
   }
 

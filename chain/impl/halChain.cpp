@@ -157,7 +157,7 @@ void convertBlocks(TopSegmentIteratorPtr firstIt,
       topIt->slice(startOffset, endOffset);
     }
        
-    if (topIt->hasParent() == true)
+    if (topIt->ts()->hasParent() == true)
     {
       botIt->toParent(topIt);
       blocks.resize(blocks.size() + 1);

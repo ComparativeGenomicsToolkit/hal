@@ -242,26 +242,26 @@ void MafBlock::buildTreeR(BottomSegmentIteratorPtr botIt, stTree *tree, bool mod
 
   // attach a node and recurse for each of this segment's children
   // (and paralogous segments)
-  for (hal_size_t i = 0; i < botIt->getNumChildren(); i++) {
-    if (botIt->hasChild(i)) {
+  for (hal_size_t i = 0; i < botIt->bs()->getNumChildren(); i++) {
+    if (botIt->bs()->hasChild(i)) {
       const Genome *child = genome->getChild(i);
       TopSegmentIteratorPtr topIt = child->getTopSegmentIterator();
       topIt->toChild(botIt, i);
       stTree *canonicalParalog = getTreeNode(topIt, modifyEntries);
       stTree_setParent(canonicalParalog, tree);
-      if (topIt->hasParseDown()) {
+      if (topIt->ts()->hasParseDown()) {
         BottomSegmentIteratorPtr childBotIt = child->getBottomSegmentIterator();
         childBotIt->toParseDown(topIt);
         buildTreeR(childBotIt, canonicalParalog, modifyEntries);
       }
       // Traverse the paralogous segments cycle and add those segments as well
-      assert(topIt->isCanonicalParalog());
-      if (topIt->hasNextParalogy()) {
+      assert(topIt->ts()->isCanonicalParalog());
+      if (topIt->ts()->hasNextParalogy()) {
         topIt->toNextParalogy();
-        while(!topIt->isCanonicalParalog()) {
+        while(!topIt->ts()->isCanonicalParalog()) {
           stTree *paralog = getTreeNode(topIt, modifyEntries);
           stTree_setParent(paralog, tree);
-          if(topIt->hasParseDown()) {
+          if(topIt->ts()->hasParseDown()) {
             BottomSegmentIteratorPtr childBotIt = child->getBottomSegmentIterator();
             childBotIt->toParseDown(topIt);
             buildTreeR(childBotIt, paralog, modifyEntries);
@@ -303,11 +303,11 @@ stTree *MafBlock::buildTree(ColumnIteratorPtr colIt, bool modifyEntries)
   } else {
     // Keep heading up the tree until we hit the root segment.
     topIt->toSite(index);
-    while (topIt->hasParent()) {
+    while (topIt->ts()->hasParent()) {
       const Genome *parent = topIt->getGenome()->getParent();
       botIt = parent->getBottomSegmentIterator();
       botIt->toParent(topIt);
-      if(parent->getParent() == NULL || !botIt->hasParseUp()) {
+      if(parent->getParent() == NULL || !botIt->bs()->hasParseUp()) {
         // Reached root genome
         break;
       }
@@ -317,7 +317,7 @@ stTree *MafBlock::buildTree(ColumnIteratorPtr colIt, bool modifyEntries)
   }
 
   stTree *tree = NULL;
-  if(topIt->hasParent() == false && topIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
+  if(topIt->ts()->hasParent() == false && topIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
     // Handle insertions in leaves. botIt doesn't point anywhere since
     // there are no bottom segments.
     tree = getTreeNode(topIt, modifyEntries);
