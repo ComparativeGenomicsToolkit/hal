@@ -76,7 +76,7 @@ void Hdf5ExternalArray::create(PortableH5Location* file,
   }
 
   // create the internal data buffer
-  _bufSize = _chunkSize > 1 ? _chunkSize : _dataSize;
+  _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
   _bufStart = 0;
   _bufEnd = _bufStart + _bufSize - 1;
   delete [] _buf;
@@ -127,7 +127,7 @@ void Hdf5ExternalArray::load(PortableH5Location* file, const H5std_string& path,
   }
   
   // create the internal data buffer
-  _bufSize = _chunkSize > 1 ? _chunkSize : _dataSize;
+  _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
   _bufEnd = _bufStart + _bufSize - 1;
   // set out of range to ensure page happens
   _bufStart = _bufEnd + 1;
@@ -154,13 +154,12 @@ void Hdf5ExternalArray::page(hsize_t i)
   {
     write();
   }
-  assert(_bufSize == _chunkSize > 1 ? _chunkSize : _dataSize);
+  assert(_bufSize == _chunkSize > 1 ? _chunkSize : _size);
   _bufStart = (i / _bufSize) * _bufSize; // todo: review
   _bufEnd = _bufStart + _bufSize - 1;  
 
   if (_bufEnd >= _size)
   {
-    assert(_bufSize != _dataSize);
     _bufEnd = _size - 1;
     _bufSize = _bufEnd - _bufStart + 1;
     _chunkSpace = DataSpace(1, &_bufSize);
