@@ -12,15 +12,17 @@ namespace hal {
     class MMapAlignment;
     
     /**
-     * Mmap implementation of DNAStorage.
+     * Mmap implementation of DNAAccess.
      */
-    class MMapDNAStorage: public DNAStorage {
+    class MMapDNAAccess: public DNAAccess {
         public:
-        MMapDNAStorage(MMapGenome* genome,
-                       hal_index_t index);
+        MMapDNAAccess(MMapGenome* genome,
+                      hal_index_t index);
         
-        virtual ~MMapDNAStorage() {
+        virtual ~MMapDNAAccess() {
         }
+
+        void flush();
 
         protected:
         virtual void fetch(hal_index_t index) const;

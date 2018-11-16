@@ -1,9 +1,10 @@
 #include "mmapGenome.h"
+#include "mmapStorageDriver.h"
 #include "mmapTopSegment.h"
 #include "mmapBottomSegment.h"
 #include "mmapSequence.h"
 #include "mmapSequenceIterator.h"
-#include "mmapDNAIterator.h"
+#include "halDNAIterator.h"
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
 #include "halColumnIterator.h"
@@ -320,15 +321,14 @@ BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmen
 
 DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position)
 {
-  MMapDNAIterator* dnaIt = new MMapDNAIterator(this, position);
-  return DNAIteratorPtr(dnaIt);
+    DNAAccess* dnaAcc = new MMapDNAAccess(this, position);
+    DNAIterator* dnaIt = new DNAIterator(this, DNAAccessPtr(dnaAcc), position);
+    return DNAIteratorPtr(dnaIt);
 }
 
 DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position) const
 {
-  MMapGenome* genome = const_cast<MMapGenome*>(this);
-  MMapDNAIterator* dnaIt = new MMapDNAIterator(genome, position);
-  return DNAIteratorPtr(dnaIt);
+    return const_cast<MMapGenome*>(this)->getDNAIterator(position);
 }
 
 DNAIteratorPtr MMapGenome::getDNAEndIterator() const
@@ -373,8 +373,8 @@ void MMapGenome::getSubString(string& outString, hal_size_t start,
                               hal_size_t length) const
 {
   outString.resize(length);
-  MMapDNAIterator dnaIt(const_cast<MMapGenome*>(this), start);
-  dnaIt.readString(outString, length);
+  DNAIteratorPtr dnaIt(getDNAIterator(start));
+  dnaIt->readString(outString, length);
 }
 
 void MMapGenome::setSubString(const string& inString, 
@@ -386,8 +386,8 @@ void MMapGenome::setSubString(const string& inString,
     throw hal_exception(string("setString: input string has differnt") +
                                "length from target string in genome");
   }
-  MMapDNAIterator dnaIt(this, start);
-  dnaIt.writeString(inString, length);
+  DNAIteratorPtr dnaIt(getDNAIterator(start));
+  dnaIt->writeString(inString, length);
 }
 
 RearrangementPtr MMapGenome::getRearrangement(hal_index_t position,

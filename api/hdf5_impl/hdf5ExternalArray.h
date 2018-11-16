@@ -122,7 +122,12 @@ public:
         return _buf;
     }
 
-    /* flag as dirty if buffer has been modified directly */
+    /* is the buffer dirty? */
+    bool getDirty() const {
+        return _dirty;
+    }
+
+    /*  dirty if buffer has been modified directly */
     void setDirty() {
         _dirty = true;
     }

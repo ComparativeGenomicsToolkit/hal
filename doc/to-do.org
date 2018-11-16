@@ -59,3 +59,6 @@ of DNA.  Maybe pack DNA in mmap?
 Joel: Not entirely sure, but I think so you can work entirely within genome coordinates, and not have to care about sequences.  column iterators for example, would be annoying if you had to iterate through sequences, then through columns within that sequence
 * sharing of HDF5Genome._dnaArray by iterators means multiple iterators in the same genome will not go well.
 * HDF5ExternalArray uses close-ended
+* DNAIterator getArrayIndex() is a confusing name.
+* change Genome is_a SegmentedSequence to has_a
+* change get*Iterator functions that create iterators to create*Iterator

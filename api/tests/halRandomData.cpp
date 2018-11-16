@@ -319,6 +319,7 @@ static void createRandomRootGenome(mt19937& rng,
       dnaIt->setChar(randDNA(rng));
       dnaIt->toRight();
     }
+    dnaIt->flush();
 }
 
 static void createRandomDescendantGenome(mt19937& rng,

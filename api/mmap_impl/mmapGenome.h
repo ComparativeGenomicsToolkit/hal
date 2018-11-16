@@ -39,7 +39,6 @@ private:
 };
 
 class MMapGenome : public Genome {
-    friend class MMapDNAIterator;
 public:
     MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex) :
         Genome(alignment, data->getName(alignment)), _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _metaData(_alignment, _data->_metadataOffset) {
@@ -60,9 +59,6 @@ public:
 
     const std::string& getName() const;
 
-    size_t getTotalSequenceLength() const {
-        return _data->_totalSequenceLength;
-    }
     void setDimensions(
         const std::vector<hal::Sequence::Info>& sequenceDimensions,
         bool storeDNAArrays);

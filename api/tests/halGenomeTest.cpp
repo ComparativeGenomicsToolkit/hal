@@ -183,12 +183,15 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     dnaIt->setChar(ancSeq[i]);
   }
+  dnaIt->flush();
+
   n = leafGenome->getSequenceLength();
   dnaIt = leafGenome->getDNAIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     dnaIt->setChar(ancSeq[i]);
   }
+  dnaIt->flush();
 
   TopSegmentIteratorPtr topIt = leafGenome->getTopSegmentIterator();
   n = leafGenome->getNumTopSegments();
@@ -225,12 +228,16 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
     size_t i = dnaIt->getArrayIndex() % copySeq.size();
     dnaIt->setChar(copySeq[i]);
   }
+  dnaIt->flush();
+
   dnaIt = copyLeafGenome->getDNAIterator();
   n = copyLeafGenome->getSequenceLength();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % copySeq.size();
     dnaIt->setChar(copySeq[i]);
   }
+  dnaIt->flush();
+
   topIt = copyLeafGenome->getTopSegmentIterator();
   n = copyLeafGenome->getNumTopSegments();
   for (; topIt->getArrayIndex() < n; topIt->toRight())

@@ -8,17 +8,26 @@
 #define _HALSTORAGEDRIVER_H
 #include "halCommon.h"
 
+// FIXME: make keep store access more modular to prevent larger number of includes mutual include issues.
+
 namespace hal {
     /**
      * Class for access a genome's DNA sequence. It handles buffering data and only goes
      * to the storage layer when the buffer needs filled, inlining of base access.
      * There can be multiple object active independently on a given genome.  Assumes
-     * that DNA is nibble-encode and handles encoding and decoding
+     * that DNA is nibble-encode and handles encoding and decoding.
      */
-    class DNAStorage {
+    class DNAAccess {
         public:
         /* Destructor */
-        virtual ~DNAStorage() = 0;
+        virtual ~DNAAccess() {
+            if (_dirty) {
+                throw hal_exception("DNAAccess is dirty, flush() should have been called");
+            }
+        }
+
+        /* flush dirty buffer if necessary */
+        virtual void flush() = 0;
 
         /* get a base at the specified index. */
         inline char getBase(hal_index_t index) const {
@@ -35,9 +44,9 @@ namespace hal {
         
         protected:
         /* constructor */
-        DNAStorage(hal_index_t startIndex,
-                   hal_index_t endIndex,
-                   char* buffer) :
+        DNAAccess(hal_index_t startIndex,
+                  hal_index_t endIndex,
+                  char* buffer) :
             _startIndex(startIndex),
             _endIndex(endIndex),
             _buffer(buffer),

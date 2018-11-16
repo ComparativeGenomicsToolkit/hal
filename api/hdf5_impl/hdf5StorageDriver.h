@@ -12,15 +12,18 @@ namespace hal {
     class HDF5ExternalArray;
     
     /**
-     * HDF5 implementation of DNAStorage.
+     * HDF5 implementation of DNAAccess.
      */
-    class HDF5DNAStorage: public DNAStorage {
+    class HDF5DNAAccess: public DNAAccess {
         public:
-        HDF5DNAStorage(HDF5Genome* genome,
+        HDF5DNAAccess(HDF5Genome* genome,
                        HDF5ExternalArray* dnaArray,
                        hal_index_t index);
         
-        virtual ~HDF5DNAStorage();
+        virtual ~HDF5DNAAccess() {
+        }
+
+        void flush();
 
         protected:
         virtual void fetch(hal_index_t index) const;

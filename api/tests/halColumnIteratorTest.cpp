@@ -399,6 +399,9 @@ void ColumnIteratorInvTest::createCallBack(Alignment* alignment)
     dDnaIt->toRight();
     sDnaIt->toRight();
   }
+  gDnaIt->flush();
+  dDnaIt->flush();
+  sDnaIt->flush();
 
   // child-dad edge has inversion in 0th segment
   bi = dad->getBottomSegmentIterator();

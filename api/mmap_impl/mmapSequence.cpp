@@ -4,7 +4,7 @@
 #include "halGappedBottomSegmentIterator.h"
 #include "mmapSequence.h"
 #include "mmapGenome.h"
-#include "mmapDNAIterator.h"
+#include "halDNAIterator.h"
 
 using namespace std;
 using namespace hal;
@@ -40,20 +40,20 @@ BottomSegmentIteratorPtr MMapSequence::getBottomSegmentIterator(
 DNAIteratorPtr MMapSequence::getDNAIterator(hal_index_t position)
 {
   hal_size_t idx = position + getStartPosition();
-  MMapDNAIterator* newIt = new MMapDNAIterator(_genome, idx);
-  return DNAIteratorPtr(newIt);
+  DNAIteratorPtr dnaIt(getDNAIterator(idx));
+  return DNAIteratorPtr(dnaIt);
 }
 
 DNAIteratorPtr MMapSequence::getDNAIterator(hal_index_t position) const
 {
   hal_size_t idx = position + getStartPosition();
-  MMapDNAIterator* newIt = new MMapDNAIterator(_genome, idx);
-  return DNAIteratorPtr(newIt);
+  DNAIteratorPtr dnaIt(_genome->getDNAIterator(idx));
+  return DNAIteratorPtr(dnaIt);
 }
 
 DNAIteratorPtr MMapSequence::getDNAEndIterator() const
 {
-  return getDNAIterator(getSequenceLength());
+  return _genome->getDNAEndIterator();
 }
 
 ColumnIteratorPtr MMapSequence::getColumnIterator(
@@ -99,8 +99,8 @@ void MMapSequence::getSubString(std::string& outString, hal_size_t start,
 {
   hal_size_t idx = start + getStartPosition();
   outString.resize(length);
-  MMapDNAIterator dnaIt(_genome, idx);
-  dnaIt.readString(outString, length);
+  DNAIteratorPtr dnaIt(getDNAIterator(idx));
+  dnaIt->readString(outString, length);
 }
 
 void MMapSequence::setSubString(const std::string& inString, 
@@ -114,8 +114,8 @@ void MMapSequence::setSubString(const std::string& inString,
                         + " which is of length " + std::to_string(length));
   }
   hal_size_t idx = start + getStartPosition();
-  MMapDNAIterator dnaIt(_genome, idx);
-  dnaIt.writeString(inString, length);
+  DNAIteratorPtr dnaIt(getDNAIterator(idx));
+  dnaIt->writeString(inString, length);
 }
 
 RearrangementPtr MMapSequence::getRearrangement(hal_index_t position,

@@ -231,6 +231,7 @@ void Genome::copySequence(Genome *dest) const
   {
     outDna->setChar(inDna->getChar());
   }
+  outDna->flush();
 }
 
 void Genome::copyMetadata(Genome *dest) const

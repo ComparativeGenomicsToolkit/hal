@@ -7,13 +7,14 @@
 #include <algorithm>
 #include "H5Cpp.h"
 #include "hdf5Genome.h"
+#include "hdf5StorageDriver.h"
 #include "hdf5TopSegment.h"
 #include "hdf5BottomSegment.h"
 #include "hdf5Sequence.h"
 #include "hdf5SequenceIterator.h"
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
-#include "hdf5DNAIterator.h"
+#include "halDNAIterator.h"
 #include "halColumnIterator.h"
 #include "halRearrangement.h"
 #include "halGappedTopSegmentIterator.h"
@@ -575,17 +576,14 @@ BottomSegmentIteratorPtr HDF5Genome::getBottomSegmentIterator(
 DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position)
 {
   assert(position / 2 <= (hal_index_t)_dnaArray.getSize());
-  HDF5DNAIterator* dnaIt = new HDF5DNAIterator(this, position);
+  DNAAccess* dnaAcc = new HDF5DNAAccess(this, &_dnaArray, position);
+  DNAIterator* dnaIt = new DNAIterator(this, DNAAccessPtr(dnaAcc), position);
   return DNAIteratorPtr(dnaIt);
 }
 
 DNAIteratorPtr HDF5Genome::getDNAIterator(hal_index_t position) const
 {
-  assert(_dnaArray.getSize() == 0 || 
-         position / 2 <= (hal_index_t)_dnaArray.getSize());
-  HDF5Genome* genome = const_cast<HDF5Genome*>(this);
-  HDF5DNAIterator* dnaIt = new HDF5DNAIterator(genome, position);
-  return DNAIteratorPtr(dnaIt);
+    return const_cast<HDF5Genome*>(this)->getDNAIterator(position);
 }
 
 DNAIteratorPtr HDF5Genome::getDNAEndIterator() const
@@ -630,8 +628,8 @@ void HDF5Genome::getSubString(string& outString, hal_size_t start,
                               hal_size_t length) const
 {
   outString.resize(length);
-  HDF5DNAIterator dnaIt(const_cast<HDF5Genome*>(this), start);
-  dnaIt.readString(outString, length);
+  DNAIteratorPtr dnaIt(getDNAIterator(start));
+  dnaIt->readString(outString, length);
 }
 
 void HDF5Genome::setSubString(const string& inString, 
@@ -640,11 +638,11 @@ void HDF5Genome::setSubString(const string& inString,
 {
   if (length != inString.length())
   {
-    throw hal_exception(string("setString: input string has differnt") +
+    throw hal_exception(string("setString: input string has different") +
                                "length from target string in genome");
   }
-  HDF5DNAIterator dnaIt(this, start);
-  dnaIt.writeString(inString, length);
+  DNAIteratorPtr dnaIt(getDNAIterator(start));
+  dnaIt->writeString(inString, length);
 }
 
 RearrangementPtr HDF5Genome::getRearrangement(hal_index_t position,

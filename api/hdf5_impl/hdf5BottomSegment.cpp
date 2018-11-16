@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include "hdf5BottomSegment.h"
 #include "hdf5TopSegment.h"
-#include "hdf5DNAIterator.h"
+#include "halDNAIterator.h"
 
 using namespace std;
 using namespace H5;
@@ -75,8 +75,8 @@ void HDF5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
 
 void HDF5BottomSegment::getString(string& outString) const
 {
-  HDF5DNAIterator di(const_cast<HDF5Genome*>(_genome), getStartPosition());
-  di.readString(outString, getLength()); 
+    DNAIteratorPtr dnaIt(_genome->getDNAIterator(getStartPosition()));
+    dnaIt->readString(outString, getLength()); 
 }
 
 bool HDF5BottomSegment::isMissingData(double nThreshold) const
@@ -85,14 +85,14 @@ bool HDF5BottomSegment::isMissingData(double nThreshold) const
   {
     return false;
   }  
-  HDF5DNAIterator di(const_cast<HDF5Genome*>(_genome), getStartPosition());
+  DNAIteratorPtr dnaIt(_genome->getDNAIterator(getStartPosition()));
   size_t length = getLength();
   size_t maxNs = nThreshold * (double)length;
   size_t Ns = 0;
   char c;
-  for (size_t i = 0; i < length; ++i, di.toRight())
+  for (size_t i = 0; i < length; ++i, dnaIt->toRight())
   {
-    c = di.getChar();
+    c = dnaIt->getChar();
     if (c == 'N' || c == 'n')
     {
       ++Ns;

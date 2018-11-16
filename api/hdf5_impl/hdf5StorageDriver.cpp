@@ -11,23 +11,31 @@ using namespace hal;
 
 static const int UDC_FETCH_SIZE = 64 * 1024;  // size to bring in for UDC access
 
-HDF5DNAStorage::HDF5DNAStorage(HDF5Genome* genome,
-                               HDF5ExternalArray* dnaArray,
-                               hal_index_t index):
-    DNAStorage(0, 0, NULL),
+HDF5DNAAccess::HDF5DNAAccess(HDF5Genome* genome,
+                             HDF5ExternalArray* dnaArray,
+                             hal_index_t index):
+    DNAAccess(0, 0, NULL),
     _genome(genome),
     _dnaArray(dnaArray) {
     fetch(index);
 }
 
-void HDF5DNAStorage::fetch(hal_index_t index) const {
+void HDF5DNAAccess::flush() {
+    // ensure that marked dirty
+    if (_dirty) {
+        _dnaArray->setDirty();
+    }
+    _dirty = false;
+}
+    
+void HDF5DNAAccess::fetch(hal_index_t index) const {
     if (_dirty) {
         _dnaArray->setDirty();
     }
     _dnaArray->page(index / 2);
     // DANGER _dnaArray is close-ended
-    _startIndex = _dnaArray->getBufStart() / 2;
-    _endIndex = (_dnaArray->getBufEnd() + 2) / 2; // 2 for open-ended convert and round up
+    _startIndex = 2 * _dnaArray->getBufStart();
+    _endIndex = 2 * (_dnaArray->getBufEnd() + 1);
     _buffer = _dnaArray->getBuf();
     _dirty = false;
 }

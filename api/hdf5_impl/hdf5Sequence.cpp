@@ -9,7 +9,7 @@
 #include <iostream>
 #include <cassert>
 #include "hdf5Sequence.h"
-#include "hdf5DNAIterator.h"
+#include "halDNAIterator.h"
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
 #include "halColumnIterator.h"
@@ -183,22 +183,17 @@ BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
 
 DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position)
 {
-  hal_size_t idx = position + getStartPosition();
-  HDF5DNAIterator* newIt = new HDF5DNAIterator(_genome, idx);
-  return DNAIteratorPtr(newIt);
+  return _genome->getDNAIterator(position + getStartPosition());
 }
 
 DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
 {
-  hal_size_t idx = position + getStartPosition();
-  HDF5Genome* genome = const_cast<HDF5Genome*>(_genome);
-  HDF5DNAIterator* dnaIt = new HDF5DNAIterator(genome, idx);
-  return DNAIteratorPtr(dnaIt);
+  return _genome->getDNAIterator(position + getStartPosition());
 }
 
 DNAIteratorPtr HDF5Sequence::getDNAEndIterator() const
 {
-  return getDNAIterator(getSequenceLength());
+    return _genome->getDNAEndIterator();
 }
 
 ColumnIteratorPtr HDF5Sequence::getColumnIterator(
@@ -244,8 +239,8 @@ void HDF5Sequence::getSubString(std::string& outString, hal_size_t start,
 {
   hal_size_t idx = start + getStartPosition();
   outString.resize(length);
-  HDF5DNAIterator dnaIt(const_cast<HDF5Genome*>(_genome), idx);
-  dnaIt.readString(outString, length);
+  DNAIteratorPtr dnaIt(getDNAIterator(idx));
+  dnaIt->readString(outString, length);
 }
 
 void HDF5Sequence::setSubString(const std::string& inString, 
@@ -259,8 +254,8 @@ void HDF5Sequence::setSubString(const std::string& inString,
                           + " which is of length " + std::to_string(length));
   }
   hal_size_t idx = start + getStartPosition();
-  HDF5DNAIterator dnaIt(_genome, idx);
-  dnaIt.writeString(inString, length);
+  DNAIteratorPtr dnaIt(getDNAIterator(idx));
+  dnaIt->writeString(inString, length);
 }
 
 RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position,

@@ -140,14 +140,14 @@ bool GappedTopSegmentIterator::isMissingData(double nThreshold) const
     return false;
   }
   hal_index_t start = min(_left->getStartPosition(), _right->getEndPosition());
-  DNAIteratorPtr di = _left->getGenome()->getDNAIterator(start);
+  DNAIteratorPtr dnaIt = _left->getGenome()->getDNAIterator(start);
   hal_size_t length = getLength();
   size_t maxNs = nThreshold * (double)length;
   size_t Ns = 0;
   char c;
-  for (size_t i = 0; i < length; ++i, di->toRight())
+  for (size_t i = 0; i < length; ++i, dnaIt->toRight())
   {
-    c = di->getChar();
+    c = dnaIt->getChar();
     if (c == 'N' || c == 'n')
     {
       ++Ns;
