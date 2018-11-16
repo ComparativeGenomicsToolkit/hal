@@ -40,15 +40,15 @@ void hal::MMapFile::validateWriteAccess() const {
 
 /* setup pointer to header */
 void hal::MMapFile::setHeaderPtr() {
-    fetchIfNeeded(0, sizeof(mmapHeader));
-    _header = static_cast<mmapHeader*>(_basePtr);
+    fetchIfNeeded(0, sizeof(MMapHeader));
+    _header = static_cast<MMapHeader*>(_basePtr);
 }
 
 /* validate the file header and save a pointer to it. */
 void hal::MMapFile::loadHeader(bool markDirty) {
-    if (_fileSize < sizeof(mmapHeader)) {
+    if (_fileSize < sizeof(MMapHeader)) {
         throw hal_exception(_alignmentPath + ": file size of " + std::to_string(_fileSize)
-                            + " is less that header size of " + std::to_string(sizeof(mmapHeader)));
+                            + " is less that header size of " + std::to_string(sizeof(MMapHeader)));
     }
     setHeaderPtr();
 
@@ -63,10 +63,10 @@ void hal::MMapFile::loadHeader(bool markDirty) {
                             + "file version " + _header->mmapVersion
                             + ", mmap API version " + MMAP_VERSION);
     }
-    if ((_header->nextOffset < sizeof(mmapHeader)) or (_header->nextOffset > _fileSize)) {
+    if ((_header->nextOffset < sizeof(MMapHeader)) or (_header->nextOffset > _fileSize)) {
         throw hal_exception(_alignmentPath + ": header nextOffset field out of bounds, probably file corruption");
     }
-    if ((_header->rootOffset < sizeof(mmapHeader)) or (_header->rootOffset > _fileSize)) {
+    if ((_header->rootOffset < sizeof(MMapHeader)) or (_header->rootOffset > _fileSize)) {
         throw hal_exception(_alignmentPath + ": header rootOffset field out of bounds, probably file corruption");
     }
     if (_header->dirty) {
@@ -87,7 +87,7 @@ void hal::MMapFile::createHeader() {
     strncpy(_header->mmapVersion, MMAP_VERSION.c_str(), sizeof(_header->mmapVersion)-1);
     assert(HAL_VERSION.size() < sizeof(_header->halVersion));
     strncpy(_header->halVersion, HAL_VERSION.c_str(), sizeof(_header->halVersion)-1);
-    _header->nextOffset = alignRound(sizeof(mmapHeader));
+    _header->nextOffset = alignRound(sizeof(MMapHeader));
     _header->dirty = true;
     _header->nextOffset = _header->nextOffset;
 }
@@ -328,7 +328,7 @@ hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
     udcMMap(_udcFile);
 
     // get base point and fetch header
-    _basePtr = udcMMapFetch(_udcFile, 0, sizeof(mmapHeader));
+    _basePtr = udcMMapFetch(_udcFile, 0, sizeof(MMapHeader));
     _fileSize = udcSizeFromCache(const_cast<char*>(_alignmentPath.c_str()),
                                  const_cast<char*>(udcCacheDir.c_str()));
     loadHeader(false);

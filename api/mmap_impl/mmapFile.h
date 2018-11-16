@@ -8,7 +8,7 @@
 
 namespace hal {
     /* header for the file */
-    struct mmapHeader {
+    struct MMapHeader {
         char format[32];
         char mmapVersion[32];
         char halVersion[32];
@@ -16,7 +16,7 @@ namespace hal {
         size_t rootOffset;
         bool dirty;
     };
-    typedef struct mmapHeader mmapHeader;
+    typedef struct MMapHeader MMapHeader;
 
     /**
      * An mmapped HAL file.  This handles creation and opening of mapped
@@ -73,7 +73,7 @@ namespace hal {
         const std::string _alignmentPath;   // name of file for errors
         unsigned _mode;       // access mode
         void *_basePtr;       // location file is mapped
-        mmapHeader *_header;  // pointer to header
+        MMapHeader *_header;  // pointer to header
         size_t _fileSize;     // size of file
         bool _mustFetch;      // fetch must be called on each access.
 
