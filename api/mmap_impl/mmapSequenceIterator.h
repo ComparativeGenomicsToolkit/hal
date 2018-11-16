@@ -12,8 +12,8 @@ public:
 
     // SEQUENCE ITERATOR METHODS
     SequenceIteratorPtr clone() const { return SequenceIteratorPtr(new MMapSequenceIterator(_genome, _index)); };
-    void toNext() { _sequence._data += 1; };
-    void toPrev() { _sequence._data -= 1; };
+    void toNext() { _index++; _sequence._data = _genome->getSequenceData(_index); };
+    void toPrev() { _index--; _sequence._data = _genome->getSequenceData(_index); };
     const Sequence* getSequence() const { return &_sequence; };
     bool equals(SequenceIteratorPtr other) const {
         const MMapSequenceIterator* mmapOther = reinterpret_cast<
