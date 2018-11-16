@@ -51,11 +51,6 @@ DnaIteratorPtr MMapSequence::getDnaIterator(hal_index_t position) const
   return DnaIteratorPtr(dnaIt);
 }
 
-DnaIteratorPtr MMapSequence::getDNAEndIterator() const
-{
-  return _genome->getDNAEndIterator();
-}
-
 ColumnIteratorPtr MMapSequence::getColumnIterator(
   const std::set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,

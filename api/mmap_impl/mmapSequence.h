@@ -80,8 +80,6 @@ public:
 
    DnaIteratorPtr getDnaIterator(hal_index_t position) const;
 
-   DnaIteratorPtr getDNAEndIterator() const;
-
    ColumnIteratorPtr getColumnIterator(const std::set<const Genome*>* targets,
                                             hal_size_t maxInsertLength,
                                             hal_index_t position,

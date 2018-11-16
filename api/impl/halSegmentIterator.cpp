@@ -57,8 +57,8 @@ const Sequence* SegmentIterator::getSequence() const
 
 hal_index_t SegmentIterator::getStartPosition() const
 {
-  assert (inRange() == true);
-  if (_reversed == false)
+  assert (inRange());
+  if (not _reversed)
   {
     return getSegment()->getStartPosition() + _startOffset;
   }
@@ -71,8 +71,8 @@ hal_index_t SegmentIterator::getStartPosition() const
 
 hal_index_t SegmentIterator::getEndPosition() const
 {
-  assert (inRange() == true);
-  if (_reversed == false)
+  assert (inRange());
+  if (not _reversed)
   {
     return getStartPosition() + (hal_index_t)(getLength() - 1);
   }
@@ -84,15 +84,15 @@ hal_index_t SegmentIterator::getEndPosition() const
 
 hal_size_t SegmentIterator::getLength() const
 {
-  assert (inRange() == true);
+  assert (inRange());
   return getSegment()->getLength() - _endOffset - _startOffset;
 }
 
 void SegmentIterator::getString(std::string& outString) const
 {
-  assert (inRange() == true);
+  assert (inRange());
   getSegment()->getString(outString);
-  if (_reversed == true)
+  if (_reversed)
   {
     reverseComplement(outString);
   }
@@ -237,13 +237,13 @@ void SegmentIterator::print(ostream& os) const
 //////////////////////////////////////////////////////////////////////////////
 void SegmentIterator::toReverse()
 {
-  assert (inRange() == true);
+  assert (inRange());
   _reversed = !_reversed;
 }
 
 void SegmentIterator::toReverseInPlace()
 {
-  assert (inRange() == true);
+  assert (inRange());
   _reversed = !_reversed;
   swap(_startOffset, _endOffset);
 }
@@ -410,7 +410,7 @@ void SegmentIterator::toSite(hal_index_t position, bool slice)
   while (overlaps(position) == false)
   {
     assert(left != right);
-    if (rightOf(position) == true)
+    if (rightOf(position))
     {
       right = getSegment()->getArrayIndex();
       rightStartPosition = getSegment()->getStartPosition();
@@ -425,7 +425,7 @@ void SegmentIterator::toSite(hal_index_t position, bool slice)
     }
     else
     {
-      assert(leftOf(position) == true);
+      assert(leftOf(position));
       left = getSegment()->getArrayIndex();
       leftStartPosition = getSegment()->getStartPosition();
       avgLen = double(rightStartPosition - leftStartPosition) / (right - left);
@@ -439,9 +439,9 @@ void SegmentIterator::toSite(hal_index_t position, bool slice)
     }
   }
   
-  assert(overlaps(position) == true);
+  assert(overlaps(position));
   
-  if (slice == true)
+  if (slice)
   {
     _startOffset = position - getSegment()->getStartPosition();
     _endOffset = getSegment()->getStartPosition() + 
@@ -452,12 +452,4 @@ void SegmentIterator::toSite(hal_index_t position, bool slice)
 //       swap(_startOffset, _endOffset);
     }
   }  
-}
-
-bool SegmentIterator::atEnd() const {
-    if (_reversed == false) {
-        return ((hal_size_t)getArrayIndex() >= getNumSegmentsInGenome());
-    } else {
-        return (getArrayIndex() < 0);
-    }
 }

@@ -586,11 +586,6 @@ DnaIteratorPtr Hdf5Genome::getDnaIterator(hal_index_t position) const
     return const_cast<Hdf5Genome*>(this)->getDnaIterator(position);
 }
 
-DnaIteratorPtr Hdf5Genome::getDNAEndIterator() const
-{
-  return getDnaIterator(getSequenceLength());
-}
-
 ColumnIteratorPtr Hdf5Genome::getColumnIterator(
   const set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,

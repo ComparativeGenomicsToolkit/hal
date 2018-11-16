@@ -55,7 +55,13 @@ public:
 
     /** has the iterator reach the end of the traversal in the direction of
      * movement? */
-    virtual bool atEnd() const;
+    bool atEnd() const {
+        if (not _reversed) {
+            return ((hal_size_t)getArrayIndex() >= getNumSegmentsInGenome());
+        } else {
+            return (getArrayIndex() < 0);
+        }
+    }
     
     // FIXME: document or change way getting segment works
     virtual Segment* getSegment() = 0;

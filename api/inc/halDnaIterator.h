@@ -65,6 +65,16 @@ public:
         _index = index;
     }
 
+    /** has the iterator reach the end of the traversal in the direction of
+     * movement? */
+    bool atEnd() const {
+        if (not _reversed) {
+            return _index >= (hal_index_t)_genome->getSequenceLength();
+        } else {
+            return _index < 0;
+        }
+    }
+    
    /** switch to base's reverse complement */
     void toReverse() {
         _reversed = !_reversed;

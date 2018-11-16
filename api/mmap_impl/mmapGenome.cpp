@@ -331,11 +331,6 @@ DnaIteratorPtr MMapGenome::getDnaIterator(hal_index_t position) const
     return const_cast<MMapGenome*>(this)->getDnaIterator(position);
 }
 
-DnaIteratorPtr MMapGenome::getDNAEndIterator() const
-{
-  return getDnaIterator(getSequenceLength());
-}
-
 ColumnIteratorPtr MMapGenome::getColumnIterator(
   const set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,
