@@ -28,7 +28,10 @@ public:
     * required for each sequence when creating a new genome */
    struct Info
    {
-      Info(){}
+       Info():
+        _length(0),
+        _numTopSegments(0),
+        _numBottomSegments(0) {}
       Info(const std::string& name,
            hal_size_t length,
            hal_size_t numTopSegments,
@@ -49,7 +52,8 @@ public:
     * segments and nothing else */
    struct UpdateInfo
    {
-      UpdateInfo(){}
+       UpdateInfo():
+           _numSegments(0) {}
       UpdateInfo(const std::string& name,
                  hal_size_t numSegments) :
         _name(name),

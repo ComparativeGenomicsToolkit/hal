@@ -32,10 +32,11 @@ of DNA.  Maybe pack DNA in mmap?
     this segment requires reading the start position of the following segment.
 * lastColumn()  should be atEnd
 * Segment interface:
+- Is really an accessor, not a segment itself, as it can be moved..  Change name.
+  or have SegmentIterator.getSegment() return an actually object.
 - Why setArrayIndex vs creating new segment object?  This seems to so object can
   be reused by iterator, it doesn't really represent a segment, can't cache.   So seems more like a function bag.
-- Function setArrayIndex is a bad name.
-- can't cache
+- Function setArrayIndex is a bit confusing (which array?)
 - segment is region of sequence with start and length -- determined by how much gapless alignment there is to its parent/children
 * Things that probably don't work very well:
 - hal::Rearrangement
@@ -58,7 +59,10 @@ of DNA.  Maybe pack DNA in mmap?
 * how come Genome is_a SegementSequence instead of has_a bunch of SgementedSequences?
 Joel: Not entirely sure, but I think so you can work entirely within genome coordinates, and not have to care about sequences.  column iterators for example, would be annoying if you had to iterate through sequences, then through columns within that sequence
 * sharing of Hdf5Genome._dnaArray by iterators means multiple iterators in the same genome will not go well.
-* Hdf5ExternalArray uses close-ended
+* Hdf5ExternalArray 
+- uses close-ended
+- combines buffer with array representation,should be two classes.
+- also it is slightly broken -- it reads in the entire thing for unchunked arrays
 * DnaIterator getArrayIndex() is a confusing name.
 * change Genome is_a SegmentedSequence to has_a
 * change get*Iterator functions that create iterators to create*Iterator
