@@ -26,12 +26,10 @@ void Genome::copyDimensions(Genome *dest) const
   vector<Sequence::Info> dimensions;
   const Alignment *inAlignment = getAlignment();
   SequenceIteratorPtr seqIt = getSequenceIterator();
-  SequenceIteratorPtr seqEndIt = getSequenceEndIterator();
-
   bool root = inAlignment->getParentName(getName()).empty();
   bool leaf = inAlignment->getChildNames(getName()).empty();     
   
-  for (; seqIt != seqEndIt; seqIt->toNext())
+  for (; not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     Sequence::Info info(sequence->getName(),
@@ -47,8 +45,7 @@ void Genome::copyTopDimensions(Genome *dest) const
 {
   vector<Sequence::UpdateInfo> dimensions;
   SequenceIteratorPtr seqIt = getSequenceIterator();
-  SequenceIteratorPtr seqEndIt = getSequenceEndIterator();
-  for (; seqIt != seqEndIt; seqIt->toNext())
+  for (; not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     if (sequence->getSequenceLength() == 0 &&
@@ -68,9 +65,8 @@ void Genome::copyBottomDimensions(Genome *dest) const
 {
   vector<Sequence::UpdateInfo> dimensions;
   SequenceIteratorPtr seqIt = getSequenceIterator();
-  SequenceIteratorPtr seqEndIt = getSequenceEndIterator();
 
-  for (; seqIt != seqEndIt; seqIt->toNext())
+  for (; not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     if (sequence->getSequenceLength() == 0 &&
@@ -178,9 +174,8 @@ void Genome::copyBottomSegments(Genome *dest) const
   // sequence in the dest genome, then copy over the segments for each
   // sequence.
   SequenceIteratorPtr seqIt = getSequenceIterator();
-  SequenceIteratorPtr seqEndIt = getSequenceEndIterator();
 
-  for (; seqIt != seqEndIt; seqIt->toNext())
+  for (; not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence *inSeq = seqIt->getSequence();
     const Sequence *outSeq = dest->getSequence(inSeq->getName());

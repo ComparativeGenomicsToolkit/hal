@@ -226,11 +226,6 @@ SequenceIteratorPtr MMapGenome::getSequenceIterator(
   return SequenceIteratorPtr(seqIt);
 }
 
-SequenceIteratorPtr MMapGenome::getSequenceEndIterator() const
-{
-  return getSequenceIterator(getNumSequences());
-}
-
 MetaData* MMapGenome::getMetaData()
 {
     return &_metaData;

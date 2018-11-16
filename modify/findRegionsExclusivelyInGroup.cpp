@@ -46,8 +46,7 @@ int main(int argc, char *argv[])
   // FIXME tmp
   ostream &os = cout;
   SequenceIteratorPtr seqIt = referenceGenome->getSequenceIterator();
-  SequenceIteratorPtr seqItEnd = referenceGenome->getSequenceEndIterator();
-  for (; seqIt != seqItEnd; seqIt->toNext()) {
+  for (; not seqIt->atEnd(); seqIt->toNext()) {
     ColumnIteratorPtr colIt = seqIt->getSequence()->getColumnIterator(NULL, 0, 0, NULL_INDEX, false, true);
     bool inRegion = false;
     BedLine curBedLine;

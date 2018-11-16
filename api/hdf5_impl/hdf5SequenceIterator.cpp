@@ -42,6 +42,12 @@ void Hdf5SequenceIterator::toPrev()
   --_sequence._index;
 }
 
+bool Hdf5SequenceIterator::atEnd() const
+{
+    return (_sequence._index < 0)
+        or (_sequence._index >= (hal_index_t)_sequence._genome->_sequenceNameArray.getSize());
+}
+
 const Sequence* Hdf5SequenceIterator::getSequence() const
 {
   assert(_sequence._index >= 0 && _sequence._index < 

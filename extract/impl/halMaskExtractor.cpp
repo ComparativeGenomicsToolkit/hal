@@ -37,8 +37,7 @@ void MaskExtractor::extract(const Alignment* alignment,
   _extendPct = extendPct;
 
   SequenceIteratorPtr seqIt = _genome->getSequenceIterator();
-  SequenceIteratorPtr seqEnd = _genome->getSequenceEndIterator();
-  for (; !seqIt->equals(seqEnd); seqIt->toNext())
+  for (; not seqIt->atEnd(); seqIt->toNext())
   {
     _sequence = seqIt->getSequence();
     if (_sequence->getSequenceLength() > 0)

@@ -31,7 +31,11 @@ public:
 
    /** Move iterator to previous sequence in the genome */
    virtual void toPrev() = 0;
-   
+
+    /** has the iterator reach the end of the traversal in the direction of
+     * movement? */
+    virtual bool atEnd() const = 0;
+    
    /** Return pointer to the sequence */
    virtual const Sequence* getSequence() const = 0;
 

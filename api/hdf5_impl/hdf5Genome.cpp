@@ -471,11 +471,6 @@ SequenceIteratorPtr Hdf5Genome::getSequenceIterator(
   return SequenceIteratorPtr(seqIt);
 }
 
-SequenceIteratorPtr Hdf5Genome::getSequenceEndIterator() const
-{
-  return getSequenceIterator(getNumSequences());
-}
-
 MetaData* Hdf5Genome::getMetaData()
 {
   return _metaData;

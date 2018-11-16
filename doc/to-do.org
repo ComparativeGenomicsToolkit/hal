@@ -62,3 +62,7 @@ Joel: Not entirely sure, but I think so you can work entirely within genome coor
 * DnaIterator getArrayIndex() is a confusing name.
 * change Genome is_a SegmentedSequence to has_a
 * change get*Iterator functions that create iterators to create*Iterator
+* Sequence is a transient accessory, not an actual object..
+* should change so no longer need marker Sequence data to indicate end
+* Doubt that the maybe of the *Iterator.toPrev() methods work.
+* are equals methods actually needed.

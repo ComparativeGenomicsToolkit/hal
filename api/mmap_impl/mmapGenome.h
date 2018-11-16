@@ -84,8 +84,6 @@ public:
     SequenceIteratorPtr getSequenceIterator(
         hal_index_t position) const;
 
-    SequenceIteratorPtr getSequenceEndIterator() const;
-
     MetaData* getMetaData();
 
     const MetaData* getMetaData() const;

@@ -102,12 +102,11 @@ void getDimensions(const Alignment* outAlignment, const Genome* genome,
 {
   assert(dimensions.size() == 0);
   SequenceIteratorPtr seqIt = genome->getSequenceIterator();
-  SequenceIteratorPtr seqEndIt = genome->getSequenceEndIterator();
-
+  
   bool root = outAlignment->getParentName(genome->getName()).empty();
   bool leaf = outAlignment->getChildNames(genome->getName()).empty();     
   
-  for (; seqIt != seqEndIt; seqIt->toNext())
+  for (; seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     Sequence::Info info(sequence->getName(),

@@ -94,10 +94,6 @@ public:
    virtual SequenceIteratorPtr getSequenceIterator(
      hal_index_t position = 0) const = 0;
 
-   /** Get a sequence end iterator (one beyond last element in list) 
-    */
-   virtual SequenceIteratorPtr getSequenceEndIterator() const = 0;
-
    /** Get genome-specific metadata for this genome */
    virtual MetaData* getMetaData() = 0;
 

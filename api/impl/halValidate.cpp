@@ -332,8 +332,7 @@ void hal::validateGenome(const Genome* genome)
   hal_size_t totalLength = 0;
   
   SequenceIteratorPtr seqIt = genome->getSequenceIterator();
-  SequenceIteratorPtr seqEnd = genome->getSequenceEndIterator();
-  for (; seqIt != seqEnd; seqIt->toNext())
+  for (; not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     validateSequence(sequence);

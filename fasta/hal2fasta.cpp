@@ -196,9 +196,8 @@ void printGenome(ostream& outStream,
     }
 
     SequenceIteratorPtr seqIt = genome->getSequenceIterator();
-    SequenceIteratorPtr seqEndIt = genome->getSequenceEndIterator();
     hal_size_t runningLength = 0;
-    for (; seqIt != seqEndIt; seqIt->toNext())
+    for (; not seqIt->atEnd(); seqIt->toNext())
     {
       const Sequence* sequence = seqIt->getSequence();
       hal_size_t seqLen = sequence->getSequenceLength();

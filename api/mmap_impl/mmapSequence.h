@@ -9,7 +9,7 @@ class MMapSequence : public Sequence {
     friend class MMapSequenceIterator;
 public:
     MMapSequence(MMapGenome *genome,
-                 MMapSequenceData *data) : _genome(genome), _data(data) {};
+                 MMapSequenceData *data) : _genome(genome), _data(data) {}
 
     MMapSequence(MMapGenome *genome,
                  MMapSequenceData *data,
@@ -34,17 +34,17 @@ public:
     };
 
    // SEQUENCE INTERFACE
-   std::string getName() const { return _data->getName(_genome->_alignment); };
+   std::string getName() const { return _data->getName(_genome->_alignment); }
 
-   std::string getFullName() const { return _genome->getName() + "." + _data->getName(_genome->_alignment); };
+   std::string getFullName() const { return _genome->getName() + "." + _data->getName(_genome->_alignment); }
 
-   const Genome* getGenome() const { return _genome; };
+   const Genome* getGenome() const { return _genome; }
 
-   Genome* getGenome() { return _genome; };
+   Genome* getGenome() { return _genome; }
 
-   hal_index_t getStartPosition() const { return _data->_startPosition; };
+   hal_index_t getStartPosition() const { return _data->_startPosition; }
 
-   hal_index_t getEndPosition() const { return _data->_startPosition + _data->_length; };
+   hal_index_t getEndPosition() const { return _data->_startPosition + _data->_length; }
 
    hal_index_t getArrayIndex() const { return _data->_index; };
 
@@ -54,15 +54,15 @@ public:
 
    // SEGMENTED SEQUENCE INTERFACE
 
-   hal_size_t getSequenceLength() const { return _data->_length; };
+   hal_size_t getSequenceLength() const { return _data->_length; }
    
-   hal_size_t getNumTopSegments() const { return _data->_numTopSegments; };
+   hal_size_t getNumTopSegments() const { return _data->_numTopSegments; }
 
-   hal_size_t getNumBottomSegments() const { return _data->_numBottomSegments; };
+   hal_size_t getNumBottomSegments() const { return _data->_numBottomSegments; }
 
-   void setNumTopSegments(hal_size_t topSegments) { _data->_numTopSegments = topSegments; };
+   void setNumTopSegments(hal_size_t topSegments) { _data->_numTopSegments = topSegments; }
 
-   void setNumBottomSegments(hal_size_t bottomSegments) { _data->_numBottomSegments = bottomSegments; };
+   void setNumBottomSegments(hal_size_t bottomSegments) { _data->_numBottomSegments = bottomSegments; }
 
    TopSegmentIteratorPtr getTopSegmentIterator(
      hal_index_t position);
@@ -81,15 +81,15 @@ public:
    DnaIteratorPtr getDnaIterator(hal_index_t position) const;
 
    ColumnIteratorPtr getColumnIterator(const std::set<const Genome*>* targets,
-                                            hal_size_t maxInsertLength,
-                                            hal_index_t position,
-                                            hal_index_t lastPosition,
-                                            bool noDupes,
-                                            bool noAncestors,
-                                            bool reverseStrand,
-                                            bool unique,
-                                            bool onlyOrthologs) const;
-
+                                       hal_size_t maxInsertLength,
+                                       hal_index_t position,
+                                       hal_index_t lastPosition,
+                                       bool noDupes,
+                                       bool noAncestors,
+                                       bool reverseStrand,
+                                       bool unique,
+                                       bool onlyOrthologs) const;
+    
    void getString(std::string& outString) const;
 
    void setString(const std::string& inString);
@@ -113,7 +113,7 @@ public:
      hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
      bool atomic) const;
 
-   void setName(const std::string &newName) { _data->setName(_genome->_alignment, newName); };
+   void setName(const std::string &newName) { _data->setName(_genome->_alignment, newName); }
 
     void setTopSegmentStartIndex(hal_index_t index) { _data->_topSegmentStartIndex = index; }
     void setBottomSegmentStartIndex(hal_index_t index) { _data->_bottomSegmentStartIndex = index; }

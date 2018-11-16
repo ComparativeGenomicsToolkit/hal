@@ -26,6 +26,7 @@ public:
    SequenceIteratorPtr clone() const;
    void toNext();
    void toPrev();
+    bool atEnd() const;
    const Sequence* getSequence() const;
    bool equals(SequenceIteratorPtr other) const;
 
