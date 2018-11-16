@@ -4,7 +4,7 @@
 #include "halGenome.h"
 #include "halAlignment.h"
 #include "halBottomSegmentIterator.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 #include "halMetaData.h"
 #include "halSegmentIterator.h"
 #include "halSequenceIterator.h"
@@ -222,8 +222,8 @@ void Genome::copyBottomSegments(Genome *dest) const
 
 void Genome::copySequence(Genome *dest) const
 {
-  DNAIteratorPtr inDna = getDNAIterator();
-  DNAIteratorPtr outDna = dest->getDNAIterator();
+  DnaIteratorPtr inDna = getDnaIterator();
+  DnaIteratorPtr outDna = dest->getDnaIterator();
   hal_size_t n = getSequenceLength();
   assert(n == dest->getSequenceLength());
   for (; (hal_size_t)inDna->getArrayIndex() < n; inDna->toRight(), 

@@ -34,15 +34,15 @@ namespace hal {
  * expose the raw void* data) because the elements' sizes are not known
  * at compile time, and we don't want to move it around once its read.
  */
-class HDF5ExternalArray
+class Hdf5ExternalArray
 {
 public:
  
    /** Constructor */
-   HDF5ExternalArray();
+   Hdf5ExternalArray();
 
    /** Destructor */
-   virtual ~HDF5ExternalArray();
+   virtual ~Hdf5ExternalArray();
 
    /** Create a new dataset in specifed location
     * @param file Pointer to the HDF5 parent in which to create array
@@ -171,13 +171,13 @@ private:
 
 private:
 
-   HDF5ExternalArray(const HDF5ExternalArray&);
-   HDF5ExternalArray& operator=(const HDF5ExternalArray&);
+   Hdf5ExternalArray(const Hdf5ExternalArray&);
+   Hdf5ExternalArray& operator=(const Hdf5ExternalArray&);
 };  
 
 // INLINE MEMBERS
 
-inline const char* HDF5ExternalArray::get(hsize_t i)
+inline const char* Hdf5ExternalArray::get(hsize_t i)
 {
   assert(i < _size);
   if (i < _bufStart || i > _bufEnd)
@@ -188,7 +188,7 @@ inline const char* HDF5ExternalArray::get(hsize_t i)
   return _buf + (i - _bufStart) * _dataSize;
 }
 
-inline char* HDF5ExternalArray::getUpdate(hsize_t i)
+inline char* Hdf5ExternalArray::getUpdate(hsize_t i)
 {
   if (i >= _size)
   {
@@ -203,31 +203,31 @@ inline char* HDF5ExternalArray::getUpdate(hsize_t i)
   return _buf + (i - _bufStart) * _dataSize;
 }
 
-inline hsize_t HDF5ExternalArray::getSize() const
+inline hsize_t Hdf5ExternalArray::getSize() const
 {
   return _size;
 }
 
 template<typename T> 
-inline T HDF5ExternalArray::getValue(hsize_t index, hsize_t offset) const 
+inline T Hdf5ExternalArray::getValue(hsize_t index, hsize_t offset) const 
 {
   assert (offset + sizeof(T) <= _dataSize);
   //even though paging causes the class to change state, we
   //still consider getValue a const function since the array's 
   //contents don't change.
-  HDF5ExternalArray* stripConstThis = const_cast<HDF5ExternalArray*>(this);
+  Hdf5ExternalArray* stripConstThis = const_cast<Hdf5ExternalArray*>(this);
   return *reinterpret_cast<const T*>(stripConstThis->get(index) + offset);
 }
 
 template<typename T> 
-inline void HDF5ExternalArray::setValue(hsize_t index, hsize_t offset, T val)
+inline void Hdf5ExternalArray::setValue(hsize_t index, hsize_t offset, T val)
 {
   assert (offset + sizeof(T) <= _dataSize);
   T* entry = reinterpret_cast<T*>(getUpdate(index) + offset);
   *entry = val;
 }
 
-inline const H5::DataType& HDF5ExternalArray::getDataType() const
+inline const H5::DataType& Hdf5ExternalArray::getDataType() const
 {
   return _dataType;
 }

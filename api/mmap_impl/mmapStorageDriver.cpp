@@ -11,9 +11,9 @@ using namespace hal;
 
 static const int UDC_FETCH_SIZE = 64 * 1024;  // size to bring in for UDC access
 
-MMapDNAAccess::MMapDNAAccess(MMapGenome* genome,
+MMapDnaAccess::MMapDnaAccess(MMapGenome* genome,
                              hal_index_t index):
-    DNAAccess(0, 0, NULL),
+    DnaAccess(0, 0, NULL),
     _genome(genome),
     _isUdcProtocol(dynamic_cast<MMapAlignment*>(_genome->getAlignment())->getMMapFile()->isUdcProtocol()) {
     if (_isUdcProtocol) {
@@ -25,12 +25,12 @@ MMapDNAAccess::MMapDNAAccess(MMapGenome* genome,
     }
 }
 
-void MMapDNAAccess::flush() {
+void MMapDnaAccess::flush() {
     // kernel handles page out
     _dirty = false;
 }
 
-void MMapDNAAccess::fetch(hal_index_t index) const {
+void MMapDnaAccess::fetch(hal_index_t index) const {
     if (_isUdcProtocol) {
         _startIndex = 2 * ( index / 2);  // even boundary
         _endIndex = std::max(hal_size_t(_startIndex + UDC_FETCH_SIZE),

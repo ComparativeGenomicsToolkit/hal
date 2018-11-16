@@ -320,7 +320,7 @@ void ColumnIterator::recursiveUpdate(bool init)
     {    
       linkTopIt->_it = refSequence->getTopSegmentIterator();
       linkTopIt->_it->toSite(_stack.top()->_index, true);
-      linkTopIt->_dna = refGenome->getDNAIterator(_stack.top()->_index);
+      linkTopIt->_dna = refGenome->getDnaIterator(_stack.top()->_index);
       if (_reversed == true)
       {
         linkTopIt->_it->toReverseInPlace();
@@ -383,7 +383,7 @@ void ColumnIterator::recursiveUpdate(bool init)
     {
       linkBotIt->_it = refSequence->getBottomSegmentIterator();
       linkBotIt->_it->toSite(_stack.top()->_index, true);
-      linkBotIt->_dna = refGenome->getDNAIterator(_stack.top()->_index);
+      linkBotIt->_dna = refGenome->getDnaIterator(_stack.top()->_index);
       if (_reversed == true)
       {
         linkBotIt->_it->toReverseInPlace();
@@ -527,7 +527,7 @@ static stTree *getTreeNode(SegmentIteratorPtr segIt)
   std::string label(segIt->getGenome()->getName() + "." + seq->getName() + "|" + std::to_string(segIt->getStartPosition() - seq->getStartPosition()));
   stTree_setLabel(ret, label.c_str());
 
-  DNAIteratorPtr *dnaIt = new DNAIteratorPtr(genome->getDNAIterator(segIt->getStartPosition()));
+  DnaIteratorPtr *dnaIt = new DnaIteratorPtr(genome->getDnaIterator(segIt->getStartPosition()));
   if (segIt->getReversed()) {
     (*dnaIt)->toReverse();
   }
@@ -661,7 +661,7 @@ static void clearTree_R(stTree *tree)
   {
     clearTree_R(stTree_getChild(tree, i));
   }
-  delete (DNAIteratorPtr *) stTree_getClientData(tree);
+  delete (DnaIteratorPtr *) stTree_getClientData(tree);
 }
 
 void ColumnIterator::clearTree()
@@ -689,7 +689,7 @@ void ColumnIterator::updateParent(LinkedTopIterator* linkTopIt)
       assert(parentGenome != NULL);
       linkTopIt->_parent = linkTopIt->_entry->newBottom();
       linkTopIt->_parent->_it = parentGenome->getBottomSegmentIterator();
-      linkTopIt->_parent->_dna = parentGenome->getDNAIterator();
+      linkTopIt->_parent->_dna = parentGenome->getDnaIterator();
       hal_size_t numChildren = parentGenome->getNumChildren();
       if (numChildren > linkTopIt->_parent->_children.size())
       {
@@ -752,7 +752,7 @@ void ColumnIterator::updateChild(LinkedBottomIterator* linkBotIt,
       assert(childGenome != NULL);
       linkBotIt->_children[index] = linkBotIt->_entry->newTop();
       linkBotIt->_children[index]->_it = childGenome->getTopSegmentIterator();
-      linkBotIt->_children[index]->_dna = childGenome->getDNAIterator();
+      linkBotIt->_children[index]->_dna = childGenome->getDnaIterator();
       linkBotIt->_children[index]->_parent = linkBotIt;
     }
     
@@ -799,7 +799,7 @@ void ColumnIterator::updateNextTopDup(LinkedTopIterator* linkTopIt)
     {
       currentTopIt->_nextDup = currentTopIt->_entry->newTop();
       currentTopIt->_nextDup->_it = genome->getTopSegmentIterator();
-      currentTopIt->_nextDup->_dna = genome->getDNAIterator();
+      currentTopIt->_nextDup->_dna = genome->getDnaIterator();
       currentTopIt->_nextDup->_parent = currentTopIt->_parent;
     }
     
@@ -841,7 +841,7 @@ void ColumnIterator::updateParseUp(LinkedBottomIterator* linkBotIt)
     {
       linkBotIt->_topParse = linkBotIt->_entry->newTop();
       linkBotIt->_topParse->_it = genome->getTopSegmentIterator();
-      linkBotIt->_topParse->_dna = genome->getDNAIterator();
+      linkBotIt->_topParse->_dna = genome->getDnaIterator();
       linkBotIt->_topParse->_bottomParse = linkBotIt;
     }
     
@@ -875,7 +875,7 @@ void ColumnIterator::updateParseDown(LinkedTopIterator* linkTopIt)
     {
       linkTopIt->_bottomParse = linkTopIt->_entry->newBottom();
       linkTopIt->_bottomParse->_it = genome->getBottomSegmentIterator();
-      linkTopIt->_bottomParse->_dna = genome->getDNAIterator();
+      linkTopIt->_bottomParse->_dna = genome->getDnaIterator();
       linkTopIt->_bottomParse->_topParse = linkTopIt;
       hal_size_t numChildren = genome->getNumChildren();
       if (numChildren > linkTopIt->_bottomParse->_children.size())
@@ -934,7 +934,7 @@ void ColumnIterator::nextFreeIndex()
   _stack.top()->_index = index;
 }
 
-bool ColumnIterator::colMapInsert(DNAIteratorPtr dnaIt) {
+bool ColumnIterator::colMapInsert(DnaIteratorPtr dnaIt) {
   const Sequence* sequence = dnaIt->getSequence();
   const Genome* genome = dnaIt->getGenome();
   assert(sequence != NULL);

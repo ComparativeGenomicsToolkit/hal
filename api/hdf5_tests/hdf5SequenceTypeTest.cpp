@@ -66,12 +66,12 @@ void hdf5SequenceTypeTest(CuTest *testCase)
       setup();
       try 
       {
-        CompType idxDatatype = HDF5Sequence::idxDataType();
-        StrType nameDatatype = HDF5Sequence::nameDataType(length);
+        CompType idxDatatype = Hdf5Sequence::idxDataType();
+        StrType nameDatatype = Hdf5Sequence::nameDataType(length);
         H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
 
-        HDF5ExternalArray myIdxArray;
-        HDF5ExternalArray myNameArray;
+        Hdf5ExternalArray myIdxArray;
+        Hdf5ExternalArray myNameArray;
         DSetCreatPropList cparms;
         if (chunkSize > 0)
         {
@@ -85,7 +85,7 @@ void hdf5SequenceTypeTest(CuTest *testCase)
         hal_index_t startPosition = 0;
         for (hsize_t i = 0; i < N; ++i)
         {
-          HDF5Sequence sequence(NULL, &myIdxArray, &myNameArray, i);
+          Hdf5Sequence sequence(NULL, &myIdxArray, &myNameArray, i);
           Sequence::Info seqInfo(genName(i, length), i * 2, i * 3, i * 4);
           sequence.set(startPosition, seqInfo, totalTopSegments, 
                        totalBottomSegments);
@@ -99,15 +99,15 @@ void hdf5SequenceTypeTest(CuTest *testCase)
         file.close();
 
         H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);
-        HDF5ExternalArray readIdxArray;
-        HDF5ExternalArray readNameArray;
+        Hdf5ExternalArray readIdxArray;
+        Hdf5ExternalArray readNameArray;
         readIdxArray.load(&rfile, datasetName);
         readNameArray.load(&rfile, datasetName + "_n");
         
         startPosition = 0;
         for (hsize_t i = 0; i < N; ++i)
         {
-          HDF5Sequence sequence(NULL, &readIdxArray, &readNameArray, i);
+          Hdf5Sequence sequence(NULL, &readIdxArray, &readNameArray, i);
           CuAssertTrue(testCase,
                        sequence.getName() == genName(i, length));
           CuAssertTrue(testCase, 

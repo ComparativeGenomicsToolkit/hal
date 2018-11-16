@@ -218,7 +218,7 @@ static void getReferenceNodes_R(stTree *colTree, const Genome *refGenome,
     getReferenceNodes_R(stTree_getChild(colTree, i), refGenome, refNodes);
   }
 
-  DNAIteratorPtr *dnaIt = (DNAIteratorPtr *) stTree_getClientData(colTree);
+  DnaIteratorPtr *dnaIt = (DnaIteratorPtr *) stTree_getClientData(colTree);
   if ((*dnaIt)->getGenome() == refGenome) {
     assert((refGenome->getNumChildren() != 0) ^
            (stTree_getChildNumber(colTree) == 0));
@@ -249,9 +249,9 @@ static stTree *stTree_getMRCA_tmp(stTree *node1, stTree *node2) {
     return ret;
 }
 
-static void addSubtreeToOrthologSet(stTree *tree, set <const Genome *> &targetGenomes, set<DNAIteratorPtr *> *orthologSet)
+static void addSubtreeToOrthologSet(stTree *tree, set <const Genome *> &targetGenomes, set<DnaIteratorPtr *> *orthologSet)
 {
-  DNAIteratorPtr *dnaIt = (DNAIteratorPtr *) stTree_getClientData(tree);
+  DnaIteratorPtr *dnaIt = (DnaIteratorPtr *) stTree_getClientData(tree);
   if (targetGenomes.count((*dnaIt)->getGenome()))
   {
     orthologSet->insert(dnaIt);
@@ -262,14 +262,14 @@ static void addSubtreeToOrthologSet(stTree *tree, set <const Genome *> &targetGe
   }
 }
 
-// Remove any ptrs to DNAIteratorPtrs that belong to the same
+// Remove any ptrs to DnaIteratorPtrs that belong to the same
 // genome as another entry in the set.
-static void removeDuplicatedGenomes(set<DNAIteratorPtr *> *orthologSet)
+static void removeDuplicatedGenomes(set<DnaIteratorPtr *> *orthologSet)
 {
   set<const Genome *> seen, genomesToRemove;
 
-  // Find genomes that have more than one DNAIterator in the set.
-  for (set<DNAIteratorPtr *>::const_iterator i = orthologSet->begin();
+  // Find genomes that have more than one DnaIterator in the set.
+  for (set<DnaIteratorPtr *>::const_iterator i = orthologSet->begin();
        i != orthologSet->end(); i++) {
     const Genome *genome = (**i)->getGenome();
     if (seen.count(genome))
@@ -281,7 +281,7 @@ static void removeDuplicatedGenomes(set<DNAIteratorPtr *> *orthologSet)
 
   // Go through the set again and remove any genomes that have more
   // than one element.
-  for (set<DNAIteratorPtr *>::const_iterator i = orthologSet->begin();
+  for (set<DnaIteratorPtr *>::const_iterator i = orthologSet->begin();
        i != orthologSet->end(); ) {
     const Genome *genome = (**i)->getGenome();
     if (genomesToRemove.count(genome)) {
@@ -298,7 +298,7 @@ static void removeDuplicatedGenomes(set<DNAIteratorPtr *> *orthologSet)
 // bases from a column tree. Only clear orthologs are added.
 static void getOrthologs(stTree *colTree, const Genome *refGenome,
                          set<const Genome *> &targetGenomes,
-                         map<DNAIteratorPtr *, set<DNAIteratorPtr *> *> *orthologs)
+                         map<DnaIteratorPtr *, set<DnaIteratorPtr *> *> *orthologs)
 {
   set<stTree *> refNodes;
   getReferenceNodes_R(colTree, refGenome, &refNodes);
@@ -317,8 +317,8 @@ static void getOrthologs(stTree *colTree, const Genome *refGenome,
     // Use those coalescences as "stops" and traverse up the tree from
     // the ref nodes. The maximal subtrees below a ref node containing
     // one ref node will contain the orthologs.
-    DNAIteratorPtr *refDnaIt = (DNAIteratorPtr *) stTree_getClientData(*refNodeIt);
-    set<DNAIteratorPtr *> *orthologSet = new set<DNAIteratorPtr *>();
+    DnaIteratorPtr *refDnaIt = (DnaIteratorPtr *) stTree_getClientData(*refNodeIt);
+    set<DnaIteratorPtr *> *orthologSet = new set<DnaIteratorPtr *>();
     (*orthologs)[refDnaIt] = orthologSet;
     stTree *curNode = *refNodeIt;
     while (stTree_getParent(curNode) != NULL && refCoalescences.count(stTree_getParent(curNode)) == 0)
@@ -381,15 +381,15 @@ static void countSnps(const Genome* refGenome,
       continue;
     }
 
-    map<DNAIteratorPtr *, set<DNAIteratorPtr *> *> orthologs;
+    map<DnaIteratorPtr *, set<DnaIteratorPtr *> *> orthologs;
     if (doDupes) {
       stTree *colTree = colIt->getTree();
       getOrthologs(colTree, refGenome, targetGenomes, &orthologs);
     } else {
       const ColumnIterator::ColumnMap *cols = colIt->getColumnMap();
       ColumnIterator::ColumnMap::const_iterator colMapIt;
-      DNAIteratorPtr *refDnaIt = NULL;
-      set<DNAIteratorPtr *> *orthologSet = new set<DNAIteratorPtr *>();
+      DnaIteratorPtr *refDnaIt = NULL;
+      set<DnaIteratorPtr *> *orthologSet = new set<DnaIteratorPtr *>();
       for (colMapIt = cols->begin(); colMapIt != cols->end(); colMapIt++) {
         const Genome *genome = colMapIt->first->getGenome();
         ColumnIterator::DNASet *dnaIts = colMapIt->second;
@@ -399,8 +399,8 @@ static void countSnps(const Genome* refGenome,
         if (dnaIts->size() != 1) {
           throw hal_exception("column iterator with noDupes has target dup");
         }
-        DNAIteratorPtr dnaIt = dnaIts->at(0);
-        DNAIteratorPtr *dnaItToInsert = new DNAIteratorPtr(genome->getDNAIterator(dnaIt->getArrayIndex()));
+        DnaIteratorPtr dnaIt = dnaIts->at(0);
+        DnaIteratorPtr *dnaItToInsert = new DnaIteratorPtr(genome->getDnaIterator(dnaIt->getArrayIndex()));
         if (dnaIt->getReversed()) {
           (*dnaItToInsert)->toReverse();
         }
@@ -421,10 +421,10 @@ static void countSnps(const Genome* refGenome,
 
     // Now that we have the set of reference bases and their
     // orthologs, just call SNPs.
-    for (map<DNAIteratorPtr *, set<DNAIteratorPtr *> *>::const_iterator orthologsIt = orthologs.begin(); orthologsIt != orthologs.end(); orthologsIt++)
+    for (map<DnaIteratorPtr *, set<DnaIteratorPtr *> *>::const_iterator orthologsIt = orthologs.begin(); orthologsIt != orthologs.end(); orthologsIt++)
     {
-      DNAIteratorPtr refDnaIt = *orthologsIt->first;
-      set<DNAIteratorPtr *> *orthologSet = orthologsIt->second;
+      DnaIteratorPtr refDnaIt = *orthologsIt->first;
+      set<DnaIteratorPtr *> *orthologSet = orthologsIt->second;
       char refDna = tolower(refDnaIt->getBase());
       hal_size_t numDifferentSpecies = 0; // # of species w/ base
                                           // different from ref
@@ -433,9 +433,9 @@ static void countSnps(const Genome* refGenome,
         // Obviously shouldn't call snps here.
         goto cleanup;
       }
-      for (set<DNAIteratorPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
+      for (set<DnaIteratorPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
       {
-        DNAIteratorPtr targetDnaIt = **orthologIt;
+        DnaIteratorPtr targetDnaIt = **orthologIt;
         char targetDna = tolower(targetDnaIt->getBase());
         if (targetDna == 'n')
         {
@@ -464,7 +464,7 @@ static void countSnps(const Genome* refGenome,
         // then finally the orthologs, in the same order that they
         // were spit out in the header.
         vector<char> orthologFields(targetGenomes.size());// initialized to '\0'
-        for (set<DNAIteratorPtr *>::const_iterator i = orthologSet->begin();
+        for (set<DnaIteratorPtr *>::const_iterator i = orthologSet->begin();
              i != orthologSet->end(); i++)
         {
           char targetDna = (**i)->getBase();
@@ -484,7 +484,7 @@ static void countSnps(const Genome* refGenome,
       }
       cleanup:
       if (!doDupes) {
-          for (set<DNAIteratorPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
+          for (set<DnaIteratorPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
           {
               delete *orthologIt;
           }

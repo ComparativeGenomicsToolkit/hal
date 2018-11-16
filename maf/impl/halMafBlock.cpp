@@ -94,7 +94,7 @@ void MafBlock::resetEntries()
 }
 
 void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence, 
-                         DNAIteratorPtr dna, bool clearSequence)
+                         DnaIteratorPtr dna, bool clearSequence)
 {
   string sequenceName = getName(sequence);
   if (entry->_name != sequenceName || 
@@ -132,7 +132,7 @@ void MafBlock::initEntry(MafBlockEntry* entry, const Sequence* sequence,
 
 inline void MafBlock::updateEntry(MafBlockEntry* entry, 
                                   const Sequence* sequence,
-                                  DNAIteratorPtr dna)
+                                  DnaIteratorPtr dna)
 {
   if (dna.get() != NULL)
   {
@@ -355,14 +355,14 @@ void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree)
       if (e == _entries.end() || e->first != sequence)
       {
         MafBlockEntry* entry = new MafBlockEntry(_stringBuffers);
-        initEntry(entry, sequence, DNAIteratorPtr());      
+        initEntry(entry, sequence, DnaIteratorPtr());      
         e = _entries.insert(Entries::value_type(sequence, entry));  
       }
       else
       {
         assert (e->first == sequence);
         assert (e->second->_name == getName(sequence));
-        initEntry(e->second, sequence, DNAIteratorPtr());
+        initEntry(e->second, sequence, DnaIteratorPtr());
       }
     }
 
@@ -439,7 +439,7 @@ void MafBlock::appendColumn(ColumnIteratorPtr col)
     {
       while (e->first != sequence && e != _entries.end())
       {
-        updateEntry(e->second, NULL, DNAIteratorPtr());
+        updateEntry(e->second, NULL, DnaIteratorPtr());
         ++e;
       }
       assert(e != _entries.end());
@@ -452,7 +452,7 @@ void MafBlock::appendColumn(ColumnIteratorPtr col)
   
   for (; e != _entries.end(); ++e)
   {
-    updateEntry(e->second, NULL, DNAIteratorPtr());
+    updateEntry(e->second, NULL, DnaIteratorPtr());
   }
 }
 

@@ -18,26 +18,26 @@ typedef struct _stTree stTree;
 
 namespace hal {
 
-class HDF5Genome;
+class Hdf5Genome;
 /** 
  * HDF5 implementation of hal::Alignment
  */
-class HDF5Alignment : public Alignment
+class Hdf5Alignment : public Alignment
 {
 public:
     /* check if first bit of file has HDF5 header */
     static bool isHdf5File(const std::string& initialBytes);
        
-   HDF5Alignment(const std::string& alignmentPath,
+   Hdf5Alignment(const std::string& alignmentPath,
                  unsigned mode,
                  const H5::FileCreatPropList& fileCreateProps,
                  const H5::FileAccPropList& fileAccessProps,
                  const H5::DSetCreatPropList& datasetCreateProps,
                  bool inMemory=false);
-   HDF5Alignment(const std::string& alignmentPath,
+   Hdf5Alignment(const std::string& alignmentPath,
                  unsigned mode,
                  const CLParser* parser);
-   ~HDF5Alignment();
+   ~Hdf5Alignment();
 
     static void defineOptions(CLParser* parser,
                               unsigned mode);
@@ -111,9 +111,9 @@ private:
                         childNames);
 
     private:
-    HDF5Alignment() {
+    Hdf5Alignment() {
     }
-    HDF5Alignment(const HDF5Alignment&) {
+    Hdf5Alignment(const Hdf5Alignment&) {
     }
     void initializeFromOptions(const CLParser* parser);
     void create();
@@ -149,7 +149,7 @@ private:
    stTree* _tree;
     mutable std::map<std::string, stTree*> _nodeMap;
    bool _dirty;
-    mutable std::map<std::string, HDF5Genome*> _openGenomes;
+    mutable std::map<std::string, Hdf5Genome*> _openGenomes;
 };
 
 }

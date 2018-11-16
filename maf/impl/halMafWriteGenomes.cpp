@@ -546,7 +546,7 @@ void MafWriteGenomes::initEmptySegments()
           _topSegment->setParentReversed(false);
           _topSegment->setNextParalogyIndex(NULL_INDEX);
         }
-        DNAIteratorPtr dna = sequence->getDNAIterator(startPosition);
+        DnaIteratorPtr dna = sequence->getDnaIterator(startPosition);
         for (hal_size_t i = 0; i < length; ++i)
         {
           dna->setBase('N');

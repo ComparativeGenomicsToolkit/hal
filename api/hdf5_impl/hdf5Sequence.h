@@ -14,21 +14,21 @@
 
 namespace hal {
 
-class HDF5SequenceIterator;
+class Hdf5SequenceIterator;
 
-class HDF5Sequence : public Sequence
+class Hdf5Sequence : public Sequence
 {
-   friend class HDF5SequenceIterator;
+   friend class Hdf5SequenceIterator;
 
 public:
 
-   HDF5Sequence(HDF5Genome* genome,
-                HDF5ExternalArray* idxArray,
-                HDF5ExternalArray* nameArray,
+   Hdf5Sequence(Hdf5Genome* genome,
+                Hdf5ExternalArray* idxArray,
+                Hdf5ExternalArray* nameArray,
                 hal_index_t index);
 
    /** Destructor */
-   ~HDF5Sequence();
+   ~Hdf5Sequence();
 
    // SEQUENCE INTERFACE
    std::string getName() const;
@@ -69,11 +69,11 @@ public:
    BottomSegmentIteratorPtr getBottomSegmentIterator(
      hal_index_t position) const;
 
-   DNAIteratorPtr getDNAIterator(hal_index_t position);
+   DnaIteratorPtr getDnaIterator(hal_index_t position);
 
-   DNAIteratorPtr getDNAIterator(hal_index_t position) const;
+   DnaIteratorPtr getDnaIterator(hal_index_t position) const;
 
-   DNAIteratorPtr getDNAEndIterator() const;
+   DnaIteratorPtr getDNAEndIterator() const;
 
    ColumnIteratorPtr getColumnIterator(const std::set<const Genome*>* targets,
                                             hal_size_t maxInsertLength,
@@ -138,10 +138,10 @@ private:
    static const size_t bottomSegmentArrayIndexOffset;
    static const size_t totalSize;
    
-   HDF5ExternalArray* _idxArray;
-   HDF5ExternalArray* _nameArray;
+   Hdf5ExternalArray* _idxArray;
+   Hdf5ExternalArray* _nameArray;
    hal_index_t _index;
-   HDF5Genome* _genome;
+   Hdf5Genome* _genome;
 };
 
 }

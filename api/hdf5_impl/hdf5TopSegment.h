@@ -14,7 +14,7 @@
 
 namespace hal {
 
-class HDF5TopSegment : public TopSegment
+class Hdf5TopSegment : public TopSegment
 {
 public:
 
@@ -22,12 +22,12 @@ public:
     * @param genome Smart pointer to genome to which segment belongs
     * @param array HDF5 array containg segment
     * @param index Index of segment in the array */
-   HDF5TopSegment(HDF5Genome* genome,
-                  HDF5ExternalArray* array,
+   Hdf5TopSegment(Hdf5Genome* genome,
+                  Hdf5ExternalArray* array,
                   hal_index_t index);
 
    /** Destructor */
-   ~HDF5TopSegment();
+   ~Hdf5TopSegment();
 
    // SEGMENT INTERFACE
    void setArrayIndex(Genome* genome, hal_index_t arrayIndex);
@@ -86,137 +86,137 @@ private:
    static const size_t parentReversedOffset;
    static const size_t totalSize;
 
-   HDF5ExternalArray* _array;
+   Hdf5ExternalArray* _array;
    hal_index_t _index;
-    HDF5Genome* _genome;
+    Hdf5Genome* _genome;
 };
 
 //INLINE members
-inline void HDF5TopSegment::setArrayIndex(Genome* genome, 
+inline void Hdf5TopSegment::setArrayIndex(Genome* genome, 
                                           hal_index_t arrayIndex)
 {
-  _genome = dynamic_cast<HDF5Genome*>(genome);
+  _genome = dynamic_cast<Hdf5Genome*>(genome);
   assert(_genome != NULL);
   _array = &_genome->_topArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;
 }
 
-inline hal_index_t HDF5TopSegment::getStartPosition() const
+inline hal_index_t Hdf5TopSegment::getStartPosition() const
 {
   return _array->getValue<hal_index_t>(_index, genomeIndexOffset);
 }
 
-inline hal_index_t HDF5TopSegment::getEndPosition() const
+inline hal_index_t Hdf5TopSegment::getEndPosition() const
 {
   return getStartPosition() + (hal_index_t)(getLength() - 1);
 }
 
-inline hal_size_t HDF5TopSegment::getLength() const
+inline hal_size_t Hdf5TopSegment::getLength() const
 {
   return _array->getValue<hal_size_t>(_index + 1, genomeIndexOffset) - 
      _array->getValue<hal_size_t>(_index, genomeIndexOffset);
 }
 
-inline const Genome* HDF5TopSegment::getGenome() const
+inline const Genome* Hdf5TopSegment::getGenome() const
 {
   return _genome;
 }
 
-inline Genome* HDF5TopSegment::getGenome()
+inline Genome* Hdf5TopSegment::getGenome()
 {
   return _genome;
 }
 
-inline const Sequence* HDF5TopSegment::getSequence() const
+inline const Sequence* Hdf5TopSegment::getSequence() const
 {
   return _genome->getSequenceBySite(getStartPosition());
 }
 
-inline bool HDF5TopSegment::hasParseDown() const
+inline bool Hdf5TopSegment::hasParseDown() const
 {
   return getBottomParseIndex() != NULL_INDEX;
 }
 
-inline hal_index_t HDF5TopSegment::getNextParalogyIndex() const
+inline hal_index_t Hdf5TopSegment::getNextParalogyIndex() const
 {
   return _array->getValue<hal_index_t>(_index, parIndexOffset);
 }
 
-inline bool HDF5TopSegment::hasNextParalogy() const
+inline bool Hdf5TopSegment::hasNextParalogy() const
 {
   return getNextParalogyIndex() != NULL_INDEX;
 }
 
-inline void HDF5TopSegment::setNextParalogyIndex(hal_index_t parIdx)
+inline void Hdf5TopSegment::setNextParalogyIndex(hal_index_t parIdx)
 {
   assert(parIdx != _index);
   _array->setValue(_index, parIndexOffset, parIdx);
 }
 
-inline hal_index_t HDF5TopSegment::getParentIndex() const
+inline hal_index_t Hdf5TopSegment::getParentIndex() const
 {
   return _array->getValue<hal_index_t>(_index, parentIndexOffset);
 }
 
-inline bool HDF5TopSegment::hasParent() const
+inline bool Hdf5TopSegment::hasParent() const
 {
   return getParentIndex() != NULL_INDEX;
 }
 
-inline void HDF5TopSegment::setParentIndex(hal_index_t parentIndex)
+inline void Hdf5TopSegment::setParentIndex(hal_index_t parentIndex)
 {
   _array->setValue(_index, parentIndexOffset, parentIndex);
 }
 
-inline bool HDF5TopSegment::getParentReversed() const
+inline bool Hdf5TopSegment::getParentReversed() const
 {
   return _array->getValue<bool>(_index, parentReversedOffset); 
 }
 
-inline void HDF5TopSegment::setParentReversed(bool isReversed)
+inline void Hdf5TopSegment::setParentReversed(bool isReversed)
 {
   _array->setValue(_index, parentReversedOffset, isReversed);
 }
 
-inline hal_index_t HDF5TopSegment::getBottomParseIndex() const
+inline hal_index_t Hdf5TopSegment::getBottomParseIndex() const
 {
   return _array->getValue<hal_index_t>(_index, bottomIndexOffset);
 }
 
-inline void HDF5TopSegment::setBottomParseIndex(hal_index_t parseIndex)
+inline void Hdf5TopSegment::setBottomParseIndex(hal_index_t parseIndex)
 {
   _array->setValue(_index, bottomIndexOffset, parseIndex);
 }
 
-inline hal_index_t HDF5TopSegment::getArrayIndex() const
+inline hal_index_t Hdf5TopSegment::getArrayIndex() const
 {
   return _index;
 }
 
-inline bool HDF5TopSegment::leftOf(hal_index_t genomePos) const
+inline bool Hdf5TopSegment::leftOf(hal_index_t genomePos) const
 {
   return getEndPosition() < genomePos;
 }
 
-inline bool HDF5TopSegment::rightOf(hal_index_t genomePos) const
+inline bool Hdf5TopSegment::rightOf(hal_index_t genomePos) const
 {
   return getStartPosition() > genomePos;
 }
 
-inline bool HDF5TopSegment::overlaps(hal_index_t genomePos) const
+inline bool Hdf5TopSegment::overlaps(hal_index_t genomePos) const
 {
   return !leftOf(genomePos) && !rightOf(genomePos);
 }
 
-inline bool HDF5TopSegment::isFirst() const
+inline bool Hdf5TopSegment::isFirst() const
 {
   assert(getSequence() != NULL);
   return _index == 0 || 
      _index == (hal_index_t)getSequence()->getTopSegmentArrayIndex();
 }
 
-inline bool HDF5TopSegment::isLast() const
+inline bool Hdf5TopSegment::isLast() const
 {
   assert(getSequence() != NULL);
   return _index == (hal_index_t)_array->getSize() - 1 || 
@@ -224,12 +224,12 @@ inline bool HDF5TopSegment::isLast() const
      (hal_index_t)getSequence()->getNumTopSegments() - 1;
 }
 
-inline bool HDF5TopSegment::isTop() const
+inline bool Hdf5TopSegment::isTop() const
 {
   return true;
 }
 
-inline hal_size_t HDF5TopSegment::getMappedSegments(
+inline hal_size_t Hdf5TopSegment::getMappedSegments(
   MappedSegmentSet& outSegments,
   const Genome* tgtGenome,
   const std::set<const Genome*>* genomesOnPath,
@@ -242,17 +242,17 @@ inline hal_size_t HDF5TopSegment::getMappedSegments(
                       "at some point go through the sliced segment");
 }
 
-inline hal_index_t HDF5TopSegment::getLeftParentIndex() const
+inline hal_index_t Hdf5TopSegment::getLeftParentIndex() const
 {
   assert(isFirst() == false);
-  HDF5TopSegment leftSeg(_genome, _array, _index - 1);
+  Hdf5TopSegment leftSeg(_genome, _array, _index - 1);
   return leftSeg.getParentIndex();
 }
 
-inline hal_index_t HDF5TopSegment::getRightParentIndex() const
+inline hal_index_t Hdf5TopSegment::getRightParentIndex() const
 {
   assert(isLast() == false);
-  HDF5TopSegment rightSeg(_genome, _array, _index + 1);
+  Hdf5TopSegment rightSeg(_genome, _array, _index + 1);
   return rightSeg.getParentIndex();
 }
 

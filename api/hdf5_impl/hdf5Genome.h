@@ -18,27 +18,27 @@
 
 namespace hal {
 
-class HDF5SequenceIterator;
-class HDF5Alignment;
-class HDF5Sequence;
+class Hdf5SequenceIterator;
+class Hdf5Alignment;
+class Hdf5Sequence;
 /** 
  * HDF5 implementation of hal::Genome
  */
-class HDF5Genome : public Genome
+class Hdf5Genome : public Genome
 {
-   friend class HDF5TopSegment;
-   friend class HDF5BottomSegment;
-   friend class HDF5SequenceIterator;
-   friend class HDF5Sequence;
+   friend class Hdf5TopSegment;
+   friend class Hdf5BottomSegment;
+   friend class Hdf5SequenceIterator;
+   friend class Hdf5Sequence;
 public:
 
-   HDF5Genome(const std::string& name,
-              HDF5Alignment* alignment,
+   Hdf5Genome(const std::string& name,
+              Hdf5Alignment* alignment,
               H5::PortableH5Location* h5Parent,
               const H5::DSetCreatPropList& dcProps,
               bool inMemory);
 
-   virtual ~HDF5Genome();
+   virtual ~Hdf5Genome();
 
     static H5::PredType dnaDataType() {
         return H5::PredType::NATIVE_UINT8;
@@ -108,11 +108,11 @@ public:
    BottomSegmentIteratorPtr getBottomSegmentIterator(
      hal_index_t position) const;
 
-   DNAIteratorPtr getDNAIterator(hal_index_t position);
+   DnaIteratorPtr getDnaIterator(hal_index_t position);
 
-   DNAIteratorPtr getDNAIterator(hal_index_t position) const;
+   DnaIteratorPtr getDnaIterator(hal_index_t position) const;
 
-   DNAIteratorPtr getDNAEndIterator() const;
+   DnaIteratorPtr getDNAEndIterator() const;
 
    ColumnIteratorPtr getColumnIterator(const std::set<const Genome*>* targets,
                                             hal_size_t maxInsertLength,
@@ -171,26 +171,26 @@ private:
 
 private:
 
-   HDF5Alignment* _alignment;
+   Hdf5Alignment* _alignment;
    H5::PortableH5Location* _h5Parent;
    AlignmentPtr _alignmentPtr;
    std::string _name;
    HDF5MetaData* _metaData;
    HDF5MetaData* _rup;
-   HDF5ExternalArray _dnaArray;
-   HDF5ExternalArray _topArray;
-   HDF5ExternalArray _bottomArray;
-   HDF5ExternalArray _sequenceIdxArray;
-   HDF5ExternalArray _sequenceNameArray;
+   Hdf5ExternalArray _dnaArray;
+   Hdf5ExternalArray _topArray;
+   Hdf5ExternalArray _bottomArray;
+   Hdf5ExternalArray _sequenceIdxArray;
+   Hdf5ExternalArray _sequenceNameArray;
    H5::Group _group;
    H5::DSetCreatPropList _dcprops;
    hal_size_t _numChildrenInBottomArray;
    hal_size_t _totalSequenceLength;
    hal_size_t _numChunksInArrayBuffer;
 
-   mutable std::map<hal_size_t, HDF5Sequence*> _sequencePosCache;
-   mutable std::vector<HDF5Sequence*> _zeroLenPosCache;
-   mutable std::map<std::string, HDF5Sequence*> _sequenceNameCache;
+   mutable std::map<hal_size_t, Hdf5Sequence*> _sequencePosCache;
+   mutable std::vector<Hdf5Sequence*> _zeroLenPosCache;
+   mutable std::map<std::string, Hdf5Sequence*> _sequenceNameCache;
 
    static const std::string dnaArrayName;
    static const std::string topArrayName;

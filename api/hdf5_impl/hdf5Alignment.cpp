@@ -32,21 +32,21 @@ static const hid_t UDC_FUSE_DRIVER_ID =  H5FD_udc_fuse_init();
 
 /** default group name for MetaData attributes, will be a subgroup
  * of the top level of the file, ie /Meta */
-const H5std_string HDF5Alignment::MetaGroupName = "Meta";
-const H5std_string HDF5Alignment::TreeGroupName = "Phylogeny";
-const H5std_string HDF5Alignment::GenomesGroupName = "Genomes";
-const H5std_string HDF5Alignment::VersionGroupName = "Verison";
+const H5std_string Hdf5Alignment::MetaGroupName = "Meta";
+const H5std_string Hdf5Alignment::TreeGroupName = "Phylogeny";
+const H5std_string Hdf5Alignment::GenomesGroupName = "Genomes";
+const H5std_string Hdf5Alignment::VersionGroupName = "Verison";
 
-const hsize_t HDF5Alignment::DefaultChunkSize = 1000;
-const hsize_t HDF5Alignment::DefaultCompression = 2;
-const hsize_t HDF5Alignment::DefaultCacheMDCElems = 113;
-const hsize_t HDF5Alignment::DefaultCacheRDCElems = 599999;
-const hsize_t HDF5Alignment::DefaultCacheRDCBytes = 15728640;
-const double HDF5Alignment::DefaultCacheW0 = 0.75;
-const bool HDF5Alignment::DefaultInMemory = false;
+const hsize_t Hdf5Alignment::DefaultChunkSize = 1000;
+const hsize_t Hdf5Alignment::DefaultCompression = 2;
+const hsize_t Hdf5Alignment::DefaultCacheMDCElems = 113;
+const hsize_t Hdf5Alignment::DefaultCacheRDCElems = 599999;
+const hsize_t Hdf5Alignment::DefaultCacheRDCBytes = 15728640;
+const double Hdf5Alignment::DefaultCacheW0 = 0.75;
+const bool Hdf5Alignment::DefaultInMemory = false;
 
 /* check if first bit of file has HDF5 header */
-bool hal::HDF5Alignment::isHdf5File(const std::string& initialBytes) {
+bool hal::Hdf5Alignment::isHdf5File(const std::string& initialBytes) {
     static const std::string HDF5_MAGIC = "\x89HDF\r";
     return initialBytes.compare(0, HDF5_MAGIC.size(), HDF5_MAGIC) == 0;
 }
@@ -62,7 +62,7 @@ static int hdf5DefaultFlags(unsigned mode) {
     }
 }
 
-HDF5Alignment::HDF5Alignment(const string& alignmentPath,
+Hdf5Alignment::Hdf5Alignment(const string& alignmentPath,
                              unsigned mode,
                              const H5::FileCreatPropList& fileCreateProps,
                              const H5::FileAccPropList& fileAccessProps,
@@ -90,7 +90,7 @@ HDF5Alignment::HDF5Alignment(const string& alignmentPath,
     }
 }
 
-HDF5Alignment::HDF5Alignment(const std::string& alignmentPath,
+Hdf5Alignment::Hdf5Alignment(const std::string& alignmentPath,
                              unsigned mode,
                              const CLParser* parser):
     _alignmentPath(alignmentPath),
@@ -112,12 +112,12 @@ HDF5Alignment::HDF5Alignment(const std::string& alignmentPath,
     }
 }
 
-HDF5Alignment::~HDF5Alignment()
+Hdf5Alignment::~Hdf5Alignment()
 {
   close();
 }
 
-void HDF5Alignment::defineOptions(CLParser* parser,
+void Hdf5Alignment::defineOptions(CLParser* parser,
                                   unsigned mode)
 {
   if (mode & CREATE_ACCESS)
@@ -139,7 +139,7 @@ void HDF5Alignment::defineOptions(CLParser* parser,
                       " a prime number ~= 10 * DefaultCacheRDCBytes / chunk",
                     DefaultCacheRDCElems);
   parser->addOption("cacheRDC", "obsolete name for --hdf5CacheRDC",
-                    HDF5Alignment::DefaultCacheRDCElems);
+                    Hdf5Alignment::DefaultCacheRDCElems);
 
   parser->addOption("hdf5CacheBytes", "maximum size in bytes of regular hdf5 cache",
                     DefaultCacheRDCBytes);
@@ -154,7 +154,7 @@ void HDF5Alignment::defineOptions(CLParser* parser,
 }
 
 /* initialize class from options */
-void HDF5Alignment::initializeFromOptions(const CLParser* parser) {
+void Hdf5Alignment::initializeFromOptions(const CLParser* parser) {
     _cprops.copy(H5::FileCreatPropList::DEFAULT);
     _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
     _aprops.copy(H5::FileAccPropList::DEFAULT);
@@ -179,7 +179,7 @@ void HDF5Alignment::initializeFromOptions(const CLParser* parser) {
 }
 
 /* set properties for in-memory access */
-void HDF5Alignment::setInMemory() {
+void Hdf5Alignment::setInMemory() {
     int mdc;
     size_t rdc, rdcb;
     double w0;
@@ -188,7 +188,7 @@ void HDF5Alignment::setInMemory() {
 }
 
 
-void HDF5Alignment::create()
+void Hdf5Alignment::create()
 {
   if (not ofstream(_alignmentPath.c_str()))
   {    // FIXME report errno
@@ -206,7 +206,7 @@ void HDF5Alignment::create()
   writeVersion();
 }
 
-void HDF5Alignment::open()
+void Hdf5Alignment::open()
 {
 #ifdef ENABLE_UDC
     if (((_mode & WRITE_ACCESS) == 0) and (not _udcCacheDir.empty()))
@@ -230,7 +230,7 @@ void HDF5Alignment::open()
 }
 
 
-void HDF5Alignment::close()
+void Hdf5Alignment::close()
 {
   if (_file != NULL)
   {
@@ -253,10 +253,10 @@ void HDF5Alignment::close()
       _metaData = NULL;
     }
     writeVersion();
-    map<string, HDF5Genome*>::iterator mapIt;
+    map<string, Hdf5Genome*>::iterator mapIt;
     for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt)
     {
-      HDF5Genome* genome = mapIt->second;
+      Hdf5Genome* genome = mapIt->second;
       if (not isReadOnly()) {
          genome->write();
       }
@@ -277,7 +277,7 @@ void HDF5Alignment::close()
   }
 }
 
-Genome*  HDF5Alignment::insertGenome(const string& name,
+Genome*  Hdf5Alignment::insertGenome(const string& name,
                                      const string& parentName,
                                      const string& childName,
                                      double upperBranchLength)
@@ -312,13 +312,13 @@ Genome*  HDF5Alignment::insertGenome(const string& name,
   stTree_setParent(child, newNode);
   stTree_setBranchLength(child, lowerBranchLength);
 
-  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
-  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  Hdf5Genome* genome = new Hdf5Genome(name, this, _file, _dcprops, _inMemory);
+  _openGenomes.insert(pair<string, Hdf5Genome*>(name, genome));
   _dirty = true;
   return genome;
 }
 
-Genome*  HDF5Alignment::addLeafGenome(const string& name,
+Genome*  Hdf5Alignment::addLeafGenome(const string& name,
                                       const string& parentName,
                                       double branchLength)
 {
@@ -343,13 +343,13 @@ Genome*  HDF5Alignment::addLeafGenome(const string& name,
   stTree_setBranchLength(childNode, branchLength);
   _nodeMap.insert(pair<string, stTree*>(name, childNode));
 
-  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
-  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  Hdf5Genome* genome = new Hdf5Genome(name, this, _file, _dcprops, _inMemory);
+  _openGenomes.insert(pair<string, Hdf5Genome*>(name, genome));
   _dirty = true;
   return genome;
 }
 
-Genome* HDF5Alignment::addRootGenome(const string& name,
+Genome* Hdf5Alignment::addRootGenome(const string& name,
                                      double branchLength)
 {
   if (name.empty() == true)
@@ -371,15 +371,15 @@ Genome* HDF5Alignment::addRootGenome(const string& name,
   _tree = node;
   _nodeMap.insert(pair<string, stTree*>(name, node));
 
-  HDF5Genome* genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
-  _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+  Hdf5Genome* genome = new Hdf5Genome(name, this, _file, _dcprops, _inMemory);
+  _openGenomes.insert(pair<string, Hdf5Genome*>(name, genome));
   _dirty = true;
   return genome;
 }
 
 // May only make sense to remove a leaf genome
 // (so that's what is done here right now)
-void HDF5Alignment::removeGenome(const string& name)
+void Hdf5Alignment::removeGenome(const string& name)
 {
   map<string, stTree*>::iterator findIt = _nodeMap.find(name);
   if (findIt == _nodeMap.end())
@@ -460,7 +460,7 @@ void HDF5Alignment::removeGenome(const string& name)
       newBottomDimensions.push_back(info);
     }
     parentGenome->updateBottomDimensions(newBottomDimensions);
-    ((HDF5Genome *)parentGenome)->resetBranchCaches();
+    ((Hdf5Genome *)parentGenome)->resetBranchCaches();
     // Copy the bottom segments back
     BottomSegmentIteratorPtr botSegIt = parentGenome->getBottomSegmentIterator();
     for (size_t i = 0; (hal_size_t)botSegIt->getArrayIndex() < n;
@@ -479,7 +479,7 @@ void HDF5Alignment::removeGenome(const string& name)
     }
     free(bottomSegments);
   }
-  map<string, HDF5Genome*>::iterator mapIt = _openGenomes.find(name);
+  map<string, Hdf5Genome*>::iterator mapIt = _openGenomes.find(name);
   if (mapIt != _openGenomes.end())
   {
     closeGenome(mapIt->second);
@@ -490,31 +490,31 @@ void HDF5Alignment::removeGenome(const string& name)
   _dirty = true;
 }
 
-const Genome* HDF5Alignment::openGenome(const string& name) const
+const Genome* Hdf5Alignment::openGenome(const string& name) const
 {
-    return const_cast<HDF5Alignment*>(this)->openGenome(name);
+    return const_cast<Hdf5Alignment*>(this)->openGenome(name);
 }
 
-Genome* HDF5Alignment::openGenome(const string& name)
+Genome* Hdf5Alignment::openGenome(const string& name)
 {
-  map<string, HDF5Genome*>::iterator mapit = _openGenomes.find(name);
+  map<string, Hdf5Genome*>::iterator mapit = _openGenomes.find(name);
   if (mapit != _openGenomes.end())
   {
     return mapit->second;
   }
-  HDF5Genome* genome = NULL;
+  Hdf5Genome* genome = NULL;
   if (_nodeMap.find(name) != _nodeMap.end())
   {
-    genome = new HDF5Genome(name, this, _file, _dcprops, _inMemory);
-    _openGenomes.insert(pair<string, HDF5Genome*>(name, genome));
+    genome = new Hdf5Genome(name, this, _file, _dcprops, _inMemory);
+    _openGenomes.insert(pair<string, Hdf5Genome*>(name, genome));
   }
   return genome;
 }
 
-void HDF5Alignment::closeGenome(const Genome* genome) const
+void Hdf5Alignment::closeGenome(const Genome* genome) const
 {
   string name = genome->getName();
-  map<string, HDF5Genome*>::iterator mapIt = _openGenomes.find(name);
+  map<string, Hdf5Genome*>::iterator mapIt = _openGenomes.find(name);
   if (mapIt == _openGenomes.end())
   {
     throw hal_exception("Attempt to close non-open genome.  " 
@@ -545,7 +545,7 @@ void HDF5Alignment::closeGenome(const Genome* genome) const
   }
 }
 
-string HDF5Alignment::getRootName() const
+string Hdf5Alignment::getRootName() const
 {
   if (_tree == NULL)
   {
@@ -554,7 +554,7 @@ string HDF5Alignment::getRootName() const
   return stTree_getLabel(_tree);
 }
 
-string HDF5Alignment::getParentName(const string& name) const
+string Hdf5Alignment::getParentName(const string& name) const
 {
   map<string, stTree*>::iterator findIt = _nodeMap.find(name);
   if (findIt == _nodeMap.end())
@@ -571,7 +571,7 @@ string HDF5Alignment::getParentName(const string& name) const
 }
 
 
-void HDF5Alignment::updateBranchLength(const string& parentName,
+void Hdf5Alignment::updateBranchLength(const string& parentName,
                                        const string& childName,
                                        double length)
 {
@@ -591,7 +591,7 @@ void HDF5Alignment::updateBranchLength(const string& parentName,
   _dirty = true;
 }
 
-double HDF5Alignment::getBranchLength(const string& parentName,
+double Hdf5Alignment::getBranchLength(const string& parentName,
                                       const string& childName) const
 {
   map<string, stTree*>::iterator findIt = _nodeMap.find(childName);
@@ -609,7 +609,7 @@ double HDF5Alignment::getBranchLength(const string& parentName,
   return stTree_getBranchLength(node);
 }
    
-vector<string> HDF5Alignment::getChildNames(const string& name) const
+vector<string> Hdf5Alignment::getChildNames(const string& name) const
 {
   map<string, stTree*>::iterator findIt = _nodeMap.find(name);
   if (findIt == _nodeMap.end())
@@ -626,7 +626,7 @@ vector<string> HDF5Alignment::getChildNames(const string& name) const
   return childNames;
 }
 
-vector<string> HDF5Alignment::getLeafNamesBelow(const string& name) const
+vector<string> Hdf5Alignment::getLeafNamesBelow(const string& name) const
 {
   vector<string> leaves;
   vector<string> children;
@@ -649,7 +649,7 @@ vector<string> HDF5Alignment::getLeafNamesBelow(const string& name) const
   return leaves;
 }
 
-hal_size_t HDF5Alignment::getNumGenomes() const
+hal_size_t Hdf5Alignment::getNumGenomes() const
 {
   if (_tree == NULL)
   {
@@ -662,17 +662,17 @@ hal_size_t HDF5Alignment::getNumGenomes() const
   }
 }
 
-MetaData* HDF5Alignment::getMetaData()
+MetaData* Hdf5Alignment::getMetaData()
 {
   return _metaData;
 }
 
-const MetaData* HDF5Alignment::getMetaData() const
+const MetaData* Hdf5Alignment::getMetaData() const
 {
   return _metaData;
 }
 
-string HDF5Alignment::getNewickTree() const
+string Hdf5Alignment::getNewickTree() const
 {
   if (_tree == NULL)
   {
@@ -687,7 +687,7 @@ string HDF5Alignment::getNewickTree() const
   }
 }
 
-string HDF5Alignment::getVersion() const
+string Hdf5Alignment::getVersion() const
 {
   try
   {
@@ -708,11 +708,11 @@ string HDF5Alignment::getVersion() const
   }
 }
 
-bool HDF5Alignment::isReadOnly() const {
+bool Hdf5Alignment::isReadOnly() const {
     return (_flags & (H5F_ACC_RDWR | H5F_ACC_TRUNC)) == 0;
 }
 
-void HDF5Alignment::writeTree()
+void Hdf5Alignment::writeTree()
 {
   if (_dirty == false)
      return;
@@ -733,7 +733,7 @@ void HDF5Alignment::writeTree()
   free(treeString);
 }
 
-void HDF5Alignment::writeVersion()
+void Hdf5Alignment::writeVersion()
 {
   if (_dirty == false)
      return;
@@ -757,7 +757,7 @@ static void addNodeToMap(stTree* node, map<string, stTree*>& nodeMap)
   }
 }
 
-void HDF5Alignment::loadTree()
+void Hdf5Alignment::loadTree()
 {
   _nodeMap.clear();
   HDF5MetaData treeMeta(_file, TreeGroupName);
@@ -777,7 +777,7 @@ void HDF5Alignment::loadTree()
   }
 }
 
-void HDF5Alignment::replaceNewickTree(const string &newNewickString)
+void Hdf5Alignment::replaceNewickTree(const string &newNewickString)
 {
   _nodeMap.clear();
   HDF5MetaData treeMeta(_file, TreeGroupName);

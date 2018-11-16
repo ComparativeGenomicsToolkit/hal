@@ -12,7 +12,7 @@ using namespace std;
 using namespace H5;
 using namespace hal;
 
-HDF5SequenceIterator::HDF5SequenceIterator(HDF5Genome* genome, 
+Hdf5SequenceIterator::Hdf5SequenceIterator(Hdf5Genome* genome, 
                                            hal_index_t index) :
 _sequence(genome, &genome->_sequenceIdxArray, 
           &genome->_sequenceNameArray, index)
@@ -20,29 +20,29 @@ _sequence(genome, &genome->_sequenceIdxArray,
   
 }
 
-HDF5SequenceIterator::~HDF5SequenceIterator()
+Hdf5SequenceIterator::~Hdf5SequenceIterator()
 {
 
 }
    
-SequenceIteratorPtr HDF5SequenceIterator::clone() const
+SequenceIteratorPtr Hdf5SequenceIterator::clone() const
 {
-  HDF5SequenceIterator* seqIt = new HDF5SequenceIterator(
+  Hdf5SequenceIterator* seqIt = new Hdf5SequenceIterator(
     _sequence._genome, _sequence._index);
   return SequenceIteratorPtr(seqIt);
 }
 
-void HDF5SequenceIterator:: toNext()
+void Hdf5SequenceIterator:: toNext()
 {
   ++_sequence._index;
 }
 
-void HDF5SequenceIterator::toPrev()
+void Hdf5SequenceIterator::toPrev()
 {
   --_sequence._index;
 }
 
-const Sequence* HDF5SequenceIterator::getSequence() const
+const Sequence* Hdf5SequenceIterator::getSequence() const
 {
   assert(_sequence._index >= 0 && _sequence._index < 
          (hal_index_t)_sequence._genome->_sequenceNameArray.getSize());
@@ -51,10 +51,10 @@ const Sequence* HDF5SequenceIterator::getSequence() const
   return _sequence._genome->getSequence(_sequence.getName());
 }
 
-bool HDF5SequenceIterator::equals(SequenceIteratorPtr other) const
+bool Hdf5SequenceIterator::equals(SequenceIteratorPtr other) const
 {
-  const HDF5SequenceIterator* h5Other = reinterpret_cast<
-     const HDF5SequenceIterator*>(other.get());
+  const Hdf5SequenceIterator* h5Other = reinterpret_cast<
+     const Hdf5SequenceIterator*>(other.get());
   assert(_sequence.getGenome() == h5Other->_sequence.getGenome());
   return _sequence._index == h5Other->_sequence._index;
 }

@@ -11,16 +11,16 @@ using namespace hal;
 
 static const int UDC_FETCH_SIZE = 64 * 1024;  // size to bring in for UDC access
 
-HDF5DNAAccess::HDF5DNAAccess(HDF5Genome* genome,
-                             HDF5ExternalArray* dnaArray,
+HDF5DnaAccess::HDF5DnaAccess(Hdf5Genome* genome,
+                             Hdf5ExternalArray* dnaArray,
                              hal_index_t index):
-    DNAAccess(0, 0, NULL),
+    DnaAccess(0, 0, NULL),
     _genome(genome),
     _dnaArray(dnaArray) {
     fetch(index);
 }
 
-void HDF5DNAAccess::flush() {
+void HDF5DnaAccess::flush() {
     // ensure that marked dirty
     if (_dirty) {
         _dnaArray->setDirty();
@@ -28,7 +28,7 @@ void HDF5DNAAccess::flush() {
     _dirty = false;
 }
     
-void HDF5DNAAccess::fetch(hal_index_t index) const {
+void HDF5DnaAccess::fetch(hal_index_t index) const {
     if (_dirty) {
         _dnaArray->setDirty();
     }

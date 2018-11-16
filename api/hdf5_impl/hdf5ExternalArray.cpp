@@ -13,7 +13,7 @@ using namespace H5;
 using namespace std;
 
 /** Constructor */
-HDF5ExternalArray::HDF5ExternalArray() :
+Hdf5ExternalArray::Hdf5ExternalArray() :
   _file(NULL),
   _size(0),
   _chunkSize(0),
@@ -25,13 +25,13 @@ HDF5ExternalArray::HDF5ExternalArray() :
 {}
 
 /** Destructor */
-HDF5ExternalArray::~HDF5ExternalArray()
+Hdf5ExternalArray::~Hdf5ExternalArray()
 {
   delete [] _buf;
 }
 
 // Create a new dataset in specifed location
-void HDF5ExternalArray::create(PortableH5Location* file, 
+void Hdf5ExternalArray::create(PortableH5Location* file, 
                                const H5std_string& path, 
                                const DataType& dataType,
                                hsize_t numElements,
@@ -90,7 +90,7 @@ void HDF5ExternalArray::create(PortableH5Location* file,
 }
 
 // Load an existing dataset into memory
-void HDF5ExternalArray::load(PortableH5Location* file, const H5std_string& path,
+void Hdf5ExternalArray::load(PortableH5Location* file, const H5std_string& path,
                              hsize_t chunksInBuffer)
 {
   // load up the parameters
@@ -112,12 +112,12 @@ void HDF5ExternalArray::load(PortableH5Location* file, const H5std_string& path,
     _chunkSize *= chunksInBuffer;
     if (_chunkSize == 1)
     {
-      throw hal_exception("HDF5ExternalArray::create: " 
+      throw hal_exception("Hdf5ExternalArray::create: " 
                           "chunkSize of 1 not supported");
     }
     if (_chunkSize > _size)
     {
-      throw hal_exception("HDF5ExternalArray::create: "
+      throw hal_exception("Hdf5ExternalArray::create: "
                           "chunkSize > array size is not supported");
     }
   }
@@ -138,7 +138,7 @@ void HDF5ExternalArray::load(PortableH5Location* file, const H5std_string& path,
 }
 
 // Write the memory buffer back to the file 
-void HDF5ExternalArray::write()
+void Hdf5ExternalArray::write()
 {
   if (_dirty == true)
   {
@@ -148,7 +148,7 @@ void HDF5ExternalArray::write()
 }
 
 // Page chunk containing index i into memory 
-void HDF5ExternalArray::page(hsize_t i)
+void Hdf5ExternalArray::page(hsize_t i)
 {
   if (_dirty == true)
   {

@@ -312,7 +312,7 @@ double PhyloP::pval(const ColumnIterator::ColumnMap *cmap)
     for (ColumnIterator::DNASet::const_iterator j = dnaSet->begin(); 
          j != dnaSet->end(); ++j) 
     {
-      DNAIteratorPtr dna = *j;
+      DnaIteratorPtr dna = *j;
       char base = fastUpper(dna->getBase());
       if (_msa->ss->col_tuples[0][spec] == '*')
       {

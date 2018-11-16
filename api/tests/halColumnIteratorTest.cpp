@@ -142,7 +142,7 @@ void ColumnIteratorDepthTest::checkGenome(const Genome* genome)
          i != colMap->end(); ++i)
     {
       CuAssertTrue(_testCase, i->second->size() == 1);
-      DNAIteratorPtr dnaIt = *i->second->begin();
+      DnaIteratorPtr dnaIt = *i->second->begin();
       
 /*        cout << "column=" << columnNumber 
            << " genome=" << dnaIt->getGenome()->getName()
@@ -268,7 +268,7 @@ void ColumnIteratorDupTest::checkGenome(const Genome* genome)
     for (ColumnIterator::ColumnMap::const_iterator i = colMap->begin();
          i != colMap->end(); ++i)
     {
-      DNAIteratorPtr dnaIt = *i->second->begin();
+      DnaIteratorPtr dnaIt = *i->second->begin();
       // the first segment (of any genome) should be aligned to 
       // every segment in son1
       if (i->first->getGenome()->getName() == "son1" && 
@@ -367,9 +367,9 @@ void ColumnIteratorInvTest::createCallBack(Alignment* alignment)
     bs.applyTo(bi);
   }  
 
-  DNAIteratorPtr gDnaIt = grandpa->getDNAIterator();
-  DNAIteratorPtr dDnaIt = dad->getDNAIterator();
-  DNAIteratorPtr sDnaIt = son1->getDNAIterator();
+  DnaIteratorPtr gDnaIt = grandpa->getDnaIterator();
+  DnaIteratorPtr dDnaIt = dad->getDnaIterator();
+  DnaIteratorPtr sDnaIt = son1->getDnaIterator();
   
   for (hal_size_t i = 0; i < grandpa->getSequenceLength(); ++i)
   {
@@ -440,7 +440,7 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
          i != colMap->end(); ++i)
     {
       CuAssertTrue(_testCase, i->second->size() == 1);
-      DNAIteratorPtr dnaIt = *i->second->begin();
+      DnaIteratorPtr dnaIt = *i->second->begin();
       
       if (i->first->getGenome()->getName() == "son1")
       {
@@ -463,9 +463,9 @@ void ColumnIteratorInvTest::checkGenome(const Genome* genome)
         CuAssertTrue(_testCase, colMap->find(graSeq->getSequence()) != 
                      colMap->end());
 
-        DNAIteratorPtr dadIt = 
+        DnaIteratorPtr dadIt = 
            *colMap->find(dadSeq->getSequence())->second->begin();
-        DNAIteratorPtr graIt = 
+        DnaIteratorPtr graIt = 
            *colMap->find(graSeq->getSequence())->second->begin();
 
         if (colNumber < 10)
@@ -590,14 +590,14 @@ void ColumnIteratorGapTest::checkCallBack(const Alignment* alignment)
       hal_index_t dadCol = i < 4 ? i : i - 4;
       ColumnIterator::DNASet* entry = colMap->find(dadSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);    
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == dadSeq);
       CuAssertTrue(_testCase, dna->getArrayIndex() == dadCol);
     }
 
     ColumnIterator::DNASet* entry = colMap->find(grandpaSeq)->second;
     CuAssertTrue(_testCase, entry->size() == 1);    
-    DNAIteratorPtr dna = entry->at(0);
+    DnaIteratorPtr dna = entry->at(0);
     CuAssertTrue(_testCase, dna->getSequence() == grandpaSeq);
     CuAssertTrue(_testCase, dna->getArrayIndex() == i);
 
@@ -733,7 +733,7 @@ void ColumnIteratorMultiGapTest::checkCallBack(const Alignment* alignment)
       CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
       ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
       CuAssertTrue(_testCase, dna->getArrayIndex() == i);
 
@@ -756,7 +756,7 @@ void ColumnIteratorMultiGapTest::checkCallBack(const Alignment* alignment)
       CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
       ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
       CuAssertTrue(_testCase, dna->getArrayIndex() == i);
 
@@ -775,7 +775,7 @@ void ColumnIteratorMultiGapTest::checkCallBack(const Alignment* alignment)
       CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
       ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
 
       CuAssertTrue(_testCase, dna->getArrayIndex() == i);
@@ -791,7 +791,7 @@ void ColumnIteratorMultiGapTest::checkCallBack(const Alignment* alignment)
       CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
       ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
       CuAssertTrue(_testCase, dna->getArrayIndex() == i);
 
@@ -933,7 +933,7 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(const Alignment* alignment)
       CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
       ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
       CuAssertTrue(_testCase, dna->getArrayIndex() == i);
 
@@ -956,7 +956,7 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(const Alignment* alignment)
       CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
       ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
       CuAssertTrue(_testCase, dna->getArrayIndex() == 11 - i);
 
@@ -975,7 +975,7 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(const Alignment* alignment)
       CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
       ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
 
       CuAssertTrue(_testCase, dna->getArrayIndex() == i);
@@ -991,7 +991,7 @@ void ColumnIteratorMultiGapInvTest::checkCallBack(const Alignment* alignment)
       CuAssertTrue(_testCase, colMap->find(adamSeq) != colMap->end());
       ColumnIterator::DNASet* entry = colMap->find(adamSeq)->second;
       CuAssertTrue(_testCase, entry->size() == 1);
-      DNAIteratorPtr dna = entry->at(0);
+      DnaIteratorPtr dna = entry->at(0);
       CuAssertTrue(_testCase, dna->getSequence() == adamSeq);
       CuAssertTrue(_testCase, dna->getArrayIndex() == i);
 

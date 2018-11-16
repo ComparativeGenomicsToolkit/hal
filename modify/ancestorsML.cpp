@@ -134,7 +134,7 @@ void buildTree(const Alignment* alignment, const Genome *genome,
   }
   stTree_setClientData(tree, data);
   if (genome->getNumChildren() == 0) {
-    DNAIteratorPtr dnaIt = genome->getDNAIterator(pos);
+    DnaIteratorPtr dnaIt = genome->getDnaIterator(pos);
     if (reversed) {
       dnaIt->toReverse();
     }
@@ -339,7 +339,7 @@ void writeNucleotides(stTree *tree, const Alignment* alignment,
   }
   const Genome *genome = alignment->openGenome(stTree_getLabel(tree));
   assert(genome != NULL);
-  DNAIteratorPtr dnaIt = genome->getDNAIterator(data->pos);
+  DnaIteratorPtr dnaIt = genome->getDnaIterator(data->pos);
   if (data->reversed) {
     dnaIt->toReverse();
   }

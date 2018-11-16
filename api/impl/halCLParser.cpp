@@ -20,7 +20,7 @@ CLParser::CLParser(unsigned mode) :
   _maxOptLen(0)
 {
     addOptionFlag("help", "display this help page", false);
-    HDF5Alignment::defineOptions(this, mode);
+    Hdf5Alignment::defineOptions(this, mode);
     MMapAlignment::defineOptions(this, mode);
     addOption("format", "choose the back-end storage format.", STORAGE_FORMAT_HDF5);
 #ifdef ENABLE_UDC

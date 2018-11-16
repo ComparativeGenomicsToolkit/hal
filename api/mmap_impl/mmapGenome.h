@@ -118,11 +118,11 @@ public:
     BottomSegmentIteratorPtr getBottomSegmentIterator(
         hal_index_t position) const;
 
-    DNAIteratorPtr getDNAIterator(hal_index_t position);
+    DnaIteratorPtr getDnaIterator(hal_index_t position);
 
-    DNAIteratorPtr getDNAIterator(hal_index_t position) const;
+    DnaIteratorPtr getDnaIterator(hal_index_t position) const;
 
-    DNAIteratorPtr getDNAEndIterator() const;
+    DnaIteratorPtr getDNAEndIterator() const;
 
     ColumnIteratorPtr getColumnIterator(const std::set<const Genome*>* targets,
                                              hal_size_t maxInsertLength,

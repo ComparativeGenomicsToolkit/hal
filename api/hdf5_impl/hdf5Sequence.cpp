@@ -9,7 +9,7 @@
 #include <iostream>
 #include <cassert>
 #include "hdf5Sequence.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
 #include "halColumnIterator.h"
@@ -21,14 +21,14 @@ using namespace std;
 using namespace H5;
 using namespace hal;
 
-const size_t HDF5Sequence::startOffset = 0;
-const size_t HDF5Sequence::topSegmentArrayIndexOffset = sizeof(hal_size_t);
-const size_t HDF5Sequence::bottomSegmentArrayIndexOffset = topSegmentArrayIndexOffset + sizeof(hal_size_t);
-const size_t HDF5Sequence::totalSize = bottomSegmentArrayIndexOffset + sizeof(hal_size_t);
+const size_t Hdf5Sequence::startOffset = 0;
+const size_t Hdf5Sequence::topSegmentArrayIndexOffset = sizeof(hal_size_t);
+const size_t Hdf5Sequence::bottomSegmentArrayIndexOffset = topSegmentArrayIndexOffset + sizeof(hal_size_t);
+const size_t Hdf5Sequence::totalSize = bottomSegmentArrayIndexOffset + sizeof(hal_size_t);
 
-HDF5Sequence::HDF5Sequence(HDF5Genome* genome,
-                           HDF5ExternalArray* idxArray,
-                           HDF5ExternalArray* nameArray,
+Hdf5Sequence::Hdf5Sequence(Hdf5Genome* genome,
+                           Hdf5ExternalArray* idxArray,
+                           Hdf5ExternalArray* nameArray,
                            hal_index_t index) :
   _idxArray(idxArray),
   _nameArray(nameArray),
@@ -38,12 +38,12 @@ HDF5Sequence::HDF5Sequence(HDF5Genome* genome,
 
 }
 
-HDF5Sequence::~HDF5Sequence()
+Hdf5Sequence::~Hdf5Sequence()
 {
   
 }
 
-H5::CompType HDF5Sequence::idxDataType()
+H5::CompType Hdf5Sequence::idxDataType()
 {
   // the in-memory representations and hdf5 representations 
   // don't necessarily have to be the same, but it simplifies 
@@ -60,7 +60,7 @@ H5::CompType HDF5Sequence::idxDataType()
   return dataType;
 }
 
-H5::StrType HDF5Sequence::nameDataType(hal_size_t maxNameLength)
+H5::StrType Hdf5Sequence::nameDataType(hal_size_t maxNameLength)
 {
   // the in-memory representations and hdf5 representations 
   // don't necessarily have to be the same, but it simplifies 
@@ -75,49 +75,49 @@ H5::StrType HDF5Sequence::nameDataType(hal_size_t maxNameLength)
 }
 
 // SEQUENCE INTERFACE
-string HDF5Sequence::getName() const
+string Hdf5Sequence::getName() const
 {
   return _nameArray->get(_index);
 }
 
-string HDF5Sequence::getFullName() const
+string Hdf5Sequence::getFullName() const
 {
   assert(_genome != NULL);
   return _genome->getName() + '.' + getName();
 }
 
-const Genome* HDF5Sequence::getGenome() const
+const Genome* Hdf5Sequence::getGenome() const
 {
   return _genome;
 }
 
-Genome* HDF5Sequence::getGenome()
+Genome* Hdf5Sequence::getGenome()
 {
   return _genome;
 }
 
-hal_index_t HDF5Sequence::getStartPosition() const
+hal_index_t Hdf5Sequence::getStartPosition() const
 {
   return _idxArray->getValue<hal_size_t>(_index, startOffset);
 }
 
-hal_index_t HDF5Sequence::getEndPosition() const
+hal_index_t Hdf5Sequence::getEndPosition() const
 {
   return _idxArray->getValue<hal_size_t>(_index + 1 , startOffset) - 1;
 }
 
-hal_index_t HDF5Sequence::getArrayIndex() const
+hal_index_t Hdf5Sequence::getArrayIndex() const
 {
   return _index;
 }
 
-hal_index_t HDF5Sequence::getTopSegmentArrayIndex() const
+hal_index_t Hdf5Sequence::getTopSegmentArrayIndex() const
 {
   return (hal_index_t)
      _idxArray->getValue<hal_size_t>(_index, topSegmentArrayIndexOffset);
 }
 
-hal_index_t HDF5Sequence::getBottomSegmentArrayIndex() const
+hal_index_t Hdf5Sequence::getBottomSegmentArrayIndex() const
 {
   return (hal_index_t)
      _idxArray->getValue<hal_size_t>(_index, bottomSegmentArrayIndexOffset);
@@ -125,7 +125,7 @@ hal_index_t HDF5Sequence::getBottomSegmentArrayIndex() const
 
 // SEGMENTED SEQUENCE INTERFACE
 
-hal_size_t HDF5Sequence::getSequenceLength() const
+hal_size_t Hdf5Sequence::getSequenceLength() const
 {
   hal_size_t len = _idxArray->getValue<hal_size_t>(_index, startOffset);
   hal_size_t nlen = _idxArray->getValue<hal_size_t>(_index + 1, startOffset);
@@ -133,7 +133,7 @@ hal_size_t HDF5Sequence::getSequenceLength() const
   return (nlen - len);
 }
 
-hal_size_t HDF5Sequence::getNumTopSegments() const
+hal_size_t Hdf5Sequence::getNumTopSegments() const
 {
   hal_index_t idx = 
      _idxArray->getValue<hal_size_t>(_index, topSegmentArrayIndexOffset);
@@ -143,7 +143,7 @@ hal_size_t HDF5Sequence::getNumTopSegments() const
   return nextIdx - idx;
 }
 
-hal_size_t HDF5Sequence::getNumBottomSegments() const
+hal_size_t Hdf5Sequence::getNumBottomSegments() const
 {
   hal_index_t idx = 
      _idxArray->getValue<hal_size_t>(_index, bottomSegmentArrayIndexOffset);
@@ -153,50 +153,50 @@ hal_size_t HDF5Sequence::getNumBottomSegments() const
   return nextIdx - idx;
 }
 
-TopSegmentIteratorPtr HDF5Sequence::getTopSegmentIterator(
+TopSegmentIteratorPtr Hdf5Sequence::getTopSegmentIterator(
   hal_index_t position)
 {
   hal_size_t idx = position + getTopSegmentArrayIndex();
   return _genome->getTopSegmentIterator(idx);
 }
 
-TopSegmentIteratorPtr HDF5Sequence::getTopSegmentIterator(
+TopSegmentIteratorPtr Hdf5Sequence::getTopSegmentIterator(
   hal_index_t position) const
 {
   hal_size_t idx = position + getTopSegmentArrayIndex();
   return _genome->getTopSegmentIterator(idx);
 }
 
-BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
+BottomSegmentIteratorPtr Hdf5Sequence::getBottomSegmentIterator(
   hal_index_t position)
 {
   hal_size_t idx = position + getBottomSegmentArrayIndex();
   return _genome->getBottomSegmentIterator(idx);
 }
 
-BottomSegmentIteratorPtr HDF5Sequence::getBottomSegmentIterator(
+BottomSegmentIteratorPtr Hdf5Sequence::getBottomSegmentIterator(
   hal_index_t position) const
 {
   hal_size_t idx = position + getBottomSegmentArrayIndex();
   return _genome->getBottomSegmentIterator(idx);
 }
 
-DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position)
+DnaIteratorPtr Hdf5Sequence::getDnaIterator(hal_index_t position)
 {
-  return _genome->getDNAIterator(position + getStartPosition());
+  return _genome->getDnaIterator(position + getStartPosition());
 }
 
-DNAIteratorPtr HDF5Sequence::getDNAIterator(hal_index_t position) const
+DnaIteratorPtr Hdf5Sequence::getDnaIterator(hal_index_t position) const
 {
-  return _genome->getDNAIterator(position + getStartPosition());
+  return _genome->getDnaIterator(position + getStartPosition());
 }
 
-DNAIteratorPtr HDF5Sequence::getDNAEndIterator() const
+DnaIteratorPtr Hdf5Sequence::getDNAEndIterator() const
 {
     return _genome->getDNAEndIterator();
 }
 
-ColumnIteratorPtr HDF5Sequence::getColumnIterator(
+ColumnIteratorPtr Hdf5Sequence::getColumnIterator(
   const std::set<const Genome*>* targets, hal_size_t maxInsertLength, 
   hal_index_t position, hal_index_t lastPosition, bool noDupes,
   bool noAncestors, bool reverseStrand, bool unique, bool onlyOrthologs) const
@@ -214,7 +214,7 @@ ColumnIteratorPtr HDF5Sequence::getColumnIterator(
   if (position < 0 || 
       lastPosition >= (hal_index_t)(getStartPosition() + getSequenceLength()))
   {
-    throw hal_exception("HDF5Sequence::getColumnIterators: input indices ("
+    throw hal_exception("Hdf5Sequence::getColumnIterators: input indices ("
                         + std::to_string(position) + ", " + std::to_string(lastPosition) + ") out of bounds");
   }
   ColumnIterator* colIt = 
@@ -224,26 +224,26 @@ ColumnIteratorPtr HDF5Sequence::getColumnIterator(
   return ColumnIteratorPtr(colIt);
 }
 
-void HDF5Sequence::getString(std::string& outString) const
+void Hdf5Sequence::getString(std::string& outString) const
 {
   getSubString(outString, 0, getSequenceLength());
 }
 
-void HDF5Sequence::setString(const std::string& inString)
+void Hdf5Sequence::setString(const std::string& inString)
 {
   setSubString(inString, 0, getSequenceLength());
 }
 
-void HDF5Sequence::getSubString(std::string& outString, hal_size_t start,
+void Hdf5Sequence::getSubString(std::string& outString, hal_size_t start,
                                 hal_size_t length) const
 {
   hal_size_t idx = start + getStartPosition();
   outString.resize(length);
-  DNAIteratorPtr dnaIt(getDNAIterator(idx));
+  DnaIteratorPtr dnaIt(getDnaIterator(idx));
   dnaIt->readString(outString, length);
 }
 
-void HDF5Sequence::setSubString(const std::string& inString, 
+void Hdf5Sequence::setSubString(const std::string& inString, 
                                 hal_size_t start,
                                 hal_size_t length)
 {
@@ -254,11 +254,11 @@ void HDF5Sequence::setSubString(const std::string& inString,
                           + " which is of length " + std::to_string(length));
   }
   hal_size_t idx = start + getStartPosition();
-  DNAIteratorPtr dnaIt(getDNAIterator(idx));
+  DnaIteratorPtr dnaIt(getDnaIterator(idx));
   dnaIt->writeString(inString, length);
 }
 
-RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position,
+RearrangementPtr Hdf5Sequence::getRearrangement(hal_index_t position,
                                                 hal_size_t gapLengthThreshold,
                                                 double nThreshold,
                                                 bool atomic) const
@@ -272,7 +272,7 @@ RearrangementPtr HDF5Sequence::getRearrangement(hal_index_t position,
   return RearrangementPtr(rea);
 }
 
-GappedTopSegmentIteratorPtr HDF5Sequence::getGappedTopSegmentIterator(
+GappedTopSegmentIteratorPtr Hdf5Sequence::getGappedTopSegmentIterator(
   hal_index_t i, hal_size_t gapThreshold, bool atomic) const
 {
   TopSegmentIteratorPtr topSegIt = getTopSegmentIterator(i);  
@@ -282,7 +282,7 @@ GappedTopSegmentIteratorPtr HDF5Sequence::getGappedTopSegmentIterator(
 }
 
 GappedBottomSegmentIteratorPtr 
-HDF5Sequence::getGappedBottomSegmentIterator(
+Hdf5Sequence::getGappedBottomSegmentIterator(
   hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
   bool atomic) const
 {
@@ -294,7 +294,7 @@ HDF5Sequence::getGappedBottomSegmentIterator(
 }
 // LOCAL
 
-void HDF5Sequence::set(hal_size_t startPosition, 
+void Hdf5Sequence::set(hal_size_t startPosition, 
                        const Sequence::Info& sequenceInfo,
                        hal_size_t topSegmentStartIndex,
                        hal_size_t bottomSegmentStartIndex)
@@ -319,29 +319,29 @@ void HDF5Sequence::set(hal_size_t startPosition,
 }
 
 // These functions look dangerous.  Dont think they're used.
-void HDF5Sequence::setNumTopSegments(hal_size_t numTopSegments)
+void Hdf5Sequence::setNumTopSegments(hal_size_t numTopSegments)
 {
   _idxArray->setValue(_index + 1, topSegmentArrayIndexOffset, 
                       getTopSegmentArrayIndex() + numTopSegments);
 }
 
-void HDF5Sequence::setNumBottomSegments(hal_size_t numBottomSegments)
+void Hdf5Sequence::setNumBottomSegments(hal_size_t numBottomSegments)
 {
   _idxArray->setValue(_index + 1, bottomSegmentArrayIndexOffset, 
                       getBottomSegmentArrayIndex() + numBottomSegments);
 }
 
-void HDF5Sequence::setTopSegmentArrayIndex(hal_size_t topIndex)
+void Hdf5Sequence::setTopSegmentArrayIndex(hal_size_t topIndex)
 {
   _idxArray->setValue(_index, topSegmentArrayIndexOffset, topIndex);
 }
 
-void HDF5Sequence::setBottomSegmentArrayIndex(hal_size_t bottomIndex)
+void Hdf5Sequence::setBottomSegmentArrayIndex(hal_size_t bottomIndex)
 {
   _idxArray->setValue(_index, bottomSegmentArrayIndexOffset, bottomIndex);
 }
 
-void HDF5Sequence::setName(const string &newName)
+void Hdf5Sequence::setName(const string &newName)
 {
   char* arrayBuffer = _nameArray->getUpdate(_index);
   strcpy(arrayBuffer, newName.c_str());

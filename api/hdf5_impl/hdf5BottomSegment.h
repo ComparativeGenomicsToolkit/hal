@@ -15,7 +15,7 @@
 
 namespace hal {
 
-class HDF5BottomSegment : public BottomSegment
+class Hdf5BottomSegment : public BottomSegment
 {
 public:
 
@@ -23,12 +23,12 @@ public:
     * @param genome Smart pointer to genome to which segment belongs
     * @param array HDF5 array containg segment
     * @param index Index of segment in the array */
-   HDF5BottomSegment( HDF5Genome* genome,
-                     HDF5ExternalArray* array,
+   Hdf5BottomSegment( Hdf5Genome* genome,
+                     Hdf5ExternalArray* array,
                      hal_index_t index);
 
     /** Destructor */
-   ~HDF5BottomSegment();
+   ~Hdf5BottomSegment();
 
    // SEGMENT INTERFACE
    void setArrayIndex(Genome* genome, hal_index_t arrayIndex);
@@ -87,63 +87,63 @@ private:
    static const size_t firstChildOffset;
    static const size_t totalSize(hal_size_t numChildren);
 
-   HDF5ExternalArray* _array;
+   Hdf5ExternalArray* _array;
    hal_index_t _index;
-    HDF5Genome* _genome;
+    Hdf5Genome* _genome;
 };
 
 
 //INLINE members
-inline void HDF5BottomSegment::setArrayIndex(Genome* genome, 
+inline void Hdf5BottomSegment::setArrayIndex(Genome* genome, 
                                              hal_index_t arrayIndex)
 {
-  _genome = dynamic_cast<HDF5Genome*>(genome);
+  _genome = dynamic_cast<Hdf5Genome*>(genome);
   assert(_genome != NULL);
   _array = &_genome->_bottomArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;  
 }
 
-inline hal_index_t HDF5BottomSegment::getStartPosition() const
+inline hal_index_t Hdf5BottomSegment::getStartPosition() const
 {
   assert(_index >= 0);
   return _array->getValue<hal_index_t>((hsize_t)_index, genomeIndexOffset);
 }
 
-inline hal_index_t HDF5BottomSegment::getEndPosition() const
+inline hal_index_t Hdf5BottomSegment::getEndPosition() const
 {
   assert(_index >= 0);
   return getStartPosition() + (hal_index_t)(getLength() - 1);
 }
 
-inline hal_size_t HDF5BottomSegment::getLength() const
+inline hal_size_t Hdf5BottomSegment::getLength() const
 {
   assert(_index >= 0);
   return _array->getValue<hal_size_t>(_index + 1, genomeIndexOffset) - 
      _array->getValue<hal_size_t>(_index, genomeIndexOffset);
 }
 
-inline const Genome* HDF5BottomSegment::getGenome() const
+inline const Genome* Hdf5BottomSegment::getGenome() const
 {                                               
   return _genome;
 }
 
-inline Genome* HDF5BottomSegment::getGenome()
+inline Genome* Hdf5BottomSegment::getGenome()
 {
     return _genome;
 }
 
-inline const Sequence* HDF5BottomSegment::getSequence() const
+inline const Sequence* Hdf5BottomSegment::getSequence() const
 {
   return _genome->getSequenceBySite(getStartPosition());
 }
 
-inline hal_size_t HDF5BottomSegment::getNumChildren() const
+inline hal_size_t Hdf5BottomSegment::getNumChildren() const
 {
   return _genome->getNumChildren();
 }
 
-inline hal_index_t HDF5BottomSegment::getChildIndex(hal_size_t i) const
+inline hal_index_t Hdf5BottomSegment::getChildIndex(hal_size_t i) const
 {
   assert(_index >= 0);
   return _array->getValue<hal_index_t>(
@@ -152,23 +152,23 @@ inline hal_index_t HDF5BottomSegment::getChildIndex(hal_size_t i) const
 }
 
 inline 
-hal_index_t HDF5BottomSegment::getChildIndexG(const Genome* childGenome) const
+hal_index_t Hdf5BottomSegment::getChildIndexG(const Genome* childGenome) const
 {
   assert(_index >= 0);
   return getChildIndex(_genome->getChildIndex(childGenome));
 }
 
-inline bool HDF5BottomSegment::hasChild(hal_size_t i) const
+inline bool Hdf5BottomSegment::hasChild(hal_size_t i) const
 {
   return getChildIndex(i) != NULL_INDEX;
 }
 
-inline bool HDF5BottomSegment::hasChildG(const Genome* childGenome) const
+inline bool Hdf5BottomSegment::hasChildG(const Genome* childGenome) const
 {
   return getChildIndexG(childGenome) != NULL_INDEX;
 }
 
-inline void HDF5BottomSegment::setChildIndex(hal_size_t i, 
+inline void Hdf5BottomSegment::setChildIndex(hal_size_t i, 
                                              hal_index_t childIndex)
 {
   assert(_index >= 0);
@@ -176,7 +176,7 @@ inline void HDF5BottomSegment::setChildIndex(hal_size_t i,
                    i * (sizeof(hal_index_t) + sizeof(bool)), childIndex);
 }
 
-inline bool HDF5BottomSegment::getChildReversed(hal_size_t i) const
+inline bool Hdf5BottomSegment::getChildReversed(hal_size_t i) const
 {
   assert(_index >= 0);
   return _array->getValue<bool>(
@@ -185,7 +185,7 @@ inline bool HDF5BottomSegment::getChildReversed(hal_size_t i) const
     sizeof(hal_index_t));
 }
 
-inline void HDF5BottomSegment::setChildReversed(hal_size_t i, 
+inline void Hdf5BottomSegment::setChildReversed(hal_size_t i, 
                                                 bool isReversed)
 {
   assert(_index >= 0);
@@ -194,51 +194,51 @@ inline void HDF5BottomSegment::setChildReversed(hal_size_t i,
                    sizeof(hal_index_t), isReversed);
 }
 
-inline hal_index_t HDF5BottomSegment::getTopParseIndex() const
+inline hal_index_t Hdf5BottomSegment::getTopParseIndex() const
 {
   assert(_index >= 0);
   return _array->getValue<hal_index_t>((hsize_t)_index, topIndexOffset);
 }
 
-inline void HDF5BottomSegment::setTopParseIndex(hal_index_t parseIndex)
+inline void Hdf5BottomSegment::setTopParseIndex(hal_index_t parseIndex)
 {
   assert(_index >= 0);
   _array->setValue((hsize_t)_index, topIndexOffset, parseIndex);
 }
 
-inline bool HDF5BottomSegment::hasParseUp() const
+inline bool Hdf5BottomSegment::hasParseUp() const
 {
   return getTopParseIndex() != NULL_INDEX;
 }
   
-inline hal_index_t HDF5BottomSegment::getArrayIndex() const
+inline hal_index_t Hdf5BottomSegment::getArrayIndex() const
 {
   return _index;
 }
 
-inline bool HDF5BottomSegment::leftOf(hal_index_t genomePos) const
+inline bool Hdf5BottomSegment::leftOf(hal_index_t genomePos) const
 {
   return getEndPosition() < genomePos;
 }
 
-inline bool HDF5BottomSegment::rightOf(hal_index_t genomePos) const
+inline bool Hdf5BottomSegment::rightOf(hal_index_t genomePos) const
 {
   return getStartPosition() > genomePos;
 }
 
-inline bool HDF5BottomSegment::overlaps(hal_index_t genomePos) const
+inline bool Hdf5BottomSegment::overlaps(hal_index_t genomePos) const
 {
   return !leftOf(genomePos) && !rightOf(genomePos);
 }
 
-inline bool HDF5BottomSegment::isFirst() const
+inline bool Hdf5BottomSegment::isFirst() const
 {
   assert(getSequence() != NULL);
   return _index == 0 || 
      _index == (hal_index_t)getSequence()->getBottomSegmentArrayIndex();
 }
 
-inline bool HDF5BottomSegment::isLast() const
+inline bool Hdf5BottomSegment::isLast() const
 {
   assert(getSequence() != NULL);
   return _index == (hal_index_t)_array->getSize() - 1 || 
@@ -246,12 +246,12 @@ inline bool HDF5BottomSegment::isLast() const
      (hal_index_t)getSequence()->getNumBottomSegments() - 1;
 }
 
-inline bool HDF5BottomSegment::isTop() const
+inline bool Hdf5BottomSegment::isTop() const
 {
   return false;
 }
 
-inline hal_size_t HDF5BottomSegment::getMappedSegments(
+inline hal_size_t Hdf5BottomSegment::getMappedSegments(
   MappedSegmentSet& outSegments,
   const Genome* tgtGenome,
   const std::set<const Genome*>* genomesOnPath,
@@ -264,17 +264,17 @@ inline hal_size_t HDF5BottomSegment::getMappedSegments(
                       "at some point go through the sliced segment");
 }
 
-inline hal_index_t HDF5BottomSegment::getLeftChildIndex(hal_size_t i) const
+inline hal_index_t Hdf5BottomSegment::getLeftChildIndex(hal_size_t i) const
 {
   assert(isFirst() == false);
-  HDF5BottomSegment leftSeg(_genome, _array, _index - 1);
+  Hdf5BottomSegment leftSeg(_genome, _array, _index - 1);
   return leftSeg.getChildIndex(i);
 }
 
-inline hal_index_t HDF5BottomSegment::getRightChildIndex(hal_size_t i) const
+inline hal_index_t Hdf5BottomSegment::getRightChildIndex(hal_size_t i) const
 {
   assert(isLast() == false);
-  HDF5BottomSegment rightSeg(_genome, _array, _index + 1);
+  Hdf5BottomSegment rightSeg(_genome, _array, _index + 1);
   return rightSeg.getChildIndex(i);
 }
 

@@ -15,15 +15,15 @@ note it would be nice to extend SegmentIterator but the crappy smart pointer int
 * Why Genome* rather than smart pointer: halMappedSegmentTest.cpp
 * change most pointer function arguments to be reference.
 * behavior of ColumnIterator: the last column is inclusive, so if you use toRight() on the last base you crash
-* DNAIterator doesn't have a direct way to check for end
+* DnaIterator doesn't have a direct way to check for end
   hal_index_t n = ancGenome->getSequenceLength();
-  DNAIteratorPtr dnaIt = ancGenome->getDNAIterator();
+  DnaIteratorPtr dnaIt = ancGenome->getDnaIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
 * smart pointer casting:
 https://herbsutter.com/2012/06/21/reader-qa-why-dont-modern-smart-pointers-implicitly-convert-to/
 * dropped gapped??: "Interface for Gapped Top Segment iterator.  Only used internally"
 - used by halChain (which doesn't do anything) and halSummarizeMutations (which doesn't work right)
-* hdf5DNAIterator structure could be collapsed with generic if genome provide a way to get an array
+* hdf5DnaIterator structure could be collapsed with generic if genome provide a way to get an array
 of DNA.  Maybe pack DNA in mmap?
 * Using stTree with C-strings results in copying rather than sharing strings.
 * C interface to blockViz is weird, with optional thowing an exception or returning a C string.
@@ -46,19 +46,19 @@ of DNA.  Maybe pack DNA in mmap?
 * Change confusing is-a relationships to has-a:
 ** MappedSegement could have reference to source and target, not be source and get target
 * six almost identical implementations of Segment.isMissingData
-  HDF5BottomSegment::isMissingData  hdf5s idential
-  HDF5TopSegment::isMissingData
+  Hdf5BottomSegment::isMissingData  hdf5s idential
+  Hdf5TopSegment::isMissingData
   GappedBottomSegmentIterator::isMissingData gapped identical
   GappedTopSegmentIterator::isMissingData
   MMapBottomSegment::isMissingData  mmaps idential
   MMapTopSegment::isMissingData
-- only difference is drive ones have specific implemented of DNAIterator, which could
-  be inlined.  However, if DNAIterator is generic, this goes away
+- only difference is drive ones have specific implemented of DnaIterator, which could
+  be inlined.  However, if DnaIterator is generic, this goes away
 * halCommon.h could be split into an DNA operations module.
 * how come Genome is_a SegementSequence instead of has_a bunch of SgementedSequences?
 Joel: Not entirely sure, but I think so you can work entirely within genome coordinates, and not have to care about sequences.  column iterators for example, would be annoying if you had to iterate through sequences, then through columns within that sequence
-* sharing of HDF5Genome._dnaArray by iterators means multiple iterators in the same genome will not go well.
-* HDF5ExternalArray uses close-ended
-* DNAIterator getArrayIndex() is a confusing name.
+* sharing of Hdf5Genome._dnaArray by iterators means multiple iterators in the same genome will not go well.
+* Hdf5ExternalArray uses close-ended
+* DnaIterator getArrayIndex() is a confusing name.
 * change Genome is_a SegmentedSequence to has_a
 * change get*Iterator functions that create iterators to create*Iterator

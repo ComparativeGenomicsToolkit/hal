@@ -54,8 +54,8 @@ void MaskExtractor::extract(const Alignment* alignment,
 void MaskExtractor::addMaskedBasesToCache()
 {
   assert(_posCache.size() == 0);
-  DNAIteratorPtr dna = _sequence->getDNAIterator();
-  DNAIteratorPtr dnaEnd = _sequence->getDNAEndIterator();
+  DnaIteratorPtr dna = _sequence->getDnaIterator();
+  DnaIteratorPtr dnaEnd = _sequence->getDNAEndIterator();
   for (; !dna->equals(dnaEnd); dna->toRight())
   {
     if (isMasked(dna->getBase()))

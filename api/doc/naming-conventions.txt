@@ -7,7 +7,7 @@
   BottomSegmentIterator: botSegIt
   GappedTopSegmentIterator: gapTopSegIt
   GappedBottomSegmentIterator: gapBotSegIt
-  DNAIterator: dnaIt
+  DnaIterator: dnaIt
   ColumnIterator: colit
   LinkedTopIterator: linkTopIt
   LinkedBotIterator: linkBotIt

@@ -15,7 +15,7 @@
 #include "halBottomSegmentIterator.h"
 #include "halSequenceIterator.h"
 #include "halGenome.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 
 using namespace std;
 using namespace hal;
@@ -228,7 +228,7 @@ void hal::validateTopSegment(const TopSegment* topSegment)
 void hal::validateSequence(const Sequence* sequence)
 {
   // Verify that the DNA sequence doesn't contain funny characters
-  DNAIteratorPtr dnaIt = sequence->getDNAIterator();
+  DnaIteratorPtr dnaIt = sequence->getDnaIterator();
   hal_size_t length = sequence->getSequenceLength();
   if (sequence->getGenome()->containsDNAArray() == true)
   {

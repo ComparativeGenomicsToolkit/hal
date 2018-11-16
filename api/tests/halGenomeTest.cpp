@@ -12,7 +12,7 @@
 #include "halAlignmentInstanceTest.h"
 #include "halAlignmentTest.h"
 #include "halBottomSegmentIterator.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 #include "halGenome.h"
 #include "halGenome.h"
 #include "halMetaData.h"
@@ -178,7 +178,7 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   leafGenome->setDimensions(seqVec);
   string ancSeq = "CAT";
   hal_index_t n = ancGenome->getSequenceLength();
-  DNAIteratorPtr dnaIt = ancGenome->getDNAIterator();
+  DnaIteratorPtr dnaIt = ancGenome->getDnaIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     dnaIt->setBase(ancSeq[i]);
@@ -186,7 +186,7 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   dnaIt->flush();
 
   n = leafGenome->getSequenceLength();
-  dnaIt = leafGenome->getDNAIterator();
+  dnaIt = leafGenome->getDnaIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     dnaIt->setBase(ancSeq[i]);
@@ -222,7 +222,7 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   seqVec[0] =Sequence::Info("Sequence", 3300, 2200, 0);
   copyLeafGenome->setDimensions(seqVec);
   string copySeq = "TAG";
-  dnaIt = copyRootGenome->getDNAIterator();
+  dnaIt = copyRootGenome->getDnaIterator();
   n = copyRootGenome->getSequenceLength();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % copySeq.size();
@@ -230,7 +230,7 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   }
   dnaIt->flush();
 
-  dnaIt = copyLeafGenome->getDNAIterator();
+  dnaIt = copyLeafGenome->getDnaIterator();
   n = copyLeafGenome->getSequenceLength();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % copySeq.size();
@@ -285,7 +285,7 @@ void GenomeCopyTest::checkCallBack(const Alignment* alignment)
   const Genome *leafGenome = alignment->openGenome("LeafGenome1");
   string ancSeq = "CAT";
   hal_index_t n = ancGenome->getSequenceLength();
-  DNAIteratorPtr dnaIt = ancGenome->getDNAIterator();
+  DnaIteratorPtr dnaIt = ancGenome->getDnaIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     CuAssertTrue(_testCase, dnaIt->getBase() == ancSeq[i]);
@@ -331,7 +331,7 @@ void GenomeCopyTest::checkCallBack(const Alignment* alignment)
   const MetaData* copyMeta = copyRootGenome->getMetaData();
   CuAssertTrue(_testCase, copyMeta->get("Young") == "Jeezy");
   n = copyRootGenome->getSequenceLength();
-  dnaIt = copyRootGenome->getDNAIterator();
+  dnaIt = copyRootGenome->getDnaIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
     CuAssertTrue(_testCase, dnaIt->getBase() == ancSeq[i]);

@@ -589,7 +589,7 @@ void printBaseComp(ostream& os, const Alignment* alignment,
     step = len - 1;
   }
 
-  DNAIteratorPtr dna = genome->getDNAIterator();
+  DnaIteratorPtr dna = genome->getDnaIterator();
   for (hal_size_t i = 0; i < len; i += step)
   {
     dna->jumpTo(i);
@@ -684,7 +684,7 @@ void printPercentID(ostream& os, const Alignment* alignment,
   map<const Genome *, pair<hal_size_t *, hal_size_t *> > genomeStats;
   while(1) {
     // Get DNA for this site in reference
-    DNAIteratorPtr refDnaIt = refGenome->getDNAIterator(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition());
+    DnaIteratorPtr refDnaIt = refGenome->getDnaIterator(colIt->getReferenceSequencePosition() + colIt->getReferenceSequence()->getStartPosition());
     char refDna = fastUpper(refDnaIt->getBase());
     
     const ColumnIterator::ColumnMap *cmap = colIt->getColumnMap();
@@ -699,7 +699,7 @@ void printPercentID(ostream& os, const Alignment* alignment,
       const ColumnIterator::DNASet *dnaSet = colMapIt->second;
       assert(dnaSet->size() == 1);
       for (hal_size_t i = 0; i < dnaSet->size(); i++) {
-        DNAIteratorPtr dnaIt = dnaSet->at(i);
+        DnaIteratorPtr dnaIt = dnaSet->at(i);
         char otherDna = fastUpper(dnaIt->getBase());
         if (refDna != 'N' && otherDna != 'N') {
           if (!tempGenomeStats.count(genome)) {

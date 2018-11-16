@@ -10,7 +10,7 @@
 #include <deque>
 #include "halGappedTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 #include "halGappedBottomSegmentIterator.h"
 
 using namespace std;
@@ -140,7 +140,7 @@ bool GappedTopSegmentIterator::isMissingData(double nThreshold) const
     return false;
   }
   hal_index_t start = min(_left->getStartPosition(), _right->getEndPosition());
-  DNAIteratorPtr dnaIt = _left->getGenome()->getDNAIterator(start);
+  DnaIteratorPtr dnaIt = _left->getGenome()->getDnaIterator(start);
   hal_size_t length = getLength();
   size_t maxNs = nThreshold * (double)length;
   size_t Ns = 0;

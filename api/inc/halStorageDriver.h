@@ -17,12 +17,12 @@ namespace hal {
      * There can be multiple object active independently on a given genome.  Assumes
      * that DNA is nibble-encode and handles encoding and decoding.
      */
-    class DNAAccess {
+    class DnaAccess {
         public:
         /* Destructor */
-        virtual ~DNAAccess() {
+        virtual ~DnaAccess() {
             if (_dirty) {
-                throw hal_exception("DNAAccess is dirty, flush() should have been called");
+                throw hal_exception("DnaAccess is dirty, flush() should have been called");
             }
         }
 
@@ -44,7 +44,7 @@ namespace hal {
         
         protected:
         /* constructor */
-        DNAAccess(hal_index_t startIndex,
+        DnaAccess(hal_index_t startIndex,
                   hal_index_t endIndex,
                   char* buffer) :
             _startIndex(startIndex),

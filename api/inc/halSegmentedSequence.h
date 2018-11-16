@@ -63,14 +63,14 @@ public:
 
    /** Create a DNA iterator
     * @param position Index in genome of returned iterator */
-   virtual DNAIteratorPtr getDNAIterator(hal_index_t position = 0) = 0;
+   virtual DnaIteratorPtr getDnaIterator(hal_index_t position = 0) = 0;
 
    /** Get a const DNA iterator
     * @param position Index in genome of returned iterator */
-   virtual DNAIteratorPtr getDNAIterator(hal_index_t position = 0) const = 0;
+   virtual DnaIteratorPtr getDnaIterator(hal_index_t position = 0) const = 0;
 
    /** Get a DNA end iterator (one beyond last element in list) */
-   virtual DNAIteratorPtr getDNAEndIterator() const = 0;
+   virtual DnaIteratorPtr getDNAEndIterator() const = 0;
 
    /** Get a column iterator 
     * @param targets Only genomes in this set are visited

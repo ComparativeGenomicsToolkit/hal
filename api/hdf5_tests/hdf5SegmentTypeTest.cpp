@@ -48,10 +48,10 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
     setup();
     try 
     {
-      CompType datatype = HDF5TopSegment::dataType();
+      CompType datatype = Hdf5TopSegment::dataType();
       H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
 
-      HDF5ExternalArray myArray;
+      Hdf5ExternalArray myArray;
       DSetCreatPropList cparms;
       if (chunkSize > 0)
       {
@@ -60,7 +60,7 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
       myArray.create(&file, datasetName, datatype, N + 1, &cparms);
       for (hsize_t i = 0; i < N; ++i)
       {
-        HDF5TopSegment segment(NULL, &myArray, i);
+        Hdf5TopSegment segment(NULL, &myArray, i);
         segment.setCoordinates(i, 1);
         segment.setNextParalogyIndex(i * 3 + 1);
         segment.setParentIndex(i * 4);
@@ -72,11 +72,11 @@ void hdf5SegmentTypeTestTop(CuTest *testCase)
       file.close();
 
       H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);
-      HDF5ExternalArray readArray;
+      Hdf5ExternalArray readArray;
       readArray.load(&rfile, datasetName);
       for (hsize_t i = 0; i < N; ++i)
       {
-         HDF5TopSegment segment(NULL, &readArray, i);
+         Hdf5TopSegment segment(NULL, &readArray, i);
          CuAssertTrue(testCase, 
                       segment.getStartPosition() == (hal_index_t)i);
          CuAssertTrue(testCase,
@@ -115,10 +115,10 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
       setup();
       try 
       {
-        CompType datatype = HDF5BottomSegment::dataType(numChildren);
+        CompType datatype = Hdf5BottomSegment::dataType(numChildren);
         H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
 
-        HDF5ExternalArray myArray;
+        Hdf5ExternalArray myArray;
         DSetCreatPropList cparms;
         if (chunkSize > 0)
         {
@@ -127,7 +127,7 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
         myArray.create(&file, datasetName, datatype, N + 1, &cparms);
         for (hsize_t i = 0; i < N; ++i)
         {
-          HDF5BottomSegment segment(NULL, &myArray, i);
+          Hdf5BottomSegment segment(NULL, &myArray, i);
           segment.setCoordinates(i, 1);
           segment.setTopParseIndex(i * 5);
           for (hsize_t j = 0; j < numChildren; ++j)
@@ -141,12 +141,12 @@ void hdf5SegmentTypeTestBottom(CuTest *testCase)
         file.close();
 
         H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);
-        HDF5ExternalArray readArray;
+        Hdf5ExternalArray readArray;
         readArray.load(&rfile, datasetName);
 
         for (hsize_t i = 0; i < N; ++i)
         {
-          HDF5BottomSegment segment(NULL, &readArray, i);
+          Hdf5BottomSegment segment(NULL, &readArray, i);
           CuAssertTrue(testCase, 
                        segment.getStartPosition() == (hal_index_t)i * 1);
           CuAssertTrue(testCase,

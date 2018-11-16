@@ -47,7 +47,7 @@ void hdf5ExternalArrayTestCreate(CuTest *testCase)
 
       H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
 
-      HDF5ExternalArray myArray;
+      Hdf5ExternalArray myArray;
       DSetCreatPropList cparms;
       if (chunkSize > 0)
       {
@@ -89,7 +89,7 @@ void hdf5ExternalArrayTestLoad(CuTest *testCase)
       writeNumbers(chunkSize);
       
       H5File file(H5std_string(fileName), H5F_ACC_RDONLY);
-      HDF5ExternalArray myArray;
+      Hdf5ExternalArray myArray;
       myArray.load(&file, datasetName);
 
       for (hsize_t i = 0; i < N; ++i)
@@ -120,7 +120,7 @@ void hdf5ExternalArrayTestCompression(CuTest *testCase)
     {
       IntType datatype(PredType::NATIVE_HSIZE);
       H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
-      HDF5ExternalArray myArray;
+      Hdf5ExternalArray myArray;
       DSetCreatPropList cparms;
       if (chunkSize > 0)
       {
@@ -138,7 +138,7 @@ void hdf5ExternalArrayTestCompression(CuTest *testCase)
       file.close();
 
       H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);
-      HDF5ExternalArray myrArray;
+      Hdf5ExternalArray myrArray;
       myrArray.load(&rfile, datasetName);
       
       for (hsize_t i = 0; i < N; ++i)

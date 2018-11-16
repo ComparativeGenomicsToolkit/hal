@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     lineStream >> prevChar;
     lineStream >> newChar;
     Genome *genome = alignment->openGenome(genomeName);
-    DNAIteratorPtr dnaIt = genome->getDNAIterator(pos);
+    DnaIteratorPtr dnaIt = genome->getDnaIterator(pos);
     if (fastUpper(dnaIt->getBase()) != prevChar) {
       dnaIt->toReverse();
       if (fastUpper(dnaIt->getBase()) != prevChar) {

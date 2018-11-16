@@ -107,9 +107,9 @@ protected:
    
    void resetEntries();
    void initEntry(MafBlockEntry* entry, const Sequence* sequence,
-                  DNAIteratorPtr dna, bool clearSequence = true);
+                  DnaIteratorPtr dna, bool clearSequence = true);
    void updateEntry(MafBlockEntry* entry, const Sequence* sequence,
-                    DNAIteratorPtr dna);
+                    DnaIteratorPtr dna);
    std::string getName(const Sequence* sequence) const;
    stTree *buildTree(ColumnIteratorPtr colIt, bool modifyEntries);
    void buildTreeR(BottomSegmentIteratorPtr botIt, stTree *tree, bool modifyEntries);

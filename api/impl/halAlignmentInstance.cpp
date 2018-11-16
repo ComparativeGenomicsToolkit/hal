@@ -45,10 +45,10 @@ const H5::FileAccPropList& hal::hdf5DefaultFileAccPropList() {
     static H5::FileAccPropList fileAccessProps;
     if (not initialize) {
         fileAccessProps.copy(H5::FileAccPropList::DEFAULT);
-        fileAccessProps.setCache(HDF5Alignment::DefaultCacheMDCElems,
-                                 HDF5Alignment::DefaultCacheRDCElems,
-                                 HDF5Alignment::DefaultCacheRDCBytes,
-                                 HDF5Alignment::DefaultCacheW0);
+        fileAccessProps.setCache(Hdf5Alignment::DefaultCacheMDCElems,
+                                 Hdf5Alignment::DefaultCacheRDCElems,
+                                 Hdf5Alignment::DefaultCacheRDCBytes,
+                                 Hdf5Alignment::DefaultCacheW0);
         initialize = true;
     }
     return fileAccessProps;
@@ -60,8 +60,8 @@ const H5::DSetCreatPropList& hal::hdf5DefaultDSetCreatPropList() {
     static H5::DSetCreatPropList datasetCreateProps;
     if (not initialize) {
         datasetCreateProps.copy(H5::DSetCreatPropList::DEFAULT);
-        datasetCreateProps.setChunk(1, &HDF5Alignment::DefaultChunkSize);
-        datasetCreateProps.setDeflate(HDF5Alignment::DefaultCompression);
+        datasetCreateProps.setChunk(1, &Hdf5Alignment::DefaultChunkSize);
+        datasetCreateProps.setDeflate(Hdf5Alignment::DefaultCompression);
         initialize = true;
     }
     return datasetCreateProps;
@@ -74,7 +74,7 @@ hal::hdf5AlignmentInstance(const std::string& alignmentPath,
                            const H5::FileAccPropList& fileAccessProps,
                            const H5::DSetCreatPropList& datasetCreateProps,
                            bool inMemory) {
-  return new HDF5Alignment(alignmentPath, mode, fileCreateProps,
+  return new Hdf5Alignment(alignmentPath, mode, fileCreateProps,
                            fileAccessProps, datasetCreateProps,
                            inMemory);
 }
@@ -124,7 +124,7 @@ const std::string& hal::detectHalAlignmentFormat(const std::string& path,
     } else {
         initialBytes = localGetInitialBytes(path);
     }
-    if (HDF5Alignment::isHdf5File(initialBytes)) {
+    if (Hdf5Alignment::isHdf5File(initialBytes)) {
         return STORAGE_FORMAT_HDF5;
     } else if (MMapFile::isMmapFile(initialBytes)) {
         return STORAGE_FORMAT_MMAP;
@@ -155,12 +155,12 @@ Alignment* hal::openHalAlignment(const std::string& path,
     }
     if (fmt == STORAGE_FORMAT_HDF5) {
         if (options == NULL) {
-            return new HDF5Alignment(path, mode,
+            return new Hdf5Alignment(path, mode,
                                      hdf5DefaultFileCreatPropList(),
                                      hdf5DefaultFileAccPropList(),
                                      hdf5DefaultDSetCreatPropList());
         } else {
-            return new HDF5Alignment(path, mode, options);
+            return new Hdf5Alignment(path, mode, options);
         }
     } else if (fmt == STORAGE_FORMAT_MMAP) {
         if (options == NULL) {

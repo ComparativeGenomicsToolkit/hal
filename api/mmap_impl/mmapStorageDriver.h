@@ -12,14 +12,14 @@ namespace hal {
     class MMapAlignment;
     
     /**
-     * Mmap implementation of DNAAccess.
+     * Mmap implementation of DnaAccess.
      */
-    class MMapDNAAccess: public DNAAccess {
+    class MMapDnaAccess: public DnaAccess {
         public:
-        MMapDNAAccess(MMapGenome* genome,
+        MMapDnaAccess(MMapGenome* genome,
                       hal_index_t index);
         
-        virtual ~MMapDNAAccess() {
+        virtual ~MMapDnaAccess() {
         }
 
         void flush();

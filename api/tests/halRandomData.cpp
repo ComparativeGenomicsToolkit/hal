@@ -312,7 +312,7 @@ void hal::createRandomDimensions(mt19937& rng,
 static void createRandomRootGenome(mt19937& rng,
                                    Alignment* alignment,
                                    Genome* genome) {
-    DNAIteratorPtr dnaIt = genome->getDNAIterator();
+    DnaIteratorPtr dnaIt = genome->getDnaIterator();
     hal_size_t length = genome->getSequenceLength();
     for (hal_size_t i = 0; i < length; ++i)
     {

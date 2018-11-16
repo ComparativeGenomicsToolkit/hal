@@ -14,7 +14,7 @@
 #include "sonLib.h"
 #include "halPositionCache.h"
 #include "halDefs.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 #include "halSequence.h"
 #include "halColumnIteratorStack.h"
 
@@ -58,7 +58,7 @@ public:
    };
    /// @endcond
 
-   typedef std::vector<DNAIteratorPtr> DNASet;
+   typedef std::vector<DnaIteratorPtr> DNASet;
    typedef std::map<const Sequence*, DNASet*, SequenceLess> ColumnMap;
 
    /** Move column iterator one column to the right along reference
@@ -153,7 +153,7 @@ private:
    bool parentInScope(const Genome*) const;
    bool childInScope(const Genome*, hal_size_t child) const;
    void nextFreeIndex();
-   bool colMapInsert(DNAIteratorPtr dnaIt);
+   bool colMapInsert(DnaIteratorPtr dnaIt);
 
    void resetColMap();
    void eraseColMap();

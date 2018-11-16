@@ -8,19 +8,19 @@
 #include "halStorageDriver.h"
 
 namespace hal {
-    class HDF5Genome;
-    class HDF5ExternalArray;
+    class Hdf5Genome;
+    class Hdf5ExternalArray;
     
     /**
-     * HDF5 implementation of DNAAccess.
+     * HDF5 implementation of DnaAccess.
      */
-    class HDF5DNAAccess: public DNAAccess {
+    class HDF5DnaAccess: public DnaAccess {
         public:
-        HDF5DNAAccess(HDF5Genome* genome,
-                       HDF5ExternalArray* dnaArray,
+        HDF5DnaAccess(Hdf5Genome* genome,
+                       Hdf5ExternalArray* dnaArray,
                        hal_index_t index);
         
-        virtual ~HDF5DNAAccess() {
+        virtual ~HDF5DnaAccess() {
         }
 
         void flush();
@@ -29,8 +29,8 @@ namespace hal {
         virtual void fetch(hal_index_t index) const;
 
         private:
-        HDF5Genome* _genome;
-        HDF5ExternalArray* _dnaArray;
+        Hdf5Genome* _genome;
+        Hdf5ExternalArray* _dnaArray;
     };
 }
 

@@ -1,6 +1,6 @@
 #include "mmapBottomSegment.h"
 #include "mmapTopSegment.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 
 using namespace hal;
 
@@ -34,7 +34,7 @@ hal_offset_t MMapBottomSegment::getTopParseOffset() const
 
 void MMapBottomSegment::getString(std::string& outString) const
 {
-    DNAIteratorPtr dnaIt(_genome->getDNAIterator(getStartPosition()));
+    DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
     dnaIt->readString(outString, getLength());
 }
 
@@ -44,7 +44,7 @@ bool MMapBottomSegment::isMissingData(double nThreshold) const
   {
     return false;
   }
-  DNAIteratorPtr dnaIt(_genome->getDNAIterator(getStartPosition()));
+  DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
   size_t length = getLength();
   size_t maxNs = nThreshold * (double)length;
   size_t Ns = 0;

@@ -4,7 +4,7 @@
 #include "mmapBottomSegment.h"
 #include "mmapSequence.h"
 #include "mmapSequenceIterator.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 #include "halTopSegmentIterator.h"
 #include "halBottomSegmentIterator.h"
 #include "halColumnIterator.h"
@@ -319,21 +319,21 @@ BottomSegmentIteratorPtr MMapGenome::getBottomSegmentIterator(hal_index_t segmen
   return BottomSegmentIteratorPtr(botSegIt);
 }
 
-DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position)
+DnaIteratorPtr MMapGenome::getDnaIterator(hal_index_t position)
 {
-    DNAAccess* dnaAcc = new MMapDNAAccess(this, position);
-    DNAIterator* dnaIt = new DNAIterator(this, DNAAccessPtr(dnaAcc), position);
-    return DNAIteratorPtr(dnaIt);
+    DnaAccess* dnaAcc = new MMapDnaAccess(this, position);
+    DnaIterator* dnaIt = new DnaIterator(this, DnaAccessPtr(dnaAcc), position);
+    return DnaIteratorPtr(dnaIt);
 }
 
-DNAIteratorPtr MMapGenome::getDNAIterator(hal_index_t position) const
+DnaIteratorPtr MMapGenome::getDnaIterator(hal_index_t position) const
 {
-    return const_cast<MMapGenome*>(this)->getDNAIterator(position);
+    return const_cast<MMapGenome*>(this)->getDnaIterator(position);
 }
 
-DNAIteratorPtr MMapGenome::getDNAEndIterator() const
+DnaIteratorPtr MMapGenome::getDNAEndIterator() const
 {
-  return getDNAIterator(getSequenceLength());
+  return getDnaIterator(getSequenceLength());
 }
 
 ColumnIteratorPtr MMapGenome::getColumnIterator(
@@ -373,7 +373,7 @@ void MMapGenome::getSubString(string& outString, hal_size_t start,
                               hal_size_t length) const
 {
   outString.resize(length);
-  DNAIteratorPtr dnaIt(getDNAIterator(start));
+  DnaIteratorPtr dnaIt(getDnaIterator(start));
   dnaIt->readString(outString, length);
 }
 
@@ -386,7 +386,7 @@ void MMapGenome::setSubString(const string& inString,
     throw hal_exception(string("setString: input string has differnt") +
                                "length from target string in genome");
   }
-  DNAIteratorPtr dnaIt(getDNAIterator(start));
+  DnaIteratorPtr dnaIt(getDnaIterator(start));
   dnaIt->writeString(inString, length);
 }
 

@@ -120,8 +120,8 @@ void getDimensions(const Alignment* outAlignment, const Genome* genome,
 
 void copyGenome(const Genome* inGenome, Genome* outGenome)
 {
-  DNAIteratorPtr inDna = inGenome->getDNAIterator();
-  DNAIteratorPtr outDna = outGenome->getDNAIterator();
+  DnaIteratorPtr inDna = inGenome->getDnaIterator();
+  DnaIteratorPtr outDna = outGenome->getDnaIterator();
   hal_size_t n = inGenome->getSequenceLength();
   assert(n == outGenome->getSequenceLength());
   for (; (hal_size_t)inDna->getArrayIndex() < n; inDna->toRight(), 

@@ -84,7 +84,7 @@ static bool is4dSiteConserved(const Sequence *sequence, hal_index_t pos, bool re
     const ColumnIterator::DNASet *dnaSet = colMapIt->second;
     for (hal_size_t j = 0; j < dnaSet->size(); j++) {
       char c1, c2;
-      DNAIteratorPtr dna = dnaSet->at(j);
+      DnaIteratorPtr dna = dnaSet->at(j);
       if ((dna->getReversed() && dna->getArrayIndex() > colMapIt->first->getEndPosition() - 2) ||
           (!dna->getReversed() && dna->getArrayIndex() < colMapIt->first->getStartPosition() + 2)) {
         isConserved = false;
@@ -146,7 +146,7 @@ void Extract4d::extractBlocks4d(bool conserved)
       --end;
       swap(start, end);
     }
-    DNAIteratorPtr dna = _refSequence->getDNAIterator(start);
+    DnaIteratorPtr dna = _refSequence->getDnaIterator(start);
     if (reversed)
     {
       dna->toReverse();

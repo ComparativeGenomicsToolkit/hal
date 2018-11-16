@@ -104,10 +104,10 @@ void hdf5DNATypeTest(CuTest *testCase)
     setup();
     try 
     {
-      PredType datatype = HDF5Genome::dnaDataType();
+      PredType datatype = Hdf5Genome::dnaDataType();
       H5File file(H5std_string(fileName), H5F_ACC_TRUNC);
 
-      HDF5ExternalArray myArray;
+      Hdf5ExternalArray myArray;
       DSetCreatPropList cparms;
       if (chunkSize > 0)
       {
@@ -127,7 +127,7 @@ void hdf5DNATypeTest(CuTest *testCase)
       file.close();
 
       H5File rfile(H5std_string(fileName), H5F_ACC_RDONLY);
-      HDF5ExternalArray readArray;
+      Hdf5ExternalArray readArray;
       readArray.load(&rfile, datasetName);
       for (hsize_t i = 0; i < NEVEN / 2; ++i)
       {

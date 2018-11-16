@@ -7,23 +7,23 @@
 #include <cstdlib>
 #include "hdf5BottomSegment.h"
 #include "hdf5TopSegment.h"
-#include "halDNAIterator.h"
+#include "halDnaIterator.h"
 
 using namespace std;
 using namespace H5;
 using namespace hal;
 
-const size_t HDF5BottomSegment::genomeIndexOffset = 0;
-const size_t HDF5BottomSegment::lengthOffset = sizeof(hal_index_t);
-const size_t HDF5BottomSegment::topIndexOffset = lengthOffset + sizeof(hal_size_t);
-const size_t HDF5BottomSegment::firstChildOffset = topIndexOffset + sizeof(hal_index_t);
-const size_t HDF5BottomSegment::totalSize(hal_size_t numChildren)
+const size_t Hdf5BottomSegment::genomeIndexOffset = 0;
+const size_t Hdf5BottomSegment::lengthOffset = sizeof(hal_index_t);
+const size_t Hdf5BottomSegment::topIndexOffset = lengthOffset + sizeof(hal_size_t);
+const size_t Hdf5BottomSegment::firstChildOffset = topIndexOffset + sizeof(hal_index_t);
+const size_t Hdf5BottomSegment::totalSize(hal_size_t numChildren)
 {
   return firstChildOffset + numChildren * (sizeof(hal_index_t) + sizeof(bool));
 }
 
-HDF5BottomSegment::HDF5BottomSegment(HDF5Genome* genome,
-                                     HDF5ExternalArray* array,
+Hdf5BottomSegment::Hdf5BottomSegment(Hdf5Genome* genome,
+                                     Hdf5ExternalArray* array,
                                      hal_index_t index) :
   _array(array),
   _index(index),
@@ -32,26 +32,26 @@ HDF5BottomSegment::HDF5BottomSegment(HDF5Genome* genome,
 
 }
 
-HDF5BottomSegment::~HDF5BottomSegment()
+Hdf5BottomSegment::~Hdf5BottomSegment()
 {
   
 }
 
-hal_size_t HDF5BottomSegment::numChildrenFromDataType(
+hal_size_t Hdf5BottomSegment::numChildrenFromDataType(
   const H5::DataType& dataType)
 {
   return (dataType.getSize() - firstChildOffset) / 
      (sizeof(hal_index_t) + sizeof(bool));
 }
 
-hal_offset_t HDF5BottomSegment::getTopParseOffset() const
+hal_offset_t Hdf5BottomSegment::getTopParseOffset() const
 {
   assert(_index >= 0);
   hal_offset_t offset = 0;
   hal_index_t topIndex = getTopParseIndex();
   if (topIndex != NULL_INDEX)
   {
-    HDF5TopSegment ts(_genome, &_genome->_topArray, topIndex);
+    Hdf5TopSegment ts(_genome, &_genome->_topArray, topIndex);
     assert(ts.getStartPosition() <= getStartPosition());
     assert((hal_index_t)(ts.getStartPosition() + ts.getLength()) 
            >= getStartPosition());
@@ -60,7 +60,7 @@ hal_offset_t HDF5BottomSegment::getTopParseOffset() const
   return offset;
 }
 
-void HDF5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
+void Hdf5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
 {
   assert(_index >= 0);
   if (_genome && (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
@@ -73,19 +73,19 @@ void HDF5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
   _array->setValue(_index + 1, genomeIndexOffset, startPos + length);
 }
 
-void HDF5BottomSegment::getString(string& outString) const
+void Hdf5BottomSegment::getString(string& outString) const
 {
-    DNAIteratorPtr dnaIt(_genome->getDNAIterator(getStartPosition()));
+    DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
     dnaIt->readString(outString, getLength()); 
 }
 
-bool HDF5BottomSegment::isMissingData(double nThreshold) const
+bool Hdf5BottomSegment::isMissingData(double nThreshold) const
 {
   if (nThreshold >= 1.0)
   {
     return false;
   }  
-  DNAIteratorPtr dnaIt(_genome->getDNAIterator(getStartPosition()));
+  DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
   size_t length = getLength();
   size_t maxNs = nThreshold * (double)length;
   size_t Ns = 0;
@@ -109,13 +109,13 @@ bool HDF5BottomSegment::isMissingData(double nThreshold) const
   return false;
 }
 
-void HDF5BottomSegment::print(std::ostream& os) const
+void Hdf5BottomSegment::print(std::ostream& os) const
 {
   os << "HDF5 Bottom Segment";
 }
 
 // HDF5 SPECIFIC
-H5::CompType HDF5BottomSegment::dataType(hal_size_t numChildren)
+H5::CompType Hdf5BottomSegment::dataType(hal_size_t numChildren)
 {
   // the in-memory representations and hdf5 representations 
   // don't necessarily have to be the same, but it simplifies 

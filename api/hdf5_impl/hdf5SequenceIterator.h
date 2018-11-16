@@ -15,12 +15,12 @@
 
 namespace hal {
 
-class HDF5SequenceIterator : public SequenceIterator
+class Hdf5SequenceIterator : public SequenceIterator
 {
 public:
    
-   HDF5SequenceIterator(HDF5Genome* genome, hal_index_t index);
-   ~HDF5SequenceIterator();
+   Hdf5SequenceIterator(Hdf5Genome* genome, hal_index_t index);
+   ~Hdf5SequenceIterator();
    
    // SEQUENCE ITERATOR METHODS
    SequenceIteratorPtr clone() const;
@@ -30,7 +30,7 @@ public:
    bool equals(SequenceIteratorPtr other) const;
 
 private:
-   HDF5Sequence _sequence;
+   Hdf5Sequence _sequence;
 };
 
 }

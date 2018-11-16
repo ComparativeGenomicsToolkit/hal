@@ -753,7 +753,7 @@ void  MappedSegmentColCompareTest::createColArray()
         ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
         for (; dnaIt != dnaSet->end(); ++dnaIt)
         {
-          DNAIteratorPtr dna = *dnaIt;
+          DnaIteratorPtr dna = *dnaIt;
           insertList.push_back(
             pair<hal_index_t, bool>(dna->getArrayIndex(), dna->getReversed()));
         }
@@ -774,7 +774,7 @@ void  MappedSegmentColCompareTest::createColArray()
         ColumnIterator::DNASet::const_iterator dnaIt = dnaSet->begin();
         for (; dnaIt != dnaSet->end(); ++dnaIt)
         {
-          DNAIteratorPtr dna = *dnaIt;
+          DnaIteratorPtr dna = *dnaIt;
           for (size_t insIdx = 0; insIdx < insertList.size(); ++insIdx)
           {
             _colArray[dna->getArrayIndex()].insert(insertList[insIdx]);

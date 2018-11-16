@@ -15,11 +15,11 @@ namespace hal {
 /** 
  * Interface for general dna iterator
  */
-class DNAIterator
+class DnaIterator
 {
 public:
-    DNAIterator(Genome* genome,
-                DNAAccessPtr dnaAccess,
+    DnaIterator(Genome* genome,
+                DnaAccessPtr dnaAccess,
                 hal_index_t index):
         _genome(genome),
         _dnaAccess(dnaAccess),
@@ -28,12 +28,12 @@ public:
     }
 
     /** Destructor */
-    virtual ~DNAIterator() {
+    virtual ~DnaIterator() {
     }
 
     /** Ensure cache write data is flushed if needed.  This should be called
      * after a writing loop or an error will be generated.  This is not done
-     * automatically on destruct, as error will be caught in DNAAccess.
+     * automatically on destruct, as error will be caught in DnaAccess.
      */
     void flush() {
         _dnaAccess->flush();
@@ -107,10 +107,10 @@ public:
     void writeString(const std::string& inString, hal_size_t length);
 
    /** Compare (array indexes) of two iterators */
-    bool equals(DNAIteratorPtr& other) const ;
+    bool equals(DnaIteratorPtr& other) const ;
 
     /** Compare (array indexes) of two iterators */
-    bool leftOf(DNAIteratorPtr& other) const;
+    bool leftOf(DnaIteratorPtr& other) const;
 
     private:
     bool inRange() const {
@@ -118,13 +118,13 @@ public:
     }
 
     Genome* _genome;
-    DNAAccessPtr _dnaAccess;
+    DnaAccessPtr _dnaAccess;
     hal_index_t _index;
     bool _reversed;
 
 };
 
-inline char DNAIterator::getBase() const
+inline char DnaIterator::getBase() const
 {
   assert(inRange());
   char c = _dnaAccess->getBase(_index);
@@ -134,7 +134,7 @@ inline char DNAIterator::getBase() const
   return c;
 }
 
-inline void DNAIterator::setBase(char c)
+inline void DnaIterator::setBase(char c)
 {
   if (not inRange()) {
     throw hal_exception("Trying to set character out of range");
@@ -148,23 +148,23 @@ inline void DNAIterator::setBase(char c)
   assert(getBase() == !_reversed ? c : reverseComplement(c));
 }
 
-inline bool DNAIterator::equals(DNAIteratorPtr& other) const
+inline bool DnaIterator::equals(DnaIteratorPtr& other) const
 {
-  const DNAIterator* mmOther = reinterpret_cast<
-     const DNAIterator*>(other.get());
+  const DnaIterator* mmOther = reinterpret_cast<
+     const DnaIterator*>(other.get());
   assert(_genome == mmOther->_genome);
   return _index == mmOther->_index;
 }
 
-inline bool DNAIterator::leftOf(DNAIteratorPtr& other) const
+inline bool DnaIterator::leftOf(DnaIteratorPtr& other) const
 {
-  const DNAIterator* mmOther = reinterpret_cast<
-     const DNAIterator*>(other.get());
+  const DnaIterator* mmOther = reinterpret_cast<
+     const DnaIterator*>(other.get());
   assert(_genome == mmOther->_genome);
   return _index < mmOther->_index;
 }
 
-inline void DNAIterator::readString(std::string& outString,
+inline void DnaIterator::readString(std::string& outString,
                                     hal_size_t length)
 {
   assert(length == 0 || inRange() == true);
@@ -176,7 +176,7 @@ inline void DNAIterator::readString(std::string& outString,
   }
 }
 
-inline void DNAIterator::writeString(const std::string& inString,
+inline void DnaIterator::writeString(const std::string& inString,
                                      hal_size_t length)
 {
   assert(length == 0 || inRange());
