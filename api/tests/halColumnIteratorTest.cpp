@@ -375,24 +375,24 @@ void ColumnIteratorInvTest::createCallBack(Alignment* alignment)
   {
     switch (i % 4) {
     case 0: 
-      gDnaIt->setChar('A'); 
-      dDnaIt->setChar('C'); 
-      sDnaIt->setChar('T');
+      gDnaIt->setBase('A'); 
+      dDnaIt->setBase('C'); 
+      sDnaIt->setBase('T');
       break;
     case 1: 
-      gDnaIt->setChar('G'); 
-      dDnaIt->setChar('A'); 
-      sDnaIt->setChar('C');
+      gDnaIt->setBase('G'); 
+      dDnaIt->setBase('A'); 
+      sDnaIt->setBase('C');
       break;
     case 2: 
-      gDnaIt->setChar('T'); 
-      dDnaIt->setChar('G'); 
-      sDnaIt->setChar('A');
+      gDnaIt->setBase('T'); 
+      dDnaIt->setBase('G'); 
+      sDnaIt->setBase('A');
       break;
     case 3: 
-      gDnaIt->setChar('C'); 
-      dDnaIt->setChar('T'); 
-      sDnaIt->setChar('G');
+      gDnaIt->setBase('C'); 
+      dDnaIt->setBase('T'); 
+      sDnaIt->setBase('G');
       break;
     }
     gDnaIt->toRight();

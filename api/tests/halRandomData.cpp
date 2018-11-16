@@ -316,7 +316,7 @@ static void createRandomRootGenome(mt19937& rng,
     hal_size_t length = genome->getSequenceLength();
     for (hal_size_t i = 0; i < length; ++i)
     {
-      dnaIt->setChar(randDNA(rng));
+      dnaIt->setBase(randDNA(rng));
       dnaIt->toRight();
     }
     dnaIt->flush();

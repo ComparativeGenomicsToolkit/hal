@@ -58,7 +58,7 @@ void MaskExtractor::addMaskedBasesToCache()
   DNAIteratorPtr dnaEnd = _sequence->getDNAEndIterator();
   for (; !dna->equals(dnaEnd); dna->toRight())
   {
-    if (isMasked(dna->getChar()))
+    if (isMasked(dna->getBase()))
     {
       _posCache.insert(dna->getArrayIndex());
     }

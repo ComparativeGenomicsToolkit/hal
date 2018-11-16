@@ -234,7 +234,7 @@ void hal::validateSequence(const Sequence* sequence)
   {
     for (hal_size_t i = 0; i < length; ++i)
     {
-      char c = dnaIt->getChar();
+      char c = dnaIt->getBase();
       if (isNucleotide(c) == false)
       {
         throw hal_exception( "Non-nucleotide character discoverd at position " 

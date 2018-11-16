@@ -50,14 +50,14 @@ int main(int argc, char *argv[])
     lineStream >> newChar;
     Genome *genome = alignment->openGenome(genomeName);
     DNAIteratorPtr dnaIt = genome->getDNAIterator(pos);
-    if (fastUpper(dnaIt->getChar()) != prevChar) {
+    if (fastUpper(dnaIt->getBase()) != prevChar) {
       dnaIt->toReverse();
-      if (fastUpper(dnaIt->getChar()) != prevChar) {
-        throw hal_exception("previous nucleotide " + string(1, dnaIt->getChar()) + " does not match expected " + string(1, prevChar) + "! Aborting early. Your hal file could be invalid now.");
+      if (fastUpper(dnaIt->getBase()) != prevChar) {
+        throw hal_exception("previous nucleotide " + string(1, dnaIt->getBase()) + " does not match expected " + string(1, prevChar) + "! Aborting early. Your hal file could be invalid now.");
       }
     }
 
-    dnaIt->setChar(newChar);
+    dnaIt->setBase(newChar);
   }
   tsv.close();
   alignment->close();

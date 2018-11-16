@@ -229,7 +229,7 @@ void Genome::copySequence(Genome *dest) const
   for (; (hal_size_t)inDna->getArrayIndex() < n; inDna->toRight(), 
          outDna->toRight())
   {
-    outDna->setChar(inDna->getChar());
+    outDna->setBase(inDna->getBase());
   }
   outDna->flush();
 }

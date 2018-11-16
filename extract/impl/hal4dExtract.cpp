@@ -91,9 +91,9 @@ static bool is4dSiteConserved(const Sequence *sequence, hal_index_t pos, bool re
         break;
       }
       dna->toLeft();
-      c2 = dna->getChar();
+      c2 = dna->getBase();
       dna->toLeft();
-      c1 = dna->getChar();
+      c1 = dna->getBase();
       if (!isFourfoldDegenerate(c1, c2)) {
         isConserved = false;
         break;
@@ -179,7 +179,7 @@ void Extract4d::extractBlocks4d(bool conserved)
         }
         frame = 0;
       } else {
-        currCodonPrefix[frame] = dna->getChar();
+        currCodonPrefix[frame] = dna->getBase();
         frame++;
       }
       dna->toRight();

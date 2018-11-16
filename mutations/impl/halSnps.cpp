@@ -425,7 +425,7 @@ static void countSnps(const Genome* refGenome,
     {
       DNAIteratorPtr refDnaIt = *orthologsIt->first;
       set<DNAIteratorPtr *> *orthologSet = orthologsIt->second;
-      char refDna = tolower(refDnaIt->getChar());
+      char refDna = tolower(refDnaIt->getBase());
       hal_size_t numDifferentSpecies = 0; // # of species w/ base
                                           // different from ref
       if (refDna == 'n')
@@ -436,7 +436,7 @@ static void countSnps(const Genome* refGenome,
       for (set<DNAIteratorPtr *>::const_iterator orthologIt = orthologSet->begin(); orthologIt != orthologSet->end(); orthologIt++)
       {
         DNAIteratorPtr targetDnaIt = **orthologIt;
-        char targetDna = tolower(targetDnaIt->getChar());
+        char targetDna = tolower(targetDnaIt->getBase());
         if (targetDna == 'n')
         {
           continue;
@@ -460,14 +460,14 @@ static void countSnps(const Genome* refGenome,
         refTsvStream << refSeq->getName() << "\t"
                      << refDnaIt->getArrayIndex() - refSeq->getStartPosition();
         // then the reference base:
-        refTsvStream << "\t" << refDnaIt->getChar();
+        refTsvStream << "\t" << refDnaIt->getBase();
         // then finally the orthologs, in the same order that they
         // were spit out in the header.
         vector<char> orthologFields(targetGenomes.size());// initialized to '\0'
         for (set<DNAIteratorPtr *>::const_iterator i = orthologSet->begin();
              i != orthologSet->end(); i++)
         {
-          char targetDna = (**i)->getChar();
+          char targetDna = (**i)->getBase();
           // - 3 because of the 3 fields preceding the target base fields
           assert(orthologFields[fieldForGenome[(**i)->getGenome()] - 3] == '\0');
           orthologFields[fieldForGenome[(**i)->getGenome()] - 3] = targetDna;

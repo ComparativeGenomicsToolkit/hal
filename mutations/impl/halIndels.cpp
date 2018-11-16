@@ -37,7 +37,7 @@ static bool regionIsNotAmbiguous(const Genome* genome, hal_index_t startPos,
   DNAIteratorPtr dnaIt = genome->getDNAIterator(startPos);
   hal_index_t length = endPos - startPos;
   for (hal_size_t i = 0; i < (hal_size_t) length; i++) {
-    if (dnaIt->getChar() == 'N') {
+    if (dnaIt->getBase() == 'N') {
       return false;
     }
     dnaIt->toRight();
@@ -85,7 +85,7 @@ static bool isNotAmbiguous(const ColumnIterator::ColumnMap *colMap)
     const ColumnIterator::DNASet *dnaSet = colMapIt->second;
     assert(dnaSet->size() == 1);
     DNAIteratorPtr dnaIt = dnaSet->at(0);
-    if (dnaIt->getChar() == 'N') {
+    if (dnaIt->getBase() == 'N') {
       return false;
     }
   }

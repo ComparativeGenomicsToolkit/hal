@@ -147,7 +147,7 @@ bool GappedTopSegmentIterator::isMissingData(double nThreshold) const
   char c;
   for (size_t i = 0; i < length; ++i, dnaIt->toRight())
   {
-    c = dnaIt->getChar();
+    c = dnaIt->getBase();
     if (c == 'N' || c == 'n')
     {
       ++Ns;

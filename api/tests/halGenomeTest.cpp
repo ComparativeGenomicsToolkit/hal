@@ -181,7 +181,7 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   DNAIteratorPtr dnaIt = ancGenome->getDNAIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
-    dnaIt->setChar(ancSeq[i]);
+    dnaIt->setBase(ancSeq[i]);
   }
   dnaIt->flush();
 
@@ -189,7 +189,7 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   dnaIt = leafGenome->getDNAIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
-    dnaIt->setChar(ancSeq[i]);
+    dnaIt->setBase(ancSeq[i]);
   }
   dnaIt->flush();
 
@@ -226,7 +226,7 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   n = copyRootGenome->getSequenceLength();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % copySeq.size();
-    dnaIt->setChar(copySeq[i]);
+    dnaIt->setBase(copySeq[i]);
   }
   dnaIt->flush();
 
@@ -234,7 +234,7 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   n = copyLeafGenome->getSequenceLength();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % copySeq.size();
-    dnaIt->setChar(copySeq[i]);
+    dnaIt->setBase(copySeq[i]);
   }
   dnaIt->flush();
 
@@ -288,7 +288,7 @@ void GenomeCopyTest::checkCallBack(const Alignment* alignment)
   DNAIteratorPtr dnaIt = ancGenome->getDNAIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
-    CuAssertTrue(_testCase, dnaIt->getChar() == ancSeq[i]);
+    CuAssertTrue(_testCase, dnaIt->getBase() == ancSeq[i]);
   }
   TopSegmentIteratorPtr topIt = leafGenome->getTopSegmentIterator();
   n = leafGenome->getNumTopSegments();
@@ -334,7 +334,7 @@ void GenomeCopyTest::checkCallBack(const Alignment* alignment)
   dnaIt = copyRootGenome->getDNAIterator();
   for (; dnaIt->getArrayIndex() < n; dnaIt->toRight()) {
     size_t i = dnaIt->getArrayIndex() % ancSeq.size();
-    CuAssertTrue(_testCase, dnaIt->getChar() == ancSeq[i]);
+    CuAssertTrue(_testCase, dnaIt->getBase() == ancSeq[i]);
   }
   topIt = copyLeafGenome->getTopSegmentIterator();
   n = copyLeafGenome->getNumTopSegments();

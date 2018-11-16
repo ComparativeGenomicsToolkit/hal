@@ -138,7 +138,7 @@ void buildTree(const Alignment* alignment, const Genome *genome,
     if (reversed) {
       dnaIt->toReverse();
     }
-    data->dna = dnaIt->getChar();
+    data->dna = dnaIt->getBase();
     return;
   }
   data->dna = 'Z'; // signals an ancestor for the pruning process -- hacky
@@ -343,7 +343,7 @@ void writeNucleotides(stTree *tree, const Alignment* alignment,
   if (data->reversed) {
     dnaIt->toReverse();
   }
-  char dna = fastUpper(dnaIt->getChar());
+  char dna = fastUpper(dnaIt->getBase());
   if (data->dna != dna) {
     if (printWrites) {
       cout << genome->getName() << "\t" << data->pos << "\t" << string(1, dna) << "\t" << string(1, data->dna) << endl;

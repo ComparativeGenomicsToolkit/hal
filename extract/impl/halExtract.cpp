@@ -127,7 +127,7 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
   for (; (hal_size_t)inDna->getArrayIndex() < n; inDna->toRight(), 
           outDna->toRight())
   {
-    outDna->setChar(inDna->getChar());
+    outDna->setBase(inDna->getBase());
   }
 
   TopSegmentIteratorPtr inTop = inGenome->getTopSegmentIterator();

@@ -41,12 +41,12 @@ public:
     
     /** Get the DNA character at this position (if revsersed is set
     * the reverse compelement is returned */
-    char getChar() const;
+    char getBase() const;
 
    /** Set the DNA character at this position (if revsersed is set
     * the reverse compelement is stored
     * @param c DNA character to set */
-    void setChar(char c);
+    void setBase(char c);
 
    /** Move to previous position (equiv. to toRight if reversed)*/
     void toLeft() {
@@ -124,7 +124,7 @@ public:
 
 };
 
-inline char DNAIterator::getChar() const
+inline char DNAIterator::getBase() const
 {
   assert(inRange());
   char c = _dnaAccess->getBase(_index);
@@ -134,7 +134,7 @@ inline char DNAIterator::getChar() const
   return c;
 }
 
-inline void DNAIterator::setChar(char c)
+inline void DNAIterator::setBase(char c)
 {
   if (not inRange()) {
     throw hal_exception("Trying to set character out of range");
@@ -145,7 +145,7 @@ inline void DNAIterator::setChar(char c)
     c = reverseComplement(c);
   }
   _dnaAccess->setBase(_index, c);
-  assert(getChar() == !_reversed ? c : reverseComplement(c));
+  assert(getBase() == !_reversed ? c : reverseComplement(c));
 }
 
 inline bool DNAIterator::equals(DNAIteratorPtr& other) const
@@ -171,7 +171,7 @@ inline void DNAIterator::readString(std::string& outString,
   outString.resize(length);
 
   for (hal_size_t i = 0; i < length; ++i) {
-    outString[i] = getChar();
+    outString[i] = getBase();
     toRight();
   }
 }
@@ -181,7 +181,7 @@ inline void DNAIterator::writeString(const std::string& inString,
 {
   assert(length == 0 || inRange());
   for (hal_size_t i = 0; i < length; ++i) {
-    setChar(inString[i]);
+    setBase(inString[i]);
     toRight();
   }
   flush();

@@ -549,7 +549,7 @@ void MafWriteGenomes::initEmptySegments()
         DNAIteratorPtr dna = sequence->getDNAIterator(startPosition);
         for (hal_size_t i = 0; i < length; ++i)
         {
-          dna->setChar('N');
+          dna->setBase('N');
           dna->toRight();
         }
       }

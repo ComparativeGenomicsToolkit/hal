@@ -157,7 +157,7 @@ inline void MafBlock::updateEntry(MafBlockEntry* entry,
            (hal_index_t)
            (entry->_start + entry->_length - 1)); 
 
-    entry->_sequence->append(dna->getChar());
+    entry->_sequence->append(dna->getBase());
   }
   else
   {
