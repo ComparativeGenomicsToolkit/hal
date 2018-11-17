@@ -127,3 +127,6 @@ Alignment* openHalAlignment(const std::string& path,
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

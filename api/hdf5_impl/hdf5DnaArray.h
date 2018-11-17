@@ -78,3 +78,6 @@ inline Hdf5DnaConstIterator(hsize_t offset)
 }
 
 }
+// Local Variables:
+// mode: c++
+// End:

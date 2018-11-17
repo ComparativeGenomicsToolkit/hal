@@ -249,3 +249,6 @@ inline void MMapAlignmentData::setNewickString(MMapAlignment *alignment, const c
 }
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

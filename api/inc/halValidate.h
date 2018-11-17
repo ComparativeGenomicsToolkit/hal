@@ -41,3 +41,6 @@ void validateAlignment(const Alignment* alignment);
 }
 #endif
 
+// Local Variables:
+// mode: c++
+// End:

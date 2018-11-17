@@ -211,3 +211,6 @@ inline char *MMapGenomeData::getDNA(MMapAlignment *alignment, size_t start, size
 }
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

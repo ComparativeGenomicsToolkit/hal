@@ -75,3 +75,6 @@ inline bool operator>(const SlicedSegment& segmentIt,
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

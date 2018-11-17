@@ -111,3 +111,6 @@ HAL_FORWARD_DEC_MUTABLE_CLASS(ColumnIterator)
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

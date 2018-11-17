@@ -147,3 +147,6 @@ inline bool operator!=(TopSegmentIteratorPtr p1,
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

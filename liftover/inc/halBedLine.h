@@ -105,3 +105,6 @@ inline bool BedLinePLess::operator()(const BedLine* b1, const BedLine* b2) const
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

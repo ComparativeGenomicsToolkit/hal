@@ -47,3 +47,6 @@ private:
 
 #endif
 
+// Local Variables:
+// mode: c++
+// End:

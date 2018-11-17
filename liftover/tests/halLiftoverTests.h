@@ -34,3 +34,6 @@ struct WiggleLiftoverTest : public AlignmentTest
 CuSuite *halLiftoverTestSuite();
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

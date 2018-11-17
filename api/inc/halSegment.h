@@ -145,3 +145,6 @@ inline std::ostream& operator<<(std::ostream& os, const Segment& s)
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

@@ -188,3 +188,6 @@ inline bool operator!=(GappedTopSegmentIteratorPtr p1,
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

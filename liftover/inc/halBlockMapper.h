@@ -123,3 +123,6 @@ inline hal_index_t BlockMapper::getAbsRefLast() const
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

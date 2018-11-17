@@ -26,3 +26,6 @@ class MMapTopSegmentData
 };
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

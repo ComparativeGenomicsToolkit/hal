@@ -319,3 +319,6 @@ inline hal::SegmentIteratorPtr hal::MappedSegment::sourceclone() const
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

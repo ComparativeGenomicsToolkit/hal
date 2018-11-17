@@ -178,3 +178,6 @@ inline hal_index_t MMapTopSegment::getRightParentIndex() const
 }
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

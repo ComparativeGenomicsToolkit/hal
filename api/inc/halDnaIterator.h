@@ -200,3 +200,6 @@ inline void DnaIterator::writeString(const std::string& inString,
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

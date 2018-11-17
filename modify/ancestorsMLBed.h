@@ -21,3 +21,6 @@ public:
   bool _printWrites;
   bool _outputPosts;
 };
+// Local Variables:
+// mode: c++
+// End:

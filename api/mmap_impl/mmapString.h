@@ -25,3 +25,6 @@ class MMapString : public MMapArray<char> {
 };
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

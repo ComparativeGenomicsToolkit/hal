@@ -24,3 +24,6 @@ CuSuite* halMappedSegmentTestSuite();
 CuSuite* halGappedSegmentIteratorTestSuite();
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

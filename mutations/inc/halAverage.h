@@ -134,3 +134,6 @@ inline Average<T>& Average<T>::operator/=(hal_size_t N)
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

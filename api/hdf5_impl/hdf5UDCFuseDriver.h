@@ -36,3 +36,6 @@ void H5FD_udc_fuse_set_cache_dir(const char* cacheDir);
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

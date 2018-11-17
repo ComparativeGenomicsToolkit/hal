@@ -62,3 +62,6 @@ void gtIteratorToChain(GappedTopSegmentIteratorPtr gt, Chain& outChain,
 
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

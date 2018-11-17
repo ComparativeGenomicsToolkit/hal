@@ -8,3 +8,5 @@
 /objs
 *.depend
 .emacs.bak
+TAGS
+include.local.mk

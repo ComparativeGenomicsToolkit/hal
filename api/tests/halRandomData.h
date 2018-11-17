@@ -53,3 +53,6 @@ void createRandomSegment(std::mt19937& rng,
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

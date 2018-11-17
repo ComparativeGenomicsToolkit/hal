@@ -61,3 +61,6 @@ inline bool operator!=(SequenceIteratorPtr p1,
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

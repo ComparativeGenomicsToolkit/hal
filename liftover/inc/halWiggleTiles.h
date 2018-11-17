@@ -197,3 +197,6 @@ inline T WiggleTiles<T>::getDefaultValue() const
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

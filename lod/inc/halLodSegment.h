@@ -231,3 +231,6 @@ inline LodBlock* LodSegment::getBlock() const
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

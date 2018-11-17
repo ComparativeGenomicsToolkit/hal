@@ -51,3 +51,6 @@ MutationsStats& operator/=(MutationsStats& ms, hal_size_t N);
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

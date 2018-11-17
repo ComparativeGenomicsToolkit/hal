@@ -16,3 +16,6 @@ extern "C" {
 CuSuite *halChainGetBlocksTestSuite();
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

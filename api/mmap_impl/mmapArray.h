@@ -52,3 +52,6 @@ class MMapArray {
 };
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

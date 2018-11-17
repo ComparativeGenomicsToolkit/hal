@@ -21,3 +21,6 @@ struct MetaDataTest : public AlignmentTest
 };
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

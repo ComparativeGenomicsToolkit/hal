@@ -233,3 +233,6 @@ inline void Hdf5ExternalArray::setValue(hsize_t index, hsize_t offset, T val)
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

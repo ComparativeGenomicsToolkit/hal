@@ -368,3 +368,6 @@ void halFreeChromList(struct hal_chromosome_t *chromosome);
 #endif
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

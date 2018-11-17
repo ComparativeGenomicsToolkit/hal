@@ -147,3 +147,6 @@ size_t hal::MMapFile::alignRound(size_t size) const {
 // Local Variables:
 // mode: C ++
 // End
+// Local Variables:
+// mode: c++
+// End:

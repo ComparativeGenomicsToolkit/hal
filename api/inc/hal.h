@@ -86,3 +86,6 @@
 #include "halRearrangement.h"
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

@@ -295,3 +295,6 @@ inline T CLParser::get(const std::string& name) const
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

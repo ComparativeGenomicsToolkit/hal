@@ -46,3 +46,6 @@ public:
 private:
    base::mask table[256];
 };
+// Local Variables:
+// mode: c++
+// End:

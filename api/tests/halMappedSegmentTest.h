@@ -104,3 +104,6 @@ struct MappedSegmentColCompareTest3 : public MappedSegmentColCompareTest
 
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

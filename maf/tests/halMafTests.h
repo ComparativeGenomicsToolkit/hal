@@ -17,3 +17,6 @@ CuSuite *halMafExportTestSuite();
 CuSuite *halMafBlockTestSuite();
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

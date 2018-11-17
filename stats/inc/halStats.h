@@ -49,3 +49,6 @@ inline std::ostream& operator<<(std::ostream& os, const hal::HalStats& halStats)
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

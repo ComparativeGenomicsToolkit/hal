@@ -259,3 +259,6 @@ inline hal_index_t Hdf5TopSegment::getRightParentIndex() const
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

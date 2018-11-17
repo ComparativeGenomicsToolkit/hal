@@ -26,3 +26,6 @@ class MMapSequenceData {
 };
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

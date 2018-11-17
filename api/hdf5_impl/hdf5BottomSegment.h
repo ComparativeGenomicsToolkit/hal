@@ -281,3 +281,6 @@ inline hal_index_t Hdf5BottomSegment::getRightChildIndex(hal_size_t i) const
 
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

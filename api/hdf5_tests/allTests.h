@@ -18,3 +18,6 @@ CuSuite *hdf5SegmentTypeTestSuite();
 CuSuite *hdf5SequenceTypeTestSuite();
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

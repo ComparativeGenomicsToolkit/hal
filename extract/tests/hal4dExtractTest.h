@@ -39,3 +39,6 @@ struct CDS4dExtractTest : public AlignmentTest
 };
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

@@ -274,3 +274,6 @@ inline const Genome* Genome::getParent() const
 }
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

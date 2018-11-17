@@ -17,3 +17,6 @@ Alignment* getTestAlignmentInstances(const std::string& storageFormat,
 
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

@@ -199,3 +199,6 @@ inline unsigned char dnaPack(char unpackedChar, hal_index_t index, unsigned char
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

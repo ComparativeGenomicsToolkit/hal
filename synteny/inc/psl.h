@@ -200,3 +200,6 @@ inline std::ostream& operator<<(std::ostream &strm, const Psl &a) {
     }
 
 #endif /*PSL_H*/
+// Local Variables:
+// mode: c++
+// End:

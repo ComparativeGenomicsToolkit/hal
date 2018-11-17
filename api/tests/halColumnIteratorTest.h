@@ -66,3 +66,6 @@ struct ColumnIteratorPositionCacheTest : public AlignmentTest
 };
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

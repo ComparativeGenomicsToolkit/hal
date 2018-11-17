@@ -29,3 +29,6 @@ std::vector<int> get_tInserts(const std::vector<PslBlock>& blocks);
 #endif /* PSL_IO_H */
 
 
+// Local Variables:
+// mode: c++
+// End:

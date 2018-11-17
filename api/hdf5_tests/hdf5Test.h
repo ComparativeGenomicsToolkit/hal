@@ -22,3 +22,6 @@ void writeNumbers(hsize_t chunkSize);
 void checkNumbers(CuTest *testCase);
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

@@ -211,3 +211,6 @@ inline bool ColumnIterator::childInScope(const Genome* genome,
 
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

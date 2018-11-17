@@ -45,3 +45,6 @@ void doFelsenstein(stTree *node, TreeModel *mod);
 void reEstimate(TreeModel *mod, const Alignment* alignment, const Genome *genome, hal_index_t startPos, hal_index_t endPos, std::map<std::string, int> &nameToId, double threshold, bool printWrites, bool outputPosts);
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

@@ -87,3 +87,6 @@ HAL_FORWARD_DEC_CLASS(LodManager)
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

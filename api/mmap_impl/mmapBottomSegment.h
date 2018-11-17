@@ -194,3 +194,6 @@ inline hal_index_t MMapBottomSegment::getRightChildIndex(hal_size_t i) const
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

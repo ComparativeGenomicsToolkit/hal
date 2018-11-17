@@ -55,3 +55,6 @@ std::vector<std::vector<PslBlock> >
 
 #endif /* PSL_MERGER_H */
 
+// Local Variables:
+// mode: c++
+// End:

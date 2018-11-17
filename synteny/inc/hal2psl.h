@@ -40,3 +40,6 @@ class Hal2Psl : public BlockLiftover {
 }
 #endif /* HAL_MERGER_H */
 
+// Local Variables:
+// mode: c++
+// End:

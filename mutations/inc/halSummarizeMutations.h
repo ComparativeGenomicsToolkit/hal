@@ -59,3 +59,6 @@ inline std::ostream& operator<<(std::ostream& os,
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

@@ -184,3 +184,6 @@ inline void MafBlock::setMaxLength(hal_index_t maxLen)
 
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

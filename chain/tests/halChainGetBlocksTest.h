@@ -60,3 +60,6 @@ struct ChainGetBlocksSimpleLiftoverTest : public ChainGetBlocksSimpleTest
 
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

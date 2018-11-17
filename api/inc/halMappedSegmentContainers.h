@@ -28,3 +28,6 @@ namespace hal {
 
 #endif
 
+// Local Variables:
+// mode: c++
+// End:

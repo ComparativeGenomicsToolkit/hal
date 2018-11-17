@@ -129,3 +129,6 @@ inline const LodSegment* LodBlock::getSegment(hal_size_t index) const
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

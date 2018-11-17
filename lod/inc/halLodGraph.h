@@ -162,3 +162,6 @@ inline const LodBlock* LodGraph::getTelomeres() const
 }
 
 #endif
+// Local Variables:
+// mode: c++
+// End:

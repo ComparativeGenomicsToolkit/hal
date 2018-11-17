@@ -138,3 +138,6 @@ inline bool operator>(SegmentIteratorPtr segmentIt,
 
 }
 #endif
+// Local Variables:
+// mode: c++
+// End:

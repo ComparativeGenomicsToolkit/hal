@@ -71,3 +71,6 @@ struct BottomSegmentIsGapTest : public AlignmentTest
 };
 
 #endif
+// Local Variables:
+// mode: c++
+// End:
