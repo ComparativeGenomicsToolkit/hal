@@ -94,7 +94,7 @@ public:
     * a given threshold.
     * @param nThreshold Maximum fraction of N's in the segment for it 
     * to no be considered missing data */
-   virtual bool isMissingData(double nThreshold) const = 0;
+    virtual bool isMissingData(double nThreshold) const;
 
    /** Check if underlying segment is a top segment (easier than doing a
     * downcast.  Returns true if it's a top segment and false if it's a 

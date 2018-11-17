@@ -45,7 +45,6 @@ public:
    bool overlaps(hal_index_t genomePos) const;
    bool isFirst() const;
    bool isLast() const;
-   bool isMissingData(double nThreshold) const;
    bool isTop() const;
    hal_size_t getMappedSegments(
      MappedSegmentSet& outSegments,

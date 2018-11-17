@@ -143,37 +143,6 @@ bool GappedBottomSegmentIterator::isFirst() const
   return _left->isFirst();
 }
 
-bool GappedBottomSegmentIterator::isMissingData(double nThreshold) const
-{
-  if (nThreshold >= 1.0)
-  {
-    return false;
-  }
-  hal_index_t start = min(_left->getStartPosition(), _right->getEndPosition());
-  DnaIteratorPtr dnaIt(_left->getGenome()->getDnaIterator(start));
-  hal_size_t length = getLength();
-  size_t maxNs = nThreshold * (double)length;
-  size_t Ns = 0;
-  char c;
-  for (size_t i = 0; i < length; ++i, dnaIt->toRight())
-  {
-    c = dnaIt->getBase();
-    if (c == 'N' || c == 'n')
-    {
-      ++Ns;
-    }
-    if (Ns > maxNs)
-    {
-      return true;
-    }
-    if ((length - i) < (maxNs - Ns))
-    {
-      break;
-    }
-  }
-  return false;
-}
-
 bool GappedBottomSegmentIterator::isTop() const
 {
   return false;

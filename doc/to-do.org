@@ -46,16 +46,8 @@ of DNA.  Maybe pack DNA in mmap?
 * writing a custom MappedSegmentSet that hits smart pointer would be really nice
 * Change confusing is-a relationships to has-a:
 ** MappedSegement could have reference to source and target, not be source and get target
-* six almost identical implementations of Segment.isMissingData
-  Hdf5BottomSegment::isMissingData  hdf5s idential
-  Hdf5TopSegment::isMissingData
-  GappedBottomSegmentIterator::isMissingData gapped identical
-  GappedTopSegmentIterator::isMissingData
-  MMapBottomSegment::isMissingData  mmaps idential
-  MMapTopSegment::isMissingData
-- only difference is drive ones have specific implemented of DnaIterator, which could
-  be inlined.  However, if DnaIterator is generic, this goes away
-* halCommon.h could be split into an DNA operations module.
+* was six almost identical implementations of Segment.isMissingData()
+mostly fixed, but still inc/halSegment.h is virtual due to SegmentIterator needing to  * halCommon.h could be split into an DNA operations module.
 * how come Genome is_a SegementSequence instead of has_a bunch of SgementedSequences?
 Joel: Not entirely sure, but I think so you can work entirely within genome coordinates, and not have to care about sequences.  column iterators for example, would be annoying if you had to iterate through sequences, then through columns within that sequence
 * sharing of Hdf5Genome._dnaArray by iterators means multiple iterators in the same genome will not go well.
@@ -72,3 +64,4 @@ Joel: Not entirely sure, but I think so you can work entirely within genome coor
 * should change so no longer need marker Sequence data to indicate end
 * Doubt that the maybe of the *Iterator.toPrev() methods work.
 * are equals methods actually needed.
+* segment:getMappedSegments() doesn't seems link it should really be a method on  segments

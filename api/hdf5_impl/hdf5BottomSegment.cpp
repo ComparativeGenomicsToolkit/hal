@@ -79,36 +79,6 @@ void Hdf5BottomSegment::getString(string& outString) const
     dnaIt->readString(outString, getLength()); 
 }
 
-bool Hdf5BottomSegment::isMissingData(double nThreshold) const
-{
-  if (nThreshold >= 1.0)
-  {
-    return false;
-  }  
-  DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
-  size_t length = getLength();
-  size_t maxNs = nThreshold * (double)length;
-  size_t Ns = 0;
-  char c;
-  for (size_t i = 0; i < length; ++i, dnaIt->toRight())
-  {
-    c = dnaIt->getBase();
-    if (c == 'N' || c == 'n')
-    {
-      ++Ns;
-    }
-    if (Ns > maxNs)
-    {
-      return true;
-    }
-    if ((length - i) < (maxNs - Ns))
-    {
-      break;
-    }
-  }
-  return false;
-}
-
 void Hdf5BottomSegment::print(std::ostream& os) const
 {
   os << "HDF5 Bottom Segment";

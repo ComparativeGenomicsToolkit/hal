@@ -106,9 +106,9 @@ inline bool isSubstitution(char c1, char c2)
 
 inline bool isTransversion(char c1, char c2)
 {
-  char x = fastUpper((char)c1);
-  char y = fastUpper((char)c2);
-  return (x != y && x != 'N' && y != 'N' && !isTransition(c1, c2));
+  char x = fastUpper(c1);
+  char y = fastUpper(c2);
+  return ((x != y) && (x != 'N') && (y != 'N') && !isTransition(c1, c2));
 }
 
 inline bool isMissingData(char c)
@@ -118,7 +118,7 @@ inline bool isMissingData(char c)
 
 inline bool isMasked(char c)
 {
-  return c == std::tolower(c);
+  return c >= 'a';
 }
 
 /** test if 3rd codon position is 4-fold degenerate given first 2 positions */
