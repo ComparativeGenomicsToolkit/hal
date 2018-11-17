@@ -31,11 +31,6 @@ Hdf5TopSegment::Hdf5TopSegment(Hdf5Genome* genome,
   assert(_index >= 0);
 }
 
-Hdf5TopSegment::~Hdf5TopSegment()
-{
-  
-}
-
 void Hdf5TopSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
 {
   if (_genome && (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
@@ -62,12 +57,6 @@ hal_offset_t Hdf5TopSegment::getBottomParseOffset() const
     offset = getStartPosition() - bs.getStartPosition();
   }
   return offset;
-}
-
-void Hdf5TopSegment::getString(std::string& outString) const
-{
-    DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
-    dnaIt->readString(outString, getLength()); 
 }
 
 bool Hdf5TopSegment::isCanonicalParalog() const

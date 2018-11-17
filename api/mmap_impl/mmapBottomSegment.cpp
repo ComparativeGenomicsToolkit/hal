@@ -32,12 +32,6 @@ hal_offset_t MMapBottomSegment::getTopParseOffset() const
   return offset;
 }
 
-void MMapBottomSegment::getString(std::string& outString) const
-{
-    DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
-    dnaIt->readString(outString, getLength());
-}
-
 void MMapBottomSegment::print(std::ostream &os) const {
     os << "MMapBottomSegment" << getStartPosition() << " " << getEndPosition() << std::endl;
 }

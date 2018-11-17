@@ -26,9 +26,6 @@ public:
                   Hdf5ExternalArray* array,
                   hal_index_t index);
 
-   /** Destructor */
-   ~Hdf5TopSegment();
-
    // SEGMENT INTERFACE
    void setArrayIndex(Genome* genome, hal_index_t arrayIndex);
    const Genome* getGenome() const;
@@ -37,15 +34,10 @@ public:
    hal_index_t getStartPosition() const;
    hal_index_t getEndPosition() const;
    hal_size_t getLength() const;
-   void getString(std::string& outString) const;
    void setCoordinates(hal_index_t startPos, hal_size_t length);
    hal_index_t getArrayIndex() const;
-   bool leftOf(hal_index_t genomePos) const;
-   bool rightOf(hal_index_t genomePos) const;
-   bool overlaps(hal_index_t genomePos) const;
    bool isFirst() const;
    bool isLast() const;
-   bool isTop() const;
    hal_size_t getMappedSegments(
      MappedSegmentSet& outSegments,
      const Genome* tgtGenome,
@@ -193,21 +185,6 @@ inline hal_index_t Hdf5TopSegment::getArrayIndex() const
   return _index;
 }
 
-inline bool Hdf5TopSegment::leftOf(hal_index_t genomePos) const
-{
-  return getEndPosition() < genomePos;
-}
-
-inline bool Hdf5TopSegment::rightOf(hal_index_t genomePos) const
-{
-  return getStartPosition() > genomePos;
-}
-
-inline bool Hdf5TopSegment::overlaps(hal_index_t genomePos) const
-{
-  return !leftOf(genomePos) && !rightOf(genomePos);
-}
-
 inline bool Hdf5TopSegment::isFirst() const
 {
   assert(getSequence() != NULL);
@@ -221,11 +198,6 @@ inline bool Hdf5TopSegment::isLast() const
   return _index == (hal_index_t)_array->getSize() - 1 || 
      _index == getSequence()->getTopSegmentArrayIndex() +
      (hal_index_t)getSequence()->getNumTopSegments() - 1;
-}
-
-inline bool Hdf5TopSegment::isTop() const
-{
-  return true;
 }
 
 inline hal_size_t Hdf5TopSegment::getMappedSegments(

@@ -84,6 +84,26 @@ public:
     * the column iterator or mappedSegment interface.  It is also the segment
     * that is connected from its parent's down edge.*/
    virtual bool isCanonicalParalog() const = 0;
+
+    // SEGMENT INTERFACE
+
+    bool isTop() const {
+        return true;
+    }
+
+    virtual void getString(std::string& outString) const;
+
+    virtual bool leftOf(hal_index_t genomePos) const {
+        return getEndPosition() < genomePos;
+    }
+
+    inline bool rightOf(hal_index_t genomePos) const {
+        return getStartPosition() > genomePos;
+    }
+
+    inline bool overlaps(hal_index_t genomePos) const {
+        return !leftOf(genomePos) && !rightOf(genomePos);
+    }
 };
 }
 #endif

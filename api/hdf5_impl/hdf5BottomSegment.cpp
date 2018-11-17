@@ -32,11 +32,6 @@ Hdf5BottomSegment::Hdf5BottomSegment(Hdf5Genome* genome,
 
 }
 
-Hdf5BottomSegment::~Hdf5BottomSegment()
-{
-  
-}
-
 hal_size_t Hdf5BottomSegment::numChildrenFromDataType(
   const H5::DataType& dataType)
 {
@@ -71,12 +66,6 @@ void Hdf5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
   
   _array->setValue((hsize_t)_index, genomeIndexOffset, startPos);
   _array->setValue(_index + 1, genomeIndexOffset, startPos + length);
-}
-
-void Hdf5BottomSegment::getString(string& outString) const
-{
-    DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
-    dnaIt->readString(outString, getLength()); 
 }
 
 void Hdf5BottomSegment::print(std::ostream& os) const

@@ -87,6 +87,25 @@ public:
     * is in the same sequence)
     * @param i index of child genome to query */
    virtual hal_index_t getRightChildIndex(hal_size_t i) const = 0;
+
+    // SEGMENT INTERFACE
+    inline bool isTop() const {
+        return false;
+    }
+   virtual void getString(std::string& outString) const;
+
+    virtual bool leftOf(hal_index_t genomePos) const {
+        return getEndPosition() < genomePos;
+    }
+
+    virtual bool rightOf(hal_index_t genomePos) const {
+        return getStartPosition() > genomePos;
+    }
+
+    virtual bool overlaps(hal_index_t genomePos) const {
+        return !leftOf(genomePos) && !rightOf(genomePos);
+    }
+
 };
 
 }

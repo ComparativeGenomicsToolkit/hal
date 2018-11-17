@@ -32,12 +32,6 @@ hal_offset_t MMapTopSegment::getBottomParseOffset() const
   return offset;
 }
 
-void MMapTopSegment::getString(std::string& outString) const
-{
-    DnaIteratorPtr dnaIt(_genome->getDnaIterator(getStartPosition()));
-    dnaIt->readString(outString, getLength());
-}
-
 bool MMapTopSegment::isCanonicalParalog() const
 {
   bool isCanon = false;

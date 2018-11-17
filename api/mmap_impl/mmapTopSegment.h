@@ -25,18 +25,15 @@ class MMapTopSegment : public TopSegment
     const Genome* getGenome() const;
     Genome* getGenome();
     const Sequence* getSequence() const;
-    hal_index_t getStartPosition() const { return _data->getStartPosition(); };
+    hal_index_t getStartPosition() const {
+        return _data->getStartPosition();
+    };
     hal_index_t getEndPosition() const;
     hal_size_t getLength() const;
-    void getString(std::string& outString) const;
     void setCoordinates(hal_index_t startPos, hal_size_t length);
     hal_index_t getArrayIndex() const;
-    bool leftOf(hal_index_t genomePos) const;
-    bool rightOf(hal_index_t genomePos) const;
-    bool overlaps(hal_index_t genomePos) const;
     bool isFirst() const;
     bool isLast() const;
-    bool isTop() const;
     hal_size_t getMappedSegments(
         MappedSegmentSet& outSegments,
         const Genome* tgtGenome,
@@ -115,21 +112,6 @@ inline hal_index_t MMapTopSegment::getArrayIndex() const
   return _index;
 }
 
-inline bool MMapTopSegment::leftOf(hal_index_t genomePos) const
-{
-  return getEndPosition() < genomePos;
-}
-
-inline bool MMapTopSegment::rightOf(hal_index_t genomePos) const
-{
-  return getStartPosition() > genomePos;
-}
-
-inline bool MMapTopSegment::overlaps(hal_index_t genomePos) const
-{
-  return !leftOf(genomePos) && !rightOf(genomePos);
-}
-
 inline bool MMapTopSegment::isFirst() const
 {
   assert(getSequence() != NULL);
@@ -143,11 +125,6 @@ inline bool MMapTopSegment::isLast() const
   return _index == _genome->getNumTopSegments() || 
      _index == getSequence()->getTopSegmentArrayIndex() +
      (hal_index_t)getSequence()->getNumTopSegments() - 1;
-}
-
-inline bool MMapTopSegment::isTop() const
-{
-  return true;
 }
 
 inline hal_size_t MMapTopSegment::getMappedSegments(
