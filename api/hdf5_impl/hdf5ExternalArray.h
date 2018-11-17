@@ -103,10 +103,14 @@ public:
     * @param offset OFfset of element in struct (number of bytes) */
    
    /** Number of elements in array */
-   hsize_t getSize() const;
+    hsize_t getSize() const {
+        return _size;
+    }
 
    /** Get the HDF5 Datatype */
-   const H5::DataType& getDataType() const;
+    const H5::DataType& getDataType() const {
+        return _dataType;
+    }
 
     /** get the current buffered start */
     hsize_t getBufStart() const {
@@ -135,7 +139,6 @@ public:
     /** Read chunk from file */
    void page(hsize_t i);
 
-    
 
 private:
 
@@ -175,7 +178,12 @@ private:
    Hdf5ExternalArray& operator=(const Hdf5ExternalArray&);
 };  
 
-// INLINE MEMBERS
+/**
+ * Class used to access an Hdf5ExternalArray.  This provides a buffer and
+ * there can be multiple instances active at once.  However, multiple writers
+ * of the same array at the same time will lead to data corruption. */
+    
+    
 
 inline const char* Hdf5ExternalArray::get(hsize_t i)
 {
@@ -203,11 +211,6 @@ inline char* Hdf5ExternalArray::getUpdate(hsize_t i)
   return _buf + (i - _bufStart) * _dataSize;
 }
 
-inline hsize_t Hdf5ExternalArray::getSize() const
-{
-  return _size;
-}
-
 template<typename T> 
 inline T Hdf5ExternalArray::getValue(hsize_t index, hsize_t offset) const 
 {
@@ -227,10 +230,6 @@ inline void Hdf5ExternalArray::setValue(hsize_t index, hsize_t offset, T val)
   *entry = val;
 }
 
-inline const H5::DataType& Hdf5ExternalArray::getDataType() const
-{
-  return _dataType;
-}
 
 }
 #endif

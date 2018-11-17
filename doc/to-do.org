@@ -63,6 +63,8 @@ Joel: Not entirely sure, but I think so you can work entirely within genome coor
 - uses close-ended
 - combines buffer with array representation,should be two classes.
 - also it is slightly broken -- it reads in the entire thing for unchunked arrays
+  commit 0f3f3f4a3cefbede84ce3355e332a7a91eaec1d8 tried to fix this, but had to be reverted.
+
 * DnaIterator getArrayIndex() is a confusing name.
 * change Genome is_a SegmentedSequence to has_a
 * change get*Iterator functions that create iterators to create*Iterator
