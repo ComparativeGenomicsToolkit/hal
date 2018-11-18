@@ -540,7 +540,7 @@ def merge_child_blocks(genome, chrom_sizes, child_names, block_files, output):
                     blocks_to_merge.append(left_block)
                     # Keep the right side of the block around for the next iteration.
                     cur_blocks[i] = right_block
-                elif split_point == block.first.end:
+                elif smallest.first.overlaps(block.first) and split_point == block.first.end:
                     # We shouldn't split this block, because it's already a perfect overlap.
                     blocks_to_merge.append(block)
                     cur_blocks[i] = need_next
