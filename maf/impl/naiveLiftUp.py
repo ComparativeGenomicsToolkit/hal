@@ -1781,6 +1781,49 @@ def test_merge_child_blocks_ref_dups():
 
     """).lstrip()
 
+def test_merge_blocks_split_point_on_different_chrom():
+    """Check that block ending in the same position on a different chrom does not get merged.
+
+    This is a regression test for a bug which only triggered on a polytomy."""
+    input_a = StringIO(dedent("""
+    Anc01	Anc01refChr237	2	9	+	XXXXXXX
+    ACERANA	KZ288318.1	138	145	+	AACtggt
+    ACERANA	KZ288398.1	211122	211129	-	AACTGGt
+
+    """).lstrip())
+
+    input_b = StringIO(dedent("""
+    Anc01	Anc01refChr237	2	9	+	XXXXXXX
+    AMELLIFERA	CM009938.2	597321	597328	+	AACTGGT
+    AMELLIFERA	CM009938.2	579437	579444	-	AACTGGT
+
+    """).lstrip())
+
+    input_c = StringIO(dedent("""
+    Anc01	Anc01refChr238	0	9	+	XXXXXXXXX
+    Anc00	Anc00refChr699	4813	4822	+	gatgattat
+
+    """).lstrip())
+
+    chrom_sizes = {'Anc01refChr238': 9, 'Anc01refChr237': 9}
+
+    output = StringIO()
+    merge_child_blocks('Anc01', chrom_sizes, ['foo', 'bar', 'baz'], [input_a, input_b, input_c], output)
+
+    assert output.getvalue() == dedent("""
+    Anc01	Anc01refChr237	0	2	+	XX
+
+    Anc01	Anc01refChr237	2	9	+	XXXXXXX
+    ACERANA	KZ288318.1	138	145	+	AACtggt
+    ACERANA	KZ288398.1	211122	211129	-	AACTGGt
+    AMELLIFERA	CM009938.2	597321	597328	+	AACTGGT
+    AMELLIFERA	CM009938.2	579437	579444	-	AACTGGT
+
+    Anc01	Anc01refChr238	0	9	+	XXXXXXXXX
+    Anc00	Anc00refChr699	4813	4822	+	gatgattat
+
+    """).lstrip()
+
 def test_block_merge():
     input_1 = StringIO(dedent("""
     Human	chr6	50	77	+	CGG---GA---TCAACCAAG--AAGAATTGCTATA---
