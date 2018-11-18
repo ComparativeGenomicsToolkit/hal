@@ -66,6 +66,6 @@ Joel: Not entirely sure, but I think so you can work entirely within genome coor
 * are equals methods actually needed.
 * segment:getMappedSegments() doesn't seems link it should really be a method on  segments
 * TopSegment:
- - getString is duplicated, but it's is complex since 
+ - getString is duplicated, but it needs a driver to get DNAIterator
  - isCanonicalParalog() could be generic if creating of BottomSegment
    could be generic.  
