@@ -39,14 +39,6 @@ public:
    hal_index_t getArrayIndex() const;
    bool isFirst() const;
    bool isLast() const;
-   hal_size_t getMappedSegments(
-     MappedSegmentSet& outSegments,
-     const Genome* tgtGenome,
-     const std::set<const Genome*>* genomesOnPath,
-     bool doDupes,
-     hal_size_t minLength,
-     const Genome *coalescenceLimit,
-     const Genome *mrca) const;
    void print(std::ostream& os) const;
    
    // BOTTOM SEGMENT INTERFACE
@@ -220,19 +212,6 @@ inline bool Hdf5BottomSegment::isLast() const
   return _index == (hal_index_t)_array->getSize() - 1 || 
      _index == getSequence()->getBottomSegmentArrayIndex() +
      (hal_index_t)getSequence()->getNumBottomSegments() - 1;
-}
-
-inline hal_size_t Hdf5BottomSegment::getMappedSegments(
-  MappedSegmentSet& outSegments,
-  const Genome* tgtGenome,
-  const std::set<const Genome*>* genomesOnPath,
-  bool doDupes,
-  hal_size_t minLength,
-  const Genome *coalescenceLimit,
-  const Genome *mrca) const
-{
-  throw hal_exception("Internal error.   HDF5 Segment interface should "
-                      "at some point go through the sliced segment");
 }
 
 inline hal_index_t Hdf5BottomSegment::getLeftChildIndex(hal_size_t i) const

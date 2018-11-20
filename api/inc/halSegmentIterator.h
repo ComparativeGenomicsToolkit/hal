@@ -86,14 +86,6 @@ public:
    virtual bool isLast() const;
    virtual bool isMissingData(double nThreshold) const;
    virtual bool isTop() const;
-   virtual hal_size_t getMappedSegments(
-     MappedSegmentSet& outSegments,
-     const Genome* tgtGenome,
-     const std::set<const Genome*>* genomesOnPath = NULL,
-     bool doDupes = true,
-     hal_size_t minLength = 0,
-     const Genome *coalescenceLimit = NULL,
-     const Genome *mrca = NULL) const;
 
     virtual void print(std::ostream& os) const;
 

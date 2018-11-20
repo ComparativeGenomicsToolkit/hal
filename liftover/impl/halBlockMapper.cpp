@@ -11,6 +11,7 @@
 #include <map>
 #include "hal.h"
 #include "halBlockMapper.h"
+#include "halSegmentMapper.h"
 
 using namespace hal;
 using namespace std;
@@ -117,8 +118,8 @@ void BlockMapper::map()
     {
       refSeg->toReverseInPlace();
     }
-    refSeg->getMappedSegments(_segSet, _queryGenome, &_downwardPath,
-                              _doDupes, _minLength, _coalescenceLimit, _mrca);
+    halMapSegment(refSeg.get(), _segSet, _queryGenome, &_downwardPath,
+                  _doDupes, _minLength, _coalescenceLimit, _mrca);
     if (_targetReversed == true)
     {
       refSeg->toReverseInPlace();            
@@ -261,8 +262,8 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt)
     }
     size_t backSize = backResults.size();
     assert(queryIt->getArrayIndex() >= 0);
-    queryIt->getMappedSegments(backResults, _refGenome, &_upwardPath,
-                               _doDupes, _minLength);
+    halMapSegment(queryIt.get(), backResults, _refGenome, &_upwardPath,
+                  _doDupes, _minLength);
     // something was found, that's good enough.
     if (backResults.size() > backSize)
     {
@@ -302,8 +303,8 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt)
       break;
     }
     size_t backSize = backResults.size();
-    queryIt->getMappedSegments(backResults, _refGenome, &_upwardPath,
-                               _doDupes, _minLength);
+    halMapSegment(queryIt.get(), backResults, _refGenome, &_upwardPath,
+                  _doDupes, _minLength);
     // something was found, that's good enough.
     if (backResults.size() > backSize)
     {

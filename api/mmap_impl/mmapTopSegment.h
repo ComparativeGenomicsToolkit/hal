@@ -34,14 +34,6 @@ class MMapTopSegment : public TopSegment
     hal_index_t getArrayIndex() const;
     bool isFirst() const;
     bool isLast() const;
-    hal_size_t getMappedSegments(
-        MappedSegmentSet& outSegments,
-        const Genome* tgtGenome,
-        const std::set<const Genome*>* genomesOnPath,
-        bool doDupes,
-        hal_size_t minLength,
-        const Genome *coalescenceLimit,
-        const Genome *mrca) const;
     void print(std::ostream& os) const;
 
     // TOP SEGMENT INTERFACE
@@ -125,19 +117,6 @@ inline bool MMapTopSegment::isLast() const
   return _index == _genome->getNumTopSegments() || 
      _index == getSequence()->getTopSegmentArrayIndex() +
      (hal_index_t)getSequence()->getNumTopSegments() - 1;
-}
-
-inline hal_size_t MMapTopSegment::getMappedSegments(
-  MappedSegmentSet& outSegments,
-  const Genome* tgtGenome,
-  const std::set<const Genome*>* genomesOnPath,
-  bool doDupes,
-  hal_size_t minLength,
-  const Genome *coalescenceLimit,
-  const Genome *mrca) const
-{
-  throw hal_exception("Internal error. MMapSegment interface should "
-                      "at some point go through the sliced segment");
 }
 
 inline hal_index_t MMapTopSegment::getLeftParentIndex() const

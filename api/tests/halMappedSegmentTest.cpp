@@ -203,7 +203,7 @@ void MappedSegmentMapUpTest::testTopSegment(const Alignment* alignment,
 {
   const Genome* parent = alignment->openGenome(ancName);
   MappedSegmentSet results;
-  top->getMappedSegments(results, parent, NULL, false);
+  halMapSegmentSP(top, results, parent, NULL, false);
   CuAssertTrue(_testCase, results.size() == 1);
   MappedSegmentPtr mseg = *results.begin();
   CuAssertTrue(_testCase, mseg->getSource()->getGenome() == top->getGenome());
@@ -271,7 +271,7 @@ void MappedSegmentParseTest::testTopSegment(const Alignment* alignment,
 {
   const Genome* parent = alignment->openGenome("parent");
   MappedSegmentSet results;
-  top->getMappedSegments(results, parent, NULL, false);
+  halMapSegmentSP(top, results, parent, NULL, false);
 
   vector<bool> covered(top->getLength(), false);
   
@@ -295,7 +295,7 @@ void MappedSegmentParseTest::testTopSegment(const Alignment* alignment,
                  mseg->getSource()->getEndPosition());
 
     MappedSegmentSet tResults;
-    mseg->getMappedSegments(tResults, top->getGenome(), NULL, false);
+    halMapSegmentSP(mseg->getTargetPtr(), tResults, top->getGenome(), NULL, false);
     CuAssertTrue(_testCase, tResults.size() == 1);
     MappedSegmentPtr tmseg = *tResults.begin();
     CuAssertTrue(_testCase, tmseg->getGenome() == top->getGenome());
@@ -340,7 +340,7 @@ void MappedSegmentMapDownTest::testBottomSegment(
 {
   const Genome* child = bottom->getGenome()->getChild(childIndex);
   MappedSegmentSet results;
-  bottom->getMappedSegments(results, child, NULL, false);
+  halMapSegmentSP(bottom, results, child, NULL, false);
   CuAssertTrue(_testCase, results.size() == 1);
   MappedSegmentPtr mseg = *results.begin();
   CuAssertTrue(_testCase, mseg->getSource()->getGenome() == 
@@ -385,7 +385,7 @@ void MappedSegmentMapAcrossTest::testTopSegment(const Alignment* alignment,
   const Genome* other = top->getGenome()->getName() == "child1" ? 
      alignment->openGenome("child2") : alignment->openGenome("child1");
   MappedSegmentSet results;
-  top->getMappedSegments(results, other, NULL, false);
+  halMapSegmentSP(top, results, other, NULL, false);
   CuAssertTrue(_testCase, results.size() == 1);
   MappedSegmentPtr mseg = *results.begin();
   CuAssertTrue(_testCase, mseg->getSource()->getGenome() == top->getGenome());
@@ -488,7 +488,7 @@ void MappedSegmentMapDupeTest::checkCallBack(const Alignment* alignment)
 
   TopSegmentIteratorPtr top = child1->getTopSegmentIterator();
   MappedSegmentSet results;
-  top->getMappedSegments(results, child2, NULL, true);
+  halMapSegmentSP(top, results, child2, NULL, true);
 //  CuAssertTrue(_testCase, results.size() == 3);
   
   MappedSegmentPtr mseg = *results.begin();
@@ -514,7 +514,7 @@ void MappedSegmentMapDupeTest::checkCallBack(const Alignment* alignment)
   top = child2->getTopSegmentIterator();
   results.clear();
   sister = child1->getTopSegmentIterator();
-  top->getMappedSegments(results, child1, NULL, true);
+  halMapSegmentSP(top, results, child1, NULL, true);
   CuAssertTrue(_testCase, results.size() == 3);
   bool found[3] = {false};
   MappedSegmentSet::iterator i = results.begin();
@@ -644,7 +644,7 @@ void MappedSegmentMapExtraParalogsTest::checkCallBack(const Alignment* alignment
 
   // First, check that by default we will only get the homologies in
   // or before the MRCA. (in this case, just seg 0 of grandChild1).
-  top->getMappedSegments(results, grandChild1, NULL, true);
+  halMapSegmentSP(top, results, grandChild1, NULL, true);
   CuAssertTrue(_testCase, results.size() == 1);
   MappedSegmentPtr mseg = *results.begin();
   // Source information should be preserved
@@ -668,7 +668,7 @@ void MappedSegmentMapExtraParalogsTest::checkCallBack(const Alignment* alignment
 
   // Check that by using the grandparent as the coalescence limit we
   // will get all the paralogs.
-  top->getMappedSegments(results, grandChild1, NULL, true, 0, root);
+  halMapSegmentSP(top, results, grandChild1, NULL, true, 0, root);
   CuAssertTrue(_testCase, results.size() == 3);
   MappedSegmentSet::iterator i = results.begin();
   for (; i != results.end(); ++i)
@@ -811,7 +811,7 @@ void  MappedSegmentColCompareTest::createBlockArray()
   MappedSegmentSet results;  
   for (; refSeg->getArrayIndex() < numSegs; refSeg->toRight())
   {
-    refSeg->getMappedSegments(results, _tgt);
+      halMapSegmentSP(refSeg, results, _tgt);
   }
   
   for (MappedSegmentSet::iterator i = results.begin();

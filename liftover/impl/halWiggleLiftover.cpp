@@ -158,8 +158,8 @@ void WiggleLiftover::mapSegment()
   while (_segment->getArrayIndex() < _lastIndex &&
          _segment->getStartPosition() <= (_cvals.back()._last))
   {
-    _segment->getMappedSegments(_mappedSegments, _tgtGenome, &_tgtSet,
-                                _traverseDupes);  
+      halMapSegment(_segment.get(), _mappedSegments, _tgtGenome, &_tgtSet,
+                    _traverseDupes);  
     _segment->toRight(_cvals.back()._last);
   }
 

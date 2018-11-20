@@ -101,37 +101,6 @@ public:
     * bottom segment */
    virtual bool isTop() const = 0;
 
-   /** Get homologous segments in target genome.  Returns the number
-    * of mapped segments found.
-    * @param outSegments  Output.  Mapped segments are sorted along the
-    * *target* genome.
-    * @param tgtGenome  Target genome to map to.  Can be the same as current.
-    * @param genomesOnPath Intermediate genomes that must be visited
-    * on the way down from coalescenceLimit to tgt.  If this is
-    * specified as NULL, then the path will be computed automatically
-    * (using hal::getGenomesInSpanningTree(coalescenceLimit, tgtGenome)).
-    * Specifying this can avoid recomputing the path over and over again
-    * when, say, calling getMappedSegments repeatedly for the same 
-    * source and target. 
-    * @param doDupes  Specify whether paralogy edges are followed 
-    * @param minLength Minimum length of segments to consider.  It is 
-    * potentially much faster to filter using this parameter than
-    * doing a second pass on the output.  If minLength is 0, then no
-    * segments are filtered based on length.
-    * @param coalescenceLimit Any paralogs that coalesce in or below
-    * this genome will be mapped to the target as well. Must be the
-    * MRCA or higher. By default, the coalescenceLimit is the MRCA.
-    * @param mrca The MRCA of the source and target genomes. By
-    * default, it is computed automatically. */
-   virtual hal_size_t getMappedSegments(
-     MappedSegmentSet& outSegments,
-     const Genome* tgtGenome,
-     const std::set<const Genome*>* genomesOnPath = NULL,
-     bool doDupes = true,
-     hal_size_t minLength = 0,
-     const Genome *coalescenceLimit = NULL,
-     const Genome *mrca = NULL) const = 0;
-
    /** Print contents of segment */
    virtual void print(std::ostream& os) const = 0;
 };

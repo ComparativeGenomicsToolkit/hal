@@ -74,6 +74,7 @@
 #include "halSegment.h"
 #include "halSlicedSegment.h"
 #include "halMappedSegment.h"
+#include "halSegmentMapper.h"
 #include "halSegmentIterator.h"
 #include "halSegmentedSequence.h"
 #include "halTopSegment.h"

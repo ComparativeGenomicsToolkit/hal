@@ -140,7 +140,7 @@ bool MappedSegment::canMergeRightWith(
   bool ret = false;
   const SlicedSegment* ref = this->getSource();
   const SlicedSegment* nextRef = nextSeg->getSource();
-#if 0
+#if 0 // FIXME: why is this here
   assert(ref->getReversed() == false);
   assert(nextRef->getReversed() == false);
 #endif
@@ -369,6 +369,7 @@ int MappedSegment::slowComp(const SegmentIteratorPtr& s1,
   return res;
 }
 
+#if 1 // FIXME
 hal_size_t MappedSegment::map(const SegmentIterator* source,
                               MappedSegmentSet& results,
                               const Genome* tgtGenome,
@@ -695,7 +696,7 @@ hal_size_t MappedSegment::mapUp(
       hal_index_t endBack = (hal_index_t)backBotSegIt->getEndOffset();
       assert(startBack >= startOffset);
       assert(endBack >= endOffset);
-      SegmentIteratorPtr newSourceSegIt = mappedSeg->sourceclone();
+      SegmentIteratorPtr newSourceSegIt = mappedSeg->sourceClone();
       hal_index_t startDelta = startBack - startOffset;
       hal_index_t endDelta = endBack - endOffset;
       assert((hal_index_t)newSourceSegIt->getLength() > startDelta + endDelta);
@@ -772,7 +773,7 @@ hal_size_t MappedSegment::mapDown(
       hal_index_t endBack = (hal_index_t)backTopSegIt->getEndOffset();
       assert(startBack >= startOffset);
       assert(endBack >= endOffset);
-      SegmentIteratorPtr newSourceSegIt = mappedSeg->sourceclone();
+      SegmentIteratorPtr newSourceSegIt = mappedSeg->sourceClone();
       hal_index_t startDelta = startBack - startOffset;
       hal_index_t endDelta = endBack - endOffset;
       assert((hal_index_t)newSourceSegIt->getLength() > startDelta + endDelta);
@@ -864,7 +865,7 @@ hal_size_t MappedSegment::mapSelf(
       hal_index_t endBack = (hal_index_t)bottomBack->getEndOffset();
       assert(startBack >= startOffset);
       assert(endBack >= endOffset);
-      SegmentIteratorPtr newSource = mappedSeg->sourceclone();
+      SegmentIteratorPtr newSource = mappedSeg->sourceClone();
       hal_index_t startDelta = startBack - startOffset;
       hal_index_t endDelta = endBack - endOffset;
       assert((hal_index_t)newSource->getLength() > startDelta + endDelta);
@@ -1144,6 +1145,7 @@ void MappedSegment::insertAndBreakOverlaps(
   // 4) insert the input list
   results.insert(inputSegs.begin(), inputSegs.end());
 }
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE
@@ -1237,20 +1239,6 @@ bool MappedSegment::isMissingData(double nThreshold) const
 bool MappedSegment::isTop() const
 {
   return _target->isTop();
-}
-
-hal_size_t MappedSegment::getMappedSegments(
-  MappedSegmentSet& outSegments,
-  const Genome* tgtGenome,
-  const set<const Genome*>* genomesOnPath,
-  bool doDupes,
-  hal_size_t minLength,
-  const Genome *coalescenceLimit,
-  const Genome *mrca) const
-{
-  return _target->getMappedSegments(outSegments, tgtGenome, genomesOnPath,
-                                    doDupes, minLength, coalescenceLimit,
-                                    mrca);
 }
 
 void MappedSegment::print(ostream& os) const

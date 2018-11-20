@@ -62,8 +62,7 @@ int main(int argc, char** argv)
         for (size_t j = 0; j < leafGenomes.size(); j++) {
             const Genome *leafGenome = leafGenomes[j];
             MappedSegmentSet segments;
-            refSeg->getMappedSegments(segments, leafGenome, NULL,
-                                      true, 0, NULL, NULL);
+            halMapSegmentSP(refSeg, segments, leafGenome, NULL, true, 0, NULL, NULL);
             vector<hal_size_t> &histogram = coverage[leafGenome];
             hal_size_t depth = segments.size();
             if (depth > maxDepth) {

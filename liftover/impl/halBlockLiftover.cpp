@@ -8,6 +8,7 @@
 #include <cassert>
 #include "halBlockLiftover.h"
 #include "halBlockMapper.h"
+#include "halSegmentMapper.h"
 
 using namespace std;
 using namespace hal;
@@ -75,8 +76,8 @@ void BlockLiftover::liftInterval(BedList& mappedBedLines)
     {
       _refSeg->toReverseInPlace();
     }
-    _refSeg->getMappedSegments(_mappedSegments, _tgtGenome, &_downwardPath,
-                               _traverseDupes, 0, _coalescenceLimit, _mrca);
+    halMapSegment(_refSeg.get(), _mappedSegments, _tgtGenome, &_downwardPath,
+                  _traverseDupes, 0, _coalescenceLimit, _mrca);
     if (flip == true)
     {
       _refSeg->toReverseInPlace();

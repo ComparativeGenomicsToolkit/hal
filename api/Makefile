@@ -32,6 +32,9 @@ halApiTests: all
 doxy :
 	doxygen doc/doxy.cfg
 
+etags:
+	(cd .. && ${MAKE} etags}
+
 include ${rootDir}/rules.mk
 
 # don't fail on missing dependencies, they are first time the .o is generates

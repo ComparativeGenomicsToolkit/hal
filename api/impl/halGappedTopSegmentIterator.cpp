@@ -138,19 +138,6 @@ bool GappedTopSegmentIterator::isTop() const
   return true;
 }
 
-hal_size_t GappedTopSegmentIterator::getMappedSegments(
-  MappedSegmentSet& outSegments,
-  const Genome* tgtGenome,
-  const set<const Genome*>* genomesOnPath,
-  bool doDupes,
-  hal_size_t minLength,
-  const Genome *coalescenceLimit,
-  const Genome *mrca) const
-{
-  throw hal_exception("getMappedSegments is not supported in "
-                      "GappedTopSegmentIterator");
-}
-
 void GappedTopSegmentIterator::print(std::ostream& os) const
 {
   os << "Gapped Top Segment: (thresh=" << getGapThreshold() << ")\n";

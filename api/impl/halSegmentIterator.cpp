@@ -163,52 +163,6 @@ bool SegmentIterator::isTop() const
   return getSegment()->isTop();
 }
 
-hal_size_t SegmentIterator::getMappedSegments(
-  MappedSegmentSet& outSegments,
-  const Genome* tgtGenome,
-  const set<const Genome*>* genomesOnPath,
-  bool doDupes,
-  hal_size_t minLength,
-  const Genome *coalescenceLimit,
-  const Genome *mrca) const
-{
-  assert(tgtGenome != NULL);
-
-  if (mrca == NULL)
-  {
-    set<const Genome*> inputSet;
-    inputSet.insert(getGenome());
-    inputSet.insert(tgtGenome);
-    mrca = getLowestCommonAncestor(inputSet);
-  }
-
-  if (coalescenceLimit == NULL)
-  {
-    coalescenceLimit = mrca;
-  }
-
-  // Get the path from the coalescence limit to the target (necessary
-  // for choosing which children to move through to get to the
-  // target).
-  set<const Genome*> pathSet;
-  if (genomesOnPath == NULL)
-  {
-    set<const Genome*> inputSet;
-    inputSet.insert(tgtGenome);
-    inputSet.insert(mrca);
-    getGenomesInSpanningTree(inputSet, pathSet);
-    genomesOnPath = &pathSet;
-  }
-
-  hal_size_t numResults = MappedSegment::map(this, outSegments,
-                                             tgtGenome,
-                                             genomesOnPath, doDupes,
-                                             minLength,
-                                             coalescenceLimit,
-                                             mrca);
-  return numResults;
-}
-
 void SegmentIterator::print(ostream& os) const
 {
   hal_index_t ai = getArrayIndex();

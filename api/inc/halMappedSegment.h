@@ -16,7 +16,7 @@
 
 namespace hal {
 /** 
- * Interface for a mapped segement.  A mapped segment keeps track of a 
+ * Interface for a mapped segment.  A mapped segment keeps track of a 
  * homologous region in another genome (from which it was mapped).  
  * Mapped segments are used to keep
  * pairwise alignment fragments across the tree as an alternative to the column
@@ -27,17 +27,21 @@ class MappedSegment : public virtual SlicedSegment
 {
 public:
 
+    /* Constructor */
+   MappedSegment(SegmentIteratorPtr sourceSegIt,
+                 SegmentIteratorPtr targetSegIt);
+
    /** Destructor */
     virtual ~MappedSegment() {
     }
 
     /** Get the original segment from which this segment was mapped */
-    virtual SlicedSegment* getSource() const {
+    SlicedSegment* getSource() const {
         return _source.get();
     }
 
     /** Get the original segment from which this segment was mapped */
-    virtual SlicedSegmentPtr getSourcePtr() const {
+    SlicedSegmentPtr getSourcePtr() const {
         return _source;
     }
 
@@ -139,14 +143,6 @@ public:
    virtual bool isLast() const;
    virtual bool isMissingData(double nThreshold) const;
    virtual bool isTop() const;
-   virtual hal_size_t getMappedSegments(
-     MappedSegmentSet& outSegments,
-     const Genome* tgtGenome,
-     const std::set<const Genome*>* genomesOnPath = NULL,
-     bool doDupes = true,
-     hal_size_t minLength = 0,
-     const Genome *coalescenceLimit = NULL,
-     const Genome *mrca = NULL) const;
 
    // SLICED SEGMENT INTERFACE 
    virtual void toReverse();
@@ -156,6 +152,28 @@ public:
    virtual void slice(hal_offset_t startOffset,
                       hal_offset_t endOffset );
    virtual bool getReversed() const;
+
+    // used by halSegmentMapper (FIXME: lef tover from transition, might want to clean up or doc)
+   TopSegmentIteratorPtr targetAsTop() const;
+   BottomSegmentIteratorPtr targetAsBottom() const;
+   TopSegmentIteratorPtr sourceAsTop() const;
+   BottomSegmentIteratorPtr sourceAsBottom() const;
+   SegmentIteratorPtr sourceClone() const;
+    void setTarget(SegmentIteratorPtr target) {
+        _target = target;
+    }
+    SegmentIteratorPtr getTargetPtr() {
+        return _target;
+    }
+
+    SegmentIterator* getTarget() {
+        return _target.get();
+    }
+
+    // FIXME: make name consistent with above
+    SegmentIteratorPtr getSourceIteratorPtr() {
+        return _source;
+    }
 
    // INTERNAL METHODS
    static hal_size_t map(const SegmentIterator* source,
@@ -167,9 +185,6 @@ public:
                          const Genome *coalescenceLimit,
                          const Genome *mrca);
 private:
-
-   MappedSegment(SegmentIteratorPtr sourceSegIt,
-                 SegmentIteratorPtr targetSegIt);
 
    static 
    int fastComp(const SegmentIteratorPtr& s1, 
@@ -273,12 +288,6 @@ private:
                       std::list<MappedSegmentPtr>& results,
                       hal_size_t minLength);
    
-   TopSegmentIteratorPtr targetAsTop() const;
-   BottomSegmentIteratorPtr targetAsBottom() const;
-   TopSegmentIteratorPtr sourceAsTop() const;
-   BottomSegmentIteratorPtr sourceAsBottom() const;
-   SegmentIteratorPtr sourceclone() const;
-
    
 private:
 
@@ -309,7 +318,7 @@ hal::BottomSegmentIteratorPtr hal::MappedSegment::sourceAsBottom() const
     return std::dynamic_pointer_cast<BottomSegmentIterator>(_source);
 }
 
-inline hal::SegmentIteratorPtr hal::MappedSegment::sourceclone() const
+inline hal::SegmentIteratorPtr hal::MappedSegment::sourceClone() const
 {
   if (_source->isTop()) {
     return sourceAsTop()->clone();
