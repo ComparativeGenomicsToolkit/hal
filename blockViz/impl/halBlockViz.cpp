@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "hal.h"
-#include "halChain.h"
 #include "halBlockViz.h"
 #include "halBlockMapper.h"
 #include "halLodManager.h"

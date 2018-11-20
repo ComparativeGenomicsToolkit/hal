@@ -11,7 +11,7 @@ objDir = ${rootDir}/objs
 
 libHal = ${libDir}/libHal.a
 libHalStats = ${libDir}/libHalStats.a
-libHalChain = ${libDir}/libHalChain.a
+libHalBlockViz = ${libDir}/libHalBlockViz.a
 libHalMutations = ${libDir}/libHalMutations.a
 libHalLiftover = ${libDir}/libHalLiftover.a
 libHalLod = ${libDir}/libHalLod.a
