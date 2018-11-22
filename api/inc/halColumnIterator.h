@@ -47,14 +47,16 @@ public:
     virtual ~ColumnIterator();
 
     /// @cond TEST
-   // we can compare genomes by pointers (because they are persistent
-   // and unique, though it's still hacky) but we can't do the same 
-   // for anything else, including sequences.  
-   struct SequenceLess { bool operator()(const Sequence* s1,
-                                         const Sequence* s2) const {
-     return s1->getGenome() < s2->getGenome() || (
-       s1->getGenome() == s2->getGenome() && 
-       s1->getArrayIndex() < s2->getArrayIndex()); }
+   // Originally could compared genomes by pointers (because they are
+   // persistent and unique).  However this lead to output instability
+   // problems for tests, so we use names.  If this shows up as a performance issue,
+  // we can sort only in MAF code.
+   struct SequenceLess {
+       bool operator()(const Sequence* s1,
+                       const Sequence* s2) const {
+           int diff = s1->getGenome()->getName().compare(s2->getGenome()->getName());
+           return (diff < 0) || ((diff == 0) && s1->getArrayIndex() < s2->getArrayIndex());
+       }
    };
    /// @endcond
 
