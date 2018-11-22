@@ -16,9 +16,6 @@ namespace hal {
  * Interface for a sequence of DNA that is also broken up into 
  * top and bottom segments.  This interface is extended by both
  * the Genome and Sequence classes. 
- *
- * Todo: Implenent the "Last" or maybe (right / left) iterator
- * notion, which will make looping easier and more general. 
  */
 class SegmentedSequence
 {
@@ -69,7 +66,7 @@ public:
     * @param position Index in genome of returned iterator */
    virtual DnaIteratorPtr getDnaIterator(hal_index_t position = 0) const = 0;
 
-   /** Get a column iterator 
+   /** Get a column iterator over all or part of the genome.
     * @param targets Only genomes in this set are visited
     * * (note that other genomes in their spanning tree will be
     * * traversed as necessary but not reported)
@@ -139,7 +136,7 @@ public:
                                              bool atomic = false) const = 0;
 
    /** Get a gapped iterator  (experimental) 
-    * REMINDER: ther iterator is extended from the left-to-right along
+    * REMINDER: the iterator is extended from the left-to-right along
     * the sequence from i.  A seperate function is needed to, say,
     * get the last iterator from a sequence  (not a big deal since
     * the functinality is already in the implementation (extendLeft)*/
@@ -147,7 +144,7 @@ public:
      hal_index_t i, hal_size_t gapThreshold, bool atomic = false) const = 0;
 
    /** Get a gapped iterator  (experimental) 
-    * REMINDER: ther iterator is extended from the left-to-right along
+    * REMINDER: the iterator is extended from the left-to-right along
     * the sequence from i.  A seperate function is needed to, say,
     * get the last iterator from a sequence  (not a big deal since
     * the functinality is already in the implementation (extendLeft)*/

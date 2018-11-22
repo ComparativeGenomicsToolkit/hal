@@ -366,7 +366,7 @@ void MafWriteGenomes::convertSegments(size_t col)
     {
       _refBottom->bs()->setChildIndex(i, NULL_INDEX);
       _refBottom->bs()->setChildReversed(i, false);
-    }    
+    }
     seq->setSubString(
       row._line.substr(col, rowInfo._length), rowInfo._start, rowInfo._length);
   }

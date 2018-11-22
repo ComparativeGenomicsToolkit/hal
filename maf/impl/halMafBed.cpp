@@ -48,9 +48,9 @@ void MafBed::visitLine()
     {
       hal_index_t start = _bedLine._start;
       hal_index_t end = _bedLine._end;
-      _mafExport.convertSegmentedSequence(_mafStream, _alignment.get(), 
-                                          refSequence, start, end - start,
-                                          _targetSet);
+      _mafExport.convertSequence(_mafStream, _alignment.get(), 
+                                 refSequence, start, end - start,
+                                 _targetSet);
     }
   }
   else
@@ -69,9 +69,9 @@ void MafBed::visitLine()
       {
         hal_index_t start = _bedLine._start +_bedLine._blocks[i]._start;
         hal_index_t end = _bedLine._start + _bedLine._blocks[i]._start + _bedLine._blocks[i]._length;
-        _mafExport.convertSegmentedSequence(_mafStream, _alignment.get(), 
-                                            refSequence, start, end - start,
-                                            _targetSet);
+        _mafExport.convertSequence(_mafStream, _alignment.get(), 
+                                   refSequence, start, end - start,
+                                   _targetSet);
       }
     }
   }

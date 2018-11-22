@@ -318,7 +318,7 @@ void ColumnIterator::recursiveUpdate(bool init)
     // first column, we search the genome for the site
     if (init == true)
     {    
-      linkTopIt->_it = refSequence->getTopSegmentIterator();
+        linkTopIt->_it = refSequence->getTopSegmentIterator();
       linkTopIt->_it->toSite(_stack.top()->_index, true);
       linkTopIt->_dna = refGenome->getDnaIterator(_stack.top()->_index);
       if (_reversed == true)

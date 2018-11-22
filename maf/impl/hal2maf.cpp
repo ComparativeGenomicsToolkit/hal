@@ -20,32 +20,30 @@ static void initParser(CLParser& optionsParser) {
                              "pipe to standard output)");
   optionsParser.addOption("refGenome", 
                            "name of reference genome (root if empty)", 
-                           "\"\"");
+                           "");
   optionsParser.addOption("refSequence",
                            "name of reference sequence within reference genome"
                            " (all sequences if empty)",
-                           "\"\"");
+                           "");
   optionsParser.addOption("refTargets", 
                            "bed file coordinates of intervals in the reference "
                            "genome to export (or \"stdin\" to pipe from "
                            "standard input)",
-                           "\"\"");
+                           "");
   optionsParser.addOption("start",
-                           "coordinate within reference genome (or sequence"
-                           " if specified) to start at",
+                          "coordinate within the sequence, requires --refSequence",
                            0);
   optionsParser.addOption("length",
-                           "length of the reference genome (or sequence"
-                           " if specified) to convert.  If set to 0,"
-                           " the entire thing is converted",
+                           "length of the sequence, requires --refSequence. "
+                           "If set to 0, the entire genome is converted",
                            0);
   optionsParser.addOption("rootGenome", 
                            "name of root genome (none if empty)", 
-                           "\"\"");
+                           "");
   optionsParser.addOption("targetGenomes",
                            "comma-separated (no spaces) list of target genomes "
                            "(others are excluded) (vist all if empty)",
-                           "\"\"");
+                           "");
   optionsParser.addOption("maxRefGap", 
                            "maximum gap length in reference", 
                            0);
@@ -87,10 +85,9 @@ static void initParser(CLParser& optionsParser) {
   optionsParser.setDescription("Convert hal database to maf.");
 }
 
-int main(int argc, char** argv)
-{
-    CLParser optionsParser;
-    initParser(optionsParser);
+/* Parsed options */
+class MafOptions {
+    public:
   string halPath;
   string mafPath;
   string refGenomeName;
@@ -110,68 +107,61 @@ int main(int argc, char** argv)
   bool printTree;
   bool onlyOrthologs;
   hal_index_t maxBlockLen;
-  try
-  {
-    optionsParser.parseOptions(argc, argv);
-    halPath = optionsParser.getArgument<string>("halFile");
-    mafPath = optionsParser.getArgument<string>("mafFile");
-    refGenomeName = optionsParser.getOption<string>("refGenome");
-    rootGenomeName = optionsParser.getOption<string>("rootGenome");
-    targetGenomes = optionsParser.getOption<string>("targetGenomes");
-    refSequenceName = optionsParser.getOption<string>("refSequence");    
-    refTargetsPath = optionsParser.getOption<string>("refTargets");
-    start = optionsParser.getOption<hal_index_t>("start");
-    length = optionsParser.getOption<hal_size_t>("length");
-    maxRefGap = optionsParser.getOption<hal_size_t>("maxRefGap");
-    noDupes = optionsParser.getFlag("noDupes");
-    noAncestors = optionsParser.getFlag("noAncestors");
-    ucscNames = !optionsParser.getFlag("onlySequenceNames");
-    unique = optionsParser.getFlag("unique");
-    append = optionsParser.getFlag("append");
-    global = optionsParser.getFlag("global");
-    printTree = optionsParser.getFlag("printTree");
-    maxBlockLen = optionsParser.getOption<hal_index_t>("maxBlockLen");
-    onlyOrthologs = optionsParser.getFlag("onlyOrthologs");
+};
 
-    if (rootGenomeName != "\"\"" && targetGenomes != "\"\"")
-    {
-      throw hal_exception("--rootGenome and --targetGenomes options are "
-                          "mutually exclusive");
+/* This empty string options specified using the old convention of '""' rather than
+ * just an empty string. FIXME: this should be removed. */
+static string fixString(const string& s) {
+    if (s == "\"\"") {
+        cerr << "WARNING missing string arguments should be specified as empty strings, not the obsolete '\"\"'" << endl;
+        return "";
+    } else {
+        return s;
     }
-  }
-  catch(exception& e)
-  {
-    cerr << e.what() << endl;
-    optionsParser.printUsage(cerr);
-    exit(1);
-  }
-  try
-  {
-      AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
-    if (alignment->getNumGenomes() == 0)
-    {
-      throw hal_exception("hal alignmenet is empty");
-    }
+}
+
+static void hal2mafWithTargets(const MafOptions& opts,
+                               const Alignment* alignment,
+                               const Genome* refGenome,
+                               set<const Genome*>& targetSet,
+                               MafExport& mafExport,
+                               ostream& mafStream) {
+      ifstream bedFileStream;
+      ifstream refTargetsStream;
+      if (opts.refTargetsPath != "stdin")
+      {
+          bedFileStream.open(opts.refTargetsPath);
+        if (!refTargetsStream)
+        {
+          throw hal_exception("Error opening " + opts.refTargetsPath);
+        }
+      }
+      istream& bedStream = opts.refTargetsPath != "stdin" ? bedFileStream : cin;
+      MafBed mafBed(mafStream, alignment, refGenome, targetSet, mafExport);
+      mafBed.scan(&bedStream);
     
-    set<const Genome*> targetSet;
+}
+
+static void hal2maf(const Alignment* alignment,
+                    const MafOptions& opts) {
     const Genome* rootGenome = NULL;
-    if (rootGenomeName != "\"\"")
+    set<const Genome*> targetSet;
+    if (opts.rootGenomeName != "")
     {
-      rootGenome = alignment->openGenome(rootGenomeName);
+      rootGenome = alignment->openGenome(opts.rootGenomeName);
       if (rootGenome == NULL)
       {
-        throw hal_exception(string("Root genome, ") + rootGenomeName + 
-                            ", not found in alignment");
+        throw hal_exception("Root genome " + opts.rootGenomeName + ", not found in alignment");
       }
-      if (rootGenomeName != alignment->getRootName())
+      if (opts.rootGenomeName != alignment->getRootName())
       {
         getGenomesInSubTree(rootGenome, targetSet);
       }
     }
 
-    if (targetGenomes != "\"\"")
+    if (opts.targetGenomes != "")
     {
-      vector<string> targetNames = chopString(targetGenomes, ",");
+      vector<string> targetNames = chopString(opts.targetGenomes, ",");
       for (size_t i = 0; i < targetNames.size(); ++i)
       {
         const Genome* tgtGenome = alignment->openGenome(targetNames[i]);
@@ -185,120 +175,152 @@ int main(int argc, char** argv)
     }
 
     const Genome* refGenome = NULL;
-    if (refGenomeName != "\"\"")
+    if (opts.refGenomeName != "")
     {
-      refGenome = alignment->openGenome(refGenomeName);
+      refGenome = alignment->openGenome(opts.refGenomeName);
       if (refGenome == NULL)
       {
-        throw hal_exception(string("Reference genome, ") + refGenomeName + 
-                            ", not found in alignment");
+        throw hal_exception("Reference genome, " + opts.refGenomeName + ", not found in alignment");
       }
     }
     else
     {
       refGenome = alignment->openGenome(alignment->getRootName());
     }
-    const SegmentedSequence* ref = refGenome;
-
-    if (noAncestors == true && refGenome->getNumChildren() != 0 && !global)
+    if (opts.noAncestors && refGenome->getNumChildren() != 0 && !opts.global)
     {
-      throw hal_exception(string("Since the reference genome to be used for the"
+        throw hal_exception(string("Since the reference genome to be used for the"
                                  " MAF is ancestral (") + refGenome->getName() +
-                          "), the --noAncestors option is invalid.  The "
-                          "--refGenome option can be used to specify a "
+                            "), the --noAncestors option is invalid.  The "
+                            "--refGenome option can be used to specify a "
                           "different reference.");
     }
     
     const Sequence* refSequence = NULL;
-    if (refSequenceName != "\"\"")
+    if (opts.refSequenceName != "")
     {
-      refSequence = refGenome->getSequence(refSequenceName);
-      ref = refSequence;
+      refSequence = refGenome->getSequence(opts.refSequenceName);
       if (refSequence == NULL)
       {
-        throw hal_exception(string("Reference sequence, ") + refSequenceName + 
+        throw hal_exception(string("Reference sequence, ") + opts.refSequenceName + 
                             ", not found in reference genome, " + 
                             refGenome->getName());
       }
     }
 
     ios_base::openmode openFlags = ios_base::out;
-    if (append == true)
+    if (opts.append == true)
     {
       openFlags |= ios_base::app;
     }
     ofstream mafFileStream;
-    if (mafPath != "stdout")
+    if (opts.mafPath != "stdout")
     {
-      mafFileStream.open(mafPath.c_str(), openFlags);
+      mafFileStream.open(opts.mafPath, openFlags);
       if (!mafFileStream)
       {
-        throw hal_exception("Error opening " + mafPath);
+        throw hal_exception("Error opening " + opts.mafPath);
       }
     }
-    ostream& mafStream = mafPath != "stdout" ? mafFileStream : cout;
+    ostream& mafStream = opts.mafPath != "stdout" ? mafFileStream : cout;
 
     MafExport mafExport;
-    mafExport.setMaxRefGap(maxRefGap);
-    mafExport.setNoDupes(noDupes);
-    mafExport.setNoAncestors(noAncestors);
-    mafExport.setUcscNames(ucscNames);
-    mafExport.setUnique(unique);
-    mafExport.setAppend(append);
-    mafExport.setMaxBlockLength(maxBlockLen);
-    mafExport.setPrintTree(printTree);
-    mafExport.setOnlyOrthologs(onlyOrthologs);
+    mafExport.setMaxRefGap(opts.maxRefGap);
+    mafExport.setNoDupes(opts.noDupes);
+    mafExport.setNoAncestors(opts.noAncestors);
+    mafExport.setUcscNames(opts.ucscNames);
+    mafExport.setUnique(opts.unique);
+    mafExport.setAppend(opts.append);
+    mafExport.setMaxBlockLength(opts.maxBlockLen);
+    mafExport.setPrintTree(opts.printTree);
+    mafExport.setOnlyOrthologs(opts.onlyOrthologs);
 
-    ifstream refTargetsStream;
-    if (refTargetsPath != "\"\"")
-    {
-      if (start != 0 || length != 0 || refSequence != NULL) {
-        cerr << "--refSequence, --start, and --length options are unsupported"
-                " when using BED input, ignoring" << endl;
-      }
-      ifstream bedFileStream;
-      if (refTargetsPath != "stdin")
-      {
-        bedFileStream.open(refTargetsPath.c_str());
-        if (!refTargetsStream)
-        {
-          throw hal_exception("Error opening " + refTargetsPath);
+    if (opts.refTargetsPath != "") {
+        hal2mafWithTargets(opts, alignment, refGenome, targetSet, mafExport, mafStream);
+    } else if (opts.global) {
+        mafExport.convertEntireAlignment(mafStream, alignment);
+    } else if (refSequence != NULL) {
+        mafExport.convertSequence(mafStream, alignment, refSequence, 
+                                  opts.start, opts.length, targetSet);
+    } else {
+        for (SequenceIteratorPtr seqIt(refGenome->getSequenceIterator());
+             not seqIt->atEnd(); seqIt->toNext()) {
+            mafExport.convertSequence(mafStream, alignment, seqIt->getSequence(),
+                                      opts.start, opts.length, targetSet);
         }
-      }
-      istream& bedStream = refTargetsPath != "stdin" ? bedFileStream : cin;
-      MafBed mafBed(mafStream, alignment.get(), refGenome, targetSet, mafExport);
-      mafBed.scan(&bedStream);
     }
-    else
-    {
-      if(global)
-      {
-        mafExport.convertEntireAlignment(mafStream, alignment.get());
-      }
-      else if (start == 0 && length == 0 && ref->getSequenceLength() == 0)
-      {
-        string refSeqName = 
-           refSequence != NULL ? refSequence->getName() : refGenome->getName();
-        cerr << "hal2maf: Warning reference sequence " << refSeqName
-             << " has zero length.  MAF output will be empty" << endl;
-      }
-      else
-      {
-        mafExport.convertSegmentedSequence(mafStream, alignment.get(), ref, 
-                                           start, length, targetSet);
-      }
-    }
-    if (mafPath != "stdout")
+    if (opts.mafPath != "stdout")
     {
       // dont want to leave a size 0 file when there's not ouput because
       // it can make some scripts (ie that process a maf for each contig)
       // obnoxious (presently the case for halPhlyoPTrain which uses 
-      // hal2mafMP --splitBySequence). 
+      // hal2mafMP --splitBySequence). FIXME: this can also break stuff that
+        // has dependencies, so drop it.
       if (mafFileStream.tellp() == (streampos)0)
       {
-        std::remove(mafPath.c_str());
+          std::remove(opts.mafPath.c_str());
       }
     }
+}
+
+
+int main(int argc, char** argv)
+{
+    CLParser optionsParser;
+    initParser(optionsParser);
+    MafOptions opts;
+  try
+  {
+    optionsParser.parseOptions(argc, argv);
+    opts.halPath = fixString(optionsParser.getArgument<string>("halFile"));
+    opts.mafPath = fixString(optionsParser.getArgument<string>("mafFile"));
+    opts.refGenomeName = fixString(optionsParser.getOption<string>("refGenome"));
+    opts.rootGenomeName = fixString(optionsParser.getOption<string>("rootGenome"));
+    opts.targetGenomes = fixString(optionsParser.getOption<string>("targetGenomes"));
+    opts.refSequenceName = fixString(optionsParser.getOption<string>("refSequence"));    
+    opts.refTargetsPath = fixString(optionsParser.getOption<string>("refTargets"));
+    opts.start = optionsParser.getOption<hal_index_t>("start");
+    opts.length = optionsParser.getOption<hal_size_t>("length");
+    opts.maxRefGap = optionsParser.getOption<hal_size_t>("maxRefGap");
+    opts.noDupes = optionsParser.getFlag("noDupes");
+    opts.noAncestors = optionsParser.getFlag("noAncestors");
+    opts.ucscNames = !optionsParser.getFlag("onlySequenceNames");
+    opts.unique = optionsParser.getFlag("unique");
+    opts.append = optionsParser.getFlag("append");
+    opts.global = optionsParser.getFlag("global");
+    opts.printTree = optionsParser.getFlag("printTree");
+    opts.maxBlockLen = optionsParser.getOption<hal_index_t>("maxBlockLen");
+    opts.onlyOrthologs = optionsParser.getFlag("onlyOrthologs");
+
+    if (((opts.length != 0) || (opts.start != 0)) && (opts.refSequenceName == "")) {
+      throw hal_exception("--start and --length require --refSequenceName");
+    }
+    if (opts.rootGenomeName != "" && opts.targetGenomes != "")
+    {
+      throw hal_exception("--rootGenome and --targetGenomes options are "
+                          "mutually exclusive");
+    }
+    if ((not opts.refTargetsPath.empty()) and ((opts.start != 0) || (opts.length != 0)
+                                      || (not opts.refSequenceName.empty()))) {
+        throw hal_exception("--refSequence, --start, and --length options are unsupported when using BED input");
+      }
+
+  }
+  catch(exception& e)
+  {
+    cerr << e.what() << endl;
+    optionsParser.printUsage(cerr);
+    exit(1);
+  }
+  try
+  {
+      AlignmentConstPtr alignment(openHalAlignment(opts.halPath, &optionsParser));
+      if (alignment->getNumGenomes() == 0)
+          {
+              throw hal_exception("hal alignmenet is empty");
+          }
+    
+      hal2maf(alignment.get(), opts);
   }
   catch(hal_exception& e)
   {

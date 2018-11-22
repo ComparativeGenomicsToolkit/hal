@@ -121,14 +121,14 @@ public:
     DnaIteratorPtr getDnaIterator(hal_index_t position) const;
 
     ColumnIteratorPtr getColumnIterator(const std::set<const Genome*>* targets,
-                                             hal_size_t maxInsertLength,
-                                             hal_index_t position,
-                                             hal_index_t lastPosition,
-                                             bool noDupes,
-                                             bool noAncestors,
-                                             bool reverseStrand,
-                                             bool unique,
-                                             bool onlyOrthologs) const;
+                                        hal_size_t maxInsertLength,
+                                        hal_index_t position,
+                                        hal_index_t lastPosition,
+                                        bool noDupes,
+                                        bool noAncestors,
+                                        bool reverseStrand,
+                                        bool unique,
+                                        bool onlyOrthologs) const;
 
     void getString(std::string& outString) const;
 

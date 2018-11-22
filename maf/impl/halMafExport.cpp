@@ -76,12 +76,12 @@ void MafExport::writeHeader()
   }
 }
 
-void MafExport::convertSegmentedSequence(ostream& mafStream,
-                                         const Alignment* alignment,
-                                         const SegmentedSequence* seq,
-                                         hal_index_t startPosition,
-                                         hal_size_t length,
-                                         const set<const Genome*>& targets)
+void MafExport::convertSequence(ostream& mafStream,
+                                const Alignment* alignment,
+                                const Sequence* seq,
+                                hal_index_t startPosition,
+                                hal_size_t length,
+                                const set<const Genome*>& targets)
 {
   assert(seq != NULL);
   if (startPosition >= (hal_index_t)seq->getSequenceLength() ||
@@ -107,14 +107,14 @@ void MafExport::convertSegmentedSequence(ostream& mafStream,
   }
 
   ColumnIteratorPtr colIt = seq->getColumnIterator(&targets,
-                                                        _maxRefGap, 
-                                                        startPosition,
-                                                        lastPosition,
-                                                        _noDupes,
-                                                        _noAncestors,
-                                                        false, // reverseStrand,
-                                                        true,  // unique
-                                                        _onlyOrthologs);
+                                                   _maxRefGap, 
+                                                   startPosition,
+                                                   lastPosition,
+                                                   _noDupes,
+                                                   _noAncestors,
+                                                   false, // reverseStrand,
+                                                   true,  // unique
+                                                   _onlyOrthologs);
 
 
   hal_size_t appendCount = 0;

@@ -321,7 +321,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle,
       // not get sequence unless alignment has sequence.  don't bother
       // getting rid of it since it allows us to easily revert back to 
       // the previous functionaly of allowing lod-blocks to acces lod-0
-      // sequence
+      // sequence (FIXME: delete)
         seqAlignment = getExistingAlignment(halHandle, absEnd - absStart, true);
     }
 
@@ -491,9 +491,9 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     mafExport.setMaxRefGap(hal_size_t(maxRefGap));
     mafExport.setMaxBlockLength(hal_index_t(maxBlockLength));
 
-    mafExport.convertSegmentedSequence(mafBuffer, alignment, tGenome, 
-                                       absStart, 1 + absEnd - absStart,
-                                       qGenomeSet);
+    mafExport.convertSequence(mafBuffer, alignment, tSequence, 
+                              absStart, 1 + absEnd - absStart,
+                              qGenomeSet);
     // if these buffers are very big, it is my intuition that 
     // chopping them up and, saw, only converting and writing a few kb
     // at a time would be more efficient... but i think that's the least

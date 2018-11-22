@@ -23,12 +23,12 @@ public:
 
    virtual ~MafExport();
 
-   void convertSegmentedSequence(std::ostream& mafStream,
-                                 const Alignment* alignment,
-                                 const SegmentedSequence* seq,
-                                 hal_index_t startPosition,
-                                 hal_size_t length,
-                                 const std::set<const Genome*>& targets);
+   void convertSequence(std::ostream& mafStream,
+                        const Alignment* alignment,
+                        const Sequence* seq,
+                        hal_index_t startPosition,
+                        hal_size_t length,
+                        const std::set<const Genome*>& targets);
 
    // Convert all columns in the leaf genomes to MAF. Each column is
    // reported exactly once regardless of the unique setting, although

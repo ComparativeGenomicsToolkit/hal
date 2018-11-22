@@ -267,8 +267,7 @@ void hal::validateSequence(const Sequence* sequence)
   if (sequence->getGenome()->getNumChildren() > 0)
   {
     hal_size_t totalBottomLength = 0;
-    BottomSegmentIteratorPtr bottomIt = 
-       sequence->getBottomSegmentIterator();
+    BottomSegmentIteratorPtr bottomIt = sequence->getBottomSegmentIterator();
     hal_size_t numBottomSegments = sequence->getNumBottomSegments();
     for (hal_size_t i = 0; i < numBottomSegments; ++i)
     {

@@ -1,10 +1,7 @@
 * halValidate needs to have initSize, it is a bit tricky for halExport, you can't reallya pass the parser in because it only allows one "format", so I hacked it up.
 * Add a units suffix (G, M) to mmapInitSize
 * Drop mmap grow functionality, as it doesn't seem to work.  Maybe estimate the initial size from the input or just make it huge.
-* api/impl/defaultMappedSegment.h says
-note it would be nice to extend SegmentIterator but the crappy smart pointer interface makes it impossible to use "this" as a parameter to lots of api functions.  simplest for now just to contain a pair of segment iterators and wrap up all the interface methods. 
 * Get rid of iterators implementing the types they are iterating over.  Add an explict get or operator*. This will allow  more inlining.
-* does this still make sense now that databases doesn't have constness defaultGappedBottomSegmentIterator.h - keep convention of other iterators where const-ness only applies to the database and not the iterator...
 * getSegment is duplicated in different places due to top/bottom/gapped/ungapped implementations.  Is this a good approach?
 * typedef containers for HAL objects (e.g. std::set<MappedSegmentPtr>) instead of repeating
 * make more members private
@@ -59,7 +56,7 @@ Joel: Not entirely sure, but I think so you can work entirely within genome coor
   commit 0f3f3f4a3cefbede84ce3355e332a7a91eaec1d8 tried to fix this, but had to be reverted.
 
 * DnaIterator getArrayIndex() is a confusing name.
-* change Genome is_a SegmentedSequence to has_a
+* change SegmentedSequence name to be SegmentedGenome. It is very confusing because of the relationship with Sequence
 * change get*Iterator functions that create iterators to create*Iterator
 * Sequence is a accessor, not an actual object..
 * should change so no longer need marker Sequence data to indicate end
@@ -70,3 +67,27 @@ Joel: Not entirely sure, but I think so you can work entirely within genome coor
  - isCanonicalParalog() could be generic if creating of BottomSegment
    could be generic.  
 * halSegmentedSequence uses `position' other code use `index' to describe array index.
+* halSequence no longer implements halSegmentedSequence.  These virtual functions were copied over.  This works because iterators implement both of them, but many of these
+belong in only one place.
+  - getSequenceLength
+  - getNumTopSegments
+  - getNumBottomSegments
+  - getTopSegmentIterator
+  - getBottomSegmentIterator
+  - getDnaIterator
+  - getColumnIterator
+
+* get rid having both const/non-const of getTopSegmentIterator, etc.
+* to we want to keep halTopSegmentIterator::ts(), etc?  too terse?
+* Sequence::getColumnIterator() do is not quite the same as Genome::getColumnIterator(),
+different ranges.
+* Sequence::getTopSegmentIterator does not stop at the end of the sequence.
+* mmap disk based hash:
+https://github.com/evilmucedin/minimal-perfect-hash
+https://github.com/ArashPartow/hash
+https://github.com/lemire/clhash
+* have functions list setSubString assert alignment is writable.
+* "the tools are barely tested": create a tools warning list based on ones not tested.
+- halLiftover works, probably
+- hal4dExtract works too, I added quite a few tests for it
+- hal2maf mostly works; wouldn't trust the maxRefGap option
