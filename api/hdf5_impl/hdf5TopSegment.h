@@ -28,8 +28,6 @@ public:
 
    // SEGMENT INTERFACE
    void setArrayIndex(Genome* genome, hal_index_t arrayIndex);
-   const Genome* getGenome() const;
-   Genome* getGenome();
    const Sequence* getSequence() const;
    hal_index_t getStartPosition() const;
    hal_index_t getEndPosition() const;
@@ -61,6 +59,9 @@ public:
    static H5::CompType dataType();
    
 private:
+    Hdf5Genome* getHdf5Genome() const {
+        return static_cast<Hdf5Genome*>(_genome);
+    }
 
    static const size_t genomeIndexOffset;
    static const size_t bottomIndexOffset;
@@ -70,8 +71,6 @@ private:
    static const size_t totalSize;
 
    Hdf5ExternalArray* _array;
-   hal_index_t _index;
-    Hdf5Genome* _genome;
 };
 
 //INLINE members
@@ -80,7 +79,7 @@ inline void Hdf5TopSegment::setArrayIndex(Genome* genome,
 {
   _genome = dynamic_cast<Hdf5Genome*>(genome);
   assert(_genome != NULL);
-  _array = &_genome->_topArray;
+  _array = &dynamic_cast<Hdf5Genome*>(_genome)->_topArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;
 }
@@ -99,16 +98,6 @@ inline hal_size_t Hdf5TopSegment::getLength() const
 {
   return _array->getValue<hal_size_t>(_index + 1, genomeIndexOffset) - 
      _array->getValue<hal_size_t>(_index, genomeIndexOffset);
-}
-
-inline const Genome* Hdf5TopSegment::getGenome() const
-{
-  return _genome;
-}
-
-inline Genome* Hdf5TopSegment::getGenome()
-{
-  return _genome;
 }
 
 inline const Sequence* Hdf5TopSegment::getSequence() const
@@ -195,14 +184,14 @@ inline bool Hdf5TopSegment::isLast() const
 inline hal_index_t Hdf5TopSegment::getLeftParentIndex() const
 {
   assert(isFirst() == false);
-  Hdf5TopSegment leftSeg(_genome, _array, _index - 1);
+  Hdf5TopSegment leftSeg(dynamic_cast<Hdf5Genome*>(_genome), _array, _index - 1);
   return leftSeg.getParentIndex();
 }
 
 inline hal_index_t Hdf5TopSegment::getRightParentIndex() const
 {
   assert(isLast() == false);
-  Hdf5TopSegment rightSeg(_genome, _array, _index + 1);
+  Hdf5TopSegment rightSeg(dynamic_cast<Hdf5Genome*>(_genome), _array, _index + 1);
   return rightSeg.getParentIndex();
 }
 

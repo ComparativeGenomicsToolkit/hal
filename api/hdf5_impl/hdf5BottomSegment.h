@@ -23,14 +23,12 @@ public:
     * @param genome Smart pointer to genome to which segment belongs
     * @param array HDF5 array containg segment
     * @param index Index of segment in the array */
-   Hdf5BottomSegment( Hdf5Genome* genome,
+   Hdf5BottomSegment(Hdf5Genome* genome,
                      Hdf5ExternalArray* array,
                      hal_index_t index);
 
    // SEGMENT INTERFACE
    void setArrayIndex(Genome* genome, hal_index_t arrayIndex);
-   const Genome* getGenome() const;
-   Genome* getGenome();
    const Sequence* getSequence() const;
    hal_index_t getStartPosition() const;
    hal_index_t getEndPosition() const;
@@ -63,7 +61,10 @@ public:
      const H5::DataType& dataType);
 
 private:
-
+    Hdf5Genome* getHdf5Genome() const {
+        return static_cast<Hdf5Genome*>(_genome);
+    }
+    
    static const size_t genomeIndexOffset;
    static const size_t lengthOffset;
    static const size_t topIndexOffset;
@@ -71,8 +72,6 @@ private:
    static const size_t totalSize(hal_size_t numChildren);
 
    Hdf5ExternalArray* _array;
-   hal_index_t _index;
-    Hdf5Genome* _genome;
 };
 
 
@@ -82,7 +81,7 @@ inline void Hdf5BottomSegment::setArrayIndex(Genome* genome,
 {
   _genome = dynamic_cast<Hdf5Genome*>(genome);
   assert(_genome != NULL);
-  _array = &_genome->_bottomArray;
+  _array = &dynamic_cast<Hdf5Genome*>(_genome)->_bottomArray;
   assert(arrayIndex < (hal_index_t)_array->getSize());
   _index = arrayIndex;  
 }
@@ -104,16 +103,6 @@ inline hal_size_t Hdf5BottomSegment::getLength() const
   assert(_index >= 0);
   return _array->getValue<hal_size_t>(_index + 1, genomeIndexOffset) - 
      _array->getValue<hal_size_t>(_index, genomeIndexOffset);
-}
-
-inline const Genome* Hdf5BottomSegment::getGenome() const
-{                                               
-  return _genome;
-}
-
-inline Genome* Hdf5BottomSegment::getGenome()
-{
-    return _genome;
 }
 
 inline const Sequence* Hdf5BottomSegment::getSequence() const
@@ -217,14 +206,14 @@ inline bool Hdf5BottomSegment::isLast() const
 inline hal_index_t Hdf5BottomSegment::getLeftChildIndex(hal_size_t i) const
 {
   assert(isFirst() == false);
-  Hdf5BottomSegment leftSeg(_genome, _array, _index - 1);
+  Hdf5BottomSegment leftSeg(getHdf5Genome(), _array, _index - 1);
   return leftSeg.getChildIndex(i);
 }
 
 inline hal_index_t Hdf5BottomSegment::getRightChildIndex(hal_size_t i) const
 {
   assert(isLast() == false);
-  Hdf5BottomSegment rightSeg(_genome, _array, _index + 1);
+  Hdf5BottomSegment rightSeg(dynamic_cast<Hdf5Genome*>(_genome), _array, _index + 1);
   return rightSeg.getChildIndex(i);
 }
 

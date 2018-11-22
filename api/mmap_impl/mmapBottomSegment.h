@@ -10,20 +10,17 @@ namespace hal {
 class MMapBottomSegment : public BottomSegment
 {
     public:
-    MMapBottomSegment(const MMapGenome *genome, hal_index_t arrayIndex) :
-        _index(arrayIndex) {
-            _genome = const_cast<MMapGenome *>(genome);
-            _data = _genome->getBottomSegmentPointer(arrayIndex);
-        };
+    MMapBottomSegment(MMapGenome *genome, hal_index_t arrayIndex) :
+        BottomSegment(genome, arrayIndex),
+        _data(genome->getBottomSegmentPointer(arrayIndex)) {
+    }
 
     // SEGMENT INTERFACE
     void setArrayIndex(Genome *genome, hal_index_t arrayIndex) {
-        _genome = dynamic_cast<MMapGenome *>(genome);
-        _data = _genome->getBottomSegmentPointer(arrayIndex);
+        _genome = genome;
+        _data = getMMapGenome()->getBottomSegmentPointer(arrayIndex);
         _index = arrayIndex;
     };
-    const Genome* getGenome() const;
-    Genome* getGenome();
     const Sequence* getSequence() const;
     hal_index_t getStartPosition() const { return _data->getStartPosition(); };
     hal_index_t getEndPosition() const;
@@ -51,24 +48,16 @@ class MMapBottomSegment : public BottomSegment
     hal_index_t getRightChildIndex(hal_size_t i) const;
 
     private:
+    MMapGenome* getMMapGenome() const {
+        return static_cast<MMapGenome*>(_genome);
+    }
+    
     // Return a pointer to the data for the segment *after* this one in the array.
     MMapBottomSegmentData *getNextData() const {
         return (MMapBottomSegmentData *) (((char *) _data) + MMapBottomSegmentData::getSize(_genome));
     };
     MMapBottomSegmentData *_data;
-    MMapGenome *_genome;
-    hal_index_t _index;
 };
-
-inline const Genome* MMapBottomSegment::getGenome() const
-{
-  return _genome;
-}
-
-inline Genome* MMapBottomSegment::getGenome()
-{
-  return _genome;
-}
 
 inline hal_index_t MMapBottomSegment::getEndPosition() const
 {
@@ -135,14 +124,15 @@ inline bool MMapBottomSegment::isLast() const
 inline hal_index_t MMapBottomSegment::getLeftChildIndex(hal_size_t i) const
 {
   assert(isFirst() == false);
-  MMapBottomSegment leftSeg(_genome, _index - 1);
+  
+  MMapBottomSegment leftSeg(getMMapGenome(), _index - 1);
   return leftSeg.getChildIndex(i);
 }
 
 inline hal_index_t MMapBottomSegment::getRightChildIndex(hal_size_t i) const
 {
   assert(isLast() == false);
-  MMapBottomSegment rightSeg(_genome, _index + 1);
+  MMapBottomSegment rightSeg(getMMapGenome(), _index + 1);
   return rightSeg.getChildIndex(i);
 }
 

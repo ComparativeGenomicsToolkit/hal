@@ -52,9 +52,19 @@ public:
    virtual void slice(hal_offset_t startOffset = 0,
                       hal_offset_t endOffset = 0) = 0;
 
-
    /** Check whether iterator is on segment's reverse complement */
    virtual bool getReversed() const = 0;
+
+    protected:
+    /** constructor */
+    SlicedSegment(Genome* genome,
+                  hal_index_t index):
+        Segment(genome, index) {
+    }
+    /** constructor */
+    SlicedSegment():
+        Segment() {
+    }
 };
 
 inline bool operator<(const SlicedSegment& segmentIt,

@@ -91,3 +91,4 @@ https://github.com/lemire/clhash
 - halLiftover works, probably
 - hal4dExtract works too, I added quite a few tests for it
 - hal2maf mostly works; wouldn't trust the maxRefGap option
+* sometimes index is `index', somethings `arrayIndex'

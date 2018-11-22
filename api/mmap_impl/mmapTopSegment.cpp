@@ -23,7 +23,7 @@ hal_offset_t MMapTopSegment::getBottomParseOffset() const
   hal_index_t bottomIndex = getBottomParseIndex();
   if (bottomIndex != NULL_INDEX)
   {
-    MMapBottomSegment bs(_genome, bottomIndex);
+      MMapBottomSegment bs(getMMapGenome(), bottomIndex);
     assert(bs.getStartPosition() <= getStartPosition());
     assert((hal_index_t)(bs.getStartPosition() + bs.getLength()) 
            >= getStartPosition());

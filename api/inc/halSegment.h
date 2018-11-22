@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <cassert>
 #include "halDefs.h"
 #include "halMappedSegmentContainers.h"
 
@@ -26,18 +27,27 @@ public:
     virtual ~Segment() {
     }
 
+   /** Get the containing (read-only) genome */
+    const Genome* getGenome() const {
+        return _genome;
+    }
+
+   /** Get the containing genome */
+    Genome* getGenome() {
+        return _genome;
+    }
+
+   /** Get the index of the segment in the segment array */
+    hal_index_t getArrayIndex() const {
+        return _index;
+    }
+
    /** Set the current array index of the segment.  This writes no information
     * to the database, but just moves the position of the segment
     * @param genome Genome whose array we want to move segment to
     * @param arrayIndex Index in genomes array (in genome segment coordinates) 
     */
-   virtual void setArrayIndex(Genome* genome, hal_index_t arrayIndex) = 0;
-
-   /** Get the containing (read-only) genome */
-   virtual const Genome* getGenome() const = 0;
-
-   /** Get the containing genome */
-   virtual Genome* getGenome() = 0;
+    virtual void setArrayIndex(Genome* genome, hal_index_t arrayIndex) = 0;
 
    /** Get the containing sequence */
    virtual const Sequence* getSequence() const = 0;
@@ -66,9 +76,6 @@ public:
     * @param startPos Start position 
     * @param length Length*/
    virtual void setCoordinates(hal_index_t startPos, hal_size_t length) = 0;
-
-   /** Get the index of the segment in the segment array */
-   virtual hal_index_t getArrayIndex() const = 0;
 
    /** Determine if current segment is to the left of a genome coordinate
     * @param genomePos Index of DNA character in genome */
@@ -103,6 +110,21 @@ public:
 
    /** Print contents of segment */
    virtual void print(std::ostream& os) const = 0;
+
+    protected:
+    Segment(Genome* genome,
+            hal_index_t index):
+        _genome(genome),
+        _index(index) {
+        assert(_index >= 0);
+    }
+    Segment():
+        _genome(NULL),
+        _index(0) {
+    }
+    
+    Genome* _genome;
+    hal_index_t _index;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Segment& s)

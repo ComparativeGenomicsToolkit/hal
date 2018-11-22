@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <cstdlib>
+#include "hdf5Genome.h"
 #include "hdf5TopSegment.h"
 #include "hdf5BottomSegment.h"
 #include "halDnaIterator.h"
@@ -24,17 +25,14 @@ const size_t Hdf5TopSegment::totalSize = parentReversedOffset + sizeof(bool);
 Hdf5TopSegment::Hdf5TopSegment(Hdf5Genome* genome,
                                Hdf5ExternalArray* array,
                                hal_index_t index) :
-  _array(array),
-  _index(index),
-  _genome(genome)
-{
-  assert(_index >= 0);
+    TopSegment(genome, index),
+  _array(array) {
 }
 
 void Hdf5TopSegment::setCoordinates(hal_index_t startPos, hal_size_t length)
 {
-  if (_genome && (startPos >= (hal_index_t)_genome->_totalSequenceLength || 
-                  startPos + length > _genome->_totalSequenceLength))
+    if ((_genome != NULL) && (startPos >= (hal_index_t)_genome->getSequenceLength() || 
+                              startPos + length > _genome->getSequenceLength()))
   {
     throw hal_exception("Trying to set top segment coordinate out of range");
   }
@@ -50,7 +48,8 @@ hal_offset_t Hdf5TopSegment::getBottomParseOffset() const
   hal_index_t bottomIndex = getBottomParseIndex();
   if (bottomIndex != NULL_INDEX)
   {
-    Hdf5BottomSegment bs(_genome, &_genome->_bottomArray, bottomIndex);
+      Hdf5Genome* genome = dynamic_cast<Hdf5Genome*>(_genome);
+    Hdf5BottomSegment bs(genome, &genome->_bottomArray, bottomIndex);
     assert(bs.getStartPosition() <= getStartPosition());
     assert((hal_index_t)(bs.getStartPosition() + bs.getLength()) 
            >= getStartPosition());

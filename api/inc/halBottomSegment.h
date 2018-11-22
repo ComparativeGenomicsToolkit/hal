@@ -106,6 +106,11 @@ public:
         return !leftOf(genomePos) && !rightOf(genomePos);
     }
 
+    protected:
+    BottomSegment(Genome* genome,
+                  hal_index_t index):
+        Segment(genome, index) {
+    }
 };
 
 }

@@ -10,20 +10,17 @@ namespace hal {
 class MMapTopSegment : public TopSegment
 {
     public:
-    MMapTopSegment(const MMapGenome *genome, hal_index_t arrayIndex) :
-        _index(arrayIndex) {
-            _genome = const_cast<MMapGenome *>(genome);
-            _data = _genome->getTopSegmentPointer(arrayIndex);
-        };
+    MMapTopSegment(MMapGenome *genome, hal_index_t arrayIndex) :
+        TopSegment(genome, arrayIndex),
+        _data(getMMapGenome()->getTopSegmentPointer(arrayIndex)) {
+        }
 
     // SEGMENT INTERFACE
-    void setArrayIndex( Genome *genome, hal_index_t arrayIndex) {
-        _genome = dynamic_cast<MMapGenome *>(genome);
-        _data = _genome->getTopSegmentPointer(arrayIndex);
+    void setArrayIndex(Genome *genome, hal_index_t arrayIndex) {
+        _genome = genome;
+        _data = getMMapGenome()->getTopSegmentPointer(arrayIndex);
         _index = arrayIndex;
     }
-    const Genome* getGenome() const;
-    Genome* getGenome();
     const Sequence* getSequence() const;
     hal_index_t getStartPosition() const {
         return _data->getStartPosition();
@@ -54,20 +51,11 @@ class MMapTopSegment : public TopSegment
     bool isCanonicalParalog() const;
 
     private:
+    MMapGenome* getMMapGenome() const {
+        return static_cast<MMapGenome*>(_genome);
+    }
     MMapTopSegmentData *_data;
-    MMapGenome *_genome;
-    hal_index_t _index;
 };
-
-inline const Genome* MMapTopSegment::getGenome() const
-{
-  return _genome;
-}
-
-inline Genome* MMapTopSegment::getGenome()
-{
-  return _genome;
-}
 
 inline hal_index_t MMapTopSegment::getEndPosition() const
 {
@@ -122,14 +110,14 @@ inline bool MMapTopSegment::isLast() const
 inline hal_index_t MMapTopSegment::getLeftParentIndex() const
 {
   assert(isFirst() == false);
-  MMapTopSegment leftSeg(_genome, _index - 1);
+  MMapTopSegment leftSeg(getMMapGenome(), _index - 1);
   return leftSeg.getParentIndex();
 }
 
 inline hal_index_t MMapTopSegment::getRightParentIndex() const
 {
   assert(isLast() == false);
-  MMapTopSegment rightSeg(_genome, _index + 1);
+  MMapTopSegment rightSeg(getMMapGenome(), _index + 1);
   return rightSeg.getParentIndex();
 }
 }

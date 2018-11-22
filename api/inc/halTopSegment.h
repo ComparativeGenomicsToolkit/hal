@@ -104,6 +104,13 @@ public:
     inline bool overlaps(hal_index_t genomePos) const {
         return !leftOf(genomePos) && !rightOf(genomePos);
     }
+
+    protected:
+    TopSegment(Genome* genome,
+               hal_index_t index):
+        Segment(genome, index) {
+    }
+
 };
 }
 #endif
