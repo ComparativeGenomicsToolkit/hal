@@ -24,15 +24,27 @@ libs: ${libHalMaf}
 progs: ${progs}
 
 clean : 
-	rm -f ${libHalMaf} ${objs} ${progs} ${depends}
+	rm -f ${libHalMaf} ${objs} ${progs} ${depends} output
 
-test: halMafTests naiveLiftUpTests
+test: halMafTests hal2MafSmallMMapTest hal2MafSmallHdf5Test naiveLiftUpTests
 
 halMafTests:
 	${binDir}/halMafTests
 
 naiveLiftUpTests:
 	python2 -m pytest impl/naiveLiftUp.py
+
+hal2MafSmallMMapTest:
+	@mkdir -p output
+	../bin/halRandGen --preset small --seed 0 --testRand --format mmap output/small.mmap.hal
+	../bin/hal2maf output/small.mmap.hal output/small.mmap.maf
+	diff tests/expected/small.mmap.maf output/small.mmap.maf
+
+hal2MafSmallHdf5Test:
+	@mkdir -p output
+	../bin/halRandGen --preset small --seed 0 --testRand --format hdf5 output/small.hdf5.hal
+	../bin/hal2maf output/small.hdf5.hal output/small.hdf5.maf
+	diff tests/expected/small.hdf5.maf output/small.hdf5.maf
 
 include ${rootDir}/rules.mk
 
