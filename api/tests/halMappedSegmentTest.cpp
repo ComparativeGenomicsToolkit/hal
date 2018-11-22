@@ -14,12 +14,12 @@
 #include "halBottomSegmentTest.h"
 #include "halTopSegmentTest.h"
 #include "hal.h"
-#include <random>
+#include "halRandNumberGen.h"
 
 using namespace std;
 using namespace hal;
 
-static std::mt19937 rng;
+static RandNumberGen rng;
 
 void MappedSegmentMapUpTest::createCallBack(Alignment* alignment)
 {

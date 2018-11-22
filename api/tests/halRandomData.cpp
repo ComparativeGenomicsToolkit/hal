@@ -9,32 +9,20 @@
 #include <ctime>
 #include <deque>
 #include "halRandomData.h"
+#include "halRandNumberGen.h"
 
 
 using namespace std;
 using namespace hal;
 
-static inline hal_size_t uniformInt(mt19937& rng, hal_size_t min, hal_size_t max)
+static inline bool exponEvent(RandNumberGen& rng, double mu)
 {
-    std::uniform_int_distribution<int> dist(min, max);
-    return dist(rng);
+    return rng.getRand() <= (1.0 - exp(-mu));
 }
 
-static inline double uniformDbl(mt19937& rng, double min, double max)
+static inline char randDNA(RandNumberGen& rng)
 {
-    std::uniform_real_distribution<double> dist(min, max);
-    return dist(rng);
-}
-
-static inline bool exponEvent(mt19937& rng, double mu)
-{
-    std::uniform_real_distribution<double> dist;
-    return dist(rng) <= (1.0 - exp(-mu));
-}
-
-static inline char randDNA(mt19937& rng)
-{
-    hal_size_t i = uniformInt(rng, 0, 3);
+    hal_size_t i = rng.getRandInt(0, 3);
   switch (i)
   {
   case 0: return 'A';
@@ -44,7 +32,7 @@ static inline char randDNA(mt19937& rng)
   }
 }
 
-static inline void mutateString(mt19937& rng, string& buffer, double branchLength)
+static inline void mutateString(RandNumberGen& rng, string& buffer, double branchLength)
 {
   for (size_t i = 0; i < buffer.length(); ++i)
   {
@@ -55,7 +43,7 @@ static inline void mutateString(mt19937& rng, string& buffer, double branchLengt
   }
 }
 
-static void createRandomAlignmentGenome(mt19937& rng,
+static void createRandomAlignmentGenome(RandNumberGen& rng,
                                         Alignment* newAlignment,
                                         deque<string>& genomeNameQueue) {
     Genome* genome = newAlignment->openGenome(genomeNameQueue.back());
@@ -78,7 +66,7 @@ static void createRandomAlignmentGenome(mt19937& rng,
 }
                                        
 
-void hal::createRandomAlignment(mt19937& rng,
+void hal::createRandomAlignment(RandNumberGen& rng,
                                 Alignment* newAlignment,
                                 double meanDegree,
                                 double maxBranchLength,
@@ -135,7 +123,7 @@ void hal::createRandomAlignment(mt19937& rng,
 }
                            
 
-static void createRandomTreeGenome(mt19937& rng,
+static void createRandomTreeGenome(RandNumberGen& rng,
                                    Alignment* newAlignment,
                                    double meanDegree,
                                    double maxBranchLength,
@@ -145,7 +133,7 @@ static void createRandomTreeGenome(mt19937& rng,
                                    deque<string>& genomeNameQueue) {
     Genome* genome = newAlignment->openGenome(genomeNameQueue.back());
     genomeNameQueue.pop_back();
-    hal_size_t numChildren = (hal_size_t)(uniformDbl(rng, 0.0, 2.0 * meanDegree) + 0.5);
+    hal_size_t numChildren = (hal_size_t)(rng.getRandDouble(0.0, 2.0 * meanDegree) + 0.5);
     if (genomeCount + numChildren >= maxGenomes) {
         numChildren = maxGenomes - genomeCount;
     }
@@ -157,12 +145,12 @@ static void createRandomTreeGenome(mt19937& rng,
         string childName = "Genome_" + std::to_string(genomeCount++);
         newAlignment->addLeafGenome(childName,
                                     genome->getName(),
-                                    uniformDbl(rng, 1e-5, maxBranchLength));
+                                    rng.getRandDouble(1e-5, maxBranchLength));
         genomeNameQueue.push_front(childName);
     }
  }
 
-void hal::createRandomTree(mt19937& rng,
+void hal::createRandomTree(RandNumberGen& rng,
                            Alignment* newAlignment,
                            double meanDegree,
                            double maxBranchLength,
@@ -204,7 +192,7 @@ static hal_size_t calcNumTopSegments(Genome* parent,
    return numTopSegments;
 }
 
-static void createGenomeDimensions(mt19937& rng,
+static void createGenomeDimensions(RandNumberGen& rng,
                                    Alignment* alignment,
                                    hal_size_t minSegmentLength,
                                    hal_size_t maxSegmentLength,
@@ -216,8 +204,8 @@ static void createGenomeDimensions(mt19937& rng,
     genomeNameQueue.pop_back();
     
     Genome* parent = genome->getParent();
-    hal_size_t botSegSize = uniformInt(rng, minSegmentLength, maxSegmentLength);
-    hal_size_t numBottomSegments = uniformInt(rng, minSegments, maxSegments);
+    hal_size_t botSegSize = rng.getRandInt(minSegmentLength, maxSegmentLength);
+    hal_size_t numBottomSegments = rng.getRandInt(minSegments, maxSegments);
     hal_size_t length = numBottomSegments * botSegSize;
     hal_size_t topSegSize = 0;
     hal_size_t numTopSegments = calcNumTopSegments(parent, length, topSegSize);
@@ -289,7 +277,7 @@ static void createGenomeDimensions(mt19937& rng,
     }
 }
 
-void hal::createRandomDimensions(mt19937& rng,
+void hal::createRandomDimensions(RandNumberGen& rng,
                                  Alignment* alignment,
                                  hal_size_t minSegmentLength,
                                  hal_size_t maxSegmentLength,
@@ -309,7 +297,7 @@ void hal::createRandomDimensions(mt19937& rng,
   }
 }
 
-static void createRandomRootGenome(mt19937& rng,
+static void createRandomRootGenome(RandNumberGen& rng,
                                    Alignment* alignment,
                                    Genome* genome) {
     DnaIteratorPtr dnaIt = genome->getDnaIterator();
@@ -322,7 +310,7 @@ static void createRandomRootGenome(mt19937& rng,
     dnaIt->flush();
 }
 
-static void createRandomDescendantGenome(mt19937& rng,
+static void createRandomDescendantGenome(RandNumberGen& rng,
                                          Alignment* alignment,
                                          Genome* genome,
                                          Genome* parent) {
@@ -352,7 +340,7 @@ static void createRandomDescendantGenome(mt19937& rng,
     }
 }
 
-void hal::createRandomGenome(mt19937& rng,
+void hal::createRandomGenome(RandNumberGen& rng,
                              Alignment* alignment,
                              Genome* genome)
 {
@@ -364,7 +352,7 @@ void hal::createRandomGenome(mt19937& rng,
   }
 }
 
-void hal::createRandomSegment(mt19937& rng,
+void hal::createRandomSegment(RandNumberGen& rng,
                               Genome* genome, 
                               hal_size_t indexInParent,
                               set<pair<hal_index_t, hal_index_t> >& edgeSet, 
@@ -384,7 +372,7 @@ void hal::createRandomSegment(mt19937& rng,
   // case 2: random parent index (trasposition/duplication)
   if (parentIdx >= (hal_index_t)numBotSegs || exponEvent(rng, branchLength) == true)
   {
-      parentIdx = uniformInt(rng, 0, numBotSegs - 1);
+      parentIdx = rng.getRandInt(0, numBotSegs - 1);
   }
 
   // case 3: null parent index (insertion)

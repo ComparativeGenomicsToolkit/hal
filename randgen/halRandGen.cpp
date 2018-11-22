@@ -11,11 +11,10 @@
 #include "halCLParser.h"
 #include "hal.h"
 #include "halRandomData.h"
-#include <random>
+#include "halRandNumberGen.h"
 
 using namespace std;
 using namespace hal;
-using namespace H5;
 
 struct RandOptions {
    double _meanDegree;
@@ -27,13 +26,14 @@ struct RandOptions {
    hal_size_t _minSegments;
    hal_size_t _maxSegments;
    int _seed;
+   bool _testRand;
    string _halFile;
 };
 
-static const RandOptions defaultSm =  {0.75,  0.1,  2,   5,  250,   1000,      5,     10, -1, ""};
-static const RandOptions defaultMed = {1.25,  0.7,  8,  20,  500,   2000,    100,    500, -1, ""};
-static const RandOptions defaultBig = {2.00,  0.7, 20,  50,  1000,  8000,    400,   5000, -1, ""};
-static const RandOptions defaultLrg = {2.00,  1.0, 50, 100,  5000, 10000,  10000,  50000, -1, ""};
+static const RandOptions defaultSm =  {0.75,  0.1,  2,   5,  250,   1000,      5,     10, -1, false, ""};
+static const RandOptions defaultMed = {1.25,  0.7,  8,  20,  500,   2000,    100,    500, -1, false, ""};
+static const RandOptions defaultBig = {2.00,  0.7, 20,  50,  1000,  8000,    400,   5000, -1, false, ""};
+static const RandOptions defaultLrg = {2.00,  1.0, 50, 100,  5000, 10000,  10000,  50000, -1, false, ""};
 
 static void initParser(CLParser& optionsParser) {
     optionsParser.setDescription("Generate a random HAL alignment file");
@@ -46,7 +46,8 @@ static void initParser(CLParser& optionsParser) {
     optionsParser.addOption("maxSegmentLength", "[" + std::to_string(defaultMed._maxSegmentLength) + "]", defaultMed._maxSegmentLength);
     optionsParser.addOption("maxSegments", "[" + std::to_string(defaultMed._maxSegments) + "]", defaultMed._maxSegments);
     optionsParser.addOption("minSegments", "[" + std::to_string(defaultMed._minSegments) + "]", defaultMed._minSegments);
-    optionsParser.addOption("seed", "[system time]\n", 0);
+    optionsParser.addOption("seed", "random number seed ", -1);
+    optionsParser.addOptionFlag("testRand", "use portable random number generator", -1);
     optionsParser.addArgument("halFile", "path to toutput HAL alignment file");
 }
 
@@ -86,6 +87,9 @@ static RandOptions parseProgOptions(const CLParser* optionsParser)
     updateOption(optionsParser, "minSegments", options._minSegments);
     updateOption(optionsParser, "maxSegments", options._maxSegments);
     updateOption(optionsParser, "seed", options._seed);
+    if (optionsParser->getFlag("testRand")) {
+        options._testRand = true;
+    }
     options._halFile = optionsParser->getArgument<string>("halFile");
     return options;
 }
@@ -104,10 +108,7 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    std::mt19937 rng;
-    if (options._seed >= 0) {
-        rng.seed(options._seed);
-    }
+    RandNumberGen rng(false, options._seed);
         
   try
   {

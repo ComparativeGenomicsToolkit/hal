@@ -8,12 +8,12 @@
 #define _HALRANDOMDATA_H
 
 #include <set>
-#include <random>
 #include "hal.h"
 
 namespace hal {
-
-    void createRandomAlignment(std::mt19937& rng,
+    class RandNumberGen;
+    
+    void createRandomAlignment(RandNumberGen& rng,
                                Alignment* emptyAlignment,
                                double meanDegree,
                                double maxBranchLength,
@@ -24,25 +24,25 @@ namespace hal {
                                hal_size_t minSegments,
                                hal_size_t maxSegments);
 
-void createRandomTree(std::mt19937& rng,
+void createRandomTree(RandNumberGen& rng,
                       Alignment* emptyAlignment,
                       double meanDegree,
                       double maxBranchLength,
                       hal_size_t minGenomes,
                       hal_size_t maxGenomes);
 
-void createRandomDimensions(std::mt19937& rng,
+void createRandomDimensions(RandNumberGen& rng,
                             Alignment* alignment,
                             hal_size_t minSegmentLength,
                             hal_size_t maxSegmentLength,
                             hal_size_t minSegments,
                             hal_size_t maxSegments);
 
-void createRandomGenome(std::mt19937& rng,
+void createRandomGenome(RandNumberGen& rng,
                         Alignment* alignment,
                         Genome* genome);
 
-void createRandomSegment(std::mt19937& rng,
+void createRandomSegment(RandNumberGen& rng,
                          Genome* genome, 
                          hal_size_t indexInParent,
                          std::set<std::pair<hal_index_t, hal_index_t> >& 

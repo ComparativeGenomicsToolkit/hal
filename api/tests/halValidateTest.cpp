@@ -10,7 +10,7 @@
 #include "halRandomData.h"
 #include "halGappedTopSegmentIterator.h"
 #include "halGappedBottomSegmentIterator.h"
-#include <random>
+#include "halRandNumberGen.h"
 
 extern "C" {
 #include "commonC.h"
@@ -19,7 +19,7 @@ extern "C" {
 using namespace std;
 using namespace hal;
 
-static std::mt19937 rng;
+static RandNumberGen rng;
 
 
 void ValidateSmallTest::createCallBack(Alignment* alignment)
