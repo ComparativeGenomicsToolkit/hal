@@ -26,7 +26,7 @@ progs: ${progs}
 clean : 
 	rm -f ${libHalMaf} ${objs} ${progs} ${depends} output
 
-test: halMafUniTests hal2mafCmdTests naiveLiftUpTests
+test: halMafTests hal2mafCmdTests naiveLiftUpTests
 
 halMafTests:
 	${binDir}/halMafTests
