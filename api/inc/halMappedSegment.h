@@ -175,15 +175,6 @@ public:
         return _source;
     }
 
-   // INTERNAL METHODS
-   static hal_size_t map(const SegmentIterator* source,
-                         MappedSegmentSet& results,
-                         const Genome* tgtGenome,
-                         const std::set<const Genome*>* genomesOnPath,
-                         bool doDupes,
-                         hal_size_t minLength,
-                         const Genome *coalescenceLimit,
-                         const Genome *mrca);
 private:
 
    static 
@@ -197,96 +188,6 @@ private:
    static 
    int slowComp(const SegmentIteratorPtr& s1, 
                 const SegmentIteratorPtr& s2);
-   
-   enum OverlapCat { Same, Disjoint, AContainsB, BContainsA,
-                     AOverlapsLeftOfB, BOverlapsLeftOfA };
- 
-   static
-   OverlapCat slowOverlap(const SlicedSegment* s1, 
-                          const SlicedSegment* s2);
-
-   static
-   void getOverlapBounds(MappedSegmentPtr& seg, 
-                         MappedSegmentSet& results, 
-                         MappedSegmentSet::iterator& leftBound, 
-                         MappedSegmentSet::iterator& rightBound);
-
-   static 
-   void clipAagainstB(MappedSegmentPtr segA,
-                      MappedSegmentPtr segB,
-                      OverlapCat overlapCat,
-                      std::vector<MappedSegmentPtr>& clippedSegs);
-   static 
-   void insertAndBreakOverlaps(MappedSegmentPtr seg,
-                               MappedSegmentSet& results);
-   
-   // Map a segment to all segments that share any homology in or below
-   // the given "coalescence limit" genome (not just those that share
-   // homology in the MRCA of the source and target genomes).
-   static hal_size_t mapIncludingExtraParalogs(
-     const Genome* srcGenome,
-     std::list<MappedSegmentPtr>& input,
-     std::list<MappedSegmentPtr>& results,
-     const std::set<std::string>& namesOnPath,
-     const Genome* tgtGenome,
-     const Genome* mrca,
-     const Genome *coalescenceLimit,
-     bool doDupes,
-     hal_size_t minLength);
-
-   // Map all segments from the input to any segments in the same genome
-   // that coalesce in or before the given "coalescence limit" genome.
-   // Destructive to any data in the input list.
-   static hal_size_t mapRecursiveParalogies(
-     const Genome *srcGenome,
-     std::list<MappedSegmentPtr>& input,
-     std::list<MappedSegmentPtr>& results,
-     const std::set<std::string>& namesOnPath,
-     const Genome* coalescenceLimit,
-     hal_size_t minLength);
-
-   // Map the input segments up until reaching the target genome. If the
-   // target genome is below the source genome, fail miserably.
-   // Destructive to any data in the input or results list.
-   static hal_size_t mapRecursiveUp(
-     std::list<MappedSegmentPtr>& input,
-     std::list<MappedSegmentPtr>& results,
-     const Genome* tgtGenome,
-     hal_size_t minLength);
-
-   // Map the input segments down until reaching the target genome. If the
-   // target genome is above the source genome, fail miserably.
-   // Destructive to any data in the input or results list.
-   static hal_size_t mapRecursiveDown(
-     std::list<MappedSegmentPtr>& input,
-     std::list<MappedSegmentPtr>& results,
-     const Genome* tgtGenome,
-     const std::set<std::string>& namesOnPath,
-     bool doDupes,
-     hal_size_t minLength);
-
-   static 
-   hal_size_t mapRecursive(const Genome* prevGenome,
-                           std::list<MappedSegmentPtr>& input,
-                           std::list<MappedSegmentPtr>& results,
-                           const Genome* tgtGenome,
-                           const std::set<std::string>& namesOnPath,
-                           bool doDupes,
-                           hal_size_t minLength);
-   static 
-   hal_size_t mapUp(MappedSegmentPtr mappedSeg, 
-                    std::list<MappedSegmentPtr>& results,
-                    bool doDupes,
-                    hal_size_t minLength);
-   static 
-   hal_size_t mapDown(MappedSegmentPtr mappedSeg, 
-                      hal_size_t childIndex,
-                      std::list<MappedSegmentPtr>& results,
-                      hal_size_t minLength);
-   static 
-   hal_size_t mapSelf(MappedSegmentPtr mappedSeg, 
-                      std::list<MappedSegmentPtr>& results,
-                      hal_size_t minLength);
    
    
 private:
