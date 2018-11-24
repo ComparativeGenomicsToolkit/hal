@@ -166,7 +166,7 @@ static hal_size_t mapDown(
   if (mappedSeg->isTop() == false)
   {
     TopSegmentIteratorPtr topSegIt = child->getTopSegmentIterator();
-    SegmentIteratorPtr targetSegIt = mappedSeg->getTargetPtr();
+    SegmentIteratorPtr targetSegIt = mappedSeg->getTargetIteratorPtr();
     BottomSegmentIteratorPtr botSegIt =
         std::dynamic_pointer_cast<BottomSegmentIterator>(targetSegIt);
 
@@ -330,7 +330,7 @@ static hal_size_t mapSelf(
   hal_size_t added = 0;
   if (mappedSeg->isTop() == true)
   {
-      SegmentIteratorPtr target = mappedSeg->getTargetPtr();
+      SegmentIteratorPtr target = mappedSeg->getTargetIteratorPtr();
       SegmentIteratorPtr source = mappedSeg->getSourceIteratorPtr();
     TopSegmentIteratorPtr top =
         std::dynamic_pointer_cast<TopSegmentIterator>(target);
@@ -491,7 +491,7 @@ static void getOverlapBounds(
     for (; leftBound != results.begin(); --leftBound)
     {
       if (leftBound != results.end() && 
-          slowOverlap(seg.get(), leftBound->get()) == Disjoint)
+          slowOverlap(seg.get()->getTarget(), leftBound->get()->getTarget()) == Disjoint)
       {
         break;
       }
@@ -501,7 +501,7 @@ static void getOverlapBounds(
     {
       for (++rightBound; rightBound != results.end(); ++rightBound)
       {
-          if (slowOverlap(seg.get(), rightBound->get()) == Disjoint)
+          if (slowOverlap(seg.get()->getTarget(), rightBound->get()->getTarget()) == Disjoint)
         {
           break;
         }
@@ -629,7 +629,7 @@ static void insertAndBreakOverlaps(
   {
     for (inputIt = inputSegs.begin(); inputIt != inputSegs.end(); ++inputIt)
     {
-        oc = slowOverlap(inputIt->get(), resIt->get());
+        oc = slowOverlap(inputIt->get()->getTarget(), resIt->get()->getTarget());
       if (oc == AContainsB || oc == AOverlapsLeftOfB || oc == BOverlapsLeftOfA)
       {
         clippedSegs.clear();
@@ -648,7 +648,7 @@ static void insertAndBreakOverlaps(
     for (; resIt != rightBound; ++resIt)
     {
       assert((*resIt)->getLength() == (*resIt)->getSource()->getLength());
-      oc = slowOverlap(resIt->get(), inputIt->get());
+      oc = slowOverlap(resIt->get()->getTarget(), inputIt->get()->getTarget());
       //assert(oc == Same || oc == Disjoint || oc == AContainsB);
       if (oc == AContainsB)
       {

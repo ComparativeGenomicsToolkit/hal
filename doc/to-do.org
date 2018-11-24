@@ -92,3 +92,4 @@ https://github.com/lemire/clhash
 - hal4dExtract works too, I added quite a few tests for it
 - hal2maf mostly works; wouldn't trust the maxRefGap option
 * sometimes index is `index', somethings `arrayIndex'
+* mapped segment target is an iterator, but it doesn't seem to have an upper bound, maybe it would be better as a target array.

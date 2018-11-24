@@ -15,7 +15,7 @@ namespace hal {
 /** 
  * Interface for a bottom segment of DNA
  */
-class BottomSegment : virtual public Segment
+class BottomSegment : public Segment
 {
 public:
    /** Destructor */
@@ -110,6 +110,10 @@ public:
     BottomSegment(Genome* genome,
                   hal_index_t index):
         Segment(genome, index) {
+    }
+
+    private:
+    BottomSegment() {
     }
 };
 

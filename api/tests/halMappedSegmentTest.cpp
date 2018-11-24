@@ -295,7 +295,7 @@ void MappedSegmentParseTest::testTopSegment(const Alignment* alignment,
                  mseg->getSource()->getEndPosition());
 
     MappedSegmentSet tResults;
-    halMapSegmentSP(mseg->getTargetPtr(), tResults, top->getGenome(), NULL, false);
+    halMapSegmentSP(mseg->getTargetIteratorPtr(), tResults, top->getGenome(), NULL, false);
     CuAssertTrue(_testCase, tResults.size() == 1);
     MappedSegmentPtr tmseg = *tResults.begin();
     CuAssertTrue(_testCase, tmseg->getGenome() == top->getGenome());

@@ -140,17 +140,18 @@ void Hdf5ExternalArray::load(PortableH5Location* file, const H5std_string& path,
 // Write the memory buffer back to the file 
 void Hdf5ExternalArray::write()
 {
-  if (_dirty == true)
+  if (_dirty)
   {
     _dataSpace.selectHyperslab(H5S_SELECT_SET, &_bufSize, &_bufStart);
     _dataSet.write(_buf, _dataType, _chunkSpace, _dataSpace);
+    _dirty = false;
   }
 }
 
 // Page chunk containing index i into memory 
 void Hdf5ExternalArray::page(hsize_t i)
 {
-  if (_dirty == true)
+  if (_dirty)
   {
     write();
   }

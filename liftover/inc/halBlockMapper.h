@@ -60,8 +60,8 @@ protected:
      hal_index_t& minIndex,
      hal_index_t& maxIndex);
 
-   static bool cutByNext(SlicedSegmentPtr query, 
-                         SlicedSegmentConstPtr nextSeg,
+   static bool cutByNext(SlicedSegment* query, 
+                         const SlicedSegment* nextSeg,
                          bool right);
       
    static bool equalTargetStart(const MappedSegmentPtr& s1,

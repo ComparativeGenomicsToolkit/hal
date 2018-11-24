@@ -16,14 +16,12 @@
 
 namespace hal {
 /** 
- * Interface for a mapped segment.  A mapped segment keeps track of a 
- * homologous region in another genome (from which it was mapped).  
- * Mapped segments are used to keep
- * pairwise alignment fragments across the tree as an alternative to the column
- * iterator. 
- * 
+ * Interface for a mapped segment.  A mapped segment stores a source segment
+ * and a homologous region in a target genome (to which it was mapped).  Mapped
+ * segments are used to keep pairwise alignment fragments across the tree as
+ * an alternative to the column iterator.
  */
-class MappedSegment : public virtual SlicedSegment
+class MappedSegment
 {
 public:
 
@@ -44,6 +42,32 @@ public:
     SlicedSegmentPtr getSourcePtr() const {
         return _source;
     }
+
+    /** Get the original segment from which this segment was mapped */
+    SegmentIteratorPtr getSourceIteratorPtr() {
+        return _source;
+    }
+
+    /** get the target object to which this segment was mapped */
+    SlicedSegment* getTarget() {
+        return _target.get();
+    }
+
+    /** get the target object to which this segment was mapped */
+    SlicedSegmentPtr getTargetPtr() {
+        return _target;
+    }
+
+    /** get the target object to which this segment was mapped */
+    SegmentIterator* getTargetIterator() {
+        return _target.get();
+    }
+
+    /** get the target object to which this segment was mapped */
+    SegmentIteratorPtr getTargetIteratorPtr() {
+        return _target;
+    }
+
 
    /** Comparison used to store in stl sets and maps.  We sort based
     * on the coordinate of the mapped segemnt's (target) interval as the primary
@@ -161,18 +185,6 @@ public:
    SegmentIteratorPtr sourceClone() const;
     void setTarget(SegmentIteratorPtr target) {
         _target = target;
-    }
-    SegmentIteratorPtr getTargetPtr() {
-        return _target;
-    }
-
-    SegmentIterator* getTarget() {
-        return _target.get();
-    }
-
-    // FIXME: make name consistent with above
-    SegmentIteratorPtr getSourceIteratorPtr() {
-        return _source;
     }
 
 private:

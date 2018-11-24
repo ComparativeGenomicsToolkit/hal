@@ -24,7 +24,7 @@ libs: ${libHalMaf}
 progs: ${progs}
 
 clean : 
-	rm -f ${libHalMaf} ${objs} ${progs} ${depends} output
+	rm -rf ${libHalMaf} ${objs} ${progs} ${depends} output
 
 test: halMafTests hal2mafCmdTests naiveLiftUpTests
 

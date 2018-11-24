@@ -254,7 +254,7 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt)
     {
       // if cut returns nothing, then the region in question is covered
       // by segNext (ie already mapped).
-      wasCut = cutByNext(queryIt, *segNext, !queryIt->getReversed());
+        wasCut = cutByNext(queryIt.get(), segNext->get()->getTarget(), !queryIt->getReversed());
     }
     if (wasCut == true)
     {
@@ -296,7 +296,7 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt)
     {
       // if cut returns nothing, then the region in question is covered
       // by segPrev (ie already mapped).
-      wasCut = cutByNext(queryIt, *segPrev, queryIt->getReversed());
+        wasCut = cutByNext(queryIt.get(), segPrev->get()->getTarget(), queryIt->getReversed());
     }
     if (wasCut == true)
     {
@@ -388,9 +388,8 @@ SegmentIteratorPtr BlockMapper::makeIterator(
   return segIt;
 }
 
-// FIXME: these Ptrs should be by ref, but it cases type problems or maybe it doesn't
-bool BlockMapper::cutByNext(SlicedSegmentPtr query, 
-                            SlicedSegmentConstPtr nextSeg,
+bool BlockMapper::cutByNext(SlicedSegment* query, 
+                            const SlicedSegment* nextSeg,
                             bool right)
 {
   assert(query->getGenome() == nextSeg->getGenome());
