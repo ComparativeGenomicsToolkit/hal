@@ -951,13 +951,13 @@ void halMappedSegmentMapExtraParalogsTest(CuTest *testCase)
     tester.check(testCase);
 }
 
-void haMappedSegmentColCompareTestCheck1(CuTest *testCase)
+void halMappedSegmentColCompareTestCheck1(CuTest *testCase)
 {
     MappedSegmentColCompareTestCheck1 tester;
     tester.check(testCase);
 }
 
-void haMappedSegmentColCompareTestCheck2(CuTest *testCase)
+void halMappedSegmentColCompareTestCheck2(CuTest *testCase)
 {
     MappedSegmentColCompareTestCheck2 tester;
     tester.check(testCase);
@@ -990,8 +990,8 @@ CuSuite* halMappedSegmentTestSuite(void)
   SUITE_ADD_TEST(suite, halMappedSegmentParseTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapAcrossTest);
   SUITE_ADD_TEST(suite, halMappedSegmentMapDupeTest); 
-  SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck1);
-  SUITE_ADD_TEST(suite, haMappedSegmentColCompareTestCheck2);
+  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTestCheck1);
+  SUITE_ADD_TEST(suite, halMappedSegmentColCompareTestCheck2);
   SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest1);
   // FIXME: why are these disabled?
   //SUITE_ADD_TEST(suite, halMappedSegmentColCompareTest2);

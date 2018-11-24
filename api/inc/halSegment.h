@@ -28,17 +28,17 @@ public:
     }
 
    /** Get the containing (read-only) genome */
-    const Genome* getGenome() const {
+    virtual const Genome* getGenome() const {
         return _genome;
     }
 
    /** Get the containing genome */
-    Genome* getGenome() {
+    virtual Genome* getGenome() {
         return _genome;
     }
 
    /** Get the index of the segment in the segment array */
-    hal_index_t getArrayIndex() const {
+    virtual hal_index_t getArrayIndex() const {
         return _index;
     }
 
