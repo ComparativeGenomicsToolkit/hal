@@ -198,7 +198,7 @@ void BranchMutations::writeSubstitutions(TopSegmentIteratorPtr first,
   hal_index_t endIndex = lastPlusOne->getArrayIndex();
   assert(_top->getReversed() == false);
   do {
-    if (_top->ts()->hasParent())
+    if (_top->tseg()->hasParent())
     {
       if (_refStream == NULL && _parentStream == NULL)
       {
@@ -240,7 +240,7 @@ void BranchMutations::writeGapInsertions()
   hal_size_t startPos, endPos;
   _top->copy(_rearrangement->getLeftBreakpoint());
   do {
-    if (_top->ts()->hasParent() == false && _top->getLength() <= _maxGap)
+    if (_top->tseg()->hasParent() == false && _top->getLength() <= _maxGap)
     {
       startPos = _top->getStartPosition();
       endPos = _top->getEndPosition();

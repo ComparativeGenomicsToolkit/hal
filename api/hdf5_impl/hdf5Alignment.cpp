@@ -442,10 +442,10 @@ void Hdf5Alignment::removeGenome(const string& name)
           newChild--;
           continue;
         }
-        bottomSegments[i].children[newChild].childIndex = oldBotIt->bs()->getChildIndex(oldChild);
-        bottomSegments[i].children[newChild].reversed = oldBotIt->bs()->getChildReversed(oldChild);
+        bottomSegments[i].children[newChild].childIndex = oldBotIt->bseg()->getChildIndex(oldChild);
+        bottomSegments[i].children[newChild].reversed = oldBotIt->bseg()->getChildReversed(oldChild);
       }
-      bottomSegments[i].topParseIndex = oldBotIt->bs()->getTopParseIndex();
+      bottomSegments[i].topParseIndex = oldBotIt->bseg()->getTopParseIndex();
     }
     // Reset the bottom segments. updateBottomDimensions will change the
     // number of children in the bottom segment array to the correct value
@@ -468,13 +468,13 @@ void Hdf5Alignment::removeGenome(const string& name)
       botSegIt->setCoordinates(bottomSegments[i].start, bottomSegments[i].length);
       for (hal_index_t child = 0; child < ((hal_index_t) childNames.size()) - 1; child++)
       {
-        botSegIt->bs()->setChildIndex(child,
+        botSegIt->bseg()->setChildIndex(child,
                                       bottomSegments[i].children[child].childIndex);
-        botSegIt->bs()->setChildReversed(child,
+        botSegIt->bseg()->setChildReversed(child,
                                          bottomSegments[i].children[child].reversed);
       }
       free(bottomSegments[i].children);
-      botSegIt->bs()->setTopParseIndex(bottomSegments[i].topParseIndex);
+      botSegIt->bseg()->setTopParseIndex(bottomSegments[i].topParseIndex);
     }
     free(bottomSegments);
   }

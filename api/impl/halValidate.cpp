@@ -295,7 +295,7 @@ void hal::validateDuplications(const Genome* genome)
   vector<unsigned char> pcount(parent->getNumBottomSegments(), 0);
   for (; not topIt->atEnd(); topIt->toRight())
   {
-    if (topIt->ts()->hasParent())
+    if (topIt->tseg()->hasParent())
     {
       if (pcount[topIt->getTopSegment()->getParentIndex()] < 250)
       {
@@ -305,12 +305,12 @@ void hal::validateDuplications(const Genome* genome)
   }
   for (topIt = genome->getTopSegmentIterator(); not topIt->atEnd(); topIt->toRight())
   {
-    if (topIt->ts()->hasParent())
+    if (topIt->tseg()->hasParent())
     {
       size_t count = pcount[topIt->getTopSegment()->getParentIndex()];
       assert(count > 0);
       {
-        if (topIt->ts()->hasNextParalogy() == false && count > 1)
+        if (topIt->tseg()->hasNextParalogy() == false && count > 1)
         {
             throw hal_exception("Top Segment " + std::to_string(topIt->getTopSegment()->getArrayIndex())
                                 + " in genome " + genome->getName() + " is not marked as a"

@@ -282,7 +282,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
   {
     BottomSegmentIteratorPtr bot =
         std::dynamic_pointer_cast<BottomSegmentIterator>(s2);
-    hal_index_t lb = bot->bs()->getTopParseIndex();
+    hal_index_t lb = bot->bseg()->getTopParseIndex();
     hal_index_t ub = lb;
     if ((hal_size_t)bot->getArrayIndex() <
         bot->getGenome()->getNumBottomSegments()-1)
@@ -290,7 +290,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
       bot = bot->clone();
       bot->slice(0,0);
       bot->toRight();
-      ub = bot->bs()->getTopParseIndex();
+      ub = bot->bseg()->getTopParseIndex();
     }
     if (s1->getArrayIndex() < lb)
     {
@@ -305,7 +305,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
   {
     TopSegmentIteratorPtr top =
         std::dynamic_pointer_cast<TopSegmentIterator>(s2);
-    hal_index_t lb = top->ts()->getBottomParseIndex();
+    hal_index_t lb = top->tseg()->getBottomParseIndex();
     hal_index_t ub = lb;
     if ((hal_size_t)top->getArrayIndex() < 
         top->getGenome()->getNumTopSegments()-1)
@@ -313,7 +313,7 @@ int MappedSegment::boundComp(const SegmentIteratorPtr& s1,
       top = top->clone();
       top->slice(0,0);
       top->toRight();
-      ub = top->ts()->getBottomParseIndex();
+      ub = top->tseg()->getBottomParseIndex();
     }
     if (s1->getArrayIndex() < lb)
     {

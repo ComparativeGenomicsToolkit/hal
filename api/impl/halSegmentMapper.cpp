@@ -38,8 +38,8 @@ static hal_size_t mapUp(
   {
     BottomSegmentIteratorPtr botSegIt = parent->getBottomSegmentIterator();
     TopSegmentIteratorPtr topSegIt = mappedSeg->targetAsTop();
-    if (topSegIt->ts()->hasParent() == true && topSegIt->getLength() >= minLength &&
-        (doDupes == true || topSegIt->ts()->isCanonicalParalog() == true))
+    if (topSegIt->tseg()->hasParent() == true && topSegIt->getLength() >= minLength &&
+        (doDupes == true || topSegIt->tseg()->isCanonicalParalog() == true))
     {
       botSegIt->toParent(topSegIt);
       mappedSeg->setTarget(std::dynamic_pointer_cast<SegmentIterator>(botSegIt));
@@ -170,7 +170,7 @@ static hal_size_t mapDown(
     BottomSegmentIteratorPtr botSegIt =
         std::dynamic_pointer_cast<BottomSegmentIterator>(targetSegIt);
 
-    if (botSegIt->bs()->hasChild(childIndex) == true && botSegIt->getLength() >= minLength)
+    if (botSegIt->bseg()->hasChild(childIndex) == true && botSegIt->getLength() >= minLength)
     {
       topSegIt->toChild(botSegIt, childIndex);
       mappedSeg->setTarget(std::dynamic_pointer_cast<SegmentIterator>(topSegIt));
@@ -352,12 +352,12 @@ static hal_size_t mapSelf(
              mappedSeg->getSource()->getGenome());
       results.push_back(newMappedSeg);
       ++added;
-      if (topCopy->ts()->hasNextParalogy())
+      if (topCopy->tseg()->hasNextParalogy())
       {
         topCopy->toNextParalogy();
       }
     } 
-    while (topCopy->ts()->hasNextParalogy() == true && 
+    while (topCopy->tseg()->hasNextParalogy() == true && 
            topCopy->getLength() >= minLength &&
            topCopy->getArrayIndex() != top->getArrayIndex());
   }

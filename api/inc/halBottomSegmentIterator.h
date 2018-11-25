@@ -54,23 +54,23 @@ public:
     * @param topSegIt Top iterator to parse down on */
     void toParseDown(const TopSegmentIteratorPtr& topSegIt);
 
-   /** DEPRECATED: FIXME: or not  */
+   /** Return a pointer to the current BottomSegment. NOTE: changes when iterator is modified.  */
     BottomSegment* getBottomSegment() {
         return  _bottomSegment.get();
     }
 
-   /** DEPRECATED FIXME: or not */
+   /** Return a pointer to the current BottomSegment. NOTE: changes when iterator is modified.  */
     const BottomSegment* getBottomSegment() const {
         return  _bottomSegment.get();
     }
 
-    /** return a pointer to the current BottomSegment (terse) */
-    BottomSegment* bs() {
+    /** Return a pointer to the current BottomSegment (terse).  NOTE: changes when iterator is modified.  */
+    BottomSegment* bseg() {
        return _bottomSegment.get();
      }
 
-   /** return a pointer to the current BottomSegment (terse) */
-   const BottomSegment* bs() const {
+   /** Return a pointer to the current BottomSegment (terse).  NOTE: changes when iterator is modified.  */
+   const BottomSegment* bseg() const {
        return _bottomSegment.get();
    }
 

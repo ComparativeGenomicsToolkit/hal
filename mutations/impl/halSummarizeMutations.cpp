@@ -167,7 +167,7 @@ void SummarizeMutations::substitutionAnalysis(const Genome* genome,
     bool readString = false;
     for (size_t j = 0; j < children.size(); ++j)
     {
-      if (bottom->bs()->hasChild(children[j]))
+      if (bottom->bseg()->hasChild(children[j]))
       {
         if (readString == false)
         {
@@ -272,7 +272,7 @@ void SummarizeMutations::subsAndGapInserts(
           r->getTopSegment()->getArrayIndex();
        i->toRight())
   {
-    if (i->ts()->hasParent())
+    if (i->tseg()->hasParent())
     {
       p->toParent(i);
       i->getString(child);

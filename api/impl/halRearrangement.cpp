@@ -229,8 +229,8 @@ pair<hal_index_t, hal_index_t> Rearrangement::getInsertedRange() const
   range.first = _cur->getLeft()->getStartPosition();
   range.second = _cur->getRight()->getStartPosition() + 
      (hal_index_t)(_cur->getRight()->getLength() - 1);
-  assert (_cur->getLeft()->ts()->hasParent() == false);
-  assert (_cur->getRight()->ts()->hasParent() == false);
+  assert (_cur->getLeft()->tseg()->hasParent() == false);
+  assert (_cur->getRight()->tseg()->hasParent() == false);
   if (range.first >= range.second)
   {
     swap(range.first, range.second);

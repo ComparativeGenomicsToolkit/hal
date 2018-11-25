@@ -444,7 +444,7 @@ void ColumnIterator::recursiveUpdate(bool init)
 
 bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr& inputTopSegIt)
 {
-  if (_maxInsertionLength > 0 && inputTopSegIt->ts()->hasParent() == true)
+  if (_maxInsertionLength > 0 && inputTopSegIt->tseg()->hasParent() == true)
   {
     _top->copy(inputTopSegIt);
     bool reversed = _top->getReversed();
@@ -483,7 +483,7 @@ bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr& inputTopSegIt)
 
 bool ColumnIterator::handleInsertion(const TopSegmentIteratorPtr& inputTopSegIt)
 {
-  if (_maxInsertionLength > 0 && inputTopSegIt->ts()->hasParent() == true)
+  if (_maxInsertionLength > 0 && inputTopSegIt->tseg()->hasParent() == true)
   {
     _top->copy(inputTopSegIt);
     bool reversed = _top->getReversed();
@@ -545,25 +545,25 @@ static void buildTreeR(BottomSegmentIteratorPtr botSegIt, stTree *tree)
 
   // attach a node and recurse for each of this segment's children
   // (and paralogous segments)
-  for (hal_size_t i = 0; i < botSegIt->bs()->getNumChildren(); i++) {
-    if (botSegIt->bs()->hasChild(i)) {
+  for (hal_size_t i = 0; i < botSegIt->bseg()->getNumChildren(); i++) {
+    if (botSegIt->bseg()->hasChild(i)) {
       const Genome *child = genome->getChild(i);
       TopSegmentIteratorPtr topSegIt = child->getTopSegmentIterator();
       topSegIt->toChild(botSegIt, i);
       stTree *canonicalParalog = getTreeNode(topSegIt);
       stTree_setParent(canonicalParalog, tree);
-      if (topSegIt->ts()->hasParseDown()) {
+      if (topSegIt->tseg()->hasParseDown()) {
         BottomSegmentIteratorPtr childBotSegIt = child->getBottomSegmentIterator();
         childBotSegIt->toParseDown(topSegIt);
         buildTreeR(childBotSegIt, canonicalParalog);
       }
       // Traverse the paralogous segments cycle and add those segments as well
-      if (topSegIt->ts()->hasNextParalogy()) {
+      if (topSegIt->tseg()->hasNextParalogy()) {
         topSegIt->toNextParalogy();
-        while(!topSegIt->ts()->isCanonicalParalog()) {
+        while(!topSegIt->tseg()->isCanonicalParalog()) {
           stTree *paralog = getTreeNode(topSegIt);
           stTree_setParent(paralog, tree);
-          if(topSegIt->ts()->hasParseDown()) {
+          if(topSegIt->tseg()->hasParseDown()) {
             BottomSegmentIteratorPtr childBotSegIt = child->getBottomSegmentIterator();
             childBotSegIt->toParseDown(topSegIt);
             buildTreeR(childBotSegIt, paralog);
@@ -605,11 +605,11 @@ stTree *ColumnIterator::buildTree() const {
     } else {
       // Keep heading up the tree until we hit the root segment.
       topSegIt->toSite(index);
-      while (topSegIt->ts()->hasParent()) {
+      while (topSegIt->tseg()->hasParent()) {
         const Genome *parent = topSegIt->getGenome()->getParent();
         botSegIt = parent->getBottomSegmentIterator();
         botSegIt->toParent(topSegIt);
-        if(parent->getParent() == NULL || !botSegIt->bs()->hasParseUp()) {
+        if(parent->getParent() == NULL || !botSegIt->bseg()->hasParseUp()) {
           // Reached root genome
           break;
         }
@@ -619,7 +619,7 @@ stTree *ColumnIterator::buildTree() const {
     }
 
     stTree *tree = NULL;
-    if(topSegIt->ts()->hasParent() == false && topSegIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
+    if(topSegIt->tseg()->hasParent() == false && topSegIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
       // Handle insertions in leaves. botSegIt doesn't point anywhere since
       // there are no bottom segments.
       tree = getTreeNode(topSegIt);
@@ -677,8 +677,8 @@ void ColumnIterator::clearTree()
 void ColumnIterator::updateParent(LinkedTopIterator* linkTopIt)
 {
   const Genome* genome = linkTopIt->_it->getTopSegment()->getGenome();
-  if (!_break && linkTopIt->_it->ts()->hasParent() && parentInScope(genome) &&
-      (!_noDupes || linkTopIt->_it->ts()->isCanonicalParalog()))
+  if (!_break && linkTopIt->_it->tseg()->hasParent() && parentInScope(genome) &&
+      (!_noDupes || linkTopIt->_it->tseg()->isCanonicalParalog()))
   {
     const Genome* parentGenome = genome->getParent();
 
@@ -717,7 +717,7 @@ void ColumnIterator::updateParent(LinkedTopIterator* linkTopIt)
 
     // recurse on parent's parse edge
     updateParseUp(linkTopIt->_parent);
-    if (linkTopIt->_parent->_it->bs()->hasParseUp() &&
+    if (linkTopIt->_parent->_it->bseg()->hasParseUp() &&
         linkTopIt->_parent->_topParse->_it.get() != NULL)
     {
       handleDeletion(linkTopIt->_parent->_topParse->_it);
@@ -740,7 +740,7 @@ void ColumnIterator::updateChild(LinkedBottomIterator* linkBotIt,
                                         hal_size_t index)
 {
   const Genome* genome = linkBotIt->_it->getBottomSegment()->getGenome();
-  if (!_break && linkBotIt->_it->bs()->hasChild(index) && childInScope(genome, index))
+  if (!_break && linkBotIt->_it->bseg()->hasChild(index) && childInScope(genome, index))
   {
     assert(index < linkBotIt->_children.size());
     const Genome* childGenome = genome->getChild(index);
@@ -832,7 +832,7 @@ void ColumnIterator::updateNextTopDup(LinkedTopIterator* linkTopIt)
 
 void ColumnIterator::updateParseUp(LinkedBottomIterator* linkBotIt)
 {
-  if (!_break && linkBotIt->_it->bs()->hasParseUp())
+  if (!_break && linkBotIt->_it->bseg()->hasParseUp())
   {
     const Genome* genome = linkBotIt->_it->getBottomSegment()->getGenome();
 
@@ -866,7 +866,7 @@ void ColumnIterator::updateParseUp(LinkedBottomIterator* linkBotIt)
  
 void ColumnIterator::updateParseDown(LinkedTopIterator* linkTopIt)
 {
-  if (!_break && linkTopIt->_it->ts()->hasParseDown())
+  if (!_break && linkTopIt->_it->tseg()->hasParseDown())
   {
     const Genome* genome = linkTopIt->_it->getTopSegment()->getGenome();
 

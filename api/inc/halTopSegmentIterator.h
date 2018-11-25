@@ -65,16 +65,26 @@ public:
     * @param bs Bottom segment to parse up from */
     void toParseUp(const BottomSegmentIteratorPtr& botSegIt);
 
-   /** DEPRECATED */
+   /** Return a pointer to the current TopSegment.  NOTE: changes when iterator is modified.  */
     TopSegment* getTopSegment() {
         return _topSegment.get();
     }
 
-   /** DEPRECATED */
+    /** Return a pointer to the current TopSegment.  NOTE: changes when iterator is modified.  */
     const TopSegment* getTopSegment() const  {
         return _topSegment.get();
    }
 
+   /** Return a pointer to the current TopSegment (terse).   NOTE: changes when iterator is modified.  */
+   TopSegment* tseg() {
+       return _topSegment.get();
+   }
+
+   /** Return a pointer to the current TopSegment (terse).   NOTE: changes when iterator is modified.  */
+   const TopSegment* tseg() const {
+       return _topSegment.get();
+   }
+   
    /** Test equality with other iterator (current implementation does not
     * take into account reverse state or offsets -- too review)
     * FIXME merge with operator==?? 
@@ -109,16 +119,6 @@ public:
         return _topSegment.get();
     }
     
-   /** return a pointer to the current TopSegment (terse) */
-   TopSegment* ts() {
-       return _topSegment.get();
-   }
-
-   /** return a pointer to the current TopSegment (terse) */
-   const TopSegment* ts() const {
-       return _topSegment.get();
-   }
-   
     virtual void print(std::ostream& os) const;
 
 private:

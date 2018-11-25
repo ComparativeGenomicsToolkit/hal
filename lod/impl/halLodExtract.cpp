@@ -425,22 +425,22 @@ void LodExtract::writeUnsampledSequence(const Sequence* outSequence,
   {
     assert(outSequence->getNumTopSegments() == 1);
     TopSegmentIteratorPtr top = dynamic_pointer_cast<TopSegmentIterator>(outSegment);
-    top->ts()->setParentIndex(NULL_INDEX);
-    top->ts()->setParentReversed(false);
-    top->ts()->setNextParalogyIndex(NULL_INDEX);
-    top->ts()->setBottomParseIndex(NULL_INDEX);
+    top->tseg()->setParentIndex(NULL_INDEX);
+    top->tseg()->setParentReversed(false);
+    top->tseg()->setNextParalogyIndex(NULL_INDEX);
+    top->tseg()->setBottomParseIndex(NULL_INDEX);
   }
   else
   {
     assert(outSequence->getNumBottomSegments() == 1);
     BottomSegmentIteratorPtr bottom = dynamic_pointer_cast<BottomSegmentIterator>(outSegment);
-    hal_size_t numChildren = bottom->bs()->getNumChildren();
+    hal_size_t numChildren = bottom->bseg()->getNumChildren();
     for (hal_size_t childNum = 0; childNum < numChildren; ++childNum)
     {
-      bottom->bs()->setChildIndex(childNum, NULL_INDEX);
-      bottom->bs()->setChildReversed(childNum, false);
+      bottom->bseg()->setChildIndex(childNum, NULL_INDEX);
+      bottom->bseg()->setChildReversed(childNum, false);
     }
-    bottom->bs()->setTopParseIndex(NULL_INDEX);
+    bottom->bseg()->setTopParseIndex(NULL_INDEX);
   }
 }
 
@@ -509,10 +509,10 @@ void LodExtract::updateBlockEdges(const Genome* inParentGenome,
     for (; setIt != segSet->end(); ++setIt)
     {
       bottom->setArrayIndex(outParentGenome, (*setIt)->getArrayIndex());
-      for (hal_size_t i = 0; i < bottom->bs()->getNumChildren(); ++i)
+      for (hal_size_t i = 0; i < bottom->bseg()->getNumChildren(); ++i)
       {
-        bottom->bs()->setChildIndex(i, NULL_INDEX);
-        bottom->bs()->setTopParseIndex(NULL_INDEX);
+        bottom->bseg()->setChildIndex(i, NULL_INDEX);
+        bottom->bseg()->setTopParseIndex(NULL_INDEX);
       }
     }
 
@@ -538,23 +538,23 @@ void LodExtract::updateBlockEdges(const Genome* inParentGenome,
       for (setIt = segSet->begin(); setIt != segSet->end(); ++setIt)
       {
         top->setArrayIndex(outChildGenome, (*setIt)->getArrayIndex());
-        top->ts()->setBottomParseIndex(NULL_INDEX);
+        top->tseg()->setBottomParseIndex(NULL_INDEX);
 
         // Connect to parent
         if (rootSeg != NULL)
         {
-          top->ts()->setParentIndex(bottom->getArrayIndex());
+          top->tseg()->setParentIndex(bottom->getArrayIndex());
           bool reversed = (*setIt)->getFlipped() != rootSeg->getFlipped();
-          top->ts()->setParentReversed(reversed);
+          top->tseg()->setParentReversed(reversed);
           if (setIt == segSet->begin())
           {
-            bottom->bs()->setChildIndex(childIndex, top->getArrayIndex());         
-            bottom->bs()->setChildReversed(childIndex, reversed);      
+            bottom->bseg()->setChildIndex(childIndex, top->getArrayIndex());         
+            bottom->bseg()->setChildReversed(childIndex, reversed);      
           }
         }
         else
         {
-          top->ts()->setParentIndex(NULL_INDEX);
+          top->tseg()->setParentIndex(NULL_INDEX);
         }
 
         // Connect to next paralogy
@@ -566,11 +566,11 @@ void LodExtract::updateBlockEdges(const Genome* inParentGenome,
         }
         if (setNext == setIt)
         {
-          top->ts()->setNextParalogyIndex(NULL_INDEX);
+          top->tseg()->setNextParalogyIndex(NULL_INDEX);
         }
         else
         {
-          top->ts()->setNextParalogyIndex((*setNext)->getArrayIndex());
+          top->tseg()->setNextParalogyIndex((*setNext)->getArrayIndex());
         }
       }
     }

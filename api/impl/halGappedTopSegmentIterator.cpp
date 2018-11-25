@@ -288,7 +288,7 @@ hal_size_t GappedTopSegmentIterator::getNumGaps() const
   _temp->copy(_left);
   for (; _temp->equals(_right) == false; _temp->toRight())
   {
-      if (_temp->ts()->hasParent() == false && _temp->getLength() <= _gapThreshold)
+      if (_temp->tseg()->hasParent() == false && _temp->getLength() <= _gapThreshold)
     {
       ++count;
     }
@@ -302,7 +302,7 @@ hal_size_t GappedTopSegmentIterator::getNumGapBases() const
   _temp->copy(_left);
   for (; _temp->equals(_right) == false; _temp->toRight())
   {
-    if (_temp->ts()->hasParent() == false)
+    if (_temp->tseg()->hasParent() == false)
     {
       count += _temp->getLength();
     }
@@ -359,8 +359,8 @@ bool GappedTopSegmentIterator::hasNextParalogy() const
   toRightNextUngapped(_temp);
   toLeftNextUngapped(_temp2);
 
-  assert(_temp->ts()->hasNextParalogy() == _temp2->ts()->hasNextParalogy());
-  return _temp->ts()->hasNextParalogy();
+  assert(_temp->tseg()->hasNextParalogy() == _temp2->tseg()->hasNextParalogy());
+  return _temp->tseg()->hasNextParalogy();
 }
 
 void GappedTopSegmentIterator::toNextParalogy() const
@@ -478,7 +478,7 @@ bool GappedTopSegmentIterator::hasParent() const
   
   // to verify edge cases here
   //assert(_temp->hasParent() == _temp2->hasParent());
-  return _temp->ts()->hasParent() && _temp2->ts()->hasParent();
+  return _temp->tseg()->hasParent() && _temp2->tseg()->hasParent();
 }
 
 bool GappedTopSegmentIterator::getParentReversed() const
@@ -490,7 +490,7 @@ bool GappedTopSegmentIterator::getParentReversed() const
 
     toRightNextUngapped(_temp);
     toLeftNextUngapped(_temp2);
-    assert(_temp->ts()->hasParent() && _temp2->ts()->hasParent());
+    assert(_temp->tseg()->hasParent() && _temp2->tseg()->hasParent());
     assert(_temp->getTopSegment()->getParentReversed() == 
            _temp2->getTopSegment()->getParentReversed());
     return _temp->getTopSegment()->getParentReversed();
@@ -551,9 +551,9 @@ bool GappedTopSegmentIterator::isCanonicalParalog() const
   
   // to verify edge cases here
   //assert(_temp->hasParent() == _temp2->hasParent());
-  if (_temp->ts()->hasParent() && _temp2->ts()->hasParent())
+  if (_temp->tseg()->hasParent() && _temp2->tseg()->hasParent())
   {
-    isCanon = _temp->ts()->isCanonicalParalog() && _temp2->ts()->isCanonicalParalog();
+    isCanon = _temp->tseg()->isCanonicalParalog() && _temp2->tseg()->isCanonicalParalog();
   }
   return isCanon;
 }
@@ -565,7 +565,7 @@ bool GappedTopSegmentIterator::compatible(
   TopSegmentIteratorPtr leftTopSegIt,
   TopSegmentIteratorPtr rightTopSegIt) const
 {
-  assert(leftTopSegIt->ts()->hasParent() && rightTopSegIt->ts()->hasParent());
+  assert(leftTopSegIt->tseg()->hasParent() && rightTopSegIt->tseg()->hasParent());
   assert(leftTopSegIt->equals(rightTopSegIt) == false);
   _leftParent->toParent(leftTopSegIt);
   _rightParent->toParent(rightTopSegIt);
@@ -575,7 +575,7 @@ bool GappedTopSegmentIterator::compatible(
     return false;
   }
 
-  if (leftTopSegIt->ts()->hasNextParalogy() != rightTopSegIt->ts()->hasNextParalogy())
+  if (leftTopSegIt->tseg()->hasNextParalogy() != rightTopSegIt->tseg()->hasNextParalogy())
   {
     return false;
   }
@@ -601,7 +601,7 @@ bool GappedTopSegmentIterator::compatible(
   {
     assert(_leftParent->isLast() == false);
     _leftParent->toRight();
-    if (_leftParent->bs()->hasChild(_childIndex) == true || 
+    if (_leftParent->bseg()->hasChild(_childIndex) == true || 
         _leftParent->getLength() > _gapThreshold)
     {
       if (_leftParent->equals(_rightParent))
@@ -614,7 +614,7 @@ bool GappedTopSegmentIterator::compatible(
       }
     }
   }
-  if (leftTopSegIt->ts()->hasNextParalogy() == true)
+  if (leftTopSegIt->tseg()->hasNextParalogy() == true)
   {
     _leftDup->copy(leftTopSegIt);
     _leftDup->toNextParalogy();
@@ -642,7 +642,7 @@ bool GappedTopSegmentIterator::compatible(
     {
       assert(_leftDup->isLast() == false);
       _leftDup->toRight();
-      if (_leftDup->ts()->hasParent() == true || 
+      if (_leftDup->tseg()->hasParent() == true || 
           _leftDup->getLength() > _gapThreshold)
       {
         if (_leftDup->equals(_rightDup))
@@ -678,9 +678,9 @@ void GappedTopSegmentIterator::extendRight()
     _right->toRight();
     toRightNextUngapped(_right);
 
-    if ((_right->ts()->hasParent() == false && _right->getLength() > _gapThreshold) ||
-        (_temp->ts()->hasParent() == false && _temp->getLength() > _gapThreshold) ||
-        (_right->ts()->hasParent() == true && _temp->ts()->hasParent() == true &&
+    if ((_right->tseg()->hasParent() == false && _right->getLength() > _gapThreshold) ||
+        (_temp->tseg()->hasParent() == false && _temp->getLength() > _gapThreshold) ||
+        (_right->tseg()->hasParent() == true && _temp->tseg()->hasParent() == true &&
          compatible(_temp, _right) == false))
     {
       _right->toLeft();
@@ -708,9 +708,9 @@ void GappedTopSegmentIterator::extendLeft()
     _left->toLeft();
     toLeftNextUngapped(_left);
     
-    if ((_left->ts()->hasParent() == false && _left->getLength() > _gapThreshold) ||
-        (_temp->ts()->hasParent() == false && _temp->getLength() > _gapThreshold) ||
-        (_left->ts()->hasParent() == true && _temp->ts()->hasParent() == true && 
+    if ((_left->tseg()->hasParent() == false && _left->getLength() > _gapThreshold) ||
+        (_temp->tseg()->hasParent() == false && _temp->getLength() > _gapThreshold) ||
+        (_left->tseg()->hasParent() == true && _temp->tseg()->hasParent() == true && 
          compatible(_left, _temp) == false))
     {
       _left->toRight();
@@ -725,7 +725,7 @@ void GappedTopSegmentIterator::extendLeft()
 void GappedTopSegmentIterator::toLeftNextUngapped(
   BottomSegmentIteratorPtr botSegIt) const
 {
-  while (botSegIt->bs()->hasChild(_childIndex) == false && 
+  while (botSegIt->bseg()->hasChild(_childIndex) == false && 
          botSegIt->getLength() <= _gapThreshold)
   {
     if ((!botSegIt->getReversed() && botSegIt->getBottomSegment()->isFirst()) ||
@@ -740,7 +740,7 @@ void GappedTopSegmentIterator::toLeftNextUngapped(
 void GappedTopSegmentIterator::toRightNextUngapped(
   BottomSegmentIteratorPtr botSegIt) const
 {
-  while (botSegIt->bs()->hasChild(_childIndex) == false &&
+  while (botSegIt->bseg()->hasChild(_childIndex) == false &&
          botSegIt->getLength() <= _gapThreshold)
   {
     if ((!botSegIt->getReversed() && botSegIt->getBottomSegment()->isLast()) ||
@@ -755,7 +755,7 @@ void GappedTopSegmentIterator::toRightNextUngapped(
 void GappedTopSegmentIterator::toLeftNextUngapped(
   TopSegmentIteratorPtr topSeqIt) const
 {
-  while (topSeqIt->ts()->hasParent() == false && 
+  while (topSeqIt->tseg()->hasParent() == false && 
          topSeqIt->getLength() <= _gapThreshold)
   {
     if ((!topSeqIt->getReversed() && topSeqIt->getTopSegment()->isFirst()) ||
@@ -770,7 +770,7 @@ void GappedTopSegmentIterator::toLeftNextUngapped(
 void GappedTopSegmentIterator::toRightNextUngapped(
   TopSegmentIteratorPtr topSeqIt) const
 {
-  while (topSeqIt->ts()->hasParent() == false &&
+  while (topSeqIt->tseg()->hasParent() == false &&
          topSeqIt->getLength() <= _gapThreshold)
   {
     if ((!topSeqIt->getReversed() && topSeqIt->getTopSegment()->isLast()) ||

@@ -361,11 +361,11 @@ void MafWriteGenomes::convertSegments(size_t col)
     assert(seq != NULL);
     _refBottom->setCoordinates(seq->getStartPosition() + rowInfo._start, 
                                rowInfo._length);
-    _refBottom->bs()->setTopParseIndex(NULL_INDEX);
+    _refBottom->bseg()->setTopParseIndex(NULL_INDEX);
     for (size_t i = 0; i < numChildren; ++i)
     {
-      _refBottom->bs()->setChildIndex(i, NULL_INDEX);
-      _refBottom->bs()->setChildReversed(i, false);
+      _refBottom->bseg()->setChildIndex(i, NULL_INDEX);
+      _refBottom->bseg()->setChildReversed(i, false);
     }
     seq->setSubString(
       row._line.substr(col, rowInfo._length), rowInfo._start, rowInfo._length);
@@ -394,11 +394,11 @@ void MafWriteGenomes::convertSegments(size_t col)
         _bottomSegment->setArrayIndex(rowInfo._genome, rowInfo._arrayIndex);
         _bottomSegment->setCoordinates(seq->getStartPosition() + rowInfo._start,
                                        rowInfo._length);
-        _bottomSegment->bs()->setTopParseIndex(NULL_INDEX);
+        _bottomSegment->bseg()->setTopParseIndex(NULL_INDEX);
         for (size_t i = 0; i < numChildren; ++i)
         {
-          _bottomSegment->bs()->setChildIndex(i, NULL_INDEX);
-          _bottomSegment->bs()->setChildReversed(i, false);
+          _bottomSegment->bseg()->setChildIndex(i, NULL_INDEX);
+          _bottomSegment->bseg()->setChildReversed(i, false);
         }
       }
       else
@@ -419,24 +419,24 @@ void MafWriteGenomes::convertSegments(size_t col)
         _topSegment->setCoordinates(seq->getStartPosition() + genStart,
                                     rowInfo._length);   
 
-        _topSegment->ts()->setNextParalogyIndex(NULL_INDEX);
-        _topSegment->ts()->setBottomParseIndex(NULL_INDEX);        
+        _topSegment->tseg()->setNextParalogyIndex(NULL_INDEX);
+        _topSegment->tseg()->setBottomParseIndex(NULL_INDEX);        
 
         if (_refRow != NULL_INDEX)
         {
           assert(_topSegment->getLength() == _refBottom->getLength());
           childIndex = _childIdxMap.find(rowInfo._genome)->second;
           bool reversed = row._strand != _block[_refRow]._strand;
-          _refBottom->bs()->setChildIndex(childIndex, rowInfo._arrayIndex);
-          _refBottom->bs()->setChildReversed(childIndex, reversed);
-          _topSegment->ts()->setParentIndex(_refBottom->getArrayIndex());
-          _topSegment->ts()->setParentReversed(reversed);
+          _refBottom->bseg()->setChildIndex(childIndex, rowInfo._arrayIndex);
+          _refBottom->bseg()->setChildReversed(childIndex, reversed);
+          _topSegment->tseg()->setParentIndex(_refBottom->getArrayIndex());
+          _topSegment->tseg()->setParentReversed(reversed);
           updateParalogy(i);
         }
         else
         {
-          _topSegment->ts()->setParentIndex(NULL_INDEX);
-          _topSegment->ts()->setParentReversed(false);
+          _topSegment->tseg()->setParentIndex(NULL_INDEX);
+          _topSegment->tseg()->setParentReversed(false);
         }
       }
 
@@ -471,7 +471,7 @@ void MafWriteGenomes::updateParalogy(size_t i)
     {
       RowInfo& nextInfo = _blockInfo[next->_row];
       assert(nextInfo._length > 0);
-      _topSegment->ts()->setNextParalogyIndex(nextInfo._arrayIndex);
+      _topSegment->tseg()->setNextParalogyIndex(nextInfo._arrayIndex);
     }
 
     ParaSet::iterator prev = circularPrev(i, paraSet, sIt);
@@ -480,7 +480,7 @@ void MafWriteGenomes::updateParalogy(size_t i)
       RowInfo& prevInfo = _blockInfo[prev->_row];
       assert(prevInfo._length > 0);
       _paraTop->setArrayIndex(prevInfo._genome, prevInfo._arrayIndex);
-      _paraTop->ts()->setNextParalogyIndex(rowInfo._arrayIndex);
+      _paraTop->tseg()->setNextParalogyIndex(rowInfo._arrayIndex);
     }
   }
 }
@@ -529,11 +529,11 @@ void MafWriteGenomes::initEmptySegments()
           _bottomSegment->setArrayIndex(genome, arrayInfo._index);
           _bottomSegment->setCoordinates(sequence->getStartPosition() + 
                                          startPosition, length);
-          _bottomSegment->bs()->setTopParseIndex(NULL_INDEX);
+          _bottomSegment->bseg()->setTopParseIndex(NULL_INDEX);
           for (size_t i = 0; i < numChildren; ++i)
           {
-            _bottomSegment->bs()->setChildIndex(i, NULL_INDEX);
-            _bottomSegment->bs()->setChildReversed(i, false);
+            _bottomSegment->bseg()->setChildIndex(i, NULL_INDEX);
+            _bottomSegment->bseg()->setChildReversed(i, false);
           }
         }
         else
@@ -541,10 +541,10 @@ void MafWriteGenomes::initEmptySegments()
           _topSegment->setArrayIndex(genome, arrayInfo._index);
           _topSegment->setCoordinates(sequence->getStartPosition() + 
                                       startPosition, length);
-          _topSegment->ts()->setBottomParseIndex(NULL_INDEX);
-          _topSegment->ts()->setParentIndex(NULL_INDEX);
-          _topSegment->ts()->setParentReversed(false);
-          _topSegment->ts()->setNextParalogyIndex(NULL_INDEX);
+          _topSegment->tseg()->setBottomParseIndex(NULL_INDEX);
+          _topSegment->tseg()->setParentIndex(NULL_INDEX);
+          _topSegment->tseg()->setParentReversed(false);
+          _topSegment->tseg()->setNextParalogyIndex(NULL_INDEX);
         }
         DnaIteratorPtr dna = sequence->getDnaIterator(startPosition);
         for (hal_size_t i = 0; i < length; ++i)

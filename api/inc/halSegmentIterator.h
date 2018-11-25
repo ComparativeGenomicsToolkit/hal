@@ -63,9 +63,21 @@ public:
         }
     }
     
-    // FIXME: document or change way getting segment works
+   /** Return a pointer to the current Segment.  NOTE: changes when iterator is modified.  */
     virtual Segment* getSegment() = 0;
+
+    /** Return a pointer to the current Segment.  NOTE: changes when iterator is modified.  */
    virtual const Segment* getSegment() const = 0;
+
+   /** Return a pointer to the current Segment (terse).  NOTE: changes when iterator is modified.  */
+    Segment* seg() {
+        return getSegment();
+    }
+
+    /** Return a pointer to the current Segment (terse).  NOTE: changes when iterator is modified.  */
+    const Segment* seg() const  {
+        return getSegment();
+    }
 
    // SEGMENT INTERFACE
    virtual void setArrayIndex(Genome* genome, 

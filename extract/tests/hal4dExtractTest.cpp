@@ -24,29 +24,29 @@ void ConservedBed4dExtractTest::createCallBack(Alignment* alignment)
   root->setString("aaaaacaagaatacaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgttttgatgctggtgtttattcttgttt");
   BottomSegmentIteratorPtr botIt = root->getBottomSegmentIterator();
   botIt->setCoordinates(0, 192);
-  botIt->bs()->setChildIndex(0, 0);
-  botIt->bs()->setChildIndex(1, 0);
-  botIt->bs()->setChildReversed(0, false);
-  botIt->bs()->setChildReversed(1, false);
-  botIt->bs()->setTopParseIndex(NULL_INDEX);
+  botIt->bseg()->setChildIndex(0, 0);
+  botIt->bseg()->setChildIndex(1, 0);
+  botIt->bseg()->setChildReversed(0, false);
+  botIt->bseg()->setChildReversed(1, false);
+  botIt->bseg()->setTopParseIndex(NULL_INDEX);
 
   // added unconserved 4d site at 2, disabled 4d site at 14 and 18/20
   leaf1->setString("acaaacaagaataaaaccatgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
   TopSegmentIteratorPtr topIt = leaf1->getTopSegmentIterator();
   topIt->setCoordinates(0, 192);
-  topIt->ts()->setParentIndex(0);
-  topIt->ts()->setParentReversed(false);
-  topIt->ts()->setNextParalogyIndex(NULL_INDEX);
-  topIt->ts()->setBottomParseIndex(NULL_INDEX);
+  topIt->tseg()->setParentIndex(0);
+  topIt->tseg()->setParentReversed(false);
+  topIt->tseg()->setNextParalogyIndex(NULL_INDEX);
+  topIt->tseg()->setBottomParseIndex(NULL_INDEX);
 
   // disabled 4d site at 14
   leaf2->setString("aaaaacaagaataaaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
   topIt = leaf2->getTopSegmentIterator();
   topIt->setCoordinates(0, 192);
-  topIt->ts()->setParentIndex(0);
-  topIt->ts()->setParentReversed(false);
-  topIt->ts()->setNextParalogyIndex(NULL_INDEX);
-  topIt->ts()->setBottomParseIndex(NULL_INDEX);
+  topIt->tseg()->setParentIndex(0);
+  topIt->tseg()->setParentReversed(false);
+  topIt->tseg()->setNextParalogyIndex(NULL_INDEX);
+  topIt->tseg()->setBottomParseIndex(NULL_INDEX);
 }
 
 void ConservedBed4dExtractTest::checkCallBack(const Alignment* alignment)
@@ -138,48 +138,48 @@ void ConservedBlock4dExtractTest::createCallBack(Alignment* alignment)
   root->setString("aaaaacaagaatacaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgttttgatgctggtgtttattcttgtttaaaaacaagaatacaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgttttgatgctggtgtttattcttgttt");
   BottomSegmentIteratorPtr botIt = root->getBottomSegmentIterator();
   botIt->setCoordinates(0, 192);
-  botIt->bs()->setChildIndex(0, 0);
-  botIt->bs()->setChildIndex(1, 0);
-  botIt->bs()->setChildReversed(0, false);
-  botIt->bs()->setChildReversed(1, false);
-  botIt->bs()->setTopParseIndex(NULL_INDEX);
+  botIt->bseg()->setChildIndex(0, 0);
+  botIt->bseg()->setChildIndex(1, 0);
+  botIt->bseg()->setChildReversed(0, false);
+  botIt->bseg()->setChildReversed(1, false);
+  botIt->bseg()->setTopParseIndex(NULL_INDEX);
   botIt->toRight();
   botIt->setCoordinates(192, 192);
-  botIt->bs()->setChildIndex(0, 1);
-  botIt->bs()->setChildIndex(1, 1);
-  botIt->bs()->setChildReversed(0, false);
-  botIt->bs()->setChildReversed(1, false);
-  botIt->bs()->setTopParseIndex(NULL_INDEX);
+  botIt->bseg()->setChildIndex(0, 1);
+  botIt->bseg()->setChildIndex(1, 1);
+  botIt->bseg()->setChildReversed(0, false);
+  botIt->bseg()->setChildReversed(1, false);
+  botIt->bseg()->setTopParseIndex(NULL_INDEX);
 
   // added unconserved 4d site at 2, disabled 4d site at 14 and 18/20
   leaf1->setString("acaaacaagaataaaaccatgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgtttacaaacaagaataaaaccatgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
   TopSegmentIteratorPtr topIt = leaf1->getTopSegmentIterator();
   topIt->setCoordinates(0, 192);
-  topIt->ts()->setParentIndex(0);
-  topIt->ts()->setParentReversed(false);
-  topIt->ts()->setNextParalogyIndex(NULL_INDEX);
-  topIt->ts()->setBottomParseIndex(NULL_INDEX);
+  topIt->tseg()->setParentIndex(0);
+  topIt->tseg()->setParentReversed(false);
+  topIt->tseg()->setNextParalogyIndex(NULL_INDEX);
+  topIt->tseg()->setBottomParseIndex(NULL_INDEX);
   topIt->toRight();
   topIt->setCoordinates(192, 192);
-  topIt->ts()->setParentIndex(1);
-  topIt->ts()->setParentReversed(false);
-  topIt->ts()->setNextParalogyIndex(NULL_INDEX);
-  topIt->ts()->setBottomParseIndex(NULL_INDEX);
+  topIt->tseg()->setParentIndex(1);
+  topIt->tseg()->setParentReversed(false);
+  topIt->tseg()->setNextParalogyIndex(NULL_INDEX);
+  topIt->tseg()->setBottomParseIndex(NULL_INDEX);
 
   // disabled 4d site at 14
   leaf2->setString("aaaaacaagaataaaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgtttaaaaacaagaataaaaccacgactagaagcaggagtataatcatgattcaacaccagcatccacccccgcctcgacgccggcgtctactcctgcttgaagacgaggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
   topIt = leaf2->getTopSegmentIterator();
   topIt->setCoordinates(0, 192);
-  topIt->ts()->setParentIndex(0);
-  topIt->ts()->setParentReversed(false);
-  topIt->ts()->setNextParalogyIndex(NULL_INDEX);
-  topIt->ts()->setBottomParseIndex(NULL_INDEX);
+  topIt->tseg()->setParentIndex(0);
+  topIt->tseg()->setParentReversed(false);
+  topIt->tseg()->setNextParalogyIndex(NULL_INDEX);
+  topIt->tseg()->setBottomParseIndex(NULL_INDEX);
   topIt->toRight();
   topIt->setCoordinates(192, 192);
-  topIt->ts()->setParentIndex(1);
-  topIt->ts()->setParentReversed(false);
-  topIt->ts()->setNextParalogyIndex(NULL_INDEX);
-  topIt->ts()->setBottomParseIndex(NULL_INDEX);
+  topIt->tseg()->setParentIndex(1);
+  topIt->tseg()->setParentReversed(false);
+  topIt->tseg()->setNextParalogyIndex(NULL_INDEX);
+  topIt->tseg()->setBottomParseIndex(NULL_INDEX);
 }
 
 void ConservedBlock4dExtractTest::checkCallBack(const Alignment* alignment)

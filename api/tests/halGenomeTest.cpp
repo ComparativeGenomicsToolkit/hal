@@ -198,13 +198,13 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   for (; topIt->getArrayIndex() < n; topIt->toRight())
   {
     topIt->setCoordinates(topIt->getArrayIndex(), 1);
-    topIt->ts()->setParentIndex(3);
-    topIt->ts()->setParentReversed(true);
-    topIt->ts()->setBottomParseIndex(5);
+    topIt->tseg()->setParentIndex(3);
+    topIt->tseg()->setParentReversed(true);
+    topIt->tseg()->setBottomParseIndex(5);
     if (topIt->getArrayIndex() != 6) {
-      topIt->ts()->setNextParalogyIndex(6);
+      topIt->tseg()->setNextParalogyIndex(6);
     } else {
-      topIt->ts()->setNextParalogyIndex(7);
+      topIt->tseg()->setNextParalogyIndex(7);
     }
   }
   BottomSegmentIteratorPtr botIt = ancGenome->getBottomSegmentIterator();
@@ -212,9 +212,9 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   for (; botIt->getArrayIndex() < n; botIt->toRight())
   {
     botIt->setCoordinates(botIt->getArrayIndex(), 1);
-    botIt->bs()->setChildIndex(0, 3);
-    botIt->bs()->setChildReversed(0, true);
-    botIt->bs()->setTopParseIndex(5);
+    botIt->bseg()->setChildIndex(0, 3);
+    botIt->bseg()->setChildReversed(0, true);
+    botIt->bseg()->setTopParseIndex(5);
   }
 
   seqVec[0] =Sequence::Info("Sequence", 3300, 0, 1100);
@@ -243,13 +243,13 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   for (; topIt->getArrayIndex() < n; topIt->toRight())
   {
     topIt->setCoordinates(7, 8);
-    topIt->ts()->setParentIndex(9);
-    topIt->ts()->setParentReversed(false);
-    topIt->ts()->setBottomParseIndex(11);
+    topIt->tseg()->setParentIndex(9);
+    topIt->tseg()->setParentReversed(false);
+    topIt->tseg()->setBottomParseIndex(11);
     if (topIt->getArrayIndex() != 12) {
-      topIt->ts()->setNextParalogyIndex(12);
+      topIt->tseg()->setNextParalogyIndex(12);
     } else {
-      topIt->ts()->setNextParalogyIndex(7);
+      topIt->tseg()->setNextParalogyIndex(7);
     }
   }
   botIt = copyRootGenome->getBottomSegmentIterator();
@@ -257,9 +257,9 @@ void GenomeCopyTest::createCallBack(Alignment* alignment)
   for (; botIt->getArrayIndex() < n; botIt->toRight())
   {
     botIt->setCoordinates(6, 7);
-    botIt->bs()->setChildIndex(0, 8);
-    botIt->bs()->setChildReversed(0, false);
-    botIt->bs()->setTopParseIndex(10);
+    botIt->bseg()->setChildIndex(0, 8);
+    botIt->bseg()->setChildReversed(0, false);
+    botIt->bseg()->setTopParseIndex(10);
   }
   
   ancGenome->copy(copyRootGenome);
@@ -297,13 +297,13 @@ void GenomeCopyTest::checkCallBack(const Alignment* alignment)
     CuAssertTrue(_testCase,
                  topIt->getStartPosition() == topIt->getArrayIndex());
     CuAssertTrue(_testCase, topIt->getLength() == 1);
-    CuAssertTrue(_testCase, topIt->ts()->getParentIndex() == 3);
-    CuAssertTrue(_testCase, topIt->ts()->getParentReversed() == true);
-    CuAssertTrue(_testCase, topIt->ts()->getBottomParseIndex() == 5);
+    CuAssertTrue(_testCase, topIt->tseg()->getParentIndex() == 3);
+    CuAssertTrue(_testCase, topIt->tseg()->getParentReversed() == true);
+    CuAssertTrue(_testCase, topIt->tseg()->getBottomParseIndex() == 5);
     if (topIt->getArrayIndex() != 6) {
-      CuAssertTrue(_testCase, topIt->ts()->getNextParalogyIndex() == 6);
+      CuAssertTrue(_testCase, topIt->tseg()->getNextParalogyIndex() == 6);
     } else {
-      CuAssertTrue(_testCase, topIt->ts()->getNextParalogyIndex() == 7);
+      CuAssertTrue(_testCase, topIt->tseg()->getNextParalogyIndex() == 7);
     }
   }
   BottomSegmentIteratorPtr botIt = ancGenome->getBottomSegmentIterator();
@@ -313,9 +313,9 @@ void GenomeCopyTest::checkCallBack(const Alignment* alignment)
     CuAssertTrue(_testCase,
                  botIt->getStartPosition() == botIt->getArrayIndex());
     CuAssertTrue(_testCase, botIt->getLength() == 1);
-    CuAssertTrue(_testCase, botIt->bs()->getChildIndex(0) == 3);
-    CuAssertTrue(_testCase, botIt->bs()->getChildReversed(0) == true);
-    CuAssertTrue(_testCase, botIt->bs()->getTopParseIndex() == 5);
+    CuAssertTrue(_testCase, botIt->bseg()->getChildIndex(0) == 3);
+    CuAssertTrue(_testCase, botIt->bseg()->getChildReversed(0) == true);
+    CuAssertTrue(_testCase, botIt->bseg()->getTopParseIndex() == 5);
   }
 
   const Genome* copyRootGenome = _secondAlignment->openGenome("copyRootGenome");
@@ -343,13 +343,13 @@ void GenomeCopyTest::checkCallBack(const Alignment* alignment)
     CuAssertTrue(_testCase,
                  topIt->getStartPosition() == topIt->getArrayIndex());
     CuAssertTrue(_testCase, topIt->getLength() == 1);
-    CuAssertTrue(_testCase, topIt->ts()->getParentIndex() == 3);
-    CuAssertTrue(_testCase, topIt->ts()->getParentReversed() == true);
-    CuAssertTrue(_testCase, topIt->ts()->getBottomParseIndex() == 5);
+    CuAssertTrue(_testCase, topIt->tseg()->getParentIndex() == 3);
+    CuAssertTrue(_testCase, topIt->tseg()->getParentReversed() == true);
+    CuAssertTrue(_testCase, topIt->tseg()->getBottomParseIndex() == 5);
     if (topIt->getArrayIndex() != 6) {
-      CuAssertTrue(_testCase, topIt->ts()->getNextParalogyIndex() == 6);
+      CuAssertTrue(_testCase, topIt->tseg()->getNextParalogyIndex() == 6);
     } else {
-      CuAssertTrue(_testCase, topIt->ts()->getNextParalogyIndex() == 7);
+      CuAssertTrue(_testCase, topIt->tseg()->getNextParalogyIndex() == 7);
     }
   }
   botIt = copyRootGenome->getBottomSegmentIterator();
@@ -359,9 +359,9 @@ void GenomeCopyTest::checkCallBack(const Alignment* alignment)
     CuAssertTrue(_testCase,
                  botIt->getStartPosition() == botIt->getArrayIndex());
     CuAssertTrue(_testCase, botIt->getLength() == 1);
-    CuAssertTrue(_testCase, botIt->bs()->getChildIndex(0) == 3);
-    CuAssertTrue(_testCase, botIt->bs()->getChildReversed(0) == true);
-    CuAssertTrue(_testCase, botIt->bs()->getTopParseIndex() == 5);
+    CuAssertTrue(_testCase, botIt->bseg()->getChildIndex(0) == 3);
+    CuAssertTrue(_testCase, botIt->bseg()->getChildReversed(0) == true);
+    CuAssertTrue(_testCase, botIt->bseg()->getTopParseIndex() == 5);
   }
 
   _secondAlignment->close();
@@ -377,10 +377,10 @@ void setTopSegments(Genome *genome, hal_size_t width) {
   for (; topIt->getArrayIndex() < n; topIt->toRight(), startPos += width)
   {
     topIt->setCoordinates(startPos, width);
-    topIt->ts()->setParentIndex(topIt->getArrayIndex());
-    topIt->ts()->setParentReversed(false);
-    topIt->ts()->setBottomParseIndex(NULL_INDEX);
-    topIt->ts()->setNextParalogyIndex(NULL_INDEX);
+    topIt->tseg()->setParentIndex(topIt->getArrayIndex());
+    topIt->tseg()->setParentReversed(false);
+    topIt->tseg()->setBottomParseIndex(NULL_INDEX);
+    topIt->tseg()->setNextParalogyIndex(NULL_INDEX);
   }
 }
 
@@ -395,9 +395,9 @@ void setBottomSegments(Genome *genome, hal_size_t width) {
   {
     for(hal_size_t i = 0; i < numChildren; i++) {
       bottomIt->setCoordinates(startPos, width);
-      bottomIt->bs()->setChildIndex(i, bottomIt->getArrayIndex());
-      bottomIt->bs()->setChildReversed(i, false);
-      bottomIt->bs()->setTopParseIndex(NULL_INDEX);
+      bottomIt->bseg()->setChildIndex(i, bottomIt->getArrayIndex());
+      bottomIt->bseg()->setChildReversed(i, false);
+      bottomIt->bseg()->setTopParseIndex(NULL_INDEX);
     }
   }
 }
@@ -510,10 +510,10 @@ void checkBottomSegments(Genome *genome, hal_size_t width, CuTest *testCase) {
      for(hal_size_t i = 0; i < numChildren; i++) {
        if (startPos < 170) {
          CuAssertStrEquals(testCase, "Sequence2", genome->getSequenceBySite(startPos)->getName().c_str());
-         CuAssertTrue(testCase, bottomIt->bs()->getChildIndex(i) == 13 + bottomIt->getArrayIndex());
+         CuAssertTrue(testCase, bottomIt->bseg()->getChildIndex(i) == 13 + bottomIt->getArrayIndex());
        } else {
          CuAssertStrEquals(testCase, "Sequence1", genome->getSequenceBySite(startPos)->getName().c_str());
-         CuAssertTrue(testCase, bottomIt->bs()->getChildIndex(i) == bottomIt->getArrayIndex() - 17);
+         CuAssertTrue(testCase, bottomIt->bseg()->getChildIndex(i) == bottomIt->getArrayIndex() - 17);
        }
      }
    }
