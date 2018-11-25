@@ -8,7 +8,7 @@
 #define _HALDNAITERATOR_H
 #include "halDefs.h"
 #include "halGenome.h"
-#include "halStorageDriver.h"
+#include "halDnaDriver.h"
 
 namespace hal {
 

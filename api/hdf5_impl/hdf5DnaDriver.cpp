@@ -3,7 +3,7 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-#include "hdf5StorageDriver.h"
+#include "hdf5DnaDriver.h"
 #include "hdf5Genome.h"
 #include "hdf5Alignment.h"
 

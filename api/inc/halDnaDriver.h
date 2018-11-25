@@ -4,11 +4,9 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#ifndef _HALSTORAGEDRIVER_H
-#define _HALSTORAGEDRIVER_H
+#ifndef _HALDNADRIVER_H
+#define _HALDNADRIVER_H
 #include "halCommon.h"
-
-// FIXME: make keep store access more modular to prevent larger number of includes mutual include issues.
 
 namespace hal {
     /**

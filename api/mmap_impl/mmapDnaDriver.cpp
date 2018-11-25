@@ -3,7 +3,7 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-#include "mmapStorageDriver.h"
+#include "mmapDnaDriver.h"
 #include "mmapGenome.h"
 #include "mmapAlignment.h"
 

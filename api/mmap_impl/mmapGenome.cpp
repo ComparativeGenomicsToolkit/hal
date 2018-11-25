@@ -1,5 +1,5 @@
 #include "mmapGenome.h"
-#include "mmapStorageDriver.h"
+#include "mmapDnaDriver.h"
 #include "mmapTopSegment.h"
 #include "mmapBottomSegment.h"
 #include "mmapSequence.h"

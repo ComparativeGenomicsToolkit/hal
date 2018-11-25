@@ -3,9 +3,9 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-#ifndef _MMAPSTORAGEDRIVER_H
-#define _MMAPSTORAGEDRIVER_H
-#include "halStorageDriver.h"
+#ifndef _MMAPDNADRIVER_H
+#define _MMAPDNADRIVER_H
+#include "halDnaDriver.h"
 
 namespace hal {
     class MMapGenome;

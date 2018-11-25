@@ -7,7 +7,7 @@
 #include <algorithm>
 #include "H5Cpp.h"
 #include "hdf5Genome.h"
-#include "hdf5StorageDriver.h"
+#include "hdf5DnaDriver.h"
 #include "hdf5TopSegment.h"
 #include "hdf5BottomSegment.h"
 #include "hdf5Sequence.h"

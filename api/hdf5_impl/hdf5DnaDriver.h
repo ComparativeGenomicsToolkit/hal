@@ -3,9 +3,9 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
-#ifndef _HDF5STORAGEDRIVER_H
-#define _HDF5STORAGEDRIVER_H
-#include "halStorageDriver.h"
+#ifndef _HDF5DNADRIVER_H
+#define _HDF5DNADRIVER_H
+#include "halDnaDriver.h"
 
 namespace hal {
     class Hdf5Genome;
