@@ -75,7 +75,7 @@ public:
     }
 
     /** Return a pointer to the current Segment (terse).  NOTE: changes when iterator is modified.  */
-    const Segment* seg() const  {
+    const Segment* seg() const {
         return getSegment();
     }
 
@@ -102,7 +102,7 @@ public:
     virtual void print(std::ostream& os) const;
 
 
-    
+#if 1   // FIXME
    // SLICED SEGMENT INTERFACE 
    virtual void toReverse();
    virtual void toReverseInPlace();
@@ -111,6 +111,8 @@ public:
    virtual void slice(hal_offset_t startOffset ,
                       hal_offset_t endOffset );
    virtual bool getReversed() const;
+#endif
+
 protected:
    virtual bool inRange() const;
    virtual hal_size_t getNumSegmentsInGenome() const;

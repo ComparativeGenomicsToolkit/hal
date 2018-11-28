@@ -487,6 +487,7 @@ void MappedSegment::print(ostream& os) const
   }
 }
 
+#if 1   // FIXME
 //////////////////////////////////////////////////////////////////////////////
 // SLICED SEGMENT INTERFACE
 //////////////////////////////////////////////////////////////////////////////
@@ -532,4 +533,5 @@ bool MappedSegment::getReversed() const
   assert(_target->getLength() == _source->getLength());
   return _target->getReversed();
 }
+#endif
 

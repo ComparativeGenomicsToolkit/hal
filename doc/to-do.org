@@ -85,6 +85,7 @@ different ranges.
 * mmap disk based hash:
 https://github.com/evilmucedin/minimal-perfect-hash
 https://github.com/ArashPartow/hash
+http://cmph.sourceforge.net/
 https://github.com/lemire/clhash
 * have functions list setSubString assert alignment is writable.
 * "the tools are barely tested": create a tools warning list based on ones not tested.

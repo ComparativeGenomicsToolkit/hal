@@ -9,11 +9,8 @@
 
 #include "halDefs.h"
 #include "halSegment.h"
-#include "halMappedSegmentContainers.h"
 
 namespace hal {
-
-class MappedSegment;
 
 /** 
  * Interface for a sliced segment.  This extends the segment interface
