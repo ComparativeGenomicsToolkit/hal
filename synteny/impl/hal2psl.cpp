@@ -41,11 +41,12 @@ std::vector<PslBlock> hal::Hal2Psl::convert2psl(hal::AlignmentConstPtr alignment
         hal::SequenceIteratorConstPtr seqIt = srcGenome->getSequenceIterator();
         hal::SequenceIteratorConstPtr seqEnd = srcGenome->getSequenceEndIterator();
         for (; !seqIt->equals(seqEnd); seqIt->toNext()) {
+          //std::cout << "aa" << srcChrom << std::endl;
           _outBedLines.clear();
           _srcSequence = seqIt->getSequence(); 
           auto chrName = _srcSequence->getName(); 
-          if (srcChrom != chrName) {continue;}
-          //else {std::cout << chrName << std::endl;}
+          if (srcChrom != "\"\""  && srcChrom != chrName) {continue;}
+          //else {std::cout << srcChrom << std::endl;}
           _bedLine._start = 0;
           _bedLine._end = _srcSequence->getSequenceLength(); 
           _mappedBlocks.clear();
