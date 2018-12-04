@@ -20,7 +20,9 @@ inclSpec += -I${rootDir}/liftover/inc -I${rootDir}/lod/inc -I${rootDir}/maf/inc 
 otherLibs += ${halApiTestSupportLibs} ${libHalBlockViz} ${libHalLiftover} ${libHalLod} ${libHalMaf}
 progs =  ${binDir}/blockVizBed ${binDir}/blockVizMaf ${binDir}/blockVizTest ${binDir}/blockVizTime
 
-testTmpDir = test.tmp
+testTmpDir = output
+testHdf5Hal = ${testTmpDir}/small.haf5.hal
+testMmapHal = ${testTmpDir}/small.mmap.hal
 
 all: libs progs
 libs: ${libHalBlockViz}
@@ -29,9 +31,6 @@ progs: ${progs}
 clean: 
 	rm -f ${libHalBlockViz} ${objs} ${progs} ${depends}
 	rm -rf ${testTmpDir}
-
-testHdf5Hal = ${testTmpDir}/small.haf5.hal
-testMmapHal = ${testTmpDir}/small.mmap.hal
 
 test: blockVizHdf5Tests blockVizMmapTests
 
@@ -50,7 +49,7 @@ ${testHdf5Hal}: ${progs}
 
 ${testMmapHal}: ${progs}
 	@mkdir -p $(dir $@)
-	${binDir}/halRandGen ${randGenArgs} --preset small --seed 0 --format mmap $@
+	${binDir}/halRandGen ${randGenArgs} --format mmap $@
 
 include ${rootDir}/rules.mk
 

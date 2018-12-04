@@ -509,8 +509,7 @@ void TopSegmentIsGapTest::createCallBack(Alignment* alignment)
   parent1->setDimensions(seqVec);
   child1->setDimensions(seqVec);
 
-  bi = parent1->getBottomSegmentIterator();
-  for (; not bi->atEnd(); bi->toRight())
+  for (bi = parent1->getBottomSegmentIterator(); not bi->atEnd(); bi->toRight())
   {
     bs.set(bi->getBottomSegment()->getArrayIndex() * 2, 2);
     bs._children.clear();
@@ -520,8 +519,7 @@ void TopSegmentIsGapTest::createCallBack(Alignment* alignment)
     bs.applyTo(bi);
   }
      
-  ti = child1->getTopSegmentIterator();
-  for (; not ti->atEnd(); ti->toRight())
+  for (ti = child1->getTopSegmentIterator(); not ti->atEnd(); ti->toRight())
   {
     ts.set(ti->getTopSegment()->getArrayIndex() * 2, 2, 
            ti->getTopSegment()->getArrayIndex());

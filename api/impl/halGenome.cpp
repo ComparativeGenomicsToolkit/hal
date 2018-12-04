@@ -25,11 +25,11 @@ void Genome::copyDimensions(Genome *dest) const
 {
   vector<Sequence::Info> dimensions;
   const Alignment *inAlignment = getAlignment();
-  SequenceIteratorPtr seqIt = getSequenceIterator();
+  
   bool root = inAlignment->getParentName(getName()).empty();
   bool leaf = inAlignment->getChildNames(getName()).empty();     
   
-  for (; not seqIt->atEnd(); seqIt->toNext())
+  for (SequenceIteratorPtr seqIt = getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     Sequence::Info info(sequence->getName(),
@@ -44,8 +44,8 @@ void Genome::copyDimensions(Genome *dest) const
 void Genome::copyTopDimensions(Genome *dest) const
 {
   vector<Sequence::UpdateInfo> dimensions;
-  SequenceIteratorPtr seqIt = getSequenceIterator();
-  for (; not seqIt->atEnd(); seqIt->toNext())
+  
+  for (SequenceIteratorPtr seqIt = getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     if (sequence->getSequenceLength() == 0 &&
@@ -64,9 +64,8 @@ void Genome::copyTopDimensions(Genome *dest) const
 void Genome::copyBottomDimensions(Genome *dest) const
 {
   vector<Sequence::UpdateInfo> dimensions;
-  SequenceIteratorPtr seqIt = getSequenceIterator();
-
-  for (; not seqIt->atEnd(); seqIt->toNext())
+  
+  for (SequenceIteratorPtr seqIt = getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     if (sequence->getSequenceLength() == 0 &&
@@ -173,9 +172,8 @@ void Genome::copyBottomSegments(Genome *dest) const
   // Go through each sequence in this genome, find the matching
   // sequence in the dest genome, then copy over the segments for each
   // sequence.
-  SequenceIteratorPtr seqIt = getSequenceIterator();
 
-  for (; not seqIt->atEnd(); seqIt->toNext())
+  for (SequenceIteratorPtr seqIt = getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence *inSeq = seqIt->getSequence();
     const Sequence *outSeq = dest->getSequence(inSeq->getName());

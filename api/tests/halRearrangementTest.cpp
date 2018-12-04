@@ -39,8 +39,7 @@ void addIdenticalParentChild(Alignment* alignment,
   parent->setDimensions(seqVec);
   child->setDimensions(seqVec);
 
-  bi = parent->getBottomSegmentIterator();
-  for (; not bi->atEnd(); bi->toRight())
+  for (bi = parent->getBottomSegmentIterator(); not bi->atEnd(); bi->toRight())
   {
     bs.set(bi->getBottomSegment()->getArrayIndex() * segmentLength, 
            segmentLength);
@@ -50,9 +49,8 @@ void addIdenticalParentChild(Alignment* alignment,
                             false));
     bs.applyTo(bi);
   }
-     
-  ti = child->getTopSegmentIterator();
-  for (; not ti->atEnd(); ti->toRight())
+  
+  for (ti = child->getTopSegmentIterator(); not ti->atEnd(); ti->toRight())
   {
     ts.set(ti->getTopSegment()->getArrayIndex() * segmentLength, 
            segmentLength, 

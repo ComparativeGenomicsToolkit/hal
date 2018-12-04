@@ -246,9 +246,8 @@ void printGenome(PhyloP *phyloP,
       length = genome->getSequenceLength() - start;
     }
 
-    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
     hal_size_t runningLength = 0;
-    for (; not seqIt->atEnd(); seqIt->toNext())
+    for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
     {
       const Sequence* sequence = seqIt->getSequence();
       hal_size_t seqLen = sequence->getSequenceLength();

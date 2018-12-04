@@ -110,8 +110,7 @@ void extractAlignedRegions(const Genome* genome, ostream* bedStream,
   assert(genome && bedStream);
   if (genome->getNumTopSegments() > 0)
   {
-    TopSegmentIteratorPtr topSeg = genome->getTopSegmentIterator();
-    for (; (not topSeg->atEnd()); topSeg->toRight())
+    for (TopSegmentIteratorPtr topSeg = genome->getTopSegmentIterator(); (not topSeg->atEnd()); topSeg->toRight())
     {
       if ((topSeg->tseg()->hasParent() && complement == false) ||
           (!topSeg->tseg()->hasParent() && complement == true))

@@ -693,8 +693,7 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle,
     hal_chromosome_t* prev = NULL;
     if (genome->getNumSequences() > 0)
     {
-      SequenceIteratorPtr seqIt = genome->getSequenceIterator();
-      for (; not seqIt->atEnd(); seqIt->toNext())
+      for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
       {
         const Sequence* sequence = seqIt->getSequence();
         

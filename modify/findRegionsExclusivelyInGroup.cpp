@@ -45,8 +45,7 @@ int main(int argc, char *argv[])
   const Genome *referenceGenome = alignment->openGenome(referenceGenomeName);
   // FIXME tmp
   ostream &os = cout;
-  SequenceIteratorPtr seqIt = referenceGenome->getSequenceIterator();
-  for (; not seqIt->atEnd(); seqIt->toNext()) {
+  for (SequenceIteratorPtr seqIt = referenceGenome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
     ColumnIteratorPtr colIt = seqIt->getSequence()->getColumnIterator(NULL, 0, 0, NULL_INDEX, false, true);
     bool inRegion = false;
     BedLine curBedLine;

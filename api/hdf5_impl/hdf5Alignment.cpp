@@ -450,8 +450,8 @@ void Hdf5Alignment::removeGenome(const string& name)
     // Reset the bottom segments. updateBottomDimensions will change the
     // number of children in the bottom segment array to the correct value
     vector<Sequence::UpdateInfo> newBottomDimensions;
-    SequenceIteratorPtr seqIt = parentGenome->getSequenceIterator();
-    for (; not seqIt->atEnd(); seqIt->toNext())
+    
+    for (SequenceIteratorPtr seqIt = parentGenome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
     {
       const Sequence* sequence = seqIt->getSequence();
       Sequence::UpdateInfo info(sequence->getName(),

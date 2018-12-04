@@ -259,8 +259,7 @@ void LodExtract::writeDimensions(
     // it's important we keep the sequences in the output genome
     // in the same order as the sequences in the input genome since
     // we always use global coordinates!
-    SequenceIteratorPtr seqIt = inGenome->getSequenceIterator();
-    for (; not seqIt->atEnd(); seqIt->toNext())
+    for (SequenceIteratorPtr seqIt = inGenome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
     {
       const Sequence* inSequence = seqIt->getSequence();
       map<const Sequence*, hal_size_t>::const_iterator segMapIt;
@@ -333,8 +332,7 @@ void LodExtract::writeSequences(const Genome* inParent,
     Genome* outGenome = _outAlignment->openGenome(inGenome->getName());
     if (inGenome == inParent || outGenome->getNumChildren() == 0)
     {   
-      SequenceIteratorPtr inSeqIt = inGenome->getSequenceIterator();
-      for (; not inSeqIt->atEnd(); inSeqIt->toNext())
+      for (SequenceIteratorPtr inSeqIt = inGenome->getSequenceIterator(); not inSeqIt->atEnd(); inSeqIt->toNext())
       {
         const Sequence* inSequence = inSeqIt->getSequence();
         if (inSequence->getSequenceLength() > 0)
@@ -366,10 +364,8 @@ void LodExtract::writeSegments(const Genome* inParent,
     const Genome* inGenome = inGenomes[i];
     Genome* outGenome = _outAlignment->openGenome(inGenome->getName());
 
-    SequenceIteratorPtr outSeqIt = outGenome->getSequenceIterator();
-    
     // FOR EVERY SEQUENCE IN GENOME
-    for (; not outSeqIt->atEnd(); outSeqIt->toNext())
+    for (SequenceIteratorPtr outSeqIt = outGenome->getSequenceIterator(); not outSeqIt->atEnd(); outSeqIt->toNext())
     {
       const Sequence* outSequence = outSeqIt->getSequence();
       const Sequence* inSequence = 

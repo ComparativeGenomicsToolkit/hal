@@ -291,9 +291,8 @@ void hal::validateDuplications(const Genome* genome)
   {
     return;
   }
-  TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator();
   vector<unsigned char> pcount(parent->getNumBottomSegments(), 0);
-  for (; not topIt->atEnd(); topIt->toRight())
+  for (TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator(); not topIt->atEnd(); topIt->toRight())
   {
     if (topIt->tseg()->hasParent())
     {
@@ -303,7 +302,7 @@ void hal::validateDuplications(const Genome* genome)
       }
     }
   }
-  for (topIt = genome->getTopSegmentIterator(); not topIt->atEnd(); topIt->toRight())
+  for (TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator(); not topIt->atEnd(); topIt->toRight())
   {
     if (topIt->tseg()->hasParent())
     {
@@ -330,8 +329,7 @@ void hal::validateGenome(const Genome* genome)
   hal_size_t totalBottom = 0;
   hal_size_t totalLength = 0;
   
-  SequenceIteratorPtr seqIt = genome->getSequenceIterator();
-  for (; not seqIt->atEnd(); seqIt->toNext())
+  for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     validateSequence(sequence);

@@ -92,10 +92,9 @@ void LodGraph::build(const Alignment* alignment, const Genome* parent,
 
 void LodGraph::scanGenome(const Genome* genome)
 {
-  SequenceIteratorPtr seqIt = genome->getSequenceIterator();
   hal_index_t lastSampledPos = 0;
   hal_index_t halfStep = std::max((hal_index_t)1, (hal_index_t)_step / 2);
-  for (; not seqIt->atEnd(); seqIt->toNext())
+  for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     hal_size_t len = sequence->getSequenceLength();
@@ -537,8 +536,7 @@ bool LodGraph::checkCoverage() const
   // check the coverage and clean up
   for (covMapIt = covMap.begin(); covMapIt != covMap.end(); ++covMapIt)
   {
-    SequenceIteratorPtr seqIt = covMapIt->first->getSequenceIterator();
-    for (; (not seqIt->atEnd()) && success; seqIt->toNext())
+    for (SequenceIteratorPtr seqIt = covMapIt->first->getSequenceIterator(); (not seqIt->atEnd()) && success; seqIt->toNext())
     {
       const Sequence* sequence = seqIt->getSequence();
       if (sequence->getSequenceLength() > 0)

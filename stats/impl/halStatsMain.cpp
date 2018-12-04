@@ -344,8 +344,7 @@ void printSequences(ostream& os, const Alignment* alignment,
   }
   if (genome->getNumSequences() > 0)
   {
-    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
-    for (; not seqIt->atEnd(); seqIt->toNext())
+    for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
     {
       if (!seqIt->equals(genome->getSequenceIterator()))
       {
@@ -367,10 +366,9 @@ void printSequenceStats(ostream& os, const Alignment* alignment,
   }
   if (genome->getNumSequences() > 0)
   {
-    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
     os << "SequenceName, Length, NumTopSegments, NumBottomSegments" << endl;
 
-    for (; not seqIt->atEnd(); seqIt->toNext())
+    for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
     {
       os << seqIt->getSequence()->getName() << ", "
          << seqIt->getSequence()->getSequenceLength() << ", "
@@ -391,9 +389,7 @@ void printBedSequenceStats(ostream& os, const Alignment* alignment,
   }
   if (genome->getNumSequences() > 0)
   {
-    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
-    
-    for (; not seqIt->atEnd(); seqIt->toNext())
+    for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
     {
       os << seqIt->getSequence()->getName() << "\t"
          << 0 << "\t"
@@ -656,8 +652,8 @@ void printChromSizes(ostream& os, const Alignment* alignment,
   }
   if (genome->getNumSequences() > 0)
   {
-    SequenceIteratorPtr seqIt = genome->getSequenceIterator();
-    for (; not seqIt->atEnd(); seqIt->toNext())
+    
+    for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
     {
       os << seqIt->getSequence()->getName() << '\t'
          << seqIt->getSequence()->getSequenceLength() << '\n';

@@ -24,15 +24,39 @@ otherLibs += ${halApiTestSupportLibs} ${libHalLiftover}
 progs = ${binDir}/halExtract ${binDir}/halAlignedExtract ${binDir}/halMaskExtract \
     ${binDir}/hal4dExtract ${binDir}/halSingleCopyRegionsExtract ${binDir}/hal4dExtractTest
 
+testTmpDir = output
+testHdf5Hal = ${testTmpDir}/small.haf5.hal
+testMmapHal = ${testTmpDir}/small.mmap.hal
+
 all: progs
 libs:
 progs: ${progs}
 
 clean : 
 	rm -f ${objs} ${progs} ${depends}
-test: hal4dExtractTest
+	rm -rf ${testTmpDir}
+
+test: hal4dExtractTest halExtactHdf5ToMmap halExtactMmapToHdf5
+
 hal4dExtractTest:
 	${binDir}/hal4dExtractTest 
+
+halExtactHdf5ToMmap: ${testHdf5Hal}
+	${binDir}/halExtract --outputFormat mmap $< ${testTmpDir}/$@.mmap.hal
+
+halExtactMmapToHdf5: ${testMmapHal}
+	${binDir}/halExtract --outputFormat hdf5 $< ${testTmpDir}/$@.hdf5.hal
+
+randGenArgs = --preset small --seed 0 --minSegmentLength 3000  --maxSegmentLength 5000
+
+${testHdf5Hal}: ${progs}
+	@mkdir -p $(dir $@)
+	${binDir}/halRandGen ${randGenArgs} --format hdf5 $@
+
+${testMmapHal}: ${progs}
+	@mkdir -p $(dir $@)
+	${binDir}/halRandGen ${randGenArgs} --format mmap $@
+
 
 include ${rootDir}/rules.mk
 

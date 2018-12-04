@@ -36,8 +36,7 @@ void MaskExtractor::extract(const Alignment* alignment,
   _extend = extend;
   _extendPct = extendPct;
 
-  SequenceIteratorPtr seqIt = _genome->getSequenceIterator();
-  for (; not seqIt->atEnd(); seqIt->toNext())
+  for (SequenceIteratorPtr seqIt = _genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
     _sequence = seqIt->getSequence();
     if (_sequence->getSequenceLength() > 0)
@@ -53,8 +52,7 @@ void MaskExtractor::extract(const Alignment* alignment,
 void MaskExtractor::addMaskedBasesToCache()
 {
   assert(_posCache.size() == 0);
-  DnaIteratorPtr dna = _sequence->getDnaIterator();
-  for (; !dna->atEnd(); dna->toRight())
+  for (DnaIteratorPtr dna = _sequence->getDnaIterator(); !dna->atEnd(); dna->toRight())
   {
     if (isMasked(dna->getBase()))
     {

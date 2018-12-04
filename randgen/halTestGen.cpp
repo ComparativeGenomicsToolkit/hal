@@ -151,9 +151,8 @@ void addLeaf(Alignment* alignment, const string& name,
   TopSegmentStruct ts;
   
   hal_index_t segLen = leaf->getSequenceLength() / numTop;
-  bi = lastLeaf->getBottomSegmentIterator();
-  ti = leaf->getTopSegmentIterator();
-  for (; not bi->atEnd(); bi->toRight(), ti->toRight())
+  for (bi = lastLeaf->getBottomSegmentIterator(), ti = leaf->getTopSegmentIterator();
+       not bi->atEnd(); bi->toRight(), ti->toRight())
   {
     bs.set(bi->getArrayIndex() * segLen, segLen);
     bs._children.clear();

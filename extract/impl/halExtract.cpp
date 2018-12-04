@@ -101,12 +101,11 @@ void getDimensions(const Alignment* outAlignment, const Genome* genome,
                    vector<Sequence::Info>& dimensions)
 {
   assert(dimensions.size() == 0);
-  SequenceIteratorPtr seqIt = genome->getSequenceIterator();
   
   bool root = outAlignment->getParentName(genome->getName()).empty();
   bool leaf = outAlignment->getChildNames(genome->getName()).empty();     
   
-  for (; seqIt->atEnd(); seqIt->toNext())
+  for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
     const Sequence* sequence = seqIt->getSequence();
     Sequence::Info info(sequence->getName(),
@@ -128,6 +127,7 @@ void copyGenome(const Genome* inGenome, Genome* outGenome)
   {
     outDna->setBase(inDna->getBase());
   }
+  outDna->flush();
 
   TopSegmentIteratorPtr inTop = inGenome->getTopSegmentIterator();
   TopSegmentIteratorPtr outTop = outGenome->getTopSegmentIterator();
@@ -219,7 +219,7 @@ void extract(const Alignment* inAlignment,
   assert(newGenome != NULL);
 
   vector<Sequence::Info> dimensions;
-  getDimensions(outAlignment.get(), genome, dimensions);
+  getDimensions(inAlignment, genome, dimensions);
   newGenome->setDimensions(dimensions);
 
   cout << "Extracting " << genome->getName() << endl;
