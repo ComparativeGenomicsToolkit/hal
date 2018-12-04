@@ -99,3 +99,4 @@ https://github.com/lemire/clhash
 * look for duplicate code around const/non-const functions and have const function call non-const
 * change hdf5Genome to have sequenceNameCache own the object and then drop the need for the zeroLenPosCache, as
 * mmap should used hal_size_t  instead of size_t
+* genomes don't formally have an array index; they do in mmap; this might be a useful formalization.

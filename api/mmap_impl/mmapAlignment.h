@@ -5,6 +5,8 @@
 #include "halAlignment.h"
 #include "mmapFile.h"
 #include "sonLib.h"
+#include "mmapPerfectHashTable.h"
+
 
 namespace hal {
     class CLParser;
@@ -17,11 +19,13 @@ public:
     void setNewickString(MMapAlignment *alignment, const char *newickString);
 
     MMapGenome *addGenome(MMapAlignment *alignment, const std::string &name);
+    std::vector<std::string> getGenomeNames(MMapAlignment *alignment);
 private:
     size_t _numGenomes;
     size_t _newickStringOffset;
     size_t _newickStringLength;
     size_t _genomeArrayOffset;
+    size_t _genomeNameHashOffset;
 };
 
 class MMapAlignment : public Alignment {
@@ -41,6 +45,7 @@ class MMapAlignment : public Alignment {
         if (_tree != NULL) {
             stTree_destruct(_tree);
         }
+        delete _genomeNameHash;
     };
     static void defineOptions(CLParser* parser,
                               unsigned mode);
@@ -202,6 +207,8 @@ private:
     void initializeFromOptions(const CLParser* parser);
     void create();
     void open();
+    void addGenomeToNameHash(const MMapGenome *genome,
+                             vector<string>& existingNames);
     Genome *_openGenome(const std::string &name) const;
     stTree *getGenomeNode(const std::string &name) const {
         stTree *node = stTree_findChild(_tree, name.c_str());
@@ -233,6 +240,7 @@ private:
     std::string _udcCacheDir;
     MMapFile *_file;
     MMapAlignmentData *_data;
+    MMapPerfectHashTable *_genomeNameHash;
     stTree *_tree;
     mutable std::map<std::string, std::vector<std::string>> _childNames;
 };

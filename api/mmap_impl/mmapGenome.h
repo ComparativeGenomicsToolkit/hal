@@ -81,6 +81,10 @@ public:
 
     const std::string& getName() const;
 
+    hal_index_t getArrayIndex() const {
+        return _arrayIndex;
+    }
+
     void setDimensions(
         const std::vector<hal::Sequence::Info>& sequenceDimensions,
         bool storeDNAArrays);
