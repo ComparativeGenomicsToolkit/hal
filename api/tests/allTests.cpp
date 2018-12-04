@@ -4,7 +4,10 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include <cstdio>
+#include <iostream>
 #include "allTests.h"
+#include "halAlignmentTest.h"
+#include "halAlignmentInstance.h"
 
 int halRunAllTests(void) {
   CuString *output = CuStringNew();
@@ -28,6 +31,16 @@ int halRunAllTests(void) {
 }
 
 int main(int argc, char *argv[]) {
-   
+    if (argc > 2) {
+        std::cerr << "wrong # args: " << argv[0] << " [storageDriver]" << std::endl;
+        ::exit(1);
+    } else if (argc == 2) {
+        storageDriverToTest = argv[1];
+        if (not ((storageDriverToTest == hal::STORAGE_FORMAT_HDF5) or (storageDriverToTest == hal::STORAGE_FORMAT_MMAP))) {
+            std::cerr << "Invalid storage driver '" << storageDriverToTest << "', expected on of: "
+                      << hal::STORAGE_FORMAT_HDF5 << " or " << hal::STORAGE_FORMAT_MMAP << std::endl;
+            ::exit(1);
+        }
+    }
   return halRunAllTests();
 }

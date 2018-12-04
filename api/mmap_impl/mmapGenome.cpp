@@ -14,10 +14,16 @@
 using namespace hal;
 using namespace std;
 
+MMapGenome::~MMapGenome() {
+    deleteSequenceCache();
+}
+
 void MMapGenome::setDimensions(
   const vector<Sequence::Info>& sequenceDimensions,
   bool storeDNAArrays)
 {
+    _sequenceObjCache.resize(sequenceDimensions.size());
+        
     // FIXME: should we check storeDNAArrays??
     hal_size_t totalSequenceLength = 0;
 
@@ -44,7 +50,7 @@ void MMapGenome::setDimensions(
     _data->_totalSequenceLength = totalSequenceLength;
     _data->_dnaOffset = _alignment->allocateNewArray(dnaLength);
     // Reverse space for the sequence data (plus an extra at the end
-    // to indicate the end position of the sequence iterator).
+    // to indicate the end position of the sequence iterator).  FIXME: extra no longer needed
     _data->_sequencesOffset = _alignment->allocateNewArray(sizeof(MMapSequenceData) * sequenceDimensions.size() + 1);
     _data->_numSequences = sequenceDimensions.size();
     hal_size_t startPos = 0;
@@ -63,22 +69,45 @@ void MMapGenome::setDimensions(
     // Write the new segment data.
     updateTopDimensions(topDimensions);
     updateBottomDimensions(bottomDimensions);
+    
+    createSequenceNameHash(sequenceDimensions.size());
+    createGenomeSiteMap(sequenceDimensions.size());
+}
+
+/* must be called after sequences are created */
+void MMapGenome::createSequenceNameHash(size_t numSequences) {
+    // build perfect hash
+    vector<string> sequenceNames;
+    for (size_t i = 0; i < numSequences; i++) {
+        sequenceNames.push_back(getSequenceByIndex(i)->getName());
+    }
+    _data->_sequenceHashOffset = _sequenceNameHash.addKeys(sequenceNames);
+
+    // add all sequence indexes
+    for (size_t i = 0; i < numSequences; i++) {
+        _sequenceNameHash.setIndex(getSequenceByIndex(i)->getName(), i);
+    }
+}
+
+/* must be called after sequences are created */
+void MMapGenome::createGenomeSiteMap(size_t numSequences) {
+    assert(_sequenceObjCache.size() == numSequences);
+    _data->_genomeSiteMapOffset = _genomeSiteMap.build(_sequenceObjCache);
 }
 
 void MMapGenome::setSequenceData(size_t i, hal_index_t startPos, hal_index_t topSegmentStartIndex,
                                  hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo) {
     MMapSequenceData *data = getSequenceData(i);
-    // FIXME: Kinda stupid that this calls the constructor to
-    // initialize the data but doesn't do anything with it.
-    MMapSequence seq(this, data, i, startPos, sequenceInfo._length,
-                     topSegmentStartIndex, bottomSegmentStartIndex,
-                     sequenceInfo._numTopSegments, sequenceInfo._numBottomSegments,
-                     sequenceInfo._name);
+    MMapSequence *seq = new MMapSequence(this, data, i, startPos, sequenceInfo._length,
+                                         topSegmentStartIndex, bottomSegmentStartIndex,
+                                         sequenceInfo._numTopSegments, sequenceInfo._numBottomSegments,
+                                         sequenceInfo._name);
+    _sequenceObjCache[i] = seq;
 }
 
 MMapSequenceData *MMapGenome::getSequenceData(size_t i) const {
-    MMapSequenceData *sequences = (MMapSequenceData *) _alignment->resolveOffset(_data->_sequencesOffset, sizeof(MMapSequenceData));
-    return sequences + i;
+    MMapSequenceData *sequenceData = (MMapSequenceData *)_alignment->resolveOffset(_data->_sequencesOffset, sizeof(MMapSequenceData));
+    return sequenceData + i;
 }
 
 // Get a vector containing updates for *all* sequences (leaving ones
@@ -157,17 +186,30 @@ hal_size_t MMapGenome::getNumSequences() const
   return _data->_numSequences;
 }
 
+Sequence* MMapGenome::getSequenceByIndex(hal_index_t index)
+{
+    if (_sequenceObjCache[index] == NULL) {
+        _sequenceObjCache[index] = new MMapSequence(this, getSequenceData(index));
+    }
+    return _sequenceObjCache[index];
+}
+
+const Sequence* MMapGenome::getSequenceByIndex(hal_index_t index) const
+{
+    return const_cast<MMapGenome*>(this)->getSequenceByIndex(index);
+}
+
 Sequence* MMapGenome::getSequence(const string& name)
 {
-  loadSequenceNameCache();
-  Sequence* sequence = NULL;
-  map<string, MMapSequence*>::iterator mapIt = 
-     _sequenceNameCache.find(name);
-  if (mapIt != _sequenceNameCache.end())
-  {
-    sequence = mapIt->second;
-  }
-  return sequence;
+    hal_index_t index = _sequenceNameHash.getIndex(name);
+    if (index == NULL_INDEX) {
+        return NULL;  // not in map
+    }
+    Sequence* sequence = getSequenceByIndex(index);
+    if (sequence->getName() != name) {
+        return NULL; // not in map
+    }
+    return sequence;
 }
 
 const Sequence* MMapGenome::getSequence(const string& name) const
@@ -177,36 +219,12 @@ const Sequence* MMapGenome::getSequence(const string& name) const
 
 Sequence* MMapGenome::getSequenceBySite(hal_size_t position)
 {
-  loadSequencePosCache();
-  map<hal_size_t, MMapSequence*>::iterator i;
-  i = _sequencePosCache.upper_bound(position);
-  if (i != _sequencePosCache.end())
-  {
-    if (position >= (hal_size_t)i->second->getStartPosition())
-    {
-      assert(position < i->second->getStartPosition() +
-             i->second->getSequenceLength());
-      return i->second;
-    }
-  }
-  return NULL;
+    return getSequenceByIndex(_genomeSiteMap.getSequenceIndexBySite(position));
 }
 
 const Sequence* MMapGenome::getSequenceBySite(hal_size_t position) const
 {
-  loadSequencePosCache();
-  map<hal_size_t, MMapSequence*>::const_iterator i;
-  i = _sequencePosCache.upper_bound(position);
-  if (i != _sequencePosCache.end())
-  {
-    if (position >= (hal_size_t)i->second->getStartPosition())
-    {
-      assert(position < i->second->getStartPosition() +
-             i->second->getSequenceLength());
-      return i->second;
-    }
-  }
-  return NULL;
+    return const_cast<MMapGenome*>(this)->getSequenceBySite(position);
 }
 
 SequenceIteratorPtr MMapGenome::getSequenceIterator(
@@ -219,11 +237,7 @@ SequenceIteratorPtr MMapGenome::getSequenceIterator(
 SequenceIteratorPtr MMapGenome::getSequenceIterator(
   hal_index_t position) const
 {
-  // genome effectively gets re-consted when returned in the
-  // const iterator.  just save doubling up code.
-  MMapSequenceIterator* seqIt = new MMapSequenceIterator(
-    const_cast<MMapGenome*>(this), position);
-  return SequenceIteratorPtr(seqIt);
+    return const_cast<MMapGenome*>(this)->getSequenceIterator(position);
 }
 
 MetaData* MMapGenome::getMetaData()
@@ -419,75 +433,10 @@ void MMapGenome::rename(const std::string &name) {
     _data->setName(_alignment, name);
 }
 
-void MMapGenome::deleteSequenceCache()
-{
-  if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0)
-  {
-    map<hal_size_t, MMapSequence*>::iterator i;
-    for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i)
-    {
-      delete i->second;
+void MMapGenome::deleteSequenceCache() {
+    for (auto seq: _sequenceObjCache) {
+        delete seq;
     }
-    vector<MMapSequence*>::iterator z;
-    for (z = _zeroLenPosCache.begin(); z != _zeroLenPosCache.end(); ++z)
-    {
-      delete *z;
-    }
-  }
-  else if (_sequenceNameCache.size() > 0)
-  {
-    map<string, MMapSequence*>::iterator i;
-    for (i = _sequenceNameCache.begin(); i != _sequenceNameCache.end(); ++i)
-    {
-      delete i->second;
-    }
-  }
-  _sequencePosCache.clear();
-  _zeroLenPosCache.clear();
-  _sequenceNameCache.clear(); // I share my pointers with above. 
-}
-
-void MMapGenome::loadSequenceNameCache() const
-{
-  if (_sequenceNameCache.size() > 0)
-  {
-    return;
-  }
-  hal_size_t numSequences = _data->_numSequences;
-  for (hal_size_t i = 0; i < numSequences; ++i)
-  {
-      MMapSequence* seq = 
-          new MMapSequence(const_cast<MMapGenome*>(this),
-                           getSequenceData(i));
-
-      _sequenceNameCache.insert(
-          pair<string, MMapSequence*>(seq->getName(), seq));
-  }
-}
-
-
-void MMapGenome::loadSequencePosCache() const
-{
-  if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0)
-  {
-    return;
-  }
-  hal_size_t totalReadLen = 0;
-  loadSequenceNameCache();
-  map<std::string, MMapSequence*>::iterator i;
-  for (i = _sequenceNameCache.begin(); i != _sequenceNameCache.end(); ++i)
-  {
-      if (i->second->getSequenceLength() > 0)
-      {
-          _sequencePosCache.insert(pair<hal_size_t, MMapSequence*>(
-                                       i->second->getStartPosition() +
-                                       i->second->getSequenceLength(), i->second));
-          totalReadLen += i->second->getSequenceLength();
-      }
-      else
-      {
-          _zeroLenPosCache.push_back(i->second);
-      }
-  }
+    _sequenceObjCache.clear();
 }
 

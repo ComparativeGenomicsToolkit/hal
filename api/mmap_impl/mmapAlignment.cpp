@@ -83,6 +83,7 @@ void MMapAlignment::open() {
 
 
 MMapGenome *MMapAlignmentData::addGenome(MMapAlignment *alignment, const std::string &name) {
+    // FIXME: would be nice to allocate extra space and only move when needed.
     size_t newGenomeArraySize = (_numGenomes + 1) * sizeof(MMapGenomeData);
     size_t newGenomeArrayOffset = alignment->allocateNewArray(newGenomeArraySize);
     MMapGenomeData *newGenomeArray = (MMapGenomeData *) alignment->resolveOffset(newGenomeArrayOffset, newGenomeArraySize);

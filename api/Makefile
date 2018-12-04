@@ -26,8 +26,11 @@ test: halHdf5Tests halApiTests
 
 halHdf5Tests: all
 	${binDir}/halHdf5Tests
-halApiTests: all
-	${binDir}/halApiTests
+
+halApiTests: hdf5.halApiTests mmap.halApiTests
+
+%.halApiTests:
+	${binDir}/halApiTests $*
 
 doxy :
 	doxygen doc/doxy.cfg

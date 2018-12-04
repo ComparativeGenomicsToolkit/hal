@@ -73,9 +73,7 @@ class hal_errno_exception: public hal_exception {
 
 namespace hal {
 
-extern const hal_index_t NULL_INDEX;
-
-// SHARED POINTER SUPPORT [FIXME needed?]
+    extern const hal_index_t NULL_INDEX;  /// FIXME: make inline.
 
 // FORWARD DECLARATIONS
 #define HAL_FORWARD_DEC_CLASS(T) \

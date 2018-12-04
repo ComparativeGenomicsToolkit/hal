@@ -437,19 +437,7 @@ Sequence* Hdf5Genome::getSequenceBySite(hal_size_t position)
 
 const Sequence* Hdf5Genome::getSequenceBySite(hal_size_t position) const
 {
-  loadSequencePosCache();
-  map<hal_size_t, Hdf5Sequence*>::const_iterator i;
-  i = _sequencePosCache.upper_bound(position);
-  if (i != _sequencePosCache.end())
-  {
-    if (position >= (hal_size_t)i->second->getStartPosition())
-    {
-      assert(position < i->second->getStartPosition() +
-             i->second->getSequenceLength());
-      return i->second;
-    }
-  }
-  return NULL;
+    return const_cast<Hdf5Genome*>(this)->getSequenceBySite(position);
 }
 
 SequenceIteratorPtr Hdf5Genome::getSequenceIterator(
@@ -463,12 +451,7 @@ SequenceIteratorPtr Hdf5Genome::getSequenceIterator(
 SequenceIteratorPtr Hdf5Genome::getSequenceIterator(
   hal_index_t position) const
 {
-  assert(position <= (hal_index_t)_sequenceNameArray.getSize());
-  // genome effectively gets re-consted when returned in the
-  // const iterator.  just save doubling up code.
-  Hdf5SequenceIterator* seqIt = new Hdf5SequenceIterator(
-    const_cast<Hdf5Genome*>(this), position);
-  return SequenceIteratorPtr(seqIt);
+    return const_cast<Hdf5Genome*>(this)->getSequenceIterator(position);
 }
 
 MetaData* Hdf5Genome::getMetaData()
@@ -784,7 +767,7 @@ void Hdf5Genome::loadSequencePosCache() const
       }
       else
       {
-        _zeroLenPosCache.push_back(i->second);
+          //FIXME: _zeroLenPosCache.push_back(i->second);
       }
     }
   }
@@ -806,7 +789,7 @@ void Hdf5Genome::loadSequencePosCache() const
       }
       else
       {
-        _zeroLenPosCache.push_back(seq);
+          //FIXME: _zeroLenPosCache.push_back(seq);
       }
     }
   }
@@ -883,7 +866,7 @@ void Hdf5Genome::writeSequences(const vector<Sequence::Info>&
     }
     else
     {
-      _zeroLenPosCache.push_back(seq);
+        //FIXME: _zeroLenPosCache.push_back(seq);
     }
     _sequenceNameCache.insert(pair<string, Hdf5Sequence*>(i->_name, seq));
     startPosition += i->_length;

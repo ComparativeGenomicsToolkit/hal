@@ -8,10 +8,16 @@
 #define _HALALIGNMENTTEST_H
 
 #include <vector>
+#include <string>
 #include "halAlignment.h"
 #include "allTests.h"
 
 using namespace hal;
+
+/* Global set from command line containing the storage drives to use.  * This
+ * allows parallelizing tests.  If empty, all storage drives are tested.
+ */
+extern std::string storageDriverToTest;
 
 class AlignmentTest
 {

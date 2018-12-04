@@ -19,6 +19,11 @@ extern "C" {
 using namespace std;
 using namespace hal;
 
+/* Global set from command line containing the storage drives to use.  * This
+ * allows parallelizing tests.  If empty, all storage drives are tested.
+ */
+std::string storageDriverToTest;
+
 string AlignmentTest::randomString(hal_size_t length)
 {
   string s;
@@ -50,8 +55,12 @@ void AlignmentTest::check(CuTest* testCase)
 {
   _testCase = testCase;
   try {
-      checkOne(testCase, STORAGE_FORMAT_HDF5);
-      checkOne(testCase, STORAGE_FORMAT_MMAP);
+      if (storageDriverToTest.empty() or (storageDriverToTest == STORAGE_FORMAT_HDF5)) {
+          checkOne(testCase, STORAGE_FORMAT_HDF5);
+      }
+      if (storageDriverToTest.empty() or (storageDriverToTest == STORAGE_FORMAT_MMAP)) {
+          checkOne(testCase, STORAGE_FORMAT_MMAP);
+      }
   } catch (const exception &e) {
       CuFail(testCase, stString_print("Caught exception while testing: %s", e.what()));
   }

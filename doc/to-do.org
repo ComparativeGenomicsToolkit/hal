@@ -95,3 +95,7 @@ https://github.com/lemire/clhash
 * sometimes index is `index', somethings `arrayIndex'
 * mapped segment target is an iterator, but it doesn't seem to have an upper bound, maybe it would be better as a target array.
 * merge Hdf5DnaArray and Hdf5DnaDriver
+* Utilities that modify a file could make a copy and then update the copy to prevent corruption on failure.  Although this could mean a lot of copies if multiple operations are done.
+* look for duplicate code around const/non-const functions and have const function call non-const
+* change hdf5Genome to have sequenceNameCache own the object and then drop the need for the zeroLenPosCache, as
+* mmap should used hal_size_t  instead of size_t

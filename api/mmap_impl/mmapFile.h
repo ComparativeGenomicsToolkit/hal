@@ -1,4 +1,5 @@
 #ifndef _MMAPFILE_H
+#define _MMAPFILE_H
 #include "halDefs.h"
 #include <cstddef>
 #include <string>
@@ -7,6 +8,11 @@
 #include "halAlignmentInstance.h"
 
 namespace hal {
+    /* Null offset constant.  So happens the header is at location zero, but we never have
+     * a offset to it */
+    static const size_t MMAP_NULL_OFFSET = 0;
+    
+    
     /* header for the file */
     struct MMapHeader {
         char format[32];
@@ -43,10 +49,18 @@ namespace hal {
         inline const void *toPtr(size_t offset,
                                  size_t accessSize) const;
         inline size_t allocMem(size_t size,
-                        bool isRoot=false);
-        bool isReadOnly() const { return !(_mode & WRITE_ACCESS); };
-        std::string getVersion() { return _header->halVersion; };
+                               bool isRoot=false);
+        bool isReadOnly() const {
+            return !(_mode & WRITE_ACCESS);
+        };
+        std::string getVersion() {
+            return _header->halVersion;
+        };
         virtual ~MMapFile() {
+        }
+        /* round up to alignment size */
+        static size_t alignRound(size_t size) {
+            return ((size + (sizeof(size_t) - 1)) / sizeof(size_t)) * sizeof(size_t);
         }
         
         protected:
@@ -60,7 +74,6 @@ namespace hal {
             // no-op by default
         }
 
-        inline size_t alignRound(size_t size) const;
         void setHeaderPtr();
         void createHeader();
         void loadHeader(bool markDirty);
@@ -138,10 +151,6 @@ size_t hal::MMapFile::allocMem(size_t size,
     return offset;
 }
 
-/* round up to alignment size */
-size_t hal::MMapFile::alignRound(size_t size) const {
-    return ((size + (sizeof(size_t) - 1)) / sizeof(size_t)) * sizeof(size_t);
-}
 #endif
 
 // Local Variables:

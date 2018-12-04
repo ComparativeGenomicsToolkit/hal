@@ -7,6 +7,9 @@
 #include "mmapMetaData.h"
 #include "mmapTopSegmentData.h"
 #include "mmapBottomSegmentData.h"
+#include "mmapPerfectHashTable.h"
+#include "mmapGenomeSiteMap.h"
+
 namespace hal {
 class MMapBottomSegmentData;
 class MMapSequence;
@@ -30,6 +33,8 @@ private:
     hal_size_t _numBottomSegments;
 
     size_t _nameOffset;
+    size_t _sequenceHashOffset;
+    size_t _genomeSiteMapOffset;
     size_t _sequencesOffset;
     size_t _metadataOffset;
     size_t _dnaOffset;
@@ -41,14 +46,31 @@ private:
 class MMapGenome : public Genome {
 public:
     MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex) :
-        Genome(alignment, data->getName(alignment)), _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _metaData(_alignment, _data->_metadataOffset) {
-        _name = _data->getName(_alignment);
+        Genome(alignment, data->getName(alignment)),
+        _alignment(alignment),
+        _data(data),
+        _arrayIndex(arrayIndex),
+        _name(data->getName(_alignment)),
+        _metaData(_alignment, _data->_metadataOffset),
+        _sequenceNameHash(alignment->getMMapFile(), data->_sequenceHashOffset),
+        _genomeSiteMap(alignment->getMMapFile(), data->_genomeSiteMapOffset) {
+        _sequenceObjCache.resize(data->_numSequences);
     };
     MMapGenome(MMapAlignment *alignment, MMapGenomeData *data, size_t arrayIndex, const std::string &name) :
-        Genome(alignment, name), _alignment(alignment), _data(data), _arrayIndex(arrayIndex), _name(name), _metaData(_alignment) {
+        Genome(alignment, name),
+        _alignment(alignment),
+        _data(data),
+        _arrayIndex(arrayIndex),
+        _name(name),
+        _metaData(_alignment),
+        _sequenceNameHash(alignment->getMMapFile(), data->_sequenceHashOffset),
+        _genomeSiteMap(alignment->getMMapFile(), data->_genomeSiteMapOffset) {
         _data->initializeName(_alignment, _name);
         _data->_metadataOffset = _metaData.getOffset();
+        _sequenceObjCache.resize(data->_numSequences);
     };
+
+    virtual ~MMapGenome();
 
     MMapTopSegmentData *getTopSegmentPointer(hal_index_t index) { return _data->getTopSegmentData(_alignment, index); };
     MMapBottomSegmentData *getBottomSegmentPointer(hal_index_t index) { return _data->getBottomSegmentData(_alignment, this, index);  };
@@ -70,7 +92,12 @@ public:
         const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
 
     hal_size_t getNumSequences() const;
-   
+
+    // FIXME: these should be in interface and hdf5
+    Sequence* getSequenceByIndex(hal_index_t index);
+
+    const Sequence* getSequenceByIndex(hal_index_t index) const;
+    
     Sequence* getSequence(const std::string& name);
 
     const Sequence* getSequence(const std::string& name) const;
@@ -161,20 +188,21 @@ public:
     }
 
 private:
-    // Index within the alignment's genome array.
-    MMapGenomeData *_data;
-    size_t _arrayIndex;
+    void createSequenceNameHash(size_t numSequences);
+    void createGenomeSiteMap(size_t numSequences);
     void setSequenceData(size_t i, hal_index_t startPos, hal_index_t topSegmentStartIndex,
                          hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo);
     std::vector<Sequence::UpdateInfo> getCompleteInputDimensions(const std::vector<Sequence::UpdateInfo>& inputDimensions, bool isTop);
-    std::string _name;
-    mutable std::map<hal_size_t, MMapSequence*> _sequencePosCache;
-    mutable std::vector<MMapSequence*> _zeroLenPosCache;
-    mutable std::map<std::string, MMapSequence*> _sequenceNameCache;
     void deleteSequenceCache();
-    void loadSequencePosCache() const;
-    void loadSequenceNameCache() const;
+
+    MMapGenomeData *_data;
+    size_t _arrayIndex;     // Index within the alignment's genome array.
+    std::string _name;
     MMapMetaData _metaData;
+    MMapPerfectHashTable _sequenceNameHash;
+    MMapGenomeSiteMap _genomeSiteMap;
+    
+    mutable std::vector<MMapSequence*> _sequenceObjCache;
 };
 
 inline std::string MMapGenomeData::getName(MMapAlignment *alignment) const {

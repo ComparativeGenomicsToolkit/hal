@@ -238,13 +238,13 @@ private:
 };
 
 inline const char *MMapAlignmentData::getNewickString(const MMapAlignment *alignment) {
-    return (const char *) alignment->resolveOffset(_newickStringOffset, _newickStringLength);
+    return static_cast<const char *>(alignment->resolveOffset(_newickStringOffset, _newickStringLength));
 }
 
 inline void MMapAlignmentData::setNewickString(MMapAlignment *alignment, const char *newickString) {
     _newickStringLength = strlen(newickString) + 1;
     _newickStringOffset = alignment->allocateNewArray(_newickStringLength);
-    char *dest = (char *) alignment->resolveOffset(_newickStringOffset, _newickStringLength);
+    char *dest = static_cast<char *>(alignment->resolveOffset(_newickStringOffset, _newickStringLength));
     strncpy(dest, newickString, _newickStringLength);
 }
 }
