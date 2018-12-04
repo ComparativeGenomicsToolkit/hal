@@ -75,6 +75,9 @@ void hal::MMapGenomeSiteMap::loadTmpTree(const vector<MMapSequence*>& sequences,
 /* recursively copy tmp tree to mmap file */
 hal_index_t hal::MMapGenomeSiteMap::copyTree(struct rb_tree_node *tmpNode,
                                              int& nextNodeIdx) {
+    if (tmpNode == NULL) {
+        return NULL_INDEX;
+    }
     const MMapGenomeSiteMapNode *tmpGsmNode = reinterpret_cast<const MMapGenomeSiteMapNode *>(tmpNode->key);
     // allocate and copy
     hal_index_t nodeIdx = nextNodeIdx++;
@@ -82,12 +85,8 @@ hal_index_t hal::MMapGenomeSiteMap::copyTree(struct rb_tree_node *tmpNode,
     *gsmNode = *tmpGsmNode;
     
     // children
-    if (tmpNode->left != NULL) {
-        gsmNode->_leftNodeIndex = copyTree(tmpNode->left, nextNodeIdx);
-    }
-    if (tmpNode->right != NULL) {
-        gsmNode->_rightNodeIndex = copyTree(tmpNode->right, nextNodeIdx);
-    }
+    gsmNode->_leftNodeIndex = copyTree(tmpNode->left, nextNodeIdx);
+    gsmNode->_rightNodeIndex = copyTree(tmpNode->right, nextNodeIdx);
     
     return nodeIdx;
 }
