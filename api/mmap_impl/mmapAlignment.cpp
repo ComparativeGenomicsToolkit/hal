@@ -9,12 +9,11 @@ static const int NAME_HASH_GROWTH_FACTOR = 1024;  // allow lots of initial space
 
 MMapAlignment::MMapAlignment(const std::string& alignmentPath,
                              unsigned mode,
-                             size_t initSize,
-                             size_t growSize):
+                             size_t fileSize):
     _alignmentPath(alignmentPath),
-    _mode(mode), _initSize(initSize), _growSize(initSize),
+    _mode(mode), _fileSize(fileSize),
     _file(NULL), _data(NULL), _genomeNameHash(NULL), _tree(NULL) {
-    _file = MMapFile::factory(alignmentPath, mode, initSize, growSize);
+    _file = MMapFile::factory(alignmentPath, mode, fileSize);
     if (mode & CREATE_ACCESS) {
         create();
     } else {
@@ -26,10 +25,10 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
                              unsigned mode,
                              const CLParser* parser):
     _alignmentPath(alignmentPath),
-    _mode(halDefaultAccessMode(mode)), _initSize(0), _growSize(0),
+    _mode(halDefaultAccessMode(mode)), _fileSize(0),
     _file(NULL), _data(NULL), _genomeNameHash(NULL), _tree(NULL) {
     initializeFromOptions(parser);
-    _file = MMapFile::factory(alignmentPath, _mode, _initSize, _growSize, _udcCacheDir);
+    _file = MMapFile::factory(alignmentPath, _mode, _fileSize, _udcCacheDir);
     if (mode & CREATE_ACCESS) {
         create();
     } else {
@@ -51,20 +50,14 @@ void MMapAlignment::close() {
 void MMapAlignment::defineOptions(CLParser* parser,
                                   unsigned mode) {
     if (mode & CREATE_ACCESS) {
-      parser->addOption("mmapInitSize", "mmap HAL file initial size", MMAP_DEFAULT_INIT_SIZE);
-    }
-    if (mode & (CREATE_ACCESS | WRITE_ACCESS)) {
-      parser->addOption("mmapGrowSize", "mmap HAL file size to grow when more memory is needed", MMAP_DEFAULT_INIT_SIZE);
+      parser->addOption("mmapFileSize", "mmap HAL file initial size", MMAP_DEFAULT_FILE_SIZE);
     }
 }
 
 /* initialize class from options */
 void MMapAlignment::initializeFromOptions(const CLParser* parser) {
     if (_mode & CREATE_ACCESS) {
-        _initSize = parser->get<size_t>("mmapInitSize");
-    }
-    if (_mode & WRITE_ACCESS) {
-        _growSize = parser->get<size_t>("mmapGrowSize");
+        _fileSize = parser->get<size_t>("mmapFileSize");
     }
 #ifdef ENABLE_UDC
     if ((_mode & WRITE_ACCESS) == 0) {

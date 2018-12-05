@@ -54,10 +54,9 @@ static inline unsigned halDefaultAccessMode(unsigned mode) {
 }
     
 /*
- * MMap file default sizes when opening file for write access.
+ * MMap file default size when opening file for write access.
  */
-static const size_t MMAP_DEFAULT_INIT_SIZE = 64 * GIGABYTE;
-static const size_t MMAP_DEFAULT_GROW_SIZE = 64 * GIGABYTE;
+static const size_t MMAP_DEFAULT_FILE_SIZE = 64 * GIGABYTE;
 
 /* get default FileCreatPropList with HAL default properties set */
 const H5::FileCreatPropList& hdf5DefaultFileCreatPropList();
@@ -97,14 +96,12 @@ hdf5AlignmentInstance(const std::string& alignmentPath,
 /** Get an instance of an mmap-implemented Alignment.
  * @param alignmentPath Path to file or URL for UDC access.
  * @param mode Access mode bit map
- * @param initSize Initial size to allocate when creating new file (CREATE_ACCESS)
- * @param growSize Addition size to allocate when growing file.
+ * @param fileSize Size to allocate when creating new file (CREATE_ACCESS)
  */
 Alignment* 
 mmapAlignmentInstance(const std::string& alignmentPath,
                       unsigned mode = hal::READ_ACCESS,
-                      size_t initSize = hal::MMAP_DEFAULT_INIT_SIZE,
-                      size_t growSize = hal::MMAP_DEFAULT_GROW_SIZE);
+                      size_t fileSize = hal::MMAP_DEFAULT_FILE_SIZE);
 
 /** Attempt to detect HAL alignment format, or return empty string if it doesn't 
  * appear to be a hal file */

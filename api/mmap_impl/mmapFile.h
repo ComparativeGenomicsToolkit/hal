@@ -78,8 +78,6 @@ namespace hal {
         void createHeader();
         void loadHeader(bool markDirty);
         void validateWriteAccess() const;
-        void growFile(size_t size);
-        virtual void growFileImpl(size_t size);
         inline void fetchIfNeeded(size_t offset,
                                   size_t accessSize) const;
         
@@ -97,8 +95,7 @@ namespace hal {
 
         static MMapFile *factory(const std::string& alignmentPath,
                                  unsigned mode = READ_ACCESS,
-                                 size_t initSize = MMAP_DEFAULT_INIT_SIZE,
-                                 size_t growSize = MMAP_DEFAULT_GROW_SIZE,
+                                 size_t fileSize = MMAP_DEFAULT_FILE_SIZE,
                                  const std::string& udcCacheDir = "");
     };
 }
@@ -133,15 +130,13 @@ const void *hal::MMapFile::toPtr(size_t offset,
     return static_cast<const char*>(_basePtr) + offset;
 }
 
-/** Allocate new memory, resize file if necessary. If isRoot
- * is specified, it is stored as the root.  If file can be grown,
- * it will be remapped with a larger size if the same virtual address
- * can be obtained. */
+/** Allocate new memory, resize file if necessary. If isRoot is specified, it
+ * is stored as the root used to find all object.  */
 size_t hal::MMapFile::allocMem(size_t size,
                                bool isRoot) {
     validateWriteAccess();
     if (_header->nextOffset + size > _fileSize) {
-        growFile(size);
+        throw hal_exception("mmap file is full, specify file size larger than " + std::to_string(_fileSize));
     }
     size_t offset = _header->nextOffset;
     _header->nextOffset += alignRound(size);

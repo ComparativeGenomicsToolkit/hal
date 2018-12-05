@@ -82,9 +82,8 @@ hal::hdf5AlignmentInstance(const std::string& alignmentPath,
 Alignment* 
 hal::mmapAlignmentInstance(const std::string& alignmentPath,
                            unsigned mode,
-                           size_t initSize,
-                           size_t growSize) {
-    return new MMapAlignment(alignmentPath, mode, initSize, growSize);
+                           size_t fileSize) {
+    return new MMapAlignment(alignmentPath, mode, fileSize);
 }
 
 static const int DETECT_INITIAL_NUM_BYTES = 64;

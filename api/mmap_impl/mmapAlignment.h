@@ -34,8 +34,7 @@ class MMapAlignment : public Alignment {
     /* constructor with all arguments specified */
     MMapAlignment(const std::string& alignmentPath,
                   unsigned mode = READ_ACCESS,
-                  size_t initSize = MMAP_DEFAULT_INIT_SIZE,
-                  size_t growSize = MMAP_DEFAULT_GROW_SIZE);
+                  size_t fileSize = MMAP_DEFAULT_FILE_SIZE);
     
     /* constructor from command line options */
     MMapAlignment(const std::string& alignmentPath,
@@ -235,8 +234,7 @@ private:
     mutable std::map<std::string, MMapGenome *> _openGenomes;
     std::string _alignmentPath;
     unsigned _mode;
-    size_t _initSize;
-    size_t _growSize;
+    size_t _fileSize;
     std::string _udcCacheDir;
     MMapFile *_file;
     MMapAlignmentData *_data;
