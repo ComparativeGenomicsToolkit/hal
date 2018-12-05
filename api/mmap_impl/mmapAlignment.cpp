@@ -50,14 +50,14 @@ void MMapAlignment::close() {
 void MMapAlignment::defineOptions(CLParser* parser,
                                   unsigned mode) {
     if (mode & CREATE_ACCESS) {
-      parser->addOption("mmapFileSize", "mmap HAL file initial size", MMAP_DEFAULT_FILE_SIZE);
+      parser->addOption("mmapFileSize", "mmap HAL file initial size (in gigabytes)", MMAP_DEFAULT_FILE_SIZE_GB);
     }
 }
 
 /* initialize class from options */
 void MMapAlignment::initializeFromOptions(const CLParser* parser) {
     if (_mode & CREATE_ACCESS) {
-        _fileSize = parser->get<size_t>("mmapFileSize");
+        _fileSize = GIGABYTE * parser->get<size_t>("mmapFileSize");
     }
 #ifdef ENABLE_UDC
     if ((_mode & WRITE_ACCESS) == 0) {

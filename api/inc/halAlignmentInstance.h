@@ -56,6 +56,7 @@ static inline unsigned halDefaultAccessMode(unsigned mode) {
 /*
  * MMap file default size when opening file for write access.
  */
+static const size_t MMAP_DEFAULT_FILE_SIZE_GB = 64;
 static const size_t MMAP_DEFAULT_FILE_SIZE = 64 * GIGABYTE;
 
 /* get default FileCreatPropList with HAL default properties set */

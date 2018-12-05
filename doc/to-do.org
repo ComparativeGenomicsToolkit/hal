@@ -1,5 +1,4 @@
 * halValidate needs to have initSize, it is a bit tricky for halExport, you can't reallya pass the parser in because it only allows one "format", so I hacked it up.
-* Add a units suffix (G, M) to mmapFileSize
 * Drop mmap grow functionality, as it doesn't seem to work.  Maybe estimate the initial size from the input or just make it huge.
 * Get rid of iterators implementing the types they are iterating over.  Add an explict get or operator*. This will allow  more inlining.
 * getSegment is duplicated in different places due to top/bottom/gapped/ungapped implementations.  Is this a good approach?
