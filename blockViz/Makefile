@@ -10,15 +10,13 @@ blockVizMaf_srcs = tests/blockVizMaf.cpp
 blockVizMaf_objs = ${blockVizMaf_srcs:%.cpp=${modObjDir}/%.o}
 blockVizTest_srcs = tests/blockVizTest.cpp
 blockVizTest_objs = ${blockVizTest_srcs:%.cpp=${modObjDir}/%.o}
-blockVizTime_srcs = tests/blockVizTime.cpp
-blockVizTime_objs = ${blockVizTime_srcs:%.cpp=${modObjDir}/%.o}
 srcs = ${libHalBlockViz_srcs} ${blockVizBed_srcs} \
-    ${blockVizMaf_srcs} ${blockVizTest_srcs} ${blockVizTime_srcs}
+    ${blockVizMaf_srcs} ${blockVizTest_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
 inclSpec += -I${rootDir}/liftover/inc -I${rootDir}/lod/inc -I${rootDir}/maf/inc -I${halApiTestIncl}
 otherLibs += ${halApiTestSupportLibs} ${libHalBlockViz} ${libHalLiftover} ${libHalLod} ${libHalMaf}
-progs =  ${binDir}/blockVizBed ${binDir}/blockVizMaf ${binDir}/blockVizTest ${binDir}/blockVizTime
+progs =  ${binDir}/blockVizBed ${binDir}/blockVizMaf ${binDir}/blockVizTest
 
 testTmpDir = output
 testHdf5Hal = ${testTmpDir}/small.haf5.hal
