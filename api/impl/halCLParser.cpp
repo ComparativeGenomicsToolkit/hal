@@ -25,7 +25,7 @@ CLParser::CLParser(unsigned mode) :
     addOption("format", "choose the back-end storage format.", STORAGE_FORMAT_HDF5);
 #ifdef ENABLE_UDC
   // this can be used by multiple storage formats
-    addOption("udcCacheDir", "udc cache path for *input* hal file(s).", "\"\"");
+    addOption("udcCacheDir", "udc cache path for *input* hal file(s).", "");
 #endif
 }
 

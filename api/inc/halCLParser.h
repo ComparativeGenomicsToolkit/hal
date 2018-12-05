@@ -246,7 +246,6 @@ inline T CLParser::getArgument(const std::string& name) const
     }
   }
   throw hal_exception(std::string("Argument ") + name + " not recognized");
-  return T();
 }
 
 template <typename T>

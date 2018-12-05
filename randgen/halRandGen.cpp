@@ -47,7 +47,7 @@ static void initParser(CLParser& optionsParser) {
     optionsParser.addOption("maxSegments", "[" + std::to_string(defaultMed._maxSegments) + "]", defaultMed._maxSegments);
     optionsParser.addOption("minSegments", "[" + std::to_string(defaultMed._minSegments) + "]", defaultMed._minSegments);
     optionsParser.addOption("seed", "random number seed ", -1);
-    optionsParser.addOptionFlag("testRand", "use portable random number generator", -1);
+    optionsParser.addOptionFlag("testRand", "use portable random number generator", false);
     optionsParser.addArgument("halFile", "path to toutput HAL alignment file");
 }
 
