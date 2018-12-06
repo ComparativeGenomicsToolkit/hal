@@ -33,12 +33,12 @@ clean:
 test: blockVizHdf5Tests blockVizMmapTests
 
 blockVizHdf5Tests: ${testHdf5Hal} ${progs}
-	${binDir}/blockVizTest --verbose --doSeq ${testHdf5Hal} Genome_2 Genome_0 Genome_0_seq 0 3000 >${testTmpDir}/$@.out 2>&1
+	${binDir}/blockVizTest --verbose --doSeq ${testHdf5Hal} Genome_2 Genome_0 Genome_0_seq 0 3000 >${testTmpDir}/$@.out
 	diff tests/expected/$@.out ${testTmpDir}/$@.out
 
 
 blockVizMmapTests: ${testMmapHal} ${progs}
-	${binDir}/blockVizTest --verbose --doSeq ${testMmapHal} Genome_2 Genome_0 Genome_0_seq 0 3000 >${testTmpDir}/$@.out 2>&1
+	${binDir}/blockVizTest --verbose --doSeq ${testMmapHal} Genome_2 Genome_0 Genome_0_seq 0 3000 >${testTmpDir}/$@.out
 	diff tests/expected/$@.out ${testTmpDir}/$@.out
 
 randGenArgs = --preset small --seed 0 --minSegmentLength 3000  --maxSegmentLength 5000

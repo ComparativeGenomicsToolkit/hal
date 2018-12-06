@@ -8,6 +8,10 @@
 #include "halBlockViz.h"
 #include "halCLParser.h"
 #include "halAlignmentInstance.h"
+extern "C" { // FIXME: tmp
+#include "common.h"
+#include "verbose.h"
+}
 
 #ifdef ENABLE_UDC
 #ifdef __cplusplus
@@ -243,7 +247,7 @@ int main(int argc, char** argv)
   if (!parseArgs(argc, argv, &args)) {
       return 1;
   }
-
+  verboseSetLevel(100); // FIXME: tmp
     
 #ifdef ENABLE_UDC
     if (args.udcCacheDir)
