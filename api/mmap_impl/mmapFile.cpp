@@ -291,8 +291,11 @@ hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
     if (_mode & WRITE_ACCESS) {
         throw hal_exception("write access not supported for UDC:" + alignmentPath);
     }
-    _udcFile = udcFileOpen(const_cast<char*>(alignmentPath.c_str()),
-                           (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
+    _udcFile = udcFileMayOpen(const_cast<char*>(alignmentPath.c_str()),
+                              (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
+    if (_udcFile == NULL) {
+        throw hal_exception("can't open " + alignmentPath);
+    }
     udcMMap(_udcFile);
 
     // get base point and fetch header

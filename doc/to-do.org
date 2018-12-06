@@ -99,3 +99,4 @@ https://github.com/lemire/clhash
 * change hdf5Genome to have sequenceNameCache own the object and then drop the need for the zeroLenPosCache, as
 * mmap should used hal_size_t  instead of size_t
 * genomes don't formally have an array index; they do in mmap; this might be a useful formalization.
+* hdf5 exceptions lose root cause :halGetBlocksInTargetRange error reading blocks: unknown exception

@@ -209,7 +209,8 @@ void Hdf5Alignment::create()
 void Hdf5Alignment::open()
 {
 #ifdef ENABLE_UDC
-    if (((_mode & WRITE_ACCESS) == 0) and (not _udcCacheDir.empty()))
+    // check for url rather than UDC cache, since default UDC cache directory could be used.
+    if (((_mode & WRITE_ACCESS) == 0) and isUrl(_alignmentPath))
   {
     _aprops.setDriver(UDC_FUSE_DRIVER_ID, NULL);
   }
