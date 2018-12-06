@@ -8,10 +8,9 @@
 #include "halBlockViz.h"
 #include "halCLParser.h"
 #include "halAlignmentInstance.h"
-extern "C" { // FIXME: tmp
-#include "common.h"
-#include "verbose.h"
-}
+
+// for debugging
+#undef UDC_DEBUG_VERBOSE
 
 #ifdef ENABLE_UDC
 #ifdef __cplusplus
@@ -20,6 +19,9 @@ extern "C" {
 #include <pthread.h>
 #include "common.h"
 #include "udc.h"
+#ifdef UDC_DEBUG_VERBOSE
+#include "verbose.h"
+#endif
 #ifdef __cplusplus
 }
 #endif
@@ -247,9 +249,11 @@ int main(int argc, char** argv)
   if (!parseArgs(argc, argv, &args)) {
       return 1;
   }
-  verboseSetLevel(100); // FIXME: tmp
     
 #ifdef ENABLE_UDC
+#ifdef UDC_DEBUG_VERBOSE
+  verboseSetLevel(100);
+#endif
     if (args.udcCacheDir)
   {
       udcSetDefaultDir(args.udcCacheDir);
