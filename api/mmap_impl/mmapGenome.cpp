@@ -106,7 +106,7 @@ void MMapGenome::setSequenceData(size_t i, hal_index_t startPos, hal_index_t top
 }
 
 MMapSequenceData *MMapGenome::getSequenceData(size_t i) const {
-    MMapSequenceData *sequenceData = (MMapSequenceData *)_alignment->resolveOffset(_data->_sequencesOffset, sizeof(MMapSequenceData));
+    MMapSequenceData *sequenceData = (MMapSequenceData *)_alignment->resolveOffset(_data->_sequencesOffset, i * sizeof(MMapSequenceData));
     return sequenceData + i;
 }
 
