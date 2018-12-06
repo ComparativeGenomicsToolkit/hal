@@ -39,16 +39,13 @@ BottomSegmentIteratorPtr MMapSequence::getBottomSegmentIterator(
 
 DnaIteratorPtr MMapSequence::getDnaIterator(hal_index_t position)
 {
-  hal_size_t idx = position + getStartPosition();
-  DnaIteratorPtr dnaIt(getDnaIterator(idx));
+  DnaIteratorPtr dnaIt(_genome->getDnaIterator(position + getStartPosition()));
   return DnaIteratorPtr(dnaIt);
 }
 
 DnaIteratorPtr MMapSequence::getDnaIterator(hal_index_t position) const
 {
-  hal_size_t idx = position + getStartPosition();
-  DnaIteratorPtr dnaIt(_genome->getDnaIterator(idx));
-  return DnaIteratorPtr(dnaIt);
+    return const_cast<MMapSequence*>(this)->getDnaIterator(position);
 }
 
 ColumnIteratorPtr MMapSequence::getColumnIterator(
@@ -92,9 +89,8 @@ void MMapSequence::setString(const std::string& inString)
 void MMapSequence::getSubString(std::string& outString, hal_size_t start,
                                 hal_size_t length) const
 {
-  hal_size_t idx = start + getStartPosition();
   outString.resize(length);
-  DnaIteratorPtr dnaIt(getDnaIterator(idx));
+  DnaIteratorPtr dnaIt(getDnaIterator(start));
   dnaIt->readString(outString, length);
 }
 
@@ -108,8 +104,7 @@ void MMapSequence::setSubString(const std::string& inString,
                         + " has length different from target string in sequence " + getName() 
                         + " which is of length " + std::to_string(length));
   }
-  hal_size_t idx = start + getStartPosition();
-  DnaIteratorPtr dnaIt(getDnaIterator(idx));
+  DnaIteratorPtr dnaIt(getDnaIterator(start));
   dnaIt->writeString(inString, length);
 }
 
