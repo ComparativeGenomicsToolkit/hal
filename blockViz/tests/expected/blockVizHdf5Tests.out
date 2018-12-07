@@ -1,4 +1,2 @@
 chr:Genome_2_seq, tSt:0, qSt:0, size:3000, strand:+: tgt : GCTATCGGGG query: GCTATCGGGG
 chr:Genome_2_seq, tSt:3000, qSt:3000, size:113, strand:+: tgt : TAAAACGCTA query: TAAAACGCTA
-
-Testing 10 threads

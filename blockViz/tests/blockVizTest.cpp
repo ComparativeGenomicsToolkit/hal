@@ -19,34 +19,36 @@ extern "C" {
 #include <pthread.h>
 #include "common.h"
 #include "udc.h"
-#ifdef UDC_DEBUG_VERBOSE
 #include "verbose.h"
-#endif
 #ifdef __cplusplus
 }
 #endif
 #endif
 
 struct bv_args_t {
-   char* path; 
-   char* qSpecies; 
-   char* tSpecies;
-   char* tChrom; 
-   int tStart; 
-   int tEnd;
-   int doSeq;
-   int doDupes;
-   char* udcCacheDir;
-   char* coalescenceLimit;
+    char* path; 
+    char* qSpecies; 
+    char* tSpecies;
+    char* tChrom; 
+    int tStart; 
+    int tEnd;
+    int doSeq;
+    int doDupes;
+    int numThreads;
+    char* udcCacheDir;
+    char* coalescenceLimit;
     int verbose;
+    int udcVerbose;
 };
 
 static void initParser(hal::CLParser& optionsParser) {
     optionsParser.setDescription("Test blockViz code from command line");
     optionsParser.addOptionFlag("verbose", "verbose tracing", false);
+    optionsParser.addOptionFlag("udcVerbose", "enable verbose output from UDC", false);
     optionsParser.addOptionFlag("doSeq", "get seqeuence", false);
     optionsParser.addOptionFlag("doDupes", "get duplicate regions",false);
-    optionsParser.addOption("coalescenceLimit", " coalescence limit specices, default is none", "");
+    optionsParser.addOption("numThreads", "number of threads for thread tests", 10);
+    optionsParser.addOption("coalescenceLimit", "coalescence limit specices, default is none", "");
     optionsParser.addArgument("halLodPath", "path to HAL or LOD file");
     optionsParser.addArgument("qSpecies", "query species name");
     optionsParser.addArgument("tSpecies", "target species name");
@@ -91,10 +93,13 @@ static bool parseArgs(int argc, char** argv, bv_args_t* args) {
     args->tEnd = optionsParser.get<int>("tEnd");
     args->doSeq = optionsParser.get<bool>("doSeq");
     args->doDupes = optionsParser.get<bool>("doDupes") ;
+    args->numThreads = optionsParser.get<int>("numThreads");
 #ifdef ENABLE_UDC
     args->udcCacheDir = optionStrOrNull(optionsParser, "udcCacheDir");
+    args->udcVerbose = optionsParser.get<bool>("udcVerbose");
 #else
     args->udcCacheDir = NULL;
+    args->udcVerbose = false;
 #endif
     args->coalescenceLimit = optionStrOrNull(optionsParser, "coalescenceLimit");
     args->verbose = optionsParser.get<bool>("verbose") ;
@@ -189,14 +194,13 @@ static void* getBlocksWrapper(void* voidArgs)
 }
 
 static bool runThreadTest(bv_args_t* args) {
-    int NUM_THREADS = 10;
-    pthread_t threads[NUM_THREADS];
-    printf("\nTesting %d threads\n", NUM_THREADS);
-    for (size_t t = 0; t < NUM_THREADS; ++t) {
+    pthread_t threads[args->numThreads];
+    fprintf(stderr, "\nTesting %d threads\n", args->numThreads);
+    for (size_t t = 0; t < args->numThreads; ++t) {
       pthread_create(&threads[t], NULL, getBlocksWrapper, args);
     }
     // wait for completion
-    for (size_t t = 0; t < NUM_THREADS; ++t) {
+    for (size_t t = 0; t <  args->numThreads; ++t) {
         pthread_join(threads[t], NULL);
     }
     if (someThreadsFailed) {
@@ -245,6 +249,7 @@ static bool runSingleTest(bv_args_t* args,
             }
     }
     halFreeBlockResults(results);
+    return true;
 }
 
 static bool runTest(bv_args_t* args,
@@ -254,13 +259,14 @@ static bool runTest(bv_args_t* args,
             return false;
         }
     }
-    if (0) //FIXME
     if (!runSingleTest(args, handle)) {
         return false;
     }
 #ifdef ENABLE_UDC
-    if (!runThreadTest(args)) {
-        return false;
+    if (args->numThreads > 0) {
+        if (!runThreadTest(args)) {
+            return false;
+        }
     }
 #endif
     return true;
@@ -274,9 +280,9 @@ int main(int argc, char** argv)
   }
     
 #ifdef ENABLE_UDC
-#ifdef UDC_DEBUG_VERBOSE
-  verboseSetLevel(100);
-#endif
+  if (args.udcVerbose) {
+      verboseSetLevel(100);
+  }
     if (args.udcCacheDir)
   {
       udcSetDefaultDir(args.udcCacheDir);
