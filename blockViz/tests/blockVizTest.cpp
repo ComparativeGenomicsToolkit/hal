@@ -5,12 +5,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdexcept>
 #include "halBlockViz.h"
 #include "halCLParser.h"
-#include "halAlignmentInstance.h"
 
 // for debugging
-#undef UDC_DEBUG_VERBOSE
+#define UDC_DEBUG_VERBOSE
 
 #ifdef ENABLE_UDC
 #ifdef __cplusplus
@@ -91,7 +91,11 @@ static bool parseArgs(int argc, char** argv, bv_args_t* args) {
     args->tEnd = optionsParser.get<int>("tEnd");
     args->doSeq = optionsParser.get<bool>("doSeq");
     args->doDupes = optionsParser.get<bool>("doDupes") ;
+#ifdef ENABLE_UDC
     args->udcCacheDir = optionStrOrNull(optionsParser, "udcCacheDir");
+#else
+    args->udcCacheDir = NULL;
+#endif
     args->coalescenceLimit = optionStrOrNull(optionsParser, "coalescenceLimit");
     args->verbose = optionsParser.get<bool>("verbose") ;
     return true;
@@ -110,18 +114,6 @@ static void printDupeList(FILE* file, struct hal_target_dupe_list_t* d)
   {
     fprintf(file, " tSt:%ld size:%ld\n", tr->tStart, tr->size);
   }
-}
-
-static int openWrapper(char* path)
-{
-    if (not hal::detectHalAlignmentFormat(path).empty()) {
-        return halOpen(path, NULL);
-    } else {
-        int handle = halOpenLOD(path, NULL);
-        hal_int_t maxQuery = halGetMaxLODQueryLength(handle, NULL);
-        printf("Max LOD query: %lu\n", maxQuery);
-        return handle;
-    }
 }
 
 /* Verify that the coalescence limit is possible. */
@@ -149,14 +141,13 @@ static bool checkCoalescenceLimit(int handle,
 }
 
 #ifdef ENABLE_UDC
-static bool someThreadFailed = false;
+static bool someThreadsFailed = false;
 
-static void* getBlocksWrapper(void* voidArgs)
+static void getBlocksTest(struct bv_args_t* args)
 {
-    struct bv_args_t* args = static_cast<struct bv_args_t*>(voidArgs);
-  int handle = openWrapper(args->path);
+    int handle = halOpenHalOrLod(args->path, NULL);
   if (handle < 0) {
-      someThreadFailed = true;
+      someThreadsFailed = true;
   }  else {
       hal_block_results_t* results = NULL;
       hal_seqmode_type_t sm = HAL_NO_SEQUENCE;
@@ -175,21 +166,48 @@ static void* getBlocksWrapper(void* voidArgs)
                                           args->coalescenceLimit,
                                           NULL);
       if (results == NULL) {
-          someThreadFailed = true;
+          someThreadsFailed = true;
       }
       halFreeBlockResults(results);
   }
-  pthread_exit(NULL);
+}
+
+static void* getBlocksWrapper(void* voidArgs)
+{
+    struct bv_args_t* args = static_cast<struct bv_args_t*>(voidArgs);
+    try {
+        getBlocksTest(args);
+    } catch (std::runtime_error& ex) {
+        std::cerr << "[" << pthread_self() << "] " << "getBlocksTest runtime_error: " << ex.what() << std::endl;
+        someThreadsFailed = true;
+    } catch (...) {
+        std::cerr << "[" << pthread_self() << "] " << "getBlocksTest other exception: " << std::endl;
+        someThreadsFailed = true;
+    }
+    pthread_exit(NULL);
+    return NULL;
+}
+
+static bool runThreadTest(bv_args_t* args) {
+    int NUM_THREADS = 10;
+    pthread_t threads[NUM_THREADS];
+    printf("\nTesting %d threads\n", NUM_THREADS);
+    for (size_t t = 0; t < NUM_THREADS; ++t) {
+      pthread_create(&threads[t], NULL, getBlocksWrapper, args);
+    }
+    // wait for completion
+    for (size_t t = 0; t < NUM_THREADS; ++t) {
+        pthread_join(threads[t], NULL);
+    }
+    if (someThreadsFailed) {
+        return false;
+    }
+  return true;
 }
 #endif
 
-static bool runTest(bv_args_t* args,
-                    int handle) {
-    if (args->coalescenceLimit != NULL) {
-        if (!checkCoalescenceLimit(handle, args)) {
-            return false;
-        }
-    }
+static bool runSingleTest(bv_args_t* args,
+                          int handle) {
     hal_seqmode_type_t sm = HAL_NO_SEQUENCE;
     if (args->doSeq != 0) {
         sm = HAL_LOD0_SEQUENCE;
@@ -213,7 +231,7 @@ static bool runTest(bv_args_t* args,
         return false;
     }
     if (args->verbose) {
-    struct hal_block_t* cur = results->mappedBlocks;
+        struct hal_block_t* cur = results->mappedBlocks;
         while (cur != NULL)
             {
                 printBlock(stdout, cur);
@@ -227,18 +245,23 @@ static bool runTest(bv_args_t* args,
             }
     }
     halFreeBlockResults(results);
-#ifdef ENABLE_UDC
-    #define NUM_THREADS 10
-    pthread_t threads[NUM_THREADS];
-    printf("\nTesting %d threads\n", NUM_THREADS);
-    for (size_t t = 0; t < NUM_THREADS; ++t)
-    {
-      pthread_create(&threads[t], NULL, getBlocksWrapper, args);
+}
+
+static bool runTest(bv_args_t* args,
+                    int handle) {
+    if (args->coalescenceLimit != NULL) {
+        if (!checkCoalescenceLimit(handle, args)) {
+            return false;
+        }
     }
-  pthread_exit(NULL);
-  if (someThreadFailed) {
-      return false;
-  }
+    if (0) //FIXME
+    if (!runSingleTest(args, handle)) {
+        return false;
+    }
+#ifdef ENABLE_UDC
+    if (!runThreadTest(args)) {
+        return false;
+    }
 #endif
     return true;
 }
@@ -259,12 +282,15 @@ int main(int argc, char** argv)
       udcSetDefaultDir(args.udcCacheDir);
   }
 #endif
-    int handle = openWrapper(args.path);
+    int handle = halOpenHalOrLod(args.path, NULL);
     if (handle < 0) {
+        std::cerr << "ERROR: open failed: " << args.path << std::endl;
         return 1;
     }
     if (!runTest(&args, handle)) {
+        std::cerr << "ERROR: test failed" << std::endl;
         return 1;
     }
+    std::cerr << "Tests successful!" << std::endl; 
   return 0;
 }

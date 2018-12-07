@@ -100,3 +100,4 @@ https://github.com/lemire/clhash
 * mmap should used hal_size_t  instead of size_t
 * genomes don't formally have an array index; they do in mmap; this might be a useful formalization.
 * hdf5 exceptions lose root cause :halGetBlocksInTargetRange error reading blocks: unknown exception
+* Remove LOD support.

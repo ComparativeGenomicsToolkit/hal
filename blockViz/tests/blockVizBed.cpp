@@ -77,15 +77,6 @@ static void printBlock(FILE* tFile, FILE* qFile, struct hal_block_t* b,
           b->qStart + b->size, idx, b->strand);
 }
 
-static int openWrapper(char* path)
-{
-  if (strcmp(path + strlen(path) - 3, "hal") == 0)
-  {
-    return halOpen(path, NULL);
-  }
-  return halOpenLOD(path, NULL);
-}
-
 int main(int argc, char** argv)
 {
   bv_args_t args;
@@ -114,7 +105,7 @@ int main(int argc, char** argv)
   {
     fprintf(stderr, "Error opening %s or %s\n", tFilePath, qFilePath);
   }
-  int handle = openWrapper(args.path);
+  int handle = halOpenHalOrLod(args.path, NULL);
   int ret = 0;
   if (handle >= 0)
   {

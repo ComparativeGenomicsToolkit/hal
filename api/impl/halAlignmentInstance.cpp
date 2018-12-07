@@ -96,7 +96,7 @@ static std::string udcGetInitialBytes(const std::string& path,
     struct udcFile* udcFile = udcFileMayOpen(const_cast<char*>(path.c_str()),
                                              (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
     if (udcFile == NULL) {
-        throw hal_exception("can't open " + path);
+        throw hal_exception("can't open via UDC: " + path);
     }
     char buf[DETECT_INITIAL_NUM_BYTES];
     bits64 bytesRead = udcRead(udcFile, buf, DETECT_INITIAL_NUM_BYTES);

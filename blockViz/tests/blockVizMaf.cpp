@@ -61,15 +61,6 @@ static int parseArgs(int argc, char** argv, bv_args_t* args)
   return 0; 
 }
 
-static int openWrapper(char* path)
-{
-  if (strcmp(path + strlen(path) - 3, "hal") == 0)
-  {
-    return halOpen(path, NULL);
-  }
-  return halOpenLOD(path, NULL);
-}
-
 int main(int argc, char** argv)
 {
   bv_args_t args;
@@ -87,7 +78,7 @@ int main(int argc, char** argv)
   }
 #endif
      
-  int handle = openWrapper(args.path);
+  int handle = halOpenHalOrLod(args.path, NULL);
   int ret = -1;
   if (handle >= 0)
   {

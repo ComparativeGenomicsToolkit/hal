@@ -22,6 +22,7 @@
 #include "halBlockMapper.h"
 #include "halLodManager.h"
 #include "halMafExport.h"
+#include "halAlignmentInstance.h"
 
 #ifdef ENABLE_UDC
 #include <pthread.h>
@@ -49,7 +50,7 @@ using namespace hal;
 typedef map<int, pair<string, LodManagerPtr> > HandleMap;
 static HandleMap handleMap;
 
-static int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr);
+static int openLodOrHal(char* inputPath, bool isLod, char **errStr);
 static void checkHandle(int handle);
 static void checkGenomes(int halHandle, 
                          const Alignment* alignment, const string& qSpecies,
@@ -97,44 +98,59 @@ static void handleError(const string& msg,
     }
 }
 
-extern "C" int halOpenLOD(char *lodFilePath, char **errStr)
-{
-  bool isHal = lodFilePath && strlen(lodFilePath) > 4 &&
-     strcmp(lodFilePath + strlen(lodFilePath) - 4, ".hal") == 0;
+static bool isHalFile(char *lodFilePath) {
+    // must be locked
+    return not hal::detectHalAlignmentFormat(lodFilePath).empty();
+}
 
-  return halOpenLodOrHal(lodFilePath, !isHal, errStr);
+extern "C" int halOpenHalOrLod(char *lodFilePath, char **errStr)
+{
+  halLock();
+  try {
+      bool isHal = isHalFile(lodFilePath);
+      int handle = openLodOrHal(lodFilePath, !isHal, errStr);
+      halUnlock();
+      return handle;
+  } catch(...) {
+      halUnlock();
+      throw;
+  }
 }
 
 extern "C" int halOpen(char* halFilePath, char **errStr)
 {
-  return halOpenLodOrHal(halFilePath, false, errStr);
+  halLock();
+  try {
+    int handle = openLodOrHal(halFilePath, false, errStr);
+    halUnlock();
+    return handle;
+  } catch(...) {
+      halUnlock();
+      throw;
+  }
 }
 
-int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr)
+static int findOrAllocHandle(char* inputPath) {
+  for (HandleMap::iterator mapIt = handleMap.begin(); 
+       mapIt != handleMap.end(); ++mapIt) {
+      if (mapIt->second.first == string(inputPath)) {
+          return mapIt->first;
+      }
+  }
+  HandleMap::reverse_iterator mapIt = handleMap.rbegin();
+  if (mapIt == handleMap.rend()) {
+      return 0;
+  } else {
+      return mapIt->first + 1;
+  }
+}
+
+
+static int openLodOrHal(char* inputPath, bool isLod, char **errStr)
 {
-  halLock();
-  int handle = -1;
+  int handle =  findOrAllocHandle(inputPath);
   try
   {
-    for (HandleMap::iterator mapIt = handleMap.begin(); 
-         mapIt != handleMap.end(); ++mapIt)
-    {
-      if (mapIt->second.first == string(inputPath))
-      {
-        handle = mapIt->first;
-      }
-    }
-    if (handle == -1)
-    {
-      HandleMap::reverse_iterator mapIt = handleMap.rbegin();
-      if (mapIt == handleMap.rend())
-      {
-        handle = 0;
-      }
-      else
-      {
-        handle = mapIt->first + 1;
-      }
       LodManagerPtr lodManager(new LodManager());
       if (isLod == true)
       {
@@ -148,20 +164,16 @@ int halOpenLodOrHal(char* inputPath, bool isLod, char **errStr)
                          handle, pair<string, LodManagerPtr>(
                            inputPath, lodManager)));
     }
-  }
   catch(exception& e)
   {
-      halUnlock();
-      handleError("halOpenLodOrHal error: " + string(inputPath) + ": " + e.what(), errStr);
+      handleError("openLodOrHal error: " + string(inputPath) + ": " + e.what(), errStr);
       return -1;
   }
   catch(...)
   {
-      halUnlock();
-    handleError("halOpenLodOrHal error: " + string(inputPath) + ": Unknown exception", errStr);
+    handleError("openLodOrHal error: " + string(inputPath) + ": Unknown exception", errStr);
     return -1;
   }
-  halUnlock();
   return handle;
 }
 

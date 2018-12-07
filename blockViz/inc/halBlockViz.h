@@ -113,7 +113,7 @@ typedef enum
   HAL_FORCE_LOD0_SEQUENCE,
 } hal_seqmode_type_t;
 
-/** Open a text file created by halLodInterpolate.py for viewing. 
+/** Open a HAL file or  text file created by halLodInterpolate for viewing. 
  * This text file contains a list of paths to progressively coarser
  * levels of detail of a source HAL file.  For example, it may look like
  * 0 ecoli.hal
@@ -138,8 +138,9 @@ typedef enum
  * failure. If NULL, throws an exception on failure instead.
  * @return new handle or -1 of open failed.
 */
-int halOpenLOD(char *lodFilePath, char **errStr);
+int halOpenHalOrLod(char *lodFilePath, char **errStr);
 
+    
 /** Open a HAL alignment file read-only.  
  * @param halFilePath path to location of HAL file on disk 
  * @param errStr pointer to a string that contains an error message on
