@@ -234,21 +234,27 @@ static bool runSingleTest(bv_args_t* args,
         fprintf(stderr, "halGetBlocksInTargetRange returned NULL\n");
         return false;
     }
-    if (args->verbose) {
-        struct hal_block_t* cur = results->mappedBlocks;
-        while (cur != NULL)
-            {
-                printBlock(stdout, cur);
-                cur = cur->next;
-            }
-        struct hal_target_dupe_list_t* dupeList = results->targetDupeBlocks;
-        while (dupeList != NULL)
-            {
-                printDupeList(stdout, dupeList);
-                dupeList = dupeList->next;
-            }
+    hal_int_t blockCnt = 0;
+    hal_int_t baseCnt = 0;
+    struct hal_block_t* cur = results->mappedBlocks;
+    while (cur != NULL) {
+        blockCnt++;
+        baseCnt += cur->size;
+        if (args->verbose) {
+            printBlock(stdout, cur);
+        }
+        cur = cur->next;
+    }
+    struct hal_target_dupe_list_t* dupeList = results->targetDupeBlocks;
+    while (dupeList != NULL) {
+        if (args->verbose) {
+            printDupeList(stdout, dupeList);
+        }
+        dupeList = dupeList->next;
     }
     halFreeBlockResults(results);
+    std::cerr << "blockCnt: " << blockCnt << std::endl;
+    std::cerr << "baseCnt: " << baseCnt << std::endl;
     return true;
 }
 
