@@ -17,7 +17,7 @@
 #ifdef ENABLE_UDC
 extern "C" {
 #include "common.h"
-#include "udc.h"
+#include "udc2.h"
 }
 #endif
 
@@ -93,14 +93,14 @@ static std::string udcGetInitialBytes(const std::string& path,
 #ifdef ENABLE_UDC
     const std::string& udcCacheDir = (options != NULL)
         ? options->getOption<const std::string&>("udcCacheDir") : "";
-    struct udcFile* udcFile = udcFileMayOpen(const_cast<char*>(path.c_str()),
-                                             (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
+    struct udc2File* udcFile = udc2FileMayOpen(const_cast<char*>(path.c_str()),
+                                              (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
     if (udcFile == NULL) {
         throw hal_exception("can't open via UDC: " + path);
     }
     char buf[DETECT_INITIAL_NUM_BYTES];
-    bits64 bytesRead = udcRead(udcFile, buf, DETECT_INITIAL_NUM_BYTES);
-    udcFileClose(&udcFile);
+    bits64 bytesRead = udc2Read(udcFile, buf, DETECT_INITIAL_NUM_BYTES);
+    udc2FileClose(&udcFile);
     return string(buf, 0, bytesRead);
 #else
     throw hal_exception("URL to HAL file supplied however UDC is not compiled into HAL library: " + path);

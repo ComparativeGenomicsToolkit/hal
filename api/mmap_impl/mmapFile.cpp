@@ -9,7 +9,7 @@
 #ifdef ENABLE_UDC
 extern "C" {
 #include "common.h"
-#include "udc.h"
+#include "udc2.h"
 }
 #endif
 
@@ -277,7 +277,7 @@ namespace hal {
                            size_t accessSize) const;
 
         private:
-        struct udcFile *_udcFile;
+        struct udc2File *_udcFile;
     };
 }
 
@@ -291,17 +291,17 @@ hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
     if (_mode & WRITE_ACCESS) {
         throw hal_exception("write access not supported for UDC:" + alignmentPath);
     }
-    _udcFile = udcFileMayOpen(const_cast<char*>(alignmentPath.c_str()),
+    _udcFile = udc2FileMayOpen(const_cast<char*>(alignmentPath.c_str()),
                               (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
     if (_udcFile == NULL) {
         throw hal_exception("can't open " + alignmentPath);
     }
-    udcMMap(_udcFile);
+    udc2MMap(_udcFile);
 
     // get base point and fetch header
-    _basePtr = udcMMapFetch(_udcFile, 0, sizeof(MMapHeader));
-    _fileSize = udcSizeFromCache(const_cast<char*>(_alignmentPath.c_str()),
-                                 const_cast<char*>(udcCacheDir.c_str()));
+    _basePtr = udc2MMapFetch(_udcFile, 0, sizeof(MMapHeader));
+    _fileSize = udc2SizeFromCache(const_cast<char*>(_alignmentPath.c_str()),
+                                  const_cast<char*>(udcCacheDir.c_str()));
     loadHeader(false);
 }
 
@@ -310,14 +310,14 @@ void hal::MMapFileUdc::close() {
     if (_basePtr == NULL) {
         throw hal_exception(_alignmentPath + ": MMapFile::close() called on closed file");
     }
-    udcFileClose(&_udcFile);
+    udc2FileClose(&_udcFile);
 }
 
 /* Destructor. write fields to header and close.  If write access and close
  * has not been called, file will me left mark dirty */
 hal::MMapFileUdc::~MMapFileUdc() {
     if (_udcFile != NULL) {
-        udcFileClose(&_udcFile);
+        udc2FileClose(&_udcFile);
     }
 }
 
@@ -329,7 +329,7 @@ void hal::MMapFileUdc::fetch(size_t offset,
         accessSize = _fileSize - offset;
     }
 
-    udcMMapFetch(_udcFile, offset, accessSize);    
+    udc2MMapFetch(_udcFile, offset, accessSize);    
 }
 
 #endif

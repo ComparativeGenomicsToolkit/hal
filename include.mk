@@ -64,6 +64,7 @@ ifdef ENABLE_UDC
     #  Find htslib as in kent/src/inc/common.mk:
     MACHTYPE = x86_64
     cppflags += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
+    # FIXME: standarize var names
     cflags += -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
     basicLibs += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lssl -lcrypto
 endif

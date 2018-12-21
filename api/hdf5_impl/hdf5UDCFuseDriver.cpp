@@ -33,7 +33,7 @@
 
 extern "C" {
 #include "common.h"
-#include "udc.h"
+#include "udc2.h"
 }
 #include "hdf5.h"
 #include "hdf5UDCFuseDriver.h"
@@ -95,7 +95,7 @@ typedef enum {
  */
 typedef struct H5FD_udc_fuse_t {
     H5FD_t      pub;            /* public stuff, must be first      */
-    udcFile    *ufp;            /* the file handle                  */
+    udc2File   *ufp;            /* the file handle                  */
     int         fd;             /* file descriptor (for truncate)   */
     haddr_t     eoa;            /* end of allocated region          */
     haddr_t     eof;            /* end of file; current file size   */
@@ -141,10 +141,10 @@ typedef struct H5FD_udc_fuse_t {
 
 /* Structs below specify seek / tell / truncate infterface for 
  * different platforms.  We override all with udc methods */
-static int udcFseekWrapper(struct udcFile* file, long long offset, int whence)
+static int udcFseekWrapper(struct udc2File* file, long long offset, int whence)
 {
   assert(whence == SEEK_SET);
-  udcSeek(file, offset);
+  udc2Seek(file, offset);
   return 0;
 }
 
@@ -373,7 +373,7 @@ static H5FD_t *
 H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
     haddr_t maxaddr)
 {
-    udcFile                *f = NULL;
+    udc2File               *f = NULL;
     unsigned            write_access = 0;           /* File opened with write access? */
     H5FD_udc_fuse_t        *file = NULL;
     static const char   *func = "H5FD_udc_fuse_open";  /* Function Name for error reporting */
@@ -399,14 +399,14 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
 
     /* Attempt to open/create the file */
         
-      f = udcFileMayOpen((char*)name, (char*)H5FD_UDC_FUSE_CACHE_PATH);
+      f = udc2FileMayOpen((char*)name, (char*)H5FD_UDC_FUSE_CACHE_PATH);
     
     if (!f)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_CANTOPENFILE, "fopen failed", NULL)
 
     /* Build the return value */
     if(NULL == (file = (H5FD_udc_fuse_t *)calloc((size_t)1, sizeof(H5FD_udc_fuse_t)))) {
-        udcFileClose(&f);
+        udc2FileClose(&f);
         H5Epush_ret(func, H5E_ERR_CLS, H5E_RESOURCE, H5E_NOSPACE, "memory allocation failed", NULL)
     } /* end if */
     file->ufp = f;
@@ -416,8 +416,8 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
     file->write_access = write_access;    /* Note the write_access for later */
     /* note -- do we add interface to modify cache dir? */
 
-    long long int udcSizeVal = udcSizeFromCache((char*)name, 
-                                                (char*)H5FD_UDC_FUSE_CACHE_PATH);
+    long long int udcSizeVal = udc2SizeFromCache((char*)name, 
+                                                 (char*)H5FD_UDC_FUSE_CACHE_PATH);
     file->eof = udcSizeVal;
     /* everything about udc cache works for files and urls but the above, 
      * which only works for ursl.  if it fails, we try as a file*/
@@ -466,7 +466,7 @@ H5FD_udc_fuse_close(H5FD_t *_file)
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
     
-    udcFileClose(&file->ufp);
+    udc2FileClose(&file->ufp);
     
     return 0;
 } /* end H5FD_udc_fuse_close() */
@@ -790,7 +790,7 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
         else
             bytes_in = size;
 
-        bytes_read = udcRead(file->ufp, buf, item_size * bytes_in);
+        bytes_read = udc2Read(file->ufp, buf, item_size * bytes_in);
 
         /*
         if(0 == bytes_read && ferror(file->ufp)) { 
@@ -799,7 +799,7 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
             H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_READERROR, "fread failed", -1)
         }*/
         
-        if(0 == bytes_read && udcTell(file->ufp) >= file->eof) {
+        if(0 == bytes_read && udc2Tell(file->ufp) >= file->eof) {
             /* end of file but not end of format address space */
             memset((unsigned char *)buf, 0, size);
             break;

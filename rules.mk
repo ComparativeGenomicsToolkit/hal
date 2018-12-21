@@ -18,6 +18,11 @@ ${modObjDir}/%.o: %.cpp
 	${cpp} -MM -MT $@ ${cppflags} ${inclSpec} -c $< >$*.depend
 	${cpp} ${cppflags} ${inclSpec} -c $< -o $@
 
+${modObjDir}/%.o: %.c
+	@mkdir -p $(dir $@)
+	${CC} -MM -MT $@ ${CFLAGS} ${inclSpec} -c $< >$*.depend
+	${CC} ${CFLAGS} ${inclSpec} -c $< -o $@
+
 # compile a program.
 # $prog_objs - has object files specific for $prog
 # otherLibs - other libraries to used
