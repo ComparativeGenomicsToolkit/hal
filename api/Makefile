@@ -19,13 +19,15 @@ srcs = ${libHal_srcs} ${halApiTests_srcs} ${halHdf5Tests_srcs}
 c_srcs = ${udc2Tests_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o} ${c_srcs:%.c=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend} ${c_srcs:%.c=%.depend}
+
+progs =  ${binDir}/halApiTests ${binDir}/halHdf5Tests
 inclSpec += -Ihdf5_impl -Immap_impl
 ifdef ENABLE_UDC
    # FIXME: standarize var names
    inclSpec += -I${KENTSRC}/inc -I${KENTSRC}/htslib
+   progs +=  ${binDir}/udc2Tests
 endif
 
-progs =  ${binDir}/halApiTests ${binDir}/halHdf5Tests ${binDir}/udc2Tests
 
 all : libs progs
 libs: ${libHal} ${halApiTestSupportLibs} 
