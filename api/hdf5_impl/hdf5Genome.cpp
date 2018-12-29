@@ -6,6 +6,7 @@
 #include <iostream>
 #include <algorithm>
 #include "H5Cpp.h"
+#include "hdf5Common.h"
 #include "hdf5Genome.h"
 #include "hdf5DnaDriver.h"
 #include "hdf5TopSegment.h"
@@ -50,9 +51,9 @@ Hdf5Genome::Hdf5Genome(const string& name,
   assert(!name.empty());
   assert(alignment != NULL && h5Parent != NULL);
 
-  H5::Exception::dontPrint();
   try
   {
+    HDF5DisableExceptionPrinting prDisable();
     _group = h5Parent->openGroup(name);
   }
   catch (Exception& e)
@@ -117,9 +118,9 @@ void Hdf5Genome::setDimensions(
   // exceptions is the only way I know how right now).  Note that
   // the file needs to be refactored to take advantage of the new
   // space. (FIXME)
-  H5::Exception::dontPrint();
   try
   {
+    HDF5DisableExceptionPrinting prDisable();
     DataSet d = _group.openDataSet(dnaArrayName);
     _group.unlink(dnaArrayName);
   }
@@ -347,9 +348,9 @@ void Hdf5Genome::setGenomeTopDimensions(
   {
     numTopSegments += i->_numSegments;
   }
-  H5::Exception::dontPrint();
   try
   {
+    HDF5DisableExceptionPrinting prDisable();
     DataSet d = _group.openDataSet(topArrayName);
     _group.unlink(topArrayName);
   }
@@ -369,9 +370,9 @@ void Hdf5Genome::setGenomeBottomDimensions(
   {
     numBottomSegments += i->_numSegments;
   }
-  H5::Exception::dontPrint();
   try
   {
+    HDF5DisableExceptionPrinting prDisable();
     DataSet d = _group.openDataSet(bottomArrayName);
     _group.unlink(bottomArrayName);
   }

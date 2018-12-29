@@ -10,7 +10,7 @@ extern "C" {
 #endif
 #include <pthread.h>
 #include "common.h"
-#include "udc.h"
+#include "udc2.h"
 #ifdef __cplusplus
 }
 #endif
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
 #ifdef ENABLE_UDC
   if (args.udcPath != NULL)
   {
-    udcSetDefaultDir(args.udcPath);
+    udc2SetDefaultDir(args.udcPath);
   }
 #endif
      

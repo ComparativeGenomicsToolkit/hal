@@ -16,7 +16,7 @@
 #ifdef ENABLE_UDC
 extern "C" {
 #include "common.h"
-#include "udc.h"
+#include "udc2.h"
 // Dont want this macro ruining std::max
 #ifdef max
 #undef max
@@ -63,7 +63,7 @@ void LodManager::loadLODFile(const string& lodPath,
   char* cpath = const_cast<char*>(lodPath.c_str());
   
   size_t cbufSize = 0;
-  char* cbuffer = udcFileReadAll(cpath, NULL, 100000, &cbufSize);
+  char* cbuffer = udc2FileReadAll(cpath, NULL, 100000, &cbufSize);
   if (cbuffer == NULL)
   {
     throw hal_exception("Error udc-opening " + lodPath);

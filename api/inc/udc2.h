@@ -185,3 +185,7 @@ void *udc2MMapFetch(struct udc2File *file, bits64 offset, bits64 size);
 
 
 #endif /* UDC2_H */
+
+// Local Variables:
+// c-file-style: "jkent-c"
+// End:

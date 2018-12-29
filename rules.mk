@@ -20,8 +20,8 @@ ${modObjDir}/%.o: %.cpp
 
 ${modObjDir}/%.o: %.c
 	@mkdir -p $(dir $@)
-	${CC} -MM -MT $@ ${CFLAGS} ${inclSpec} -c $< >$*.depend
-	${CC} ${CFLAGS} ${inclSpec} -c $< -o $@
+	${CC} -MM -MT $@ ${cflags} ${inclSpec} -c $< >$*.depend
+	${CC} ${cflags} ${inclSpec} -c $< -o $@
 
 # compile a program.
 # $prog_objs - has object files specific for $prog

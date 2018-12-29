@@ -13,6 +13,7 @@
 #include "halCommon.h"
 #include "halSequenceIterator.h"
 #include "halCLParser.h"
+#include "hdf5Common.h"
 #include "hdf5Alignment.h"
 #include "hdf5MetaData.h"
 #include "hdf5Genome.h"
@@ -691,7 +692,7 @@ string Hdf5Alignment::getVersion() const
 {
   try
   {
-      H5::Exception::dontPrint();  // FIXME: change all dontPrint calles to save and restore 
+    HDF5DisableExceptionPrinting prDisable();
     _file->openGroup(VersionGroupName);  
     HDF5MetaData versionMeta(_file, VersionGroupName);
     if (versionMeta.has(VersionGroupName) == false)

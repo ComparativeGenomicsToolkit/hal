@@ -17,7 +17,7 @@ libHalLiftover = ${libDir}/libHalLiftover.a
 libHalLod = ${libDir}/libHalLod.a
 libHalMaf = ${libDir}/libHalMaf.a
 
-inclSpec = -I${rootDir}/api/inc -Iimpl -Iinc
+inclSpec += -I${rootDir}/api/inc -Iimpl -Iinc
 
 #Modify this variable to set the location of sonLib
 #(sonlib is used only for cuTest at this potin)
@@ -65,8 +65,8 @@ ifdef ENABLE_UDC
     MACHTYPE = x86_64
     cppflags += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
     # FIXME: standarize var names
-    cflags += -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
-    basicLibs += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lssl -lcrypto
+    cflags += -Wall -Werror -std=c99 -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
+    basicLibs += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lcurl -lssl -lcrypto
 endif
 
 

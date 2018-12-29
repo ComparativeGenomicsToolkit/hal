@@ -18,7 +18,7 @@ extern "C" {
 #endif
 #include <pthread.h>
 #include "common.h"
-#include "udc.h"
+#include "udc2.h"
 #include "verbose.h"
 #ifdef __cplusplus
 }
@@ -289,9 +289,9 @@ int main(int argc, char** argv)
   if (args.udcVerbose) {
       verboseSetLevel(100);
   }
-    if (args.udcCacheDir)
+    if (args.udcCacheDir != NULL)
   {
-      udcSetDefaultDir(args.udcCacheDir);
+      udc2SetDefaultDir(args.udcCacheDir);
   }
 #endif
     int handle = halOpenHalOrLod(args.path, NULL);

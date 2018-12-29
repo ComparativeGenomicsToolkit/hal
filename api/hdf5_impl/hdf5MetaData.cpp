@@ -7,6 +7,7 @@
 #include <iostream>
 #include "hdf5MetaData.h"
 #include "halCommon.h"
+#include "hdf5Common.h"
 
 using namespace hal;
 using namespace H5;
@@ -84,9 +85,9 @@ void HDF5MetaData::open(PortableH5Location* parent, const string& name)
   _name = name;
   _dirty = false;
 
-  H5::Exception::dontPrint();
   try
   {
+    HDF5DisableExceptionPrinting prDisable();
     _group = parent->openGroup(name);
   }
   catch (Exception& e)
