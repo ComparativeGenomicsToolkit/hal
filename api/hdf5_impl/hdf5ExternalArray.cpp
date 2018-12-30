@@ -30,6 +30,16 @@ Hdf5ExternalArray::~Hdf5ExternalArray()
   delete [] _buf;
 }
 
+/* initialize the internal data buffer */
+void Hdf5ExternalArray::initBuf()
+{
+  _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
+  _bufStart = 0;
+  _bufEnd = _bufSize - 1;
+  delete [] _buf;
+  _buf = new char[_bufSize * _dataSize];
+}
+
 // Create a new dataset in specifed location
 void Hdf5ExternalArray::create(PortableH5Location* file, 
                                const H5std_string& path, 
@@ -76,11 +86,7 @@ void Hdf5ExternalArray::create(PortableH5Location* file,
   }
 
   // create the internal data buffer
-  _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
-  _bufStart = 0;
-  _bufEnd = _bufStart + _bufSize - 1;
-  delete [] _buf;
-  _buf = new char[_bufSize * _dataSize];
+  initBuf();
 
   // create the hdf5 array
   _dataSet = _file->createDataSet(_path, _dataType, _dataSpace, cparms);
@@ -125,14 +131,8 @@ void Hdf5ExternalArray::load(PortableH5Location* file, const H5std_string& path,
   {
     _chunkSize = 0;
   }
-  
-  // create the internal data buffer
-  _bufSize = _chunkSize > 1 ? _chunkSize : _size;  
-  _bufEnd = _bufStart + _bufSize - 1;
-  // set out of range to ensure page happens
-  _bufStart = _bufEnd + 1;
-  delete [] _buf;
-  _buf = new char[_bufSize * _dataSize];
+  initBuf();
+  _bufStart = _bufEnd + 1; // set out of range to ensure page happens
   _chunkSpace = DataSpace(1, &_bufSize);
   assert(_bufSize > 0 || _size == 0);
 }
@@ -155,7 +155,6 @@ void Hdf5ExternalArray::page(hsize_t i)
   {
     write();
   }
-  assert(_bufSize == (_chunkSize > 1 ? _chunkSize : _size));
   _bufStart = (i / _bufSize) * _bufSize; // todo: review
   _bufEnd = _bufStart + _bufSize - 1;  
 

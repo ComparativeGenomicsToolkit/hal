@@ -14,7 +14,7 @@ class HDF5DisableExceptionPrinting {
     public:
     HDF5DisableExceptionPrinting() {
         H5::Exception::getAutoPrint(_func, &_clientData);
-        //H5::Exception::dontPrint();
+        H5::Exception::dontPrint();
     }
     ~HDF5DisableExceptionPrinting() {
         H5::Exception::setAutoPrint(_func, _clientData);

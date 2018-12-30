@@ -141,7 +141,8 @@ public:
 
 
 private:
-
+    void initBuf();
+    
    /** Pointer to file that owns this dataset */
    H5::PortableH5Location* _file;
    /** Path of dataset in file */
