@@ -235,7 +235,6 @@ private:
     std::string _alignmentPath;
     unsigned _mode;
     size_t _fileSize;
-    std::string _udcCacheDir;
     MMapFile *_file;
     MMapAlignmentData *_data;
     MMapPerfectHashTable *_genomeNameHash;

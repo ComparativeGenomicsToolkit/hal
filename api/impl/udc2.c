@@ -386,26 +386,24 @@ curl_easy_setopt(curl, CURLOPT_RANGE, range);
 struct curlWriteData
 /* Structure to hold pointers to being read from CURL. */
 {
-    bits64 offset;              // File offset of start of data 
     char *buffer;               // output buffer (not owned)
     size_t size;                // size of buffer
     size_t iNext;               // next location to store
 };
 
-static struct curlWriteData curlWriteDataInit(bits64 offset, void *buffer, int size)
+static struct curlWriteData curlWriteDataInit(void *buffer, int size)
 /* construct a new buffer */
 {
-struct curlWriteData curlWriteData = {offset, buffer, size, 0};
+struct curlWriteData curlWriteData = {buffer, size, 0};
 return curlWriteData;
 }
 
 static int curlWriteCallback(char *buffer, size_t size, size_t nitems, struct curlWriteData *writeData)
 /* call back to save data to a buffer. */
 {
-int inSize = size * nitems;
+size_t inSize = size * nitems;
 memcpy(writeData->buffer + writeData->iNext, buffer, inSize);
 writeData->iNext += inSize;
-writeData->offset += inSize;
 return inSize;
 }
 
@@ -420,9 +418,8 @@ if (!(startsWith("http://",url) || startsWith("https://",url)))
 	     url);
 verbose(4, "reading http/https data - %d bytes at %lld - on %s\n", size, offset, url);
 
-
 // build request
-struct curlWriteData writeData = curlWriteDataInit(offset, buffer, size);
+struct curlWriteData writeData = curlWriteDataInit(buffer, size);
 curlHttpSetup(url, file->prot->curl);
 curl_easy_setopt(file->prot->curl, CURLOPT_WRITEFUNCTION, curlWriteCallback);
 curl_easy_setopt(file->prot->curl, CURLOPT_WRITEDATA, &writeData);
@@ -435,8 +432,6 @@ if (err != CURLE_OK)
 
 file->ios.net.numReads += 1;
 file->ios.net.bytesRead += writeData.iNext;
-file->offset = offset + size;   // not really used by HTTP, but keep updated anyway
-assert(file->offset == writeData.offset);
 return writeData.iNext;
 }
 
@@ -1651,7 +1646,6 @@ while(TRUE)
 	break;
 	}
     }
-
 return bytesRead;
 }
 

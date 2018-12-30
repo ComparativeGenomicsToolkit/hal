@@ -35,7 +35,6 @@ struct bv_args_t {
     int doSeq;
     int doDupes;
     int numThreads;
-    char* udcCacheDir;
     char* coalescenceLimit;
     int verbose;
     int udcVerbose;
@@ -44,7 +43,6 @@ struct bv_args_t {
 static void initParser(hal::CLParser& optionsParser) {
     optionsParser.setDescription("Test blockViz code from command line");
     optionsParser.addOptionFlag("verbose", "verbose tracing", false);
-    optionsParser.addOptionFlag("udcVerbose", "enable verbose output from UDC", false);
     optionsParser.addOptionFlag("doSeq", "get seqeuence", false);
     optionsParser.addOptionFlag("doDupes", "get duplicate regions",false);
     optionsParser.addOption("numThreads", "number of threads for thread tests", 10);
@@ -94,13 +92,6 @@ static bool parseArgs(int argc, char** argv, bv_args_t* args) {
     args->doSeq = optionsParser.get<bool>("doSeq");
     args->doDupes = optionsParser.get<bool>("doDupes") ;
     args->numThreads = optionsParser.get<int>("numThreads");
-#ifdef ENABLE_UDC
-    args->udcCacheDir = optionStrOrNull(optionsParser, "udcCacheDir");
-    args->udcVerbose = optionsParser.get<bool>("udcVerbose");
-#else
-    args->udcCacheDir = NULL;
-    args->udcVerbose = false;
-#endif
     args->coalescenceLimit = optionStrOrNull(optionsParser, "coalescenceLimit");
     args->verbose = optionsParser.get<bool>("verbose") ;
     return true;
@@ -285,15 +276,6 @@ int main(int argc, char** argv)
       return 1;
   }
     
-#ifdef ENABLE_UDC
-  if (args.udcVerbose) {
-      verboseSetLevel(100);
-  }
-    if (args.udcCacheDir != NULL)
-  {
-      udc2SetDefaultDir(args.udcCacheDir);
-  }
-#endif
     int handle = halOpenHalOrLod(args.path, NULL);
     if (handle < 0) {
         std::cerr << "ERROR: open failed: " << args.path << std::endl;

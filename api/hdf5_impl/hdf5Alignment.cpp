@@ -21,6 +21,7 @@ extern "C" {
 #include "sonLibTree.h"
 }
 
+
 using namespace hal;
 using namespace std;
 using namespace H5;
@@ -170,13 +171,6 @@ void Hdf5Alignment::initializeFromOptions(const CLParser* parser) {
                      parser->getOptionAlt<hsize_t>("hdf5CacheRDC", "cacheRDC"),
                      parser->getOptionAlt<hsize_t>("hdf5CacheBytes", "cacheBytes"),
                      parser->getOptionAlt<double>("hdf5CacheW0", "cacheW0"));
-
-#ifdef ENABLE_UDC
-    _udcCacheDir = parser->getOption<const string&>("udcCacheDir");
-    if (not _udcCacheDir.empty()) {
-        H5FD_udc_fuse_set_cache_dir(_udcCacheDir.c_str());
-    }
-#endif
 }
 
 /* set properties for in-memory access */

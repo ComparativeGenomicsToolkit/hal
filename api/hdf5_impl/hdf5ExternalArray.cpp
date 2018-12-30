@@ -155,7 +155,7 @@ void Hdf5ExternalArray::page(hsize_t i)
   {
     write();
   }
-  assert(_bufSize == _chunkSize > 1 ? _chunkSize : _size);
+  assert(_bufSize == (_chunkSize > 1 ? _chunkSize : _size));
   _bufStart = (i / _bufSize) * _bufSize; // todo: review
   _bufEnd = _bufStart + _bufSize - 1;  
 

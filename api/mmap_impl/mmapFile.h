@@ -95,8 +95,7 @@ namespace hal {
 
         static MMapFile *factory(const std::string& alignmentPath,
                                  unsigned mode = READ_ACCESS,
-                                 size_t fileSize = MMAP_DEFAULT_FILE_SIZE,
-                                 const std::string& udcCacheDir = "");
+                                 size_t fileSize = MMAP_DEFAULT_FILE_SIZE);
     };
 }
 

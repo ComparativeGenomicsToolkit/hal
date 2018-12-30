@@ -8,6 +8,13 @@
 #include "halCLParser.h"
 #include "hdf5Alignment.h"
 #include "mmapAlignment.h"
+#ifdef ENABLE_UDC
+extern "C" {
+#include "common.h"
+#include "udc2.h"
+#include "verbose.h"
+}
+#endif
 
 using namespace std;
 using namespace hal;
@@ -24,8 +31,9 @@ CLParser::CLParser(unsigned mode) :
     MMapAlignment::defineOptions(this, mode);
     addOption("format", "choose the back-end storage format.", STORAGE_FORMAT_HDF5);
 #ifdef ENABLE_UDC
-  // this can be used by multiple storage formats
+    // these can be used by multiple storage formats
     addOption("udcCacheDir", "udc cache path for *input* hal file(s).", "");
+    addOptionFlag("udcVerbose", "enable verbose output from UDC", false);
 #endif
 }
 
@@ -178,6 +186,15 @@ void CLParser::parseOptions(int argc, char** argv)
   {
     throw hal_exception("Too few (required positional) arguments");
   }
+#ifdef ENABLE_UDC
+    const string& udcCacheDir = getOption<const string&>("udcCacheDir");
+    if (not udcCacheDir.empty()) {
+        udc2SetDefaultDir(const_cast<char*>(udcCacheDir.c_str()));
+    }
+    if (get<bool>("udcVerbose")) {
+        verboseSetLevel(100);
+    }
+#endif
 }
 
 void CLParser::printUsage(ostream& os) const

@@ -28,7 +28,7 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
     _mode(halDefaultAccessMode(mode)), _fileSize(0),
     _file(NULL), _data(NULL), _genomeNameHash(NULL), _tree(NULL) {
     initializeFromOptions(parser);
-    _file = MMapFile::factory(alignmentPath, _mode, _fileSize, _udcCacheDir);
+    _file = MMapFile::factory(alignmentPath, _mode, _fileSize);
     if (mode & CREATE_ACCESS) {
         create();
     } else {
@@ -59,11 +59,6 @@ void MMapAlignment::initializeFromOptions(const CLParser* parser) {
     if (_mode & CREATE_ACCESS) {
         _fileSize = GIGABYTE * parser->get<size_t>("mmapFileSize");
     }
-#ifdef ENABLE_UDC
-    if ((_mode & WRITE_ACCESS) == 0) {
-        _udcCacheDir = parser->getOption<const string&>("udcCacheDir");
-    }
-#endif
 }
 
 void MMapAlignment::create() {

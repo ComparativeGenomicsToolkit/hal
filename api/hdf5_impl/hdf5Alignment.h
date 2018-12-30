@@ -141,7 +141,6 @@ private:
    H5::H5File* _file;
     int _flags;
     bool _inMemory;
-    std::string _udcCacheDir;
    H5::FileCreatPropList _cprops;
    H5::FileAccPropList _aprops;
    H5::DSetCreatPropList _dcprops;

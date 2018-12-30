@@ -264,8 +264,7 @@ namespace hal {
         public:
         MMapFileUdc(const std::string& alignmentPath,
                     unsigned mode,
-                    size_t fileSize,
-                    const std::string& udcCacheDir);
+                    size_t fileSize);
         virtual void close();
         virtual ~MMapFileUdc();
         virtual bool isUdcProtocol() const {
@@ -285,14 +284,12 @@ namespace hal {
 /* Constructor. Open or create the specified file. */
 hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
                               unsigned mode,
-                              size_t fileSize,
-                              const std::string& udcCacheDir):
+                              size_t fileSize):
     MMapFile(alignmentPath, mode, true), _udcFile(NULL) {
     if (_mode & WRITE_ACCESS) {
         throw hal_exception("write access not supported for UDC:" + alignmentPath);
     }
-    _udcFile = udc2FileMayOpen(const_cast<char*>(alignmentPath.c_str()),
-                              (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
+    _udcFile = udc2FileMayOpen(const_cast<char*>(alignmentPath.c_str()), NULL);
     if (_udcFile == NULL) {
         throw hal_exception("can't open " + alignmentPath);
     }
@@ -300,8 +297,7 @@ hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
 
     // get base point and fetch header
     _basePtr = udc2MMapFetch(_udcFile, 0, sizeof(MMapHeader));
-    _fileSize = udc2SizeFromCache(const_cast<char*>(_alignmentPath.c_str()),
-                                  const_cast<char*>(udcCacheDir.c_str()));
+    _fileSize = udc2SizeFromCache(const_cast<char*>(_alignmentPath.c_str()), NULL);
     loadHeader(false);
 }
 
@@ -337,14 +333,13 @@ void hal::MMapFileUdc::fetch(size_t offset,
 /** create a MMapFile object, opening a local file */
 hal::MMapFile *hal::MMapFile::factory(const std::string& alignmentPath,
                                       unsigned mode,
-                                      size_t fileSize,
-                                      const std::string& udcCacheDir) {
+                                      size_t fileSize) {
     if (isUrl(alignmentPath)) {
         if (mode & (CREATE_ACCESS | WRITE_ACCESS)) {
             throw hal_exception("create or write access not support with URL: " + alignmentPath);
         }
 #ifdef ENABLE_UDC
-        return new MMapFileUdc(alignmentPath, mode, fileSize, udcCacheDir);
+        return new MMapFileUdc(alignmentPath, mode, fileSize);
 #else
         throw hal_exception("URL access requires UDC support to be compiled into HAL library: " + alignmentPath);
 #endif

@@ -91,10 +91,7 @@ static const int DETECT_INITIAL_NUM_BYTES = 64;
 static std::string udcGetInitialBytes(const std::string& path,
                                       const CLParser* options) {
 #ifdef ENABLE_UDC
-    const std::string& udcCacheDir = (options != NULL)
-        ? options->getOption<const std::string&>("udcCacheDir") : "";
-    struct udc2File* udcFile = udc2FileMayOpen(const_cast<char*>(path.c_str()),
-                                              (udcCacheDir.empty()) ? NULL : const_cast<char*>(udcCacheDir.c_str()));
+    struct udc2File* udcFile = udc2FileMayOpen(const_cast<char*>(path.c_str()), NULL);
     if (udcFile == NULL) {
         throw hal_exception("can't open via UDC: " + path);
     }
