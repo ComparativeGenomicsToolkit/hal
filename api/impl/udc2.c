@@ -163,7 +163,10 @@ struct udcBitmap
     bits64 localUpdate;		/* Time we last fetched new data into cache. */
     bits64 localAccess;		/* Time we last accessed data. */
     boolean isSwapped;		/* If true need to swap all bytes on read. */
+    bits64 bitmapFileSize;      /* size of bitmap file */
     int fd;			/* File descriptor for file with current block. */
+    void *basePtr;              /* mmapped file */
+    Bits *bits;                 /* pointer to bitmap in file */
     };
 static char *bitmapName = "bitmap";
 static char *sparseDataName = "sparseData";
@@ -766,8 +769,12 @@ fdReadBits64(fd, isSwapped); // ignore result
 bits->localUpdate = status.st_mtime;
 bits->localAccess = status.st_atime;
 bits->isSwapped = isSwapped;
+bits->bitmapFileSize = status.st_size;
 bits->fd = fd;
-
+bits->basePtr = mmap(NULL, status.st_size, PROT_READ|PROT_WRITE, MAP_SHARED, bits->fd, 0);
+if (bits->basePtr == MAP_FAILED)
+    errnoAbort("mmap() failed for %s", fileName);
+bits->bits = (Bits*)(((char*)bits->basePtr) + udcBitmapHeaderSize);
 return bits;
 }
 
@@ -777,6 +784,8 @@ static void udcBitmapClose(struct udcBitmap **pBits)
 struct udcBitmap *bits = *pBits;
 if (bits != NULL)
     {
+    if (munmap(bits->basePtr, bits->bitmapFileSize) < 0)
+        errnoAbort("munmap() failed for UDC spares bitmap");
     mustCloseFd(&(bits->fd));
     freez(pBits);
     }
@@ -1346,28 +1355,11 @@ for (sl = slList;  sl != NULL;  sl = sl->next)
 return (now - oldestTime);
 }
 
-static void readBitsIntoBuf(struct udc2File *file, int fd, int headerSize, int bitStart, int bitEnd,
-	Bits **retBits, int *retPartOffset)
-/* Do some bit-to-byte offset conversions and read in all the bytes that
- * have information in the bits we're interested in. */
-{
-int byteStart = bitStart/8;
-int byteEnd = bitToByteSize(bitEnd);
-int byteSize = byteEnd - byteStart;
-Bits *bits = needLargeMem(byteSize);
-ourMustLseek(&file->ios.bit,fd, headerSize + byteStart, SEEK_SET);
-ourMustRead(&file->ios.bit, fd, bits, byteSize);
-*retBits = bits;
-*retPartOffset = byteStart*8;
-}
-
-static boolean allBitsSetInFile(int bitStart, int bitEnd, int partOffset, Bits *bits)
+static boolean allBitsSetInFile(struct udcBitmap *bitmap, int bitStart, int bitEnd)
 /* Return TRUE if all bits in file between start and end are set. */
 {
-int partBitStart = bitStart - partOffset;
-int partBitEnd = bitEnd - partOffset;
-int nextClearBit = bitFindClear(bits, partBitStart, partBitEnd);
-boolean allSet = (nextClearBit >= partBitEnd);
+int nextClearBit = bitFindClear(bitmap->bits, bitStart, bitEnd);
+boolean allSet = (nextClearBit >= bitEnd);
 return allSet;
 }
 
@@ -1377,22 +1369,17 @@ boolean udc2CheckCacheBits(struct udc2File *file, int startBlock, int endBlock)
 {
 boolean gotUnset = FALSE;
 struct udcBitmap *bitmap = udcBitmapOpen(file->bitmapFileName);
-int partOffset;
-Bits *bits;
-readBitsIntoBuf(file, bitmap->fd, udcBitmapHeaderSize, startBlock, endBlock, &bits, &partOffset);
 
-int partBitStart = startBlock - partOffset;
-int partBitEnd = endBlock - partOffset;
-int nextClearBit = bitFindClear(bits, partBitStart, partBitEnd);
-while (nextClearBit < partBitEnd)
+int nextClearBlock = bitFindClear(bitmap->bits, startBlock, endBlock);
+while (nextClearBlock < endBlock)
     {
-    int clearBlock = nextClearBit + partOffset;
+    int clearBlock = nextClearBlock;
     warn("... udcFile 0x%04lx: bit for block %d (%lld..%lld] is not set",
 	 (unsigned long)file, clearBlock,
 	 ((long long)clearBlock * udcBlockSize), (((long long)clearBlock+1) * udcBlockSize));
     gotUnset = TRUE;
-    int nextSetBit = bitFindSet(bits, nextClearBit, partBitEnd);
-    nextClearBit = bitFindClear(bits, nextSetBit, partBitEnd);
+    int nextSetBlock = bitFindSet(bitmap->bits, nextClearBlock, endBlock);
+    nextClearBlock = bitFindClear(bitmap->bits, nextSetBlock, endBlock);
     }
 return gotUnset;
 }
@@ -1424,50 +1411,29 @@ static boolean fetchMissingBits(struct udc2File *file, struct udcBitmap *bits,
 	bits64 start, bits64 end, bits64 *retFetchedStart, bits64 *retFetchedEnd)
 /* Scan through relevant parts of bitmap, fetching blocks we don't already have. */
 {
-/* Fetch relevant part of bitmap into memory */
-int partOffset;
-Bits *b;
 int startBlock = start / bits->blockSize;
 int endBlock = (end + bits->blockSize - 1) / bits->blockSize;
-readBitsIntoBuf(file, bits->fd, udcBitmapHeaderSize, startBlock, endBlock, &b, &partOffset);
-if (allBitsSetInFile(startBlock, endBlock, partOffset, b))
-    {  // it is already in the cache
-    freeMem(b);
-    return TRUE;
-    }
+if (allBitsSetInFile(bits, startBlock, endBlock))
+    return TRUE;    // it is already in the cache
 
 /* Loop around first skipping set bits, then fetching clear bits. */
-boolean dirty = FALSE;
-int s = startBlock - partOffset;
-int e = endBlock - partOffset;
+int s = startBlock;
+int e = endBlock;
 for (;;)
     {
-    int nextClearBit = bitFindClear(b, s, e);
+    int nextClearBit = bitFindClear(bits->bits, s, e);
     if (nextClearBit >= e)
         break;
-    int nextSetBit = bitFindSet(b, nextClearBit, e);
+    int nextSetBit = bitFindSet(bits->bits, nextClearBit, e);
     int clearSize =  nextSetBit - nextClearBit;
 
-    fetchMissingBlocks(file, bits, nextClearBit + partOffset, clearSize, bits->blockSize);
-    bitSetRange(b, nextClearBit, clearSize);
-
-    dirty = TRUE;
+    fetchMissingBlocks(file, bits, nextClearBit, clearSize, bits->blockSize);
+    bitSetRange(bits->bits, nextClearBit, clearSize);
     if (nextSetBit >= e)
         break;
     s = nextSetBit;
     }
 
-if (dirty)
-    {
-    /* Update bitmap on disk.... */
-    int byteStart = startBlock/8;
-    int byteEnd = bitToByteSize(endBlock);
-    int byteSize = byteEnd - byteStart;
-    ourMustLseek(&file->ios.bit, bits->fd, byteStart + udcBitmapHeaderSize, SEEK_SET);
-    ourMustWrite(&file->ios.bit, bits->fd, b, byteSize);
-    }
-
-freeMem(b);
 *retFetchedStart = startBlock * bits->blockSize;
 *retFetchedEnd = endBlock * bits->blockSize;
 return FALSE;
