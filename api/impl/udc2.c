@@ -91,12 +91,6 @@ struct ios
 #define udcBlockSize (8*1024)
 /* All fetch requests are rounded up to block size. */
 
-#define udcMaxBytesPerRemoteFetch (udcBlockSize * 32)
-/* Very large remote reads are broken down into chunks this size. */
-
-#define MAX_SKIP_TO_SAVE_RECONNECT (udcMaxBytesPerRemoteFetch / 2)
-/* amount for FTP to read and discard rather than reconnect */
-
 typedef int (*UdcDataCallback)(char *url, bits64 offset, int size, void *buffer,
 			       struct udc2File *file);
 /* Type for callback function that fetches file data. */
@@ -1475,37 +1469,19 @@ static boolean udcCachePreload(struct udc2File *file, bits64 offset, bits64 size
 {
 if (!udc2CacheEnabled())
     return TRUE;
-
-boolean ok = TRUE;
-/* Original comment said:  FIXME: well, we can drop this
- *  "We'll break this operation into blocks of a reasonable size to allow
- *   other processes to get cache access, since we have to lock the cache files."
- * However there is no locking done, so this whole splitting might be unnecessary
- * complexity.
- */
-bits64 s,e, endPos=offset+size;
-for (s = offset; s < endPos; s = e)
+bits64 endPos = offset+size;
+struct udcBitmap *bits = file->bits;
+if (bits->version == file->bitmapVersion)
     {
-    /* Figure out bounds of this section. */
-    e = s + udcMaxBytesPerRemoteFetch;
-    if (e > endPos)
-	e = endPos;
-
-    struct udcBitmap *bits = file->bits;
-    if (bits->version == file->bitmapVersion)
-	{
-        udcFetchMissing(file, bits, s, e);
-	}
-    else
-	{
-	ok = FALSE;
-	verbose(4, "udcCachePreload version check failed %d vs %d", 
-		bits->version, file->bitmapVersion);
-	}
-    if (!ok)
-        break;
+    udcFetchMissing(file, bits, offset, endPos);
+    return TRUE;
     }
-return ok;
+else
+    {
+    verbose(4, "udcCachePreload version check failed %d vs %d", 
+		bits->version, file->bitmapVersion);
+    return FALSE;
+    }
 }
 
 #define READAHEADBUFSIZE 4096
