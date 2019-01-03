@@ -227,7 +227,7 @@ inline MMapTopSegmentData *MMapGenomeData::getTopSegmentData(MMapAlignment *alig
     // We request twice the segment length here because checking the length of
     // this segment requires reading the start position of the following
     // segment.
-    return (MMapTopSegmentData *) alignment->resolveOffset(_topSegmentsOffset + index * sizeof(MMapTopSegmentData), 2 *sizeof(MMapTopSegmentData));
+    return static_cast<MMapTopSegmentData*>(alignment->resolveOffset(_topSegmentsOffset + index * sizeof(MMapTopSegmentData), 2 *sizeof(MMapTopSegmentData)));
 }
 
 inline MMapBottomSegmentData *MMapGenomeData::getBottomSegmentData(MMapAlignment *alignment, MMapGenome *genome, hal_index_t index) {
@@ -235,11 +235,11 @@ inline MMapBottomSegmentData *MMapGenomeData::getBottomSegmentData(MMapAlignment
     // We request twice the segment length here because checking the length of
     // this segment requires reading the start position of the following
     // segment.
-    return (MMapBottomSegmentData *) alignment->resolveOffset(_bottomSegmentsOffset + index * segmentSize, 2 * segmentSize);
+    return static_cast<MMapBottomSegmentData*>(alignment->resolveOffset(_bottomSegmentsOffset + index * segmentSize, 2 * segmentSize));
 }
 
 inline char *MMapGenomeData::getDNA(MMapAlignment *alignment, size_t start, size_t length) const {
-    return (char *) alignment->resolveOffset(_dnaOffset + start, length);
+    return static_cast<char*>(alignment->resolveOffset(_dnaOffset + start, length));
 }
 }
 #endif
