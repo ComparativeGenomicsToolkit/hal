@@ -88,7 +88,7 @@ struct ios
     bits64 numReuse;            /* The number of socket reuses. */
     };
 
-#define udcBlockSize (8*1024)
+#define defaultUdcBlockSize (8*1024)
 /* All fetch requests are rounded up to block size. */
 
 typedef int (*UdcDataCallback)(char *url, bits64 offset, int size, void *buffer,
@@ -671,15 +671,14 @@ return path;
 }
 
 static void udcNewCreateBitmapAndSparse(struct udc2File *file, 
-	bits64 remoteUpdate, bits64 remoteSize, bits32 version)
+                                        bits64 remoteUpdate, bits64 remoteSize, bits32 version, bits32 blockSize)
 /* Create a new bitmap file around the given remoteUpdate time. */
 {
 int fd = mustOpenFd(file->bitmapFileName, O_WRONLY | O_CREAT | O_TRUNC);
 bits32 sig = udcBitmapSig;
-bits32 blockSize = udcBlockSize;
 bits64 reserved64 = 0;
 bits32 reserved32 = 0;
-int blockCount = (remoteSize + udcBlockSize - 1)/udcBlockSize;
+int blockCount = (remoteSize + blockSize - 1)/blockSize;
 int bitmapSize = bitToByteSize(blockCount);
 
 /* Write out fixed part of header. */
@@ -842,7 +841,7 @@ if (prot != NULL)
     }
 }
 
-static void setInitialCachedDataBounds(struct udc2File *file, boolean useCacheInfo)
+static void setInitialCachedDataBounds(struct udc2File *file, boolean useCacheInfo, bits32 blockSize)
 /* Open up bitmap file and read a little bit of it to see if cache is stale,
  * and if not to see if the initial part is cached.  Sets the data members
  * startData, and endData.  If the case is stale it makes fresh empty
@@ -882,13 +881,14 @@ else
 /* If no bitmap, then create one, and also an empty sparse data file. */
 if (bits == NULL)
     {
-    udcNewCreateBitmapAndSparse(file, file->updateTime, file->size, version);
+    udcNewCreateBitmapAndSparse(file, file->updateTime, file->size, version, blockSize);
     bits = udcBitmapOpen(file->bitmapFileName);
     if (bits == NULL)
         errAbort("Unable to open bitmap file %s", file->bitmapFileName);
     }
 
 file->bitmapVersion = bits->version;
+file->bits = bits;
 
 /* Read in a little bit from bitmap while we have it open to see if we have anything cached. */
 if (file->size > 0)
@@ -896,16 +896,13 @@ if (file->size > 0)
     Bits b;
     off_t wasAt = lseek(bits->fd, 0, SEEK_CUR);
     mustReadOneFd(bits->fd, b);
-    int endBlock = (file->size + udcBlockSize - 1)/udcBlockSize;
+    int endBlock = (file->size + file->bits->blockSize - 1)/file->bits->blockSize;
     if (endBlock > 8)
         endBlock = 8;
     int initialCachedBlocks = bitFindClear(&b, 0, endBlock);
-    file->endData = initialCachedBlocks * udcBlockSize;
+    file->endData = initialCachedBlocks * file->bits->blockSize;
     ourMustLseek(&file->ios.bit, bits->fd, wasAt, SEEK_SET);
     } 
-
-file->bits = bits;
-
 }
 
 static boolean qEscaped(char c)
@@ -1073,15 +1070,18 @@ udcBitmapClose(&bits);
 return ret;
 }
 
-struct udc2File *udc2FileMayOpen(char *url, char *cacheDir)
+struct udc2File *udc2FileMayOpen(char *url, char *cacheDir, bits32 blockSize)
 /* Open up a cached file. cacheDir may be null in which case udcDefaultDir() will be
  * used.  Return NULL if file doesn't exist. 
  * Caching is inactive if defaultDir is NULL or the protocol is "transparent".
- * */
+ * If blockSize is zero, the default is used. Should be a power of two.
+ */
 {
 if (cacheDir == NULL)
     cacheDir = udc2DefaultDir();
-verbose(4, "udcfileOpen(%s, %s)\n", url, cacheDir);
+if (blockSize == 0)
+    blockSize = defaultUdcBlockSize;
+verbose(4, "udcfileOpen(%s, %s, %d)\n", url, cacheDir, blockSize);
 if (udcLogStream)
     fprintf(udcLogStream, "Open %s\n", url);
 /* Parse out protocol.  Make it "transparent" if none specified. */
@@ -1157,7 +1157,7 @@ else
         makeDirsOnPath(file->cacheDir);
 
         /* Figure out a little bit about the extent of the good cached data if any. Open bits bitmap. */
-        setInitialCachedDataBounds(file, useCacheInfo);
+        setInitialCachedDataBounds(file, useCacheInfo, blockSize);
 
         file->fdSparse = mustOpenFd(file->sparseFileName, O_RDWR);
         }
@@ -1167,11 +1167,11 @@ freeMem(afterProtocol);
 return file;
 }
 
-struct udc2File *udc2FileOpen(char *url, char *cacheDir)
+struct udc2File *udc2FileOpen(char *url, char *cacheDir, bits32 blockSize)
 /* Open up a cached file.  cacheDir may be null in which case udcDefaultDir() will be
  * used.  Abort if file doesn't exist. */
 {
-struct udc2File *udcFile = udc2FileMayOpen(url, cacheDir);
+struct udc2File *udcFile = udc2FileMayOpen(url, cacheDir, blockSize);
 if (udcFile == NULL)
     errAbort("Couldn't open %s", url);
 return udcFile;
@@ -1370,7 +1370,7 @@ while (nextClearBlock < endBlock)
     int clearBlock = nextClearBlock;
     warn("... udcFile 0x%04lx: bit for block %d (%lld..%lld] is not set",
 	 (unsigned long)file, clearBlock,
-	 ((long long)clearBlock * udcBlockSize), (((long long)clearBlock+1) * udcBlockSize));
+	 ((long long)clearBlock * file->bits->blockSize), (((long long)clearBlock+1) * file->bits->blockSize));
     gotUnset = TRUE;
     int nextSetBlock = bitFindSet(bitmap->bits, nextClearBlock, endBlock);
     nextClearBlock = bitFindClear(bitmap->bits, nextSetBlock, endBlock);
@@ -1728,7 +1728,7 @@ char *udc2FileReadAll(char *url, char *cacheDir, size_t maxSize, size_t *retSize
  * returns size of file in *retSize. Do a freeMem or freez of the returned buffer
  * when done. */
 {
-struct udc2File  *file = udc2FileOpen(url, cacheDir);
+struct udc2File  *file = udc2FileOpen(url, cacheDir, 0);
 size_t size = file->size;
 if (maxSize != 0 && size > maxSize)
     errAbort("%s is %lld bytes, but maxSize to udc2FileReadAll is %lld",

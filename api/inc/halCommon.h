@@ -17,6 +17,9 @@
 
 namespace hal {
 
+    /* size to use for UDC blocks */
+    static const unsigned UDC_BLOCK_SIZE = 8 * 1024;
+
     extern const char to_upper_map[128];
 
     /** fast conversion of a character to upper case */

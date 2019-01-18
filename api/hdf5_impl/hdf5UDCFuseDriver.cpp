@@ -36,6 +36,7 @@ extern "C" {
 #include "udc2.h"
 }
 #include "hdf5.h"
+#include "halCommon.h"
 #include "hdf5UDCFuseDriver.h"
 
 #ifdef H5_HAVE_UNISTD_H
@@ -399,7 +400,7 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
 
     /* Attempt to open/create the file */
         
-      f = udc2FileMayOpen((char*)name, (char*)H5FD_UDC_FUSE_CACHE_PATH);
+            f = udc2FileMayOpen((char*)name, (char*)H5FD_UDC_FUSE_CACHE_PATH, hal::UDC_BLOCK_SIZE);
     
     if (!f)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_CANTOPENFILE, "fopen failed", NULL)

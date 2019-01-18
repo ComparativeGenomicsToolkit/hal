@@ -26,13 +26,17 @@
 struct udc2File;
 /* Handle to a cached file.  Inside of structure mysterious unless you are udc2.c. */
 
-struct udc2File *udc2FileMayOpen(char *url, char *cacheDir);
+struct udc2File *udc2FileMayOpen(char *url, char *cacheDir, bits32 blockSize);
 /* Open up a cached file. cacheDir may be null in which case udc2DefaultDir() will be
- * used.  Return NULL if file doesn't exist. */
+ * used.  Return NULL if file doesn't exist.
+ * If blockSize is zero, the default is used. Should be a power of two.
+ */
 
-struct udc2File *udc2FileOpen(char *url, char *cacheDir);
+struct udc2File *udc2FileOpen(char *url, char *cacheDir, bits32 blockSize);
 /* Open up a cached file.  cacheDir may be null in which case udc2DefaultDir() will be
- * used.  Abort if if file doesn't exist. */
+ * used.  Abort if if file doesn't exist.
+ * If blockSize is zero, the default is used. Should be a power of two.
+ */
 
 void udc2FileClose(struct udc2File **pFile);
 /* Close down cached file. */

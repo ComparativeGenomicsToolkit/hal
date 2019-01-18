@@ -289,7 +289,7 @@ hal::MMapFileUdc::MMapFileUdc(const std::string& alignmentPath,
     if (_mode & WRITE_ACCESS) {
         throw hal_exception("write access not supported for UDC:" + alignmentPath);
     }
-    _udcFile = udc2FileMayOpen(const_cast<char*>(alignmentPath.c_str()), NULL);
+    _udcFile = udc2FileMayOpen(const_cast<char*>(alignmentPath.c_str()), NULL, UDC_BLOCK_SIZE);
     if (_udcFile == NULL) {
         throw hal_exception("can't open " + alignmentPath);
     }

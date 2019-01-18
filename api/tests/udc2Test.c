@@ -22,6 +22,7 @@ static struct optionSpec options[] = {
     {"mmap",     OPTION_BOOLEAN},
     {"protocol", OPTION_STRING},
     {"seed",     OPTION_INT},
+    {"blockSize",     OPTION_INT},
     {NULL, 0},
 };
 
@@ -30,6 +31,7 @@ boolean doFork = FALSE;
 boolean mmapAccess = FALSE; /* test access via mmap */
 char *protocol = "ftp";
 unsigned int seed = 0;
+bits32 blockSize = 0;
 int size = 0;
 
 // Local copy (reference file) and URL for testing:
@@ -250,7 +252,7 @@ for (i = startBlock;  i < endBlock;  i++)
 mustCloseFd(&fdLocal);
 mustCloseFd(&fdSparse);
 // Check bitmap bits too:
-struct udc2File *udcf = udc2FileOpen(url, udc2DefaultDir());
+struct udc2File *udcf = udc2FileOpen(url, udc2DefaultDir(), blockSize);
 verbose(1, "checking bitmap bits (%d..%d].\n", startBlock, endBlock);
 udc2CheckCacheBits(udcf, startBlock, endBlock);
 udc2FileClose(&udcf);
@@ -263,7 +265,7 @@ boolean testReadAheadBufferMode(char *url, char *localCopy, int mode)
 boolean gotError = FALSE;
 bits64 fSize = fileSize(localCopy);
 
-struct udc2File *udcf = udc2FileOpen(url, udc2DefaultDir());
+struct udc2File *udcf = udc2FileOpen(url, udc2DefaultDir(), blockSize);
 if (mmapAccess)
     udc2MMap(udcf);
 bits64 offset = 0;
@@ -330,7 +332,7 @@ bits64 size = fileSize(localCopy);
 
 
 // First, read some bytes from udc2File udcf1.
-struct udc2File *udcf1 = udc2FileOpen(url, udc2DefaultDir());
+struct udc2File *udcf1 = udc2FileOpen(url, udc2DefaultDir(), blockSize);
 if (mmapAccess)
     udc2MMap(udcf1);
 int blksRead1 = 0;
@@ -340,7 +342,7 @@ gotError |= readAndTestBlocks(udcf1, &offset1, 2, &blksRead1, localCopy, url);
 
 // While keeping udcf1 open, create udcf2 on the same URL, and read from a 
 // (probably) different location:
-struct udc2File *udcf2 = udc2FileOpen(url, udc2DefaultDir());
+struct udc2File *udcf2 = udc2FileOpen(url, udc2DefaultDir(), blockSize);
 if (mmapAccess)
     udc2MMap(udcf2);
 int blksRead2 = 0;
@@ -399,7 +401,7 @@ if (kidPid < 0)
 else if (kidPid == 0)
     {
     // child: access url and then exit, to pass control back to parent.
-    struct udc2File *udcf = udc2FileOpen(url, udc2DefaultDir());
+    struct udc2File *udcf = udc2FileOpen(url, udc2DefaultDir(), blockSize);
     if (mmapAccess)
         udc2MMap(udcf);
     int blksRead = 0;
@@ -410,7 +412,7 @@ else if (kidPid == 0)
 else
     {
     // parent: access url, wait for child, do post-checking.
-    struct udc2File *udcf = udc2FileOpen(url, udc2DefaultDir());
+    struct udc2File *udcf = udc2FileOpen(url, udc2DefaultDir(), blockSize);
     if (mmapAccess)
         udc2MMap(udcf);
     int blksRead = 0;
@@ -446,6 +448,7 @@ doFork = optionExists("fork");
 mmapAccess = optionExists("mmap");
 protocol = optionVal("protocol", protocol);
 seed = optionInt("seed", seed);
+blockSize = optionInt("blockSize", blockSize);
 
 char *host = getenv("HOST");
 if (host == NULL || !startsWith("hgwdev", host))
