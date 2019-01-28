@@ -105,37 +105,69 @@ void Genome::copyTopSegments(Genome *dest) const
   BottomSegmentIteratorConstPtr inParentBottomSegIt = inParent->getBottomSegmentIterator();
   BottomSegmentIteratorConstPtr outParentBottomSegIt = outParent->getBottomSegmentIterator();
 
-  for (; (hal_size_t)inTop->getArrayIndex() < n; inTop->toRight(),
-         outTop->toRight())
+
+  // Go through each sequence in this genome, find the matching
+  // sequence in the dest genome, then copy over the segments for each
+  // sequence.
+  SequenceIteratorConstPtr seqIt = getSequenceIterator();
+  SequenceIteratorConstPtr seqEndIt = getSequenceEndIterator();
+
+  for (; seqIt != seqEndIt; seqIt->toNext())
   {
-    hal_index_t genomePos = inTop->getStartPosition();
-    assert(genomePos != NULL_INDEX);
-    string inSeqName = getSequenceBySite(genomePos)->getName();
-    string outSeqName = dest->getSequenceBySite(genomePos)->getName();
-    // if (inSeqName != outSeqName) {
-    //   stringstream ss;
-    //   ss << "When copying top segments from " << getName() << " to " << dest->getName() << ": sequence " << inSeqName << " != " << outSeqName << " at site " << genomePos;
-    //   throw hal_exception(ss.str());
-    // }
+    const Sequence *inSeq = seqIt->getSequence();
+    const Sequence *outSeq = dest->getSequence(inSeq->getName());
+    TopSegmentIteratorPtr inTop = inSeq->getTopSegmentIterator();
+    TopSegmentIteratorPtr outTop = outSeq->getTopSegmentIterator();
 
-    outTop->setCoordinates(inTop->getStartPosition(), inTop->getLength());
-    outTop->setParentIndex(inTop->getParentIndex());
-    outTop->setParentReversed(inTop->getParentReversed());
-    outTop->setBottomParseIndex(inTop->getBottomParseIndex());
-    outTop->setNextParalogyIndex(inTop->getNextParalogyIndex());
+    if (inSeq->getName() != outSeq->getName()) {
+      stringstream ss;
+      ss << "When copying top segments: segment #" << inTop->getArrayIndex() << " of source genome is from sequence " << inTop->getSequence()->getName() << ", but segment #" << outTop->getArrayIndex() << " is from sequence " << outTop->getSequence()->getName();
+      throw hal_exception(ss.str());
+    }
 
-    // Check that the sequences from the bottom segments we point to are the same. If not, correct the indices so that they are.
-    if (inTop->getParentIndex() != NULL_INDEX) {
-      inParentBottomSegIt->toParent(inTop);
+    if (inSeq->getNumTopSegments() != outSeq->getNumTopSegments()) {
+      stringstream ss;
+      ss << "When copying top segments: sequence " << inSeq->getName() << " has " << inSeq->getNumTopSegments() << " in genome " << getName() << ", while it has " << outSeq->getNumTopSegments() << " in genome " << dest->getName();
+      throw hal_exception(ss.str());
+    }
 
-      const Sequence *inParentSequence = inParentBottomSegIt->getSequence();
+    hal_index_t inSegmentEnd = inSeq->getTopSegmentArrayIndex() + inSeq->getNumTopSegments();
+    for (; (hal_size_t)inTop->getArrayIndex() < inSegmentEnd; inTop->toRight(),
+             outTop->toRight())
+    {
+        hal_index_t outStartPosition = inTop->getStartPosition() - inSeq->getStartPosition() + outSeq->getStartPosition();
+        outTop->setCoordinates(outStartPosition, inTop->getLength());
+        outTop->setParentIndex(inTop->getParentIndex());
+        outTop->setParentReversed(inTop->getParentReversed());
+        outTop->setBottomParseIndex(inTop->getBottomParseIndex());
+        // Figure out next paralogy index in new sequence order.
+        hal_index_t inParalogyIndex = inTop->getNextParalogyIndex();
+        hal_index_t outParalogyIndex;
+        if (inParalogyIndex != NULL_INDEX) {
+            TopSegmentIteratorPtr inParalogyIt = getTopSegmentIterator(inParalogyIndex);
+            Sequence *inParalogySeq = inParalogyIt->getSequence();
+            Sequence *outParalogySeq = dest->getSequence(inParalogySeq->getName());
+            outParalogyIndex = inParalogyIndex - inParalogySeq->getTopSegmentArrayIndex() + outParalogySeq->getTopSegmentArrayIndex();
+        } else {
+            outParalogyIndex = NULL_INDEX;
+        }
+        outTop->setNextParalogyIndex(outParalogyIndex);
 
-      const Sequence *outParentSequence = outParent->getSequence(inParentSequence->getName());
+        // Check that the sequences from the bottom segments we point to are the same. If not, correct the indices so that they are.
+        if (inTop->getParentIndex() != NULL_INDEX) {
+            inParentBottomSegIt->toParent(inTop);
 
-      hal_index_t inParentSegmentOffset = inTop->getParentIndex() - inParentSequence->getBottomSegmentArrayIndex();
-      hal_index_t outParentSegmentIndex = inParentSegmentOffset + outParentSequence->getBottomSegmentArrayIndex();
+            const Sequence *inParentSequence = inParentBottomSegIt->getSequence();
 
-      outTop->setParentIndex(outParentSegmentIndex);
+            const Sequence *outParentSequence = outParent->getSequence(inParentSequence->getName());
+
+            hal_index_t inParentSegmentOffset = inTop->getParentIndex() - inParentSequence->getBottomSegmentArrayIndex();
+            hal_index_t outParentSegmentIndex = inParentSegmentOffset + outParentSequence->getBottomSegmentArrayIndex();
+
+            outTop->setParentIndex(outParentSegmentIndex);
+        } else {
+            outTop->setParentIndex(NULL_INDEX);
+        }
     }
   }
 }
@@ -188,8 +220,6 @@ void Genome::copyBottomSegments(Genome *dest) const
     BottomSegmentIteratorPtr inBot = inSeq->getBottomSegmentIterator();
     BottomSegmentIteratorPtr outBot = outSeq->getBottomSegmentIterator();
 
-    cout << "DEBUG: inSeq name: " << inSeq->getName() << ", outSeq name: " << outSeq->getName() << endl;
-
     if (inSeq->getName() != outSeq->getName()) {
       // This check is important enough that it can't be an assert.
       stringstream ss;
@@ -204,13 +234,10 @@ void Genome::copyBottomSegments(Genome *dest) const
     }
 
     hal_index_t inSegmentEnd = inSeq->getBottomSegmentArrayIndex() + inSeq->getNumBottomSegments();
-    cout << "DEBUG: inSegmentStart: " << inSeq->getBottomSegmentArrayIndex() << " inSegmentEnd: " << inSegmentEnd << " num bottom segments: " << inSeq->getNumBottomSegments() << endl;
     for (; inBot->getArrayIndex() < inSegmentEnd; inBot->toRight(),
            outBot->toRight())
     {
       hal_index_t outStartPosition = inBot->getStartPosition() - inSeq->getStartPosition() + outSeq->getStartPosition();
-
-      cout << "Decided on outStartPosition " << outStartPosition << " for seg index " << outBot->getArrayIndex() << " (src index " << inBot->getArrayIndex() << ")" << endl;
 
       if (dest->getSequenceBySite(outStartPosition) != outSeq) {
         stringstream ss;
@@ -221,9 +248,23 @@ void Genome::copyBottomSegments(Genome *dest) const
       for(hal_size_t inChild = 0; inChild < inNc; inChild++) {
         hal_size_t outChild = inChildToOutChild[inChild];
         if (outChild != outNc) {
-          outBot->setChildIndex(outChild, inBot->getChildIndex(inChild));
-          cout << "genome " << getName() << ": Set child index " << inChild << " to " << inBot->getChildIndex(inChild) << endl;
-          outBot->setChildReversed(outChild, inBot->getChildReversed(inChild));
+            // Adjust top segment we point to so that it points to the
+            // same sequence, even if the sequence ordering has changed.
+            hal_index_t childIndex = inBot->getChildIndex(inChild);
+            Genome *outChildGenome = dest->getChild(outChild);
+            if (childIndex != NULL_INDEX) {
+                TopSegmentIteratorConstPtr inIt = getTopSegmentIterator();
+                inIt->toChild(inBot, inChild);
+
+                const Sequence *inChildSequence = inIt->getSequence();
+                const Sequence *outChildSequence = outChildGenome->getSequence(inChildSequence->getName());
+
+                hal_index_t inChildSegmentOffset = inIt->getArrayIndex() - inChildSequence->getTopSegmentArrayIndex();
+                childIndex = inChildSegmentOffset + outChildSequence->getTopSegmentArrayIndex();
+            }
+
+            outBot->setChildIndex(outChild, childIndex);
+            outBot->setChildReversed(outChild, inBot->getChildReversed(inChild));
         }
       }
       outBot->setTopParseIndex(inBot->getTopParseIndex());
