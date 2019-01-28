@@ -15,12 +15,14 @@ int main(int argc, char** argv)
 {
   CLParserPtr optionsParser = hdf5CLParserInstance();
   optionsParser->addArgument("halFile", "path to hal file to validate");
+  optionsParser->addOption("genome", "specific genome to validate instead of entire file", "");
   optionsParser->setDescription("Check if hal database is valid");
-  string path;
+  string path, genomeName;
   try
   {
     optionsParser->parseOptions(argc, argv);
     path = optionsParser->getArgument<string>("halFile");
+    genomeName = optionsParser->getOption<string>("genome");
   }
   catch(exception& e)
   {
@@ -31,7 +33,12 @@ int main(int argc, char** argv)
   try
   {
     AlignmentConstPtr alignment = openHalAlignmentReadOnly(path, optionsParser);
-    validateAlignment(alignment);
+    if (genomeName == "") {
+        validateAlignment(alignment);
+    } else {
+        const Genome *genome = alignment->openGenome(genomeName);
+        validateGenome(genome);
+    }
   }
   catch(hal_exception& e)
   {
