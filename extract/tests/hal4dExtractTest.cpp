@@ -289,5 +289,16 @@ int hal4dExtractRunAllTests(void)
 
 int main(int argc, char *argv[])
 {
+    if (argc > 2) {
+        std::cerr << "wrong # args: " << argv[0] << " [storageDriver]" << std::endl;
+        ::exit(1);
+    } else if (argc == 2) {
+        storageDriverToTest = argv[1];
+        if (not ((storageDriverToTest == hal::STORAGE_FORMAT_HDF5) or (storageDriverToTest == hal::STORAGE_FORMAT_MMAP))) {
+            std::cerr << "Invalid storage driver '" << storageDriverToTest << "', expected on of: "
+                      << hal::STORAGE_FORMAT_HDF5 << " or " << hal::STORAGE_FORMAT_MMAP << std::endl;
+            ::exit(1);
+        }
+    }
   return hal4dExtractRunAllTests();
 }
