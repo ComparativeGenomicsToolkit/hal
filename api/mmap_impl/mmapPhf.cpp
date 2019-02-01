@@ -522,8 +522,8 @@ PHF_PUBLIC int PHF::init(struct phf *phf, const key_t k[], const size_t n, const
 	size_t a1 = PHF_MAX(PHF_MIN(a, 100), 1);
 	size_t r; /* number of buckets */
 	size_t m; /* size of output array */
-        std::vector<phf_key<key_t> > B_k; /* linear bucket-slot array */
-	std::vector<size_t> B_z;         /* number of slots per bucket */
+	phf_key<key_t> *B_k = NULL; /* linear bucket-slot array */
+	size_t *B_z = NULL;         /* number of slots per bucket */
 	phf_key<key_t> *B_p, *B_pe;
 	phf_bits_t *T = NULL; /* bitmap to track index occupancy */
 	phf_bits_t *T_b;      /* per-bucket working bitmap */
@@ -545,8 +545,10 @@ PHF_PUBLIC int PHF::init(struct phf *phf, const key_t k[], const size_t n, const
 	if (r == 0 || m == 0)
 		return ERANGE;
 
-        B_k.resize(n1);
-        B_z.resize(r);
+	if (!(B_k = static_cast<phf_key<key_t> *>(calloc(n1, sizeof *B_k))))
+		goto syerr;
+	if (!(B_z = static_cast<size_t *>(calloc(r, sizeof *B_z))))
+		goto syerr;
 
 	for (size_t i = 0; i < n; i++) {
 		phf_hash_t g = phf_g_mod_r<nodiv>(k[i], seed, r);
@@ -557,7 +559,7 @@ PHF_PUBLIC int PHF::init(struct phf *phf, const key_t k[], const size_t n, const
 		++*B_k[i].n;
 	}
 
-	qsort(&B_k[0], n1, sizeof(B_k[0]), reinterpret_cast<int(*)(const void *, const void *)>(&phf_keycmp<key_t>));
+	qsort(B_k, n1, sizeof(*B_k), reinterpret_cast<int(*)(const void *, const void *)>(&phf_keycmp<key_t>));
 
 	T_n = PHF_HOWMANY(m, PHF_BITS(*T));
 	if (!(T = static_cast<phf_bits_t *>(calloc(T_n * 2, sizeof *T))))
@@ -637,6 +639,8 @@ syerr:
 clean:
 	free(g);
 	free(T);
+	free(B_z);
+	free(B_k);
 
 	return error;
 } /* PHF::init() */
