@@ -686,7 +686,7 @@ string Hdf5Alignment::getVersion() const
 {
   try
   {
-    HDF5DisableExceptionPrinting prDisable();
+    HDF5DisableExceptionPrinting prDisable;
     _file->openGroup(VersionGroupName);  
     HDF5MetaData versionMeta(_file, VersionGroupName);
     if (versionMeta.has(VersionGroupName) == false)

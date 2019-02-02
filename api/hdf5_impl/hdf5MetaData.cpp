@@ -87,7 +87,7 @@ void HDF5MetaData::open(PortableH5Location* parent, const string& name)
 
   try
   {
-    HDF5DisableExceptionPrinting prDisable();
+    HDF5DisableExceptionPrinting prDisable;
     _group = parent->openGroup(name);
   }
   catch (Exception& e)

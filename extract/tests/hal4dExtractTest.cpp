@@ -229,41 +229,20 @@ void CDS4dExtractTest::checkCallBack(const Alignment* alignment)
 
 void halBlock4dExtractTest(CuTest *testCase)
 {
-  // try
-  // {
     Block4dExtractTest tester;
     tester.check(testCase);
-  // }
-  // catch (...)
-  // {
-  //   CuAssertTrue(testCase, false);
-  // }
 }
 
 void halCDS4dExtractTest(CuTest *testCase)
 {
-  // try
-  // {
     CDS4dExtractTest tester;
     tester.check(testCase);
-  // }
-  // catch (...)
-  // {
-  //   CuAssertTrue(testCase, false);
-  // }
 }
 
 void halConservedBlock4dExtractTest(CuTest *testCase)
 {
-  // try
-  // {
     ConservedBlock4dExtractTest tester;
     tester.check(testCase);
-  // }
-  // catch (...)
-  // {
-  //   CuAssertTrue(testCase, false);
-  // }
 }
 
 CuSuite* hal4dExtractTestSuite(void)

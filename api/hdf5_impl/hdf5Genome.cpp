@@ -53,7 +53,7 @@ Hdf5Genome::Hdf5Genome(const string& name,
 
   try
   {
-    HDF5DisableExceptionPrinting prDisable();
+    HDF5DisableExceptionPrinting prDisable;
     _group = h5Parent->openGroup(name);
   }
   catch (Exception& e)
@@ -120,19 +120,21 @@ void Hdf5Genome::setDimensions(
   // space. (FIXME)
   try
   {
-    HDF5DisableExceptionPrinting prDisable();
+    HDF5DisableExceptionPrinting prDisable;
     DataSet d = _group.openDataSet(dnaArrayName);
     _group.unlink(dnaArrayName);
   }
   catch (H5::Exception&){}
   try
   {
+    HDF5DisableExceptionPrinting prDisable;
     DataSet d = _group.openDataSet(sequenceIdxArrayName);
     _group.unlink(sequenceIdxArrayName);
   }
   catch (H5::Exception&){}
   try
   {
+    HDF5DisableExceptionPrinting prDisable;
     DataSet d = _group.openDataSet(sequenceNameArrayName);
     _group.unlink(sequenceNameArrayName);
   }
@@ -350,7 +352,7 @@ void Hdf5Genome::setGenomeTopDimensions(
   }
   try
   {
-    HDF5DisableExceptionPrinting prDisable();
+    HDF5DisableExceptionPrinting prDisable;
     DataSet d = _group.openDataSet(topArrayName);
     _group.unlink(topArrayName);
   }
@@ -372,7 +374,7 @@ void Hdf5Genome::setGenomeBottomDimensions(
   }
   try
   {
-    HDF5DisableExceptionPrinting prDisable();
+    HDF5DisableExceptionPrinting prDisable;
     DataSet d = _group.openDataSet(bottomArrayName);
     _group.unlink(bottomArrayName);
   }
@@ -672,6 +674,7 @@ void Hdf5Genome::read()
 {
   try
   {
+    HDF5DisableExceptionPrinting prDisable;
     _group.openDataSet(dnaArrayName);
     _dnaArray.load(&_group, dnaArrayName, _numChunksInArrayBuffer);    
   }
@@ -679,12 +682,14 @@ void Hdf5Genome::read()
 
   try
   {
+    HDF5DisableExceptionPrinting prDisable;
     _group.openDataSet(topArrayName);
     _topArray.load(&_group, topArrayName, _numChunksInArrayBuffer);
   }
   catch (H5::Exception&){}
   try
   {
+    HDF5DisableExceptionPrinting prDisable;
     _group.openDataSet(bottomArrayName);
     _bottomArray.load(&_group, bottomArrayName, _numChunksInArrayBuffer);
     _numChildrenInBottomArray = 
@@ -695,6 +700,7 @@ void Hdf5Genome::read()
   deleteSequenceCache();
   try
   {
+    HDF5DisableExceptionPrinting prDisable;
     _group.openDataSet(sequenceIdxArrayName);
     _sequenceIdxArray.load(&_group, sequenceIdxArrayName, 
                            _numChunksInArrayBuffer);
@@ -702,6 +708,7 @@ void Hdf5Genome::read()
   catch (H5::Exception&){}
   try
   {
+    HDF5DisableExceptionPrinting prDisable;
     _group.openDataSet(sequenceNameArrayName);
     _sequenceNameArray.load(&_group, sequenceNameArrayName, 
                             _numChunksInArrayBuffer);
