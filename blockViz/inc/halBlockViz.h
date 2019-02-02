@@ -292,9 +292,10 @@ struct hal_block_results_t *halGetBlocksInTargetRange_filterByChrom(int halHandl
  * @param tStart start position in reference  
  * @param tEnd last + 1 position in reference (if 0, then the size of the 
  * chromosome is used). 
- * @param doDupes create blocks for duplications if not 0.  When this
  * @param maxRefGap maximum gap length in reference. Use 0 for default value. 
  * option is enabled, the same region can appear in more than one block.
+ * @param maxBlockLength maximum length of a block to create. Use 0 for no limit. 
+ * @param doDupes create blocks for duplications if not 0.  When this
  * @param errStr pointer to a string that contains an error message on
  * failure. If NULL, throws an exception on failure instead.
  * @return  number of bytes written. -1 on failure.
@@ -345,7 +346,7 @@ char *halGetDna(int halHandle,
 
 /** Get the maximum query size supported by the lod.txt file.  Queries > than
  * this length will return an error. 
- * @param  halHandle handle for the HAL LOD.txt obtained from halOpenLOD 
+ * @param  halHandle handle for the HAL LOD.txt obtained from halOpen or halOpenLod 
  * @param errStr pointer to a string that contains an error message on
  * failure. If NULL, throws an exception on failure instead.
  * @return Maximum query length.  Any query > than this value will be invalid.
