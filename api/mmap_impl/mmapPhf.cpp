@@ -28,6 +28,7 @@
  * 2b781079946401ce160eb577b4534e94b763242a.
  * ==========================================================================
  */
+#include <halDefs.h>
 #include <limits.h>   /* CHAR_BIT SIZE_MAX */
 #include <inttypes.h> /* PRIu32 PRIu64 PRIx64 */
 #include <stdint.h>   /* UINT32_C UINT64_C uint32_t uint64_t */
@@ -39,6 +40,7 @@
 #include <string>     /* std::string */
 #endif
 #include <vector>
+#include <algorithm>
 
 #include "mmapPhf.h"
 
@@ -469,31 +471,34 @@ static bool operator==(const phf_string_t &a, const phf_string_t &b) {
 }
 
 template<typename T>
-struct phf_key {
+class phf_key {
+    public:
 	T k;
 	phf_hash_t g; /* result of g(k) % r */
 	size_t *n;  /* number of keys in bucket g */
+    phf_key():
+        g(0), n(NULL) {
+    }
+    
 }; /* struct phf_key */
 
 template<typename T>
-static int phf_keycmp(const phf_key<T> *a, const phf_key<T> *b) {
-	if (*(a->n) > *(b->n))
-		return -1;
-	if (*(a->n) < *(b->n))
-		return 1;
-	if (a->g > b->g)
-		return -1;
-	if (a->g < b->g)
-		return 1;
+struct  phf_keycmp {
 
-	/* duplicate key? */
-	if (a->k == b->k && a != b) {
-		assert(!(a->k == b->k));
-		abort(); /* if NDEBUG defined */
-	}
-
-	return 0;
-} /* phf_keycmp() */
+    bool operator()(const phf_key<T>& a, const phf_key<T>& b) {
+        if (a.n < b.n) {
+            return true;
+        }
+        if (a.g < b.g) {
+            return true;
+        }
+        /* duplicate key? */
+        if ((a.k == b.k) && (&a != &b)) {
+            throw hal_exception("duplicate key in perfect hash");
+        }
+        return false;
+    }
+};
 
 
 /*
@@ -522,8 +527,9 @@ PHF_PUBLIC int PHF::init(struct phf *phf, const key_t k[], const size_t n, const
 	size_t a1 = PHF_MAX(PHF_MIN(a, 100), 1);
 	size_t r; /* number of buckets */
 	size_t m; /* size of output array */
-	phf_key<key_t> *B_k = NULL; /* linear bucket-slot array */
-	size_t *B_z = NULL;         /* number of slots per bucket */
+        // original code used C arrays, but we change to vector to get initialization.
+        std::vector<phf_key<key_t> > B_k; /* linear bucket-slot array */
+	std::vector<size_t> B_z;         /* number of slots per bucket */
 	phf_key<key_t> *B_p, *B_pe;
 	phf_bits_t *T = NULL; /* bitmap to track index occupancy */
 	phf_bits_t *T_b;      /* per-bucket working bitmap */
@@ -545,10 +551,8 @@ PHF_PUBLIC int PHF::init(struct phf *phf, const key_t k[], const size_t n, const
 	if (r == 0 || m == 0)
 		return ERANGE;
 
-	if (!(B_k = static_cast<phf_key<key_t> *>(calloc(n1, sizeof *B_k))))
-		goto syerr;
-	if (!(B_z = static_cast<size_t *>(calloc(r, sizeof *B_z))))
-		goto syerr;
+        B_k.resize(n1);
+        B_z.resize(r);
 
 	for (size_t i = 0; i < n; i++) {
 		phf_hash_t g = phf_g_mod_r<nodiv>(k[i], seed, r);
@@ -559,7 +563,7 @@ PHF_PUBLIC int PHF::init(struct phf *phf, const key_t k[], const size_t n, const
 		++*B_k[i].n;
 	}
 
-	qsort(B_k, n1, sizeof(*B_k), reinterpret_cast<int(*)(const void *, const void *)>(&phf_keycmp<key_t>));
+        sort(B_k.begin(), B_k.end(), phf_keycmp<key_t>());
 
 	T_n = PHF_HOWMANY(m, PHF_BITS(*T));
 	if (!(T = static_cast<phf_bits_t *>(calloc(T_n * 2, sizeof *T))))
@@ -639,8 +643,6 @@ syerr:
 clean:
 	free(g);
 	free(T);
-	free(B_z);
-	free(B_k);
 
 	return error;
 } /* PHF::init() */
