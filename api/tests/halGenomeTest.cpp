@@ -590,7 +590,7 @@ void halGenomeCopyTest(CuTest *testCase)
 
 void halGenomeDNAPackUnpackTest(CuTest *testCase)
 {
-    char *DNA = "CCTTTTGAGAATTGATGGTGTGGATAAAGCCTTTCATTCATAAACACTCAAGGTACCACACTGTAAAAGGGTCAGTAAGT";
+    const char *DNA = "CCTTTTGAGAATTGATGGTGTGGATAAAGCCTTTCATTCATAAACACTCAAGGTACCACACTGTAAAAGGGTCAGTAAGT";
     char packed[strlen(DNA)];
     for (uint64_t i = 0; i < strlen(DNA); i++) {
         packed[i / 2] = dnaPack(DNA[i], i, packed[i / 2]);
