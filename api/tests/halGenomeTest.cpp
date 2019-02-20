@@ -588,6 +588,18 @@ void halGenomeCopyTest(CuTest *testCase)
     tester.check(testCase);
 }
 
+void halGenomeDNAPackUnpackTest(CuTest *testCase)
+{
+    char *DNA = "CCTTTTGAGAATTGATGGTGTGGATAAAGCCTTTCATTCATAAACACTCAAGGTACCACACTGTAAAAGGGTCAGTAAGT";
+    char packed[strlen(DNA)];
+    for (uint64_t i = 0; i < strlen(DNA); i++) {
+        packed[i / 2] = dnaPack(DNA[i], i, packed[i / 2]);
+    }
+    for (uint64_t i = 0; i < strlen(DNA); i++) {
+        CuAssertIntEquals(testCase, dnaUnpack(i, packed[i / 2]), DNA[i]);
+    }
+}
+
 CuSuite* halGenomeTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
@@ -597,6 +609,7 @@ CuSuite* halGenomeTestSuite(void)
   SUITE_ADD_TEST(suite, halGenomeStringTest);
   SUITE_ADD_TEST(suite, halGenomeCopyTest);
   SUITE_ADD_TEST(suite, halGenomeCopySegmentsWhenSequencesOutOfOrderTest);
+  SUITE_ADD_TEST(suite, halGenomeDNAPackUnpackTest);
   return suite;
 }
 
