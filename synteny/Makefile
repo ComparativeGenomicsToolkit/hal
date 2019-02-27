@@ -7,10 +7,10 @@ libSources=$(subst impl/main.cpp,,${libSourcesAll})
 
 cpp = h5c++ ${h5prefix}
 
-all : ${binPath}/hal2synteny    
+all : ${binPath}/halSynteny    
 
-${binPath}/hal2synteny : impl/main.cpp  ${libPath}/halLib.a  ${libPath}/halLiftover.a  ${basicLibsDependencies}
-	${cpp} ${cppflags} -std=c++11 -I${sonLibPath} -I${rootPath}/liftover/inc -I${rootPath}/api/inc -Iinc -Iimpl impl/main.cpp ${libPath}/halLib.a ${libPath}/halLiftover.a  ${sonLibPath}/sonLib.a -o ${binPath}/hal2synteny
+${binPath}/halSynteny : impl/main.cpp  ${libPath}/halLib.a  ${libPath}/halLiftover.a  ${basicLibsDependencies}
+	${cpp} ${cppflags} -std=c++11 -I${sonLibPath} -I${rootPath}/liftover/inc -I${rootPath}/api/inc -Iinc -Iimpl impl/main.cpp ${libPath}/halLib.a ${libPath}/halLiftover.a  ${sonLibPath}/sonLib.a -o ${binPath}/halSynteny
 
 clean:
-	rm -f ${binPath}/hal2synteny
+	rm -f ${binPath}/halSynteny
