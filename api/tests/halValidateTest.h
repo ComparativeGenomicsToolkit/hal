@@ -32,6 +32,12 @@ struct ValidateLargeTest : public AlignmentTest
    void checkCallBack(const Alignment* alignment);
 };
 
+struct ValidateManyGenomesTest : public AlignmentTest
+{
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
+};
+
 #endif
 // Local Variables:
 // mode: c++

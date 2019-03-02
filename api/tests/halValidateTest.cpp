@@ -56,6 +56,16 @@ void ValidateLargeTest::checkCallBack(const Alignment* alignment)
   validateAlignment(alignment);
 }
 
+void ValidateManyGenomesTest::createCallBack(Alignment* alignment)
+{
+    createRandomAlignment(rng, alignment, 0.75, 0.1, 363, 600, 1, 10, 1, 5);
+}
+
+void ValidateManyGenomesTest::checkCallBack(const Alignment* alignment)
+{
+    validateAlignment(alignment);
+}
+
 void halValidateSmallTest(CuTest *testCase)
 {
     ValidateSmallTest tester;
@@ -74,11 +84,18 @@ void halValidateLargeTest(CuTest *testCase)
     tester.check(testCase);
 }
 
+void halValidateManyGenomesTest(CuTest *testCase)
+{
+    ValidateManyGenomesTest tester;
+    tester.check(testCase);
+}
+
 CuSuite* halValidateTestSuite(void) 
 {
   CuSuite* suite = CuSuiteNew();
   SUITE_ADD_TEST(suite, halValidateSmallTest);
   SUITE_ADD_TEST(suite, halValidateMediumTest);
+  SUITE_ADD_TEST(suite, halValidateManyGenomesTest);
 #if 0  // this is very slow
   SUITE_ADD_TEST(suite, halValidateLargeTest);
 #endif
