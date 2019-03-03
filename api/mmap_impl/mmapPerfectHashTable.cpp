@@ -58,7 +58,7 @@ void hal::MMapPerfectHashTable::writePhf(size_t phtOffset,
     _data->_gOffset = phtOffset + displacementMapRelOffset();
     _data->_hashTableOffset = phtOffset + hashTableRelOffset(phf);
     uint32_t* g = static_cast<uint32_t*>(_file->toPtr(_data->_gOffset, _data->_phf_r * sizeof(uint32_t)));
-    memcpy(g, phf->g, phf->r);
+    memcpy(g, phf->g, phf->r * sizeof(uint32_t));
 
     // initialize hash table to NULL_INDEX
     _hashTable = static_cast<hal_index_t*>(_file->toPtr(_data->_hashTableOffset, _data->_phf_m * sizeof(size_t)));
