@@ -163,6 +163,7 @@ void Hdf5Genome::setDimensions(
     dnaDC.setChunk(1, &chunk);
     _dnaArray.create(&_group, dnaArrayName, dnaDataType(), 
                      arrayLength, &dnaDC, _numChunksInArrayBuffer);
+      _dnaAccess = DnaAccessPtr(new HDF5DnaAccess(this, &_dnaArray, 0));
   }
   if (totalSeq > 0)
   {
@@ -671,11 +672,13 @@ void Hdf5Genome::write()
 
 void Hdf5Genome::read()
 {
+  bool dnaLoaded = false;
   try
   {
     HDF5DisableExceptionPrinting prDisable;
     _group.openDataSet(dnaArrayName);
     _dnaArray.load(&_group, dnaArrayName, _numChunksInArrayBuffer);
+    dnaLoaded = true;
   }
   catch (H5::Exception&){}
 
@@ -715,7 +718,9 @@ void Hdf5Genome::read()
   catch (H5::Exception&){}
 
   readSequences();
-  _dnaAccess = DnaAccessPtr(new HDF5DnaAccess(this, &_dnaArray, 0));
+  if (dnaLoaded) {
+      _dnaAccess = DnaAccessPtr(new HDF5DnaAccess(this, &_dnaArray, 0));
+  }
 }
 
 void Hdf5Genome::readSequences()
