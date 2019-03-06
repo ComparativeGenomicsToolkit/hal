@@ -18,6 +18,8 @@ static CLParserPtr initParser()
   optionsParser->addArgument("genomeName", "name of genome to be replaced");
   optionsParser->addOptionFlag("noMarkAncestors", "don't mark ancestors for"
                                " update", false);
+  optionsParser->addOptionFlag("noTopAlignment", "remove all top segments despite being non-root. This will result in an invalid HAL file, at least temporarily.", false);
+  optionsParser->addOptionFlag("noBottomAlignment", "remove all bottom segments despite being non-leaf. This will result in an invalid HAL file, at least temporarily.", false);
   return optionsParser;
 }
 
@@ -79,7 +81,7 @@ int main(int argc, char *argv[])
 {
   CLParserPtr optParser = initParser();
   string inPath, bottomAlignmentFile, topAlignmentFile, genomeName;
-  bool noMarkAncestors;
+  bool noMarkAncestors, noBottomAlignment, noTopAlignment;
   try {
     optParser->parseOptions(argc, argv);
     inPath = optParser->getArgument<string>("inFile");
@@ -87,6 +89,8 @@ int main(int argc, char *argv[])
     topAlignmentFile = optParser->getOption<string>("topAlignmentFile");
     genomeName = optParser->getArgument<string>("genomeName");
     noMarkAncestors = optParser->getFlag("noMarkAncestors");
+    noBottomAlignment = optParser->getFlag("noBottomAlignment");
+    noTopAlignment = optParser->getFlag("noTopAlignment");
   } catch (exception &e) {
     optParser->printUsage(cerr);
     return 1;
@@ -94,8 +98,8 @@ int main(int argc, char *argv[])
   AlignmentPtr mainAlignment = openHalAlignment(inPath, optParser);
   AlignmentConstPtr bottomAlignment;
   AlignmentConstPtr topAlignment;
-  bool useTopAlignment = mainAlignment->getRootName() != genomeName;
-  bool useBottomAlignment = mainAlignment->getChildNames(genomeName).size() != 0;
+  bool useTopAlignment = !noTopAlignment && mainAlignment->getRootName() != genomeName;
+  bool useBottomAlignment = !noBottomAlignment && mainAlignment->getChildNames(genomeName).size() != 0;
   Genome *mainReplacedGenome = mainAlignment->openGenome(genomeName);
   if (useTopAlignment) {
     // Not a root genome. Can update using a top alignment.
@@ -108,7 +112,6 @@ int main(int argc, char *argv[])
     const Genome *topReplacedGenome = topAlignment->openGenome(genomeName);
     topReplacedGenome->copyDimensions(mainReplacedGenome);
     topReplacedGenome->copySequence(mainReplacedGenome);
-    
   }
   if (useBottomAlignment) {
     // Not a leaf genome. Can update using a bottom alignment.
