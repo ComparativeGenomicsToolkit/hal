@@ -178,6 +178,11 @@ private:
    Hdf5ExternalArray _bottomArray;
    Hdf5ExternalArray _sequenceIdxArray;
    Hdf5ExternalArray _sequenceNameArray;
+
+   // FIXME: every DNAIteratorPtr uses the same DNAAccess. This causes
+   // thrashing when multiple DNAIterators are used concurrently
+   // accessing different stretches of DNA.
+   DnaAccessPtr _dnaAccess;
    H5::Group _group;
    H5::DSetCreatPropList _dcprops;
    hal_size_t _numChildrenInBottomArray;

@@ -557,8 +557,7 @@ BottomSegmentIteratorPtr Hdf5Genome::getBottomSegmentIterator(
 DnaIteratorPtr Hdf5Genome::getDnaIterator(hal_index_t position)
 {
   assert(position / 2 <= (hal_index_t)_dnaArray.getSize());
-  DnaAccess* dnaAcc = new HDF5DnaAccess(this, &_dnaArray, position);
-  DnaIterator* dnaIt = new DnaIterator(this, DnaAccessPtr(dnaAcc), position);
+  DnaIterator* dnaIt = new DnaIterator(this, _dnaAccess, position);
   return DnaIteratorPtr(dnaIt);
 }
 
@@ -676,7 +675,7 @@ void Hdf5Genome::read()
   {
     HDF5DisableExceptionPrinting prDisable;
     _group.openDataSet(dnaArrayName);
-    _dnaArray.load(&_group, dnaArrayName, _numChunksInArrayBuffer);    
+    _dnaArray.load(&_group, dnaArrayName, _numChunksInArrayBuffer);
   }
   catch (H5::Exception&){}
 
@@ -716,6 +715,7 @@ void Hdf5Genome::read()
   catch (H5::Exception&){}
 
   readSequences();
+  _dnaAccess = DnaAccessPtr(new HDF5DnaAccess(this, &_dnaArray, 0));
 }
 
 void Hdf5Genome::readSequences()
