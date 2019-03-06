@@ -58,7 +58,7 @@ void ValidateLargeTest::checkCallBack(const Alignment* alignment)
 
 void ValidateManyGenomesTest::createCallBack(Alignment* alignment)
 {
-    createRandomAlignment(rng, alignment, 0.75, 0.1, 363, 600, 1, 10, 1, 5);
+    createRandomAlignment(rng, alignment, 0.75, 0.1, 363, 400, 1, 10, 1, 2);
 }
 
 void ValidateManyGenomesTest::checkCallBack(const Alignment* alignment)
