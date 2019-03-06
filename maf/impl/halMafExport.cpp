@@ -77,7 +77,7 @@ void MafExport::writeHeader()
 }
 
 void MafExport::convertSequence(ostream& mafStream,
-                                const Alignment* alignment,
+                                AlignmentConstPtr alignment,
                                 const Sequence* seq,
                                 hal_index_t startPosition,
                                 hal_size_t length,
@@ -165,7 +165,7 @@ void MafExport::convertSequence(ostream& mafStream,
 }
 
 void MafExport::convertEntireAlignment(ostream& mafStream,
-                                       const Alignment* alignment)
+                                       AlignmentConstPtr alignment)
 {
     hal_size_t appendCount = 0;
     size_t numBlocks = 0;
@@ -176,7 +176,7 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
     writeHeader();
 
     // Load in all leaves from alignment
-    vector<const Genome *> leafGenomes = getLeafGenomes(alignment);
+    vector<const Genome *> leafGenomes = getLeafGenomes(alignment.get());
 
     ColumnIterator::VisitCache visitCache;
     // Go through all the genomes one by one, and spit out any columns

@@ -11,7 +11,7 @@
 using namespace std;
 using namespace hal;
 
-MafBed::MafBed(std::ostream& mafStream, const Alignment* alignment,
+MafBed::MafBed(std::ostream& mafStream, AlignmentConstPtr alignment,
                const Genome* refGenome, std::set<const Genome*>& targetSet,
                MafExport& mafExport) :
   BedScanner(),
@@ -48,7 +48,7 @@ void MafBed::visitLine()
     {
       hal_index_t start = _bedLine._start;
       hal_index_t end = _bedLine._end;
-      _mafExport.convertSequence(_mafStream, _alignment.get(), 
+      _mafExport.convertSequence(_mafStream, _alignment,
                                  refSequence, start, end - start,
                                  _targetSet);
     }
@@ -69,7 +69,7 @@ void MafBed::visitLine()
       {
         hal_index_t start = _bedLine._start +_bedLine._blocks[i]._start;
         hal_index_t end = _bedLine._start + _bedLine._blocks[i]._start + _bedLine._blocks[i]._length;
-        _mafExport.convertSequence(_mafStream, _alignment.get(), 
+        _mafExport.convertSequence(_mafStream, _alignment,
                                    refSequence, start, end - start,
                                    _targetSet);
       }

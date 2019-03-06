@@ -121,7 +121,7 @@ static string fixString(const string& s) {
 }
 
 static void hal2mafWithTargets(const MafOptions& opts,
-                               const Alignment* alignment,
+                               AlignmentConstPtr alignment,
                                const Genome* refGenome,
                                set<const Genome*>& targetSet,
                                MafExport& mafExport,
@@ -142,7 +142,7 @@ static void hal2mafWithTargets(const MafOptions& opts,
     
 }
 
-static void hal2maf(const Alignment* alignment,
+static void hal2maf(AlignmentConstPtr alignment,
                     const MafOptions& opts) {
     const Genome* rootGenome = NULL;
     set<const Genome*> targetSet;
@@ -320,7 +320,7 @@ int main(int argc, char** argv)
               throw hal_exception("hal alignmenet is empty");
           }
     
-      hal2maf(alignment.get(), opts);
+      hal2maf(alignment, opts);
   }
   catch(hal_exception& e)
   {

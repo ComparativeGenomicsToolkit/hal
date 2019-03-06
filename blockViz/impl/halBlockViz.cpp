@@ -466,13 +466,13 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
         handleError("halGetMAF invalid query range [" + std::to_string(tStart) + "," + std::to_string(tEnd) + ")", errStr);
         return -1;
     }
-    const Alignment* alignment = getExistingAlignment(halHandle, hal_size_t(0), true);
+    AlignmentConstPtr alignment(getExistingAlignment(halHandle, hal_size_t(0), true));
 
     set<const Genome*> qGenomeSet;
     for (hal_species_t* qSpecies = qSpeciesNames; qSpecies != NULL;
          qSpecies = qSpecies->next)
     {
-        checkGenomes(halHandle, alignment, qSpecies->name, tSpecies, tChrom);
+      checkGenomes(halHandle, alignment.get(), qSpecies->name, tSpecies, tChrom);
       const Genome* qGenome = alignment->openGenome(qSpecies->name);
       qGenomeSet.insert(qGenome);
     }
