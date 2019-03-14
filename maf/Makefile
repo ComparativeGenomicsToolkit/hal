@@ -38,11 +38,11 @@ hal2mafCmdTests: hal2MafSmallMMapTest hal2MafSmallHdf5Test hal2MafSeqTest hal2Ma
 
 hal2MafSmallMMapTest: output/small.mmap.hal
 	../bin/hal2maf output/small.mmap.hal output/$@.maf
-	diff tests/expected/$@.maf output/$@.maf
+	diff tests/expected/hal2MafSmallTest.maf output/$@.maf
 
 hal2MafSmallHdf5Test: output/small.hdf5.hal
 	../bin/hal2maf output/small.hdf5.hal output/$@.maf
-	diff tests/expected/$@.maf output/$@.maf
+	diff tests/expected/hal2MafSmallTest.maf output/$@.maf
 
 hal2MafSeqTest: output/small.mmap.hal
 	../bin/hal2maf --refGenome Genome_2 --refSequence Genome_2_seq output/small.mmap.hal output/$@.maf
