@@ -63,10 +63,6 @@ initParser(optionsParser);
     {
       throw hal_exception("Error opening MAF file: " + mafPath);
     }    
-    if (!ofstream(halPath.c_str(), ios_base::app))
-    {
-      throw hal_exception("Error opening HAL file: " + halPath);
-    }
 
     if (refGenomeName ==  "\"\"")
     {
@@ -80,7 +76,7 @@ initParser(optionsParser);
     AlignmentPtr alignment;
     if (append == true)
     {
-        alignment = AlignmentPtr(openHalAlignment(halPath, &optionsParser));
+        alignment = AlignmentPtr(openHalAlignment(halPath, &optionsParser, WRITE_ACCESS));
       if (alignment->openGenome(refGenomeName) == NULL)
       {
         throw hal_exception("Reference genome " + refGenomeName + " not found "
@@ -94,7 +90,7 @@ initParser(optionsParser);
     }
     else
     {
-        alignment = AlignmentPtr(openHalAlignment(halPath, &optionsParser));
+        alignment = AlignmentPtr(openHalAlignment(halPath, &optionsParser, CREATE_ACCESS));
     }
     
     vector<string> targetNames;
