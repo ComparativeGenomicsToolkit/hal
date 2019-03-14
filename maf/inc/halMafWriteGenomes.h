@@ -40,7 +40,7 @@ public:
                 const std::string& refGenomeName,
                 const std::set<std::string>& targets,
                 const DimMap& dimMap,
-                Alignment* alignment);
+                AlignmentPtr alignment);
                          
 private:
    

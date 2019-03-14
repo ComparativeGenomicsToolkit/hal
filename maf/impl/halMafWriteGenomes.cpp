@@ -28,11 +28,11 @@ void MafWriteGenomes::convert(const string& mafPath,
                               const string& refGenomeName,
                               const set<string>& targets,
                               const DimMap& dimMap,
-                              Alignment* alignment)
+                              AlignmentPtr alignment)
 {
   _refName = refGenomeName;
   _dimMap = &dimMap;
-  _alignment = AlignmentPtr(alignment);
+  _alignment = alignment;
   _topSegment = TopSegmentIteratorPtr();
   _paraTop = TopSegmentIteratorPtr();
   _bottomSegment = BottomSegmentIteratorPtr();
@@ -552,6 +552,7 @@ void MafWriteGenomes::initEmptySegments()
           dna->setBase('N');
           dna->toRight();
         }
+        dna->flush();
       }
     }
   }

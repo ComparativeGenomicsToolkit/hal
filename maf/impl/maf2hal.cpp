@@ -19,11 +19,11 @@ static void initParser(CLParser& optionsParser) {
   optionsParser.addArgument("halFile", "input hal file");
   optionsParser.addOption("refGenome", "name of reference genome in MAF "
                            "(first found if empty)",
-                           "\"\"");
+                           "");
   optionsParser.addOption("targetGenomes",
                            "comma-separated (no spaces) list of target genomes "
                            "(others are excluded) (vist all if empty)",
-                           "\"\"");
+                           "");
   optionsParser.addOptionFlag("append",
                                "append maf as subtree to existing alignment."
                                " reference must alaready be present in hal"
@@ -64,7 +64,7 @@ initParser(optionsParser);
       throw hal_exception("Error opening MAF file: " + mafPath);
     }    
 
-    if (refGenomeName ==  "\"\"")
+    if (refGenomeName ==  "")
     {
       MafScanReference nameGetter;
       refGenomeName = nameGetter.getRefName(mafPath);
@@ -94,11 +94,11 @@ initParser(optionsParser);
     }
     
     vector<string> targetNames;
-    if (targetGenomes != "\"\"")
+    if (targetGenomes != "")
     {
       targetNames = chopString(targetGenomes, ",");
     }
-    set<string> targetSet(targetNames.begin(), targetNames.end());
+   set<string> targetSet(targetNames.begin(), targetNames.end());
     targetSet.insert(refGenomeName);
 
     MafScanDimensions dScan;
@@ -138,7 +138,7 @@ initParser(optionsParser);
 
     MafWriteGenomes writer;
     writer.convert(mafPath, refGenomeName, targetSet, dScan.getDimensions(),
-                   alignment.get());
+                   alignment);
 
 
   }try{}
