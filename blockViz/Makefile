@@ -43,11 +43,11 @@ blockVizMmapTests: ${testMmapHal} ${progs}
 
 randGenArgs = --preset small --seed 0 --minSegmentLength 3000  --maxSegmentLength 5000
 
-${testHdf5Hal}: ${progs}
+${testHdf5Hal}: ${progs} ${binDir}/halRandGen
 	@mkdir -p $(dir $@)
 	${binDir}/halRandGen ${randGenArgs} --format hdf5 $@
 
-${testMmapHal}: ${progs}
+${testMmapHal}: ${progs} ${binDir}/halRandGen
 	@mkdir -p $(dir $@)
 	${binDir}/halRandGen ${randGenArgs} --format mmap $@
 

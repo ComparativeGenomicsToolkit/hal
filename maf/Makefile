@@ -52,11 +52,11 @@ hal2MafSeqPartTest: output/small.mmap.hal
 	../bin/hal2maf --refGenome Genome_2 --refSequence Genome_2_seq --start 1000 --length 2000 output/small.mmap.hal output/$@.maf
 	diff tests/expected/$@.maf output/$@.maf
 
-output/small.mmap.hal:
+output/small.mmap.hal: ../bin/halRandGen
 	@mkdir -p output
 	../bin/halRandGen --preset small --seed 0 --testRand --format mmap output/small.mmap.hal
 
-output/small.hdf5.hal:
+output/small.hdf5.hal: ../bin/halRandGen
 	@mkdir -p output
 	../bin/halRandGen --preset small --seed 0 --testRand --format hdf5 output/small.hdf5.hal
 
