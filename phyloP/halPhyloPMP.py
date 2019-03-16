@@ -135,13 +135,13 @@ def runParallelSlices(options):
     options.firstSmallFile = True
     sliceCmds = []
     sliceOpts = []
-    if options.refSequence is not None:   
-        refStat = [x for x in refSequenceStats if x[1] == 
+    if options.refSequence is not None:
+        refStat = [x for x in refSequenceStats if x[0] == 
                    options.refSequence]
-        if len(refStat != 1):
+        if len(refStat) != 1:
             raise RuntimeError("Sequence %s not found in genome %s" % (
                 options.refSequence, options.refGenome))
-        totalLength = int(refStat[1])
+        totalLength = int(refStat[0][1])
     else:
         totalLength = getHalGenomeLength(options.halFile, refGenome)
     
@@ -154,7 +154,6 @@ def runParallelSlices(options):
             refLen = seqOpts.length
         seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
                 
-    index = 0
     for sStart, sLen, sIdx in computeSlices(seqOpts, totalLength):
         seqOpts.start = sStart
         seqOpts.length = sLen
