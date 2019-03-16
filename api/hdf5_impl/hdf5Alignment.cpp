@@ -136,7 +136,13 @@ void HDF5Alignment::open(const string& alignmentPath, bool readOnly)
       // every genome opened will cause several new chunk caches to be
       // initialized. This causes massive memory usage (well over 17
       // GB for just running halStats on a 250-genome alignment).
-      _aprops.setCache(0, 0, 0, 0);
+      close();
+      delete _file;
+      _aprops.setCache(0, 0, 0, 0.);
+      _file = new H5File(alignmentPath.c_str(),  _flags, _cprops, _aprops);
+      delete _metaData;
+      _metaData = new HDF5MetaData(_file, MetaGroupName);
+      loadTree();
   }
 }
 
