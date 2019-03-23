@@ -17,7 +17,7 @@ libHalLiftover = ${libDir}/libHalLiftover.a
 libHalLod = ${libDir}/libHalLod.a
 libHalMaf = ${libDir}/libHalMaf.a
 
-inclSpec += -I${rootDir}/api/inc -Iimpl -Iinc
+inclSpec += -I${rootDir}/api/inc -Iimpl -Iinc -I${rootDir}/liftover/inc/
 
 #Modify this variable to set the location of sonLib
 #(sonlib is used only for cuTest at this potin)
@@ -88,12 +88,12 @@ endif
 	CLAPACKPATH=../../clapack
 
 ifeq ($(TARGETOS), Darwin)
-	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
-	phyloPlibs += -L${PHAST}/lib -lphast -lc -framework Accelerate
+	cppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
+	basicLibs += -L${PHAST}/lib -lphast -lc -framework Accelerate
 else
 	F2CPATH=${CLAPACKPATH}/F2CLIBS
-	phyloPcppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
-	phyloPlibs += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
+	cppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+	basicLibs += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
 endif
 
 endif

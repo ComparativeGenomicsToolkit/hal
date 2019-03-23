@@ -8,6 +8,8 @@ srcs = ${halPhyloP_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
 progs =  ${binDir}/halPhyloP ${binDir}/halPhyloPTrain.py ${binDir}/halPhyloPMP.py ${binDir}/halTreePhyloP.py
+otherLibs = ${libHalLiftover}
+inclSpec += -I${rootDir}/liftover/inc
 
 ifdef ENABLE_PHYLOP
 all: progs

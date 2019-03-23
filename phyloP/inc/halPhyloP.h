@@ -12,13 +12,15 @@
 #include <string>
 #include "hal.h"
 
-extern "C"{
+#undef __cplusplus
+extern "C" {
 #include "tree_model.h"
 #include "fit_column.h"
 #include "msa.h"
 #include "sufficient_stats.h"
 #include "hashtable.h"
 }
+#define __cplusplus
 
 namespace hal {
 
@@ -42,7 +44,7 @@ public:
     * subtree relative to rest of tree. The subtree includes all children
     * of the named node as well as the branch leading to the node.
     */
-   void init(const Alignment* alignment, const std::string& modFilePath,
+   void init(AlignmentConstPtr alignment, const std::string& modFilePath,
              std::ostream* outStream,
              bool softMaskDups = true, 
              const std::string& dupType = "ambiguous",

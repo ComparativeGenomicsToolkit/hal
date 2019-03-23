@@ -42,7 +42,7 @@ void PhyloP::clear()
 
 }
 
-void PhyloP::init(const Alignment* alignment, const string& modFilePath,
+void PhyloP::init(AlignmentConstPtr alignment, const string& modFilePath,
                   ostream* outStream,
                   bool softMaskDups, 
                   const string& dupType,
@@ -216,9 +216,9 @@ void PhyloP::processSequence(const Sequence* sequence,
   hal_size_t last = start + length;
   if (last > seqLen)
   {
-      throw hal_exception("Specified range [" + start + "," + std::to_string(length)
+    throw hal_exception("Specified range [" + std::to_string(start) + "," + std::to_string(length)
                         + "] is out of range for sequence " + sequence->getName() 
-                          + ", which has length " + std::to_string(seqLen);
+			+ ", which has length " + std::to_string(seqLen));
   }
 
   const Genome* genome = sequence->getGenome();

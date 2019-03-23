@@ -15,7 +15,7 @@ using namespace std;
 using namespace hal;
 
 
-PhyloPBed::PhyloPBed(const Alignment* alignment,
+PhyloPBed::PhyloPBed(AlignmentConstPtr alignment,
                      const Genome* refGenome, const Sequence* refSequence,
                      hal_index_t start, hal_size_t length, 
                      hal_size_t step, PhyloP& phyloP, ostream& outStream) :

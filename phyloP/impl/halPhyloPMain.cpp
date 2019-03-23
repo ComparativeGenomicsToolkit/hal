@@ -24,7 +24,7 @@ static void printGenome(PhyloP *phyloP,
                         hal_size_t start, hal_size_t length, hal_size_t step);
 
 
-static void initParser(CLParser& optionsParser) {
+static void initParser(CLParser& optionsParser)
 {
   /** It is convenient to use the HAL command line parser for the command
    * line because it automatically adds some comman options.  Using the 
@@ -72,13 +72,12 @@ static void initParser(CLParser& optionsParser) {
   optionsParser.addOption("prec", "Number of decimal places in wig output", 3);
   
   optionsParser.setDescription("Make PhyloP wiggle plot for a genome.");
-  return optionsParser;
 }
 
 int main(int argc, char** argv)
 {
     CLParser optionsParser;
-    initParser(optionsParser)
+    initParser(optionsParser);
   string modPath;
   string halPath;
   string wigPath;
@@ -123,8 +122,8 @@ int main(int argc, char** argv)
      * via a path to a .hal file.  Options don't necessarily need to
      * come from the optionsParser -- see other interfaces in 
      * hal/api/inc/halAlignmentInstance.h */
-    AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, 
-                                                           optionsParser);
+    AlignmentConstPtr alignment(openHalAlignment(halPath, 
+						 &optionsParser));
 
     if (alignment->getNumGenomes() == 0)
     {
