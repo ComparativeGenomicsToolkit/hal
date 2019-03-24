@@ -5,7 +5,7 @@
 using namespace std;
 using namespace hal;
 
-static void initParser(CLParser& optionsParser) {
+static void initParser(CLParser& optionsParser)
 {
   optionsParser.addArgument("halFile", "hal tree");
   optionsParser.addArgument("genome", "(ancestor) genome to modify");
@@ -22,34 +22,32 @@ static void initParser(CLParser& optionsParser) {
                                " probabilities for reference in wig"
                                " format", false);
   optionsParser.addOptionFlag("printWrites", "print base changes", false);
-  return optionsParser;
 }
 
 
 int main(int argc, char *argv[])
 {
   string halPath, genomeName, modPath, sequenceName, bedPath;
-  CLParser optionsParser;
-  initParser(optionsParser);
-static void initParser(CLParser& optionsParser)
+  CLParser optParser;
+  initParser(optParser);
   bool printWrites = false, outputPosts = false;
   hal_index_t startPos = 0;
   hal_index_t endPos = -1;
   double threshold = 0.0;
   try {
-    optParser->parseOptions(argc, argv);
-    halPath = optParser->getArgument<string>("halFile");
-    genomeName = optParser->getArgument<string>("genome");
-    modPath = optParser->getArgument<string>("model");
-    startPos = optParser->getOption<hal_index_t>("startPos");
-    endPos = optParser->getOption<hal_index_t>("endPos");
-    threshold = optParser->getOption<double>("thresholdN");
-    sequenceName = optParser->getOption<string>("sequence");
-    bedPath = optParser->getOption<string>("bed");
-    outputPosts = optParser->getFlag("outputPosts");
-    printWrites = optParser->getFlag("printWrites");
+    optParser.parseOptions(argc, argv);
+    halPath = optParser.getArgument<string>("halFile");
+    genomeName = optParser.getArgument<string>("genome");
+    modPath = optParser.getArgument<string>("model");
+    startPos = optParser.getOption<hal_index_t>("startPos");
+    endPos = optParser.getOption<hal_index_t>("endPos");
+    threshold = optParser.getOption<double>("thresholdN");
+    sequenceName = optParser.getOption<string>("sequence");
+    bedPath = optParser.getOption<string>("bed");
+    outputPosts = optParser.getFlag("outputPosts");
+    printWrites = optParser.getFlag("printWrites");
   } catch (exception &e) {
-    optParser->printUsage(cerr);
+    optParser.printUsage(cerr);
     return 1;
   }
 
@@ -67,7 +65,7 @@ static void initParser(CLParser& optionsParser)
   }
   lst_free(phastList);
 
-  AlignmentConstPtr alignment = openHalAlignmentReadOnly(halPath, optParser);
+  Alignment *alignment = openHalAlignment(halPath, &optParser);
   const Genome *genome = alignment->openGenome(genomeName);
   if (genome == NULL) {
     throw hal_exception("Genome " + genomeName + " not found in alignment.");

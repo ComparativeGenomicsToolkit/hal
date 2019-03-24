@@ -3,9 +3,11 @@
 #include <fstream>
 #include <iostream>
 #include "hal.h"
+#undef __cplusplus
 extern "C" {
 #include "tree_model.h"
 }
+#define __cplusplus
 #include "ancestorsML.h"
 #include "ancestorsMLBed.h"
 

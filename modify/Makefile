@@ -28,9 +28,9 @@ halRenameGenomes_srcs = halRenameGenomes.cpp
 halRenameGenomes_objs = ${halRenameGenomes_srcs:%.cpp=${modObjDir}/%.o} ${renameFile_objs}
 halRenameSequences_srcs = halRenameSequences.cpp
 halRenameSequences_objs = ${halRenameSequences_srcs:%.cpp=${modObjDir}/%.o} ${renameFile_objs}
-ancestorsML_srcs = ancestorsML.cpp
+ancestorsML_srcs = ancestorsML.cpp ancestorsMLMain.cpp ancestorsMLBed.cpp
 ancestorsML_objs = ${ancestorsML_srcs:%.cpp=${modObjDir}/%.o}
-halAncestorsMLTest_srcs = halAncestorsMLTest.cpp
+halAncestorsMLTest_srcs = halAncestorsMLTest.cpp ancestorsML.cpp
 halAncestorsMLTest_objs = ${halAncestorsMLTest_srcs:%.cpp=${modObjDir}/%.o}
 srcs = ${markAncestors_srcs} ${renameFile_srcs} ${halRemoveGenome_srcs} ${halAddToBranch_srcs} \
     ${halReplaceGenome_srcs} ${halAppendSubtree_srcs} \
@@ -46,7 +46,7 @@ otherLibs += ${libHalLiftover}
 ifdef ENABLE_PHYLOP
 inclSpec += ${phyloPcppflags}
 otherLibs += ${phyloPlibs}
-phast_progs = ${binDir}/ancestorsML ${binDir}/halAncestorsMLTest ${binDir}/ancestorsMLMP.py
+phast_progs = ${binDir}/ancestorsML ${binDir}/ancestorsMLMP.py
 endif
 
 ifdef ENABLE_PHYLOP

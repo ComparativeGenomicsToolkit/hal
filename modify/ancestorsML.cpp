@@ -85,8 +85,8 @@ rootInfo * findRoot(const Genome *genome,
   }
   TopSegmentIteratorPtr topIt = genome->getTopSegmentIterator();
   topIt->toSite(pos, false);
-  bool parentReversed = topIt->getParentReversed() ? !reversed : reversed;
-  if (!topIt->hasParent()) {
+  bool parentReversed = topIt->getTopSegment()->getParentReversed() ? !reversed : reversed;
+  if (!topIt->getTopSegment()->hasParent()) {
 //    cout << "Root genome for pos: " << pos << " " << genome->getName() << endl;
     rootInfo *data = (rootInfo *) malloc(sizeof(rootInfo));
     data->rootGenome = genome;
@@ -98,7 +98,7 @@ rootInfo * findRoot(const Genome *genome,
     botIt->toParent(topIt);
     hal_index_t parentPos = botIt->getStartPosition();
     hal_index_t offset = abs(pos - topIt->getStartPosition());
-    parentPos = topIt->getParentReversed() ? parentPos - offset : parentPos + offset;
+    parentPos = topIt->getTopSegment()->getParentReversed() ? parentPos - offset : parentPos + offset;
     //  cout << "Going to parent " << genome->getParent()->getName() << ": start pos " << pos << " parent pos: " << parentPos << "reversed: " << parentReversed << endl;
     return findRoot(genome->getParent(), parentPos, parentReversed);
   }
@@ -147,13 +147,13 @@ void buildTree(const Alignment* alignment, const Genome *genome,
   BottomSegmentIteratorPtr botIt = genome->getBottomSegmentIterator();
   botIt->toSite(pos, false);
   assert(botIt->getReversed() == false);
-  for (hal_size_t i = 0; i < botIt->getNumChildren(); i++) {
-    hal_index_t childIndex = botIt->getChildIndex(i);
+  for (hal_size_t i = 0; i < genome->getNumChildren(); i++) {
+    hal_index_t childIndex = botIt->getBottomSegment()->getChildIndex(i);
     if (childIndex != NULL_INDEX) {
       const Genome *childGenome = genome->getChild(i);
       TopSegmentIteratorPtr topIt = childGenome->getTopSegmentIterator();
       topIt->toChild(botIt, i);
-      if (topIt->getNextParalogyIndex() != NULL_INDEX) {
+      if (topIt->getTopSegment()->getNextParalogyIndex() != NULL_INDEX) {
         // Go through the paralogy cycle and add the
         // paralogous sites.
         // NOTE!: can theoretically run into problems
@@ -162,13 +162,13 @@ void buildTree(const Alignment* alignment, const Genome *genome,
         // possibly create more duplications than really
         // exist) Won't happen with the way the iterator
         // comparison is implemented now though.
-        TopSegmentIteratorPtr original = topIt->copy();
+        TopSegmentIteratorPtr original = topIt->clone();
         for (topIt->toNextParalogy(); !topIt->equals(original); topIt->toNextParalogy()) {
           // sanity check
           assert(topIt->getLength() == botIt->getLength());
           hal_index_t childPos = topIt->getStartPosition();
           hal_index_t offset = abs(pos - botIt->getStartPosition());
-          childPos = topIt->getParentReversed() ? childPos - offset : childPos + offset;
+          childPos = topIt->getTopSegment()->getParentReversed() ? childPos - offset : childPos + offset;
           stTree *childNode = stTree_construct();
           stTree_setParent(childNode, tree);
           double branchLength = alignment->getBranchLength(genome->getName(),
@@ -176,19 +176,19 @@ void buildTree(const Alignment* alignment, const Genome *genome,
           // TODO: make option for branch length of duplications
           // (e.g. as fraction of species-tree branch length)
           stTree_setBranchLength(childNode, branchLength);
-          bool childReversed = topIt->getParentReversed() ? !reversed : reversed;
+          bool childReversed = topIt->getTopSegment()->getParentReversed() ? !reversed : reversed;
           buildTree(alignment, childGenome, childPos, childNode, childReversed, nameToId);
         }
       }
       hal_index_t childPos = topIt->getStartPosition();
       hal_index_t offset = abs(pos - botIt->getStartPosition());
-      childPos = botIt->getChildReversed(i) ? childPos - offset : childPos + offset;
+      childPos = botIt->getBottomSegment()->getChildReversed(i) ? childPos - offset : childPos + offset;
       stTree *childNode = stTree_construct();
       stTree_setParent(childNode, tree);
       double branchLength = alignment->getBranchLength(genome->getName(),
                                                        childGenome->getName());
       stTree_setBranchLength(childNode, branchLength);
-      bool childReversed = botIt->getChildReversed(i) ? !reversed : reversed;
+      bool childReversed = botIt->getBottomSegment()->getChildReversed(i) ? !reversed : reversed;
       buildTree(alignment, childGenome, childPos, childNode, childReversed, nameToId);
     }
   }
