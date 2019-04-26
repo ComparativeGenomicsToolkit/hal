@@ -44,8 +44,8 @@ std::vector<PslBlock> Hal2Psl::convert2psl(const Alignment* alignment,
           _outBedLines.clear();
           _srcSequence = seqIt->getSequence(); 
           auto chrName = _srcSequence->getName(); 
-          if (srcChrom != chrName) {continue;}
-          //else {std::cout << chrName << std::endl;}
+          if (srcChrom != "\"\""  && srcChrom != chrName) {continue;}
+          //else {std::cout << srcChrom << std::endl;}
           _bedLine._start = 0;
           _bedLine._end = _srcSequence->getSequenceLength(); 
           _mappedBlocks.clear();

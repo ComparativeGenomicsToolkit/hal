@@ -99,37 +99,62 @@ void Genome::copyTopSegments(Genome *dest) const
   BottomSegmentIteratorPtr inParentBottomSegIt = inParent->getBottomSegmentIterator();
   BottomSegmentIteratorPtr outParentBottomSegIt = outParent->getBottomSegmentIterator();
 
-  for (; (hal_size_t)inTop->getArrayIndex() < n; inTop->toRight(),
-         outTop->toRight())
+
+  // Go through each sequence in this genome, find the matching
+  // sequence in the dest genome, then copy over the segments for each
+  // sequence.
+  for (SequenceIteratorPtr seqIt = getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext())
   {
-    hal_index_t genomePos = inTop->getStartPosition();
-    assert(genomePos != NULL_INDEX);
-    string inSeqName = getSequenceBySite(genomePos)->getName();
-    string outSeqName = dest->getSequenceBySite(genomePos)->getName();
-#if NDEBUG
-    if (inSeqName != outSeqName) {
-        throw hal_exception("When copying top segments from " + getName() + " to " + dest->getName() + ": sequence " + inSeqName + " != " + outSeqName + " at site " + std::to_string(genomePos));
+    const Sequence *inSeq = seqIt->getSequence();
+    const Sequence *outSeq = dest->getSequence(inSeq->getName());
+    TopSegmentIteratorPtr inTop = inSeq->getTopSegmentIterator();
+    TopSegmentIteratorPtr outTop = outSeq->getTopSegmentIterator();
+
+    if (inSeq->getName() != outSeq->getName()) {
+        throw hal_exception("When copying top segments: segment #" + std::to_string(inTop->getArrayIndex()) + " of source genome is from sequence " + inTop->getSequence()->getName() + ", but segment #" + std::to_string(outTop->getArrayIndex()) + " is from sequence " + outTop->getSequence()->getName());
     }
-#endif
 
-    outTop->setCoordinates(inTop->getStartPosition(), inTop->getLength());
-    outTop->tseg()->setParentIndex(inTop->tseg()->getParentIndex());
-    outTop->tseg()->setParentReversed(inTop->tseg()->getParentReversed());
-    outTop->tseg()->setBottomParseIndex(inTop->tseg()->getBottomParseIndex());
-    outTop->tseg()->setNextParalogyIndex(inTop->tseg()->getNextParalogyIndex());
+    if (inSeq->getNumTopSegments() != outSeq->getNumTopSegments()) {
+      throw hal_exception("When copying top segments: sequence " + inSeq->getName() + " has " + std::to_string(inSeq->getNumTopSegments()) + " in genome " + getName() + ", while it has " + std::to_string(outSeq->getNumTopSegments()) + " in genome " + dest->getName());
+     }
 
-    // Check that the sequences from the bottom segments we point to are the same. If not, correct the indices so that they are.
-    if (inTop->tseg()->getParentIndex() != NULL_INDEX) {
-      inParentBottomSegIt->toParent(inTop);
+    hal_index_t inSegmentEnd = inSeq->getTopSegmentArrayIndex() + inSeq->getNumTopSegments();
+    for (; (hal_size_t)inTop->getArrayIndex() < inSegmentEnd; inTop->toRight(),
+             outTop->toRight())
+    {
+        hal_index_t outStartPosition = inTop->getStartPosition() - inSeq->getStartPosition() + outSeq->getStartPosition();
+        outTop->setCoordinates(outStartPosition, inTop->getLength());
+        outTop->tseg()->setParentIndex(inTop->tseg()->getParentIndex());
+        outTop->tseg()->setParentReversed(inTop->tseg()->getParentReversed());
+        outTop->tseg()->setBottomParseIndex(inTop->tseg()->getBottomParseIndex());
+        // Figure out next paralogy index in new sequence order.
+        hal_index_t inParalogyIndex = inTop->tseg()->getNextParalogyIndex();
+        hal_index_t outParalogyIndex;
+        if (inParalogyIndex != NULL_INDEX) {
+            TopSegmentIteratorPtr inParalogyIt = getTopSegmentIterator(inParalogyIndex);
+            const Sequence *inParalogySeq = inParalogyIt->tseg()->getSequence();
+            const Sequence *outParalogySeq = dest->getSequence(inParalogySeq->getName());
+            outParalogyIndex = inParalogyIndex - inParalogySeq->getTopSegmentArrayIndex() + outParalogySeq->getTopSegmentArrayIndex();
+        } else {
+            outParalogyIndex = NULL_INDEX;
+        }
+        outTop->tseg()->setNextParalogyIndex(outParalogyIndex);
 
-      const Sequence *inParentSequence = inParentBottomSegIt->getSequence();
+        // Check that the sequences from the bottom segments we point to are the same. If not, correct the indices so that they are.
+        if (inTop->tseg()->getParentIndex() != NULL_INDEX) {
+            inParentBottomSegIt->toParent(inTop);
 
-      const Sequence *outParentSequence = outParent->getSequence(inParentSequence->getName());
+            const Sequence *inParentSequence = inParentBottomSegIt->getSequence();
 
-      hal_index_t inParentSegmentOffset = inTop->tseg()->getParentIndex() - inParentSequence->getBottomSegmentArrayIndex();
-      hal_index_t outParentSegmentIndex = inParentSegmentOffset + outParentSequence->getBottomSegmentArrayIndex();
+            const Sequence *outParentSequence = outParent->getSequence(inParentSequence->getName());
 
-      outTop->tseg()->setParentIndex(outParentSegmentIndex);
+            hal_index_t inParentSegmentOffset = inTop->tseg()->getParentIndex() - inParentSequence->getBottomSegmentArrayIndex();
+            hal_index_t outParentSegmentIndex = inParentSegmentOffset + outParentSequence->getBottomSegmentArrayIndex();
+
+            outTop->tseg()->setParentIndex(outParentSegmentIndex);
+        } else {
+            outTop->tseg()->setParentIndex(NULL_INDEX);
+        }
     }
   }
 }
@@ -195,7 +220,6 @@ void Genome::copyBottomSegments(Genome *dest) const
     {
       hal_index_t outStartPosition = inBotSegIt->getStartPosition() - inSeq->getStartPosition() + outSeq->getStartPosition();
 
-
       if (dest->getSequenceBySite(outStartPosition) != outSeq) {
           throw hal_exception("When copying bottom segments from " + getName() + " to " + dest->getName() + ": expected destination sequence " + outSeq->getName() + " for segment # " + std::to_string(inBotSegIt->getArrayIndex()) + " but got " + dest->getSequenceBySite(outStartPosition)->getName());
       }
@@ -203,8 +227,23 @@ void Genome::copyBottomSegments(Genome *dest) const
       for(hal_size_t inChild = 0; inChild < inNc; inChild++) {
         hal_size_t outChild = inChildToOutChild[inChild];
         if (outChild != outNc) {
-          outBotSegIt->bseg()->setChildIndex(outChild, inBotSegIt->bseg()->getChildIndex(inChild));
-          outBotSegIt->bseg()->setChildReversed(outChild, inBotSegIt->bseg()->getChildReversed(inChild));
+            // Adjust top segment we point to so that it points to the
+            // same sequence, even if the sequence ordering has changed.
+            hal_index_t childIndex = inBotSegIt->bseg()->getChildIndex(inChild);
+            Genome *outChildGenome = dest->getChild(outChild);
+            if (childIndex != NULL_INDEX) {
+                TopSegmentIteratorPtr inTopSetIter = getTopSegmentIterator();
+                inTopSetIter->toChild(inBotSegIt, inChild);
+
+                const Sequence *inChildSequence = inTopSetIter->getSequence();
+                const Sequence *outChildSequence = outChildGenome->getSequence(inChildSequence->getName());
+
+                hal_index_t inChildSegmentOffset = inTopSetIter->getArrayIndex() - inChildSequence->getTopSegmentArrayIndex();
+                childIndex = inChildSegmentOffset + outChildSequence->getTopSegmentArrayIndex();
+            }
+
+            outBotSegIt->bseg()->setChildIndex(outChild, childIndex);
+            outBotSegIt->bseg()->setChildReversed(outChild, inBotSegIt->bseg()->getChildReversed(inChild));
         }
       }
       outBotSegIt->bseg()->setTopParseIndex(inBotSegIt->bseg()->getTopParseIndex());

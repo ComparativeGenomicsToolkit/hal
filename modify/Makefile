@@ -12,8 +12,6 @@ halAddToBranch_srcs = halAddToBranch.cpp
 halAddToBranch_objs = ${halAddToBranch_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
 halReplaceGenome_srcs = halReplaceGenome.cpp
 halReplaceGenome_objs = ${halReplaceGenome_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
-halReplaceSequence_srcs = halReplaceSequence.cpp
-halReplaceSequence_objs = ${halReplaceSequence_srcs:%.cpp=${modObjDir}/%.o}
 halAppendSubtree_srcs = halAppendSubtree.cpp
 halAppendSubtree_objs = ${halAppendSubtree_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
 findRegionsExclusivelyInGroup_srcs = findRegionsExclusivelyInGroup.cpp
@@ -36,10 +34,10 @@ srcs = ${markAncestors_srcs} ${renameFile_srcs} ${halRemoveGenome_srcs} ${halAdd
     ${halReplaceGenome_srcs} ${halAppendSubtree_srcs} \
     ${findRegionsExclusivelyInGroup_srcs} ${halUpdateBranchLengths_srcs} \
     ${halWriteNucleotides_srcs} ${halSetMetadata_srcs} ${halRenameGenomes_srcs} \
-    ${halRenameSequences_srcs} ${ancestorsML_srcs} ${halAncestorsMLTest_srcs} ${halReplaceSequence_srcs}
+    ${halRenameSequences_srcs} ${ancestorsML_srcs} ${halAncestorsMLTest_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
-progs = ${binDir}/halRemoveGenome ${binDir}/halAddToBranch ${binDir}/halReplaceGenome ${binDir}/halAppendSubtree ${binDir}/findRegionsExclusivelyInGroup ${binDir}/halUpdateBranchLengths ${binDir}/halWriteNucleotides ${binDir}/halSetMetadata ${binDir}/halRenameGenomes ${binDir}/halRenameSequences ${binDir}/halReplaceSequence
+progs = ${binDir}/halRemoveGenome ${binDir}/halAddToBranch ${binDir}/halReplaceGenome ${binDir}/halAppendSubtree ${binDir}/findRegionsExclusivelyInGroup ${binDir}/halUpdateBranchLengths ${binDir}/halWriteNucleotides ${binDir}/halSetMetadata ${binDir}/halRenameGenomes ${binDir}/halRenameSequences
 
 inclSpec += -I${rootDir}/liftover/inc
 otherLibs += ${libHalLiftover}

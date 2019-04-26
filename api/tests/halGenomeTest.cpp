@@ -484,7 +484,7 @@ void GenomeCopySegmentsWhenSequencesOutOfOrderTest::createCallBack(Alignment* al
   internalGenome->copyBottomDimensions(copyInternalGenome);
   internalGenome->copyBottomSegments(copyInternalGenome);
   internalGenome->copyTopDimensions(copyInternalGenome);
-  setTopSegments(copyInternalGenome, 10);
+  internalGenome->copyTopSegments(copyInternalGenome);
   copyInternalGenome->fixParseInfo();
 
   leaf1Genome->copyTopDimensions(copyLeaf1Genome);

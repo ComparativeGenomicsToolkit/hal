@@ -54,7 +54,7 @@ const Alignment* openAlignmentOrThrow(const std::string& halFile,
  void validateInputOrThrow(const std::string& queryGenomeName,
                                 const std::string& targetGenomeName,
                                     const std::string& queryChromosome) {
-      if (queryGenomeName == "\"\"" || targetGenomeName == "\"\"" || queryChromosome == "\"\""){
+      if (queryGenomeName == "\"\"" || targetGenomeName == "\"\"" ){
         throw hal_exception("--queryGenome and --targetGenome and --queryChromosome must be"
                           "specified");
         }
@@ -101,16 +101,15 @@ int main(int argc, char *argv[]) {
     auto queryGenome = openGenomeOrThrow(alignment, queryGenomeName);    
     
     
-    auto hal2psl = Hal2Psl();
-    //std::cout << "reading hal " << std::endl;                  
+    auto hal2psl = hal::Hal2Psl();
     auto blocks = hal2psl.convert2psl(alignment, queryGenome,
                         targetGenome, queryChromosome);
     
 
-    //std::cout << "merging "  << blocks.size() << " blocks"<< std::endl;                  
+    std::cout << "merging "  << blocks.size() << " blocks"<< std::endl;                  
     auto merged_blocks = dag_merge(blocks, 
                             minBlockSize, maxAnchorDistance);
-    //std::cout << "writing psl "   << std::endl;                  
+    std::cout << "writing psl "   << std::endl;                  
     psl_io::write_psl(merged_blocks, outPslPath);
     }
     catch(std::exception& e)

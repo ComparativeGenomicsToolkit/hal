@@ -28,4 +28,3 @@ include ${rootDir}/rules.mk
 # Local Variables:
 # mode: makefile-gmake
 # End:
-

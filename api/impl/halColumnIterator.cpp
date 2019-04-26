@@ -619,7 +619,7 @@ stTree *ColumnIterator::buildTree() const {
     }
 
     stTree *tree = NULL;
-    if(topSegIt->tseg()->hasParent() == false && topSegIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
+    if ((genome->getNumTopSegments() != 0) && (not topSegIt->tseg()->hasParent()) && (topSegIt->getGenome() == genome) && (genome->getNumBottomSegments() == 0)) {
       // Handle insertions in leaves. botSegIt doesn't point anywhere since
       // there are no bottom segments.
       tree = getTreeNode(topSegIt);

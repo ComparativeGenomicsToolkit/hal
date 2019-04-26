@@ -13,14 +13,16 @@ using namespace hal;
 
 int main(int argc, char** argv)
 {
-      CLParser optionsParser;
-        optionsParser.addArgument("halFile", "path to hal file to validate");
-  optionsParser.setDescription("Check if hal database is valid");
-  string path;
+    CLParser optionsParser;
+    optionsParser.addArgument("halFile", "path to hal file to validate");
+    optionsParser.addOption("genome", "specific genome to validate instead of entire file", "");
+    optionsParser.setDescription("Check if hal database is valid");
+    string path, genomeName;
   try
   {
     optionsParser.parseOptions(argc, argv);
     path = optionsParser.getArgument<string>("halFile");
+    genomeName = optionsParser.getOption<string>("genome");
   }
   catch(exception& e)
   {
@@ -31,7 +33,12 @@ int main(int argc, char** argv)
   try
   {
       AlignmentConstPtr alignment(openHalAlignment(path, &optionsParser));
-    validateAlignment(alignment.get());
+    if (genomeName == "") {
+        validateAlignment(alignment.get());
+    } else {
+        const Genome *genome = alignment->openGenome(genomeName);
+        validateGenome(genome);
+    }
   }
   catch(hal_exception& e)
   {
