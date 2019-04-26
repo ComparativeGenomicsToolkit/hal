@@ -20,6 +20,7 @@ Code Contributors
 * Ngan Nguyen (UCSC)
 * Benedict Paten (UCSC)
 * Melissa Jane Hubisz (Cornell)
+* Mark Diekhans (UCSC)
 
 Installation
 -----
