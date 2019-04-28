@@ -113,7 +113,11 @@ public:
      hal_index_t i, hal_size_t childIdx, hal_size_t gapThreshold,
      bool atomic) const;
 
-   void setName(const std::string &newName) { _data->setName(_genome->_alignment, newName); }
+   void setName(const std::string &newName) {
+       _data->setName(_genome->_alignment, newName);
+       // Update the perfect hash to account for the new sequence
+       _genome->createSequenceNameHash(_genome->getNumSequences());
+   }
 
     void setTopSegmentStartIndex(hal_index_t index) { _data->_topSegmentStartIndex = index; }
     void setBottomSegmentStartIndex(hal_index_t index) { _data->_bottomSegmentStartIndex = index; }

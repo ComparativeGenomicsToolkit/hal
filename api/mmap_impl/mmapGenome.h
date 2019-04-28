@@ -190,9 +190,9 @@ public:
     char *getDNA(size_t start, size_t length) {
         return _data->getDNA(_alignment, start, length);
     }
+    void createSequenceNameHash(size_t numSequences);
 
 private:
-    void createSequenceNameHash(size_t numSequences);
     void createGenomeSiteMap(size_t numSequences);
     void setSequenceData(size_t i, hal_index_t startPos, hal_index_t topSegmentStartIndex,
                          hal_index_t bottomSegmentStartIndex, const Sequence::Info &sequenceInfo);
