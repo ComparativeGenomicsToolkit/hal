@@ -230,9 +230,9 @@ void hal::MMapFileLocal::openWrite(size_t fileSize) {
     _fd = openFile();
     if (_mode & CREATE_ACCESS) {
         adjustFileSize(0);  // clear out existing data
-    }
-    if (fileSize > _fileSize) {
         adjustFileSize(fileSize);
+    } else if (_mode & WRITE_ACCESS) {
+        adjustFileSize(getFileStatSize(_fd) + fileSize);
     }
     _basePtr = mapFile();
     if (_mode & CREATE_ACCESS) {

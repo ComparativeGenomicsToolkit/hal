@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     optionsParser.printUsage(cerr);
     return 1;
   }
-  AlignmentPtr mainAlignment(openHalAlignment(inPath, &optionsParser));
+  AlignmentPtr mainAlignment(openHalAlignment(inPath, &optionsParser, READ_ACCESS | WRITE_ACCESS));
   AlignmentConstPtr bottomAlignment;
   AlignmentConstPtr topAlignment;
   bool useTopAlignment = !noTopAlignment && mainAlignment->getRootName() != genomeName;

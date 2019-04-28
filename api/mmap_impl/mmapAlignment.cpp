@@ -51,6 +51,8 @@ void MMapAlignment::defineOptions(CLParser* parser,
                                   unsigned mode) {
     if (mode & CREATE_ACCESS) {
       parser->addOption("mmapFileSize", "mmap HAL file initial size (in gigabytes)", MMAP_DEFAULT_FILE_SIZE_GB);
+    } else if (mode & WRITE_ACCESS) {
+      parser->addOption("mmapSizeIncrease", "additional space to reserve at end of file (in gigabytes)", 1);
     }
 }
 
@@ -58,6 +60,14 @@ void MMapAlignment::defineOptions(CLParser* parser,
 void MMapAlignment::initializeFromOptions(const CLParser* parser) {
     if (_mode & CREATE_ACCESS) {
         _fileSize = GIGABYTE * parser->get<size_t>("mmapFileSize");
+    } else if (_mode & WRITE_ACCESS) {
+        // TODO: this causes _fileSize's meaning to be far too
+        // overloaded: sometimes (CREATE_ACCESS) it is a requested
+        // maximum file size, others (WRITE_ACCESS) it is an offset,
+        // and still others (READ_ACCESS) it is totally
+        // ignored. Probably the cleanest solution is to just create
+        // 3 separate factory functions.
+        _fileSize = GIGABYTE * parser->get<size_t>("mmapSizeIncrease");
     }
 }
 

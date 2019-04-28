@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser));
+  AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser, WRITE_ACCESS | READ_ACCESS));
   Genome *genome = alignment->openGenome(genomeName);
   if (genome == NULL) {
       throw hal_exception("Genome " + genomeName + " not found in alignment");
