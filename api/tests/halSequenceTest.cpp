@@ -247,6 +247,42 @@ void SequenceUpdateTest::checkCallBack(const Alignment* alignment)
                ancGenome->getNumBottomSegments() == numBottomSegments);
 }
 
+void SequenceRenameTest::createCallBack(Alignment* alignment)
+{
+  Genome* ancGenome = alignment->addRootGenome("AncGenome", 0);
+  
+  vector<Sequence::Info> seqVec;
+  seqVec.push_back(Sequence::Info("seq1", 40, 20, 20));
+  seqVec.push_back(Sequence::Info("seq2", 50, 20, 20));
+  seqVec.push_back(Sequence::Info("anotherSeq", 60, 20, 20));
+  ancGenome->setDimensions(seqVec);
+  alignment->closeGenome(ancGenome);
+
+  ancGenome = alignment->openGenome("AncGenome");
+  ancGenome->getSequence("seq1")->setName("foobar");
+  ancGenome->getSequence("seq2")->setName("a_really_really_super_long_name");
+  ancGenome->getSequence("anotherSeq")->setName("short");
+  ancGenome->getSequence("short")->setName("again");
+}
+
+void SequenceRenameTest::checkCallBack(const Alignment* alignment)
+{
+  const Genome* ancGenome = alignment->openGenome("AncGenome");
+  
+  CuAssertTrue(_testCase, ancGenome->getNumSequences() == 3);
+  CuAssertTrue(_testCase, ancGenome->getSequence("seq1") == NULL);
+  CuAssertTrue(_testCase, ancGenome->getSequence("seq2") == NULL);
+  CuAssertTrue(_testCase, ancGenome->getSequence("anotherSeq") == NULL);
+  CuAssertTrue(_testCase, ancGenome->getSequence("short") == NULL);
+
+  CuAssertTrue(_testCase, ancGenome->getSequence("foobar") != NULL);
+  CuAssertTrue(_testCase, ancGenome->getSequence("a_really_really_super_long_name") != NULL);
+  CuAssertTrue(_testCase, ancGenome->getSequence("again") != NULL);
+
+  CuAssertTrue(_testCase, ancGenome->getSequence("foobar")->getSequenceLength() == 40);
+  CuAssertTrue(_testCase, ancGenome->getSequence("a_really_really_super_long_name")->getSequenceLength() == 50);
+  CuAssertTrue(_testCase, ancGenome->getSequence("again")->getSequenceLength() == 60);
+}
 
 void halSequenceCreateTest(CuTest *testCase)
 {
@@ -266,6 +302,11 @@ void halSequenceUpdateTest(CuTest *testCase)
     tester.check(testCase);
 }
 
+void halSequenceRenameTest(CuTest *testCase)
+{
+    SequenceRenameTest tester;
+    tester.check(testCase);
+}
 
 CuSuite* halSequenceTestSuite(void) 
 {
@@ -273,6 +314,7 @@ CuSuite* halSequenceTestSuite(void)
   SUITE_ADD_TEST(suite, halSequenceCreateTest);
   SUITE_ADD_TEST(suite, halSequenceIteratorTest);
   SUITE_ADD_TEST(suite, halSequenceUpdateTest);
+  SUITE_ADD_TEST(suite, halSequenceRenameTest);
   return suite;
 }
 

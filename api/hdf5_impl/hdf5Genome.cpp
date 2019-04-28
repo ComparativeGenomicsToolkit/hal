@@ -904,3 +904,48 @@ void Hdf5Genome::rename(const string &newName)
   _alignment->replaceNewickTree(stTree_getNewickTreeString(tree));
   stTree_destruct(tree);
 }
+
+void Hdf5Genome::renameSequence(const string &oldName,
+                                size_t index,
+                                const string &newName)
+{
+    if (oldName.size() < newName.size()) {
+        resizeNameArray(newName.size());
+    }
+    char* arrayBuffer = _sequenceNameArray.getUpdate(index);
+    strcpy(arrayBuffer, newName.c_str());
+    _sequenceNameArray.write();
+    readSequences();
+}
+
+void Hdf5Genome::resizeNameArray(size_t newMaxSize)
+{
+    size_t currentMaxSize = _sequenceNameArray.getDataType().getSize();
+    if (newMaxSize > currentMaxSize) {
+        vector<string> names;
+        size_t numSequences = getNumSequences();
+        for (hal_size_t i = 0; i < numSequences; ++i)
+        {
+            Hdf5Sequence seq(const_cast<Hdf5Genome*>(this),
+                             const_cast<Hdf5ExternalArray*>(&_sequenceIdxArray),
+                             const_cast<Hdf5ExternalArray*>(&_sequenceNameArray),
+                             i);
+            names.push_back(seq.getName());
+        }
+        try
+        {
+            HDF5DisableExceptionPrinting prDisable;
+            DataSet d = _group.openDataSet(sequenceNameArrayName);
+            _group.unlink(sequenceNameArrayName);
+        }
+        catch (H5::Exception&){}
+
+        _sequenceNameArray.create(&_group, sequenceNameArrayName,
+                                  Hdf5Sequence::nameDataType(newMaxSize + 1),
+                                  numSequences, &_dcprops, _numChunksInArrayBuffer);
+        for (size_t i = 0; i < numSequences; i++) {
+            char* arrayBuffer = _sequenceNameArray.getUpdate(i);
+            strcpy(arrayBuffer, names[i].c_str());
+        }
+    }
+}

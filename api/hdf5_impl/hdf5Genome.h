@@ -149,6 +149,9 @@ public:
    void create();
    void resetTreeCache();
    void resetBranchCaches();
+   void renameSequence(const std::string &oldName,
+                       size_t index,
+                       const std::string &newName);
 
 private:
 
@@ -163,6 +166,7 @@ private:
 
    void setGenomeBottomDimensions(
      const std::vector<hal::Sequence::UpdateInfo>& sequenceDimensions);
+   void resizeNameArray(size_t newMaxSize);
 
 
 private:

@@ -62,16 +62,10 @@ H5::CompType Hdf5Sequence::idxDataType()
 
 H5::StrType Hdf5Sequence::nameDataType(hal_size_t maxNameLength)
 {
-  // the in-memory representations and hdf5 representations 
-  // don't necessarily have to be the same, but it simplifies 
-  // testing for now. 
   assert(PredType::NATIVE_HSIZE.getSize() == sizeof(hal_size_t));
   assert(PredType::NATIVE_CHAR.getSize() == sizeof(char));
   StrType strType(PredType::NATIVE_CHAR, (maxNameLength + 1) * sizeof(char));
-//  CompType dataType(nameOffset + strType.getSize());
-//  dataType.insertMember("name", nameOffset, strType);
   return strType;
-//  return dataType;
 }
 
 // SEQUENCE INTERFACE
@@ -336,8 +330,5 @@ void Hdf5Sequence::setBottomSegmentArrayIndex(hal_size_t bottomIndex)
 
 void Hdf5Sequence::setName(const string &newName)
 {
-  char* arrayBuffer = _nameArray->getUpdate(_index);
-  strcpy(arrayBuffer, newName.c_str());
-  _nameArray->write();
-  _genome->readSequences();
+  _genome->renameSequence(getName(), _index, newName);
 }

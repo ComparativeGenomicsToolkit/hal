@@ -33,6 +33,12 @@ struct SequenceUpdateTest : public AlignmentTest
    void checkCallBack(const Alignment* alignment);
 };
 
+struct SequenceRenameTest : public AlignmentTest
+{
+   void createCallBack(Alignment* alignment);
+   void checkCallBack(const Alignment* alignment);
+};
+
 #endif
 // Local Variables:
 // mode: c++
