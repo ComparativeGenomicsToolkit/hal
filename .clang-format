@@ -1,0 +1,18 @@
+BasedOnStyle: LLVM
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+# BinPackArguments: false
+# BinPackParameters: false
+# BreakBeforeBinaryOperators: false
+# BreakBeforeBraces: Attach
+# BreakAfterJavaFieldAnnotations: true
+ColumnLimit: 128
+# IndentCaseLabels: true
+IndentWidth: 4
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: All
+TabWidth: 4
+UseTab: Never
+
