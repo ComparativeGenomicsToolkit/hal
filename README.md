@@ -5,7 +5,7 @@ Released under the MIT license, see LICENSE.txt
 
 HAL is a structure to efficiently store and index multiple genome alignments and ancestral reconstructions.  HAL is a graph-based representation which provides several advantages over matrix/block-based formats such as MAF, such as improved scalability and the ability to perform queries with respect to an arbitrary reference or subtree. 
 
-This package includes the [HAL API](http://htmlpreview.github.com/?https://raw.github.com/glennhickey/hal/development/api/doc/html/index.html) and several analysis and  conversion tools which are described below.  HAL files are presently stored in  [HDF5](http://www.hdfgroup.org/HDF5/) format, but we note that the tools and most of the API are format-independent, so other databases could be implemented in the future.  
+This package includes the [HAL API](http://htmlpreview.github.com/?https://raw.github.com/glennhickey/hal/development/api/doc/html/index.html) and several analysis and  conversion tools which are described below.  HAL files are presently stored in either [HDF5](http://www.hdfgroup.org/HDF5/) or `mmap` format, but we note that the tools and most of the API are format-independent, so other databases could be implemented in the future.
 
 Citing
 -----
@@ -140,6 +140,10 @@ HAL Tools
 ### General Options
 
 *Detailed command line options can be obtained by running each tool with the `--help` option.*
+
+
+Two stored formats are included with HAL: `HDF5` and `mmap`.  HDF5 is standard container format for larger data sets with good compression characteristics .  The `mmap` format stores the raw data structures in a file, which is access by mapping in into memory using the `mmap` system call.  HAL files in the `mmap` format a considerably bigger but often much faster to access.  The `halExtract` command can be used to copy between formats.
+
 
 All HAL tools compiled with HDF5 support expose some caching parameters.  Tools that create HAL files also include chunking and compression parameters.  In most cases, the default values of these options will suffice.  
 
