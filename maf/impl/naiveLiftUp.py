@@ -9,7 +9,7 @@ from StringIO import StringIO
 from argparse import ArgumentParser
 from copy import deepcopy
 from collections import namedtuple, deque, defaultdict
-from subprocess import check_output
+from subprocess32 import check_output
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
 from urlparse import urlparse
@@ -105,7 +105,7 @@ def prune_tree(tree, leaves_to_keep):
 
 def start_job(job, hal_id, refGenome, opts):
     """Set up the structure of the pipeline."""
-    hal = job.fileStore.readGlobalFile(hal_id)
+    hal = hal_id
     # Newick representation of the HAL species tree.
     newick_string = get_hal_tree(hal)
     job.fileStore.logToMaster("Newick string: %s" % (newick_string))
@@ -142,11 +142,8 @@ def start_job(job, hal_id, refGenome, opts):
     blocks_on_ref = setup_jobs(rerooted)
 
     all_genomes = [node.name for node in tree.walk()]
-    chrom_sizes = {}
-    for genome in all_genomes:
-        chrom_sizes[genome] = get_chrom_sizes(hal, genome)
 
-    return job.addFollowOnJobFn(maf_export_job, chrom_sizes, blocks_on_ref, opts).rv()
+    return job.addFollowOnJobFn(maf_export_job, hal, all_genomes, blocks_on_ref, opts).rv()
 
 def split_blocks_by_chrom(blocks_file, get_temp_path):
     """
@@ -248,7 +245,7 @@ def lift_job(job, up_or_down, genome, other_genome, blocks_id, hal_id, opts):
     job.fileStore.logToMaster("Lifting from {} to {}".format(genome, other_genome))
 
     # Get the alignments / blocks, separated into different files by chromosome.
-    hal = job.fileStore.readGlobalFile(hal_id)
+    hal = hal_id
     alignment_path = job.fileStore.getLocalTempFile()
     if up_or_down == 'up':
         get_alignment_to_parent(hal, genome, alignment_path)
@@ -283,7 +280,7 @@ def lift_job(job, up_or_down, genome, other_genome, blocks_id, hal_id, opts):
     return output_id
 
 def lift_subset_job(job, alignment_id, blocks_id, parent_genome):
-    alignment_path = job.fileStore.readGlobalFile(alignment_id)
+    alignment_path = alignment_id
     blocks_path = job.fileStore.readGlobalFile(blocks_id)
     lifted_path = job.fileStore.getLocalTempFile()
     with open(alignment_path) as alignment, open(blocks_path) as blocks, open(lifted_path, 'w') as lifted:
@@ -300,7 +297,7 @@ def sort_blocks_job(job, blocks_id):
 def merge_blocks_job(job, genome, child_names, block_ids, hal_id, opts):
     """Combine the lifted blocks and add in the current genome's sequence."""
     job.fileStore.logToMaster("Merging blocks on {} (from child genomes {})".format(genome, child_names))
-    hal = job.fileStore.readGlobalFile(hal_id)
+    hal = hal_id
     if len(block_ids) == 0:
         # Leaf genome.
         assert len(child_names) == len(block_ids) == 0
@@ -342,7 +339,7 @@ def merge_blocks_merge_subset_job(job, genome, child_names, block_ids, chrom_siz
 
 def merge_blocks_maximize_block_length_job(job, genome, merged_blocks_id, hal_id, opts):
     """Maximizes the block length of a set of merged blocks."""
-    hal = job.fileStore.readGlobalFile(hal_id)
+    hal = hal_id
     ref_sequence = get_sequence(hal, genome)
     merged_path = job.fileStore.readGlobalFile(merged_blocks_id)
     # Sort the blocks (they are probably in a somewhat random order).
@@ -597,8 +594,12 @@ def maximize_block_length(blocks, ref_sequence, output):
             growing_block = cur_block
     output.write(str(growing_block))
 
-def maf_export_job(job, chrom_sizes, blocksID, opts):
+def maf_export_job(job, hal, genomes, blocksID, opts):
     """Once blocks are on the reference, export them to MAF."""
+    chrom_sizes = {}
+    for genome in genomes:
+        chrom_sizes[genome] = get_chrom_sizes(hal, genome)
+
     blocks_path = job.fileStore.readGlobalFile(blocksID)
     output_path = job.fileStore.getLocalTempFile()
     with open(blocks_path) as blocks, open(output_path, 'w') as output:
@@ -1452,8 +1453,7 @@ def main():
         if opts.restart:
             mafID = toil.restart()
         else:
-            hal_id = toil.importFile(makeURL(opts.hal))
-            mafID = toil.start(Job.wrapJobFn(start_job, hal_id, opts.refGenome, opts))
+            mafID = toil.start(Job.wrapJobFn(start_job, opts.hal, opts.refGenome, opts))
         toil.exportFile(mafID, makeURL(opts.outputMaf))
 
 # Tests
