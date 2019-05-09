@@ -87,7 +87,7 @@ int main(int argc, char** argv)
     qSpecies.name = args.qSpecies;
     qSpecies.next = NULL;
 
-    long numBytes = halGetMAF(stdout,  
+    long numBytes = halGetMaf(stdout,  
                               handle,
                               &qSpecies,
                               args.tSpecies,

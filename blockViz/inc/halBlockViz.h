@@ -140,6 +140,10 @@ typedef enum
 */
 int halOpenHalOrLod(char *lodFilePath, char **errStr);
 
+
+/* Deprecated, maintain for browser code compatibility */
+int halOpenLOD(char *lodFilePath, char **errStr);
+
     
 /** Open a HAL alignment file read-only.  
  * @param halFilePath path to location of HAL file on disk 
@@ -300,7 +304,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange_filterByChrom(int halHandl
  * failure. If NULL, throws an exception on failure instead.
  * @return  number of bytes written. -1 on failure.
  */
-hal_int_t halGetMAF(FILE* outFile,
+hal_int_t halGetMaf(FILE* outFile,
                     int halHandle, 
                     struct hal_species_t* qSpeciesNames,
                     char* tSpecies,
@@ -312,6 +316,17 @@ hal_int_t halGetMAF(FILE* outFile,
                     int doDupes,
                     char **errStr);
 
+/* Deprecated, maintain for browser code compatibility */
+hal_int_t halGetMAF(FILE* outFile,
+                    int halHandle, 
+                    struct hal_species_t* qSpeciesNames,
+                    char* tSpecies,
+                    char* tChrom,
+                    hal_int_t tStart, 
+                    hal_int_t tEnd,
+                    int doDupes,
+                    char **errStr);
+    
 /** Create a linked list of the species in the hal file.
  * @param halHandle handle for the HAL alignment obtained from halOpen
  * @param errStr pointer to a string that contains an error message on
@@ -346,7 +361,7 @@ char *halGetDna(int halHandle,
 
 /** Get the maximum query size supported by the lod.txt file.  Queries > than
  * this length will return an error. 
- * @param  halHandle handle for the HAL LOD.txt obtained from halOpen or halOpenLod 
+ * @param  halHandle handle for the HAL LOD.txt obtained from halOpen or halOpenHalOrLod 
  * @param errStr pointer to a string that contains an error message on
  * failure. If NULL, throws an exception on failure instead.
  * @return Maximum query length.  Any query > than this value will be invalid.

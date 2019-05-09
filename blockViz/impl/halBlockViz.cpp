@@ -117,6 +117,13 @@ extern "C" int halOpenHalOrLod(char *lodFilePath, char **errStr)
   }
 }
 
+/* Deprecated, maintain for browser code compatibility */
+extern "C" int halOpenLOD(char *lodFilePath, char **errStr) {
+    // FIXME remove when browser is migrated
+    return halOpenHalOrLod(lodFilePath, errStr);
+}
+
+
 extern "C" int halOpen(char* halFilePath, char **errStr)
 {
   halLock();
@@ -443,7 +450,7 @@ struct hal_block_results_t *halGetBlocksInTargetRange_filterByChrom(int halHandl
     return results;
 }
 
-extern "C" hal_int_t halGetMAF(FILE* outFile,
+extern "C" hal_int_t halGetMaf(FILE* outFile,
                                int halHandle, 
                                hal_species_t* qSpeciesNames,
                                char* tSpecies,
@@ -463,7 +470,7 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     if (rangeLength < 0)
     {
         halUnlock();
-        handleError("halGetMAF invalid query range [" + std::to_string(tStart) + "," + std::to_string(tEnd) + ")", errStr);
+        handleError("halGetMaf invalid query range [" + std::to_string(tStart) + "," + std::to_string(tEnd) + ")", errStr);
         return -1;
     }
     AlignmentConstPtr alignment(getExistingAlignment(halHandle, hal_size_t(0), true));
@@ -486,13 +493,13 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
     if (absStart > absEnd)
     {
         halUnlock();
-        handleError("halGetMAF invalid range", errStr);
+        handleError("halGetMaf invalid range", errStr);
         return -1;
     }
     if (absEnd > tSequence->getEndPosition())
     {
         halUnlock();
-        handleError("halGetMAF target end position outside of target sequence", errStr);
+        handleError("halGetMaf target end position outside of target sequence", errStr);
         return -1;
     }
 
@@ -521,17 +528,33 @@ extern "C" hal_int_t halGetMAF(FILE* outFile,
   catch(exception& e)
   {
     halUnlock();
-    handleError("halGetMAF error writing MAF blocks: " + string(e.what()), errStr);
+    handleError("halGetMaf error writing MAF blocks: " + string(e.what()), errStr);
     return -1;
   }
   catch(...)
   {
     halUnlock();
-    handleError("halGetMAF error writing MAF blocks: unknown exception", errStr);
+    handleError("halGetMaf error writing MAF blocks: unknown exception", errStr);
     return -1;
   }
   halUnlock();
   return numBytes;
+}
+
+/* Deprecated, maintain for browser code compatibility */
+extern "C" hal_int_t halGetMAF(FILE* outFile,
+                               int halHandle, 
+                               struct hal_species_t* qSpeciesNames,
+                               char* tSpecies,
+                               char* tChrom,
+                               hal_int_t tStart, 
+                               hal_int_t tEnd,
+                               int doDupes,
+                               char **errStr) {
+    // FIXME remove when browser is migrated
+    return halGetMaf(outFile, halHandle, qSpeciesNames,
+                     tSpecies,tChrom, tStart,  tEnd, 0, 0,
+                     doDupes, errStr);
 }
 
 extern "C" struct hal_species_t *halGetSpecies(int halHandle, char **errStr)
