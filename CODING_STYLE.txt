@@ -10,3 +10,6 @@ For emacs users, this is set automatically from `.dir.locals.el`.
 
 The `clang-format` program was used  '.clang-format' as a configuration.
 
+Other conventions:
+  - member variables: begin with _
+  - never use "using namespace" in a header file
