@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 #Copyright (C) 2013 by Glenn Hickey
+# Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
 #!/usr/bin/env python

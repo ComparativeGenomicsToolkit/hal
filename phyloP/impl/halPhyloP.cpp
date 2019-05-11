@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 by Glenn Hickey (hickey@soe.ucsc.edu) and
+ * Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
  * Melissa Jane Hubisz (Cornell University)
  *
  * Released under the MIT license, see LICENSE.txt

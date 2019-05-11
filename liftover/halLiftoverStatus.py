@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 #Copyright (C) 2013 by Ngan Nguyen (nknguyen@soe.ucsc.edu)
+# Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txtimport unittest
 

@@ -1,4 +1,5 @@
 /* Copyright (C) 2012 by Glenn Hickey (hickey@soe.ucsc.edu)
+ * Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
  *
  * Released under the MIT license, see LICENSE.txt
  */
