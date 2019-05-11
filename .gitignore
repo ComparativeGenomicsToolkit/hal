@@ -10,3 +10,4 @@
 .emacs.bak
 TAGS
 include.local.mk
+output
