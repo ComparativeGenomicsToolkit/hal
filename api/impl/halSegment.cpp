@@ -4,8 +4,8 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include "halSegment.h"
-#include "halGenome.h"
 #include "halDnaIterator.h"
+#include "halGenome.h"
 
 using namespace hal;
 
@@ -29,4 +29,3 @@ bool Segment::isMissingData(double nThreshold) const {
     }
     return false;
 }
-

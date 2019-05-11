@@ -4,32 +4,24 @@
 using namespace std;
 using namespace hal;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
     CLParser optionsParser;
     optionsParser.setDescription("Calculate coverage by sampling bases.");
     optionsParser.addArgument("halFile", "path to hal file to analyze");
     optionsParser.addArgument("refGenome", "genome to calculate coverage on");
-    optionsParser.addOption("numSamples",
-                             "Number of bases to sample when calculating coverage",
-                             1000000);
-    optionsParser.addOption("seed",
-                             "Random seed (integer)",
-                             0);
+    optionsParser.addOption("numSamples", "Number of bases to sample when calculating coverage", 1000000);
+    optionsParser.addOption("seed", "Random seed (integer)", 0);
     string path;
     string refGenome;
     hal_size_t numSamples;
     int64_t seed;
-    try
-    {
+    try {
         optionsParser.parseOptions(argc, argv);
         path = optionsParser.getArgument<string>("halFile");
         refGenome = optionsParser.getArgument<string>("refGenome");
         numSamples = optionsParser.getOption<hal_size_t>("numSamples");
         seed = optionsParser.getOption<int64_t>("seed");
-    }
-    catch(exception& e)
-    {
+    } catch (exception &e) {
         cerr << e.what() << endl;
         optionsParser.printUsage(cerr);
         exit(1);
@@ -46,7 +38,7 @@ int main(int argc, char** argv)
     const Genome *ref = alignment->openGenome(refGenome);
     vector<const Genome *> leafGenomes = getLeafGenomes(alignment.get());
 
-    map<const Genome *, vector<hal_size_t> > coverage;
+    map<const Genome *, vector<hal_size_t>> coverage;
     for (size_t i = 0; i < leafGenomes.size(); i++) {
         coverage.insert(make_pair(leafGenomes[i], vector<hal_size_t>()));
     }
@@ -83,8 +75,7 @@ int main(int argc, char** argv)
     }
     cout << endl;
 
-    for (map<const Genome *, vector<hal_size_t> >::iterator it = coverage.begin();
-         it != coverage.end(); it++) {
+    for (map<const Genome *, vector<hal_size_t>>::iterator it = coverage.begin(); it != coverage.end(); it++) {
         string name = it->first->getName();
         cout << name;
         vector<hal_size_t> histogram = it->second;

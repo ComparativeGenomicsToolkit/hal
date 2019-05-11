@@ -7,42 +7,34 @@
 #ifndef _HALWIGGLELOADER_H
 #define _HALWIGGLELOADER_H
 
-#include <vector>
-#include <string>
-#include <fstream>
-#include <iostream>
 #include "halWiggleScanner.h"
 #include "halWiggleTiles.h"
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 
 namespace hal {
 
-/** Quick hack to load a wiggle into memory, in order to have wiggleLiftover
- * --append option work better.  Ideally would be base class of WiggleLiftover
- * but don't have time to refactor right now */
-class WiggleLoader : public WiggleScanner
-{
-public:
-   
-   WiggleLoader();
-   virtual ~WiggleLoader();
+    /** Quick hack to load a wiggle into memory, in order to have wiggleLiftover
+     * --append option work better.  Ideally would be base class of WiggleLiftover
+     * but don't have time to refactor right now */
+    class WiggleLoader : public WiggleScanner {
+      public:
+        WiggleLoader();
+        virtual ~WiggleLoader();
 
-   void load(const Alignment* alignment, 
-             const Genome* genome,
-             std::istream* inputFile,
-             WiggleTiles<double>* vals);
-     
-   
-protected:
+        void load(const Alignment *alignment, const Genome *genome, std::istream *inputFile, WiggleTiles<double> *vals);
 
-   virtual void visitLine();
-   virtual void visitHeader();
+      protected:
+        virtual void visitLine();
+        virtual void visitHeader();
 
-   AlignmentConstPtr _alignment;
-   const Genome* _srcGenome;
-   const Sequence* _srcSequence;
-   WiggleTiles<double>* _vals;
-};
-
+        AlignmentConstPtr _alignment;
+        const Genome *_srcGenome;
+        const Sequence *_srcSequence;
+        WiggleTiles<double> *_vals;
+    };
 }
 #endif
 // Local Variables:

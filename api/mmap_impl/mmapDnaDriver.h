@@ -10,28 +10,26 @@
 namespace hal {
     class MMapGenome;
     class MMapAlignment;
-    
+
     /**
      * Mmap implementation of DnaAccess.
      */
-    class MMapDnaAccess: public DnaAccess {
-        public:
-        MMapDnaAccess(MMapGenome* genome,
-                      hal_index_t index);
-        
+    class MMapDnaAccess : public DnaAccess {
+      public:
+        MMapDnaAccess(MMapGenome *genome, hal_index_t index);
+
         virtual ~MMapDnaAccess() {
         }
 
         void flush();
 
-        protected:
+      protected:
         virtual void fetch(hal_index_t index) const;
 
-        private:
-        MMapGenome* _genome;
+      private:
+        MMapGenome *_genome;
         bool _isUdcProtocol;
     };
-
 }
 
 #endif

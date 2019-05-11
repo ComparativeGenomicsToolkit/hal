@@ -7,52 +7,46 @@
 #ifndef _HALGENOMETEST_H
 #define _HALGENOMETEST_H
 
-#include <vector>
+#include "allTests.h"
 #include "halAlignmentTest.h"
 #include "halGenome.h"
-#include "allTests.h"
+#include <vector>
 
 using namespace hal;
 
-struct GenomeMetaTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct GenomeMetaTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct GenomeCreateTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct GenomeCreateTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct GenomeUpdateTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct GenomeUpdateTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct GenomeStringTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
-   std::string _string;
+struct GenomeStringTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
+    std::string _string;
 };
 
-struct GenomeCopyTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
-   std::string _path;
-   AlignmentPtr _secondAlignment;
+struct GenomeCopyTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
+    std::string _path;
+    AlignmentPtr _secondAlignment;
 };
 
-struct GenomeCopySegmentsWhenSequencesOutOfOrderTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
-   std::string _path;
-   AlignmentPtr _secondAlignment;
+struct GenomeCopySegmentsWhenSequencesOutOfOrderTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
+    std::string _path;
+    AlignmentPtr _secondAlignment;
 };
 
 #endif

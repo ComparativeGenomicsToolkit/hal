@@ -7,76 +7,66 @@
 #ifndef _HDF5DNAARRAY_H
 #define _HDF5DNAARRAY_H
 
-#include <cassert>
-#include <H5Cpp.h>
 #include "rawH5ExternalArray.h"
+#include <H5Cpp.h>
+#include <cassert>
 
 namespace hal {
 
-/** 
- * Wraps the RawH5ExternalArray with interface tailored to storing and accessing
- * only DNA characters
- */
-class Hdf5DnaArray
-{
-public:
+    /**
+     * Wraps the RawH5ExternalArray with interface tailored to storing and accessing
+     * only DNA characters
+     */
+    class Hdf5DnaArray {
+      public:
+        /** Constructor */
+        Hdf5DnaArray();
 
-   /** Constructor */
-   Hdf5DnaArray();  
+        /** Destructor */
+        virtual ~Hdf5DnaArray();
 
-   /** Destructor */
-   virtual ~Hdf5DnaArray();
-   
-   /** Create a new array (overloads method in parent)
-    * @param file HDF5 file in which to add new array dataset
-    * @param path location of new array in file
-    * @param size Fixed length of the new array
-    * @param cparams Creation parameters for new array (chunking, zipping) */
-   void create(H5File* file,
-               const std::string& path,
-               hsize_t size, 
-               const H5::DSetCreatPropList& cparms = 
-               H5::DSetCreatPropList::DEFAULT);
-   
-   /** Open an existing array 
-    * @param file HDF5 file containing array to open
-    * @param path location of array in file */
-   void open(H5File* file,
-             const std::string& path);
+        /** Create a new array (overloads method in parent)
+         * @param file HDF5 file in which to add new array dataset
+         * @param path location of new array in file
+         * @param size Fixed length of the new array
+         * @param cparams Creation parameters for new array (chunking, zipping) */
+        void create(H5File *file, const std::string &path, hsize_t size,
+                    const H5::DSetCreatPropList &cparms = H5::DSetCreatPropList::DEFAULT);
 
-   /** Write any unsaved buffer contents back to the file */
-   void write();
-             
-   /** Get read/write iterator 
-    * @param offset position of iterator in array */
-   Hdf5DnaIterator getDnaIterator(hsize_t offset = 0);
+        /** Open an existing array
+         * @param file HDF5 file containing array to open
+         * @param path location of array in file */
+        void open(H5File *file, const std::string &path);
 
-   /** Get read-only iterator
-    * @param offset position of iterator in array */
-   Hdf5DnaConstIterator getDnaConstIterator(hsize_t offset = 0);
+        /** Write any unsaved buffer contents back to the file */
+        void write();
 
-   /** Get size of array */
-   hsize_t size();
-   
-private:
-   
-   RawH5ExternalArray _array;
-};
+        /** Get read/write iterator
+         * @param offset position of iterator in array */
+        Hdf5DnaIterator getDnaIterator(hsize_t offset = 0);
 
-// INLINE METHODS
+        /** Get read-only iterator
+         * @param offset position of iterator in array */
+        Hdf5DnaConstIterator getDnaConstIterator(hsize_t offset = 0);
 
-inline Hdf5DnaArray::getDnaIterator(hsize_t offset)
-{
-  assert(offset < size());
-  return DnaIterator(_array, offset);
-}
+        /** Get size of array */
+        hsize_t size();
 
-inline Hdf5DnaConstIterator(hsize_t offset)
-{
-  assert(offset < size());
-  return DnaIterator(_array, offset);
-}
+      private:
+        RawH5ExternalArray _array;
+    };
 
+    // INLINE METHODS
+
+    inline Hdf5DnaArray::getDnaIterator(hsize_t offset) {
+        assert(offset < size());
+        return DnaIterator(_array, offset);
+    }
+
+    inline Hdf5DnaConstIterator(hsize_t offset) {
+        assert(offset < size());
+        return DnaIterator(_array, offset);
+    }
 }
 // Local Variables:
 // mode: c++

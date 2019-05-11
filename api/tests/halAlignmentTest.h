@@ -7,10 +7,10 @@
 #ifndef _HALALIGNMENTTEST_H
 #define _HALALIGNMENTTEST_H
 
-#include <vector>
-#include <string>
-#include "halAlignment.h"
 #include "allTests.h"
+#include "halAlignment.h"
+#include <string>
+#include <vector>
 
 using namespace hal;
 
@@ -19,22 +19,22 @@ using namespace hal;
  */
 extern std::string storageDriverToTest;
 
-class AlignmentTest
-{
-public:
-   AlignmentTest() {
-   }
-   virtual ~AlignmentTest() {
-   }
-   void check(CuTest *testCase);   
-    virtual void createCallBack(Alignment* alignment) {}
-   virtual void checkCallBack(const Alignment* alignment) {}
-   CuTest* _testCase;
-   std::string _createPath;
-   std::string _checkPath;
-   static std::string randomString(hal_size_t length);
-   void checkOne(CuTest* testCase,
-                 const std::string& storageFormat);
+class AlignmentTest {
+  public:
+    AlignmentTest() {
+    }
+    virtual ~AlignmentTest() {
+    }
+    void check(CuTest *testCase);
+    virtual void createCallBack(Alignment *alignment) {
+    }
+    virtual void checkCallBack(const Alignment *alignment) {
+    }
+    CuTest *_testCase;
+    std::string _createPath;
+    std::string _checkPath;
+    static std::string randomString(hal_size_t length);
+    void checkOne(CuTest *testCase, const std::string &storageFormat);
 };
 
 #endif

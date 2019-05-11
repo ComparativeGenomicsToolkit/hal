@@ -35,8 +35,8 @@ extern "C" {
 #include "common.h"
 #include "udc2.h"
 }
-#include "hdf5.h"
 #include "halCommon.h"
+#include "hdf5.h"
 #include "hdf5UDCFuseDriver.h"
 
 #ifdef H5_HAVE_UNISTD_H
@@ -45,11 +45,11 @@ extern "C" {
 
 #ifdef H5_HAVE_WIN32_API
 /* The following two defines must be before any windows headers are included */
-#define WIN32_LEAN_AND_MEAN    /* Exclude rarely-used stuff from Windows headers */
-#define NOGDI                  /* Exclude Graphic Display Interface macros */
+#define WIN32_LEAN_AND_MEAN /* Exclude rarely-used stuff from Windows headers */
+#define NOGDI               /* Exclude Graphic Display Interface macros */
 
-#include <windows.h>
 #include <io.h>
+#include <windows.h>
 
 /* This is not defined in the Windows header files */
 #ifndef F_OK
@@ -63,24 +63,24 @@ extern "C" {
 #ifdef MAX
 #undef MAX
 #endif /* MAX */
-#define MAX(X,Y)  ((X)>(Y)?(X):(Y))
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
 /* The driver identification number, initialized at runtime */
 static hid_t H5FD_UDC_FUSE_g = 0;
 
 /* Flexibility to not use the default path within udc library
  * if desired */
-static const char* H5FD_UDC_FUSE_CACHE_PATH = NULL;
+static const char *H5FD_UDC_FUSE_CACHE_PATH = NULL;
 
 /* The maximum number of bytes which can be written in a single I/O operation */
 static size_t H5_UDC_FUSE_MAX_IO_BYTES_g = (size_t)-1;
 
 /* File operations */
 typedef enum {
-    H5FD_UDC_FUSE_OP_UNKNOWN=0,
-    H5FD_UDC_FUSE_OP_READ=1,
-    H5FD_UDC_FUSE_OP_WRITE=2,
-    H5FD_UDC_FUSE_OP_SEEK=3
+    H5FD_UDC_FUSE_OP_UNKNOWN = 0,
+    H5FD_UDC_FUSE_OP_READ = 1,
+    H5FD_UDC_FUSE_OP_WRITE = 2,
+    H5FD_UDC_FUSE_OP_SEEK = 3
 } H5FD_udc_fuse_file_op;
 
 /* The description of a file belonging to this driver. The 'eoa' and 'eof'
@@ -95,15 +95,15 @@ typedef enum {
  * occurs), and 'op' will be set to H5F_OP_UNKNOWN.
  */
 typedef struct H5FD_udc_fuse_t {
-    H5FD_t      pub;            /* public stuff, must be first      */
-    udc2File   *ufp;            /* the file handle                  */
-    int         fd;             /* file descriptor (for truncate)   */
-    haddr_t     eoa;            /* end of allocated region          */
-    haddr_t     eof;            /* end of file; current file size   */
-    haddr_t     pos;            /* current file I/O position        */
-    unsigned    write_access;   /* Flag to indicate the file was opened with write access */
-    H5FD_udc_fuse_file_op op;  /* last operation */
-    const char*  name;           /* path of file used for id */
+    H5FD_t pub;               /* public stuff, must be first      */
+    udc2File *ufp;            /* the file handle                  */
+    int fd;                   /* file descriptor (for truncate)   */
+    haddr_t eoa;              /* end of allocated region          */
+    haddr_t eof;              /* end of file; current file size   */
+    haddr_t pos;              /* current file I/O position        */
+    unsigned write_access;    /* Flag to indicate the file was opened with write access */
+    H5FD_udc_fuse_file_op op; /* last operation */
+    const char *name;         /* path of file used for id */
 #ifndef H5_HAVE_WIN32_API
     /* On most systems the combination of device and i-node number uniquely
      * identify a file.  Note that Cygwin, MinGW and other Windows POSIX
@@ -111,11 +111,11 @@ typedef struct H5FD_udc_fuse_t {
      * and will use the 'device + inodes' scheme as opposed to the
      * Windows code further below.
      */
-    dev_t           device;     /* file device number   */
+    dev_t device; /* file device number   */
 #ifdef H5_VMS
-    ino_t           inode[3];   /* file i-node number   */
+    ino_t inode[3]; /* file i-node number   */
 #else
-    ino_t           inode;      /* file i-node number   */
+    ino_t inode; /* file i-node number   */
 #endif /* H5_VMS */
 #else
     /* Files in windows are uniquely identified by the volume serial
@@ -132,21 +132,20 @@ typedef struct H5FD_udc_fuse_t {
      *
      * http://msdn.microsoft.com/en-us/library/aa363788(v=VS.85).aspx
      */
-    DWORD           nFileIndexLow;
-    DWORD           nFileIndexHigh;
-    DWORD           dwVolumeSerialNumber;
-    
-    HANDLE          hFile;      /* Native windows file handle */
-#endif  /* H5_HAVE_WIN32_API */
+    DWORD nFileIndexLow;
+    DWORD nFileIndexHigh;
+    DWORD dwVolumeSerialNumber;
+
+    HANDLE hFile; /* Native windows file handle */
+#endif /* H5_HAVE_WIN32_API */
 } H5FD_udc_fuse_t;
 
-/* Structs below specify seek / tell / truncate infterface for 
+/* Structs below specify seek / tell / truncate infterface for
  * different platforms.  We override all with udc methods */
-static int udcFseekWrapper(struct udc2File* file, long long offset, int whence)
-{
-  assert(whence == SEEK_SET);
-  udc2Seek(file, offset);
-  return 0;
+static int udcFseekWrapper(struct udc2File *file, long long offset, int whence) {
+    assert(whence == SEEK_SET);
+    udc2Seek(file, offset);
+    return 0;
 }
 
 #if 0
@@ -157,34 +156,33 @@ static int udcFtruncateWrapper(int, long long)
 }
 #endif
 
-
 /* Use similar structure as in H5private.h by defining Windows stuff first. */
 #ifdef H5_HAVE_WIN32_API
 #ifndef H5_HAVE_MINGW
-    #define file_fseek      udcFseekWrapper
-    #define file_offset_t   __int64
-    #define file_ftruncate  udcFtruncateWrapper   /* Supported in VS 2005 or newer */
-    #define file_ftell      udcTell
+#define file_fseek udcFseekWrapper
+#define file_offset_t __int64
+#define file_ftruncate udcFtruncateWrapper /* Supported in VS 2005 or newer */
+#define file_ftell udcTell
 #endif /* H5_HAVE_MINGW */
 #endif /* H5_HAVE_WIN32_API */
 
-/* Use file_xxx to indicate these are local macros, avoiding confusing 
- * with the global HD_xxx macros. 
- * Assume fseeko, which is POSIX standard, is always supported; 
- * but prefer to use fseeko64 if supported. 
+/* Use file_xxx to indicate these are local macros, avoiding confusing
+ * with the global HD_xxx macros.
+ * Assume fseeko, which is POSIX standard, is always supported;
+ * but prefer to use fseeko64 if supported.
  */
 #ifndef file_fseek
-    #ifdef H5_HAVE_FSEEKO64
-        #define file_fseek      udcFseekWrapper
-        #define file_offset_t   off64_t
-        #define file_ftruncate  ftruncate64
-        #define file_ftell      udcTell
-    #else
-        #define file_fseek      udcFseekWrapper
-        #define file_offset_t   off_t
-        #define file_ftruncate  udcFtruncateWrapper
-        #define file_ftell      udcTell
-    #endif /* H5_HAVE_FSEEKO64 */
+#ifdef H5_HAVE_FSEEKO64
+#define file_fseek udcFseekWrapper
+#define file_offset_t off64_t
+#define file_ftruncate ftruncate64
+#define file_ftell udcTell
+#else
+#define file_fseek udcFseekWrapper
+#define file_offset_t off_t
+#define file_ftruncate udcFtruncateWrapper
+#define file_ftell udcTell
+#endif /* H5_HAVE_FSEEKO64 */
 #endif /* file_fseek */
 
 /* These macros check for overflow of various quantities.  These macros
@@ -202,15 +200,14 @@ static int udcFtruncateWrapper(int, long long)
  *      argument of the file seek function.
  */
 /* adding for windows NT filesystem support. */
-#define MAXADDR (((haddr_t)1<<(8*sizeof(file_offset_t)-1))-1)
-#define ADDR_OVERFLOW(A)  (HADDR_UNDEF==(A) || ((A) & ~(haddr_t)MAXADDR))
-#define SIZE_OVERFLOW(Z)  ((Z) & ~(hsize_t)MAXADDR)
-#define REGION_OVERFLOW(A,Z)  (ADDR_OVERFLOW(A) || SIZE_OVERFLOW(Z) || \
-    HADDR_UNDEF==(A)+(Z) || (file_offset_t)((A)+(Z))<(file_offset_t)(A))
+#define MAXADDR (((haddr_t)1 << (8 * sizeof(file_offset_t) - 1)) - 1)
+#define ADDR_OVERFLOW(A) (HADDR_UNDEF == (A) || ((A) & ~(haddr_t)MAXADDR))
+#define SIZE_OVERFLOW(Z) ((Z) & ~(hsize_t)MAXADDR)
+#define REGION_OVERFLOW(A, Z)                                                                                                  \
+    (ADDR_OVERFLOW(A) || SIZE_OVERFLOW(Z) || HADDR_UNDEF == (A) + (Z) || (file_offset_t)((A) + (Z)) < (file_offset_t)(A))
 
 /* Prototypes */
-static H5FD_t *H5FD_udc_fuse_open(const char *name, unsigned flags,
-                 hid_t fapl_id, haddr_t maxaddr);
+static H5FD_t *H5FD_udc_fuse_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr);
 static herr_t H5FD_udc_fuse_close(H5FD_t *lf);
 static int H5FD_udc_fuse_cmp(const H5FD_t *_f1, const H5FD_t *_f2);
 static herr_t H5FD_udc_fuse_query(const H5FD_t *_f1, unsigned long *flags);
@@ -218,52 +215,49 @@ static haddr_t H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id
 static haddr_t H5FD_udc_fuse_get_eoa(const H5FD_t *_file, H5FD_mem_t type);
 static herr_t H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr);
 static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type);
-static herr_t  H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void** file_handle);
-static herr_t H5FD_udc_fuse_read(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr,
-                size_t size, void *buf);
-static herr_t H5FD_udc_fuse_write(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr,
-                size_t size, const void *buf);
+static herr_t H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void **file_handle);
+static herr_t H5FD_udc_fuse_read(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, void *buf);
+static herr_t H5FD_udc_fuse_write(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, const void *buf);
 static herr_t H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, hbool_t closing);
 static herr_t H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing);
 
 static const H5FD_class_t H5FD_udc_fuse_g = {
-    "udc_fuse",                    /* name         */
-    MAXADDR,                    /* maxaddr      */
-    H5F_CLOSE_WEAK,             /* fc_degree    */
-    NULL,                       /* terminate */
-    NULL,                       /* sb_size      */
-    NULL,                       /* sb_encode    */
-    NULL,                       /* sb_decode    */
-    0,                          /* fapl_size    */
-    NULL,                       /* fapl_get     */
-    NULL,                       /* fapl_copy    */
-    NULL,                       /* fapl_free    */
-    0,                          /* dxpl_size    */
-    NULL,                       /* dxpl_copy    */
-    NULL,                       /* dxpl_free    */
-    H5FD_udc_fuse_open,            /* open         */
-    H5FD_udc_fuse_close,           /* close        */
-    H5FD_udc_fuse_cmp,             /* cmp          */
-    H5FD_udc_fuse_query,           /* query        */
-    NULL,                       /* get_type_map */
-    H5FD_udc_fuse_alloc,           /* alloc        */
-    NULL,                       /* free         */
-    H5FD_udc_fuse_get_eoa,         /* get_eoa      */
-    H5FD_udc_fuse_set_eoa,         /* set_eoa      */
-    H5FD_udc_fuse_get_eof,         /* get_eof      */
-    H5FD_udc_fuse_get_handle,      /* get_handle   */
-    H5FD_udc_fuse_read,            /* read         */
-    H5FD_udc_fuse_write,           /* write        */
-    H5FD_udc_fuse_flush,           /* flush        */
-    H5FD_udc_fuse_truncate,        /* truncate     */
-    NULL,                       /* lock         */
-    NULL,                       /* unlock       */
-    H5FD_FLMAP_SINGLE           /* fl_map       */
+    "udc_fuse",               /* name         */
+    MAXADDR,                  /* maxaddr      */
+    H5F_CLOSE_WEAK,           /* fc_degree    */
+    NULL,                     /* terminate */
+    NULL,                     /* sb_size      */
+    NULL,                     /* sb_encode    */
+    NULL,                     /* sb_decode    */
+    0,                        /* fapl_size    */
+    NULL,                     /* fapl_get     */
+    NULL,                     /* fapl_copy    */
+    NULL,                     /* fapl_free    */
+    0,                        /* dxpl_size    */
+    NULL,                     /* dxpl_copy    */
+    NULL,                     /* dxpl_free    */
+    H5FD_udc_fuse_open,       /* open         */
+    H5FD_udc_fuse_close,      /* close        */
+    H5FD_udc_fuse_cmp,        /* cmp          */
+    H5FD_udc_fuse_query,      /* query        */
+    NULL,                     /* get_type_map */
+    H5FD_udc_fuse_alloc,      /* alloc        */
+    NULL,                     /* free         */
+    H5FD_udc_fuse_get_eoa,    /* get_eoa      */
+    H5FD_udc_fuse_set_eoa,    /* set_eoa      */
+    H5FD_udc_fuse_get_eof,    /* get_eof      */
+    H5FD_udc_fuse_get_handle, /* get_handle   */
+    H5FD_udc_fuse_read,       /* read         */
+    H5FD_udc_fuse_write,      /* write        */
+    H5FD_udc_fuse_flush,      /* flush        */
+    H5FD_udc_fuse_truncate,   /* truncate     */
+    NULL,                     /* lock         */
+    NULL,                     /* unlock       */
+    H5FD_FLMAP_SINGLE         /* fl_map       */
 };
 
-void H5FD_udc_fuse_set_cache_dir(const char* cacheDir)
-{
-  H5FD_UDC_FUSE_CACHE_PATH = cacheDir;
+void H5FD_udc_fuse_set_cache_dir(const char *cacheDir) {
+    H5FD_UDC_FUSE_CACHE_PATH = cacheDir;
 }
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_init
@@ -280,19 +274,16 @@ void H5FD_udc_fuse_set_cache_dir(const char* cacheDir)
  *
  *-------------------------------------------------------------------------
  */
-hid_t
-H5FD_udc_fuse_init(void)
-{
+hid_t H5FD_udc_fuse_init(void) {
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
 
-    if (H5I_VFL!=H5Iget_type(H5FD_UDC_FUSE_g))
+    if (H5I_VFL != H5Iget_type(H5FD_UDC_FUSE_g))
         H5FD_UDC_FUSE_g = H5FDregister(&H5FD_udc_fuse_g);
 
     return H5FD_UDC_FUSE_g;
 } /* end H5FD_udc_fuse_init() */
 
-
 /*---------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_term
  *
@@ -305,16 +296,13 @@ H5FD_udc_fuse_init(void)
  *
  *---------------------------------------------------------------------------
  */
-void
-H5FD_udc_fuse_term(void)
-{
+void H5FD_udc_fuse_term(void) {
     /* Reset VFL ID */
     H5FD_UDC_FUSE_g = 0;
 
     return;
 } /* end H5FD_udc_fuse_term() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5Pset_fapl_udc_fuse
  *
@@ -329,23 +317,20 @@ H5FD_udc_fuse_term(void)
  *
  *-------------------------------------------------------------------------
  */
-herr_t
-H5Pset_fapl_udc_fuse(hid_t fapl_id)
-{
-    static const char *func = "H5FDset_fapl_udc_fuse";  /*for error reporting*/
+herr_t H5Pset_fapl_udc_fuse(hid_t fapl_id) {
+    static const char *func = "H5FDset_fapl_udc_fuse"; /*for error reporting*/
 
     /*NO TRACE*/
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
 
-    if(0 == H5Pisa_class(fapl_id, H5P_FILE_ACCESS))
+    if (0 == H5Pisa_class(fapl_id, H5P_FILE_ACCESS))
         H5Epush_ret(func, H5E_ERR_CLS, H5E_PLIST, H5E_BADTYPE, "not a file access property list", -1)
 
-    return H5Pset_driver(fapl_id, H5FD_UDC_FUSE, NULL);
+            return H5Pset_driver(fapl_id, H5FD_UDC_FUSE, NULL);
 } /* end H5Pset_fapl_udc_fuse() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_open
  *
@@ -370,17 +355,14 @@ H5Pset_fapl_udc_fuse(hid_t fapl_id)
  *
  *-------------------------------------------------------------------------
  */
-static H5FD_t *
-H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
-    haddr_t maxaddr)
-{
-    udc2File               *f = NULL;
-    unsigned            write_access = 0;           /* File opened with write access? */
-    H5FD_udc_fuse_t        *file = NULL;
-    static const char   *func = "H5FD_udc_fuse_open";  /* Function Name for error reporting */
+static H5FD_t *H5FD_udc_fuse_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr) {
+    udc2File *f = NULL;
+    unsigned write_access = 0; /* File opened with write access? */
+    H5FD_udc_fuse_t *file = NULL;
+    static const char *func = "H5FD_udc_fuse_open"; /* Function Name for error reporting */
 #ifdef H5_HAVE_WIN32_API
     struct _BY_HANDLE_FILE_INFORMATION fileinfo;
-#endif  /* H5_HAVE_WIN32_API */
+#endif /* H5_HAVE_WIN32_API */
     /* Sanity check on file offsets */
     assert(sizeof(file_offset_t) >= sizeof(size_t));
 
@@ -389,58 +371,51 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
 
     /* Check arguments */
     if (!name || !*name)
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_ARGS, H5E_BADVALUE, "invalid file name", NULL)
-    if (0 == maxaddr || HADDR_UNDEF == maxaddr)
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_ARGS, H5E_BADRANGE, "bogus maxaddr", NULL)
-    if (ADDR_OVERFLOW(maxaddr))
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_ARGS, H5E_OVERFLOW, "maxaddr too large", NULL)
+        H5Epush_ret(func, H5E_ERR_CLS, H5E_ARGS, H5E_BADVALUE, "invalid file name",
+                    NULL) if (0 == maxaddr || HADDR_UNDEF == maxaddr)
+            H5Epush_ret(func, H5E_ERR_CLS, H5E_ARGS, H5E_BADRANGE, "bogus maxaddr", NULL) if (ADDR_OVERFLOW(maxaddr))
+                H5Epush_ret(func, H5E_ERR_CLS, H5E_ARGS, H5E_OVERFLOW, "maxaddr too large", NULL)
 
-    /* Attempt to open/create the file */
-        
-            f = udc2FileMayOpen((char*)name, (char*)H5FD_UDC_FUSE_CACHE_PATH, hal::UDC_BLOCK_SIZE);
-    
+            /* Attempt to open/create the file */
+
+            f = udc2FileMayOpen((char *)name, (char *)H5FD_UDC_FUSE_CACHE_PATH, hal::UDC_BLOCK_SIZE);
+
     if (!f)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_CANTOPENFILE, "fopen failed", NULL)
 
-    /* Build the return value */
-    if(NULL == (file = (H5FD_udc_fuse_t *)calloc((size_t)1, sizeof(H5FD_udc_fuse_t)))) {
-        udc2FileClose(&f);
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_RESOURCE, H5E_NOSPACE, "memory allocation failed", NULL)
-    } /* end if */
+            /* Build the return value */
+            if (NULL == (file = (H5FD_udc_fuse_t *)calloc((size_t)1, sizeof(H5FD_udc_fuse_t)))) {
+            udc2FileClose(&f);
+            H5Epush_ret(func, H5E_ERR_CLS, H5E_RESOURCE, H5E_NOSPACE, "memory allocation failed", NULL)
+        } /* end if */
     file->ufp = f;
     file->name = name;
     file->op = H5FD_UDC_FUSE_OP_SEEK;
     file->pos = HADDR_UNDEF;
-    file->write_access = write_access;    /* Note the write_access for later */
+    file->write_access = write_access; /* Note the write_access for later */
     /* note -- do we add interface to modify cache dir? */
 
-    long long int udcSizeVal = udc2SizeFromCache((char*)name, 
-                                                 (char*)H5FD_UDC_FUSE_CACHE_PATH);
+    long long int udcSizeVal = udc2SizeFromCache((char *)name, (char *)H5FD_UDC_FUSE_CACHE_PATH);
     file->eof = udcSizeVal;
-    /* everything about udc cache works for files and urls but the above, 
+    /* everything about udc cache works for files and urls but the above,
      * which only works for ursl.  if it fails, we try as a file*/
-    if (udcSizeVal < 0)
-    {
-      FILE* tempHandle = fopen(name, "r");
-      if (tempHandle)
-      {
-        fseek(tempHandle, 0, SEEK_END);
-        file->eof = (haddr_t) ftell(tempHandle);
-        fclose(tempHandle);
-      }
+    if (udcSizeVal < 0) {
+        FILE *tempHandle = fopen(name, "r");
+        if (tempHandle) {
+            fseek(tempHandle, 0, SEEK_END);
+            file->eof = (haddr_t)ftell(tempHandle);
+            fclose(tempHandle);
+        }
     }
 
     /* Get the file descriptor (needed for truncate and some Windows information) */
     file->fd = 0;
-    if(file->fd < 0)
+    if (file->fd < 0)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_FILE, H5E_CANTOPENFILE, "unable to get file descriptor", NULL);
 
-
-
-    return (H5FD_t*)file;
+    return (H5FD_t *)file;
 } /* end H5FD_udc_fuse_open() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5F_udc_fuse_close
  *
@@ -456,20 +431,17 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5FD_udc_fuse_close(H5FD_t *_file)
-{
-    H5FD_udc_fuse_t  *file = (H5FD_udc_fuse_t*)_file;
+static herr_t H5FD_udc_fuse_close(H5FD_t *_file) {
+    H5FD_udc_fuse_t *file = (H5FD_udc_fuse_t *)_file;
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
-    
+
     udc2FileClose(&file->ufp);
-    
+
     return 0;
 } /* end H5FD_udc_fuse_close() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_cmp
  *
@@ -486,11 +458,9 @@ H5FD_udc_fuse_close(H5FD_t *_file)
  *
  *-------------------------------------------------------------------------
  */
-static int
-H5FD_udc_fuse_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
-{
-    const H5FD_udc_fuse_t  *f1 = (const H5FD_udc_fuse_t*)_f1;
-    const H5FD_udc_fuse_t  *f2 = (const H5FD_udc_fuse_t*)_f2;
+static int H5FD_udc_fuse_cmp(const H5FD_t *_f1, const H5FD_t *_f2) {
+    const H5FD_udc_fuse_t *f1 = (const H5FD_udc_fuse_t *)_f1;
+    const H5FD_udc_fuse_t *f2 = (const H5FD_udc_fuse_t *)_f2;
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
@@ -498,7 +468,6 @@ H5FD_udc_fuse_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
     assert(f1->name and f2->name);
     return strcmp(f1->name, f2->name);
 } /* H5FD_udc_fuse_cmp() */
-
 
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_query
@@ -515,22 +484,19 @@ H5FD_udc_fuse_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5FD_udc_fuse_query(const H5FD_t *_f, unsigned long *flags /* out */)
-{
+static herr_t H5FD_udc_fuse_query(const H5FD_t *_f, unsigned long *flags /* out */) {
     /* Set the VFL feature flags that this driver supports */
-    if(flags) {
+    if (flags) {
         *flags = 0;
-        *flags|=H5FD_FEAT_AGGREGATE_METADATA; /* OK to aggregate metadata allocations */
-        *flags|=H5FD_FEAT_ACCUMULATE_METADATA; /* OK to accumulate metadata for faster writes */
-        *flags|=H5FD_FEAT_DATA_SIEVE;       /* OK to perform data sieving for faster raw data reads & writes */
-        *flags|=H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */
+        *flags |= H5FD_FEAT_AGGREGATE_METADATA;  /* OK to aggregate metadata allocations */
+        *flags |= H5FD_FEAT_ACCUMULATE_METADATA; /* OK to accumulate metadata for faster writes */
+        *flags |= H5FD_FEAT_DATA_SIEVE;          /* OK to perform data sieving for faster raw data reads & writes */
+        *flags |= H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */
     }
 
     return 0;
 } /* end H5FD_udc_fuse_query() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_alloc
  *
@@ -549,11 +515,9 @@ H5FD_udc_fuse_query(const H5FD_t *_f, unsigned long *flags /* out */)
  *
  *-------------------------------------------------------------------------
  */
-static haddr_t
-H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, hid_t /*UNUSED*/ dxpl_id, hsize_t size)
-{
-    H5FD_udc_fuse_t    *file = (H5FD_udc_fuse_t*)_file;
-    haddr_t         addr;
+static haddr_t H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, hid_t /*UNUSED*/ dxpl_id, hsize_t size) {
+    H5FD_udc_fuse_t *file = (H5FD_udc_fuse_t *)_file;
+    haddr_t addr;
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
@@ -562,9 +526,9 @@ H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, hid_t /*UNUSED*/ 
     addr = file->eoa;
 
     /* Check if we need to align this block */
-    if(size >= file->pub.threshold) {
+    if (size >= file->pub.threshold) {
         /* Check for an already aligned block */
-        if((addr % file->pub.alignment) != 0)
+        if ((addr % file->pub.alignment) != 0)
             addr = ((addr / file->pub.alignment) + 1) * file->pub.alignment;
     } /* end if */
 
@@ -573,7 +537,6 @@ H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, hid_t /*UNUSED*/ 
     return addr;
 } /* end H5FD_udc_fuse_alloc() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_get_eoa
  *
@@ -590,9 +553,7 @@ H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, hid_t /*UNUSED*/ 
  *
  *-------------------------------------------------------------------------
  */
-static haddr_t
-H5FD_udc_fuse_get_eoa(const H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type)
-{
+static haddr_t H5FD_udc_fuse_get_eoa(const H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type) {
     const H5FD_udc_fuse_t *file = (const H5FD_udc_fuse_t *)_file;
 
     /* Clear the error stack */
@@ -604,7 +565,6 @@ H5FD_udc_fuse_get_eoa(const H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type)
     return file->eoa;
 } /* end H5FD_udc_fuse_get_eoa() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_set_eoa
  *
@@ -621,10 +581,8 @@ H5FD_udc_fuse_get_eoa(const H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, haddr_t addr)
-{
-    H5FD_udc_fuse_t  *file = (H5FD_udc_fuse_t*)_file;
+static herr_t H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, haddr_t addr) {
+    H5FD_udc_fuse_t *file = (H5FD_udc_fuse_t *)_file;
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
@@ -637,7 +595,6 @@ H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, haddr_t addr)
     return 0;
 }
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_get_eof
  *
@@ -656,10 +613,8 @@ H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, haddr_t addr)
  *
  *-------------------------------------------------------------------------
  */
-static haddr_t
-H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type)
-{
-    const H5FD_udc_fuse_t  *file = (const H5FD_udc_fuse_t *)_file;
+static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type) {
+    const H5FD_udc_fuse_t *file = (const H5FD_udc_fuse_t *)_file;
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
@@ -667,7 +622,6 @@ H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type)
     return MAX(file->eof, file->eoa);
 } /* end H5FD_udc_fuse_get_eof() */
 
-
 /*-------------------------------------------------------------------------
  * Function:       H5FD_udc_fuse_get_handle
  *
@@ -680,11 +634,9 @@ H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void** file_handle)
-{
-    H5FD_udc_fuse_t       *file = (H5FD_udc_fuse_t *)_file;
-    static const char  *func = "H5FD_udc_fuse_get_handle";  /* Function Name for error reporting */
+static herr_t H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void **file_handle) {
+    H5FD_udc_fuse_t *file = (H5FD_udc_fuse_t *)_file;
+    static const char *func = "H5FD_udc_fuse_get_handle"; /* Function Name for error reporting */
 
     /* Quiet the compiler */
     fapl = fapl;
@@ -693,13 +645,12 @@ H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void** file_handle)
     H5Eclear2(H5E_DEFAULT);
 
     *file_handle = &(file->ufp);
-    if(*file_handle == NULL)
+    if (*file_handle == NULL)
         H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "get handle failed", -1)
 
-    return 0;
+            return 0;
 } /* end H5FD_udc_fuse_get_handle() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_read
  *
@@ -718,12 +669,9 @@ H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void** file_handle)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, size_t size,
-    void *buf/*out*/)
-{
-    H5FD_udc_fuse_t    *file = (H5FD_udc_fuse_t*)_file;
-    static const char *func = "H5FD_udc_fuse_read";  /* Function Name for error reporting */
+static herr_t H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, size_t size, void *buf /*out*/) {
+    H5FD_udc_fuse_t *file = (H5FD_udc_fuse_t *)_file;
+    static const char *func = "H5FD_udc_fuse_read"; /* Function Name for error reporting */
 
     /* Quiet the compiler */
     type = type;
@@ -733,24 +681,20 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
     H5Eclear2(H5E_DEFAULT);
 
     /* Check for overflow */
-    if (HADDR_UNDEF==addr)
-        H5Epush_ret (func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1)
-    if (REGION_OVERFLOW(addr, size))
-        H5Epush_ret (func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1)
-    if((addr + size) > file->eoa)
-        H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1)
+    if (HADDR_UNDEF == addr)
+        H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1) if (REGION_OVERFLOW(addr, size))
+            H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1) if ((addr + size) > file->eoa)
+                H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_OVERFLOW, "file address overflowed", -1)
 
-    /* Check easy cases */
-    if (0 == size)
-        return 0;
+            /* Check easy cases */
+            if (0 == size) return 0;
     if ((haddr_t)addr >= file->eof) {
         memset(buf, 0, size);
         return 0;
     }
 
     /* Seek to the correct file position. */
-    if (!(file->op == H5FD_UDC_FUSE_OP_READ || file->op == H5FD_UDC_FUSE_OP_SEEK) ||
-            file->pos != addr) {
+    if (!(file->op == H5FD_UDC_FUSE_OP_READ || file->op == H5FD_UDC_FUSE_OP_SEEK) || file->pos != addr) {
         if (file_fseek(file->ufp, (file_offset_t)addr, SEEK_SET) < 0) {
             file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
             file->pos = HADDR_UNDEF;
@@ -761,7 +705,7 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
 
     /* Read zeros past the logical end of file (physical is handled below) */
     if (addr + size > file->eof) {
-        size_t nbytes = (size_t) (addr + size - file->eof);
+        size_t nbytes = (size_t)(addr + size - file->eof);
         memset((unsigned char *)buf + size - nbytes, 0, nbytes);
         size -= nbytes;
     }
@@ -770,13 +714,13 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
      * will advance the file position by N.  If N is zero or an error
      * occurs then the file position is undefined.
      */
-    while(size > 0) {
+    while (size > 0) {
 
-        size_t bytes_in        = 0;    /* # of bytes to read       */
-        size_t bytes_read      = 0;    /* # of bytes actually read */
-        size_t item_size       = 1;    /* size of items in bytes */
+        size_t bytes_in = 0;   /* # of bytes to read       */
+        size_t bytes_read = 0; /* # of bytes actually read */
+        size_t item_size = 1;  /* size of items in bytes */
 
-        if(size > H5_UDC_FUSE_MAX_IO_BYTES_g)
+        if (size > H5_UDC_FUSE_MAX_IO_BYTES_g)
             bytes_in = H5_UDC_FUSE_MAX_IO_BYTES_g;
         else
             bytes_in = size;
@@ -784,18 +728,18 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
         bytes_read = udc2Read(file->ufp, buf, item_size * bytes_in);
 
         /*
-        if(0 == bytes_read && ferror(file->ufp)) { 
+        if(0 == bytes_read && ferror(file->ufp)) {
             file->op = H5FD_UDC_FUSE_OP_UNKNOWN;
             file->pos = HADDR_UNDEF;
             H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_READERROR, "fread failed", -1)
         }*/
-        
-        if(0 == bytes_read && udc2Tell(file->ufp) >= file->eof) {
+
+        if (0 == bytes_read && udc2Tell(file->ufp) >= file->eof) {
             /* end of file but not end of format address space */
             memset((unsigned char *)buf, 0, size);
             break;
         } /* end if */
-        
+
         size -= bytes_read;
         addr += (haddr_t)bytes_read;
         buf = (char *)buf + bytes_read;
@@ -808,7 +752,6 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
     return 0;
 }
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_write
  *
@@ -826,21 +769,17 @@ H5FD_udc_fuse_read(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, 
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5FD_udc_fuse_write(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr,
-    size_t size, const void *buf)
-{
-    static const char *func = "H5FD_udc_fuse_write";  /* Function Name for error reporting */
+static herr_t H5FD_udc_fuse_write(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr, size_t size, const void *buf) {
+    static const char *func = "H5FD_udc_fuse_write"; /* Function Name for error reporting */
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
 
-    H5Epush_ret (func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot write!", -1)
-    
-    return -1;
+    H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot write!", -1)
+
+        return -1;
 }
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_flush
  *
@@ -857,16 +796,13 @@ H5FD_udc_fuse_write(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, hbool_t closing)
-{
-    static const char *func = "H5FD_udc_fuse_flush";  /* Function Name for error reporting */
+static herr_t H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, hbool_t closing) {
+    static const char *func = "H5FD_udc_fuse_flush"; /* Function Name for error reporting */
     H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot flush", -1)
-    
-    return -1;
+
+        return -1;
 } /* end H5FD_udc_fuse_flush() */
 
-
 /*-------------------------------------------------------------------------
  * Function:  H5FD_udc_fuse_truncate
  *
@@ -884,17 +820,14 @@ H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, hbool_t closing)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
-H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing)
-{
-    static const char *func = "H5FD_udc_fuse_truncate";  /* Function Name for error reporting */
-    
+static herr_t H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing) {
+    static const char *func = "H5FD_udc_fuse_truncate"; /* Function Name for error reporting */
+
     H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot truncate", -1)
-    
-    return 0;
+
+        return 0;
 } /* end H5FD_udc_fuse_truncate() */
 
-
 #ifdef _H5private_H
 /*
  * This is not related to the functionality of the driver code.
@@ -903,8 +836,6 @@ H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing)
  */
 #error "Do not use HDF5 private definitions"
 #endif
-
 }
 
 #endif
-

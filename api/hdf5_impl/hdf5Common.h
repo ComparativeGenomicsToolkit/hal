@@ -11,7 +11,7 @@
  * class is destroyed.  Can comment out dontPrint() call for debugging.
  */
 class HDF5DisableExceptionPrinting {
-    public:
+  public:
     HDF5DisableExceptionPrinting() {
         H5::Exception::getAutoPrint(_func, &_clientData);
         H5::Exception::dontPrint();
@@ -19,8 +19,8 @@ class HDF5DisableExceptionPrinting {
     ~HDF5DisableExceptionPrinting() {
         H5::Exception::setAutoPrint(_func, _clientData);
     }
-    
-    private:
+
+  private:
     H5E_auto2_t _func;
     void *_clientData;
 };

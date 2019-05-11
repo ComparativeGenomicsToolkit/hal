@@ -7,14 +7,11 @@
 #ifndef _HALALIGNMENTINSTANCETEST_H
 #define _HALALIGNMENTINSTANCETEST_H
 
-#include <vector>
 #include "halAlignmentInstance.h"
+#include <vector>
 
 using namespace hal;
-Alignment* getTestAlignmentInstances(const std::string& storageFormat,
-                                     const std::string& alignmentPath,
-                                     unsigned mode);
-
+Alignment *getTestAlignmentInstances(const std::string &storageFormat, const std::string &alignmentPath, unsigned mode);
 
 #endif
 // Local Variables:

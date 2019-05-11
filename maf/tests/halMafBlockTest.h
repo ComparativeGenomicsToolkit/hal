@@ -8,19 +8,17 @@
 #ifndef _HALMAFBLOCKTEST_H
 #define _HALMAFBLOCKTEST_H
 
-#include <vector>
-#include "halAlignmentTest.h"
 #include "hal.h"
+#include "halAlignmentTest.h"
 #include "halMafTests.h"
+#include <vector>
 
 using namespace hal;
 
-struct MafBlockCreateTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct MafBlockCreateTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
-
 
 #endif
 // Local Variables:

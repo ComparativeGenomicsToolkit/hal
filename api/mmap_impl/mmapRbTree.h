@@ -10,8 +10,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 
 /** \defgroup rb_tree_compiler_prims Compiler Abstractions
  * Primitives used to abstract compiler-specific syntax for common details used in
@@ -22,12 +22,12 @@ extern "C" {
 /**
  * Macro to check if a given assertion about an argument is true
  */
-#define RB_ASSERT_ARG(x) \
-    do {                                \
-        if (RB_UNLIKELY(!(x))) {        \
-            assert(#x && 0);            \
-            return RB_BAD_ARG;          \
-        }                               \
+#define RB_ASSERT_ARG(x)                                                                                                       \
+    do {                                                                                                                       \
+        if (RB_UNLIKELY(!(x))) {                                                                                               \
+            assert(#x && 0);                                                                                                   \
+            return RB_BAD_ARG;                                                                                                 \
+        }                                                                                                                      \
     } while (0)
 
 /**
@@ -64,7 +64,7 @@ struct rb_tree_node {
      */
     struct rb_tree_node *left;
 
-    /** 
+    /**
      * The right child (`NULL` if empty)
      */
     struct rb_tree_node *right;
@@ -148,19 +148,19 @@ typedef int rb_result_t;
 /**
  * Function was successful
  */
-#define RB_OK           0x0
+#define RB_OK 0x0
 /**
  * Element was not found
  */
-#define RB_NOT_FOUND    0x1
+#define RB_NOT_FOUND 0x1
 /**
  * Bad argument provided to function (typically unexpected NULL)
  */
-#define RB_BAD_ARG      0x2
+#define RB_BAD_ARG 0x2
 /**
  * Node is a duplicate of an existing node
  */
-#define RB_DUPLICATE    0x3
+#define RB_DUPLICATE 0x3
 
 /**@} rb_result_code */
 /**@} rb_result */
@@ -188,12 +188,11 @@ typedef int rb_result_t;
  * \param memb The name of the `struct rb_tree_node` in the containing structure
  * \return Pointer to the containing structure of the specified type
  */
-#define RB_CONTAINER_OF(x, type, memb) \
-    ({                                                              \
-        const __typeof__( ((type *)0)->memb ) *__member = (x);      \
-        (type *)( (char *)__member - __offsetof__(type, memb) );    \
+#define RB_CONTAINER_OF(x, type, memb)                                                                                         \
+    ({                                                                                                                         \
+        const __typeof__(((type *)0)->memb) *__member = (x);                                                                   \
+        (type *)((char *)__member - __offsetof__(type, memb));                                                                 \
     })
-
 
 /** \defgroup rb_functions Functions for Manipulating Red-Black Trees
  * All functions associated with manipulating Red-Black trees using `struct rb_tree`,
@@ -222,8 +221,7 @@ rb_result_t rb_tree_new_ex(struct rb_tree *tree, rb_cmp_func_ex_t compare, void 
  * \param compare Function used to traverse the tree.
  * \return RB_OK on success, an error code otherwise
  */
-rb_result_t rb_tree_new(struct rb_tree *tree,
-                        rb_cmp_func_t compare);
+rb_result_t rb_tree_new(struct rb_tree *tree, rb_cmp_func_t compare);
 
 /**
  * \brief Destroy a Red-Black tree.
@@ -255,9 +253,7 @@ rb_result_t rb_tree_empty(struct rb_tree *tree, int *is_empty);
  * \param value a reference to a pointer to receive the pointer to the rb_tree_node if key is found
  * \return RB_OK on success, an error code otherwise
  */
-rb_result_t rb_tree_find(struct rb_tree *tree,
-                         const void *key,
-                         struct rb_tree_node **value);
+rb_result_t rb_tree_find(struct rb_tree *tree, const void *key, struct rb_tree_node **value);
 
 /**
  * \brief Insert a node into the tree.
@@ -269,9 +265,7 @@ rb_result_t rb_tree_find(struct rb_tree *tree,
  * \param node the node to be inserted into the tree
  * \return RB_OK on sucess, an error code otherwise
  */
-rb_result_t rb_tree_insert(struct rb_tree *tree,
-                           const void *key,
-                           struct rb_tree_node *node);
+rb_result_t rb_tree_insert(struct rb_tree *tree, const void *key, struct rb_tree_node *node);
 
 /**
  * \brief Remove the specified node from the Red-Black tree.
@@ -281,8 +275,7 @@ rb_result_t rb_tree_insert(struct rb_tree *tree,
  * \param node The the node we want to remove
  * \return RB_OK on success, an error code otherwise
  */
-rb_result_t rb_tree_remove(struct rb_tree *tree,
-                           struct rb_tree_node *node);
+rb_result_t rb_tree_remove(struct rb_tree *tree, struct rb_tree_node *node);
 
 /**
  * \brief Find a node. If not found, insert the candidate.
@@ -299,9 +292,7 @@ rb_result_t rb_tree_remove(struct rb_tree *tree,
  * \param value The value at the given location
  * \return RB_OK on success, an error code otherwise
  */
-rb_result_t rb_tree_find_or_insert(struct rb_tree *tree,
-                                   void *key,
-                                   struct rb_tree_node *new_candidate,
+rb_result_t rb_tree_find_or_insert(struct rb_tree *tree, void *key, struct rb_tree_node *new_candidate,
                                    struct rb_tree_node **value);
 
 /**
@@ -320,19 +311,14 @@ rb_result_t rb_tree_find_or_insert(struct rb_tree *tree,
  *
  * \return RB_OK on success, an error code otherwise
  */
-rb_result_t rb_tree_find_or_insert(struct rb_tree *tree,
-                                   void *key,
-                                   struct rb_tree_node *new_candidate,
+rb_result_t rb_tree_find_or_insert(struct rb_tree *tree, void *key, struct rb_tree_node *new_candidate,
                                    struct rb_tree_node **value);
 /**
  * \brief Get the rightmost (greatest relative to predicate) node.
  * Return the rightmost (i.e. greatest relative to predicate) node of the Red-Black tree.
  */
-static inline
-rb_result_t rb_tree_get_rightmost(struct rb_tree *tree,
-                                  struct rb_tree_node **rightmost)
-{
-    if ( (NULL == tree) || (NULL == rightmost) ) {
+static inline rb_result_t rb_tree_get_rightmost(struct rb_tree *tree, struct rb_tree_node **rightmost) {
+    if ((NULL == tree) || (NULL == rightmost)) {
         return RB_BAD_ARG;
     }
 
@@ -341,14 +327,10 @@ rb_result_t rb_tree_get_rightmost(struct rb_tree *tree,
     return RB_OK;
 }
 
-
 /**
  * Find the minimum of the given tree/subtree rooted at the given node.
  */
-static inline
-rb_result_t __rb_tree_find_minimum(struct rb_tree_node *root,
-                                   struct rb_tree_node **min)
-{
+static inline rb_result_t __rb_tree_find_minimum(struct rb_tree_node *root, struct rb_tree_node **min) {
     struct rb_tree_node *x = root;
 
     while (x->left != NULL) {
@@ -363,10 +345,7 @@ rb_result_t __rb_tree_find_minimum(struct rb_tree_node *root,
 /**
  * Find the maximum of the given tree/subtree rooted at the given node.
  */
-static inline
-rb_result_t __rb_tree_find_maximum(struct rb_tree_node *root,
-                                   struct rb_tree_node **max)
-{
+static inline rb_result_t __rb_tree_find_maximum(struct rb_tree_node *root, struct rb_tree_node **max) {
     struct rb_tree_node *x = root;
 
     while (x->right != NULL) {
@@ -381,11 +360,8 @@ rb_result_t __rb_tree_find_maximum(struct rb_tree_node *root,
 /**
  * Find the successor (greater than, relative to predicate) node of the given node.
  */
-static inline
-rb_result_t rb_tree_find_successor(struct rb_tree *tree,
-                                   struct rb_tree_node *node,
-                                   struct rb_tree_node **successor)
-{
+static inline rb_result_t rb_tree_find_successor(struct rb_tree *tree, struct rb_tree_node *node,
+                                                 struct rb_tree_node **successor) {
     rb_result_t ret = RB_OK;
 
     RB_ASSERT_ARG(tree != NULL);
@@ -414,11 +390,8 @@ rb_result_t rb_tree_find_successor(struct rb_tree *tree,
 /**
  * Find the predecessor (less than, relative to predicate) node of the given node.
  */
-static inline
-rb_result_t rb_tree_find_predecessor(struct rb_tree *tree,
-                                     struct rb_tree_node *node,
-                                     struct rb_tree_node **pred)
-{
+static inline rb_result_t rb_tree_find_predecessor(struct rb_tree *tree, struct rb_tree_node *node,
+                                                   struct rb_tree_node **pred) {
     rb_result_t ret = RB_OK;
     struct rb_tree_node *x = node;
 
@@ -450,4 +423,3 @@ rb_result_t rb_tree_find_predecessor(struct rb_tree *tree,
 #endif /* __cplusplus */
 
 #endif /* __INCLUDED_RBTREE_H__ */
-

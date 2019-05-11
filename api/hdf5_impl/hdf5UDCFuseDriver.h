@@ -24,7 +24,7 @@
 
 #include "H5Ipublic.h"
 
-#define H5FD_UDC_FUSE	(H5FD_udc_fuse_init())
+#define H5FD_UDC_FUSE (H5FD_udc_fuse_init())
 
 extern "C" {
 
@@ -32,7 +32,7 @@ H5_DLL hid_t H5FD_udc_fuse_init(void);
 H5_DLL void H5FD_udc_fuse_term(void);
 H5_DLL herr_t H5Pset_fapl_udc_fuse(hid_t fapl_id);
 
-void H5FD_udc_fuse_set_cache_dir(const char* cacheDir);
+void H5FD_udc_fuse_set_cache_dir(const char *cacheDir);
 }
 
 #endif

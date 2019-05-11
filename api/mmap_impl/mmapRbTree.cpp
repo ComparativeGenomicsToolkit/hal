@@ -27,10 +27,10 @@
  */
 
 /*
- * Source from https://github.com/pvachon/rbtree 
+ * Source from https://github.com/pvachon/rbtree
  * commit 4d5b1c7b0c4b279d6b387397e3e2e41bc904a699.
  * Modified for HAL to compile with C++, but left as a C
- * implementation.  There were lots of C++ RB trees, either 
+ * implementation.  There were lots of C++ RB trees, either
  * not very usable or requiring newer than C++11.
  */
 
@@ -65,25 +65,20 @@
 /**
  * Node is black
  */
-#define COLOR_BLACK         0x0
+#define COLOR_BLACK 0x0
 
 /**
  * Node is red
  */
-#define COLOR_RED           0x1
+#define COLOR_RED 0x1
 /**@}*/
 
-static
-int __rb_tree_cmp_mapper(void *state, const void *lhs, const void *rhs)
-{
+static int __rb_tree_cmp_mapper(void *state, const void *lhs, const void *rhs) {
     rb_cmp_func_t cmp = reinterpret_cast<rb_cmp_func_t>(state);
     return cmp(lhs, rhs);
 }
 
-rb_result_t rb_tree_new_ex(struct rb_tree *tree,
-                           rb_cmp_func_ex_t compare,
-                           void *state)
-{
+rb_result_t rb_tree_new_ex(struct rb_tree *tree, rb_cmp_func_ex_t compare, void *state) {
     rb_result_t ret = RB_OK;
 
     RB_ASSERT_ARG(tree != NULL);
@@ -97,17 +92,14 @@ rb_result_t rb_tree_new_ex(struct rb_tree *tree,
     return ret;
 }
 
-rb_result_t rb_tree_new(struct rb_tree *tree,
-                        rb_cmp_func_t compare)
-{
+rb_result_t rb_tree_new(struct rb_tree *tree, rb_cmp_func_t compare) {
     RB_ASSERT_ARG(tree != NULL);
     RB_ASSERT_ARG(compare != NULL);
 
     return rb_tree_new_ex(tree, __rb_tree_cmp_mapper, (void *)compare);
 }
 
-rb_result_t rb_tree_destroy(struct rb_tree *tree)
-{
+rb_result_t rb_tree_destroy(struct rb_tree *tree) {
     rb_result_t ret = RB_OK;
 
     RB_ASSERT_ARG(tree != NULL);
@@ -117,9 +109,7 @@ rb_result_t rb_tree_destroy(struct rb_tree *tree)
     return ret;
 }
 
-rb_result_t rb_tree_empty(struct rb_tree *tree,
-                          int *is_empty)
-{
+rb_result_t rb_tree_empty(struct rb_tree *tree, int *is_empty) {
     rb_result_t ret = RB_OK;
 
     RB_ASSERT_ARG(tree != NULL);
@@ -130,10 +120,7 @@ rb_result_t rb_tree_empty(struct rb_tree *tree,
     return ret;
 }
 
-rb_result_t rb_tree_find(struct rb_tree *tree,
-                         const void *key,
-                         struct rb_tree_node **value)
-{
+rb_result_t rb_tree_find(struct rb_tree *tree, const void *key, struct rb_tree_node **value) {
     rb_result_t ret = RB_OK;
 
     RB_ASSERT_ARG(tree != NULL);
@@ -171,9 +158,7 @@ rb_result_t rb_tree_find(struct rb_tree *tree,
 }
 
 /* Helper function to get a node's sibling */
-static inline
-struct rb_tree_node *__helper_get_sibling(struct rb_tree_node *node)
-{
+static inline struct rb_tree_node *__helper_get_sibling(struct rb_tree_node *node) {
     if (node->parent == NULL) {
         return NULL;
     }
@@ -188,9 +173,7 @@ struct rb_tree_node *__helper_get_sibling(struct rb_tree_node *node)
 }
 
 /* Helper function to get a node's grandparent */
-static inline
-struct rb_tree_node *__helper_get_grandparent(struct rb_tree_node *node)
-{
+static inline struct rb_tree_node *__helper_get_grandparent(struct rb_tree_node *node) {
     if (node->parent == NULL) {
         return NULL;
     }
@@ -201,9 +184,7 @@ struct rb_tree_node *__helper_get_grandparent(struct rb_tree_node *node)
 }
 
 /* Helper function to get a node's uncle */
-static inline
-struct rb_tree_node *__helper_get_uncle(struct rb_tree_node *node)
-{
+static inline struct rb_tree_node *__helper_get_uncle(struct rb_tree_node *node) {
     struct rb_tree_node *grandparent = __helper_get_grandparent(node);
 
     if (grandparent == NULL) {
@@ -218,10 +199,7 @@ struct rb_tree_node *__helper_get_uncle(struct rb_tree_node *node)
 }
 
 /* Helper function to do a left rotation of a given node */
-static inline
-void __helper_rotate_left(struct rb_tree *tree,
-                          struct rb_tree_node *node)
-{
+static inline void __helper_rotate_left(struct rb_tree *tree, struct rb_tree_node *node) {
     struct rb_tree_node *x = node;
     struct rb_tree_node *y = x->right;
 
@@ -250,10 +228,7 @@ void __helper_rotate_left(struct rb_tree *tree,
 }
 
 /* Helper function to do a right rotation of a given node */
-static inline
-void __helper_rotate_right(struct rb_tree *tree,
-                           struct rb_tree_node *node)
-{
+static inline void __helper_rotate_right(struct rb_tree *tree, struct rb_tree_node *node) {
     struct rb_tree_node *x = node;
     struct rb_tree_node *y = x->left;
 
@@ -282,10 +257,7 @@ void __helper_rotate_right(struct rb_tree *tree,
 }
 
 /* Function to perform a RB tree rebalancing after an insertion */
-static
-void __helper_rb_tree_insert_rebalance(struct rb_tree *tree,
-                                       struct rb_tree_node *node)
-{
+static void __helper_rb_tree_insert_rebalance(struct rb_tree *tree, struct rb_tree_node *node) {
     struct rb_tree_node *new_node_parent = node->parent;
 
     if (new_node_parent != NULL && new_node_parent->color != COLOR_BLACK) {
@@ -294,9 +266,7 @@ void __helper_rb_tree_insert_rebalance(struct rb_tree *tree,
         /* Iterate until we're at the root (which we just color black) or
          * until we the parent node is no longer red.
          */
-        while ((tree->root != pnode) && (pnode->parent != NULL) &&
-                    (pnode->parent->color == COLOR_RED))
-        {
+        while ((tree->root != pnode) && (pnode->parent != NULL) && (pnode->parent->color == COLOR_RED)) {
             struct rb_tree_node *parent = pnode->parent;
             struct rb_tree_node *grandparent = __helper_get_grandparent(pnode);
             struct rb_tree_node *uncle = NULL;
@@ -352,10 +322,7 @@ void __helper_rb_tree_insert_rebalance(struct rb_tree *tree,
     }
 }
 
-rb_result_t rb_tree_insert(struct rb_tree *tree,
-                           const void *key,
-                           struct rb_tree_node *node)
-{
+rb_result_t rb_tree_insert(struct rb_tree *tree, const void *key, struct rb_tree_node *node) {
     rb_result_t ret = RB_OK;
 
     int rightmost = 1;
@@ -421,11 +388,8 @@ rb_result_t rb_tree_insert(struct rb_tree *tree,
     return ret;
 }
 
-rb_result_t rb_tree_find_or_insert(struct rb_tree *tree,
-                                   void *key,
-                                   struct rb_tree_node *new_candidate,
-                                   struct rb_tree_node **value)
-{
+rb_result_t rb_tree_find_or_insert(struct rb_tree *tree, void *key, struct rb_tree_node *new_candidate,
+                                   struct rb_tree_node **value) {
     rb_result_t ret = RB_OK;
 
     RB_ASSERT_ARG(tree != NULL);
@@ -497,9 +461,7 @@ rb_result_t rb_tree_find_or_insert(struct rb_tree *tree,
 /**
  * Find the minimum of the subtree starting at node
  */
-static
-struct rb_tree_node *__helper_rb_tree_find_minimum(struct rb_tree_node *node)
-{
+static struct rb_tree_node *__helper_rb_tree_find_minimum(struct rb_tree_node *node) {
     struct rb_tree_node *x = node;
 
     while (x->left != NULL) {
@@ -509,9 +471,7 @@ struct rb_tree_node *__helper_rb_tree_find_minimum(struct rb_tree_node *node)
     return x;
 }
 
-static
-struct rb_tree_node *__helper_rb_tree_find_maximum(struct rb_tree_node *node)
-{
+static struct rb_tree_node *__helper_rb_tree_find_maximum(struct rb_tree_node *node) {
     struct rb_tree_node *x = node;
 
     while (x->right != NULL) {
@@ -521,9 +481,7 @@ struct rb_tree_node *__helper_rb_tree_find_maximum(struct rb_tree_node *node)
     return x;
 }
 
-static
-struct rb_tree_node *__helper_rb_tree_find_successor(struct rb_tree_node *node)
-{
+static struct rb_tree_node *__helper_rb_tree_find_successor(struct rb_tree_node *node) {
     struct rb_tree_node *x = node;
 
     if (x->right != NULL) {
@@ -540,9 +498,7 @@ struct rb_tree_node *__helper_rb_tree_find_successor(struct rb_tree_node *node)
     return y;
 }
 
-static
-struct rb_tree_node *__helper_rb_tree_find_predecessor(struct rb_tree_node *node)
-{
+static struct rb_tree_node *__helper_rb_tree_find_predecessor(struct rb_tree_node *node) {
     struct rb_tree_node *x = node;
 
     if (x->left != NULL) {
@@ -559,13 +515,8 @@ struct rb_tree_node *__helper_rb_tree_find_predecessor(struct rb_tree_node *node
     return y;
 }
 
-
 /* Replace x with y, inserting y where x previously was */
-static
-void __helper_rb_tree_swap_node(struct rb_tree *tree,
-                                struct rb_tree_node *x,
-                                struct rb_tree_node *y)
-{
+static void __helper_rb_tree_swap_node(struct rb_tree *tree, struct rb_tree_node *x, struct rb_tree_node *y) {
     struct rb_tree_node *left = x->left;
     struct rb_tree_node *right = x->right;
     struct rb_tree_node *parent = x->parent;
@@ -600,18 +551,14 @@ void __helper_rb_tree_swap_node(struct rb_tree *tree,
     x->parent = NULL;
 }
 
-static
-void __helper_rb_tree_delete_rebalance(struct rb_tree *tree,
-                                       struct rb_tree_node *node,
-                                       struct rb_tree_node *parent,
-                                       int node_is_left)
-{
+static void __helper_rb_tree_delete_rebalance(struct rb_tree *tree, struct rb_tree_node *node, struct rb_tree_node *parent,
+                                              int node_is_left) {
     struct rb_tree_node *x = node;
     struct rb_tree_node *xp = parent;
     int is_left = node_is_left;
 
     while (x != tree->root && (x == NULL || x->color == COLOR_BLACK)) {
-        struct rb_tree_node *w = is_left ? xp->right : xp->left;    /* Sibling */
+        struct rb_tree_node *w = is_left ? xp->right : xp->left; /* Sibling */
 
         if (w != NULL && w->color == COLOR_RED) {
             /* Case 1: */
@@ -627,9 +574,7 @@ void __helper_rb_tree_delete_rebalance(struct rb_tree *tree,
 
         struct rb_tree_node *wleft = w != NULL ? w->left : NULL;
         struct rb_tree_node *wright = w != NULL ? w->right : NULL;
-        if ( (wleft == NULL || wleft->color == COLOR_BLACK) &&
-             (wright == NULL || wright->color == COLOR_BLACK) )
-        {
+        if ((wleft == NULL || wleft->color == COLOR_BLACK) && (wright == NULL || wright->color == COLOR_BLACK)) {
             /* Case 2: */
             if (w != NULL) {
                 w->color = COLOR_RED;
@@ -679,16 +624,13 @@ void __helper_rb_tree_delete_rebalance(struct rb_tree *tree,
     }
 }
 
-rb_result_t rb_tree_remove(struct rb_tree *tree,
-                           struct rb_tree_node *node)
-{
+rb_result_t rb_tree_remove(struct rb_tree *tree, struct rb_tree_node *node) {
     rb_result_t ret = RB_OK;
 
     RB_ASSERT_ARG(tree != NULL);
     RB_ASSERT_ARG(node != NULL);
 
     struct rb_tree_node *y;
-
 
     if (node->left == NULL || node->right == NULL) {
         y = node;
@@ -759,7 +701,7 @@ rb_result_t rb_tree_remove(struct rb_tree *tree,
  * typically want to do with a red-black tree.
  *
  * To make a structure usable with an rb_tree, you must embed the structure
- * struct rb_tree_node. 
+ * struct rb_tree_node.
  * \code
     struct my_sample_struct {
         const char *name;
@@ -810,4 +752,3 @@ rb_result_t rb_tree_remove(struct rb_tree *tree,
  * \see rb_functions
  * \see rbtree.h
  */
-

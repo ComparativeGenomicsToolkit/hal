@@ -1,18 +1,15 @@
 #include "mmapAlignment.h"
-#include "mmapGenome.h"
 #include "halCLParser.h"
+#include "mmapGenome.h"
 
 using namespace hal;
 using namespace std;
 
-static const int NAME_HASH_GROWTH_FACTOR = 1024;  // allow lots of initial space
+static const int NAME_HASH_GROWTH_FACTOR = 1024; // allow lots of initial space
 
-MMapAlignment::MMapAlignment(const std::string& alignmentPath,
-                             unsigned mode,
-                             size_t fileSize):
-    _alignmentPath(alignmentPath),
-    _mode(mode), _fileSize(fileSize),
-    _file(NULL), _data(NULL), _genomeNameHash(NULL), _tree(NULL) {
+MMapAlignment::MMapAlignment(const std::string &alignmentPath, unsigned mode, size_t fileSize)
+    : _alignmentPath(alignmentPath), _mode(mode), _fileSize(fileSize), _file(NULL), _data(NULL), _genomeNameHash(NULL),
+      _tree(NULL) {
     _file = MMapFile::factory(alignmentPath, mode, fileSize);
     if (mode & CREATE_ACCESS) {
         create();
@@ -21,12 +18,9 @@ MMapAlignment::MMapAlignment(const std::string& alignmentPath,
     }
 }
 
-MMapAlignment::MMapAlignment(const std::string& alignmentPath,
-                             unsigned mode,
-                             const CLParser* parser):
-    _alignmentPath(alignmentPath),
-    _mode(halDefaultAccessMode(mode)), _fileSize(0),
-    _file(NULL), _data(NULL), _genomeNameHash(NULL), _tree(NULL) {
+MMapAlignment::MMapAlignment(const std::string &alignmentPath, unsigned mode, const CLParser *parser)
+    : _alignmentPath(alignmentPath), _mode(halDefaultAccessMode(mode)), _fileSize(0), _file(NULL), _data(NULL),
+      _genomeNameHash(NULL), _tree(NULL) {
     initializeFromOptions(parser);
     _file = MMapFile::factory(alignmentPath, _mode, _fileSize);
     if (mode & CREATE_ACCESS) {
@@ -47,17 +41,16 @@ void MMapAlignment::close() {
     _file->close();
 }
 
-void MMapAlignment::defineOptions(CLParser* parser,
-                                  unsigned mode) {
+void MMapAlignment::defineOptions(CLParser *parser, unsigned mode) {
     if (mode & CREATE_ACCESS) {
-      parser->addOption("mmapFileSize", "mmap HAL file initial size (in gigabytes)", MMAP_DEFAULT_FILE_SIZE_GB);
+        parser->addOption("mmapFileSize", "mmap HAL file initial size (in gigabytes)", MMAP_DEFAULT_FILE_SIZE_GB);
     } else if (mode & WRITE_ACCESS) {
-      parser->addOption("mmapSizeIncrease", "additional space to reserve at end of file (in gigabytes)", 1);
+        parser->addOption("mmapSizeIncrease", "additional space to reserve at end of file (in gigabytes)", 1);
     }
 }
 
 /* initialize class from options */
-void MMapAlignment::initializeFromOptions(const CLParser* parser) {
+void MMapAlignment::initializeFromOptions(const CLParser *parser) {
     if (_mode & CREATE_ACCESS) {
         _fileSize = GIGABYTE * parser->get<size_t>("mmapFileSize");
     } else if (_mode & WRITE_ACCESS) {
@@ -90,10 +83,11 @@ MMapGenome *MMapAlignmentData::addGenome(MMapAlignment *alignment, const std::st
     // FIXME: would be nice to allocate extra space and only move when needed.
     size_t newGenomeArraySize = (_numGenomes + 1) * sizeof(MMapGenomeData);
     size_t newGenomeArrayOffset = alignment->allocateNewArray(newGenomeArraySize);
-    MMapGenomeData *newGenomeArray = (MMapGenomeData *) alignment->resolveOffset(newGenomeArrayOffset, newGenomeArraySize);
+    MMapGenomeData *newGenomeArray = (MMapGenomeData *)alignment->resolveOffset(newGenomeArrayOffset, newGenomeArraySize);
     if (_numGenomes != 0) {
         // Copy over old genome data.
-        MMapGenomeData *oldGenomeArray = (MMapGenomeData *) alignment->resolveOffset(_genomeArrayOffset, _numGenomes * sizeof(MMapGenomeData));
+        MMapGenomeData *oldGenomeArray =
+            (MMapGenomeData *)alignment->resolveOffset(_genomeArrayOffset, _numGenomes * sizeof(MMapGenomeData));
         memcpy(newGenomeArray, oldGenomeArray, _numGenomes * sizeof(MMapGenomeData));
     }
     _genomeArrayOffset = newGenomeArrayOffset;
@@ -112,7 +106,8 @@ MMapGenome *MMapAlignmentData::addGenome(MMapAlignment *alignment, const std::st
 
 vector<string> MMapAlignmentData::getGenomeNames(MMapAlignment *alignment) {
     vector<string> names;
-    MMapGenomeData *genomeArray = static_cast<MMapGenomeData *>(alignment->resolveOffset(_genomeArrayOffset, _numGenomes * sizeof(MMapGenomeData)));
+    MMapGenomeData *genomeArray =
+        static_cast<MMapGenomeData *>(alignment->resolveOffset(_genomeArrayOffset, _numGenomes * sizeof(MMapGenomeData)));
     for (int i = 0; i < _numGenomes; i++) {
         names.push_back(genomeArray[i].getName(alignment));
     }
@@ -120,12 +115,11 @@ vector<string> MMapAlignmentData::getGenomeNames(MMapAlignment *alignment) {
 }
 
 /* this only adds name to hash function, index must still be set */
-void MMapAlignment::addGenomeToNameHash(const MMapGenome *genome,
-                                        vector<string>& existingNames) {
-    const string& name = genome->getName();
+void MMapAlignment::addGenomeToNameHash(const MMapGenome *genome, vector<string> &existingNames) {
+    const string &name = genome->getName();
     vector<string> newNames;
     newNames.push_back(name);
-    assert(find(existingNames.begin(), existingNames.end(), name) == existingNames.end());  // must not exist
+    assert(find(existingNames.begin(), existingNames.end(), name) == existingNames.end()); // must not exist
 
     if (_genomeNameHash == NULL) {
         _genomeNameHash = new MMapPerfectHashTable(_file, _data->_genomeNameHashOffset, NAME_HASH_GROWTH_FACTOR);
@@ -134,9 +128,7 @@ void MMapAlignment::addGenomeToNameHash(const MMapGenome *genome,
     _genomeNameHash->setIndex(name, genome->getArrayIndex());
 }
 
-Genome* MMapAlignment::addLeafGenome(const string& name,
-                                     const string& parentName,
-                                     double branchLength) {
+Genome *MMapAlignment::addLeafGenome(const string &name, const string &parentName, double branchLength) {
     _childNames.clear();
     stTree *parentNode = getGenomeNode(parentName);
     stTree *childNode = stTree_construct();
@@ -151,8 +143,7 @@ Genome* MMapAlignment::addLeafGenome(const string& name,
     return genome;
 }
 
-Genome* MMapAlignment::addRootGenome(const string& name,
-                                     double branchLength) {
+Genome *MMapAlignment::addRootGenome(const string &name, double branchLength) {
     _childNames.clear();
     stTree *newRoot = stTree_construct();
     stTree_setLabel(newRoot, name.c_str());
@@ -182,11 +173,12 @@ Genome *MMapAlignment::_openGenome(const string &name) const {
         return NULL;
     }
     // FIXME: put this in a function
-    MMapGenomeData *genomeDataArray = (MMapGenomeData *) resolveOffset(_data->_genomeArrayOffset, _data->_numGenomes * sizeof(MMapGenomeData));
-    if (genomeDataArray[genomeIndex].getName(const_cast<MMapAlignment*>(this)) != name) {
-        return NULL;  // name not in perfect hash
+    MMapGenomeData *genomeDataArray =
+        (MMapGenomeData *)resolveOffset(_data->_genomeArrayOffset, _data->_numGenomes * sizeof(MMapGenomeData));
+    if (genomeDataArray[genomeIndex].getName(const_cast<MMapAlignment *>(this)) != name) {
+        return NULL; // name not in perfect hash
     }
-    MMapGenome* genome = new MMapGenome(const_cast<MMapAlignment *>(this), &genomeDataArray[genomeIndex], genomeIndex);
+    MMapGenome *genome = new MMapGenome(const_cast<MMapAlignment *>(this), &genomeDataArray[genomeIndex], genomeIndex);
     _openGenomes[name] = genome;
     return genome;
 }

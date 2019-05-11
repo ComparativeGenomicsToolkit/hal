@@ -7,17 +7,16 @@
 #ifndef _HALMETADATATEST_H
 #define _HALMETADATATEST_H
 
-#include <vector>
+#include "allTests.h"
 #include "halAlignmentTest.h"
 #include "halMetaData.h"
-#include "allTests.h"
+#include <vector>
 
 using namespace hal;
 
-struct MetaDataTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct MetaDataTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
 #endif

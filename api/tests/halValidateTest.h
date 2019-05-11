@@ -7,35 +7,31 @@
 #ifndef _HALVALIDATETEST_H
 #define _HALVALIDATETEST_H
 
-#include <vector>
-#include "halAlignmentTest.h"
-#include "hal.h"
 #include "allTests.h"
+#include "hal.h"
+#include "halAlignmentTest.h"
+#include <vector>
 
 using namespace hal;
 
-struct ValidateSmallTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct ValidateSmallTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct ValidateMediumTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct ValidateMediumTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct ValidateLargeTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct ValidateLargeTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct ValidateManyGenomesTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct ValidateManyGenomesTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
 #endif

@@ -1,13 +1,12 @@
 
-Coding style is based on the google C++ style.  With some changes
-to remove special cases for consistency and simplicity:
+Coding style is based on the K&R style.  It was reformatted with clang-format
+LLVM, with some changes to remove special cases for consistency and
+simplicity:
 
 * Line width is set to 128 characters, since no one has seen a Wyse 60 is a very long time.
-* Single line functions in headers are not formatted in special way.
 * Standard indentation is used namespaces
 
 For emacs users, this is set automatically from `.dir.locals.el`.
-The `google-c-style` package should be installed from the package archive.
 
-The `clang-format` program was used  '.clang-format'
+The `clang-format` program was used  '.clang-format' as a configuration.
 

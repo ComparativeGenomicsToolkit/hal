@@ -2,10 +2,10 @@
 #ifndef _RANDNUMBERGEN_H
 #define _RANDNUMBERGEN_H
 
-#include <stdlib.h>
+#include <ctime>
 #include <math.h>
 #include <random>
-#include <ctime>
+#include <stdlib.h>
 
 namespace hal {
 
@@ -30,7 +30,7 @@ namespace hal {
 
         std::mt19937 rng;
 
-        /* 
+        /*
          * Get a pseudo-random number reproducable on all systems
          */
         double getTestRand() {
@@ -42,10 +42,7 @@ namespace hal {
         /**
          * Constructor, if seed >=0 is used to set the seed.
          */
-        RandNumberGen(bool testMode = false,
-                      int seed=-1):
-            _testMode(testMode),
-            _seed(0) {
+        RandNumberGen(bool testMode = false, int seed = -1) : _testMode(testMode), _seed(0) {
             if (_testMode) {
                 if (_seed >= 0) {
                     _seed = seed;
@@ -74,32 +71,30 @@ namespace hal {
         /**
          * Get a random positive double in the specified range.
          */
-        inline int getRandDouble(double minVal,
-                                 double maxVal) {
+        inline int getRandDouble(double minVal, double maxVal) {
             if (maxVal < minVal) {
                 // This is useful for generating `at least' lengths,
                 // even if them max is below this.
                 maxVal = minVal;
             }
-            return (getRand() * (maxVal-minVal)) + minVal;
+            return (getRand() * (maxVal - minVal)) + minVal;
         }
 
         /**
          * Get a random positive integer in the specified range.
          */
-        inline int getRandInt(int minVal,
-                              int maxVal) {
-                if (maxVal < minVal) {
-                    // This is useful for generating `at least' lengths,
-                    // even if them max is below this.
-                    maxVal = minVal;
-                }
-                double rnum = getRand() * double(maxVal-minVal);
-                if ((rnum - floor(rnum)) >= 0.5) {
-                    return minVal + int(ceil(rnum));
-                } else {
-                    return minVal + int(floor(rnum));
-                }
+        inline int getRandInt(int minVal, int maxVal) {
+            if (maxVal < minVal) {
+                // This is useful for generating `at least' lengths,
+                // even if them max is below this.
+                maxVal = minVal;
+            }
+            double rnum = getRand() * double(maxVal - minVal);
+            if ((rnum - floor(rnum)) >= 0.5) {
+                return minVal + int(ceil(rnum));
+            } else {
+                return minVal + int(floor(rnum));
+            }
         }
 
         /**

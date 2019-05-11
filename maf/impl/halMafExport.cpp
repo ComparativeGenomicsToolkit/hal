@@ -4,169 +4,130 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#include <deque>
-#include <cassert>
 #include "halMafExport.h"
+#include <cassert>
+#include <deque>
 
 using namespace std;
 using namespace hal;
 
-MafExport::MafExport() : _maxRefGap(0), _noDupes(false), _printTree(false)
-{
-
+MafExport::MafExport() : _maxRefGap(0), _noDupes(false), _printTree(false) {
 }
 
-MafExport::~MafExport()
-{
-
+MafExport::~MafExport() {
 }
 
-void MafExport::setMaxRefGap(hal_size_t maxRefGap)
-{
-  _maxRefGap = maxRefGap;
+void MafExport::setMaxRefGap(hal_size_t maxRefGap) {
+    _maxRefGap = maxRefGap;
 }
 
-void MafExport::setNoDupes(bool noDupes)
-{
-  _noDupes = noDupes;
+void MafExport::setNoDupes(bool noDupes) {
+    _noDupes = noDupes;
 }
 
-void MafExport::setNoAncestors(bool noAncestors)
-{
-  _noAncestors = noAncestors;
+void MafExport::setNoAncestors(bool noAncestors) {
+    _noAncestors = noAncestors;
 }
 
-void MafExport::setUcscNames(bool ucscNames)
-{
-  _ucscNames = ucscNames;
+void MafExport::setUcscNames(bool ucscNames) {
+    _ucscNames = ucscNames;
 }
 
-void MafExport::setUnique(bool unique)
-{
-  _unique = unique;
+void MafExport::setUnique(bool unique) {
+    _unique = unique;
 }
 
-void MafExport::setAppend(bool append)
-{
-  _append = append;
+void MafExport::setAppend(bool append) {
+    _append = append;
 }
 
-void MafExport::setMaxBlockLength(hal_index_t maxLength)
-{
-  _mafBlock.setMaxLength(maxLength);
+void MafExport::setMaxBlockLength(hal_index_t maxLength) {
+    _mafBlock.setMaxLength(maxLength);
 }
 
-void MafExport::setPrintTree(bool printTree)
-{
-  _printTree = printTree;
+void MafExport::setPrintTree(bool printTree) {
+    _printTree = printTree;
 }
 
-void MafExport::setOnlyOrthologs(bool onlyOrthologs)
-{
-  _onlyOrthologs = onlyOrthologs;
+void MafExport::setOnlyOrthologs(bool onlyOrthologs) {
+    _onlyOrthologs = onlyOrthologs;
 }
 
-void MafExport::writeHeader()
-{
-  assert(_mafStream != NULL);
-  if (_mafStream->tellp() == streampos(0))
-  {
-    *_mafStream << "##maf version=1 scoring=N/A\n"
-                << "# hal " << _alignment->getNewickTree() << endl << endl;
-  }
-}
-
-void MafExport::convertSequence(ostream& mafStream,
-                                AlignmentConstPtr alignment,
-                                const Sequence* seq,
-                                hal_index_t startPosition,
-                                hal_size_t length,
-                                const set<const Genome*>& targets)
-{
-  assert(seq != NULL);
-  if (startPosition >= (hal_index_t)seq->getSequenceLength() ||
-      (hal_size_t)startPosition + length > seq->getSequenceLength())
-  {
-    throw hal_exception("Invalid range specified for convertGenome");
-  }
-  if (length == 0)
-  {
-    length = seq->getSequenceLength() - startPosition;
-  }
-  if (length == 0)
-  {
-    throw hal_exception("Cannot convert zero length sequence");
-  }
-  hal_index_t lastPosition = startPosition + (hal_index_t)(length - 1);
-
-  _mafStream = &mafStream;
-  _alignment = alignment;
-  if (!_append)
-  {
-    writeHeader();
-  }
-
-  ColumnIteratorPtr colIt = seq->getColumnIterator(&targets,
-                                                   _maxRefGap, 
-                                                   startPosition,
-                                                   lastPosition,
-                                                   _noDupes,
-                                                   _noAncestors,
-                                                   false, // reverseStrand,
-                                                   true,  // unique
-                                                   _onlyOrthologs);
-
-
-  hal_size_t appendCount = 0;
-  if (_unique == false || colIt->isCanonicalOnRef() == true)
-  {
-    _mafBlock.initBlock(colIt, _ucscNames, _printTree);
-    assert(_mafBlock.canAppendColumn(colIt) == true);
-    _mafBlock.appendColumn(colIt);
-    ++appendCount;
-  }
-  size_t numBlocks = 0;
-  while (colIt->lastColumn() == false)
-  {
-    colIt->toRight();
-    if (_unique == false || colIt->isCanonicalOnRef() == true)
-    {
-      if (appendCount == 0)
-      {
-        _mafBlock.initBlock(colIt, _ucscNames, _printTree);
-        assert(_mafBlock.canAppendColumn(colIt) == true);
-      }
-      if (_mafBlock.canAppendColumn(colIt) == false)
-      {
-        // erase empty entries from the column.  helps when there are 
-        // millions of sequences (ie from fastas with lots of scaffolds)
-        if (numBlocks++ % 1000 == 0)
-        {
-          colIt->defragment();
-        }
-        if (appendCount > 0)
-        {
-          mafStream << _mafBlock << '\n';
-        }
-        _mafBlock.initBlock(colIt, _ucscNames, _printTree);
-        assert(_mafBlock.canAppendColumn(colIt) == true);
-      }
-      _mafBlock.appendColumn(colIt);
-      ++appendCount;
+void MafExport::writeHeader() {
+    assert(_mafStream != NULL);
+    if (_mafStream->tellp() == streampos(0)) {
+        *_mafStream << "##maf version=1 scoring=N/A\n"
+                    << "# hal " << _alignment->getNewickTree() << endl
+                    << endl;
     }
-  }
-  // if nothing was ever added (seems to happen in corner case where
-  // all columns violate unique), mafBlock ostream operator will crash
-  // so we do following check
-  if (appendCount > 0)
-  {
-    mafStream << _mafBlock << endl;
-  }
 }
 
-void MafExport::convertEntireAlignment(ostream& mafStream,
-                                       AlignmentConstPtr alignment)
-{
+void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment, const Sequence *seq, hal_index_t startPosition,
+                                hal_size_t length, const set<const Genome *> &targets) {
+    assert(seq != NULL);
+    if (startPosition >= (hal_index_t)seq->getSequenceLength() ||
+        (hal_size_t)startPosition + length > seq->getSequenceLength()) {
+        throw hal_exception("Invalid range specified for convertGenome");
+    }
+    if (length == 0) {
+        length = seq->getSequenceLength() - startPosition;
+    }
+    if (length == 0) {
+        throw hal_exception("Cannot convert zero length sequence");
+    }
+    hal_index_t lastPosition = startPosition + (hal_index_t)(length - 1);
+
+    _mafStream = &mafStream;
+    _alignment = alignment;
+    if (!_append) {
+        writeHeader();
+    }
+
+    ColumnIteratorPtr colIt = seq->getColumnIterator(&targets, _maxRefGap, startPosition, lastPosition, _noDupes, _noAncestors,
+                                                     false, // reverseStrand,
+                                                     true,  // unique
+                                                     _onlyOrthologs);
+
+    hal_size_t appendCount = 0;
+    if (_unique == false || colIt->isCanonicalOnRef() == true) {
+        _mafBlock.initBlock(colIt, _ucscNames, _printTree);
+        assert(_mafBlock.canAppendColumn(colIt) == true);
+        _mafBlock.appendColumn(colIt);
+        ++appendCount;
+    }
+    size_t numBlocks = 0;
+    while (colIt->lastColumn() == false) {
+        colIt->toRight();
+        if (_unique == false || colIt->isCanonicalOnRef() == true) {
+            if (appendCount == 0) {
+                _mafBlock.initBlock(colIt, _ucscNames, _printTree);
+                assert(_mafBlock.canAppendColumn(colIt) == true);
+            }
+            if (_mafBlock.canAppendColumn(colIt) == false) {
+                // erase empty entries from the column.  helps when there are
+                // millions of sequences (ie from fastas with lots of scaffolds)
+                if (numBlocks++ % 1000 == 0) {
+                    colIt->defragment();
+                }
+                if (appendCount > 0) {
+                    mafStream << _mafBlock << '\n';
+                }
+                _mafBlock.initBlock(colIt, _ucscNames, _printTree);
+                assert(_mafBlock.canAppendColumn(colIt) == true);
+            }
+            _mafBlock.appendColumn(colIt);
+            ++appendCount;
+        }
+    }
+    // if nothing was ever added (seems to happen in corner case where
+    // all columns violate unique), mafBlock ostream operator will crash
+    // so we do following check
+    if (appendCount > 0) {
+        mafStream << _mafBlock << endl;
+    }
+}
+
+void MafExport::convertEntireAlignment(ostream &mafStream, AlignmentConstPtr alignment) {
     hal_size_t appendCount = 0;
     size_t numBlocks = 0;
 
@@ -183,34 +144,26 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
     // they participate in that we haven't seen.
     for (hal_size_t i = 0; i < leafGenomes.size(); i++) {
         const Genome *genome = leafGenomes[i];
-        ColumnIteratorPtr colIt = genome->getColumnIterator(NULL,
-                                                                 0,
-                                                                 0,
-                                                                 NULL_INDEX,
-                                                                 _noDupes,
-                                                                 _noAncestors,
-                                                                 false, // reverseStrand
-                                                                 true,  // unique
-                                                                 _onlyOrthologs);
+        ColumnIteratorPtr colIt = genome->getColumnIterator(NULL, 0, 0, NULL_INDEX, _noDupes, _noAncestors,
+                                                            false, // reverseStrand
+                                                            true,  // unique
+                                                            _onlyOrthologs);
         colIt->setVisitCache(&visitCache);
         // So that we don't accidentally visit the first column if it's
         // already been visited.
         colIt->toSite(0, genome->getSequenceLength() - 1);
         for (;;) {
             if (appendCount == 0) {
-              _mafBlock.initBlock(colIt, _ucscNames, _printTree);
+                _mafBlock.initBlock(colIt, _ucscNames, _printTree);
                 assert(_mafBlock.canAppendColumn(colIt) == true);
             }
-            if (_mafBlock.canAppendColumn(colIt) == false)
-            {
-                // erase empty entries from the column.  helps when there are 
+            if (_mafBlock.canAppendColumn(colIt) == false) {
+                // erase empty entries from the column.  helps when there are
                 // millions of sequences (ie from fastas with lots of scaffolds)
-                if (numBlocks++ % 1000 == 0)
-                {
+                if (numBlocks++ % 1000 == 0) {
                     colIt->defragment();
                 }
-                if (appendCount > 0)
-                {
+                if (appendCount > 0) {
                     mafStream << _mafBlock << '\n';
                 }
                 _mafBlock.initBlock(colIt, _ucscNames, _printTree);
@@ -231,8 +184,7 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
         // column iterator ownership of the visit cache
         visitCache.clear();
         ColumnIterator::VisitCache *newVisitCache = colIt->getVisitCache();
-        for(ColumnIterator::VisitCache::iterator it = newVisitCache->begin();
-            it != newVisitCache->end(); it++) {
+        for (ColumnIterator::VisitCache::iterator it = newVisitCache->begin(); it != newVisitCache->end(); it++) {
             visitCache[it->first] = new PositionCache(*it->second);
         }
     }
@@ -240,8 +192,7 @@ void MafExport::convertEntireAlignment(ostream& mafStream,
     // if nothing was ever added (seems to happen in corner case where
     // all columns violate unique), mafBlock ostream operator will crash
     // so we do following check
-    if (appendCount > 0)
-    {
+    if (appendCount > 0) {
         mafStream << _mafBlock << endl;
     }
 }

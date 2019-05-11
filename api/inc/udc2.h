@@ -1,8 +1,8 @@
 /* udc - url data cache - a caching system that keeps blocks of data fetched from URLs in
- * sparse local files for quick use the next time the data is needed. 
+ * sparse local files for quick use the next time the data is needed.
  *
  * This cache is enormously simplified by there being no local _write_ to the cache,
- * just reads.  
+ * just reads.
  *
  * The overall strategy of the implementation is to have a root cache directory
  * with a subdir for each file being cached.  The directory for a single cached file
@@ -16,7 +16,7 @@
  * URL, with some necessary escaping, is used to define the rest of the cache directory
  * structure, with each '/' after the protocol line translating into another directory
  * level.
- *    
+ *
  * The bitmap file contains time stamp and size data as well as an array with one bit
  * for each block of the file that has been fetched.  Currently the block size is 8K. */
 
@@ -105,14 +105,13 @@ bits64 udc2Cleanup(char *cacheDir, double maxDays, boolean testOnly);
  * cleaned up is still. */
 
 void udc2ParseUrl(char *url, char **retProtocol, char **retAfterProtocol, char **retColon);
-/* Parse the URL into components that udc treats separately. 
- * *retAfterProtocol is Q-encoded to keep special chars out of filenames.  
+/* Parse the URL into components that udc treats separately.
+ * *retAfterProtocol is Q-encoded to keep special chars out of filenames.
  * Free all *ret's except *retColon when done. */
 
-void udc2ParseUrlFull(char *url, char **retProtocol, char **retAfterProtocol, char **retColon,
-		     char **retAuth);
+void udc2ParseUrlFull(char *url, char **retProtocol, char **retAfterProtocol, char **retColon, char **retAuth);
 /* Parse the URL into components that udc treats separately.
- * *retAfterProtocol is Q-encoded to keep special chars out of filenames.  
+ * *retAfterProtocol is Q-encoded to keep special chars out of filenames.
  * Free all *ret's except *retColon when done. */
 
 char *udc2DefaultDir();
@@ -186,7 +185,6 @@ void *udc2MMapFetch(struct udc2File *file, bits64 offset, bits64 size);
  * called for first access to a range of the file or erroneous (zeros) data
  * maybe returned.  Maybe called multiple times on a range or overlapping
  * returns. */
-
 
 #endif /* UDC2_H */
 

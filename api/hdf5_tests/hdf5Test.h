@@ -6,6 +6,11 @@
 
 #ifndef _HDF5TEST_H
 #define _HDF5TEST_H
+#include <H5Cpp.h>
+extern "C" {
+#include "CuTest.h"
+}
+
 
 /** some functionality shared by tests that rely on basic
  * hdf5 stuff
@@ -13,8 +18,8 @@
 
 static const hsize_t N = 500000;
 static const std::string datasetName("name");
-extern char* fileName;
-extern int64_t* numbers;
+extern char *fileName;
+extern int64_t *numbers;
 
 void hdf5TestTeardown();
 void hdf5TestSetup();

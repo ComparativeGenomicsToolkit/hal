@@ -15,20 +15,18 @@ extern "C" {
 
 using namespace hal;
 
-struct BedLiftoverTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
-   void testOneBranchLifts(const Alignment* alignment);
-   void testMultiBranchLifts(const Alignment* alignment);
+struct BedLiftoverTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
+    void testOneBranchLifts(const Alignment *alignment);
+    void testMultiBranchLifts(const Alignment *alignment);
 };
 
-struct WiggleLiftoverTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
-   void testOneBranchLifts(const Alignment* alignment);
-   void testMultiBranchLifts(const Alignment* alignment);
+struct WiggleLiftoverTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
+    void testOneBranchLifts(const Alignment *alignment);
+    void testMultiBranchLifts(const Alignment *alignment);
 };
 
 CuSuite *halLiftoverTestSuite();

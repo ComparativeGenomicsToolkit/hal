@@ -10,26 +10,24 @@
 namespace hal {
     class Hdf5Genome;
     class Hdf5ExternalArray;
-    
+
     /**
      * HDF5 implementation of DnaAccess.
      */
-    class HDF5DnaAccess: public DnaAccess {
-        public:
-        HDF5DnaAccess(Hdf5Genome* genome,
-                       Hdf5ExternalArray* dnaArray,
-                       hal_index_t index);
-        
+    class HDF5DnaAccess : public DnaAccess {
+      public:
+        HDF5DnaAccess(Hdf5Genome *genome, Hdf5ExternalArray *dnaArray, hal_index_t index);
+
         virtual ~HDF5DnaAccess() {
         }
 
         void flush();
 
-        protected:
+      protected:
         virtual void fetch(hal_index_t index) const;
 
-        private:
-        Hdf5ExternalArray* _dnaArray;
+      private:
+        Hdf5ExternalArray *_dnaArray;
     };
 }
 

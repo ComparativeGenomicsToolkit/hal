@@ -3,9 +3,7 @@
 
 using namespace hal;
 
-void BottomSegment::getString(std::string& outString) const
-{
+void BottomSegment::getString(std::string &outString) const {
     DnaIteratorPtr dnaIt(getGenome()->getDnaIterator(getStartPosition()));
     dnaIt->readString(outString, getLength());
 }
-

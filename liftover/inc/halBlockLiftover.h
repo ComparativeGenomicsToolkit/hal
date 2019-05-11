@@ -7,40 +7,33 @@
 #ifndef _HALBLOCKLIFTOVER_H
 #define _HALBLOCKLIFTOVER_H
 
-#include <vector>
-#include <string>
+#include "halLiftover.h"
 #include <fstream>
 #include <iostream>
-#include "halLiftover.h"
+#include <string>
+#include <vector>
 
 namespace hal {
 
-class BlockLiftover : public Liftover
-{
-public:
-   
-   BlockLiftover();
-   virtual ~BlockLiftover();
-                   
-protected:
+    class BlockLiftover : public Liftover {
+      public:
+        BlockLiftover();
+        virtual ~BlockLiftover();
 
-   void liftInterval(BedList& mappedBedLines);
-   void visitBegin();
+      protected:
+        void liftInterval(BedList &mappedBedLines);
+        void visitBegin();
 
-   void cleanTargetParalogies();
-   void readPSLInfo(std::vector<MappedSegmentPtr>& fragments, 
-                    BedLine& outBedLine);
+        void cleanTargetParalogies();
+        void readPSLInfo(std::vector<MappedSegmentPtr> &fragments, BedLine &outBedLine);
 
-   
-protected: 
-   
-   MappedSegmentSet _mappedSegments;
-   SegmentIteratorPtr _refSeg;
-   hal_index_t _lastIndex;
-   std::set<const Genome*> _downwardPath;
-   const Genome *_mrca;
-};
-
+      protected:
+        MappedSegmentSet _mappedSegments;
+        SegmentIteratorPtr _refSeg;
+        hal_index_t _lastIndex;
+        std::set<const Genome *> _downwardPath;
+        const Genome *_mrca;
+    };
 }
 #endif
 // Local Variables:

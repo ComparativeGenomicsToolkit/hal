@@ -7,39 +7,34 @@
 #ifndef _HALCOLUMNLIFTOVER_H
 #define _HALCOLUMNLIFTOVER_H
 
-#include <vector>
-#include <string>
+#include "halLiftover.h"
 #include <fstream>
 #include <iostream>
-#include "halLiftover.h"
+#include <string>
+#include <vector>
 
 namespace hal {
 
-class ColumnLiftover : public Liftover
-{
-public:
-   
-   ColumnLiftover();
-   virtual ~ColumnLiftover();
-                   
-protected:
+    class ColumnLiftover : public Liftover {
+      public:
+        ColumnLiftover();
+        virtual ~ColumnLiftover();
 
-   void liftInterval(BedList& mappedBedLines);
+      protected:
+        void liftInterval(BedList &mappedBedLines);
 
-   typedef ColumnIterator::DNASet DNASet;
-   typedef ColumnIterator::ColumnMap ColumnMap;
-   typedef PositionCache::IntervalSet IntervalSet;
-   
-   typedef std::pair<const Sequence*, hal_size_t> SeqIndex;
-   typedef std::map<SeqIndex, PositionCache*> PositionMap;
-   
-protected: 
-   
-   ColumnIteratorPtr _colIt;
-   std::set<std::string> _missedSet;
-   bool _outParalogy;
-};
+        typedef ColumnIterator::DNASet DNASet;
+        typedef ColumnIterator::ColumnMap ColumnMap;
+        typedef PositionCache::IntervalSet IntervalSet;
 
+        typedef std::pair<const Sequence *, hal_size_t> SeqIndex;
+        typedef std::map<SeqIndex, PositionCache *> PositionMap;
+
+      protected:
+        ColumnIteratorPtr _colIt;
+        std::set<std::string> _missedSet;
+        bool _outParalogy;
+    };
 }
 #endif
 // Local Variables:

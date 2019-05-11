@@ -7,44 +7,36 @@
 #ifndef _HALMASKEXTRACTOR_H
 #define _HALMASKEXTRACTOR_H
 
+#include "hal.h"
 #include <iostream>
 #include <string>
 #include <vector>
-#include "hal.h"
 
 namespace hal {
 
-class MaskExtractor 
-{
-public:
+    class MaskExtractor {
+      public:
+        MaskExtractor();
+        virtual ~MaskExtractor();
 
-   MaskExtractor();
-   virtual ~MaskExtractor();
+        void extract(const Alignment *alignment, const Genome *genome, std::ostream *bedStream, hal_size_t extend,
+                     double extendPct);
 
-   void extract(const Alignment* alignment, 
-                const Genome* genome, std::ostream* bedStream, 
-                hal_size_t extend, double extendPct);
+      protected:
+        void addMaskedBasesToCache();
+        void extendCachedIntervals();
+        void writeCachedIntervals();
 
-protected:
-
-   void addMaskedBasesToCache();
-   void extendCachedIntervals();
-   void writeCachedIntervals();
-
-protected:
-
-   AlignmentConstPtr _alignment;
-   const Genome* _genome;
-   const Sequence* _sequence;
-   std::ostream* _bedStream;
-   hal_size_t _extend; 
-   double _extendPct;
-   PositionCache _posCache;
-   
-};
-
+      protected:
+        AlignmentConstPtr _alignment;
+        const Genome *_genome;
+        const Sequence *_sequence;
+        std::ostream *_bedStream;
+        hal_size_t _extend;
+        double _extendPct;
+        PositionCache _posCache;
+    };
 }
-
 
 #endif
 // Local Variables:

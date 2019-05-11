@@ -12,16 +12,16 @@ extern "C" {
 }
 
 CuSuite *halAlignmentTestSuite();
-CuSuite* halMetaDataTestSuite();
-CuSuite* halGenomeTestSuite();
-CuSuite* halTopSegmentTestSuite();
-CuSuite* halBottomSegmentTestSuite();
-CuSuite* halSequenceTestSuite();
-CuSuite* halValidateTestSuite();
-CuSuite* halColumnIteratorTestSuite();
-CuSuite* halRearrangementTestSuite();
-CuSuite* halMappedSegmentTestSuite();
-CuSuite* halGappedSegmentIteratorTestSuite();
+CuSuite *halMetaDataTestSuite();
+CuSuite *halGenomeTestSuite();
+CuSuite *halTopSegmentTestSuite();
+CuSuite *halBottomSegmentTestSuite();
+CuSuite *halSequenceTestSuite();
+CuSuite *halValidateTestSuite();
+CuSuite *halColumnIteratorTestSuite();
+CuSuite *halRearrangementTestSuite();
+CuSuite *halMappedSegmentTestSuite();
+CuSuite *halGappedSegmentIteratorTestSuite();
 
 #endif
 // Local Variables:

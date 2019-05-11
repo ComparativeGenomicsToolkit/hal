@@ -4,14 +4,13 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#include "halMafTests.h"
 #include "halMafExport.h"
+#include "halMafTests.h"
 
 using namespace std;
 using namespace hal;
 
-CuSuite *halMafExportTestSuite(void)
-{
-  CuSuite* suite = CuSuiteNew();
-  return suite;
+CuSuite *halMafExportTestSuite(void) {
+    CuSuite *suite = CuSuiteNew();
+    return suite;
 }

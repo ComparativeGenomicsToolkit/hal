@@ -16,7 +16,7 @@ namespace hal {
      * that DNA is nibble-encode and handles encoding and decoding.
      */
     class DnaAccess {
-        public:
+      public:
         /* Destructor */
         virtual ~DnaAccess() {
             if (_dirty) {
@@ -39,19 +39,13 @@ namespace hal {
             _buffer[relIndex / 2] = dnaPack(base, relIndex, _buffer[relIndex / 2]);
             _dirty = true;
         }
-        
-        protected:
+
+      protected:
         /* constructor */
-        DnaAccess(hal_index_t startIndex,
-                  hal_index_t endIndex,
-                  char* buffer) :
-            _startIndex(startIndex),
-            _endIndex(endIndex),
-            _buffer(buffer),
-            _dirty(false) {
+        DnaAccess(hal_index_t startIndex, hal_index_t endIndex, char *buffer)
+            : _startIndex(startIndex), _endIndex(endIndex), _buffer(buffer), _dirty(false) {
         }
 
-        
         /* refresh the buffer if needed and return relative index */
         inline hal_index_t access(hal_index_t index) const {
             if ((index < _startIndex) or (index >= _endIndex)) {
@@ -59,14 +53,14 @@ namespace hal {
             }
             return index - _startIndex;
         }
-        
+
         /* refreshed the buffer, const since it is abstracted as a cache */
         virtual void fetch(hal_index_t index) const = 0;
 
         /* Cached buffer.  Index will always be even (first nibble) */
         mutable hal_index_t _startIndex;
         mutable hal_index_t _endIndex;
-        mutable char* _buffer;
+        mutable char *_buffer;
         mutable bool _dirty;
     };
 }

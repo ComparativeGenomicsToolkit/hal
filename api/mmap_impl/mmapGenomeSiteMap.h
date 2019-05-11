@@ -9,18 +9,13 @@ struct rb_tree_node;
 namespace hal {
     class MMapSequence;
     class TmpTreeNodes;
-    
+
     /* node in the binary search tree */
     class MMapGenomeSiteMapNode {
-        public:
-        MMapGenomeSiteMapNode(size_t startPosition = 0,
-                              size_t length = 0,
-                              hal_index_t sequenceIndex = NULL_INDEX):
-            _startPosition(startPosition),
-            _length(length),
-            _sequenceIndex(sequenceIndex),
-            _leftNodeIndex(NULL_INDEX),
-            _rightNodeIndex(NULL_INDEX) {
+      public:
+        MMapGenomeSiteMapNode(size_t startPosition = 0, size_t length = 0, hal_index_t sequenceIndex = NULL_INDEX)
+            : _startPosition(startPosition), _length(length), _sequenceIndex(sequenceIndex), _leftNodeIndex(NULL_INDEX),
+              _rightNodeIndex(NULL_INDEX) {
         }
 
         /* check if positions is in entry?  Return 0 if contain, -1 if less than, or
@@ -34,8 +29,7 @@ namespace hal {
                 return 0;
             }
         }
-        
-        
+
         /* sequence range in genome */
         size_t _startPosition;
         size_t _length;
@@ -45,29 +39,25 @@ namespace hal {
         hal_index_t _leftNodeIndex;
         hal_index_t _rightNodeIndex;
     };
-    
+
     class MMapGenomeSiteMapData {
-        public:
+      public:
         size_t _numSequences;
         // other nodes immediately follow
-        MMapGenomeSiteMapNode _root; 
+        MMapGenomeSiteMapNode _root;
     };
-    
+
     /**
      * MMap file structure used to map position in genome to specific
      * sequence.  This builds a balance binary tree and stores it in the
      * mmapped file for direct access.
      */
     class MMapGenomeSiteMap {
-        public:
+      public:
         /** Construct new object for accessing site map in HAL file.
          * If the hash table is being created, then gsmOffset
          * should be MMAP_NULL_OFFSET.  */
-        MMapGenomeSiteMap(MMapFile* mmapFile,
-                          size_t gsmOffset):
-            _file(mmapFile),
-            _gsmOffset(gsmOffset),
-            _data(NULL) {
+        MMapGenomeSiteMap(MMapFile *mmapFile, size_t gsmOffset) : _file(mmapFile), _gsmOffset(gsmOffset), _data(NULL) {
             if (gsmOffset != MMAP_NULL_OFFSET) {
                 readGsm(gsmOffset);
             }
@@ -75,29 +65,25 @@ namespace hal {
 
         /* Build the map from an array of sequences, return gsmOffset.
          * Rebuilding will just lose space in the file. */
-        size_t build(const std::vector<MMapSequence*>& sequences);
+        size_t build(const std::vector<MMapSequence *> &sequences);
 
         /** find the sequence index containing a position */
         hal_index_t getSequenceIndexBySite(size_t position);
 
         /** find the sequence containing a position */
-        const Sequence* getSequenceBySite(hal_size_t position) const {
-            return const_cast<MMapGenomeSiteMap*>(this)->getSequenceBySite(position);
+        const Sequence *getSequenceBySite(hal_size_t position) const {
+            return const_cast<MMapGenomeSiteMap *>(this)->getSequenceBySite(position);
         }
 
-        
-        private:
+      private:
         static size_t calcRequiredSpace(size_t numSequences);
         void readGsm(size_t gsmOffset);
         void createGsm(size_t numSequences);
-        void loadTmpTree(const std::vector<MMapSequence*>& sequences,
-                         struct rb_tree *tmpTree,
-                         TmpTreeNodes& tmpTreeNodes);
-        hal_index_t copyTree(struct rb_tree_node *tmpNode,
-                             int& nextNodeIdx);
+        void loadTmpTree(const std::vector<MMapSequence *> &sequences, struct rb_tree *tmpTree, TmpTreeNodes &tmpTreeNodes);
+        hal_index_t copyTree(struct rb_tree_node *tmpNode, int &nextNodeIdx);
 
         /* returns null for NULL_INDEX */
-        MMapGenomeSiteMapNode* getNodePtr(int nodeIndex) {
+        MMapGenomeSiteMapNode *getNodePtr(int nodeIndex) {
             if (nodeIndex == NULL_INDEX) {
                 return NULL;
             } else {
@@ -106,11 +92,11 @@ namespace hal {
         }
 
         /* returns null for NULL_INDEX */
-        const MMapGenomeSiteMapNode* getNodePtr(int nodeIndex) const {
-            return const_cast<MMapGenomeSiteMap*>(this)->getNodePtr(nodeIndex);
+        const MMapGenomeSiteMapNode *getNodePtr(int nodeIndex) const {
+            return const_cast<MMapGenomeSiteMap *>(this)->getNodePtr(nodeIndex);
         }
-        
-        MMapFile* _file;
+
+        MMapFile *_file;
         size_t _gsmOffset;
         MMapGenomeSiteMapData *_data;
     };

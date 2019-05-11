@@ -31,11 +31,10 @@
 #ifndef PHF_H
 #define PHF_H
 
+#include <inttypes.h> /* PRIu32 PRIx32 */
+#include <stdbool.h>  /* bool */
 #include <stddef.h>   /* size_t */
 #include <stdint.h>   /* UINT32_MAX uint32_t uint64_t */
-#include <stdbool.h>  /* bool */
-#include <inttypes.h> /* PRIu32 PRIx32 */
-
 
 /*
  * C O M P I L E R  F E A T U R E S  &  D I A G N O S T I C S
@@ -53,17 +52,11 @@
 #endif
 
 #ifndef PHF_HAVE_NOEXCEPT
-#define PHF_HAVE_NOEXCEPT \
-	(__cplusplus >= 201103L || \
-	 phf_has_extension(cxx_noexcept) || \
-	 PHF_GNUC_PREREQ(4, 6))
+#define PHF_HAVE_NOEXCEPT (__cplusplus >= 201103L || phf_has_extension(cxx_noexcept) || PHF_GNUC_PREREQ(4, 6))
 #endif
 
 #ifndef PHF_HAVE_GENERIC
-#define PHF_HAVE_GENERIC \
-	(__STDC_VERSION__ >= 201112L || \
-	 phf_has_extension(c_generic_selections) || \
-	 PHF_GNUC_PREREQ(4, 9))
+#define PHF_HAVE_GENERIC (__STDC_VERSION__ >= 201112L || phf_has_extension(c_generic_selections) || PHF_GNUC_PREREQ(4, 9))
 #endif
 
 #ifndef PHF_HAVE_BUILTIN_TYPES_COMPATIBLE_P
@@ -75,8 +68,7 @@
 #endif
 
 #ifndef PHF_HAVE_ATTRIBUTE_VISIBILITY
-#define PHF_HAVE_ATTRIBUTE_VISIBILITY \
-	(phf_has_attribute(visibility) || PHF_GNUC_PREREQ(4, 0))
+#define PHF_HAVE_ATTRIBUTE_VISIBILITY (phf_has_attribute(visibility) || PHF_GNUC_PREREQ(4, 0))
 #endif
 
 #ifndef PHF_HAVE_COMPUTED_GOTOS
@@ -97,7 +89,6 @@
 #endif
 #endif
 
-
 /*
  * C / C + +  V I S I B I L I T Y
  *
@@ -115,7 +106,6 @@
 #endif
 #endif
 
-
 /*
  * C / C + +  S H A R E D  T Y P E S
  *
@@ -131,34 +121,33 @@ typedef uint32_t phf_hash_t;
 typedef uint32_t phf_seed_t;
 
 typedef struct phf_string {
-	void *p;
-	size_t n;
+    void *p;
+    size_t n;
 } phf_string_t;
 
 struct phf {
-	bool nodiv;
+    bool nodiv;
 
-	phf_seed_t seed;
+    phf_seed_t seed;
 
-	size_t r; /* number of elements in g */
-	size_t m; /* number of elements in perfect hash */
-	uint32_t *g; /* displacement map indexed by g(k) % r */
+    size_t r;    /* number of elements in g */
+    size_t m;    /* number of elements in perfect hash */
+    uint32_t *g; /* displacement map indexed by g(k) % r */
 
-	size_t d_max; /* maximum displacement value in g */
+    size_t d_max; /* maximum displacement value in g */
 
-	enum g_op_t {
-		PHF_G_UINT8_MOD_R = 1,
-		PHF_G_UINT8_BAND_R,
-		PHF_G_UINT16_MOD_R,
-		PHF_G_UINT16_BAND_R,
-		PHF_G_UINT32_MOD_R,
-		PHF_G_UINT32_BAND_R,
-	} g_op;
+    enum g_op_t {
+        PHF_G_UINT8_MOD_R = 1,
+        PHF_G_UINT8_BAND_R,
+        PHF_G_UINT16_MOD_R,
+        PHF_G_UINT16_BAND_R,
+        PHF_G_UINT32_MOD_R,
+        PHF_G_UINT32_BAND_R,
+    } g_op;
 #if 0
 	const void *g_jmp;
 #endif
 }; /* struct phf */
-
 
 /*
  * C + +  I N T E R F A C E S
@@ -171,18 +160,16 @@ struct phf {
 #endif
 
 namespace PHF {
-	template<typename key_t>
-	PHF_PUBLIC size_t uniq(key_t[], const size_t);
+    template <typename key_t> PHF_PUBLIC size_t uniq(key_t[], const size_t);
 
-	template<typename key_t, bool nodiv>
-	PHF_PUBLIC phf_error_t init(struct phf *, const key_t[], const size_t, const size_t, const size_t, const phf_seed_t);
+    template <typename key_t, bool nodiv>
+    PHF_PUBLIC phf_error_t init(struct phf *, const key_t[], const size_t, const size_t, const size_t, const phf_seed_t);
 
-	PHF_PUBLIC void compact(struct phf *);
+    PHF_PUBLIC void compact(struct phf *);
 
-	template<typename key_t>
-	PHF_PUBLIC phf_hash_t hash(const struct phf *, key_t);
+    template <typename key_t> PHF_PUBLIC phf_hash_t hash(const struct phf *, key_t);
 
-	PHF_PUBLIC void destroy(struct phf *);
+    PHF_PUBLIC void destroy(struct phf *);
 }
 
 extern template size_t PHF::uniq<uint32_t>(uint32_t[], const size_t);
@@ -192,18 +179,26 @@ extern template size_t PHF::uniq<phf_string_t>(phf_string_t[], const size_t);
 extern template size_t PHF::uniq<std::string>(std::string[], const size_t);
 #endif
 
-extern template phf_error_t PHF::init<uint32_t, true>(struct phf *, const uint32_t[], const size_t, const size_t, const size_t, const phf_seed_t);
-extern template phf_error_t PHF::init<uint64_t, true>(struct phf *, const uint64_t[], const size_t, const size_t, const size_t, const phf_seed_t);
-extern template phf_error_t PHF::init<phf_string_t, true>(struct phf *, const phf_string_t[], const size_t, const size_t, const size_t, const phf_seed_t);
+extern template phf_error_t PHF::init<uint32_t, true>(struct phf *, const uint32_t[], const size_t, const size_t, const size_t,
+                                                      const phf_seed_t);
+extern template phf_error_t PHF::init<uint64_t, true>(struct phf *, const uint64_t[], const size_t, const size_t, const size_t,
+                                                      const phf_seed_t);
+extern template phf_error_t PHF::init<phf_string_t, true>(struct phf *, const phf_string_t[], const size_t, const size_t,
+                                                          const size_t, const phf_seed_t);
 #if !PHF_NO_LIBCXX
-extern template phf_error_t PHF::init<std::string, true>(struct phf *, const std::string[], const size_t, const size_t, const size_t, const phf_seed_t);
+extern template phf_error_t PHF::init<std::string, true>(struct phf *, const std::string[], const size_t, const size_t,
+                                                         const size_t, const phf_seed_t);
 #endif
 
-extern template phf_error_t PHF::init<uint32_t, false>(struct phf *, const uint32_t[], const size_t, const size_t, const size_t, const phf_seed_t);
-extern template phf_error_t PHF::init<uint64_t, false>(struct phf *, const uint64_t[], const size_t, const size_t, const size_t, const phf_seed_t);
-extern template phf_error_t PHF::init<phf_string_t, false>(struct phf *, const phf_string_t[], const size_t, const size_t, const size_t, const phf_seed_t);
+extern template phf_error_t PHF::init<uint32_t, false>(struct phf *, const uint32_t[], const size_t, const size_t, const size_t,
+                                                       const phf_seed_t);
+extern template phf_error_t PHF::init<uint64_t, false>(struct phf *, const uint64_t[], const size_t, const size_t, const size_t,
+                                                       const phf_seed_t);
+extern template phf_error_t PHF::init<phf_string_t, false>(struct phf *, const phf_string_t[], const size_t, const size_t,
+                                                           const size_t, const phf_seed_t);
 #if !PHF_NO_LIBCXX
-extern template phf_error_t PHF::init<std::string, false>(struct phf *, const std::string[], const size_t, const size_t, const size_t, const phf_seed_t);
+extern template phf_error_t PHF::init<std::string, false>(struct phf *, const std::string[], const size_t, const size_t,
+                                                          const size_t, const phf_seed_t);
 #endif
 
 extern template phf_hash_t PHF::hash<uint32_t>(const struct phf *, uint32_t);

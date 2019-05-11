@@ -8,35 +8,31 @@
 #ifndef _HALSEQUENCETEST_H
 #define _HALSEQUENCETEST_H
 
-#include <vector>
-#include "halAlignmentTest.h"
-#include "hal.h"
 #include "allTests.h"
+#include "hal.h"
+#include "halAlignmentTest.h"
+#include <vector>
 
 using namespace hal;
 
-struct SequenceCreateTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct SequenceCreateTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct SequenceIteratorTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct SequenceIteratorTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct SequenceUpdateTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct SequenceUpdateTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
-struct SequenceRenameTest : public AlignmentTest
-{
-   void createCallBack(Alignment* alignment);
-   void checkCallBack(const Alignment* alignment);
+struct SequenceRenameTest : public AlignmentTest {
+    void createCallBack(Alignment *alignment);
+    void checkCallBack(const Alignment *alignment);
 };
 
 #endif
