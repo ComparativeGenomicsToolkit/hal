@@ -29,7 +29,6 @@ namespace hal {
         virtual void fetch(hal_index_t index) const;
 
         private:
-        Hdf5Genome* _genome;
         Hdf5ExternalArray* _dnaArray;
     };
 }

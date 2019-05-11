@@ -170,7 +170,6 @@ private:
    ColumnIteratorStack _stack;
    ColumnIteratorStack _indelStack;
    const Sequence* _ref;
-   size_t _curInsertionLength;
 
    RearrangementPtr _rearrangement;
    hal_size_t _maxInsertionLength;

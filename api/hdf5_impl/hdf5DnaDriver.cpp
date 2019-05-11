@@ -9,13 +9,10 @@
 
 using namespace hal;
 
-static const int UDC_FETCH_SIZE = 64 * 1024;  // size to bring in for UDC access
-
 HDF5DnaAccess::HDF5DnaAccess(Hdf5Genome* genome,
                              Hdf5ExternalArray* dnaArray,
                              hal_index_t index):
     DnaAccess(0, 0, NULL),
-    _genome(genome),
     _dnaArray(dnaArray) {
     fetch(index);
 }

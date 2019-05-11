@@ -152,7 +152,6 @@ private:
    _rightParent;
    TopSegmentIteratorPtr _top;
    
-   hal_size_t _childIndex;
    const Genome* _genome;
    const Genome* _parent;
 

@@ -29,7 +29,6 @@ Rearrangement::Rearrangement(const Genome* childGenome,
   _gapThreshold(gapThreshold),
   _atomic(atomic),
   _nThreshold(nThreshold),
-  _childIndex(1000),
   _genome(childGenome),
   _parent(NULL),
   _id(Invalid)

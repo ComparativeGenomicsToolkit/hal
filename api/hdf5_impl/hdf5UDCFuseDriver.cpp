@@ -384,9 +384,6 @@ H5FD_udc_fuse_open( const char *name, unsigned flags, hid_t fapl_id,
     /* Sanity check on file offsets */
     assert(sizeof(file_offset_t) >= sizeof(size_t));
 
-    /* Quiet compiler */
-    fapl_id = fapl_id;
-
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);
 
@@ -521,9 +518,6 @@ H5FD_udc_fuse_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
 static herr_t
 H5FD_udc_fuse_query(const H5FD_t *_f, unsigned long *flags /* out */)
 {
-    /* Quiet the compiler */
-    _f=_f;
-
     /* Set the VFL feature flags that this driver supports */
     if(flags) {
         *flags = 0;
@@ -560,10 +554,6 @@ H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, hid_t /*UNUSED*/ 
 {
     H5FD_udc_fuse_t    *file = (H5FD_udc_fuse_t*)_file;
     haddr_t         addr;
-
-    /* Quiet compiler */
-    type = type;
-    dxpl_id = dxpl_id;
 
     /* Clear the error stack */
     H5Eclear2(H5E_DEFAULT);

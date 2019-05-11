@@ -28,7 +28,6 @@ public:
 private:
     hal_size_t _totalSequenceLength;
     hal_size_t _numSequences;
-    hal_size_t _numMetadata;
     hal_size_t _numTopSegments;
     hal_size_t _numBottomSegments;
 
@@ -40,7 +39,6 @@ private:
     size_t _dnaOffset;
     size_t _topSegmentsOffset;
     size_t _bottomSegmentsOffset;
-    size_t _childNamesOffset;
 };
 
 class MMapGenome : public Genome {
