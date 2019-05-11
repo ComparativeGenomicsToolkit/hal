@@ -10,9 +10,9 @@
 #include "halSequenceIterator.h"
 #include "halTopSegmentIterator.h"
 using namespace std;
+using namespace hal;
 
-namespace hal {
-void Genome::copy(Genome *dest) const
+void hal::Genome::copy(Genome *dest) const
 {
   copyDimensions(dest);
   copySequence(dest);
@@ -21,7 +21,7 @@ void Genome::copy(Genome *dest) const
   copyMetadata(dest);
 }
 
-void Genome::copyDimensions(Genome *dest) const
+void hal::Genome::copyDimensions(Genome *dest) const
 {
   vector<Sequence::Info> dimensions;
   const Alignment *inAlignment = getAlignment();
@@ -41,7 +41,7 @@ void Genome::copyDimensions(Genome *dest) const
   dest->setDimensions(dimensions);
 }
 
-void Genome::copyTopDimensions(Genome *dest) const
+void hal::Genome::copyTopDimensions(Genome *dest) const
 {
   vector<Sequence::UpdateInfo> dimensions;
   
@@ -61,7 +61,7 @@ void Genome::copyTopDimensions(Genome *dest) const
   dest->updateTopDimensions(dimensions);
 }
 
-void Genome::copyBottomDimensions(Genome *dest) const
+void hal::Genome::copyBottomDimensions(Genome *dest) const
 {
   vector<Sequence::UpdateInfo> dimensions;
   
@@ -81,7 +81,7 @@ void Genome::copyBottomDimensions(Genome *dest) const
   dest->updateBottomDimensions(dimensions);
 }
 
-void Genome::copyTopSegments(Genome *dest) const
+void hal::Genome::copyTopSegments(Genome *dest) const
 {
   const Genome *inParent = getParent();
   const Genome *outParent = dest->getParent();
@@ -159,7 +159,7 @@ void Genome::copyTopSegments(Genome *dest) const
   }
 }
 
-void Genome::copyBottomSegments(Genome *dest) const
+void hal::Genome::copyBottomSegments(Genome *dest) const
 {
   assert(getNumBottomSegments() == dest->getNumBottomSegments());
   hal_size_t inNc = getNumChildren();
@@ -252,7 +252,7 @@ void Genome::copyBottomSegments(Genome *dest) const
 }
 
 
-void Genome::copySequence(Genome *dest) const
+void hal::Genome::copySequence(Genome *dest) const
 {
   DnaIteratorPtr inDna = getDnaIterator();
   DnaIteratorPtr outDna = dest->getDnaIterator();
@@ -266,7 +266,7 @@ void Genome::copySequence(Genome *dest) const
   outDna->flush();
 }
 
-void Genome::copyMetadata(Genome *dest) const
+void hal::Genome::copyMetadata(Genome *dest) const
 {
   const map<string, string>& meta = getMetaData()->getMap();
   map<string, string>::const_iterator i = meta.begin();
@@ -276,7 +276,7 @@ void Genome::copyMetadata(Genome *dest) const
   }
 }
 
-void Genome::fixParseInfo()
+void hal::Genome::fixParseInfo()
 {
   if (getParent() == NULL || getNumChildren() == 0)
   {
@@ -330,4 +330,4 @@ void Genome::fixParseInfo()
     }
   }
 }
-} // namespace hal
+

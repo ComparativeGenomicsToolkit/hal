@@ -1,13 +1,12 @@
 #include <fstream>
 #include "sonLib.h"
 #include "hal.h"
+#include "renameFile.h"
 
 using namespace std;
 using namespace hal;
 
-namespace hal {
-
-map<string, string> ingestRenameFile(string tsvPath) {
+map<string, string> hal::ingestRenameFile(string tsvPath) {
   map<string, string> ret;
   set<string> values;
   ifstream tsv(tsvPath.c_str());
@@ -40,6 +39,4 @@ map<string, string> ingestRenameFile(string tsvPath) {
     values.insert(newName);
   }
   return ret;
-}
-
 }

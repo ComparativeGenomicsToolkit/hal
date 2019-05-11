@@ -118,7 +118,6 @@ namespace hal {
     };
 }
 
-
 /* Constructor. Open or create the specified file. */
 hal::MMapFileLocal::MMapFileLocal(const std::string& alignmentPath,
                                   unsigned mode,
