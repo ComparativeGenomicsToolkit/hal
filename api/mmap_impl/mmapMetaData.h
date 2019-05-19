@@ -11,6 +11,7 @@ namespace hal {
       public:
         size_t _keysOffset;
         size_t _valuesOffset;
+        char _reserved[256];   // 256 bytes of reserved added in mmap API 1.1
     };
 
     class MMapMetaData : public MetaData {

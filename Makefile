@@ -19,6 +19,7 @@ progs: ${modules:%=%.progs}
 clean: ${modules:%=%.clean}
 	rm -rf lib bin objs
 	rm -f *.pyc */*.pyc */*/*.pyc
+	rm -rf __pycache__ */__pycache__ */*/__pycache__
 
 %.clean:
 	cd $* && ${MAKE} clean

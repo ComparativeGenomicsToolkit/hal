@@ -27,6 +27,7 @@ namespace hal {
         hal_size_t _numBottomSegments;
         size_t _nameLength;
         size_t _nameOffset;
+        char _reserved[256];   // 256 bytes of reserved added in mmap API 1.1
     };
 }
 #endif

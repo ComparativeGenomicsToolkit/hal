@@ -8,6 +8,13 @@
 #include <string>
 
 namespace hal {
+    /* Current API major and minor versions */
+    static const unsigned MMAP_API_MAJOR_VERSION = 1;
+    static const unsigned MMAP_API_MINOR_VERSION = 1;
+
+    /* get current mmap version as a string */
+    const std::string& getMmapCurentVersion();
+    
     /* Null offset constant.  So happens the header is at location zero, but we never have
      * a offset to it */
     static const size_t MMAP_NULL_OFFSET = 0;
@@ -20,6 +27,7 @@ namespace hal {
         size_t nextOffset;
         size_t rootOffset;
         bool dirty;
+        char _reserved[256];   // 256 bytes of reserved added in mmap API 1.1
     };
     typedef struct MMapHeader MMapHeader;
 
@@ -36,6 +44,20 @@ namespace hal {
         /* check if first bit of file has MMAP header */
         static bool isMmapFile(const std::string &initialBytes);
 
+        /* get the mmap version of this file */
+        const std::string getVersion() const {
+            return _version;
+        }
+        /* get the mmap major version of this file */
+        unsigned getMajorVersion() const {
+            return _majorVersion;
+        }
+        
+        /* get the mmap minor version of this file */
+        unsigned getMinorVersion() const {
+            return _minorVersion;
+        }
+        
         std::string getStorageFormat() const {
             return STORAGE_FORMAT_MMAP;
         }
@@ -84,9 +106,15 @@ namespace hal {
         MMapFile() {
             // no copying
         }
+        void parseCheckVersion();
 
         static MMapFile *factory(const std::string &alignmentPath, unsigned mode = READ_ACCESS,
                                  size_t fileSize = MMAP_DEFAULT_FILE_SIZE);
+
+        std::string _version;
+        unsigned _majorVersion;
+        unsigned _minorVersion;
+        
     };
 }
 

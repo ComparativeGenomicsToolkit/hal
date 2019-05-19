@@ -41,6 +41,8 @@ namespace hal {
         size_t _dnaOffset;
         size_t _topSegmentsOffset;
         size_t _bottomSegmentsOffset;
+        // note: couldn't add a reserved field, since MMapGenomeData is an array
+        // of structs.
     };
 
     class MMapGenome : public Genome {

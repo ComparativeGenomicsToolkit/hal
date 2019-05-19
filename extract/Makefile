@@ -36,7 +36,7 @@ clean :
 	rm -f ${objs} ${progs} ${depends}
 	rm -rf ${testTmpDir}
 
-test: hal4dExtractTest halExtactHdf5ToMmap halExtactMmapToHdf5
+test: hal4dExtractTest halExtactHdf5ToMmap halExtactMmapToHdf5 halExtactMmapV1.0
 
 hal4dExtractTest:
 	${binDir}/hal4dExtractTest 
@@ -46,6 +46,13 @@ halExtactHdf5ToMmap: ${testHdf5Hal}
 
 halExtactMmapToHdf5: ${testMmapHal}
 	${binDir}/halExtract --outputFormat hdf5 $< ${testTmpDir}/$@.hdf5.hal
+
+# this tests reading V1.0 mmap files
+halExtactMmapV1.0: 
+	@mkdir -p $(dir $@)
+	bzcat  tests/input/small.mmap1.0.hal.bz2  > output/small.mmap1.0.hal
+	${binDir}/halExtract --outputFormat mmap output/small.mmap1.0.hal ${testTmpDir}/$@.mmap.hal
+
 
 randGenArgs = --preset small --seed 0 --minSegmentLength 3000  --maxSegmentLength 5000
 

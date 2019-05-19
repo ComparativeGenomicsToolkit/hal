@@ -27,6 +27,7 @@ namespace hal {
         size_t _newickStringLength;
         size_t _genomeArrayOffset;
         size_t _genomeNameHashOffset;
+        char _reserved[265];   // 256 bytes of reserved added in mmap API 1.1
     };
 
     class MMapAlignment : public Alignment {

@@ -15,7 +15,15 @@ extern "C" {
 
 /* constants for header */
 static const std::string FORMAT_NAME = "HAL-MMAP";
-static const std::string MMAP_VERSION = "1.0";
+
+/* get current version as a string */
+static const std::string& getMmapApiVersion() {
+    static std::string version;
+    if (version == "") {
+        version = std::to_string(hal::MMAP_API_MAJOR_VERSION) + "." + std::to_string(hal::MMAP_API_MINOR_VERSION);
+    }
+    return version;
+}
 
 /* check if first bit of file has MMAP header */
 bool hal::MMapFile::isMmapFile(const std::string &initialBytes) {
@@ -24,7 +32,8 @@ bool hal::MMapFile::isMmapFile(const std::string &initialBytes) {
 
 /* constructor, used only by derived classes */
 hal::MMapFile::MMapFile(const std::string alignmentPath, unsigned mode, bool mustFetch)
-    : _alignmentPath(alignmentPath), _mode(halDefaultAccessMode(mode)), _basePtr(NULL), _fileSize(0), _mustFetch(mustFetch) {
+    : _alignmentPath(alignmentPath), _mode(halDefaultAccessMode(mode)), _basePtr(NULL), _fileSize(0), _mustFetch(mustFetch),
+      _majorVersion(0), _minorVersion(0) {
 }
 
 /* error if file is not open for write accecss */
@@ -40,6 +49,29 @@ void hal::MMapFile::setHeaderPtr() {
     _header = static_cast<MMapHeader *>(_basePtr);
 }
 
+/* Check that major version is compatible and store in object */
+void hal::MMapFile::parseCheckVersion() {
+    std::string fileVersion(_header->mmapVersion);
+    size_t dotPos = fileVersion.find('.');
+    try {
+        if (dotPos == std::string::npos) {
+            throw hal_exception("dot not found");
+        }
+        _majorVersion = std::stoi(fileVersion.substr(0, dotPos));
+        _minorVersion = std::stoi(fileVersion.substr(dotPos+1));
+        _version = std::to_string(_majorVersion) + "." + std::to_string(_minorVersion);
+    } catch(std::exception) {
+        // truncate to avoid tons of garbage
+        throw hal_exception(_alignmentPath + ": doesn't have a valid mmap version string: "
+                            + fileVersion.substr(0, 20));
+    }
+    
+    if (_majorVersion != MMAP_API_MAJOR_VERSION) {
+        throw hal_exception(_alignmentPath + ": incompatible mmap major versions: " + "file version " + _version +
+                            ", mmap API version " + getMmapApiVersion());
+    }
+}
+
 /* validate the file header and save a pointer to it. */
 void hal::MMapFile::loadHeader(bool markDirty) {
     if (_fileSize < sizeof(MMapHeader)) {
@@ -48,19 +80,17 @@ void hal::MMapFile::loadHeader(bool markDirty) {
     }
     setHeaderPtr();
 
-    // don't print found strings as it might have garbage
-    if (::strcmp(_header->format, FORMAT_NAME.c_str()) != 0) {
-        throw hal_exception(_alignmentPath + ": invalid file header, expected format name of '" + FORMAT_NAME + "'");
+    std::string fileFormat(_header->format);
+    if (fileFormat != FORMAT_NAME) {
+        // don't print full string to avoid garbage
+    throw hal_exception(_alignmentPath + ": invalid file header, expected format name of '" + FORMAT_NAME + "', got '" + fileFormat.substr(0, 20) + "'");
     }
-    // FIXME: to need to check version compatibility
-    if (::strcmp(_header->mmapVersion, MMAP_VERSION.c_str()) != 0) {
-        throw hal_exception(_alignmentPath + ": incompatible mmap format versions: " + "file version " + _header->mmapVersion +
-                            ", mmap API version " + MMAP_VERSION);
-    }
-    if ((_header->nextOffset < sizeof(MMapHeader)) or (_header->nextOffset > _fileSize)) {
+    parseCheckVersion();
+    // header sizes can change with addition of fields which still might be backwards compatible
+    if (_header->nextOffset > _fileSize) {
         throw hal_exception(_alignmentPath + ": header nextOffset field out of bounds, probably file corruption");
     }
-    if ((_header->rootOffset < sizeof(MMapHeader)) or (_header->rootOffset > _fileSize)) {
+    if (_header->rootOffset > _fileSize) {
         throw hal_exception(_alignmentPath + ": header rootOffset field out of bounds, probably file corruption");
     }
     if (_header->dirty) {
@@ -77,8 +107,8 @@ void hal::MMapFile::createHeader() {
     setHeaderPtr();
     assert(FORMAT_NAME.size() < sizeof(_header->format));
     strncpy(_header->format, FORMAT_NAME.c_str(), sizeof(_header->format) - 1);
-    assert(MMAP_VERSION.size() < sizeof(_header->mmapVersion));
-    strncpy(_header->mmapVersion, MMAP_VERSION.c_str(), sizeof(_header->mmapVersion) - 1);
+    assert(getMmapApiVersion().size() < sizeof(_header->mmapVersion));
+    strncpy(_header->mmapVersion, getMmapApiVersion().c_str(), sizeof(_header->mmapVersion) - 1);
     assert(HAL_VERSION.size() < sizeof(_header->halVersion));
     strncpy(_header->halVersion, HAL_VERSION.c_str(), sizeof(_header->halVersion) - 1);
     _header->nextOffset = alignRound(sizeof(MMapHeader));
@@ -158,7 +188,6 @@ int hal::MMapFileLocal::openFile() {
 
 /* change size size of the file, possibly deleting data. */
 void hal::MMapFileLocal::adjustFileSize(size_t size) {
-try_truncate:
     if (ftruncate(_fd, size) < 0) {
         throw hal_errno_exception(_alignmentPath, "set size failed", errno);
     }
@@ -225,7 +254,6 @@ void hal::MMapFileLocal::openWrite(size_t fileSize) {
 /* close the file if open */
 void hal::MMapFileLocal::closeFile() {
     if (_fd >= 0) {
-    try_close:
         if (::close(_fd) < 0) {
             throw hal_errno_exception(_alignmentPath, "close failed", errno);
         }
