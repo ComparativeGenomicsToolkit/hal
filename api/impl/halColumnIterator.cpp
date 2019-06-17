@@ -266,6 +266,11 @@ void ColumnIterator::recursiveUpdate(bool init) {
         // otherwise, we scan forward from last visisted column
         else {
             assert(linkTopIt->_it.get() != NULL);
+            bool rev = linkTopIt->_it->getReversed();
+            if (rev == true) {
+                linkTopIt->_it->toReverseInPlace();
+            }
+            assert(linkTopIt->_it->getReversed() == false);
 
             // catch up to nextfreeindex
             linkTopIt->_it->slice(0, 0);
@@ -315,6 +320,11 @@ void ColumnIterator::recursiveUpdate(bool init) {
             }
         } else {
             assert(linkBotIt->_it.get() != NULL);
+            bool rev = linkBotIt->_it->getReversed();
+            if (rev == true) {
+                linkBotIt->_it->toReverseInPlace();
+            }
+            assert(linkBotIt->_it->getReversed() == false);
 
             // catch up to nextfreeindex
             linkBotIt->_it->slice(0, 0);
@@ -395,10 +405,8 @@ bool ColumnIterator::handleInsertion(const TopSegmentIteratorPtr &inputTopSegIt)
                 _rearrangement->getLength() + _stack.top()->_cumulativeSize <= _maxInsertionLength) {
                 pair<hal_index_t, hal_index_t> insertedRange = _rearrangement->getInsertedRange();
                 assert((hal_size_t)(insertedRange.second - insertedRange.first) == _rearrangement->getLength() - 1);
-                cout << "adding insertion genome: " << _top->getGenome()->getName() << " seq: " << _top->getTopSegment()->getSequence()->getName() << ":" << insertedRange.first - _top->getTopSegment()->getSequence()->getStartPosition() << "-" << insertedRange.second - _top->getTopSegment()->getSequence()->getStartPosition() << " top reversed: " << inputTopSegIt->getReversed() << endl;
-                if (_indelStack.size() == 0) {
-                    _indelStack.push(_top->getTopSegment()->getSequence(), insertedRange.first, insertedRange.second, reversed);
-                }
+
+                _indelStack.push(_top->getTopSegment()->getSequence(), insertedRange.first, insertedRange.second, reversed);
             }
         }
     }
