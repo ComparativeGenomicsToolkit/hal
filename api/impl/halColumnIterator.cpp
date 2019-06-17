@@ -373,7 +373,7 @@ bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) 
 
                 BottomSegmentIteratorPtr botSegIt = parent->getBottomSegmentIterator(0);
                 botSegIt->toParent(_top);
-                _indelStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second);
+                _indelStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, reversed);
 
                 return true;
             }
