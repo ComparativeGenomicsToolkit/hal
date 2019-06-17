@@ -161,7 +161,6 @@ namespace hal {
         hal_size_t _maxInsertionLength;
         bool _noDupes;
         bool _noAncestors;
-        bool _reversed;
 
         ColumnMap _colMap;
         TopSegmentIteratorPtr _top;
