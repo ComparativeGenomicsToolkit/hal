@@ -59,7 +59,7 @@ void Extract4d::visitLine() {
 
 // Check if the 4d site is still a 4d site in all aligned regions.
 static bool is4dSiteConserved(const Sequence *sequence, hal_index_t pos, bool reversed) {
-    ColumnIteratorPtr colIt = sequence->getColumnIterator(NULL, 0, pos, NULL_INDEX, false, true, reversed);
+    ColumnIteratorPtr colIt = sequence->getColumnIterator(NULL, 0, pos, pos, false, true, reversed);
     bool isConserved = true;
     const ColumnIterator::ColumnMap *colMap = colIt->getColumnMap();
     for (ColumnIterator::ColumnMap::const_iterator colMapIt = colMap->begin(); colMapIt != colMap->end(); ++colMapIt) {
