@@ -71,7 +71,7 @@ namespace hal {
          * @param noDupes Don't follow paralogy edges
          * @param noAncestors Don't report any non-leaf nodes in output
          * @param reverseStrand Map from reverse strand of this sequence
-         * (but still in a left-to-right direction of forward strand)
+         * (and in the opposite direction of forward strand)
          * @param unique calls to toRight() will automatically skip
          * over bases in the reference sequence that have already been
          * seen in an alignment column (ie homologous to already visited
