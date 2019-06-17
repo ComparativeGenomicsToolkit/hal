@@ -378,11 +378,8 @@ bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) 
                 assert((hal_size_t)(deletedRange.second - deletedRange.first) == _rearrangement->getLength() - 1);
 
                 BottomSegmentIteratorPtr botSegIt = parent->getBottomSegmentIterator(0);
-                botSegIt->toParent(inputTopSegIt);
-                cout << "adding deletion child: " << _top->getGenome()->getName() << " parent: " << botSegIt->getGenome()->getName() << " seq: " << botSegIt->getBottomSegment()->getSequence()->getName() << ":" << deletedRange.first - botSegIt->getBottomSegment()->getSequence()->getStartPosition() << "-" << deletedRange.second - botSegIt->getBottomSegment()->getSequence()->getStartPosition() << " top reversed: " << inputTopSegIt->getReversed() << " bot reversed: " << botSegIt->getReversed() << endl;
-                if (_indelStack.size() == 0) {
-                    _indelStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, botSegIt->getReversed());
-                }
+                botSegIt->toParent(_top);
+                _indelStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, reversed);
 
                 return true;
             }
