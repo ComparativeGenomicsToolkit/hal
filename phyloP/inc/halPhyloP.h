@@ -21,7 +21,9 @@ extern "C" {
 #include "sufficient_stats.h"
 #include "tree_model.h"
 }
-#define __cplusplus
+// PHAST code defines min, max macros which conflict with the reserved C++ names.
+#undef min
+#undef max
 
 namespace hal {
 

@@ -5,12 +5,10 @@
 #include "halBedScanner.h"
 #include "sonLibTree.h"
 #include "string.h"
-#undef __cplusplus
 extern "C" {
 #include "markov_matrix.h"
 #include "tree_model.h"
 }
-#define __cplusplus
 // PHAST code defines min, max macros which conflict with the reserved C++ names.
 #undef min
 #undef max
