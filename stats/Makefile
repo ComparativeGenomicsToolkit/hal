@@ -8,10 +8,12 @@ halStats_srcs = impl/halStatsMain.cpp
 halStats_objs = ${halStats_srcs:%.cpp=${modObjDir}/%.o}
 halCoverage_srcs = impl/halCoverage.cpp
 halCoverage_objs = ${halCoverage_srcs:%.cpp=${modObjDir}/%.o}
-srcs = ${libHalStats_srcs} ${halStats_srcs} ${halCoverage_srcs}
+halPctId_srcs = impl/halPctIdentity.cpp
+halPctId_objs = ${halPctId_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHalStats_srcs} ${halStats_srcs} ${halCoverage_srcs} ${halPctId_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
-progs = ${binDir}/halStats ${binDir}/halCoverage
+progs = ${binDir}/halStats ${binDir}/halCoverage ${binDir}/halPctId
 otherLibs = ${libHalStats}
 
 all : libs progs
