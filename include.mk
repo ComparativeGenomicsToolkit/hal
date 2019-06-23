@@ -17,7 +17,7 @@ libHalLiftover = ${libDir}/libHalLiftover.a
 libHalLod = ${libDir}/libHalLod.a
 libHalMaf = ${libDir}/libHalMaf.a
 
-inclSpec += -I${rootDir}/api/inc -Iimpl -Iinc -I${rootDir}/liftover/inc/
+inclSpec += -I${rootDir}/api/inc -Iimpl -Iinc -I${rootDir}/liftover/inc
 
 #Modify this variable to set the location of sonLib
 #(sonlib is used only for cuTest at this potin)

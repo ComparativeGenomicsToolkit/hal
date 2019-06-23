@@ -8,6 +8,7 @@
 #ifndef _HALLIFTOVERTESTS_H
 #define _HALLIFTOVERTESTS_H
 
+#include "hal.h"
 #include "halAlignmentTest.h"
 
 extern "C" {
