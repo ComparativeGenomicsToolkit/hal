@@ -15,7 +15,8 @@ halMafTests_objs = ${halMafTests_srcs:%.cpp=${modObjDir}/%.o}
 srcs = ${libHalMaf_srcs} ${hal2maf_srcs} ${maf2hal_srcs} ${halMafTests_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
-progs = ${binDir}/hal2maf ${binDir}/maf2hal ${binDir}/halMafTests
+pyprogs = ${binDir}/hal2mafMP.py
+progs = ${binDir}/hal2maf ${binDir}/maf2hal ${binDir}/halMafTests ${pyprogs}
 otherLibs = ${libHalMaf} ${libHalLiftover} ${halApiTestSupportLibs}
 inclSpec += -I${rootDir}/liftover/inc -I${halApiTestIncl}
 
@@ -60,6 +61,10 @@ output/small.hdf5.hal: ../bin/halRandGen
 	@mkdir -p output
 	../bin/halRandGen --preset small --seed 0 --testRand --format hdf5 output/small.hdf5.hal
 
+${binDir}/%.py: %.py
+	@mkdir -p $(dir $@)
+	cp -f $< $@
+	chmod +x,-w $@
 
 include ${rootDir}/rules.mk
 
