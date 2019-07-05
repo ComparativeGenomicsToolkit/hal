@@ -101,3 +101,18 @@ https://github.com/lemire/clhash
 * genomes don't formally have an array index; they do in mmap; this might be a useful formalization.
 * hdf5 exceptions lose root cause :halGetBlocksInTargetRange error reading blocks: unknown exception
 * Remove LOD support.
+* hal2maf -maxRefGap doesn't really do the expect thing:
+Discussion with Joel: The maximum length for an indel that it will
+traverse. basically it makes us look a little more like MULTIZ mafs, where
+it’s not just a straight base-by-base projection onto the reference, but
+contains a little bit of collinear sequence unaligned to the reference
+(because of a deletion in the reference). 
+Column iterators are reference based.
+maxRefGap makes it not strictly reference based, or at least able to switch
+references.
+So you would get those MAFs which weren’t technically “wrong”, just weird
+well, in this case the “top” would be referenced on wherever the insertion took place in the tree.
+The idea behind the “stack” is that you might encounter *another* insertion while traversing through the first insertion — then that second insertion gets added to the top and gets traversed, popped, then you resume on the first insertion, finish that, pop it, and go back to where you stopped in the reference.
+it’s actually all fairly clever, if only it actually worked.
+
+markd: It seems like we really need to defined the expected behavior.
