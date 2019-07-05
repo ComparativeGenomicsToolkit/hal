@@ -100,7 +100,7 @@ Hdf5Alignment::~Hdf5Alignment() {
 }
 
 void Hdf5Alignment::defineOptions(CLParser *parser, unsigned mode) {
-    if (mode & CREATE_ACCESS) {
+    if ((mode & CREATE_ACCESS) || (mode & WRITE_ACCESS)) {
         parser->addOption("hdf5Chunk", "hdf5 chunk size", DefaultChunkSize);
         parser->addOption("chunk", "obsolete name for --hdf5Chunk ", DefaultChunkSize);
 
@@ -131,7 +131,7 @@ void Hdf5Alignment::initializeFromOptions(const CLParser *parser) {
     _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
     _aprops.copy(H5::FileAccPropList::DEFAULT);
     _inMemory = parser->getFlagAlt("hdf5InMemory", "inMemory");
-    if (_mode & CREATE_ACCESS) {
+    if ((_mode & CREATE_ACCESS) || (_mode & WRITE_ACCESS)) {
         // these are only available on create
         hsize_t chunk = parser->getOptionAlt<hsize_t>("hdf5Chunk", "chunk");
         _dcprops.setChunk(1, &chunk);
