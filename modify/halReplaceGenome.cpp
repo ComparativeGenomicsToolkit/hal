@@ -66,6 +66,7 @@ void copyFromBottomAlignment(const Alignment *bottomAlignment, Alignment *mainAl
             double branchLength = bottomAlignment->getBranchLength(genomeName, bottomChildren[i]);
             Genome *mainNewChild = mainAlignment->addLeafGenome(bottomChildren[i], genomeName, branchLength);
             const Genome *bottomChild = bottomAlignment->openGenome(bottomChildren[i]);
+            bottomChild->copyDimensions(mainNewChild);
             bottomChild->copySequence(mainNewChild);
         }
     }

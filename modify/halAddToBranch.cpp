@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
         optionsParser.printUsage(cerr);
         return 1;
     }
-    AlignmentPtr mainAlignment(openHalAlignment(inPath, &optionsParser));
+    AlignmentPtr mainAlignment(openHalAlignment(inPath, &optionsParser), READ_ACCESS | WRITE_ACCESS);
     AlignmentConstPtr botAlignment(openHalAlignment(botAlignmentPath, &optionsParser));
     AlignmentConstPtr topAlignment(openHalAlignment(topAlignmentPath, &optionsParser));
     mainAlignment->insertGenome(insertName, parentName, childName, upperBranchLength);
