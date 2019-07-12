@@ -47,8 +47,16 @@ int main(int argc, char *argv[]) {
     AlignmentPtr mainAlignment(openHalAlignment(inPath, &optionsParser, READ_ACCESS | WRITE_ACCESS));
     AlignmentConstPtr botAlignment(openHalAlignment(botAlignmentPath, &optionsParser));
     AlignmentConstPtr topAlignment(openHalAlignment(topAlignmentPath, &optionsParser));
+
+    // Add in the insert genome.
     mainAlignment->insertGenome(insertName, parentName, childName, upperBranchLength);
+
+    // Add in the new leaf genome and its dimensions (so that it has the proper number of sequences).
     mainAlignment->addLeafGenome(leafName, insertName, leafBranchLength);
+    Genome *outLeafGenome = mainAlignment->openGenome(leafName);
+    const Genome *inLeafGenome = botAlignment->openGenome(leafName);
+    inLeafGenome->copyDimensions(outLeafGenome);
+
     // Insert the new intermediate node.
     Genome *insertGenome = mainAlignment->openGenome(insertName);
     const Genome *topInsertGenome = topAlignment->openGenome(insertName);
@@ -89,8 +97,6 @@ int main(int argc, char *argv[]) {
     childGenome->fixParseInfo();
 
     // Copy the entire genome for the leaf from the bottom alignment.
-    Genome *outLeafGenome = mainAlignment->openGenome(leafName);
-    const Genome *inLeafGenome = botAlignment->openGenome(leafName);
     inLeafGenome->copy(outLeafGenome);
     if (!noMarkAncestors) {
         markAncestorsForUpdate(mainAlignment.get(), insertName);
