@@ -28,63 +28,66 @@ istream &BedLine::read(istream &is, int version, string &lineBuffer) {
     ss.imbue(is.getloc());
     ss >> _chrName;
     if (ss.bad() || ss.fail()) {
-        throw hal_exception("Error scanning BED chrom");
+        throw hal_exception("Error parsing BED chrom" + lineBuffer);
     }
     ss >> _start;
     if (ss.bad() || ss.fail()) {
-        throw hal_exception("Error scanning BED chromStart");
+        throw hal_exception("Error parsing BED chromStart" + lineBuffer);
     }
     ss >> _end;
     if (ss.bad() || ss.fail()) {
-        throw hal_exception("Error scanning BED chromEnd");
+        throw hal_exception("Error parsing BED chromEnd" + lineBuffer);
+    }
+    if (_start >= _end) {
+        throw hal_exception("Error zero or negative length BED range" + lineBuffer);
     }
     if (_version > 3) {
         ss >> _name;
         if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED name");
+            throw hal_exception("Error parsing BED name" + lineBuffer);
         }
     }
     if (_version > 4) {
         ss >> _score;
         if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED score");
+            throw hal_exception("Error parsing BED score" + lineBuffer);
         }
     }
     if (_version > 5) {
         ss >> _strand;
         if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED strand");
+            throw hal_exception("Error parsing BED strand" + lineBuffer);
         }
         if (_strand != '.' && _strand != '+' && _strand != '-') {
-            throw hal_exception("Strand character must be + or - or .");
+            throw hal_exception("Strand character must be + or - or ." + lineBuffer);
         }
     }
     if (_version > 6) {
         ss >> _thickStart;
         if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED thickStart");
+            throw hal_exception("Error parsing BED thickStart" + lineBuffer);
         }
     }
     if (_version > 7) {
         ss >> _thickEnd;
         if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED thickEnd");
+            throw hal_exception("Error parsing BED thickEnd" + lineBuffer);
         }
     }
-    if (_version > 8) {
+   if (_version > 8) {
         string rgb;
         ss >> rgb;
         if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED itemRGB");
+            throw hal_exception("Error parsing BED itemRGB" + lineBuffer);
         }
-        vector<string> rgbTokens = chopString(rgb, ",");
+        vector<string> rgbTokens = chopString(rgb, "," + lineBuffer);
         if (rgbTokens.size() > 3 || rgbTokens.size() == 0) {
-            throw hal_exception("Error parsing BED itemRGB");
+            throw hal_exception("Error parsing BED itemRGB" + lineBuffer);
         }
         stringstream rgbssr(rgbTokens[0]);
         rgbssr >> _itemR;
         if (rgbssr.bad()) {
-            throw hal_exception("Error parsing BED itemRGB");
+            throw hal_exception("Error parsing BED itemRGB" + lineBuffer);
         }
         _itemG = _itemR;
         _itemB = _itemR;
@@ -92,14 +95,14 @@ istream &BedLine::read(istream &is, int version, string &lineBuffer) {
             stringstream rgbssg(rgbTokens[1]);
             rgbssg >> _itemG;
             if (rgbssg.bad()) {
-                throw hal_exception("Error parsing BED itemRGB");
+                throw hal_exception("Error parsing BED itemRGB" + lineBuffer);
             }
         }
         if (rgbTokens.size() == 3) {
             stringstream rgbssb(rgbTokens[2]);
             rgbssb >> _itemB;
             if (rgbssb.bad()) {
-                throw hal_exception("Error parsing BED itemRGB");
+                throw hal_exception("Error parsing BED itemRGB" + lineBuffer);
             }
         }
     }
@@ -107,42 +110,42 @@ istream &BedLine::read(istream &is, int version, string &lineBuffer) {
         size_t numBlocks;
         ss >> numBlocks;
         if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED blockCount");
+            throw hal_exception("Error parsing BED blockCount" + lineBuffer);
         }
         if (numBlocks > 0) {
             string blockSizes;
             ss >> blockSizes;
             if (ss.bad() || ss.fail()) {
-                throw hal_exception("Error scanning BED blockSizes");
+                throw hal_exception("Error parsing BED blockSizes" + lineBuffer);
             }
             string blockStarts;
             ss >> blockStarts;
             if (ss.bad() || ss.fail()) {
-                throw hal_exception("Error scanning BED blockStarts");
+                throw hal_exception("Error parsing BED blockStarts" + lineBuffer);
             }
             _blocks.resize(numBlocks);
-            vector<string> sizeBuf = chopString(blockSizes, ",");
+            vector<string> sizeBuf = chopString(blockSizes, "," + lineBuffer);
             if (sizeBuf.size() != numBlocks) {
-                throw hal_exception("Error scanning BED blockSizes");
+                throw hal_exception("Error parsing BED blockSizes" + lineBuffer);
             }
-            vector<string> startBuf = chopString(blockStarts, ",");
+            vector<string> startBuf = chopString(blockStarts, "," + lineBuffer);
             if (startBuf.size() != numBlocks) {
-                throw hal_exception("Error scanning BED blockStarts");
+                throw hal_exception("Error parsing BED blockStarts" + lineBuffer);
             }
             for (size_t i = 0; i < numBlocks; ++i) {
                 BedBlock &block = _blocks[i];
                 stringstream ss1(sizeBuf[i]);
                 ss1 >> block._length;
                 if (ss1.bad()) {
-                    throw hal_exception("Error scanning BED blockSizes");
+                    throw hal_exception("Error parsing BED blockSizes" + lineBuffer);
                 }
                 stringstream ss2(startBuf[i]);
                 ss2 >> block._start;
                 if (ss2.bad()) {
-                    throw hal_exception("Error scanning BED blockStarts");
+                    throw hal_exception("Error parsing BED blockStarts" + lineBuffer);
                 }
                 if (_start + block._start + block._length > _end) {
-                    throw hal_exception("Error BED block out of range");
+                    throw hal_exception("Error BED block out of range" + lineBuffer);
                 }
             }
         }
