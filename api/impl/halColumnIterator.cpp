@@ -267,17 +267,17 @@ void ColumnIterator::recursiveUpdate(bool init) {
         // otherwise, we scan forward from last visisted column
         else {
             assert(linkTopIt->_it.get() != NULL);
-            bool rev = linkTopIt->_it->getReversed();
-            if (rev == true) {
-                linkTopIt->_it->toReverseInPlace();
-            }
-            assert(linkTopIt->_it->getReversed() == false);
 
             // catch up to nextfreeindex
             linkTopIt->_it->slice(0, 0);
             while (linkTopIt->_it->overlaps(_stack.top()->_index) == false) {
                 linkTopIt->_it->toRight();
             }
+            bool rev = linkTopIt->_it->getReversed();
+            if (rev == true) {
+                linkTopIt->_it->toReverseInPlace();
+            }
+            assert(linkTopIt->_it->getReversed() == false);
             hal_size_t offset = (hal_size_t)abs(_stack.top()->_index - linkTopIt->_it->getStartPosition());
             linkTopIt->_it->slice(offset, linkTopIt->_it->getLength() - offset - 1);
             linkTopIt->_dna->jumpTo(_stack.top()->_index);
@@ -316,17 +316,17 @@ void ColumnIterator::recursiveUpdate(bool init) {
             }
         } else {
             assert(linkBotIt->_it.get() != NULL);
-            bool rev = linkBotIt->_it->getReversed();
-            if (rev == true) {
-                linkBotIt->_it->toReverseInPlace();
-            }
-            assert(linkBotIt->_it->getReversed() == false);
 
             // catch up to nextfreeindex
             linkBotIt->_it->slice(0, 0);
             while (linkBotIt->_it->overlaps(_stack.top()->_index) == false) {
                 linkBotIt->_it->toRight();
             }
+            bool rev = linkBotIt->_it->getReversed();
+            if (rev == true) {
+                linkBotIt->_it->toReverseInPlace();
+            }
+            assert(linkBotIt->_it->getReversed() == false);
             hal_size_t offset = (hal_size_t)abs(_stack.top()->_index - linkBotIt->_it->getStartPosition());
             linkBotIt->_it->slice(offset, linkBotIt->_it->getLength() - offset - 1);
             linkBotIt->_dna->jumpTo(_stack.top()->_index);
