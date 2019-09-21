@@ -266,11 +266,6 @@ void ColumnIterator::recursiveUpdate(bool init) {
         // otherwise, we scan forward from last visisted column
         else {
             assert(linkTopIt->_it.get() != NULL);
-            bool rev = linkTopIt->_it->getReversed();
-            if (rev == true) {
-                linkTopIt->_it->toReverseInPlace();
-            }
-            assert(linkTopIt->_it->getReversed() == false);
 
             // catch up to nextfreeindex
             linkTopIt->_it->slice(0, 0);
@@ -320,11 +315,6 @@ void ColumnIterator::recursiveUpdate(bool init) {
             }
         } else {
             assert(linkBotIt->_it.get() != NULL);
-            bool rev = linkBotIt->_it->getReversed();
-            if (rev == true) {
-                linkBotIt->_it->toReverseInPlace();
-            }
-            assert(linkBotIt->_it->getReversed() == false);
 
             // catch up to nextfreeindex
             linkBotIt->_it->slice(0, 0);
