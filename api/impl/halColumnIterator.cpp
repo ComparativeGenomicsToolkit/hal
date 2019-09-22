@@ -356,6 +356,15 @@ void ColumnIterator::recursiveUpdate(bool init) {
 bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) {
     if (_maxInsertionLength > 0 && inputTopSegIt->tseg()->hasParent() == true) {
         _top->copy(inputTopSegIt);
+        bool reversed = _top->getReversed();
+        if (reversed == true) {
+            // We need to identify the deletion from the *left* breakpoint on
+            // the positive strand. That means the *right* breakpoint when on
+            // the negative strand. Therefore, we go right (i.e. left according
+            // to the positive strand) when checking the breakpoint.
+            _top->toRight();
+            _top->toReverse();
+        }
         // only handle a deletion if we are immediately left of the breakpoint
         if (_top->getEndOffset() == 0) {
             const Genome *genome = _top->getTopSegment()->getGenome();
@@ -368,8 +377,8 @@ bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) 
                 assert((hal_size_t)(deletedRange.second - deletedRange.first) == _rearrangement->getLength() - 1);
 
                 BottomSegmentIteratorPtr botSegIt = parent->getBottomSegmentIterator(0);
-                botSegIt->toParent(_top);
-                _indelStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, reversed);
+                botSegIt->toParent(inputTopSegIt);
+                _indelStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, botSegIt->getReversed());
 
                 return true;
             }
