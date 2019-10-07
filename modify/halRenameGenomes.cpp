@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser));
+    AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser, WRITE_ACCESS | READ_ACCESS));
     map<string, string> renameMap = ingestRenameFile(renamePath);
 
     // Check that the alignment has all the old genome names, and none
