@@ -112,7 +112,7 @@ void Block4dExtractTest::checkCallBack(const Alignment *alignment) {
     const Genome *genome = alignment->openGenome("root");
     // test frame shift
     stringstream bedFile("rootSequence\t0\t192\tFORWARD\t0\t+\t0\t192\t0\t3\t17,6,7\t0,30,60\n"
-                         "rootSequence\t0\t192\tREV\t0\t-\t0\t192\t0\t2\t13,17\t0,175");
+                         "rootSequence\t0\t192\tREV\t0\t-\t0\t192\t0\t2\t13,17\t0,175\n");
     stringstream outStream;
     Extract4d extract;
     extract.run(genome, &bedFile, &outStream, -1);
@@ -243,7 +243,7 @@ void CDS4dExtractTest::createCallBack(Alignment *alignment) {
 void CDS4dExtractTest::checkCallBack(const Alignment *alignment) {
     const Genome *genome = alignment->openGenome("root");
     stringstream bedFile("rootSequence\t1\t212\tFORWARD\t0\t+\t21\t88\t0\t5\t10,19,6,8,10\t0,18,50,80,90\n"
-                         "rootSequence\t1\t213\tREV\t0\t-\t25\t198\t0\t2\t13,17\t20,195");
+                         "rootSequence\t1\t213\tREV\t0\t-\t25\t198\t0\t2\t13,17\t20,195\n");
     stringstream outStream;
     Extract4d extract;
     extract.run(genome, &bedFile, &outStream, -1);

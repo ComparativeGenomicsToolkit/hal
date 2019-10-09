@@ -80,7 +80,7 @@ istream &BedLine::read(istream &is, int version, string &lineBuffer) {
         if (ss.bad() || ss.fail()) {
             throw hal_exception("Error parsing BED itemRGB" + lineBuffer);
         }
-        vector<string> rgbTokens = chopString(rgb, "," + lineBuffer);
+        vector<string> rgbTokens = chopString(rgb, ",");
         if (rgbTokens.size() > 3 || rgbTokens.size() == 0) {
             throw hal_exception("Error parsing BED itemRGB" + lineBuffer);
         }
@@ -124,11 +124,11 @@ istream &BedLine::read(istream &is, int version, string &lineBuffer) {
                 throw hal_exception("Error parsing BED blockStarts" + lineBuffer);
             }
             _blocks.resize(numBlocks);
-            vector<string> sizeBuf = chopString(blockSizes, "," + lineBuffer);
+            vector<string> sizeBuf = chopString(blockSizes, ",");
             if (sizeBuf.size() != numBlocks) {
                 throw hal_exception("Error parsing BED blockSizes" + lineBuffer);
             }
-            vector<string> startBuf = chopString(blockStarts, "," + lineBuffer);
+            vector<string> startBuf = chopString(blockStarts, ",");
             if (startBuf.size() != numBlocks) {
                 throw hal_exception("Error parsing BED blockStarts" + lineBuffer);
             }
