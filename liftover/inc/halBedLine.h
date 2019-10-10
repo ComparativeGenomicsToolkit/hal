@@ -50,8 +50,8 @@ namespace hal {
     struct BedLine {
         BedLine();
         virtual ~BedLine();
-        std::istream &read(std::istream &is, int version, std::string &lineBuffer);
-        std::ostream &write(std::ostream &os, int version = -1);
+        std::istream &read(std::istream &is, std::string &lineBuffer);
+        std::ostream &write(std::ostream &os);
         std::ostream &writePSL(std::ostream &os, bool prefixWithName = false);
         bool validatePSL() const;
 

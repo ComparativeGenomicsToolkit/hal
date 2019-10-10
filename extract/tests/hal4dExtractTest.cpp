@@ -57,7 +57,7 @@ void ConservedBed4dExtractTest::checkCallBack(const Alignment *alignment) {
                          "rootSequence\t0\t192\tREV\t0\t-\n");
     stringstream outStream;
     Extract4d extract;
-    extract.run(genome, &bedFile, &outStream, -1, true);
+    extract.run(genome, &bedFile, &outStream, true);
     vector<string> streamResults = chopString(outStream.str(), "\n");
     CuAssertTrue(_testCase,
                  find(streamResults.begin(), streamResults.end(), "rootSequence\t14\t15\tFORWARD\t0\t+") ==
@@ -115,7 +115,7 @@ void Block4dExtractTest::checkCallBack(const Alignment *alignment) {
                          "rootSequence\t0\t192\tREV\t0\t-\t0\t192\t0\t2\t13,17\t0,175\n");
     stringstream outStream;
     Extract4d extract;
-    extract.run(genome, &bedFile, &outStream, -1);
+    extract.run(genome, &bedFile, &outStream);
     vector<string> streamResults = chopString(outStream.str(), "\n");
     CuAssertTrue(_testCase,
                  find(streamResults.begin(), streamResults.end(),
@@ -210,7 +210,7 @@ void ConservedBlock4dExtractTest::checkCallBack(const Alignment *alignment) {
                          "rootSequence2\t0\t192\tREV\t0\t-\t0\t192\t0\t2\t13,17\t0,175\n");
     stringstream outStream;
     Extract4d extract;
-    extract.run(genome, &bedFile, &outStream, -1, true);
+    extract.run(genome, &bedFile, &outStream, true);
     vector<string> streamResults = chopString(outStream.str(), "\n");
     CuAssertTrue(_testCase,
                  find(streamResults.begin(), streamResults.end(),
@@ -246,7 +246,7 @@ void CDS4dExtractTest::checkCallBack(const Alignment *alignment) {
                          "rootSequence\t1\t213\tREV\t0\t-\t25\t198\t0\t2\t13,17\t20,195\n");
     stringstream outStream;
     Extract4d extract;
-    extract.run(genome, &bedFile, &outStream, -1);
+    extract.run(genome, &bedFile, &outStream);
     vector<string> streamResults = chopString(outStream.str(), "\n");
     CuAssertTrue(_testCase,
                  find(streamResults.begin(), streamResults.end(),

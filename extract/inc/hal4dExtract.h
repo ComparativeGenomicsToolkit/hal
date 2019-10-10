@@ -24,8 +24,7 @@ namespace hal {
         Extract4d();
         virtual ~Extract4d();
 
-        void run(const Genome *refGenome, std::istream *inBedStream, std::ostream *outBedStream, int bedVersion = -1,
-                 bool conserved = false);
+        void run(const Genome *refGenome, std::istream *inBedStream, std::ostream *outBedStream, bool conserved = false);
 
         static const char CodonPrefixTable[2][8];
 
@@ -40,7 +39,6 @@ namespace hal {
         const Genome *_refGenome;
         const Sequence *_refSequence;
         std::deque<BedLine> _outBedLines;
-        int _bedVersion;
         bool _conserved;
     };
 }

@@ -25,9 +25,6 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.addArgument("outBed", "output path for bed file that "
                                         "will only contain 4d sites (or \"stdout\" to "
                                         "pipe to standard output)");
-    optionsParser.addOption("bedVersion", "version of input bed file.  will be"
-                                          " automatically detected if not specified",
-                            -1);
     optionsParser.addOptionFlag("append", "append to instead of overwrite output file.", false);
     optionsParser.addOptionFlag("conserved", "ensure 4d sites are 4d sites in all leaf genomes", false);
 }
@@ -40,7 +37,6 @@ int main(int argc, char **argv) {
     string genomeName;
     string inBedPath;
     string outBedPath;
-    int bedVersion;
     bool append;
     bool conserved;
     try {
@@ -49,7 +45,6 @@ int main(int argc, char **argv) {
         genomeName = optionsParser.getArgument<string>("refGenome");
         inBedPath = optionsParser.getArgument<string>("inBed");
         outBedPath = optionsParser.getArgument<string>("outBed");
-        bedVersion = optionsParser.getOption<int>("bedVersion");
         append = optionsParser.getFlag("append");
         conserved = optionsParser.getFlag("conserved");
     } catch (exception &e) {
@@ -99,7 +94,7 @@ int main(int argc, char **argv) {
         }
 
         Extract4d extractor;
-        extractor.run(genome, inBedStream, outBedStream, bedVersion, conserved);
+        extractor.run(genome, inBedStream, outBedStream, conserved);
     } catch (hal_exception &e) {
         cerr << "hal exception caught: " << e.what() << endl;
         return 1;

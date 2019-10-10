@@ -202,7 +202,10 @@ namespace hal {
     }
 
     inline const Genome *Genome::getChild(hal_size_t childIdx) const {
-        if (_childCache.size() <= childIdx) {
+        if (childIdx >= _numChildren) {
+            throw hal_exception("Genome::getChild() - child out of range");
+        }
+        if (_childCache.size() < _numChildren) {
             _childCache.assign(_numChildren, NULL);
         }
         if (_childCache[childIdx] == NULL) {

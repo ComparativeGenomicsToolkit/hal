@@ -9,6 +9,7 @@
 #include "halGenome.h"
 #include <cassert>
 #include <map>
+#include <sstream>
 #include <sys/stat.h>
 
 using namespace std;
@@ -39,6 +40,17 @@ vector<string> hal::chopString(const string &inString, const string &separator) 
     }
     return outVector;
 }
+
+hal_index_t hal::strToInt(const string &str) {
+    stringstream ss(str);
+    hal_index_t i;
+    ss >> i;
+    if (ss.bad() || ss.fail()) {
+        throw hal_exception("Error converting string to int: " + str);
+    }
+    return i;
+}
+
 
 void hal::reverseComplement(std::string &s) {
     if (!s.empty()) {

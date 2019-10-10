@@ -21,7 +21,6 @@ ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *
     : _maxInsertionLength(maxInsertLength), _noDupes(noDupes), _noAncestors(noAncestors), _reversed(reverseStrand),
       _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs) {
     assert(columnIndex >= 0 && lastColumnIndex >= columnIndex && lastColumnIndex < (hal_index_t)reference->getSequenceLength());
-
     // allocate temp iterators
     if (reference->getNumTopSegments() > 0) {
         _top = reference->getTopSegmentIterator(0);

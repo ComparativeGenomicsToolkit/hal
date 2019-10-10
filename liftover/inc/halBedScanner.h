@@ -12,7 +12,6 @@
 #include "halBedLine.h"
 #include <cstdlib>
 #include <fstream>
-#include <locale>
 #include <string>
 #include <vector>
 
@@ -25,24 +24,22 @@ namespace hal {
       public:
         BedScanner();
         virtual ~BedScanner();
-        virtual void scan(const std::string &bedPath, int bedVersion = -1, const std::locale *inLocale = NULL);
-        virtual void scan(std::istream *bedStream, int bedVersion = -1, const std::locale *inLocale = NULL);
+        virtual void scan(const std::string &bedPath);
+        virtual void scan(std::istream *bedStream);
 
-        static int getBedVersion(std::istream *bedStream, const std::locale *inLocale = NULL);
-        static size_t getNumColumns(const std::string &bedLine, const std::locale *inLocale = NULL);
+        static size_t getNumColumns(const std::string &bedLine);
 
       protected:
         virtual void visitBegin();
         virtual void visitLine();
         virtual void visitEOF();
 
-        static void skipWhiteSpaces(std::istream *bedStream, const std::locale *inLocale = NULL);
+        static void skipWhiteSpaces(std::istream *bedStream);
 
       protected:
         std::istream *_bedStream;
         BedLine _bedLine;
         hal_size_t _lineNumber;
-        int _bedVersion;
     };
 }
 

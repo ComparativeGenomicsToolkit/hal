@@ -29,6 +29,7 @@ progs: ${progs}
 clean : 
 	rm -f ${libHalLiftover} ${objs} ${progs} ${depends}
 test:
+	${binDir}/halLiftoverTests 
 
 include ${rootDir}/rules.mk
 

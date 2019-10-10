@@ -310,11 +310,11 @@ void BedLiftoverTest::testOneBranchLifts(const Alignment *alignment) {
                  find(streamResults.begin(), streamResults.end(), "Sequence\t40\t50\tOVERLAPINSERTION\t0\t+") !=
                      streamResults.end());
     CuAssertTrue(_testCase, streamResults.size() == 3);
-    delete root;
-    delete child1;
-    delete leaf1;
-    delete leaf2;
-    delete leaf3;
+    alignment->closeGenome(root);
+    alignment->closeGenome(child1);
+    alignment->closeGenome(leaf1);
+    alignment->closeGenome(leaf2);
+    alignment->closeGenome(leaf3);
 }
 
 void BedLiftoverTest::testMultiBranchLifts(const Alignment *alignment) {
@@ -375,11 +375,11 @@ void BedLiftoverTest::testMultiBranchLifts(const Alignment *alignment) {
     CuAssertTrue(_testCase,
                  find(streamResults.begin(), streamResults.end(), "Sequence\t0\t10\tSEGMENT_4\t0\t-") != streamResults.end());
     CuAssertTrue(_testCase, streamResults.size() == 4);
-    delete root;
-    delete child1;
-    delete leaf1;
-    delete leaf2;
-    delete leaf3;
+    alignment->closeGenome(root);
+    alignment->closeGenome(child1);
+    alignment->closeGenome(leaf1);
+    alignment->closeGenome(leaf2);
+    alignment->closeGenome(leaf3);
 }
 
 void BedLiftoverTest::createCallBack(Alignment *alignment) {
