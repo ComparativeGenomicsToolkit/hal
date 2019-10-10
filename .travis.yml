@@ -8,7 +8,7 @@ before_install:
   - git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
   - sudo pip install --upgrade pip requests pathlib2
   - sudo pip install --ignore-installed --upgrade six
-  - sudo pip install --upgrade newick attrs pytest toil
+  - sudo pip install --upgrade newick attrs pathlib pytest toil
 install:
   - sh -c 'cd sonLib && make'
 script:
