@@ -11,7 +11,7 @@
 using namespace std;
 using namespace hal;
 
-void setupSharedAlignment(Alignment *alignment) {
+static void setupSharedAlignment(Alignment *alignment) {
     Genome *root = alignment->addRootGenome("root");
     Genome *child1 = alignment->addLeafGenome("child1", "root", 1);
     Genome *leaf1 = alignment->addLeafGenome("leaf1", "root", 1);
@@ -243,6 +243,29 @@ void setupSharedAlignment(Alignment *alignment) {
     leaf1->fixParseInfo();
     leaf2->fixParseInfo();
     leaf3->fixParseInfo();
+    alignment->closeGenome(root);
+    alignment->closeGenome(child1);
+    alignment->closeGenome(leaf1);
+    alignment->closeGenome(leaf2);
+    alignment->closeGenome(leaf3);
+}
+
+void BedLiftoverTest::liftAndCheck(const Alignment *alignment,
+                                   const Genome *srcGenome,
+                                   const Genome *tgtGenome,
+                                   const string& inBed,
+                                   const string& expectBed,
+                                   bool outPSL, bool outPSLWithName) {
+    BlockLiftover liftover;
+    stringstream bedFile(inBed);
+    stringstream outStream;
+    liftover.convert(alignment, srcGenome, &bedFile, tgtGenome, &outStream,
+                     false, true, outPSL, outPSLWithName);
+    if (outStream.str() != expectBed) {
+        cerr << "Got: " << endl << outStream.str() << endl;
+        cerr << "Expected: " << endl << expectBed << endl;
+    }
+    CuAssertTrue(_testCase, outStream.str() == expectBed);
 }
 
 void BedLiftoverTest::testOneBranchLifts(const Alignment *alignment) {
@@ -254,62 +277,37 @@ void BedLiftoverTest::testOneBranchLifts(const Alignment *alignment) {
     const Genome *leaf3 = alignment->openGenome("leaf3");
 
     // whole blocks (reversed, unreversed, paralogies)
-    stringstream bedFile("Sequence\t0\t20\tPARALOGY1REV\t0\t+\n"
-                         "Sequence\t60\t80\tREV\t0\t+\n"
-                         "Sequence\t20\t40\tINSERTION\t0\t+\n"
-                         "Sequence\t80\t100\tPARALOGY2\t0\t+\n");
-    stringstream outStream;
-    liftover.convert(alignment, child1, &bedFile, root, &outStream);
-    vector<string> streamResults = chopString(outStream.str(), "\n");
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t0\t20\tPARALOGY1REV\t0\t-") !=
-                     streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t60\t80\tREV\t0\t-") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t0\t20\tPARALOGY2\t0\t+") != streamResults.end());
-    CuAssertTrue(_testCase, streamResults.size() == 3);
+    liftAndCheck(alignment, child1, root,
+                 "Sequence\t0\t20\tPARALOGY1REV\t0\t+\n"
+                 "Sequence\t60\t80\tREV\t0\t+\n"
+                 "Sequence\t20\t40\tINSERTION\t0\t+\n"
+                 "Sequence\t80\t100\tPARALOGY2\t0\t+\n",
+                 // ->
+                 "Sequence\t0\t20\tPARALOGY1REV\t0\t-\n"
+                 "Sequence\t60\t80\tREV\t0\t-\n"
+                 "Sequence\t0\t20\tPARALOGY2\t0\t+\n");
 
     // segment fragments (including overlapping)
-    bedFile.str("Sequence\t0\t5\tNORMALREV\t0\t+\n"
-                "Sequence\t10\t30\tOVERLAP\t0\t+\n"          // 1st half reversed
-                "Sequence\t50\t70\tOVERLAPINSERTION\t0\t+\n" // 1st half reversed
-                "Sequence\t70\t100\tOVERLAPINSERTION2\t0\t+\n");
-    bedFile.clear();
-    outStream.str("");
-    outStream.clear();
-    liftover.convert(alignment, leaf1, &bedFile, root, &outStream);
-    streamResults = chopString(outStream.str(), "\n");
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t15\t20\tNORMALREV\t0\t-") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t0\t10\tOVERLAP\t0\t-") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t40\t50\tOVERLAP\t0\t+") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t20\t30\tOVERLAPINSERTION\t0\t-") !=
-                     streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t80\t100\tOVERLAPINSERTION2\t0\t+") !=
-                     streamResults.end());
-    CuAssertTrue(_testCase, streamResults.size() == 5);
+    liftAndCheck(alignment, leaf1, root,
+                 "Sequence\t0\t5\tNORMALREV\t0\t+\n"
+                 "Sequence\t10\t30\tOVERLAP\t0\t+\n"          // 1st half reversed
+                 "Sequence\t50\t70\tOVERLAPINSERTION\t0\t+\n" // 1st half reversed
+                 "Sequence\t70\t100\tOVERLAPINSERTION2\t0\t+\n",
+                 //->
+                 "Sequence\t15\t20\tNORMALREV\t0\t-\n"
+                 "Sequence\t0\t10\tOVERLAP\t0\t-\n"
+                 "Sequence\t40\t50\tOVERLAP\t0\t+\n"
+                 "Sequence\t20\t30\tOVERLAPINSERTION\t0\t-\n"
+                 "Sequence\t80\t100\tOVERLAPINSERTION2\t0\t+\n");
 
     // test lifts down a branch (root->child1)
-    bedFile.str("Sequence\t0\t10\tPARALOGY\t0\t+\n"            // reversed in one of the duplicates
-                "Sequence\t30\t50\tOVERLAPINSERTION\t0\t+\n"); // 1st half should not map
-    bedFile.clear();
-    outStream.str("");
-    outStream.clear();
-    liftover.convert(alignment, root, &bedFile, child1, &outStream);
-    streamResults = chopString(outStream.str(), "\n");
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t10\t20\tPARALOGY\t0\t-") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t80\t90\tPARALOGY\t0\t+") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t40\t50\tOVERLAPINSERTION\t0\t+") !=
-                     streamResults.end());
-    CuAssertTrue(_testCase, streamResults.size() == 3);
+    liftAndCheck(alignment, root, child1,
+                 "Sequence\t0\t10\tPARALOGY\t0\t+\n"            // reversed in one of the duplicates
+                 "Sequence\t30\t50\tOVERLAPINSERTION\t0\t+\n",
+                 //->
+                 "Sequence\t10\t20\tPARALOGY\t0\t-\n"
+                 "Sequence\t80\t90\tPARALOGY\t0\t+\n"
+                 "Sequence\t40\t50\tOVERLAPINSERTION\t0\t+\n");
     alignment->closeGenome(root);
     alignment->closeGenome(child1);
     alignment->closeGenome(leaf1);
@@ -326,55 +324,52 @@ void BedLiftoverTest::testMultiBranchLifts(const Alignment *alignment) {
     const Genome *leaf3 = alignment->openGenome("leaf3");
 
     // leaf2 -> leaf3 (up 1 then down 1)
-    stringstream bedFile("Sequence\t30\t35\tREV\t0\t+\n"
-                         "Sequence\t40\t60\tOVERLAP\t0\t+\n" // 1st half reversed, 2nd half double reversed (not realistic)
-                         );
-    stringstream outStream;
-    liftover.convert(alignment, leaf2, &bedFile, leaf3, &outStream);
-    vector<string> streamResults = chopString(outStream.str(), "\n");
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t60\t65\tREV\t0\t-") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t45\t55\tOVERLAP\t0\t-") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t10\t20\tOVERLAP\t0\t+") != streamResults.end());
-    CuAssertTrue(_testCase, streamResults.size() == 3);
+    liftAndCheck(alignment, leaf2, leaf3,
+                 "Sequence\t30\t35\tREV\t0\t+\n"
+                 "Sequence\t40\t60\tOVERLAP\t0\t+\n", // 1st half reversed, 2nd half double reversed (not realistic)
+                 //->
+                 "Sequence\t60\t65\tREV\t0\t-\n"
+                 "Sequence\t45\t55\tOVERLAP\t0\t-\n"
+                 "Sequence\t10\t20\tOVERLAP\t0\t+\n");
 
     // root->leaf2 (down 2)
-    bedFile.str("Sequence\t0\t20\tBLOCK_A\t0\t+\n"
-                "Sequence\t30\t50\tBLOCK_B\t0\t+\n");
-    bedFile.clear();
-    outStream.str("");
-    outStream.clear();
-    liftover.convert(alignment, root, &bedFile, leaf2, &outStream);
-    streamResults = chopString(outStream.str(), "\n");
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t0\t20\tBLOCK_A\t0\t+") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t40\t50\tBLOCK_A\t0\t+") != streamResults.end());
-    CuAssertTrue(_testCase, streamResults.size() == 2);
+    liftAndCheck(alignment, root, leaf2,
+                 "Sequence\t0\t20\tBLOCK_A\t0\t+\n"
+                 "Sequence\t30\t50\tBLOCK_B\t0\t+\n",
+                 //->
+                 "Sequence\t0\t20\tBLOCK_A\t0\t+\n"
+                 "Sequence\t40\t50\tBLOCK_A\t0\t+\n");
 
-    // leaf3->leaf1 (up 2, down 1)
-    bedFile.str("Sequence\t0\t10\tSEGMENT_0\t0\t+\n"
-                "Sequence\t10\t30\tSEGMENT_1\t0\t+\n"
-                "Sequence\t30\t45\tSEGMENT_2\t0\t+\n"
-                "Sequence\t45\t65\tSEGMENT_3\t0\t+\n"
-                "Sequence\t65\t75\tSEGMENT_4\t0\t+\n"
-                "Sequence\t75\t100\tSEGMENT_5\t0\t+\n");
-    bedFile.clear();
-    outStream.str("");
-    outStream.clear();
-    liftover.convert(alignment, leaf3, &bedFile, leaf1, &outStream);
-    streamResults = chopString(outStream.str(), "\n");
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t30\t40\tSEGMENT_1\t0\t-") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t20\t30\tSEGMENT_2\t0\t+") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t10\t20\tSEGMENT_3\t0\t+") != streamResults.end());
-    CuAssertTrue(_testCase,
-                 find(streamResults.begin(), streamResults.end(), "Sequence\t0\t10\tSEGMENT_4\t0\t-") != streamResults.end());
-    CuAssertTrue(_testCase, streamResults.size() == 4);
+    // leaf3->leaf1 (up 2, down 1) with blocks
+    const string case3("Sequence\t0\t10\tSEGMENT_0\t0\t+\t0\t10\t128,0,0\t1\t10\t0,\n"
+                       "Sequence\t10\t30\tSEGMENT_1\t0\t+\t10\t30\t128,0,0\t1\t20\t0,\n"
+                       "Sequence\t30\t45\tSEGMENT_2\t0\t+\t30\t45\t128,0,0\t1\t15\t0,\n"
+                       "Sequence\t45\t65\tSEGMENT_3\t0\t+\t45\t65\t128,0,0\t1\t20\t0,\n"
+                       "Sequence\t65\t75\tSEGMENT_4\t0\t+\t65\t75\t128,0,0\t1\t10\t0,\n"
+                       "Sequence\t75\t100\tSEGMENT_5\t0\t+\t75\t100\t128,0,0\t1\t25\t0,\n");
+    liftAndCheck(alignment, leaf3, leaf1,
+                 case3,
+                 //->
+                 "Sequence\t30\t40\tSEGMENT_1\t0\t-\t30\t40\t128,0,0\t1\t10\t0\n"
+                 "Sequence\t20\t30\tSEGMENT_2\t0\t+\t20\t30\t128,0,0\t1\t10\t0\n"
+                 "Sequence\t10\t20\tSEGMENT_3\t0\t+\t10\t20\t128,0,0\t1\t10\t0\n"
+                 "Sequence\t0\t10\tSEGMENT_4\t0\t-\t0\t10\t128,0,0\t1\t10\t0\n");
+    liftAndCheck(alignment, leaf3, leaf1,
+                 case3,
+                 //->
+                 "2\t8\t0\t0\t0\t0\t0\t0\t+-\tSequence\t100\t20\t30\tSequence\t100\t30\t40\t1\t10,\t20,\t60,\n"
+                 "2\t8\t0\t0\t0\t0\t0\t0\t++\tSequence\t100\t35\t45\tSequence\t100\t20\t30\t1\t10,\t35,\t20,\n"
+                 "3\t7\t0\t0\t0\t0\t0\t0\t++\tSequence\t100\t45\t55\tSequence\t100\t10\t20\t1\t10,\t45,\t10,\n"
+                 "3\t7\t0\t0\t0\t0\t0\t0\t+-\tSequence\t100\t65\t75\tSequence\t100\t0\t10\t1\t10,\t65,\t90,\n",
+                 true);
+    liftAndCheck(alignment, leaf3, leaf1,
+                 case3,
+                 //->
+                 "SEGMENT_1\t2\t8\t0\t0\t0\t0\t0\t0\t+-\tSequence\t100\t20\t30\tSequence\t100\t30\t40\t1\t10,\t20,\t60,\n"
+                 "SEGMENT_2\t2\t8\t0\t0\t0\t0\t0\t0\t++\tSequence\t100\t35\t45\tSequence\t100\t20\t30\t1\t10,\t35,\t20,\n"
+                 "SEGMENT_3\t3\t7\t0\t0\t0\t0\t0\t0\t++\tSequence\t100\t45\t55\tSequence\t100\t10\t20\t1\t10,\t45,\t10,\n"
+                 "SEGMENT_4\t3\t7\t0\t0\t0\t0\t0\t0\t+-\tSequence\t100\t65\t75\tSequence\t100\t0\t10\t1\t10,\t65,\t90,\n",
+                 true, true);
     alignment->closeGenome(root);
     alignment->closeGenome(child1);
     alignment->closeGenome(leaf1);
@@ -391,7 +386,7 @@ void BedLiftoverTest::checkCallBack(const Alignment *alignment) {
     testMultiBranchLifts(alignment);
 }
 
-/*
+/* FIXME: what is this?
 // Makes assumptions about wig output:
 // 1. input wig step = output wig step
 // 2. only fixedStep is used
@@ -404,33 +399,35 @@ void WiggleLiftoverTest::checkWigHasEntry(vector<string> &wig,
 */
 
 void WiggleLiftoverTest::testOneBranchLifts(const Alignment *alignment) {
-    /*  WiggleLiftover liftover;
-      const Genome *root = alignment->openGenome("root");
-      const Genome *child1 = alignment->openGenome("child1");
-      const Genome *leaf1 = alignment->openGenome("leaf1");
-      const Genome *leaf2 = alignment->openGenome("leaf2");
-      const Genome *leaf3 = alignment->openGenome("leaf3");
+#if 0 // FIXME: implement
+    const Genome *root = alignment->openGenome("root");
+    const Genome *child1 = alignment->openGenome("child1");
+    const Genome *leaf1 = alignment->openGenome("leaf1");
+    const Genome *leaf2 = alignment->openGenome("leaf2");
+    const Genome *leaf3 = alignment->openGenome("leaf3");
 
-      // whole blocks (reversed, unreversed, paralogies)
-      stringstream wigFile("fixedStep chrom=Sequence start=0 step=5\n"
-                           "1\n2\n3\n4\n"
-                           "fixedStep chrom=Sequence start=60 step=5\n"
-                           "5\n6\n7\n8\n"
-                           "fixedStep chrom=Sequence start=20 step=5\n"
-                           "9\n10\n11\n12\n"
-                           "fixedStep chrom=Sequence start=80 step=5\n"
-                           "13\n14\n15\n16\n");
-      stringstream outStream;
-      liftover.convert(alignment, child1, &wigFile, root, &outStream);
-      vector<string> streamResults = chopString(outStream.str(), "\n");
-      CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "Sequence\t0\t20\tPARALOGY1REV\t0\t-") !=
-      streamResults.end());
-      CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "Sequence\t60\t80\tREV\t0\t-") !=
-      streamResults.end());
-      CuAssertTrue(_testCase, find(streamResults.begin(), streamResults.end(), "Sequence\t0\t20\tPARALOGY2\t0\t+") !=
-      streamResults.end());
-      CuAssertTrue(_testCase, streamResults.size() == 3);
-    */
+    // whole blocks (reversed, unreversed, paralogies)
+    const string case1("fixedStep chrom=Sequence start=0 step=5\n"
+                       "1\n2\n3\n4\n"
+                       "fixedStep chrom=Sequence start=60 step=5\n"
+                       "5\n6\n7\n8\n"
+                       "fixedStep chrom=Sequence start=20 step=5\n"
+                       "9\n10\n11\n12\n"
+                       "fixedStep chrom=Sequence start=80 step=5\n"
+                       "13\n14\n15\n16\n");
+    stringstream wigFile(case1);
+    stringstream outStream;
+    liftover.convert(alignment, child1, &wigFile, root, &outStream);
+    CuAssertTrue(_testCase, outStream.str() ==
+                 "Sequence\t0\t20\tPARALOGY1REV\t0\t-\n"
+                 "Sequence\t60\t80\tREV\t0\t-\n"
+                 "Sequence\t0\t20\tPARALOGY2\t0\t+\n");
+    alignment->closeGenome(root);
+    alignment->closeGenome(child1);
+    alignment->closeGenome(leaf1);
+    alignment->closeGenome(leaf2);
+    alignment->closeGenome(leaf3);
+#endif
 }
 
 void WiggleLiftoverTest::testMultiBranchLifts(const Alignment *alignment) {
