@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
         }
 
         BlockLiftover liftover;
-        liftover.convert(alignment.get(), srcGenome, srcBedPtr, tgtGenome, tgtBedPtr,
+        liftover.convert(alignment.get(), srcGenome, srcBedPtr, tgtGenome, tgtBedPtr, false,
                          !noDupes, outPSL, outPSLWithName, coalescenceLimit);
 
 

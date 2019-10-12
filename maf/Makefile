@@ -61,6 +61,9 @@ output/small.hdf5.hal: ../bin/halRandGen
 	@mkdir -p output
 	../bin/halRandGen --preset small --seed 0 --testRand --format hdf5 output/small.hdf5.hal
 
+../bin/halRandGen:
+	cd ../randgen && ${MAKE}
+
 ${binDir}/%.py: %.py
 	@mkdir -p $(dir $@)
 	cp -f $< $@

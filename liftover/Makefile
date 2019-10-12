@@ -26,10 +26,28 @@ all : libs progs
 libs: ${libHalLiftover}
 progs: ${progs}
 
-clean : 
-	rm -f ${libHalLiftover} ${objs} ${progs} ${depends}
-test:
+clean: 
+	rm -rf ${libHalLiftover} ${objs} ${progs} ${depends} output
+
+test: unitTests halLiftoverBedTest halLiftoverPslTest
+
+unitTests:
 	${binDir}/halLiftoverTests 
+
+halLiftoverBedTest: output/small.hdf5.hal
+	${binDir}/halLiftover output/small.hdf5.hal Genome_0 tests/input/test1.bed Genome_2 output/$@.bed
+	diff -u tests/expected/$@.bed output/$@.bed
+
+halLiftoverPslTest: output/small.hdf5.hal
+	${binDir}/halLiftover --outPSL output/small.hdf5.hal Genome_0 tests/input/test1.bed Genome_2 output/$@.psl
+	diff -u tests/expected/$@.psl output/$@.psl
+
+output/small.hdf5.hal: ../bin/halRandGen
+	@mkdir -p output
+	../bin/halRandGen --preset small --seed 0 --testRand --format hdf5 output/small.hdf5.hal
+
+../bin/halRandGen:
+	cd ../randgen && ${MAKE}
 
 include ${rootDir}/rules.mk
 
