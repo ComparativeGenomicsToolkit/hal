@@ -126,6 +126,12 @@ namespace hal {
             }
             otherStack._stack.clear();
         }
+        void pushStackReversed(ColumnIteratorStack &otherStack) {
+            for (int64_t i = otherStack.size() - 1; i >= 0; --i) {
+                _stack.push_back(otherStack[i]);
+            }
+            otherStack._stack.clear();
+        }
         void popDelete() {
             delete _stack.back();
             _stack.pop_back();
