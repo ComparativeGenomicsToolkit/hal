@@ -119,7 +119,8 @@ void ColumnIterator::toRight() {
     } while (_break == true);
 
     // push the indel stack.
-    _stack.pushStack(_indelStack);
+    _stack.pushStackReversed(_deletionStack);
+    _stack.pushStack(_insertionStack);
 
     // clean stack again
     nextFreeIndex();
@@ -356,15 +357,6 @@ void ColumnIterator::recursiveUpdate(bool init) {
 bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) {
     if (_maxInsertionLength > 0 && inputTopSegIt->tseg()->hasParent() == true) {
         _top->copy(inputTopSegIt);
-        bool reversed = _top->getReversed();
-        if (reversed == true) {
-            // We need to identify the deletion from the *left* breakpoint on
-            // the positive strand. That means the *right* breakpoint when on
-            // the negative strand. Therefore, we go right (i.e. left according
-            // to the positive strand) when checking the breakpoint.
-            _top->toRight();
-            _top->toReverse();
-        }
         // only handle a deletion if we are immediately left of the breakpoint
         if (_top->getEndOffset() == 0) {
             const Genome *genome = _top->getTopSegment()->getGenome();
@@ -378,7 +370,7 @@ bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) 
 
                 BottomSegmentIteratorPtr botSegIt = parent->getBottomSegmentIterator(0);
                 botSegIt->toParent(inputTopSegIt);
-                _indelStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, botSegIt->getReversed());
+                _deletionStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, botSegIt->getReversed());
 
                 return true;
             }
@@ -396,16 +388,12 @@ bool ColumnIterator::handleInsertion(const TopSegmentIteratorPtr &inputTopSegIt)
             _rearrangement->setAtomic(true);
             _top->slice(0, 0);
             _top->toRight();
-            if (reversed == true) {
-                _top->toReverse();
-            }
             assert(_rearrangement->getAtomic() == true);
             if (_rearrangement->identifyInsertionFromLeftBreakpoint(_top) == true &&
                 _rearrangement->getLength() + _stack.top()->_cumulativeSize <= _maxInsertionLength) {
                 pair<hal_index_t, hal_index_t> insertedRange = _rearrangement->getInsertedRange();
                 assert((hal_size_t)(insertedRange.second - insertedRange.first) == _rearrangement->getLength() - 1);
-
-                _indelStack.push(_top->getTopSegment()->getSequence(), insertedRange.first, insertedRange.second, reversed);
+                _insertionStack.push(_top->getTopSegment()->getSequence(), insertedRange.first, insertedRange.second, reversed);
             }
         }
     }

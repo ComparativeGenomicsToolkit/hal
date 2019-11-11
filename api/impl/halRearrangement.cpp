@@ -56,12 +56,10 @@ hal_size_t Rearrangement::getNumContainedGapBases() const {
 }
 
 TopSegmentIteratorPtr Rearrangement::getLeftBreakpoint() const {
-    assert(_cur->getReversed() == false);
     return _cur->getLeft();
 }
 
 TopSegmentIteratorPtr Rearrangement::getRightBreakpoint() const {
-    assert(_cur->getReversed() == false);
     return _cur->getRight();
 }
 
@@ -135,7 +133,6 @@ bool Rearrangement::identifyFromLeftBreakpoint(TopSegmentIteratorPtr topSegment)
 }
 
 bool Rearrangement::identifyDeletionFromLeftBreakpoint(TopSegmentIteratorPtr topSegment) {
-    assert(topSegment->getReversed() == false);
     if (scanDeletionCycle(topSegment) == true && _leftParent->hasChild() == false) {
         _id = Deletion;
         return true;
@@ -159,7 +156,6 @@ pair<hal_index_t, hal_index_t> Rearrangement::getDeletedRange() const {
 }
 
 bool Rearrangement::identifyInsertionFromLeftBreakpoint(TopSegmentIteratorPtr topSegment) {
-    assert(topSegment->getReversed() == false);
     if (scanInsertionCycle(topSegment) == true && _cur->hasParent() == false) {
         _id = Insertion;
         return true;
