@@ -155,8 +155,6 @@ namespace hal {
         std::set<const Genome *> _scope;
         ColumnIteratorStack _stack;
         ColumnIteratorStack _indelStack;
-        ColumnIteratorStack _insertionStack;
-        ColumnIteratorStack _deletionStack;
         const Sequence *_ref;
 
         RearrangementPtr _rearrangement;
