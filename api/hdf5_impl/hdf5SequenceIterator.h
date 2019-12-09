@@ -26,7 +26,10 @@ namespace hal {
         void toNext();
         void toPrev();
         bool atEnd() const;
-        const Sequence *getSequence() const;
+        Sequence *getSequence();
+        const Sequence *getSequence() const {
+            return const_cast<Hdf5SequenceIterator *>(this)->getSequence();
+        }
         bool equals(SequenceIteratorPtr other) const;
 
       private:

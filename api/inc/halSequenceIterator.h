@@ -39,6 +39,9 @@ namespace hal {
         /** Return pointer to the sequence */
         virtual const Sequence *getSequence() const = 0;
 
+        /** Return pointer to the sequence */
+        virtual Sequence *getSequence() = 0;
+
         /** Test if iterator points to same sequence as other iterator */
         virtual bool equals(SequenceIteratorPtr p2) const = 0;
     };
