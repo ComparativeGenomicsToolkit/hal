@@ -65,6 +65,16 @@ From the parent directory of where you want HAL installed:
    
      `export PATH=DIR/hdf5/bin:${PATH}`  
      `export h5prefix=-prefix=DIR/hdf5`  
+ 
+     or set these in include.local.mk.
+
+    If you are using older version of HDF5, such as installed on Centos,
+    you may need to set 
+    
+    `export CXX_ABI_DEF='-D_GLIBCXX_USE_CXX11_ABI=1'
+    
+    If you get undefined functions base on string type with errors about
+    `std::__cxx11::basic_string` vs `std::basic_string`.
 
 #### sonLib
 

@@ -33,27 +33,32 @@ export PATH := $(abspath ${rootDir}/bin):${PATH}
 
 include  ${sonLibRootDir}/include.mk
 
-dataSetsDir=/Users/hickey/Documents/Devel/genomes/datasets
-
-#
-# The -D_GLIBCXX_USE_CXX11_ABI=1 flag prevents errors with
+##
+# For GCC, the C++ 11 aplication binary interface must match the version
+# that HDF5 uses.  Change the ABI version can address errors about undefined functions that vary
+# by string type, such as 
 #   std::__cxx11::basic_string vs std::basic_string
-# vs
-#   std::basic_string vs std::basic_string
-# when linking with HDF5 and modern C++ compilers (well, GCC 7.3)
 #
-ifeq (${CXX_11_ABI_DEF},)
-    CXX_11_ABI_DEF = -D_GLIBCXX_USE_CXX11_ABI=1
+# Specify one of:
+#   CXX_ABI_DEF = -D_GLIBCXX_USE_CXX11_ABI=0
+# or
+#   CXX_ABI_DEF = -D_GLIBCXX_USE_CXX11_ABI=1
+#
+# in include.local.mk or the environment will change the API.
+# You must do a make clean if you change this variable.
+
+ifeq (${CXX_ABI_DEF},)
+    CXX_ABI_DEF = -D_GLIBCXX_USE_CXX11_ABI=1
 endif
 
 cflags += -I${sonLibDir} -fPIC
-cppflags += -I${sonLibDir} -fPIC ${CXX_11_ABI_DEF} -std=c++11 -Wno-sign-compare
+cppflags += -I${sonLibDir} -fPIC ${CXX_ABI_DEF} -std=c++11 -Wno-sign-compare
 
 basicLibs += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 basicLibsDependencies += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 
-# hdf5 compilation is done through its wrappers.
-# we can speficy our own (sonlib) compilers with these variables:
+# hdf5 compilation is done through its wrappers.  See README.md for discussion of
+# h5prefix
 cpp = h5c++ ${h5prefix}
 cxx = h5cc ${h5prefix}
 
