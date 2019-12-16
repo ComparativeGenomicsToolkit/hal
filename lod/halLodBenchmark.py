@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Benchmark halLodExtract by extracting with a bunch of different
 stepsizes then seeing how much smaller they get.  Also (optionally)
@@ -66,17 +66,17 @@ def getPrecisionRecall(inHalPath, outDir, step, doMaf):
     if doMaf:
         sumPath = makePath(inHalPath, outDir, step, "comp", "txt")
         sumFile = open(sumPath, "r")
-        line = sumFile.next()
-        line = sumFile.next()
-        line = sumFile.next()
+        line = next(sumFile)
+        line = next(sumFile)
+        line = next(sumFile)
         tokens = line.split()
         assert tokens[2] == "self)"
 
         sumNearPath = makePath(inHalPath, outDir, step, "comp_near", "txt")
         sumNearFile = open(sumNearPath, "r")
-        line = sumNearFile.next()
-        line = sumNearFile.next()
-        line = sumNearFile.next()
+        line = next(sumNearFile)
+        line = next(sumNearFile)
+        line = next(sumNearFile)
         tokensNear = line.split()
         assert tokensNear[2] == "self)"
 
@@ -102,7 +102,7 @@ def getScanTime(inHalPath, outDir, step):
     return [elapsedTime]
     
 def printTable(table):
-    print "Step, kb,, nTop,, nBottom,, Prec., Recall, PrecNear, RecallNear, ScanTime"
+    print("Step, kb,, nTop,, nBottom,, Prec., Recall, PrecNear, RecallNear, ScanTime")
     for step, data in sorted(table.items()):
         line = "%d" % step
         idx = 0
@@ -115,7 +115,7 @@ def printTable(table):
                     frac = float(elem) / float(orig)
                 line += ", %f" % frac
             idx += 1
-        print line
+        print(line)
     
 def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
              keepSeq, trans, inMemory):
@@ -129,7 +129,7 @@ def runSteps(inHalPath, outDir, maxBlock, scale, steps, overwrite, doMaf,
 
     if steps is None:
         steps =  getSteps(inHalPath, maxBlock, scale)
-    for stepIdx in xrange(1,len(steps)):
+    for stepIdx in range(1,len(steps)):
         step = steps[stepIdx]
         outPath = makePath(inHalPath, outDir, step, "lod", "hal")
         

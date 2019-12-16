@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Make histogram of inter-event distances in BED file
 """
@@ -39,7 +39,7 @@ def getHalBranchMutations(halPath, genomeName, args):
 
     if not args.noSort:
         command += " | sortBed > %s" % refBedFile
-    print command
+    print(command)
     runShellCommand(command)
 
 def getHalTreeMutations(halPath, args, rootName=None):
@@ -77,8 +77,8 @@ def main(argv=None):
         try:
             runShellCommand("echo \"x\t0\t1\" | sortBed 2> /dev/null")
         except Exception:
-            print ("Warning: output BED files not sorted because sortBed" + 
-               " (BedTools) not found")
+            print(("Warning: output BED files not sorted because sortBed" + 
+               " (BedTools) not found"))
             args.noSort = True
         
     getHalTreeMutations(args.hal, args, args.root)

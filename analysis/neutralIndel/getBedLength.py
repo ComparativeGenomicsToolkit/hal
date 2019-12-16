@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -28,7 +28,7 @@ def main(argv=None):
                         help="path to bed file")
     
     args = parser.parse_args()
-    print getBedLength(args.bedPath)
+    print(getBedLength(args.bedPath))
         
 if __name__ == "__main__":
     sys.exit(main())

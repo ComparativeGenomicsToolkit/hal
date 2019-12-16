@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Ngan Nguyen
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab

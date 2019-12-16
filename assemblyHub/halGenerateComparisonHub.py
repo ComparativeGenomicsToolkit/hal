@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Generates a single assembly hub that compares two hal files that have genomes in common.
 
@@ -12,6 +12,7 @@ from argparse import ArgumentParser
 from sonLib.bioio import system, popenCatch, getTempFile
 from jobTree.scriptTree.target import Target
 from jobTree.scriptTree.stack import Stack
+from functools import reduce
 
 def getGenomesInHal(halFile):
     """Get a set of all genomes in the hal file."""
@@ -92,7 +93,7 @@ def writeGenomesFile(genomesTxtPath, halFile, genomes):
             # Find a valid default chromosome and position. We pick the
             # middle 10000 bases of the maximum-length sequence.
             chromSizes = getChromSizes(halFile, genome)
-            maxChrom = max(chromSizes.iterkeys(), key=lambda x: chromSizes[x])
+            maxChrom = max(iter(chromSizes.keys()), key=lambda x: chromSizes[x])
             defaultPosStart = chromSizes[maxChrom] / 2 - 5000
             defaultPosEnd = chromSizes[maxChrom] /  2 + 5000
             defaultPosStart = max(defaultPosStart, 0)

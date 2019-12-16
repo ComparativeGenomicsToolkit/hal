@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Compare conserved intervals between a genome and those of its parent,
 detecting patterns of conservation (overlap), gain and loss
@@ -204,7 +204,7 @@ def main(argv=None):
         outMappedGenomeBed, outConservationBed, outAlignedBed,
         outGainBed, outLossBed)
 
-    print (conLen, gainLen, lossLen, unconLen)
+    print((conLen, gainLen, lossLen, unconLen))
     
 if __name__ == "__main__":
     sys.exit(main())

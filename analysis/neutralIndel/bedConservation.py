@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Write conserved regions based on neutral-indel-like test
 """

@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Run hal2maf in parallel by slicing along reference genome.
 """
@@ -35,7 +35,7 @@ from hal.stats.halStats import getHalRootName
 # Wrapper for hal2maf
 def getHal2MafCmd(options):
     cmd = "hal2maf %s %s --unique" % (options.halFile, makeOutMafPath(options))
-    for opt,val in options.__dict__.items():
+    for opt,val in list(options.__dict__.items()):
         if (val is not None and
             (type(val) != bool or val == True) and
             (opt == 'cacheMDC' or
@@ -91,7 +91,7 @@ def computeSlices(options, seqLen):
         if options.sliceSize is None or options.sliceSize >= inLength:
             yield (inStart, inLength, None)
         else:
-            for i in xrange(inLength / options.sliceSize):
+            for i in range(inLength / options.sliceSize):
                 yield (inStart + i * options.sliceSize, options.sliceSize, i)
             r = inLength % options.sliceSize
             if r > 0:
@@ -125,7 +125,7 @@ def splitBed(bed, numParts):
     with open(bed) as f:
         numLines = sum(1 for line in f)
     # Random suffix so two runs on the same file don't collide
-    suffix = "".join([random.choice(string.ascii_uppercase) for _ in xrange(7)])
+    suffix = "".join([random.choice(string.ascii_uppercase) for _ in range(7)])
     system("split -l %d %s %s.temp.%s" % (math.ceil(float(numLines)/numParts), bed, bed, suffix))
     return glob('%s.temp.%s*' % (bed, suffix))
             

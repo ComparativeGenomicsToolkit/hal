@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Runs ancestorsML on all unique columns that contain at least one
 ancestor.
 """
@@ -59,14 +59,14 @@ class RunAncestorsMLParallel(Target):
 
     def run(self):
         outputsPerGenome = {}
-        for genome, bedFile in self.bedFileDict.items():
+        for genome, bedFile in list(self.bedFileDict.items()):
             outputsPerGenome[genome] = []
             with open(bedFile) as f:
                 numLines = sum(1 for line in f)
             linesPerJob = int(math.ceil(float(numLines)/self.jobsPerGenome))
             if linesPerJob == 0:
                 linesPerJob = 1
-            for start in xrange(0, numLines, linesPerJob):
+            for start in range(0, numLines, linesPerJob):
                 end = start + linesPerJob
                 if end > numLines:
                     end = numLines
@@ -104,7 +104,7 @@ class WriteNucleotides(Target):
     def run(self):
         counts = defaultdict(int)
         nCounts = defaultdict(int)
-        for genome, inputs in self.inputsPerGenome.items():
+        for genome, inputs in list(self.inputsPerGenome.items()):
             for input in inputs:
                 with open(input) as f:
                     for line in f:

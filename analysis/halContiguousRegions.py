@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # won't work in the general case right now
 # (i.e. needs to be positive query strand)
 import sys
@@ -13,13 +13,14 @@ from jobTree.scriptTree.target import Target
 from jobTree.scriptTree.stack import Stack
 from sonLib.bioio import logger
 from sonLib.bioio import setLoggingFromOptions
+from functools import reduce
 
 # Useful itertools recipe
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = itertools.tee(iterable)
     next(b, None)
-    return itertools.izip(a, b)
+    return zip(a, b)
 
 class Setup(Target):
     def __init__(self, args):
@@ -33,7 +34,7 @@ class Setup(Target):
         if numLines > self.args.sliceNum:
             step = numLines/self.args.sliceNum
             count = 0
-            for i in xrange(sliceNum):
+            for i in range(sliceNum):
                 slices.append((count, count + step))
                 count += step
             slices[-1] = (slices[-1][0], slices[-1][1] + numLines % self.args.sliceNum)
@@ -42,7 +43,7 @@ class Setup(Target):
             slices = [[0, numLines]]
 
         sliceOutputs = []
-        for i in xrange(sliceNum):
+        for i in range(sliceNum):
             slice = slices[i]
             sliceOut = getTempFile(rootDir=self.getGlobalTempDir())
             sliceOutputs.append(sliceOut)
@@ -129,7 +130,7 @@ class ContiguousRegions:
         pslLines = open(tempDest).read().split("\n")
         os.remove(tempSrc)
         os.remove(tempDest)
-        pslLines = map(lambda x: x.split(), pslLines)
+        pslLines = [x.split() for x in pslLines]
         # Get target blocks for every query block. All adjacencies
         # within a block are by definition preserved. Adjacencies
         # between target blocks (and query blocks with the commandline
@@ -257,7 +258,7 @@ class ContiguousRegions:
         """
 
         ret = {}
-        for seq, blockList in blockDict.items():
+        for seq, blockList in list(blockDict.items()):
             blockList.sort(key=itemgetter(0))
             newBlockList = []
             prev = None
@@ -280,9 +281,9 @@ class ContiguousRegions:
             maxGap = self.maxGap
         for x, y in itertools.product(blocks1, blocks2):
             if x[2] == y[2]: # orientation preserved
-                if x[2] == '+' and y[0] - x[1] in xrange(minGap, maxGap):
+                if x[2] == '+' and y[0] - x[1] in range(minGap, maxGap):
                     return True
-                elif x[2] == '-' and x[0] - y[1] in xrange(minGap, maxGap):
+                elif x[2] == '-' and x[0] - y[1] in range(minGap, maxGap):
                     return True
         return False
 
@@ -298,8 +299,8 @@ class ContiguousRegions:
         bedIntrons = []
         bedLength = 0
         if len(bedFields) == 12:
-            blockStarts = map(int, filter(lambda x: x != "", bedFields[11].split(",")))
-            blockSizes = map(int, filter(lambda x: x != "", bedFields[10].split(",")))
+            blockStarts = list(map(int, [x for x in bedFields[11].split(",") if x != ""]))
+            blockSizes = list(map(int, [x for x in bedFields[10].split(",") if x != ""]))
             assert(len(blockStarts) == len(blockSizes))
             bedBlocks = [(bedStart + start, bedStart + start + size)
                          for start, size in zip(blockStarts, blockSizes)]
@@ -320,8 +321,8 @@ class ContiguousRegions:
         # bases
         totalMappedAdjacencies = 0
         tSeqMapped = {}
-        for seq, value in blockDict.items():
-            qBlocks = map(itemgetter(0), value)
+        for seq, value in list(blockDict.items()):
+            qBlocks = list(map(itemgetter(0), value))
             mappedBases = reduce(lambda r, v: r + (v[1] - v[0]), qBlocks, 0)
             totalMappedAdjacencies += mappedBases - 1
             # Adjacencies within blocks are always preserved.
@@ -332,7 +333,7 @@ class ContiguousRegions:
             # can happen if the sequence doesn't map to the target at all
             return (False, 0, 0, bedLength)
 
-        for seq, blocks in blockDict.items():
+        for seq, blocks in list(blockDict.items()):
             # FIXME: Need to account for introns again
             # And qGaps if option is given
             preservedForSeq = True

@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Make histogram of inter-event distances in BED file
 """
@@ -58,13 +58,13 @@ def getHalTreeConservation(halPath, args, events, rootName=None):
         bc.identifyConservedIntervals(muFile, outFile, float(args.pval),
                                       float(args.cutoff))
         getHalTreeConservation(halPath, args, events, child)
-        print "%s: %d segments with %d bases (%f pct of genome) found. bgrate= %f minDist=%d" % (
+        print("%s: %d segments with %d bases (%f pct of genome) found. bgrate= %f minDist=%d" % (
             child,
             bc.writtenCount,
             bc.writtenBases,
             float(bc.writtenBases) / float(genomeLength(halPath, child)),
             bc.rate,
-            bc.minDistance(float(args.pval)))
+            bc.minDistance(float(args.pval))))
         
 def main(argv=None):
     if argv is None:

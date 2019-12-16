@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Make histogram of inter-event distances in BED file
 """
@@ -33,7 +33,7 @@ def getHalTreeBackground(halPath, args, rootName=None):
         else:
             command = "halStats %s --bedSequences %s > %s" % (halPath, child,
                                                               bgFile)
-        print command
+        print(command)
         runShellCommand(command)
         getHalTreeBackground(halPath, args, child)
 

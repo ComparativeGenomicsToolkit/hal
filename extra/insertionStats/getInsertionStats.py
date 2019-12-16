@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Get a TSV of (insertion size, length, seq, genome) sampled from a HAL
 file."""
 from argparse import ArgumentParser
@@ -87,7 +87,7 @@ class ExtractInsertions(Target):
 
     def run(self):
         fastaDict = self.getFastaDict()
-        chromSizes = dict([(x[0], len(x[1])) for x in fastaDict.items()])
+        chromSizes = dict([(x[0], len(x[1])) for x in list(fastaDict.items())])
 
         insertionBed = getTempFile(rootDir=self.getGlobalTempDir())
         system("halAlignedExtract --complement %s %s > %s" % (self.halPath, self.genome, insertionBed))

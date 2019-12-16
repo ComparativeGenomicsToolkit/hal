@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Compute constraint turnover stats over entire tree
 """
@@ -72,7 +72,7 @@ def getHalTreeTurnover(halPath, args, rootName=None):
 
             branchLength = getBranchLength(halPath, child)
                 
-            print "%s: cons %d  ucons %d  gain %d (%f) loss %d (%f) bl %f" % (
+            print("%s: cons %d  ucons %d  gain %d (%f) loss %d (%f) bl %f" % (
                 child,                                                
                 conLen,
                 unconLen,
@@ -80,7 +80,7 @@ def getHalTreeTurnover(halPath, args, rootName=None):
                 gainRate,
                 lossLen,
                 lossRate,
-                branchLength)
+                branchLength))
         
         getHalTreeTurnover(halPath, args, child)
         

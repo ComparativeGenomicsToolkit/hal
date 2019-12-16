@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Ngan Nguyen
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
@@ -45,8 +45,8 @@ class GetCladeExclusive(Target):
 
     def run(self):
         cladedir = os.path.join(self.outdir, self.names[0])
-        print self.names
-        print cladedir
+        print(self.names)
+        print(cladedir)
         system("mkdir -p %s" %cladedir)
         minIn = self.minIn
         if not minIn or minIn > len(self.names):

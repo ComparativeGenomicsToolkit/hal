@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import unittest
 from hal.analysis.halContiguousRegions import ContiguousRegions

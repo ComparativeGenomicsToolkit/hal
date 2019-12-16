@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Ngan Nguyen
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
@@ -74,7 +74,7 @@ def getLod(options, localHalfile, outdir):
     if int(options.maxThreads) > 1 and (options.lod or len(options.lodOpts) > 0):
         options.lodOpts += '--numProc %d ' % int(options.maxThreads)
     if len(options.lodOpts) > 0:
-        print options.lodOpts
+        print(options.lodOpts)
         options.lod = True
     if options.lod:
         lodtxtfile, loddir = getLodFiles(localHalfile, options, outdir)

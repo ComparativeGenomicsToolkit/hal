@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Ngan Nguyen (nknguyen@soe.ucsc.edu)
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
@@ -327,7 +327,7 @@ def hasFiles(genome, indir, ext):
     return False
 
 def getLongestSeq(seq2len):
-    seqs = sorted( [(seq, len) for seq, len in seq2len.iteritems()], key=lambda item:item[1], reverse=True )
+    seqs = sorted( [(seq, len) for seq, len in seq2len.items()], key=lambda item:item[1], reverse=True )
     return seqs[0]
 
 def getGenomeSequencesFromHal(halfile, genome, ucscNames):
@@ -365,7 +365,7 @@ def getChromSizesFromHal(halfile, genome, outfile):
 
 def getChromSizes(halfile, seq2len, outfile):
     f = open(outfile, 'w')
-    for s, l in seq2len.iteritems():
+    for s, l in seq2len.items():
         if l > 0:
             f.write("%s\t%d\n" %(s, l))
     f.close()
