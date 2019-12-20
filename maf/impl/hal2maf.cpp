@@ -61,6 +61,8 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.addOptionFlag("onlyOrthologs", "make only orthologs to the "
                                                  "reference appear in the MAF blocks",
                                 false);
+    optionsParser.addOptionFlag("keepEmptyRefBlocks", "keep blocks that contain no reference sequence",
+                                false);
 
     optionsParser.setDescription("Convert hal database to maf.");
 }
@@ -86,6 +88,7 @@ class MafOptions {
     bool global;
     bool printTree;
     bool onlyOrthologs;
+    bool keepEmptyRefBlocks;
     hal_index_t maxBlockLen;
 };
 
@@ -188,6 +191,7 @@ static void hal2maf(AlignmentConstPtr alignment, const MafOptions &opts) {
     mafExport.setMaxBlockLength(opts.maxBlockLen);
     mafExport.setPrintTree(opts.printTree);
     mafExport.setOnlyOrthologs(opts.onlyOrthologs);
+    mafExport.setKeepEmptyRefBlocks(opts.keepEmptyRefBlocks);
 
     if (opts.refTargetsPath != "") {
         hal2mafWithTargets(opts, alignment, refGenome, targetSet, mafExport, mafStream);
@@ -237,6 +241,7 @@ int main(int argc, char **argv) {
         opts.printTree = optionsParser.getFlag("printTree");
         opts.maxBlockLen = optionsParser.getOption<hal_index_t>("maxBlockLen");
         opts.onlyOrthologs = optionsParser.getFlag("onlyOrthologs");
+        opts.keepEmptyRefBlocks = optionsParser.getFlag("keepEmptyRefBlocks");
 
         if (((opts.length != 0) || (opts.start != 0)) && (opts.refSequenceName == "")) {
             throw hal_exception("--start and --length require --refSequenceName");
