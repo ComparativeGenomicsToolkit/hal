@@ -35,7 +35,7 @@ BranchMutations::BranchMutations() {
 BranchMutations::~BranchMutations() {
 }
 
-void BranchMutations::analyzeBranch(const Alignment *alignment, hal_size_t gapThreshold, double nThreshold,
+void BranchMutations::analyzeBranch(AlignmentConstPtr alignment, hal_size_t gapThreshold, double nThreshold,
                                     ostream *refBedStream, ostream *parentBedStream, ostream *snpBedStream,
                                     ostream *delBreakBedStream, const Genome *reference, hal_index_t startPosition,
                                     hal_size_t length) {

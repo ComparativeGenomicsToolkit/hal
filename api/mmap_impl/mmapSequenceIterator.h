@@ -28,6 +28,9 @@ namespace hal {
         const Sequence *getSequence() const {
             return &_sequence;
         }
+        Sequence *getSequence() {
+            return &_sequence;
+        }
         bool equals(SequenceIteratorPtr other) const {
             const MMapSequenceIterator *mmapOther = reinterpret_cast<const MMapSequenceIterator *>(other.get());
             assert(_sequence.getGenome() == mmapOther->_sequence.getGenome());

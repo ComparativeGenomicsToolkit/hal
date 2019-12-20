@@ -13,7 +13,7 @@ using namespace std;
 using namespace hal;
 
 Liftover::Liftover()
-    : _outBedStream(NULL), _inBedVersion(-1), _outBedVersion(-1), _outPSL(false), _outPSLWithName(false), _srcGenome(NULL),
+    : _outBedStream(NULL), _outPSL(false), _outPSLWithName(false), _srcGenome(NULL),
       _tgtGenome(NULL) {
 }
 
@@ -21,57 +21,32 @@ Liftover::~Liftover() {
 }
 
 void Liftover::convert(const Alignment *alignment, const Genome *srcGenome, istream *inBedStream, const Genome *tgtGenome,
-                       ostream *outBedStream, int inBedVersion, int outBedVersion, bool addExtraColumns, bool traverseDupes,
-                       bool outPSL, bool outPSLWithName, const locale *inLocale, const Genome *coalescenceLimit) {
+                       ostream *outBedStream, bool addExtraColumns, bool traverseDupes,
+                       bool outPSL, bool outPSLWithName, const Genome *coalescenceLimit) {
     _srcGenome = srcGenome;
     _tgtGenome = tgtGenome;
     _coalescenceLimit = coalescenceLimit;
     _outBedStream = outBedStream;
     _addExtraColumns = addExtraColumns;
-    _inBedVersion = inBedVersion;
-    _outBedVersion = outBedVersion;
     _traverseDupes = traverseDupes;
     _outPSL = outPSL;
     _outPSLWithName = outPSLWithName;
-    _inLocale = inLocale;
     _missedSet.clear();
     _tgtSet.clear();
     assert(_srcGenome && inBedStream && tgtGenome && outBedStream);
 
     _tgtSet.insert(tgtGenome);
 
-    // we copy into a stringstream because we never want to
-    // run getBedVersion (which does random access) on cin (which is a
-    // possible value for inBedStream)
-    string firstLineBuffer;
-    stringstream *firstLineStream = NULL;
-    if (_inBedVersion <= 0) {
-        skipWhiteSpaces(inBedStream, _inLocale);
-        std::getline(*inBedStream, firstLineBuffer);
-        firstLineStream = new stringstream(firstLineBuffer);
-        _inBedVersion = BedScanner::getBedVersion(firstLineStream, inLocale);
-        assert(inBedStream->eof() || _inBedVersion >= 3);
-        size_t numCols = BedScanner::getNumColumns(firstLineBuffer, inLocale);
-        if ((int)numCols > _inBedVersion) {
-            cerr << "Warning: auto-detecting input BED version " << _inBedVersion << " even though " << numCols
-                 << " columns present" << endl;
-        }
-    }
-    if (_outBedVersion <= 0) {
-        _outBedVersion = _inBedVersion;
-    }
-
-    if (firstLineStream != NULL) {
-        scan(firstLineStream, _inBedVersion, inLocale);
-        delete firstLineStream;
-    }
-    scan(inBedStream, _inBedVersion, inLocale);
+    scan(inBedStream);
 }
 
 void Liftover::visitBegin() {
 }
 
 void Liftover::visitLine() {
+    if ((_outPSL || _outPSLWithName) && (_bedLine._version < 12)) {
+        throw hal_exception("PSL output requires BED 12 input");
+    }
     _outBedLines.clear();
     _srcSequence = _srcGenome->getSequence(_bedLine._chrName);
     if (_srcSequence == NULL) {
@@ -88,24 +63,24 @@ void Liftover::visitLine() {
         return;
     }
 
-    else if (_inBedVersion > 9 && _bedLine._blocks.empty()) {
+    else if (_bedLine._version > 9 && _bedLine._blocks.empty()) {
         std::cerr << "Skipping input line with 0 blocks" << endl;
         return;
     }
 
     _mappedBlocks.clear();
-    if (_inBedVersion <= 9) {
+    if (_bedLine._version <= 9) {
         liftInterval(_mappedBlocks);
     } else {
         assert(!_bedLine._blocks.empty());
         liftBlockIntervals();
     }
 
-    if (_mappedBlocks.size() > 0 && _outBedVersion > 9) {
+    if (_mappedBlocks.size() > 0 && _bedLine._version > 9) {
         // fill them with mapped blocks
         assignBlocksToIntervals();
     }
-    if (_outBedVersion <= 9) {
+    if (_bedLine._version <= 9) {
         // only map the blocks and forget about the intervals
         writeBlocksAsIntervals();
     }
@@ -125,7 +100,7 @@ void Liftover::writeLineResults() {
             i->_extra.clear();
         }
         if (_outPSL == false) {
-            i->write(*_outBedStream, _outBedVersion);
+            i->write(*_outBedStream);
         } else {
             i->writePSL(*_outBedStream, _outPSLWithName);
         }
@@ -338,7 +313,7 @@ void Liftover::liftBlockIntervals() {
 // do a little postprocessing on the lifted intervals to make sure
 // they are bed compliant
 void Liftover::cleanResults() {
-    if (_outBedVersion > 6) {
+    if (_bedLine._version > 6) {
         BedList::iterator i;
         BedList::iterator j;
         for (i = _outBedLines.begin(); i != _outBedLines.end(); i = j) {
@@ -359,7 +334,7 @@ void Liftover::cleanResults() {
                 assert(i->_thickStart == 0 && i->_thickEnd == 0);
             }
 
-            if (_outBedVersion > 9) {
+            if (_bedLine._version > 9) {
                 if (i->_blocks.size() > 0) {
                     if (_outPSL == true) {
                         assert(i->_psl.size() == 1);

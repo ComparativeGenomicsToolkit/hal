@@ -10,19 +10,44 @@ halLiftover_srcs = impl/halLiftoverMain.cpp
 halLiftover_objs = ${halLiftover_srcs:%.cpp=${modObjDir}/%.o}
 halWiggleLiftover_srcs = impl/halWiggleLiftoverMain.cpp
 halWiggleLiftover_objs = ${halWiggleLiftover_srcs:%.cpp=${modObjDir}/%.o}
-srcs = ${libHalLiftover_srcs} ${halLiftover_srcs} ${halWiggleLiftover_srcs}
+halLiftoverTests_srcs = tests/halLiftoverTests.cpp
+halLiftoverTests_objs = ${halLiftoverTests_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${libHalLiftover_srcs} ${halLiftover_srcs} ${halWiggleLiftover_srcs} ${halLiftover_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
-progs = ${binDir}/halLiftover ${binDir}/halWiggleLiftover
+progs = ${binDir}/halLiftover ${binDir}/halWiggleLiftover ${binDir}/halLiftoverTests
 otherLibs = ${libHalLiftover}
+
+# tests use api/tests/halAlignmentTest
+inclSpec += -I${rootDir}/api/tests
+otherLibs += ${rootDir}/objs/api/tests/halAlignmentTest.o ${rootDir}/objs/api/tests/halAlignmentInstanceTest.o
 
 all : libs progs
 libs: ${libHalLiftover}
 progs: ${progs}
 
-clean : 
-	rm -f ${libHalLiftover} ${objs} ${progs} ${depends}
-test:
+clean: 
+	rm -rf ${libHalLiftover} ${objs} ${progs} ${depends} output
+
+test: unitTests halLiftoverBedTest halLiftoverPslTest
+
+unitTests:
+	${binDir}/halLiftoverTests 
+
+halLiftoverBedTest: output/small.hdf5.hal
+	${binDir}/halLiftover output/small.hdf5.hal Genome_0 tests/input/test1.bed Genome_2 output/$@.bed
+	diff -u tests/expected/$@.bed output/$@.bed
+
+halLiftoverPslTest: output/small.hdf5.hal
+	${binDir}/halLiftover --outPSL output/small.hdf5.hal Genome_0 tests/input/test1.bed Genome_2 output/$@.psl
+	diff -u tests/expected/$@.psl output/$@.psl
+
+output/small.hdf5.hal: ../bin/halRandGen
+	@mkdir -p output
+	../bin/halRandGen --preset small --seed 0 --testRand --format hdf5 output/small.hdf5.hal
+
+../bin/halRandGen:
+	cd ../randgen && ${MAKE}
 
 include ${rootDir}/rules.mk
 

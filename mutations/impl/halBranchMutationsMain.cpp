@@ -231,14 +231,14 @@ int main(int argc, char **argv) {
                     if (refSequence != NULL && length <= refSequence->getSequenceLength()) {
                         start = refSequence->getStartPosition() + start;
                         BranchMutations mutations;
-                        mutations.analyzeBranch(alignment.get(), maxGap, nThreshold, refBedStream, parentBedStream,
+                        mutations.analyzeBranch(alignment, maxGap, nThreshold, refBedStream, parentBedStream,
                                                 snpBedStream, delBreakBedStream, refGenome, start, length);
                     }
                 }
             }
         } else {
             BranchMutations mutations;
-            mutations.analyzeBranch(alignment.get(), maxGap, nThreshold, refBedStream, parentBedStream, snpBedStream,
+            mutations.analyzeBranch(alignment, maxGap, nThreshold, refBedStream, parentBedStream, snpBedStream,
                                     delBreakBedStream, refGenome, start, length);
         }
         if (newRef) {

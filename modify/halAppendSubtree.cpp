@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
         optionsParser.printUsage(cerr);
         return 1;
     }
-    AlignmentPtr mainAlignment(openHalAlignment(mainPath, &optionsParser));
+    AlignmentPtr mainAlignment(openHalAlignment(mainPath, &optionsParser, READ_ACCESS | WRITE_ACCESS));
     AlignmentConstPtr appendAlignment(openHalAlignment(appendPath, &optionsParser));
     AlignmentConstPtr bridgeAlignment;
 

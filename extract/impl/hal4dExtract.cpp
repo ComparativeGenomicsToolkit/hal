@@ -20,22 +20,18 @@ Extract4d::Extract4d() {
 Extract4d::~Extract4d() {
 }
 
-void Extract4d::run(const Genome *refGenome, istream *inBedStream, ostream *outBedStream, int bedVersion, bool conserved) {
+void Extract4d::run(const Genome *refGenome, istream *inBedStream, ostream *outBedStream, bool conserved) {
     _refGenome = refGenome;
     _outBedStream = outBedStream;
-    _bedVersion = bedVersion;
-    if (_bedVersion == -1) {
-        _bedVersion = getBedVersion(inBedStream);
-    }
     _conserved = conserved;
-    scan(inBedStream, _bedVersion);
+    scan(inBedStream);
 }
 
 void Extract4d::visitLine() {
     _outBedLines.clear();
     _refSequence = _refGenome->getSequence(_bedLine._chrName);
     if (_refSequence != NULL) {
-        if (_bedVersion <= 9) {
+        if (_bedLine._version <= 9) {
             throw hal_exception("Only compatible with BED12 input. 4d sites are sensitive to frame."
                                 " Even if your genes are all single-exon, please convert them "
                                 "to BED12 first.");
@@ -169,6 +165,6 @@ void Extract4d::extractBlocks4d(bool conserved) {
 
 void Extract4d::write() {
     for (size_t i = 0; i < _outBedLines.size(); ++i) {
-        _outBedLines[i].write(*_outBedStream, _bedVersion);
+        _outBedLines[i].write(*_outBedStream);
     }
 }

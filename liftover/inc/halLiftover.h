@@ -23,9 +23,9 @@ namespace hal {
         virtual ~Liftover();
 
         void convert(const Alignment *alignment, const Genome *srcGenome, std::istream *inputFile, const Genome *tgtGenome,
-                     std::ostream *outputFile, int inBedVersion = -1, int outBedVersion = -1, bool addExtraColumns = false,
+                     std::ostream *outputFile, bool addExtraColumns = false,
                      bool traverseDupes = true, bool outPSL = false, bool outPSLWithName = false,
-                     const std::locale *inLocale = NULL, const Genome *coalescenceLimit = NULL);
+                     const Genome *coalescenceLimit = NULL);
 
       protected:
         typedef std::list<BedLine> BedList;
@@ -49,11 +49,8 @@ namespace hal {
         bool _addExtraColumns;
         bool _traverseDupes;
         BedList _outBedLines;
-        int _inBedVersion;
-        int _outBedVersion;
         bool _outPSL;
         bool _outPSLWithName;
-        const std::locale *_inLocale;
 
         BedList _mappedBlocks;
 

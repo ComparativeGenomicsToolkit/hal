@@ -64,6 +64,9 @@ ${testMmapHal}: ${progs} ${binDir}/halRandGen
 	@mkdir -p $(dir $@)
 	${binDir}/halRandGen ${randGenArgs} --format mmap $@
 
+${binDir}/halRandGen:
+	cd ../randgen && ${MAKE}
+
 
 include ${rootDir}/rules.mk
 

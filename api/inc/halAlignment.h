@@ -59,11 +59,13 @@ namespace hal {
                                      double upperBranchLength) = 0;
 
         /** Open an exsting genome for reading
-         * @param name Name of genome to open */
+         * @param name Name of genome to open
+         * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
         virtual const Genome *openGenome(const std::string &name) const = 0;
 
         /** Open an existing genome for reading and updating
-         * @param name Name of genome to open */
+         * @param name Name of genome to open.
+         * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
         virtual Genome *openGenome(const std::string &name) = 0;
 
         /** Close an open genome.  All pointers to this genome become

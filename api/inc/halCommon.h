@@ -36,6 +36,9 @@ namespace hal {
     /** C++ style strtok-type function.  Can't remember why I wrote it */
     std::vector<std::string> chopString(const std::string &inString, const std::string &separator);
 
+    /** convert a string to an integer */
+    hal_index_t strToInt(const std::string &str);
+    
     /** Get the DNA reverse complement of a character.
      * If the input is not a nucleotide, then just return it as is
      * (ie no error checking) */

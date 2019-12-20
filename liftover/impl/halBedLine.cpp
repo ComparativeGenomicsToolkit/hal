@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include "halBedLine.h"
+#include "halCommon.h"
 
 using namespace std;
 using namespace hal;
@@ -21,168 +22,101 @@ BedLine::BedLine() : _start(NULL_INDEX), _end(NULL_INDEX), _strand('+'), _versio
 BedLine::~BedLine() {
 }
 
-istream &BedLine::read(istream &is, int version, string &lineBuffer) {
-    _version = version;
+istream &BedLine::read(istream &is, string &lineBuffer) {
     std::getline(is, lineBuffer);
-    stringstream ss(lineBuffer);
-    ss.imbue(is.getloc());
-    ss >> _chrName;
-    if (ss.bad() || ss.fail()) {
-        throw hal_exception("Error scanning BED chrom");
+    std::vector<std::string> row = chopString(lineBuffer, "\t");
+    if (row.size() < 3) {
+        throw hal_exception("Expected at least three columns in BED record: " + lineBuffer);
     }
-    ss >> _start;
-    if (ss.bad() || ss.fail()) {
-        throw hal_exception("Error scanning BED chromStart");
+    _version = min(int(row.size()), 12);
+    _chrName = row[0];
+    _start = strToInt(row[1]);
+    _end = strToInt(row[2]);
+    if (_start >= _end) {
+        throw hal_exception("Error zero or negative length BED range: " + lineBuffer);
     }
-    ss >> _end;
-    if (ss.bad() || ss.fail()) {
-        throw hal_exception("Error scanning BED chromEnd");
+    if (row.size() > 3) {
+        _name = row[3];
     }
-    if (_version > 3) {
-        ss >> _name;
-        if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED name");
-        }
+    if (row.size() > 4) {
+        _score = strToInt(row[4]);
     }
-    if (_version > 4) {
-        ss >> _score;
-        if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED score");
-        }
-    }
-    if (_version > 5) {
-        ss >> _strand;
-        if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED strand");
-        }
+    if (row.size() > 5) {
+        _strand = row[5][0];
         if (_strand != '.' && _strand != '+' && _strand != '-') {
-            throw hal_exception("Strand character must be + or - or .");
+            throw hal_exception("Strand character must be + or - or ." + lineBuffer);
         }
     }
-    if (_version > 6) {
-        ss >> _thickStart;
-        if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED thickStart");
-        }
+    if (row.size() > 6) {
+        _thickStart = strToInt(row[6]);
     }
-    if (_version > 7) {
-        ss >> _thickEnd;
-        if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED thickEnd");
-        }
+    if (row.size() > 7) {
+        _thickEnd = strToInt(row[7]);
     }
-    if (_version > 8) {
-        string rgb;
-        ss >> rgb;
-        if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED itemRGB");
-        }
-        vector<string> rgbTokens = chopString(rgb, ",");
+   if (row.size() > 8) {
+        vector<string> rgbTokens = chopString(row[8], ",");
         if (rgbTokens.size() > 3 || rgbTokens.size() == 0) {
-            throw hal_exception("Error parsing BED itemRGB");
+            throw hal_exception("Error parsing BED itemRGB: " + lineBuffer);
         }
-        stringstream rgbssr(rgbTokens[0]);
-        rgbssr >> _itemR;
-        if (rgbssr.bad()) {
-            throw hal_exception("Error parsing BED itemRGB");
-        }
-        _itemG = _itemR;
-        _itemB = _itemR;
+        _itemR = strToInt(rgbTokens[0]);
+        _itemG = _itemB = _itemR;
         if (rgbTokens.size() > 1) {
-            stringstream rgbssg(rgbTokens[1]);
-            rgbssg >> _itemG;
-            if (rgbssg.bad()) {
-                throw hal_exception("Error parsing BED itemRGB");
-            }
+            _itemG = strToInt(rgbTokens[1]);
         }
         if (rgbTokens.size() == 3) {
-            stringstream rgbssb(rgbTokens[2]);
-            rgbssb >> _itemB;
-            if (rgbssb.bad()) {
-                throw hal_exception("Error parsing BED itemRGB");
+            _itemB= strToInt(rgbTokens[2]);;
+        }
+    }
+    if (row.size() > 9) {
+        if (row.size() < 12) {
+            throw hal_exception("Error parsing BED, insufficient columns for blocks: " + lineBuffer);
+        }
+        size_t numBlocks = strToInt(row[9]);
+        vector<string> blockSizes = chopString(row[10], ",");
+        if (blockSizes.size() != numBlocks) {
+            throw hal_exception("Error parsing BED blockSizes: " + lineBuffer);
+        }
+        vector<string> blockStarts = chopString(row[11], ",");
+        if (blockStarts.size() != numBlocks) {
+            throw hal_exception("Error parsing BED blockStarts: " + lineBuffer);
+        }
+        _blocks.resize(numBlocks);
+        for (size_t i = 0; i < numBlocks; ++i) {
+            _blocks[i]._length = strToInt(blockSizes[i]);
+            _blocks[i]._start = strToInt(blockStarts[i]);
+            if (_start + _blocks[i]._start + _blocks[i]._length > _end) {
+                throw hal_exception("Error BED block out of range: " + lineBuffer);
             }
         }
     }
-    if (_version > 9) {
-        size_t numBlocks;
-        ss >> numBlocks;
-        if (ss.bad() || ss.fail()) {
-            throw hal_exception("Error scanning BED blockCount");
-        }
-        if (numBlocks > 0) {
-            string blockSizes;
-            ss >> blockSizes;
-            if (ss.bad() || ss.fail()) {
-                throw hal_exception("Error scanning BED blockSizes");
-            }
-            string blockStarts;
-            ss >> blockStarts;
-            if (ss.bad() || ss.fail()) {
-                throw hal_exception("Error scanning BED blockStarts");
-            }
-            _blocks.resize(numBlocks);
-            vector<string> sizeBuf = chopString(blockSizes, ",");
-            if (sizeBuf.size() != numBlocks) {
-                throw hal_exception("Error scanning BED blockSizes");
-            }
-            vector<string> startBuf = chopString(blockStarts, ",");
-            if (startBuf.size() != numBlocks) {
-                throw hal_exception("Error scanning BED blockStarts");
-            }
-            for (size_t i = 0; i < numBlocks; ++i) {
-                BedBlock &block = _blocks[i];
-                stringstream ss1(sizeBuf[i]);
-                ss1 >> block._length;
-                if (ss1.bad()) {
-                    throw hal_exception("Error scanning BED blockSizes");
-                }
-                stringstream ss2(startBuf[i]);
-                ss2 >> block._start;
-                if (ss2.bad()) {
-                    throw hal_exception("Error scanning BED blockStarts");
-                }
-                if (_start + block._start + block._length > _end) {
-                    throw hal_exception("Error BED block out of range");
-                }
-            }
-        }
-    }
-    _extra.clear();
-    while (ss.good()) {
-        string extraBuf;
-        ss >> extraBuf;
-        if (extraBuf.length() > 0) {
-            _extra.push_back(extraBuf);
-        }
+    for (int i = 12; i < row.size(); i++) {
+        _extra.push_back(row[i]);
     }
     return is;
 }
 
-ostream &BedLine::write(ostream &os, int version) {
-    if (version <= 0) {
-        version = _version;
-    }
+ostream &BedLine::write(ostream &os) {
     os << _chrName << '\t' << _start << '\t' << _end;
 
-    if (version > 3) {
+    if (_version > 3) {
         os << '\t' << _name;
     }
-    if (version > 4) {
+    if (_version > 4) {
         os << '\t' << _score;
     }
-    if (version > 5) {
+    if (_version > 5) {
         os << '\t' << _strand;
     }
-    if (version > 6) {
+    if (_version > 6) {
         os << '\t' << _thickStart;
     }
-    if (version > 7) {
+    if (_version > 7) {
         os << '\t' << _thickEnd;
     }
-    if (version > 8) {
+    if (_version > 8) {
         os << '\t' << _itemR << ',' << _itemG << ',' << _itemB;
     }
-    if (version > 9) {
+    if (_version > 9) {
         os << '\t' << _blocks.size();
         for (size_t i = 0; i < _blocks.size(); ++i) {
             if (i == 0) {

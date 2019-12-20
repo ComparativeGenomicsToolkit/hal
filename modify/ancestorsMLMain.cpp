@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
     if (bedPath != "") {
         AncestorsMLBed bedScanner(mod, alignment, genome, nameToId, threshold, printWrites, outputPosts);
-        bedScanner.scan(bedPath, -1);
+        bedScanner.scan(bedPath);
         return 0;
     }
 

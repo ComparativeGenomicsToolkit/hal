@@ -8,6 +8,7 @@
 #ifndef _HALLIFTOVERTESTS_H
 #define _HALLIFTOVERTESTS_H
 
+#include "hal.h"
 #include "halAlignmentTest.h"
 
 extern "C" {
@@ -17,6 +18,14 @@ extern "C" {
 using namespace hal;
 
 struct BedLiftoverTest : public AlignmentTest {
+    private:
+    void liftAndCheck(const Alignment *alignment,
+                      const Genome *srcGenome,
+                      const Genome *tgtGenome,
+                      const std::string& inBed,
+                      const std::string& expectBed,
+                      bool outPSL = false, bool outPSLWithName = false);
+    public:
     void createCallBack(Alignment *alignment);
     void checkCallBack(const Alignment *alignment);
     void testOneBranchLifts(const Alignment *alignment);

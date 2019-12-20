@@ -25,7 +25,7 @@ namespace hal {
                std::set<const Genome *> &targetSet, MafExport &mafExport);
         virtual ~MafBed();
 
-        void run(std::istream *bedStream, int bedVersion = -1);
+        void run(std::istream *bedStream);
 
       protected:
         virtual void visitLine();

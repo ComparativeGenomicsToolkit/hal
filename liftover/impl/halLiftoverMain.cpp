@@ -7,7 +7,6 @@
 
 #include "halBlockLiftover.h"
 #include "halColumnLiftover.h"
-#include "halTabFacet.h"
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -27,40 +26,15 @@ static void initParser(CLParser &optionsParser) {
                                            " graph.",
                                 false);
     optionsParser.addOptionFlag("append", "append results to tgtBed", false);
-    optionsParser.addOption("inBedVersion", "bed version of input file "
-                                            "as integer between 3 and 9 or 12 reflecting "
-                                            "the number of columns (see bed "
-                                            "format specification for more details). Will "
-                                            "be autodetected by default.",
-                            0);
-    optionsParser.addOption("outBedVersion", "bed version of output file "
-                                             "as integer between 3 and 9 or 12 reflecting "
-                                             "the number of columns (see bed "
-                                             "format specification for more details). Will "
-                                             "be same as input by default.",
-                            0);
     optionsParser.addOption("coalescenceLimit", "coalescence limit genome:"
                                                 " the genome at or above the MRCA of source"
                                                 " and target at which we stop looking for"
                                                 " homologies (default: MRCA)",
                             "");
-    optionsParser.addOptionFlag("outPSL", "write output in PSL instead of "
-                                          "bed format. overrides --outBedVersion when "
-                                          "specified.",
+    optionsParser.addOptionFlag("outPSL", "write output in PSL instead of bed format",
                                 false);
     optionsParser.addOptionFlag("outPSLWithName", "write output as input BED name followed by PSL line instead of "
-                                                  "bed format. overrides --outBedVersion when "
-                                                  "specified.",
-                                false);
-    optionsParser.addOptionFlag("keepExtra", "keep extra columns. these are "
-                                             "columns in the input beyond the specified or "
-                                             "detected bed version, and which are cut by "
-                                             "default.",
-                                false);
-    optionsParser.addOptionFlag("tab", "input is tab-separated. this allows"
-                                       " column entries to contain spaces.  if this"
-                                       " flag is not set, both spaces and tabs are"
-                                       " used to separate input columns.",
+                                                  "bed format",
                                 false);
     optionsParser.setDescription("Map BED genome interval coordinates between "
                                  "two genomes.");
@@ -78,12 +52,8 @@ int main(int argc, char **argv) {
     string coalescenceLimitName;
     bool noDupes;
     bool append;
-    int inBedVersion;
-    int outBedVersion;
-    bool keepExtra;
     bool outPSL;
     bool outPSLWithName;
-    bool tab;
     try {
         optionsParser.parseOptions(argc, argv);
         halPath = optionsParser.getArgument<string>("halFile");
@@ -94,12 +64,8 @@ int main(int argc, char **argv) {
         coalescenceLimitName = optionsParser.getOption<string>("coalescenceLimit");
         noDupes = optionsParser.getFlag("noDupes");
         append = optionsParser.getFlag("append");
-        inBedVersion = optionsParser.getOption<int>("inBedVersion");
-        outBedVersion = optionsParser.getOption<int>("outBedVersion");
-        keepExtra = optionsParser.getFlag("keepExtra");
         outPSL = optionsParser.getFlag("outPSL");
         outPSLWithName = optionsParser.getFlag("outPSLWithName");
-        tab = optionsParser.getFlag("tab");
     } catch (exception &e) {
         cerr << e.what() << endl;
         optionsParser.printUsage(cerr);
@@ -110,10 +76,6 @@ int main(int argc, char **argv) {
         if (outPSLWithName == true) {
             outPSL = true;
         }
-        if (outPSL == true) {
-            outBedVersion = 12;
-        }
-
         AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
         if (alignment->getNumGenomes() == 0) {
             throw hal_exception("hal alignment is empty");
@@ -161,18 +123,10 @@ int main(int argc, char **argv) {
             }
         }
 
-        locale *inLocale = NULL;
-        if (tab == true) {
-            inLocale = new locale(cin.getloc(), new TabSepFacet(cin.getloc()));
-            assert(std::isspace('\t', *inLocale) == true);
-            assert(std::isspace(' ', *inLocale) == false);
-        }
-
         BlockLiftover liftover;
-        liftover.convert(alignment.get(), srcGenome, srcBedPtr, tgtGenome, tgtBedPtr, inBedVersion, outBedVersion, keepExtra,
-                         !noDupes, outPSL, outPSLWithName, inLocale, coalescenceLimit);
+        liftover.convert(alignment.get(), srcGenome, srcBedPtr, tgtGenome, tgtBedPtr, false,
+                         !noDupes, outPSL, outPSLWithName, coalescenceLimit);
 
-        delete inLocale;
 
     } catch (hal_exception &e) {
         cerr << "hal exception caught: " << e.what() << endl;

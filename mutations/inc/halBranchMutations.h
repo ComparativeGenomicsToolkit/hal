@@ -21,7 +21,7 @@ namespace hal {
         virtual ~BranchMutations();
 
         void printCsv(std::ostream &outStream) const;
-        void analyzeBranch(const Alignment *alignment, hal_size_t gapThreshold, double nThreshold, std::ostream *refBedStream,
+        void analyzeBranch(AlignmentConstPtr alignment, hal_size_t gapThreshold, double nThreshold, std::ostream *refBedStream,
                            std::ostream *parentBedStream, std::ostream *snpBedStream, std::ostream *delBreakBedStream,
                            const Genome *reference, hal_index_t startPosition, hal_size_t length);
 

@@ -25,7 +25,7 @@ namespace hal {
                   hal_size_t length, hal_size_t step, PhyloP &phyloP, std::ostream &outStream);
         virtual ~PhyloPBed();
 
-        void run(std::istream *bedStream, int bedVersion = -1);
+        void run(std::istream *bedStream);
 
       protected:
         virtual void visitLine();
