@@ -12,48 +12,6 @@
 using namespace std;
 using namespace hal;
 
-MafExport::MafExport() : _maxRefGap(0), _noDupes(false), _printTree(false) {
-}
-
-MafExport::~MafExport() {
-}
-
-void MafExport::setMaxRefGap(hal_size_t maxRefGap) {
-    _maxRefGap = maxRefGap;
-}
-
-void MafExport::setNoDupes(bool noDupes) {
-    _noDupes = noDupes;
-}
-
-void MafExport::setNoAncestors(bool noAncestors) {
-    _noAncestors = noAncestors;
-}
-
-void MafExport::setUcscNames(bool ucscNames) {
-    _ucscNames = ucscNames;
-}
-
-void MafExport::setUnique(bool unique) {
-    _unique = unique;
-}
-
-void MafExport::setAppend(bool append) {
-    _append = append;
-}
-
-void MafExport::setMaxBlockLength(hal_index_t maxLength) {
-    _mafBlock.setMaxLength(maxLength);
-}
-
-void MafExport::setPrintTree(bool printTree) {
-    _printTree = printTree;
-}
-
-void MafExport::setOnlyOrthologs(bool onlyOrthologs) {
-    _onlyOrthologs = onlyOrthologs;
-}
-
 void MafExport::writeHeader() {
     assert(_mafStream != NULL);
     if (_mafStream->tellp() == streampos(0)) {
@@ -110,7 +68,7 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
                 if (numBlocks++ % 1000 == 0) {
                     colIt->defragment();
                 }
-                if (appendCount > 0) {
+                if ((appendCount > 0) and (_keepEmptyRefBlocks or (not _mafBlock.referenceIsAllGaps()))) {
                     mafStream << _mafBlock << '\n';
                 }
                 _mafBlock.initBlock(colIt, _ucscNames, _printTree);
@@ -123,7 +81,7 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
     // if nothing was ever added (seems to happen in corner case where
     // all columns violate unique), mafBlock ostream operator will crash
     // so we do following check
-    if (appendCount > 0) {
+    if ((appendCount > 0) and (_keepEmptyRefBlocks or (not _mafBlock.referenceIsAllGaps()))) {
         mafStream << _mafBlock << endl;
     }
 }

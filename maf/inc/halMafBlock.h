@@ -21,6 +21,8 @@ namespace hal {
     // used to use std::string but appending was too slow
     // though sometimes i think instruments' cpu profiler has been lying
     // to me and i did all this for nothing.
+    // markd: I suspect setting string capacity high might fix the performance
+    // problem.
     class MafBlockString {
       public:
         MafBlockString() : _buf(NULL), _cap(1024), _len(0) {
@@ -71,6 +73,15 @@ namespace hal {
         MafBlockEntry(std::vector<MafBlockString *> &buffers);
         ~MafBlockEntry();
 
+        /* is the string all gaps */
+        bool allGaps() const {
+            for (const char *p = _sequence->str(); *p != '\0'; p++) {
+                if (*p != '-') {
+                    return false;
+                }
+            }
+            return true;
+        }
         std::vector<MafBlockString *> &_buffers;
         std::string _name;
         hal_index_t _start;
@@ -97,6 +108,9 @@ namespace hal {
         void appendColumn(ColumnIteratorPtr col);
         bool canAppendColumn(ColumnIteratorPtr col);
         void setMaxLength(hal_index_t maxLen);
+        bool referenceIsAllGaps() const {
+            return (_reference != _entries.end()) and (_reference->second->allGaps());
+        }
 
       protected:
         void resetEntries();
