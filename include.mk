@@ -114,6 +114,4 @@ endif
 
 # test includes and libs uses buy several modules
 halApiTestIncl = ${rootDir}/api/tests
-halApiTestSupportLibs = ${objDir}/api/tests/halAlignmentTest.o ${objDir}/api/tests/halBottomSegmentTest.o \
-    ${objDir}/api/tests/halTopSegmentTest.o ${objDir}/api/tests/halAlignmentInstanceTest.o \
-    ${objDir}/api/tests/halRandomData.o
+halApiTestSupportLibs = ${objDir}/api/tests/halApiTestSupport.o ${objDir}/api/tests/halRandomData.o

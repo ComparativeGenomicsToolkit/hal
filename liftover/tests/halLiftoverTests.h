@@ -9,7 +9,7 @@
 #define _HALLIFTOVERTESTS_H
 
 #include "hal.h"
-#include "halAlignmentTest.h"
+#include "halApiTestSupport.h"
 
 extern "C" {
 #include "CuTest.h"

@@ -5,9 +5,8 @@
  * Released under the MIT license, see LICENSE.txt
  */
 
-#include "halAlignmentTest.h"
+#include "halApiTestSupport.h"
 #include "halAlignment.h"
-#include "halAlignmentInstanceTest.h"
 #include "halGenome.h"
 #include <cstdlib>
 #include <iostream>
@@ -19,89 +18,6 @@ extern "C" {
 
 using namespace std;
 using namespace hal;
-
-/* Global set from command line containing the storage drives to use.  * This
- * allows parallelizing tests.  If empty, all storage drives are tested.
- */
-std::string storageDriverToTest;
-
-string AlignmentTest::randomString(hal_size_t length) {
-    string s;
-    s.resize(length);
-    for (hal_size_t i = 0; i < length; ++i) {
-        int r = rand() % 10;
-        char c;
-        switch (r) {
-        case 0:
-            c = 'a';
-            break;
-        case 1:
-            c = 'c';
-            break;
-        case 2:
-            c = 'g';
-            break;
-        case 3:
-            c = 't';
-            break;
-        case 4:
-            c = 'A';
-            break;
-        case 5:
-            c = 'C';
-            break;
-        case 6:
-            c = 'G';
-            break;
-        case 7:
-            c = 'T';
-            break;
-        case 8:
-            c = 'N';
-            break;
-        case 9:
-            c = 'n';
-            break;
-        default:
-            c = '?';
-            break;
-        }
-        s[i] = c;
-    }
-    return s;
-}
-
-void AlignmentTest::check(CuTest *testCase) {
-    _testCase = testCase;
-    try {
-        if (storageDriverToTest.empty() or (storageDriverToTest == STORAGE_FORMAT_HDF5)) {
-            checkOne(testCase, STORAGE_FORMAT_HDF5);
-        }
-        if (storageDriverToTest.empty() or (storageDriverToTest == STORAGE_FORMAT_MMAP)) {
-            checkOne(testCase, STORAGE_FORMAT_MMAP);
-        }
-    } catch (const exception &e) {
-        CuFail(testCase, stString_print("Caught exception while testing: %s", e.what()));
-    }
-}
-
-void AlignmentTest::checkOne(CuTest *testCase, const std::string &storageFormat) {
-    string alignmentPath = getTempFile();
-
-    // test with created
-    AlignmentPtr calignment(getTestAlignmentInstances(storageFormat, alignmentPath, CREATE_ACCESS));
-    _createPath = alignmentPath;
-    createCallBack(calignment.get());
-    calignment->close();
-
-    // test with existing alignment
-    AlignmentPtr ralignment(getTestAlignmentInstances(storageFormat, alignmentPath, READ_ACCESS));
-    _checkPath = alignmentPath;
-    checkCallBack(ralignment.get());
-    ralignment->close();
-
-    ::unlink(alignmentPath.c_str());
-}
 
 class AlignmentTestTrees : public AlignmentTest {
   public:
@@ -145,13 +61,17 @@ class AlignmentTestTrees : public AlignmentTest {
     }
 };
 
-void halAlignmentTestTrees(CuTest *testCase) {
+static void halAlignmentTestTrees(CuTest *testCase) {
     AlignmentTestTrees tester;
     tester.check(testCase);
 }
 
-CuSuite *halAlignmentTestSuite(void) {
+static CuSuite *halAlignmentTestSuite(void) {
     CuSuite *suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, halAlignmentTestTrees);
     return suite;
+}
+
+int main(int argc, char *argv[]) {
+    return runHalTestSuite(argc, argv, halAlignmentTestSuite());
 }

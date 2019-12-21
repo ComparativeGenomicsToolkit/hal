@@ -10,9 +10,9 @@
 #include <string>
 
 #include "hal.h"
-#include "halBottomSegmentTest.h"
+#include "halApiTestSupport.h"
+#include "halSegmentTestSupport.h"
 #include "halCLParser.h"
-#include "halTopSegmentTest.h"
 
 using namespace std;
 using namespace hal;

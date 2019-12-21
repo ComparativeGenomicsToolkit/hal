@@ -10,7 +10,7 @@
 #define _HALMAFBLOCKTEST_H
 
 #include "hal.h"
-#include "halAlignmentTest.h"
+#include "halApiTestSupport.h"
 #include "halMafTests.h"
 #include <vector>
 

@@ -16,11 +16,11 @@ srcs = ${libHalLiftover_srcs} ${halLiftover_srcs} ${halWiggleLiftover_srcs} ${ha
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
 progs = ${binDir}/halLiftover ${binDir}/halWiggleLiftover ${binDir}/halLiftoverTests
-otherLibs = ${libHalLiftover}
+otherLibs += ${libHalLiftover} ${halApiTestSupportLibs}
 
 # tests use api/tests/halAlignmentTest
 inclSpec += -I${rootDir}/api/tests
-otherLibs += ${rootDir}/objs/api/tests/halAlignmentTest.o ${rootDir}/objs/api/tests/halAlignmentInstanceTest.o
+otherLibs += ${halApiTestSupportLib}
 
 all : libs progs
 libs: ${libHalLiftover}
