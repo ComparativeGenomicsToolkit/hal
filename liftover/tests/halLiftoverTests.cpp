@@ -4,6 +4,7 @@
  *
  * Released under the MIT license, see LICENSE.txt
  */
+#include "halApiTestSupport.h"
 #include "halLiftoverTests.h"
 #include "halBlockLiftover.h"
 #include <cstdio>

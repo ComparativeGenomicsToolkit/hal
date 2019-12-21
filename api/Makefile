@@ -7,10 +7,31 @@ ifdef ENABLE_UDC
   libHal_c_srcs = impl/udc2.c
 endif
 libHal_objs = ${libHal_srcs:%.cpp=${modObjDir}/%.o} ${libHal_c_srcs:%.c=${modObjDir}/%.o}
-halApiTests_srcs = $(wildcard tests/*.cpp)
-halApiTests_objs = ${halApiTests_srcs:%.cpp=${modObjDir}/%.o}
+
 halHdf5Tests_srcs = $(wildcard hdf5_tests/*.cpp)
 halHdf5Tests_objs = ${halHdf5Tests_srcs:%.cpp=${modObjDir}/%.o}
+halHdf5Tests_progs = ${binDir}/halHdf5Tests
+
+halApiTests_srcs = $(wildcard tests/*.cpp)
+halApiTests_objs = ${halApiTests_srcs:%.cpp=${modObjDir}/%.o}
+
+halApiTest_names = halAlignmentTreesTest \
+	halBottomSegmentTest \
+	halColumnIteratorTest \
+	halGappedSegmentIteratorTest \
+	halGenomeTest \
+	halMappedSegmentTest \
+	halMetaDataTest \
+	halRearrangementTest \
+	halSequenceTest \
+	halTopSegmentTest \
+	halValidateTest
+halApiTest_progs = ${halApiTest_names:%=${binDir}/%}
+
+# make magic to generate the variables containing the objects for the link rule.
+# for each prog name this generates a _objs variable (e.g. halValidateTest_objs)
+$(foreach prog,${halApiTest_names},$(eval ${prog}_objs = ${modObjDir}/tests/${prog}.o ${halApiTestSupportLibs}))
+
 ifdef ENABLE_UDC
    udc2Tests_srcs = $(wildcard tests/udc2Test.c)
    udc2Tests_objs = ${udc2Tests_srcs:%.c=${modObjDir}/%.o}
@@ -20,7 +41,7 @@ c_srcs = ${udc2Tests_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o} ${c_srcs:%.c=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend} ${c_srcs:%.c=%.depend}
 
-progs =  ${binDir}/halApiTests ${binDir}/halHdf5Tests
+progs = ${halHdf5Tests_progs} ${halApiTest_progs}
 inclSpec += -Ihdf5_impl -Immap_impl
 ifdef ENABLE_UDC
    # FIXME: standarize var names
@@ -41,10 +62,16 @@ test: halHdf5Tests halApiTests
 halHdf5Tests: all
 	${binDir}/halHdf5Tests
 
-halApiTests: hdf5.halApiTests mmap.halApiTests
 
-%.halApiTests:
-	${binDir}/halApiTests $*
+halApiTests: hdf5.halApiTestsStorage mmap.halApiTestsStorage
+
+%.halApiTestsStorage:
+	${MAKE} runHaltApiTest halStorageFormat=$*
+
+runHaltApiTest: ${halApiTest_names:%=%.runHaltApiTest}
+
+%.runHaltApiTest:
+	${binDir}/$* ${halStorageFormat}
 
 doxy :
 	doxygen doc/doxy.cfg
