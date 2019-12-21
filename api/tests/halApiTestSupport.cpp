@@ -110,9 +110,10 @@ string AlignmentTest::randomString(hal_size_t length) {
 void AlignmentTest::check(CuTest *testCase) {
     _testCase = testCase;
     try {
-        if (storageDriverToTest == STORAGE_FORMAT_HDF5) {
+        if (storageDriverToTest.empty() or (storageDriverToTest == STORAGE_FORMAT_HDF5)) {
             checkOne(testCase, STORAGE_FORMAT_HDF5);
-        } else if (storageDriverToTest == STORAGE_FORMAT_MMAP) {
+        }
+        if (storageDriverToTest.empty() or (storageDriverToTest == STORAGE_FORMAT_MMAP)) {
             checkOne(testCase, STORAGE_FORMAT_MMAP);
         }
     } catch (const exception &e) {
