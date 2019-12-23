@@ -8,7 +8,7 @@
 #ifndef _HALMAFTESTS_H
 #define _HALMAFTESTS_H
 
-#include "halAlignmentTest.h"
+#include "halApiTestSupport.h"
 
 extern "C" {
 #include "CuTest.h"

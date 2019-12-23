@@ -30,7 +30,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser));
+    AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser,
+                                            WRITE_ACCESS | READ_ACCESS));
     if (genomeName == "") {
         // No genome to set metadata for, so set the alignment-wide metadata.
         MetaData *metadata = alignment->getMetaData();

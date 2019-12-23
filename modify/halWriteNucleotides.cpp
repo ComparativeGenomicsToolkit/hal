@@ -28,7 +28,8 @@ int main(int argc, char *argv[]) {
         optionsParser.printUsage(cerr);
         return 1;
     }
-    AlignmentPtr alignment(openHalAlignment(inPath, &optionsParser));
+    AlignmentPtr alignment(openHalAlignment(inPath, &optionsParser,
+                                            READ_ACCESS | WRITE_ACCESS));
 
     ifstream tsv(tsvFile.c_str());
     string line;

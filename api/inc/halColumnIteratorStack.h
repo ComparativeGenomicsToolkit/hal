@@ -46,13 +46,21 @@ namespace hal {
 
         class Entry {
           public:
-            Entry(const Sequence *seq, hal_index_t first, hal_index_t index, hal_index_t last, hal_size_t size)
-                : _sequence(seq), _firstIndex(first), _index(index), _lastIndex(last), _cumulativeSize(size) {
+            Entry(const Sequence *seq, hal_index_t first, hal_index_t index, hal_index_t last, hal_size_t size, bool reversed)
+                : _sequence(seq), _firstIndex(first), _index(index), _lastIndex(last), _cumulativeSize(size), _reversed(reversed) {
                 _top._entry = this;
                 _bottom._entry = this;
             }
             ~Entry() {
                 freeLinks();
+            }
+
+            bool pastEnd() const {
+                if (_reversed) {
+                    return _index < _firstIndex;
+                } else {
+                    return _index > _lastIndex;
+                }
             }
 
             LinkedTopIterator *newTop() {
@@ -95,24 +103,31 @@ namespace hal {
             LinkedBottomIterator _bottom;
             std::vector<LinkedTopIterator *> _topLinks;
             std::vector<LinkedBottomIterator *> _bottomLinks;
+            bool _reversed;
         };
 
       public:
         ~ColumnIteratorStack() {
             clear();
         }
-        void push(const Sequence *ref, hal_index_t index, hal_index_t lastIndex) {
+        void push(const Sequence *ref, hal_index_t index, hal_index_t lastIndex, bool reversed = false) {
             assert(lastIndex >= index);
             assert(ref != NULL);
             hal_size_t cumulative = 0;
             if (_stack.size() > 0) {
                 cumulative = top()->_cumulativeSize + lastIndex - index + 1;
             }
-            Entry *entry = new Entry(ref, index, index, lastIndex, cumulative);
+            Entry *entry = new Entry(ref, index, reversed ? lastIndex : index, lastIndex, cumulative, reversed);
             _stack.push_back(entry);
         }
         void pushStack(ColumnIteratorStack &otherStack) {
             for (size_t i = 0; i < otherStack.size(); ++i) {
+                _stack.push_back(otherStack[i]);
+            }
+            otherStack._stack.clear();
+        }
+        void pushStackReversed(ColumnIteratorStack &otherStack) {
+            for (int64_t i = otherStack.size() - 1; i >= 0; --i) {
                 _stack.push_back(otherStack[i]);
             }
             otherStack._stack.clear();

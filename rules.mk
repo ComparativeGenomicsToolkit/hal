@@ -24,7 +24,7 @@ ${modObjDir}/%.o: %.c
 	${CC} ${cflags} ${inclSpec} -c $< -o $@
 
 # compile a program.
-# $prog_objs - has object files specific for $prog
+# ${prog_objs} - has object files specific for ${prog}
 # otherLibs - other libraries to used
 .SECONDEXPANSION:
 ${binDir}/% : $${$$*_objs} ${libHal} ${otherLibs} ${basicLibsDependencies}

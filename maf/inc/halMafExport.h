@@ -18,9 +18,14 @@ namespace hal {
 
     class MafExport {
       public:
-        MafExport();
-
-        virtual ~MafExport();
+        MafExport():
+            _mafStream(NULL), _maxRefGap(0), _noDupes(false), _noAncestors(false),
+            _ucscNames(false), _unique(false), _append(false), _printTree(false),
+            _onlyOrthologs(false), _keepEmptyRefBlocks(false) {
+        }
+        
+        virtual ~MafExport() {
+        }
 
         void convertSequence(std::ostream &mafStream, AlignmentConstPtr alignment, const Sequence *seq,
                              hal_index_t startPosition, hal_size_t length, const std::set<const Genome *> &targets);
@@ -31,15 +36,36 @@ namespace hal {
         // effect, although noDupes will work.
         void convertEntireAlignment(std::ostream &mafStream, AlignmentConstPtr alignment);
 
-        void setMaxRefGap(hal_size_t maxRefGap);
-        void setNoDupes(bool noDupes);
-        void setNoAncestors(bool noAncestors);
-        void setUcscNames(bool ucscNames);
-        void setUnique(bool unique);
-        void setAppend(bool append);
-        void setMaxBlockLength(hal_index_t maxLength);
-        void setPrintTree(bool printTree);
-        void setOnlyOrthologs(bool onlyOrthologs);
+        void setMaxRefGap(hal_size_t maxRefGap) {
+            _maxRefGap = maxRefGap;
+        }
+        void setNoDupes(bool noDupes) {
+            _noDupes = noDupes;
+        }
+        void setNoAncestors(bool noAncestors) {
+            _noAncestors = noAncestors;
+        }
+        void setUcscNames(bool ucscNames) {
+            _ucscNames = ucscNames;
+        }
+        void setUnique(bool unique) {
+            _unique = unique;
+        }
+        void setAppend(bool append) {
+            _append = append;
+        }
+        void setMaxBlockLength(hal_index_t maxLength) {
+            _mafBlock.setMaxLength(maxLength);
+        }
+        void setPrintTree(bool printTree) {
+            _printTree = printTree;
+        }
+        void setOnlyOrthologs(bool onlyOrthologs) {
+            _onlyOrthologs = onlyOrthologs;
+        }
+        void setKeepEmptyRefBlocks(bool keepEmptyRefBlocks) {
+            _keepEmptyRefBlocks = keepEmptyRefBlocks;
+        }
 
       protected:
         void writeHeader();
@@ -56,6 +82,7 @@ namespace hal {
         bool _append;
         bool _printTree;
         bool _onlyOrthologs;
+        bool _keepEmptyRefBlocks;
     };
 }
 
