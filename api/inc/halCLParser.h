@@ -24,10 +24,11 @@ namespace hal {
      * flags. Ex: --overwrite
      * positional arugments. Ex: outfile.txt 100
      * in any combination.
-     * The idea is to use this a base class to derive common parsers for
-     * different hal implementations (ie just hdf5 for the time being)
-     * since any tool using hal (ex halCons, halValidate, halAppendCactusSubtree
-     * will have many common options.
+     *
+     * This adds a sect of standard options for HAL access.
+     *
+     * The mode option controls what standard options to add to the parser, it doesn't
+     * actually specified the access mode.
      */
     class CLParser {
       public:

@@ -47,7 +47,8 @@ int main(int argc, char *argv[]) {
         optionsParser.printUsage(cerr);
         return 1;
     }
-    AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser));
+    AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser,
+                                            WRITE_ACCESS | READ_ACCESS));
     stTree *newTree = stTree_parseNewickString(newickTree.c_str());
     // recursively update branches
     updateBranches(alignment.get(), alignment->openGenome(alignment->getRootName()), newTree);
