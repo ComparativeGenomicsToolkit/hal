@@ -393,7 +393,13 @@ bool ColumnIterator::handleInsertion(const TopSegmentIteratorPtr &inputTopSegIt)
                 _rearrangement->getLength() + _stack.top()->_cumulativeSize <= _maxInsertionLength) {
                 pair<hal_index_t, hal_index_t> insertedRange = _rearrangement->getInsertedRange();
                 assert((hal_size_t)(insertedRange.second - insertedRange.first) == _rearrangement->getLength() - 1);
+<<<<<<< HEAD
                 _insertionStack.push(_top->getTopSegment()->getSequence(), insertedRange.first, insertedRange.second, reversed);
+=======
+                if (_indelStack.size() == 0) {
+                    _indelStack.push(_top->getTopSegment()->getSequence(), insertedRange.first, insertedRange.second, reversed);
+                }
+>>>>>>> removed debugging code left in stomach
             }
         }
     }
