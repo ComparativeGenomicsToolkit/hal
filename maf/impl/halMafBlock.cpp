@@ -34,7 +34,7 @@ MafBlock::~MafBlock() {
 }
 
 void MafBlock::resetEntries() {
-    _reference = _entries.end();
+    _reference = NULL;
     _refIndex = NULL_INDEX;
     Entries::iterator i = _entries.begin();
     Entries::iterator next;
@@ -350,13 +350,13 @@ void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree) 
         }
     }
 
-    if (_reference == _entries.end()) {
+    if (_reference == NULL) {
         const Sequence *referenceSequence = col->getReferenceSequence();
         e = _entries.lower_bound(referenceSequence);
         if (e == _entries.end() || e->first != referenceSequence) {
             e = _entries.begin();
         }
-        _reference = e;
+        _reference = e->second;
         if (e->first == referenceSequence) {
             _refIndex = col->getReferenceSequencePosition();
         }
@@ -483,8 +483,7 @@ static void printTreeEntries(stTree *tree, ostream &os) {
 
 ostream &MafBlock::printBlockWithTree(ostream &os) const {
     // Sort tree so that the reference comes first.
-    MafBlockEntry *refEntry = _reference->second;
-    prioritizeNodeInTree(refEntry->_tree);
+    prioritizeNodeInTree(_reference->_tree);
 
     // Print tree as a block comment.
     char *treeString = stTree_getNewickTreeString(_tree);
@@ -500,20 +499,19 @@ ostream &MafBlock::printBlockWithTree(ostream &os) const {
 ostream &MafBlock::printBlock(ostream &os) const {
     os << "a\n";
 
-    Entries::const_iterator ref = _reference;
-    assert(_reference != _entries.end());
-    if (ref->second->_start == NULL_INDEX) {
+    assert(_reference != NULL);
+    if (_reference->_start == NULL_INDEX) {
         if (_refIndex != NULL_INDEX) {
-            ref->second->_start = _refIndex;
-            os << *ref->second;
-            ref->second->_start = NULL_INDEX;
+            _reference->_start = _refIndex;
+            os << *_reference;
+            _reference->_start = NULL_INDEX;
         }
     } else {
-        os << *ref->second;
+        os << *_reference;
     }
 
     for (Entries::const_iterator e = _entries.begin(); e != _entries.end(); ++e) {
-        if (e->second->_start != NULL_INDEX && e != ref) {
+        if ((e->second->_start != NULL_INDEX) && (e->second != _reference)) {
             os << *e->second;
         }
     }
