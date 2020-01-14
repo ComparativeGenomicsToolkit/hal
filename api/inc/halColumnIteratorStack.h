@@ -48,6 +48,9 @@ namespace hal {
           public:
             Entry(const Sequence *seq, hal_index_t first, hal_index_t index, hal_index_t last, hal_size_t size, bool reversed)
                 : _sequence(seq), _firstIndex(first), _index(index), _lastIndex(last), _cumulativeSize(size), _reversed(reversed) {
+                if ((seq->getName() == "NC_015770.1") and reversed) { // FIXME:
+                    throw hal_exception("pushing rev of " + seq->getName());
+                }
                 _top._entry = this;
                 _bottom._entry = this;
             }

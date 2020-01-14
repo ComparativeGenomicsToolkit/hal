@@ -70,19 +70,28 @@ namespace hal {
             }
         }
 
+        void FIXME_check_rev() const {
+            if ((getGenome()->getName() == "BTERRESTRIS") and _reversed) {  // FIXME
+                throw hal_exception("ref gone rev");
+            }
+        }
+        
         /** switch to base's reverse complement */
         void toReverse() {
             _reversed = !_reversed;
+            FIXME_check_rev();
         }
 
         /** Check whether iterator is on base's complement */
         bool getReversed() const {
+            FIXME_check_rev();
             return _reversed;
         }
 
         /** Set the iterator's reverse complement status */
         void setReversed(bool reversed) {
             _reversed = reversed;
+            FIXME_check_rev();
         }
 
         /** Get the containing (read-only) genome */

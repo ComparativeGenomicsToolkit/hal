@@ -55,7 +55,12 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
         ++appendCount;
     }
     size_t numBlocks = 0;
-    while (colIt->lastColumn() == false) {
+    int FIXME_cnt = 0;
+    while (not colIt->lastColumn()) {
+        FIXME_cnt++;
+        if (FIXME_cnt >= 3) {
+            cerr << "going wrong here" << endl;
+        }
         colIt->toRight();
         if (_unique == false || colIt->isCanonicalOnRef() == true) {
             if (appendCount == 0) {

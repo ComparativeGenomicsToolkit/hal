@@ -155,7 +155,7 @@ namespace hal {
         std::set<const Genome *> _scope;
         ColumnIteratorStack _stack;
         ColumnIteratorStack _indelStack;
-        const Sequence *_ref;
+        const Sequence *_refSeq;
 
         RearrangementPtr _rearrangement;
         hal_size_t _maxInsertionLength;

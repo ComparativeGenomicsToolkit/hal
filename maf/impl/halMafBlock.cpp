@@ -37,14 +37,11 @@ void MafBlock::resetEntries() {
     _reference = NULL;
     _refIndex = NULL_INDEX;
     Entries::iterator i = _entries.begin();
-    Entries::iterator next;
-    MafBlockEntry *e;
-    bool deleted;
     while (i != _entries.end()) {
-        next = i;
+        Entries::iterator next = i;
         ++next;
-        e = i->second;
-        deleted = false;
+        MafBlockEntry *e = i->second;
+        bool deleted = false;
 
         // every time we reset an entry, we check if was empty.
         // if it was, then we increase lastUsed, otherwise we reset it to
@@ -86,13 +83,16 @@ void MafBlock::initEntry(MafBlockEntry *entry, const Sequence *sequence, DnaIter
         entry->_genome = sequence->getGenome();
         entry->_srcLength = (hal_index_t)sequence->getSequenceLength();
     }
-    if (dna.get()) {
+    if (dna != nullptr) {
         // update start position from the iterator
         entry->_start = dna->getArrayIndex() - sequence->getStartPosition();
         entry->_length = 0;
         entry->_strand = dna->getReversed() ? '-' : '+';
         if (dna->getReversed()) {
             entry->_start = entry->_srcLength - 1 - entry->_start;
+        }
+        if ((entry->_name  == "BTERRESTRIS.NC_015770.1") and (entry->_strand == '-') ) {  // FIXME hack
+            throw hal_exception("FIXME: Reference entry in MAF block created on negative strand: " + entry->_name);
         }
     } else {
         // no start position, so we wait till next time
@@ -107,7 +107,7 @@ void MafBlock::initEntry(MafBlockEntry *entry, const Sequence *sequence, DnaIter
 }
 
 inline void MafBlock::updateEntry(MafBlockEntry *entry, const Sequence *sequence, DnaIteratorPtr dna) {
-    if (dna.get() != NULL) {
+    if (dna != nullptr) {
         if (entry->_start == NULL_INDEX) {
             initEntry(entry, sequence, dna, false);
         }
@@ -279,7 +279,7 @@ stTree *MafBlock::buildTree(ColumnIteratorPtr colIt, bool modifyEntries) {
     }
 
     stTree *tree = NULL;
-    if (topIt->tseg()->hasParent() == false && topIt->getGenome() == genome && genome->getNumBottomSegments() == 0) {
+    if ((not topIt->tseg()->hasParent()) && (topIt->getGenome() == genome) && (genome->getNumBottomSegments() == 0)) {
         // Handle insertions in leaves. botIt doesn't point anywhere since
         // there are no bottom segments.
         tree = getTreeNode(topIt, modifyEntries);
@@ -300,12 +300,14 @@ void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree) 
     _printTree = printTree;
     const ColumnMap *colMap = col->getColumnMap();
     Entries::iterator e = _entries.begin();
-    ColumnMap::const_iterator c = colMap->begin();
-    DNASet::const_iterator d;
-    const Sequence *sequence;
+    static int cnt_FIXME = 0;
 
-    for (; c != colMap->end(); ++c) {
-        sequence = c->first;
+    for (ColumnMap::const_iterator c = colMap->begin(); c != colMap->end(); ++c) {
+        const Sequence *sequence = c->first;
+        if (sequence->getName() == "NC_015770.1") { // FIXME
+            cnt_FIXME++;
+            cerr << "initBlock on " << sequence->getName() << " " << cnt_FIXME << endl;
+        }
 
         // No DNA Iterator for this sequence.  We just give it an empty
         // entry
@@ -320,10 +322,8 @@ void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree) 
                 assert(e->second->_name == getName(sequence));
                 initEntry(e->second, sequence, DnaIteratorPtr());
             }
-        }
-
-        else {
-            for (d = c->second->begin(); d != c->second->end(); ++d) {
+        } else {
+            for (DNASet::const_iterator d = c->second->begin(); d != c->second->end(); ++d) {
                 // search for c's sequence in _entries.
                 // we conly call find() once.  afterwards we just move forward
                 // in the map since they are both sorted by the same key.
@@ -360,6 +360,9 @@ void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree) 
         if (e->first == referenceSequence) {
             _refIndex = col->getReferenceSequencePosition();
         }
+    }
+    if (_reference->_strand == '-') {
+        throw hal_exception("Reference entry in MAF block created on negative strand: " + _reference->_name);
     }
 
     if (_printTree) {
@@ -401,25 +404,19 @@ void MafBlock::appendColumn(ColumnIteratorPtr col) {
 bool MafBlock::canAppendColumn(ColumnIteratorPtr col) {
     const ColumnMap *colMap = col->getColumnMap();
     Entries::iterator e = _entries.begin();
-    ColumnMap::const_iterator c;
-    DNASet::const_iterator d;
-    const Sequence *sequence;
-    MafBlockEntry *entry;
-    hal_index_t sequenceStart;
-    hal_index_t pos;
 
-    for (c = colMap->begin(); c != colMap->end(); ++c) {
-        sequence = c->first;
-        sequenceStart = sequence->getStartPosition();
+    for (ColumnMap::const_iterator c = colMap->begin(); c != colMap->end(); ++c) {
+        const Sequence *sequence = c->first;
+        hal_index_t sequenceStart = sequence->getStartPosition();
 
-        for (d = c->second->begin(); d != c->second->end(); ++d) {
+        for (DNASet::const_iterator d = c->second->begin(); d != c->second->end(); ++d) {
             while (e->first != sequence && e != _entries.end()) {
                 ++e;
             }
             if (e == _entries.end()) {
                 return false;
             } else {
-                entry = e->second;
+                MafBlockEntry *entry = e->second;
                 assert(e->first == sequence);
                 assert(entry->_name == getName(sequence) && entry->_genome == sequence->getGenome());
                 if (entry->_start != NULL_INDEX) {
@@ -427,7 +424,7 @@ bool MafBlock::canAppendColumn(ColumnIteratorPtr col) {
                         (entry->_length > 0 && (entry->_strand == '-') != (*d)->getReversed())) {
                         return false;
                     }
-                    pos = (*d)->getArrayIndex() - sequenceStart;
+                    hal_index_t pos = (*d)->getArrayIndex() - sequenceStart;
                     if ((*d)->getReversed() == true) {
                         // position on reverse strand relative to end of sequence
                         pos = entry->_srcLength - 1 - pos;

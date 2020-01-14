@@ -38,9 +38,8 @@ ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *
             _rearrangement = reference->getChild(0)->getRearrangement(0, 0, 1., true);
         }
     }
-    const Sequence *sequence = reference->getSequenceBySite(columnIndex);
-    assert(sequence != NULL);
-    _ref = sequence;
+    _refSeq = reference->getSequenceBySite(columnIndex);
+    assert(_refSeq != NULL);
 
     // compute all genomes in search scope (spanning tree of reference and targets)
     // if targets is empty we just visit everything.
@@ -51,7 +50,7 @@ ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *
     }
 
     // note columnIndex in genome (not sequence) coordinates
-    _stack.push(sequence, columnIndex, lastColumnIndex, reverseStrand);
+    _stack.push(_refSeq, columnIndex, lastColumnIndex, reverseStrand);
 
     toRight();
 }
@@ -68,8 +67,8 @@ void ColumnIterator::toRight() {
     // keep the current position so that when client calls
     // getReferenceXXX() methods, they get the state before
     // toRight is called.
-    _prevRefSequence = _ref;
-    _prevRefIndex = _stack[0]->_index - _ref->getStartPosition();
+    _prevRefSequence = _refSeq;
+    _prevRefIndex = _stack[0]->_index - _refSeq->getStartPosition();
 
     // compatible with old interface which allowed toRight() to go out
     // of bounds without crashing.
@@ -114,7 +113,7 @@ void ColumnIterator::toRight() {
             _stack.top()->_index < (hal_index_t)(seq->getGenome()->getSequenceLength())))) {
             _stack.top()->_sequence = seq->getGenome()->getSequenceBySite(_stack.top()->_index);
             assert(_stack.top()->_sequence != NULL);
-            _ref = _stack.top()->_sequence;
+            _refSeq = _stack.top()->_sequence;
         }
     } while (_break == true);
 
@@ -148,9 +147,8 @@ void ColumnIterator::toSite(hal_index_t columnIndex, hal_index_t lastColumnIndex
     const Genome *reference = getReferenceGenome();
     assert(columnIndex >= 0 && lastColumnIndex >= columnIndex && lastColumnIndex < (hal_index_t)reference->getSequenceLength());
 
-    const Sequence *sequence = reference->getSequenceBySite(columnIndex);
-    assert(sequence != NULL);
-    _ref = sequence;
+    _refSeq = reference->getSequenceBySite(columnIndex);
+    assert(_refSeq != NULL);
     _stack.clear();
     _indelStack.clear();
     if (clearCache == true) {
@@ -158,9 +156,9 @@ void ColumnIterator::toSite(hal_index_t columnIndex, hal_index_t lastColumnIndex
     }
     defragment();
     // note columnIndex in genome (not sequence) coordinates
-    _stack.push(sequence, columnIndex, lastColumnIndex);
+    _stack.push(_refSeq, columnIndex, lastColumnIndex);
     toRight();
-    assert(getReferenceSequencePosition() + sequence->getStartPosition() == columnIndex);
+    assert(getReferenceSequencePosition() + _refSeq->getStartPosition() == columnIndex);
 }
 
 bool ColumnIterator::lastColumn() const {
@@ -262,9 +260,8 @@ void ColumnIterator::recursiveUpdate(bool init) {
                 linkTopIt->_it->toReverseInPlace();
                 linkTopIt->_dna->toReverse();
             }
-        }
-        // otherwise, we scan forward from last visisted column
-        else {
+        } else {
+            // otherwise, we scan forward from last visisted column
             assert(linkTopIt->_it.get() != NULL);
 
             // catch up to nextfreeindex
@@ -300,9 +297,7 @@ void ColumnIterator::recursiveUpdate(bool init) {
             updateNextTopDup(linkTopIt);
         }
         updateParseDown(linkTopIt);
-    }
-
-    else {
+    } else {
         assert(_stack.size() > 0);
         LinkedBottomIterator *linkBotIt = &_stack.top()->_bottom;
         if (init == true) {
