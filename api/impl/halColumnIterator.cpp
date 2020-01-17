@@ -119,7 +119,8 @@ void ColumnIterator::toRight() {
     } while (_break == true);
 
     // push the indel stack.
-    _stack.pushStack(_indelStack);
+    _stack.pushStackReversed(_deletionStack);
+    _stack.pushStack(_insertionStack);
 
     // clean stack again
     nextFreeIndex();
@@ -369,10 +370,7 @@ bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) 
 
                 BottomSegmentIteratorPtr botSegIt = parent->getBottomSegmentIterator(0);
                 botSegIt->toParent(inputTopSegIt);
-                cout << "adding deletion child: " << _top->getGenome()->getName() << " parent: " << botSegIt->getGenome()->getName() << " seq: " << botSegIt->getBottomSegment()->getSequence()->getName() << ":" << deletedRange.first - botSegIt->getBottomSegment()->getSequence()->getStartPosition() << "-" << deletedRange.second - botSegIt->getBottomSegment()->getSequence()->getStartPosition() << " top reversed: " << inputTopSegIt->getReversed() << " bot reversed: " << botSegIt->getReversed() << endl;
-                if (_indelStack.size() == 0) {
-                    _indelStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, botSegIt->getReversed());
-                }
+                _deletionStack.push(botSegIt->getBottomSegment()->getSequence(), deletedRange.first, deletedRange.second, botSegIt->getReversed());
 
                 return true;
             }
@@ -395,10 +393,7 @@ bool ColumnIterator::handleInsertion(const TopSegmentIteratorPtr &inputTopSegIt)
                 _rearrangement->getLength() + _stack.top()->_cumulativeSize <= _maxInsertionLength) {
                 pair<hal_index_t, hal_index_t> insertedRange = _rearrangement->getInsertedRange();
                 assert((hal_size_t)(insertedRange.second - insertedRange.first) == _rearrangement->getLength() - 1);
-                cout << "adding insertion genome: " << _top->getGenome()->getName() << " seq: " << _top->getTopSegment()->getSequence()->getName() << ":" << insertedRange.first - _top->getTopSegment()->getSequence()->getStartPosition() << "-" << insertedRange.second - _top->getTopSegment()->getSequence()->getStartPosition() << " top reversed: " << inputTopSegIt->getReversed() << endl;
-                if (_indelStack.size() == 0) {
-                    _indelStack.push(_top->getTopSegment()->getSequence(), insertedRange.first, insertedRange.second, reversed);
-                }
+                _insertionStack.push(_top->getTopSegment()->getSequence(), insertedRange.first, insertedRange.second, reversed);
             }
         }
     }
