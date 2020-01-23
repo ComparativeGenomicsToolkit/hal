@@ -29,17 +29,26 @@ progs: ${progs}
 clean: 
 	rm -rf ${libHalLiftover} ${objs} ${progs} ${depends} output
 
-test: unitTests halLiftoverBedTest halLiftoverPslTest
+test: unitTests halLiftoverBed12Test halLiftoverPsl12Test \
+	 halLiftoverBed3Test halLiftoverPsl3Test
 
 unitTests:
 	${binDir}/halLiftoverTests 
 
-halLiftoverBedTest: output/small.hdf5.hal
-	${binDir}/halLiftover output/small.hdf5.hal Genome_0 tests/input/test1.bed Genome_2 output/$@.bed
+halLiftoverBed12Test: output/small.hdf5.hal
+	${binDir}/halLiftover output/small.hdf5.hal Genome_0 tests/input/test1.bed12 Genome_2 output/$@.bed
 	diff -u tests/expected/$@.bed output/$@.bed
 
-halLiftoverPslTest: output/small.hdf5.hal
-	${binDir}/halLiftover --outPSL output/small.hdf5.hal Genome_0 tests/input/test1.bed Genome_2 output/$@.psl
+halLiftoverPsl12Test: output/small.hdf5.hal
+	${binDir}/halLiftover --outPSL output/small.hdf5.hal Genome_0 tests/input/test1.bed12 Genome_2 output/$@.psl
+	diff -u tests/expected/$@.psl output/$@.psl
+
+halLiftoverBed3Test: output/small.hdf5.hal
+	${binDir}/halLiftover output/small.hdf5.hal Genome_0 tests/input/test1.bed3 Genome_2 output/$@.bed
+	diff -u tests/expected/$@.bed output/$@.bed
+
+halLiftoverPsl3Test: output/small.hdf5.hal
+	${binDir}/halLiftover --outPSL output/small.hdf5.hal Genome_0 tests/input/test1.bed3 Genome_2 output/$@.psl
 	diff -u tests/expected/$@.psl output/$@.psl
 
 output/small.hdf5.hal: ../bin/halRandGen

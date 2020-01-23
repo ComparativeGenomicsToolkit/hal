@@ -54,6 +54,7 @@ namespace hal {
         std::ostream &write(std::ostream &os);
         std::ostream &writePSL(std::ostream &os, bool prefixWithName = false);
         bool validatePSL() const;
+        void expandToBed12();
 
         std::string _chrName;
         hal_index_t _start;

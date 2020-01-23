@@ -144,6 +144,33 @@ ostream &BedLine::write(ostream &os) {
     return os;
 }
 
+void BedLine::expandToBed12() {
+    if (_version <= 3) {
+        _name = "";
+    }
+    if (_version <= 4) {
+        _score = 0;
+    }
+    if (_version <= 5) {
+        _strand = '+';
+    }
+    if (_version <= 6) {
+        _thickStart = _start;
+    }
+    if (_version <= 7) {
+        _thickEnd = _end;
+    }
+    if (_version <= 8) {
+        _itemR = _itemG = _itemB = 0;
+    }
+    if (_version <= 9) {
+        _blocks.resize(1);
+        _blocks[0]._start = 0;
+        _blocks[0]._length = _end - _start;
+    }
+    _version = 12;
+}
+
 bool BedBlock::operator<(const BedBlock &other) const {
     bool isLess = _start < other._start;
     return isLess;

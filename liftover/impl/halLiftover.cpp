@@ -45,7 +45,8 @@ void Liftover::visitBegin() {
 
 void Liftover::visitLine() {
     if ((_outPSL || _outPSLWithName) && (_bedLine._version < 12)) {
-        throw hal_exception("PSL output requires BED 12 input");
+        // forcing to BED12 makes PSL code simpler
+        _bedLine.expandToBed12();
     }
     _outBedLines.clear();
     _srcSequence = _srcGenome->getSequence(_bedLine._chrName);
