@@ -1,15 +1,15 @@
 sudo: required
 dist: trusty
-language: c++
+language: python
+python:
+  - "3.6"
+
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libhdf5-7 libhdf5-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install hdf5 || echo "a brew error code when installing gcc is expected"; fi
   - git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
-  - sudo pip install --upgrade pip requests pathlib2
-  - sudo pip install --ignore-installed --upgrade six
-  - sudo pip install --upgrade newick attrs pytest toil
-  - sudo pip install --upgrade newick attrs pathlib pytest toil
+  - sudo pip install --upgrade newick pytest
 install:
   - sh -c 'cd sonLib && make'
 script:
