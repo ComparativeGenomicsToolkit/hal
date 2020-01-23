@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Simulate snake track browser queries and time them.  Ideally done with hgTracks
 but it's easier to automate this way, as far as I can tell. 
@@ -58,7 +58,7 @@ def simulateLoad(options):
     elapsedTime = 0.
     for cmd in cmds:
         lastExcep = None
-        for trial in xrange(options.retry):
+        for trial in range(options.retry):
             if options.udc is not None and options.zapUdc is True:
                 runShellCommand("rm -rf %s" % os.path.join(options.udc, "*"))
             t = -1
@@ -77,7 +77,7 @@ def simulateLoad(options):
 
 def uniformRuns(options):
     trials = []
-    for i in xrange(options.reps):
+    for i in range(options.reps):
         size = random.uniform(1, options.refLength)
         start = random.uniform(0, options.refLength - size)
         trials.append((int(start), int(start + size)))
@@ -108,13 +108,13 @@ def binTimes(options, elapsedTimes):
     return binnedTimes
 
 def printTable(options, binnedTimes):
-    print "Bin, nElem, totTime, minTime, maxTime, avgTime"
-    for key in sorted(binnedTimes.iterkeys()):
+    print("Bin, nElem, totTime, minTime, maxTime, avgTime")
+    for key in sorted(binnedTimes.keys()):
         theBin = key
         nElem, totSize, totTime, minTime, maxTime = binnedTimes[theBin]
         avgTime = float(totTime) / nElem
-        print "%d, %d, %f, %f, %f, %f" % (
-            theBin, nElem, totTime, minTime, maxTime, avgTime)
+        print("%d, %d, %f, %f, %f, %f" % (
+            theBin, nElem, totTime, minTime, maxTime, avgTime))
         
 def main(argv=None):
     if argv is None:

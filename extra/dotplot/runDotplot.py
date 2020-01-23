@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Pipeline to get a very simple dotplot relating two sequences in a
 HAL file.
 
@@ -19,7 +19,7 @@ def getBedLineForSequence(halFile, genome, sequence, start, length):
     """
     bedLines = popenCatch(
         "halStats --bedSequences %s %s" % (genome, halFile)).split("\n")
-    seqLines = filter(lambda x: x[0] == sequence, [line.split() for line in bedLines if line != ""])
+    seqLines = [x for x in [line.split() for line in bedLines if line != ""] if x[0] == sequence]
     if len(seqLines) > 1:
         raise RuntimeError("More than one sequence named %s in genome %s, "
                            "aborting!" % (sequence, genome))
@@ -47,9 +47,9 @@ def liftoverLine(halFile, refGenome, refBedLine, targetGenome, targetSeq=None):
                            refGenome,
                            targetGenome),
                           stdinString=refBedLine).split("\n")
-    pslLines = filter(lambda x: x != "", pslLines)
+    pslLines = [x for x in pslLines if x != ""]
     if targetSeq is not None:
-        pslLines = filter(lambda x: x.split()[13] == targetSeq, pslLines)
+        pslLines = [x for x in pslLines if x.split()[13] == targetSeq]
     return pslLines
 
 def pslsToDotplotTsv(pslLines, genomeX, seqX, genomeY, seqY, startY, lengthY):
@@ -91,7 +91,7 @@ def pslsToDotplotTsv(pslLines, genomeX, seqX, genomeY, seqY, startY, lengthY):
             # Filter out blocks that are outside the selected region in Y
             # (the filtering for the selected region in X took place
             # before the liftover).
-            regionY = xrange(startY, startY + lengthY)
+            regionY = range(startY, startY + lengthY)
             deleteIndices = [index for index, block in enumerate(blocksY) if not in_range(block[0], regionY) or not in_range(block[1], regionY)]
             numDeleted = 0
             for deleteIndex in deleteIndices:
@@ -132,7 +132,7 @@ def main():
                               opts.genomeY, opts.seqY, opts.startY,
                               opts.lengthY)
     for line in rInput:
-        print line
+        print(line)
 
 if __name__ == '__main__':
     main()

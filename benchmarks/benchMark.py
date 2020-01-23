@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
@@ -38,7 +38,7 @@ def main(argv=None):
                         help='halGenRandom preset to use [small, medium, big, large]', default='small')
     args = parser.parse_args()
     rval = 0
-    print "chunk, comp, time(gen), time(cons), fsize(k)"
+    print("chunk, comp, time(gen), time(cons), fsize(k)")
     try:
         for chunkSize in [10000, 100000, 1000000, 10000000]:
             for compression in [0, 2, 5, 7, 9]:
@@ -55,8 +55,8 @@ def main(argv=None):
                 th = time.time() - t
                 runHalCons(tempFile, getTempFile(rootDir=tempDir))
                 tc = time.time() - th - t
-                print "%d, %d, %f.3, %f.3, %f.2" % (
-                    chunkSize, compression, th, tc, fsize / 1024.)
+                print("%d, %d, %f.3, %f.3, %f.2" % (
+                    chunkSize, compression, th, tc, fsize / 1024.))
 
     except:
         traceback.print_exc(file=sys.stdout)

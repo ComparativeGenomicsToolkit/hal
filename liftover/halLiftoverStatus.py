@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Ngan Nguyen (nknguyen@soe.ucsc.edu)
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
@@ -99,7 +99,7 @@ class Bed():
             self.start = int(items[1])  # base 0
             self.end = int(items[2])  # exclusive
         except ValueError:
-            print "BED %s has wrong format\n" % line
+            print("BED %s has wrong format\n" % line)
         self.name = ''
         if len(items) > 3:
             self.name = items[3]
@@ -171,7 +171,7 @@ def psl_pos_target(psl):
     sizes = []
     qstarts = []
     tstarts = []
-    for i in xrange(psl.blockCount - 1, -1, -1):
+    for i in range(psl.blockCount - 1, -1, -1):
         size = psl.blockSizes[i]
         qs = psl.qSize - (psl.qStarts[i] + size)
         ts = psl.tSize - (psl.tStarts[i] + size)
@@ -202,7 +202,7 @@ def psl_getPosCoords(psl):
         qstarts = []
         tstarts = []
         sizes = []
-        for i in xrange(psl.blockCount - 1, -1, -1):
+        for i in range(psl.blockCount - 1, -1, -1):
             qstart = psl.qSize - (psl.qStarts[i] + psl.blockSizes[i])
             tstart = psl.tSize - (psl.tStarts[i] + psl.blockSizes[i])
             qstarts.append(qstart)
@@ -248,7 +248,7 @@ def get_next_non_overlap_psl(sets, sorted_psls):
         psl_indices = curr_set[0]
         i = curr_set[1]  # current index
         added = 0
-        for j in xrange(i + 1, len(sorted_psls)):
+        for j in range(i + 1, len(sorted_psls)):
             psl = sorted_psls[j]
             overlap = False
             for index in psl_indices:
@@ -271,7 +271,7 @@ def get_non_overlap_psls_sets(psls):
     # this function return all possible sets of psls where the query base
     # only appear at most once
     sets = []
-    for i in xrange(len(psls)):  # each psl as a starting element
+    for i in range(len(psls)):  # each psl as a starting element
         start_set = ([i], i)
         curr_sets = get_next_non_overlap_psl([start_set], psls)
         for s in curr_sets:  # make sure added set is not a subset of existing ones
@@ -375,7 +375,7 @@ def block_status(indices, sorted_psls, start, end, edge):
 
     # checking for insertions:
     if len(tregs) > 1:
-        for i in xrange(1, len(tregs)):
+        for i in range(1, len(tregs)):
             if float(treg.qstart - start)/blocksize <= edge or float(end - treg.qend)/blocksize <= edge:
                 continue
             prev_treg = tregs[i - 1]

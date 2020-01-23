@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Attempt to automate neutral model estimation from 4d sitesfor phyloP.
 """
@@ -247,7 +247,7 @@ def main(argv=None):
     args.outDir = os.path.dirname(args.outMod)
     args.outName = os.path.splitext(os.path.basename(args.outMod))[0]
     # Random suffix so two runs don't collide
-    suffix = "".join([random.choice(string.ascii_uppercase) for _ in xrange(7)])
+    suffix = "".join([random.choice(string.ascii_uppercase) for _ in range(7)])
     args.outMafName = args.outName + "_halPhyloPTrain_temp_%s.maf" % suffix
     args.outMafPath = os.path.join(args.outDir, args.outMafName)
     args.outMafAllPaths = args.outMafPath.replace("_halPhyloPTrain_temp_%s.maf" % suffix,

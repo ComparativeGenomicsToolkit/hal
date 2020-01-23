@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """This is a two-state continuous time markov model: 0: unconstratined.  1: constrained.  There are two transition rates to go between states.  lossRate: 1->0 and gainRate: 0->1.  Probability Matrix and Stationary Distribution are computed from the two rates and a time t. (see pdf)
 """
@@ -233,11 +233,11 @@ def main(argv=None):
             if diff < bestDiff:
                 bestLr, bestGr, bestDiff = (lrEst, grEst, diff)
                 
-        print "Truth=(%f,%f), Start=(%f,%f) Est=(%f,%f), dsq=%f" % (
+        print("Truth=(%f,%f), Start=(%f,%f) Est=(%f,%f), dsq=%f" % (
                 lrTrue, grTrue, lrStart, grStart, bestLr, bestGr,
                 (lrTrue - bestLr) * (lrTrue - bestLr) +
-                (grTrue - bestGr) * (grTrue - bestGr))
-        print "--------------------------------"
+                (grTrue - bestGr) * (grTrue - bestGr)))
+        print("--------------------------------")
     
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Ngan Nguyen
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
@@ -31,7 +31,7 @@ class LiftoverBedFiles( Target ):
         #for each genome in beddir, lifeover the bed records of that genome to the coordinate of all other genomes
          
         #liftover bed file of each genome with available beds to all genomes
-        genomes = self.genome2seq2len.keys()
+        genomes = list(self.genome2seq2len.keys())
         tempbeds = []
         
         for genome in os.listdir(self.indir):

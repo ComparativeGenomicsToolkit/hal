@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Estimate constraint turnover parameters from output of halTreeNITurnover.
 This file has form like
@@ -112,21 +112,21 @@ def printComparison(halPath, obsVals, observations, result):
     lossRate = result[0]
     gainRate = result[1]
     obsScope = set([str(x) for x in obsVals])
-    if len(observations.items()) > 0:
-        print "Genome, t, piObs0, piObs1, piEst0, piEst1, PLossObs, PGainObs, PLossEst, PGainEst, AvgDiff"
-    for (name, obs) in observations.items():
+    if len(list(observations.items())) > 0:
+        print("Genome, t, piObs0, piObs1, piEst0, piEst1, PLossObs, PGainObs, PLossEst, PGainEst, AvgDiff")
+    for (name, obs) in list(observations.items()):
         if str(obs) in obsScope:            
             t = obs[2]
             pi = computeStationaryDist(lossRate, gainRate, t)
             P = computePMatrix(lossRate, gainRate, t)
-            print "  %s, %f, %.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f, %.3f, %.3f" % (
+            print("  %s, %f, %.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f, %.3f, %.3f" % (
                 name, t, obs[0][0], obs[0][1], pi[0], pi[1], 
                 obs[1][0][1], obs[1][1][0], P[0][1], P[1][0],
                 0.25 * (math.fabs(obs[0][0] - pi[0]) +
                 math.fabs(obs[0][1] - pi[1]) +
                 math.fabs(obs[1][0][1] - P[0][1]) +
                 math.fabs(obs[1][1][0] - P[1][0]))
-                )
+                ))
     
 # estimate the parameters for the root. if allInternals is true, then
 # repeat for all internal nodes below the root. 
@@ -143,8 +143,8 @@ def halTreeTurnoverParams(halPath, obsPath, rootName, allInternals,
 
             obsVals = getValuesBelowRoot(halPath, next, observations)
             result = estimateParamsFromList(obsVals, maxIt, step, retries)
-            print "%s: lr=%f gr=%f dsq=%f" % (next,result[0], result[1],
-                                              result[2])
+            print("%s: lr=%f gr=%f dsq=%f" % (next,result[0], result[1],
+                                              result[2]))
             printComparison(halPath, obsVals, observations, result)
         for child in getHalChildrenNames(halPath, next):
             nextQueue.append(child)

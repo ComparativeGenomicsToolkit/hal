@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Generate a series of HAL files at progressively coarse levels of detail
 from an input file by calling halLodExtract
@@ -37,7 +37,7 @@ def getHalPhyloPCmd(options):
                                      options.refGenome,
                                      options.modFile,
                                      makeOutWigglePath(options))
-    for opt,val in options.__dict__.items():
+    for opt,val in list(options.__dict__.items()):
         if (val is not None and
             (type(val) != bool or val == True) and
             (opt == 'cacheMDC' or
@@ -86,7 +86,7 @@ def computeSlices(options, seqLen):
         if options.sliceSize is None or options.sliceSize >= inLength:
             yield (inStart, inLength, None)
         else:
-            for i in xrange(inLength / options.sliceSize):
+            for i in range(inLength / options.sliceSize):
                 yield (inStart + i * options.sliceSize, options.sliceSize, i)
             r = inLength % options.sliceSize
             if r > 0:

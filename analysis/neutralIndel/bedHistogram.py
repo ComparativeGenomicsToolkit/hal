@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Make histogram of inter-event distances in BED file
 """
@@ -76,13 +76,13 @@ class BedHistogram(object):
         if self.bgRate is not None:
             total = 0
             y = np.zeros(len(x))
-            for xelem in xrange(len(x)):
+            for xelem in range(len(x)):
                 s = int(max(0, x[xelem] - (self.binSize / 2.)))
                 for i in range(s, s + self.binSize):                    
                     p = self.bgRate * math.pow(1. - self.bgRate, i)
                     y[xelem] += int(p * self.totalEvents)
                     total += y[xelem]
-            print "rate total %i" % total
+            print("rate total %i" % total)
             return y
 
     # draw the histogram of inter-event distances in log scale
@@ -96,7 +96,7 @@ class BedHistogram(object):
 
     # convert bed data into numpy arrays
     def __extractPlotTables(self):
-        keylist = self.bins.keys()
+        keylist = list(self.bins.keys())
         keylist.sort()
         x = []
         y = []
@@ -165,7 +165,7 @@ class BedHistogram(object):
             plt.xlim(xmax - ((xmax - xmin) * 1.02), xmax * 1.02)
         pltTitle = plt.title(self.title)
         plt.setp(pltTitle, fontsize='x-small') # legend fontsize
-        for loc, spine in ax.spines.iteritems():
+        for loc, spine in ax.spines.items():
             if loc in ['left','bottom']:
                 # outward by 10 points
                 spine.set_position(('outward', 10)) 
@@ -179,7 +179,7 @@ class BedHistogram(object):
         ax.yaxis.set_ticks_position('left')
         if not self.linearY:
             ax.set_yscale('log')
-            ax.yaxis.set_minor_locator(LogLocator(base=10, subs=range(1, 10)))
+            ax.yaxis.set_minor_locator(LogLocator(base=10, subs=list(range(1, 10))))
             ax.yaxis.set_data_interval(0.01, None)
         plt.xlabel('Distance')
         plt.ylabel('Count')

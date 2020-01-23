@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Compute the background mutation rate over selected genomic regions
 using bed files of mutations, and bed files of target regions.  
@@ -102,7 +102,7 @@ def main(argv=None):
     
     events =  args.events.split()
     count, size = getBackgroundRate(args.eventsBed, args.selectBed, events)
-    print "%d / %d = %f" % (count, size, float(count) / float(size))
+    print("%d / %d = %f" % (count, size, float(count) / float(size)))
     
 if __name__ == "__main__":
     sys.exit(main())

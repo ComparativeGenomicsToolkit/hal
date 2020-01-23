@@ -1,18 +1,19 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import itertools
 import logging
+from functools import reduce
 logging.basicConfig(level=logging.DEBUG)
 import os
 import re
 import shutil
-from StringIO import StringIO
+from io import StringIO
 from argparse import ArgumentParser
 from copy import deepcopy
 from collections import namedtuple, deque, defaultdict
-from subprocess32 import check_output
+from subprocess import check_output
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 import newick
 import pytest
@@ -22,6 +23,10 @@ from toil.common import Toil
 from toil.job import Job
 
 logger = logging.getLogger(__name__)
+
+def get_ascii_tmp_file(delete=True):
+    "create a temporary file with ASCII encode"
+    return NamedTemporaryFile(mode="w", encoding='ascii', delete=delete)
 
 class LiftedContextManager(object):
     """Transforms an iterable of context managers into a list of opened managers."""
@@ -209,7 +214,7 @@ def group_by_size(files_by_chroms, chrom_sizes, get_temp_path, target_size=50000
         chroms_to_merge.sort()
 
         paths = [get_temp_path() for _ in range(len(files_by_chroms))]
-        with LiftedContextManager(map(lambda p: open(p, 'w'), paths)) as outputs:
+        with LiftedContextManager([open(p, 'w') for p in paths]) as outputs:
             for chrom in chroms_to_merge:
                 for files_by_chrom, output in zip(files_by_chroms, outputs):
                     if chrom not in files_by_chrom:
@@ -221,7 +226,7 @@ def group_by_size(files_by_chroms, chrom_sizes, get_temp_path, target_size=50000
 
     grouped_pathss = []
     chrom_sizes_subsets = []
-    chromsAndSizes = sorted(chrom_sizes.items(), key=lambda cs: cs[1])
+    chromsAndSizes = sorted(list(chrom_sizes.items()), key=lambda cs: cs[1])
     running_size = 0
     chroms_to_merge = []
     for chrom, size in chromsAndSizes:
@@ -311,7 +316,7 @@ def merge_blocks_job(job, genome, child_names, block_ids, hal_id, opts):
 
         chrom_sizes = get_chrom_sizes(hal, genome)
 
-        block_paths = map(job.fileStore.readGlobalFile, block_ids)
+        block_paths = list(map(job.fileStore.readGlobalFile, block_ids))
         split_blocks = [split_blocks_by_chrom(open(block_path), job.fileStore.getLocalTempFile) for block_path in block_paths]
         chrom_sizes_subsets, grouped_pathss = group_by_size(split_blocks, chrom_sizes, job.fileStore.getLocalTempFile)
         subset_jobs = []
@@ -330,11 +335,11 @@ def merge_blocks_merge_subset_job(job, genome, child_names, block_ids, chrom_siz
     """Merges a small subset of the lifted alignments from children/parent."""
     block_paths = [job.fileStore.readGlobalFile(block_id) for block_id in block_ids]
     merged_path = job.fileStore.getLocalTempFile()
-    with LiftedContextManager(map(open, block_paths)) as blocks, open(merged_path, 'w') as output:
+    with LiftedContextManager(list(map(open, block_paths))) as blocks, open(merged_path, 'w') as output:
         merge_child_blocks(genome, chrom_sizes, child_names, blocks, output)
     output_id = job.fileStore.writeGlobalFile(merged_path)
     if opts.intermediateResultsUrl is not None:
-        job.fileStore.exportFile(output_id, opts.intermediateResultsUrl + "{}-merged-subset-{}.blocks".format(genome, chrom_sizes.keys()[0]))
+        job.fileStore.exportFile(output_id, opts.intermediateResultsUrl + "{}-merged-subset-{}.blocks".format(genome, list(chrom_sizes.keys())[0]))
     return output_id
 
 def merge_blocks_maximize_block_length_job(job, genome, merged_blocks_id, hal_id, opts):
@@ -991,7 +996,7 @@ class Block(object):
         new_end = max(self.first.end, other.first.end)
         # To avoid ugly quadratic behavior we represent the new sequences as
         # lists and join them into strings only at the end.
-        block_seqs = [[] for _ in xrange(len(self.block_lines) + len(other.block_lines) - 1)]
+        block_seqs = [[] for _ in range(len(self.block_lines) + len(other.block_lines) - 1)]
         my_seq_pos = self.first.start
         other_seq_pos = other.first.start
         my_align_pos = 0
@@ -1010,10 +1015,10 @@ class Block(object):
         if my_seq_pos < overlap_start:
             pre_overlap_align_len = self.first.seq_pos_to_align_pos(overlap_start)
             # First block's sequences: taken from the first block's alignment
-            for i in xrange(len(self.block_lines)):
+            for i in range(len(self.block_lines)):
                 block_seqs[i].extend(self.block_lines[i].seq[:pre_overlap_align_len])
             # Second block's sequences: all gaps
-            for i in xrange(len(self.block_lines), len(block_seqs)):
+            for i in range(len(self.block_lines), len(block_seqs)):
                 block_seqs[i].extend('-' * pre_overlap_align_len)
             my_align_pos += pre_overlap_align_len
             my_seq_pos = overlap_start
@@ -1022,10 +1027,10 @@ class Block(object):
             # Reference sequence: taken from the second block
             block_seqs[0].extend(other.block_lines[0].seq[:pre_overlap_align_len])
             # First block's sequences: all gaps
-            for i in xrange(1, len(self.block_lines)):
+            for i in range(1, len(self.block_lines)):
                 block_seqs[i].extend('-' * pre_overlap_align_len)
             # Second block's sequences: taken from the second block's alignment
-            for i in xrange(len(self.block_lines), len(block_seqs)):
+            for i in range(len(self.block_lines), len(block_seqs)):
                 block_seqs[i].extend(other.block_lines[i - len(self.block_lines) + 1].seq[:pre_overlap_align_len])
             other_align_pos += pre_overlap_align_len
             other_seq_pos = overlap_start
@@ -1073,19 +1078,19 @@ class Block(object):
         # Region after overlap.
         if my_align_pos < my_end_pos:
             # First block's sequences: taken from the first block's alignment
-            for i in xrange(len(self.block_lines)):
+            for i in range(len(self.block_lines)):
                 block_seqs[i].extend(self.block_lines[i].seq[my_align_pos:])
             # Second block's sequences: all gaps
-            for i in xrange(len(self.block_lines), len(block_seqs)):
+            for i in range(len(self.block_lines), len(block_seqs)):
                 block_seqs[i].extend('-' * (my_end_pos - my_align_pos))
         elif other_align_pos < other_end_pos:
             # Reference sequence: taken from the second block
             block_seqs[0].extend(other.block_lines[0].seq[other_align_pos:])
             # First block's sequences: all gaps
-            for i in xrange(1, len(self.block_lines)):
+            for i in range(1, len(self.block_lines)):
                 block_seqs[i].extend('-' * (other_end_pos - other_align_pos))
             # Second block's sequences: taken from the second block's alignment
-            for i in xrange(len(self.block_lines), len(block_seqs)):
+            for i in range(len(self.block_lines), len(block_seqs)):
                 block_seqs[i].extend(other.block_lines[i - len(self.block_lines) + 1].seq[other_align_pos:])
 
         # Build up and return the new block.
@@ -1238,7 +1243,7 @@ def paired_iter(iterable):
     The last pair will be (final_item, None)."""
     first_iter, second_iter = itertools.tee(iterable, 2)
     next(second_iter, None)
-    return itertools.izip_longest(first_iter, second_iter)
+    return itertools.zip_longest(first_iter, second_iter)
 
 def lift_blocks(alignments, blocks, other_genome, output):
     """
@@ -1313,7 +1318,7 @@ def get_sequence(hal_path, genome):
     """
     Get a dict from {seq_name: sequence} representing the nucleotide sequence for a genome.
     """
-    with NamedTemporaryFile() as tmp:
+    with get_ascii_tmp_file() as tmp:
         call(['hal2fasta', hal_path, genome, '--outFaPath', tmp.name])
         return dict(fastaRead(tmp.name))
 
@@ -1353,7 +1358,7 @@ def sort_blocks(blocks, output):
     memory exhaustion.
     """
     # Gather up the start positions within all the blocks, and their position within the file.
-    with NamedTemporaryFile(delete=False) as file_to_sort:
+    with get_ascii_tmp_file(delete=False) as file_to_sort:
         while True:
             file_pos = blocks.tell()
             block = Block.read_next_from_file(blocks)
@@ -1364,7 +1369,7 @@ def sort_blocks(blocks, output):
     # Do the actual sorting
     call(['sort', '-k1,1', '-k2,2n', '-k3,3n', file_to_sort.name, '-o', file_to_sort.name])
 
-    with open(file_to_sort.name) as sorted:
+    with open(file_to_sort.name, encoding='ascii') as sorted:
         for line in sorted:
             fields = line.strip().split()
             file_pos = int(fields[-1])
@@ -1375,7 +1380,7 @@ def sort_blocks(blocks, output):
 
 def get_alignment_to_parent(hal_path, child_genome, output_path):
     """Get a file representing maximal gapless alignment blocks between this child and its parent (referenced on the child)."""
-    with NamedTemporaryFile() as tmp:
+    with get_ascii_tmp_file() as tmp:
         call(['halAlignedExtract', '--viewParentCoords', '--alignedFile', tmp.name, hal_path, child_genome])
         with open(output_path, 'w') as output:
             maximize_gapless_alignment_length(open(tmp.name), output)
@@ -1383,7 +1388,7 @@ def get_alignment_to_parent(hal_path, child_genome, output_path):
 
 def get_alignment_to_child(hal_path, child_genome, output_path):
     """Get a file representing maximal gapless alignment blocks between this child and its parent (referenced on the parent)."""
-    with NamedTemporaryFile() as original_alignment, NamedTemporaryFile() as flipped_alignment:
+    with get_ascii_tmp_file() as original_alignment, get_ascii_tmp_file() as flipped_alignment:
         get_alignment_to_parent(hal_path, child_genome, original_alignment.name)
         flip_alignment(open(original_alignment.name), open(flipped_alignment.name, 'w'))
         call(['sort', flipped_alignment.name, '-k1,1', '-k2,2n', '-o', output_path])
@@ -2124,7 +2129,7 @@ def test_block_concatenate():
 
     input_2 = StringIO(dedent("""
     Human	chr6	2	6	+	C-CCC
-    Chimp	chr6	18	22	-	GTGG-	
+    Chimp	chr6	18	22	-	GTGG-
     Chimp	chr6	12	16	+	GTG-G
 
     """).lstrip())
@@ -2413,7 +2418,7 @@ def test_lift_region():
 def test_group_by_size():
     chrom_sizes = {'chr1': 5000, 'chr2': 10000, 'chrY': 1000}
     files_by_chroms = [{'chr1': NamedTemporaryFile().name, 'chr2': NamedTemporaryFile().name, 'chrY': NamedTemporaryFile().name}]
-    for chrom, path in files_by_chroms[0].items():
+    for chrom, path in list(files_by_chroms[0].items()):
         with open(path, 'w') as f:
             f.write(chrom + "\n")
     chrom_sizes_subsets, files = group_by_size(files_by_chroms, chrom_sizes, lambda: NamedTemporaryFile().name, target_size=7000)
@@ -2482,4 +2487,3 @@ def test_split_alignments_by_chrom():
 
 if __name__ == '__main__':
     main()
-

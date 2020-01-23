@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Mon Oct  7 15:27:23 PDT 2013
@@ -100,7 +100,7 @@ def splitBed(bed, i):
 
 def filterLongIntrons_bed(bed, maxIntron):
     beds = []
-    for i in xrange(0, bed.blockCount -1):
+    for i in range(0, bed.blockCount -1):
         intronStart = bed.blockStarts[i] + bed.blockSizes[i]
         intronEnd = bed.blockStarts[i+1]
         if intronEnd - intronStart > maxIntron:

@@ -1,12 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2012 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-"""Little python halStats wrapper.  
+"""Little python halStats wrapper.
 """
 import argparse
 import os
@@ -32,14 +32,15 @@ def runShellCommand(command):
 
 def runParallelShellCommands(cmdList, numProc):
     if numProc == 1 or len(cmdList) == 1:
-        map(runShellCommand, cmdList)
+        for cmd in cmdList:
+            runShellCommand(cmd)
     elif len(cmdList) > 0:
         mpPool = Pool(processes=min(numProc, len(cmdList)))
         result = mpPool.map_async(runShellCommand, cmdList)
         # specifying a timeout allows keyboard interrupts to work?!
         # http://stackoverflow.com/questions/1408356/keyboard-interrupts-with-pythons-multiprocessing-pool
         try:
-            result.get(sys.maxint)
+            result.get(sys.maxsize)
         except KeyboardInterrupt:
             mpPool.terminate()
             raise RuntimeError("Keyboard interrupt")

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Ngan Nguyen
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
@@ -28,7 +28,7 @@ class LiftoverWigFiles( Target ):
         #for each genome in wigdir, liftover the wig records of that genome to the coordinate of all other genomes
          
         #liftover wig file of each genome with available wigs to all genomes
-        genomes = self.genome2seq2len.keys()
+        genomes = list(self.genome2seq2len.keys())
         tempwigs = []
         
         for genome in os.listdir(self.indir):

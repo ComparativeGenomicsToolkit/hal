@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Ngan Nguyen
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
@@ -69,8 +69,8 @@ def inorder_relative(tree, name):
         try:
             newtree.root_with_outgroup(node)
         except TypeError:
-            print "Node %s" %node.name
-            print "Ancestor %s" % getParent(newtree, node).name
+            print("Node %s" %node.name)
+            print("Ancestor %s" % getParent(newtree, node).name)
             sys.exit(1)
         return inorder(newtree.root)
     else:

@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
 #Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Generate a series of HAL files at progressively coarse levels of detail
 from an input file by calling halLodExtract
@@ -63,7 +63,7 @@ def getMaxGenomeLength(statsTable):
 
 # Return the smallest averege block length of any genome in the HAL file
 def getMinAvgBlockSize(statsTable):
-    minAvgBlockSize = sys.maxint
+    minAvgBlockSize = sys.maxsize
     for row in statsTable:
         if float(row[3]) > 0:
             avgTop = float(row[2]) / float(row[3])
@@ -71,14 +71,14 @@ def getMinAvgBlockSize(statsTable):
         if float(row[4]) > 0:
             avgBottom = float(row[2]) / float(row[4])
             minAvgBlockSize = min(minAvgBlockSize, avgBottom)
-    assert minAvgBlockSize > 0 and minAvgBlockSize != sys.maxint
+    assert minAvgBlockSize > 0 and minAvgBlockSize != sys.maxsize
     return minAvgBlockSize
 
 # Return the smallest fraction of any genome that would be left if we
 # cut out all sequences of length less than minLen
 def getMinCoverageFrac(sequenceStatsTable, minLen):
     minCoverage = 1.0
-    for genome, sequenceStats in sequenceStatsTable.items():
+    for genome, sequenceStats in list(sequenceStatsTable.items()):
         totalLength = 0.0
         uncutLength = 0.0
         for sequence, seqLen, numTop, numBot in sequenceStats:
@@ -141,7 +141,7 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
     curStepFactor = scaleCorFac
     lodExtractCmds = []
     prevStep = None
-    for stepIdx in xrange(1,len(steps)):
+    for stepIdx in range(1,len(steps)):
         step = int(max(1, steps[stepIdx] * curStepFactor))
         maxQueryLength = maxBlock * steps[stepIdx - 1]
         keepSequences = maxQueryLength <= maxDNA
@@ -284,7 +284,7 @@ def main(argv=None):
                            "set")
 
     if args.maxDNA < 0:
-        args.maxDNA = sys.maxint
+        args.maxDNA = sys.maxsize
 
     createLods(args.hal, args.outLodFile, args.outHalDir,
                args.maxBlock, args.scale, not args.resume, args.maxDNA,

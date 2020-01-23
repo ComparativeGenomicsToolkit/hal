@@ -33,7 +33,7 @@ halMafTests:
 	${binDir}/halMafTests
 
 naiveLiftUpTests:
-	python2 -m pytest impl/naiveLiftUp.py
+	${PYTHON} -m pytest impl/naiveLiftUp.py
 
 hal2mafCmdTests: hal2MafSmallMMapTest hal2MafSmallHdf5Test hal2MafSeqTest hal2MafSeqPartTest
 
