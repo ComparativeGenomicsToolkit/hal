@@ -10,7 +10,10 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install hdf5 || echo "a brew error code when installing gcc is expected"; fi
   - git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
 install:
-  - sudo pip3 install -r requirements.txt
+  - sudo pip install -r requirements.txt
+  - which python
+  - python -c 'import newick'
+  - python3 -c 'import newick'
   - sh -c 'cd sonLib && make'
 script:
   - export sonLibRootDir=`pwd`/sonLib
