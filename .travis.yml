@@ -11,10 +11,10 @@ before_install:
   - git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
 install:
   - sudo pip install -r requirements.txt
-  - sudo pip install --upgrade newick
+  - sudo pip install newick
   - which python
-  - python3 -c 'import glob,sys;print([glob.glob(p+"/*") for p in sys.path])'
-  - python3 -c 'import newick'
+  - python -c 'import glob,sys;print([glob.glob(p+"/*") for p in sys.path])'
+  - python -c 'import newick'
   - sh -c 'cd sonLib && make'
 script:
   - export sonLibRootDir=`pwd`/sonLib
