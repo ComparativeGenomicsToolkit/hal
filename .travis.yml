@@ -2,7 +2,7 @@ sudo: required
 dist: trusty
 language: python
 python:
-  - "3.6"
+  - "3.7"
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi
