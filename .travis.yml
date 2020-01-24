@@ -13,7 +13,8 @@ install:
   - sudo pip install -r requirements.txt
   - sudo pip install newick
   - which python
-  - python -c 'import glob,sys;print([glob.glob(p+"/*") for p in sys.path])'
+  - which pip
+  - find /home/travis/virtualenv/python3.6.3/lib/python3.6/site-packages/ -type f
   - python -c 'import newick'
   - sh -c 'cd sonLib && make'
 script:
