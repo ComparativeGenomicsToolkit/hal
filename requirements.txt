@@ -1,2 +1,3 @@
 pytest
 newick
+git+https://github.com/DataBiosphere/toil.git
