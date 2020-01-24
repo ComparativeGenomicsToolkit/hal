@@ -10,12 +10,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install hdf5 || echo "a brew error code when installing gcc is expected"; fi
   - git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
 install:
-  - sudo pip install -r requirements.txt
-  - sudo pip install newick
-  - which python
-  - which pip
-  - find /home/travis/virtualenv/python3.6.3/lib/python3.6/site-packages/ -type f
-  - python -c 'import newick'
+  - pip install -r requirements.txt
   - sh -c 'cd sonLib && make'
 script:
   - export sonLibRootDir=`pwd`/sonLib
@@ -23,7 +18,8 @@ script:
   - PYTHONPATH=..:.:$PYTHONPATH PATH=./bin:$PATH make -k test
 os:
   - linux
-  - osx
+# os/x disabled until we get python 3 working with travis os/x
+#  - osx
 env:
   - CGL_DEBUG=1
   - CGL_DEBUG=ultra ASAN_OPTIONS=detect_leaks=0
