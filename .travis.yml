@@ -7,12 +7,12 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libhdf5-7 libhdf5-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install hdf5 || echo "a brew error code when installing gcc is expected"; fi
   - git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
-  - alias python=python3
-  - alias pip=pip3
 install:
-  - pip install -r requirements.txt
+  - pip3 install -r requirements.txt
   - sh -c 'cd sonLib && make'
 script:
+  - alias python=python3
+  - alias pip=pip3
   - export sonLibRootDir=`pwd`/sonLib
   - make -j 4
   - PYTHONPATH=..:.:$PYTHONPATH PATH=./bin:$PATH make -k test
