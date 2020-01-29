@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.org/ComparativeGenomicsToolkit/hal.svg?branch=master)]
+
 Hierarchical Alignment (HAL) Format API (v2.1)
 =====
 Copyright (C) 2012 - 2014 by Glenn Hickey (hickey@soe.ucsc.edu)
