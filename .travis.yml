@@ -18,8 +18,7 @@ script:
   - PYTHONPATH=..:.:$PYTHONPATH PATH=./bin:$PATH make -k test
 os:
   - linux
-# os/x disabled until we get python 3 working with travis os/x
-#  - osx
+  - osx
 env:
   - CGL_DEBUG=1
   - CGL_DEBUG=ultra ASAN_OPTIONS=detect_leaks=0
