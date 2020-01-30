@@ -1,25 +1,25 @@
 sudo: required
-dist: trusty
-language: python
-python:
-  - "3.6"
+dist: bionic
+language: cpp
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libhdf5-7 libhdf5-dev; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install hdf5 || echo "a brew error code when installing gcc is expected"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libhdf5-serial-dev python3 python3-pip libpython3-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install hdf5 python3.6 python3-pip || echo "a brew error code when installing gcc is expected"; fi
   - git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
 install:
-  - pip install -r requirements.txt
+  - sudo pip3 install setuptools --upgrade
+  - pip3 install -r requirements.txt
   - sh -c 'cd sonLib && make'
 script:
+  - alias python=python3
+  - alias pip=pip3
   - export sonLibRootDir=`pwd`/sonLib
   - make -j 4
   - PYTHONPATH=..:.:$PYTHONPATH PATH=./bin:$PATH make -k test
 os:
   - linux
-# os/x disabled until we get python 3 working with travis os/x
-#  - osx
+  - osx
 env:
   - CGL_DEBUG=1
   - CGL_DEBUG=ultra ASAN_OPTIONS=detect_leaks=0
