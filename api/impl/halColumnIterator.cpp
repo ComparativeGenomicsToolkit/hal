@@ -15,12 +15,17 @@
 using namespace std;
 using namespace hal;
 
+static const bool DEBUG = true;
+
 ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *> *targets, hal_index_t columnIndex,
                                hal_index_t lastColumnIndex, hal_size_t maxInsertLength, bool noDupes, bool noAncestors,
                                bool reverseStrand, bool unique, bool onlyOrthologs)
     : _maxInsertionLength(maxInsertLength), _noDupes(noDupes), _noAncestors(noAncestors),
       _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs) {
     assert(columnIndex >= 0 && lastColumnIndex >= columnIndex && lastColumnIndex < (hal_index_t)reference->getSequenceLength());
+    if (DEBUG) {
+        cerr << "ColumnIterator new: " << reference->getName() << ":" << columnIndex << endl;
+    }
     // allocate temp iterators
     if (reference->getNumTopSegments() > 0) {
         _top = reference->getTopSegmentIterator(0);
@@ -224,7 +229,7 @@ void ColumnIterator::setVisitCache(ColumnIterator::VisitCache *visitCache) {
     _visitCache = *visitCache;
 }
 
-void ColumnIterator::print(ostream &os) const {
+std::ostream &ColumnIterator::print(ostream &os) const {
     const ColumnIterator::ColumnMap *cmap = getColumnMap();
     for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin(); i != cmap->end(); ++i) {
         os << i->first->getName() << ": ";
@@ -233,6 +238,7 @@ void ColumnIterator::print(ostream &os) const {
         }
         os << "\n";
     }
+    return os;
 }
 
 // Starting from the reference sequence which is determined

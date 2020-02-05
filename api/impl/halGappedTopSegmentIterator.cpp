@@ -112,7 +112,7 @@ bool GappedTopSegmentIterator::isTop() const {
     return true;
 }
 
-void GappedTopSegmentIterator::print(std::ostream &os) const {
+std::ostream &GappedTopSegmentIterator::print(std::ostream &os) const {
     os << "Gapped Top Segment: (thresh=" << getGapThreshold() << ")\n";
     os << "Left: ";
     if (_left.get() == NULL) {
@@ -126,6 +126,7 @@ void GappedTopSegmentIterator::print(std::ostream &os) const {
     } else {
         os << *_right;
     }
+    return os;
 }
 
 //////////////////////////////////////////////////////////////////////////////

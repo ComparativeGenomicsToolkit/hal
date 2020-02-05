@@ -56,8 +56,9 @@ void Hdf5BottomSegment::setCoordinates(hal_index_t startPos, hal_size_t length) 
     _array->setValue(_index + 1, genomeIndexOffset, startPos + length);
 }
 
-void Hdf5BottomSegment::print(std::ostream &os) const {
+std::ostream &Hdf5BottomSegment::print(std::ostream &os) const {
     os << "HDF5 Bottom Segment";
+    return os;
 }
 
 // HDF5 SPECIFIC

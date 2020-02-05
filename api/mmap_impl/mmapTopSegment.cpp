@@ -39,6 +39,7 @@ bool MMapTopSegment::isCanonicalParalog() const {
     return isCanon;
 }
 
-void MMapTopSegment::print(std::ostream &os) const {
+std::ostream &MMapTopSegment::print(std::ostream &os) const {
     os << "MMapTopSegment" << getStartPosition() << " " << getEndPosition() << std::endl;
+    return os;
 }

@@ -17,7 +17,7 @@ using namespace hal;
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE OVERRIDE
 //////////////////////////////////////////////////////////////////////////////
-void BottomSegmentIterator::print(ostream &os) const {
+std::ostream &BottomSegmentIterator::print(ostream &os) const {
     os << "BotSegIt: ";
     SegmentIterator::print(os);
 
@@ -32,6 +32,7 @@ void BottomSegmentIterator::print(ostream &os) const {
             os << " cR[" << i << "]=" << bseg()->getChildReversed(i);
         }
     }
+    return os;
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -351,7 +351,7 @@ bool MappedSegment::isTop() const {
     return _target->isTop();
 }
 
-void MappedSegment::print(ostream &os) const {
+std::ostream &MappedSegment::print(ostream &os) const {
     os << "Mapped Segment:\n";
     os << "Source: ";
     if (_source.get() == NULL) {
@@ -365,6 +365,7 @@ void MappedSegment::print(ostream &os) const {
     } else {
         os << *_target;
     }
+    return os;
 }
 
 #if 1 // FIXME

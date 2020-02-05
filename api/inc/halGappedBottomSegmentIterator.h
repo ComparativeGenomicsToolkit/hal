@@ -84,7 +84,7 @@ namespace hal {
         virtual bool isFirst() const;
         virtual bool isLast() const;
         virtual bool isTop() const;
-        virtual void print(std::ostream &os) const;
+        virtual std::ostream &print(std::ostream &os) const;
 
         virtual Segment *getSegment();
         virtual const Segment *getSegment() const;

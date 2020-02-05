@@ -109,7 +109,7 @@ namespace hal {
         virtual bool isCanonicalOnRef() const;
 
         /** Print contents of column iterator */
-        virtual void print(std::ostream &os) const;
+        virtual std::ostream &print(std::ostream &os) const;
 
         /** Get a new tree that represents the phylogenetic relationship
          * between the entries in this column. Do not attempt to free this

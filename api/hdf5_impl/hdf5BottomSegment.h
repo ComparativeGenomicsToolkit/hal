@@ -34,7 +34,7 @@ namespace hal {
         hal_index_t getArrayIndex() const;
         bool isFirst() const;
         bool isLast() const;
-        void print(std::ostream &os) const;
+        std::ostream &print(std::ostream &os) const;
 
         // BOTTOM SEGMENT INTERFACE
         hal_size_t getNumChildren() const;
