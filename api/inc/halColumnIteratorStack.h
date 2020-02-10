@@ -10,10 +10,12 @@
 
 #include "halCommon.h"
 #include "halRearrangement.h"
+#include "halDnaIterator.h"
 #include <map>
 #include <set>
 #include <stack>
 #include <vector>
+#include <iostream>
 
 namespace hal {
 
@@ -25,17 +27,39 @@ namespace hal {
           public:
             LinkedBottomIterator() : _topParse(NULL), _entry(NULL) {
             }
+            std::ostream& print(std::ostream& os) const {
+                char strand = (_dna != NULL) ? _dna->getStrand() : 'N';
+                if (_it != NULL) {
+                    os << _it->print(os);
+                } else {
+                    os << "NULL";
+                }
+                os << " strand: " << strand  << " nchild: " << _children.size();
+                return os;
+            }
             BottomSegmentIteratorPtr _it;
             DnaIteratorPtr _dna;
             LinkedTopIterator *_topParse;
             std::vector<LinkedTopIterator *> _children;
             Entry *_entry;
+
         };
 
         class LinkedTopIterator {
           public:
             LinkedTopIterator() : _bottomParse(NULL), _parent(NULL), _nextDup(NULL), _entry(NULL) {
             }
+            std::ostream& print(std::ostream& os) const {
+                char strand = (_dna != NULL) ? _dna->getStrand() : 'N';
+                if (_it != NULL) {
+                    os << _it->print(os);
+                } else {
+                    os << "NULL";
+                }
+                os << " strand: " << strand;
+                return os;
+            }
+
             TopSegmentIteratorPtr _it;
             DnaIteratorPtr _dna;
             LinkedBottomIterator *_bottomParse;
@@ -49,7 +73,7 @@ namespace hal {
             Entry(const Sequence *seq, hal_index_t first, hal_index_t index, hal_index_t last, hal_size_t size, bool reversed)
                 : _sequence(seq), _firstIndex(first), _index(index), _lastIndex(last), _cumulativeSize(size), _reversed(reversed) {
                 if ((seq->getName() == "NC_015770.1") and reversed) { // FIXME:
-                    throw hal_exception("pushing rev of " + seq->getName());
+                    std::cerr << "pushing rev of " << seq->getName() << std::endl;
                 }
                 _top._entry = this;
                 _bottom._entry = this;
@@ -97,6 +121,17 @@ namespace hal {
                 _bottom._topParse = NULL;
                 _bottom._children.clear();
             }
+
+            std::ostream &print(std::ostream &os, const std::string& indent="") const {
+                os << indent << "entry: " << _sequence->getGenome()->getName() << " "
+                   << _firstIndex << ".." << _index << ".." << _lastIndex << " rev: " << _reversed << std::endl;
+                os << indent << "  top: ";
+                _top.print(os) << std::endl;
+                os << indent << "  bot: ";
+                _bottom.print(os) << std::endl;
+                return os;
+            }
+
             const Sequence *_sequence;
             hal_index_t _firstIndex;
             hal_index_t _index;
@@ -167,6 +202,14 @@ namespace hal {
         bool topInBounds() const {
             const Entry *e = _stack.back();
             return e->_index >= e->_firstIndex && e->_index <= e->_lastIndex;
+        }
+
+        std::ostream& print(std::ostream& os, const std::string& indent="") const {
+            for (int i = 0; i < _stack.size(); i++) {
+                os << indent << "entry " << i << ":" << std::endl;
+                _stack[i]->print(os, indent + "    ");
+            }
+            return os;
         }
 
       private:

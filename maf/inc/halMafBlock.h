@@ -153,10 +153,20 @@ namespace hal {
         void buildTreeR(BottomSegmentIteratorPtr botIt, stTree *tree, bool modifyEntries);
         stTree *getTreeNode(SegmentIteratorPtr segIt, bool modifyEntries);
 
+        void checkRefStrand() const;
         std::ostream &printBlock(std::ostream &os) const;
         std::ostream &printBlockWithTree(std::ostream &os) const;
 
+        protected:
         typedef std::multimap<const Sequence *, MafBlockEntry *, ColumnIterator::SequenceLess> Entries;
+        typedef hal::ColumnIterator::ColumnMap ColumnMap;
+        typedef hal::ColumnIterator::DNASet DNASet;
+        private:
+        void initBlockEmpty(ColumnMap::const_iterator& colMapIt);
+        void initBlockFill(ColumnMap::const_iterator& colMapIt);
+        void initBlockInitReference(ColumnIteratorPtr col);
+
+        protected: // FIXME: can these be private
         Entries _entries;
         MafBlockEntry *_reference;
         std::vector<MafBlockString *> _stringBuffers;
@@ -166,8 +176,6 @@ namespace hal {
         bool _printTree;
         stTree *_tree;
 
-        typedef hal::ColumnIterator::ColumnMap ColumnMap;
-        typedef hal::ColumnIterator::DNASet DNASet;
         friend std::ostream &operator<<(std::ostream &os, const hal::MafBlock &mafBlock);
         friend std::istream &operator>>(std::istream &is, hal::MafBlock &mafBlock);
     };

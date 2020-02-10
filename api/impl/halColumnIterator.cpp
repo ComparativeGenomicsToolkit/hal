@@ -16,6 +16,7 @@ using namespace std;
 using namespace hal;
 
 static const bool DEBUG = true;
+static int toRight_cnt_FIXME = 0;
 
 ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *> *targets, hal_index_t columnIndex,
                                hal_index_t lastColumnIndex, hal_size_t maxInsertLength, bool noDupes, bool noAncestors,
@@ -67,6 +68,10 @@ ColumnIterator::~ColumnIterator() {
 }
 
 void ColumnIterator::toRight() {
+    toRight_cnt_FIXME++;
+    if (toRight_cnt_FIXME >= 4) {
+        cerr << "@@@@@@@@@ toRight " << toRight_cnt_FIXME << endl;
+    }
     clearTree();
 
     // keep the current position so that when client calls
@@ -75,6 +80,9 @@ void ColumnIterator::toRight() {
     _prevRefSequence = _refSeq;
     _prevRefIndex = _stack[0]->_index - _refSeq->getStartPosition();
 
+    cerr << "===== toRight =====" << endl;
+    print(cerr);
+    
     // compatible with old interface which allowed toRight() to go out
     // of bounds without crashing.
     if (_stack.size() == 1 && !_stack.topInBounds()) {
@@ -98,10 +106,16 @@ void ColumnIterator::toRight() {
 
         _indelStack.clear();
 
-        bool init = _stack.top()->_index == _stack.top()->_firstIndex ||
-                    (_stack.top()->_bottom._it.get() == NULL && _stack.top()->_top._it.get() == NULL);
-
-        recursiveUpdate(init);
+        bool init = (_stack.top()->_index == _stack.top()->_firstIndex) ||
+            ((_stack.top()->_bottom._it.get() == NULL) && (_stack.top()->_top._it.get() == NULL));
+        
+        try { // FIXME:
+            recursiveUpdate(init);
+        } catch (const exception& ex) {
+            cerr << "EXCEPTION: ";
+            print(cerr) << endl;
+            throw;
+        }
 
         // move the index right
         if (_stack.top()->_reversed) {
@@ -229,16 +243,138 @@ void ColumnIterator::setVisitCache(ColumnIterator::VisitCache *visitCache) {
     _visitCache = *visitCache;
 }
 
-std::ostream &ColumnIterator::print(ostream &os) const {
+std::ostream &ColumnIterator::printColumn(ostream &os, const string& indent) const {
     const ColumnIterator::ColumnMap *cmap = getColumnMap();
     for (ColumnIterator::ColumnMap::const_iterator i = cmap->begin(); i != cmap->end(); ++i) {
-        os << i->first->getName() << ": ";
+        os << indent << i->first->getGenome()->getName() << " " << i->first->getName() << ": ";
         for (size_t j = 0; j < i->second->size(); ++j) {
             os << i->second->at(j)->getArrayIndex() << ", ";
         }
-        os << "\n";
+        os << endl;
     }
     return os;
+}
+
+std::ostream &ColumnIterator::print(ostream &os) const {
+    os << "ColumnIterator: ref: ";
+    if (_refSeq == NULL) {
+        os << "NULL";
+    } else {
+        os << _refSeq->getGenome()->getName() << ":" << _refSeq->getName();
+    }
+    os << endl;
+    os << "  column:" << endl;
+    printColumn(os, "    ");
+    os << "  stack:" << endl;
+    _stack.print(os, "    ");
+    os << "  indelStack:" << endl;
+    _indelStack.print(os, "    ");
+    return os;
+}
+
+void ColumnIterator::recursiveUpdateRefTopSegs(bool init,
+                                               const Sequence *refSequence,
+                                               const Genome *refGenome) {
+    LinkedTopIterator *linkTopIt = &_stack.top()->_top;
+    if (init) {
+        // first column, we search the genome for the site
+        linkTopIt->_it = refSequence->getTopSegmentIterator();
+        linkTopIt->_it->toSite(_stack.top()->_index, true);
+        linkTopIt->_dna = refGenome->getDnaIterator(_stack.top()->_index);
+        if (_stack.top()->_reversed) {
+            linkTopIt->_it->toReverseInPlace();
+            linkTopIt->_dna->toReverse();
+        }
+    } else {
+        // otherwise, we scan forward from last visisted column
+        assert(linkTopIt->_it.get() != NULL);
+
+        // catch up to nextfreeindex
+        linkTopIt->_it->slice(0, 0);
+        while (linkTopIt->_it->overlaps(_stack.top()->_index) == false) {
+            linkTopIt->_it->toRight();
+        }
+        bool rev = linkTopIt->_it->getReversed();
+        if (rev) {
+            linkTopIt->_it->toReverseInPlace();
+        }
+        assert(linkTopIt->_it->getReversed() == false);
+        hal_size_t offset = (hal_size_t)abs(_stack.top()->_index - linkTopIt->_it->getStartPosition());
+        linkTopIt->_it->slice(offset, linkTopIt->_it->getLength() - offset - 1);
+        linkTopIt->_dna->jumpTo(_stack.top()->_index);
+        if (rev) {
+            assert(linkTopIt->_dna->getReversed() == true);
+            linkTopIt->_it->toReverseInPlace();
+        }
+    }
+    assert(linkTopIt->_it->getStartPosition() == linkTopIt->_dna->getArrayIndex());
+    assert(linkTopIt->_dna->getArrayIndex() == _stack.top()->_index);
+    assert(_stack.top()->_index <= _stack.top()->_lastIndex);
+    assert(linkTopIt->_it->getStartPosition() == linkTopIt->_dna->getArrayIndex());
+
+    if (colMapInsert(linkTopIt->_dna) == false) {
+        _break = true;
+    } else {
+        handleDeletion(linkTopIt->_it);
+        updateParent(linkTopIt);
+        if (!_onlyOrthologs) {
+            updateNextTopDup(linkTopIt);
+        }
+        updateParseDown(linkTopIt);
+    }
+}
+
+void ColumnIterator::recursiveUpdateRefBottomSegs(bool init,
+                                                  const Sequence *refSequence,
+                                                  const Genome *refGenome) {
+    LinkedBottomIterator *linkBotIt = &_stack.top()->_bottom;
+    if (init) {
+        // first column, we search the genome for the site
+        linkBotIt->_it = refSequence->getBottomSegmentIterator();
+        linkBotIt->_it->toSite(_stack.top()->_index, true);
+        linkBotIt->_dna = refGenome->getDnaIterator(_stack.top()->_index);
+        if (_stack.top()->_reversed) {
+            linkBotIt->_it->toReverseInPlace();
+            linkBotIt->_dna->toReverse();
+        }
+    } else {
+        // otherwise, we scan forward from last visisted column
+        assert(linkBotIt->_it.get() != NULL);
+
+        // catch up to nextfreeindex
+        linkBotIt->_it->slice(0, 0);
+        while (linkBotIt->_it->overlaps(_stack.top()->_index) == false) {
+            linkBotIt->_it->toRight();
+        }
+        bool rev = linkBotIt->_it->getReversed();
+        if (rev) {
+            linkBotIt->_it->toReverseInPlace();
+        }
+        assert(linkBotIt->_it->getReversed() == false);
+        hal_size_t offset = (hal_size_t)abs(_stack.top()->_index - linkBotIt->_it->getStartPosition());
+        linkBotIt->_it->slice(offset, linkBotIt->_it->getLength() - offset - 1);
+        linkBotIt->_dna->jumpTo(_stack.top()->_index);
+        if (rev) {
+            assert(linkBotIt->_dna->getReversed() == true);
+            linkBotIt->_it->toReverseInPlace();
+        }
+    }
+
+    assert(linkBotIt->_it->getStartPosition() == linkBotIt->_dna->getArrayIndex());
+    assert(linkBotIt->_dna->getArrayIndex() == _stack.top()->_index);
+
+    if (colMapInsert(linkBotIt->_dna) == false) {
+        _break = true;
+    } else {
+        hal_size_t numChildren = refSequence->getGenome()->getNumChildren();
+        if (numChildren > linkBotIt->_children.size()) {
+            linkBotIt->_children.resize(numChildren, NULL);
+        }
+        assert(linkBotIt->_it->getStartPosition() == linkBotIt->_dna->getArrayIndex());
+        for (size_t child = 0; child < numChildren; ++child) {
+            updateChild(linkBotIt, child);
+        }
+    }
 }
 
 // Starting from the reference sequence which is determined
@@ -251,106 +387,14 @@ void ColumnIterator::recursiveUpdate(bool init) {
     clearTree();
     _break = false;
     _leftmostRefPos = _stack[0]->_index;
+    assert(_stack.size() > 0);
 
     const Sequence *refSequence = _stack.top()->_sequence;
     const Genome *refGenome = refSequence->getGenome();
     if (refSequence->getNumTopSegments() > 0) {
-        assert(_stack.size() > 0);
-        LinkedTopIterator *linkTopIt = &_stack.top()->_top;
-        // first column, we search the genome for the site
-        if (init == true) {
-            linkTopIt->_it = refSequence->getTopSegmentIterator();
-            linkTopIt->_it->toSite(_stack.top()->_index, true);
-            linkTopIt->_dna = refGenome->getDnaIterator(_stack.top()->_index);
-            if (_stack.top()->_reversed) {
-                linkTopIt->_it->toReverseInPlace();
-                linkTopIt->_dna->toReverse();
-            }
-        } else {
-            // otherwise, we scan forward from last visisted column
-            assert(linkTopIt->_it.get() != NULL);
-
-            // catch up to nextfreeindex
-            linkTopIt->_it->slice(0, 0);
-            while (linkTopIt->_it->overlaps(_stack.top()->_index) == false) {
-                linkTopIt->_it->toRight();
-            }
-            bool rev = linkTopIt->_it->getReversed();
-            if (rev == true) {
-                linkTopIt->_it->toReverseInPlace();
-            }
-            assert(linkTopIt->_it->getReversed() == false);
-            hal_size_t offset = (hal_size_t)abs(_stack.top()->_index - linkTopIt->_it->getStartPosition());
-            linkTopIt->_it->slice(offset, linkTopIt->_it->getLength() - offset - 1);
-            linkTopIt->_dna->jumpTo(_stack.top()->_index);
-            if (rev == true) {
-                assert(linkTopIt->_dna->getReversed() == true);
-                linkTopIt->_it->toReverseInPlace();
-            }
-        }
-        assert(linkTopIt->_it->getStartPosition() == linkTopIt->_dna->getArrayIndex());
-        assert(linkTopIt->_dna->getArrayIndex() == _stack.top()->_index);
-        assert(_stack.top()->_index <= _stack.top()->_lastIndex);
-        assert(linkTopIt->_it->getStartPosition() == linkTopIt->_dna->getArrayIndex());
-
-        if (colMapInsert(linkTopIt->_dna) == false) {
-            _break = true;
-            return;
-        }
-        handleDeletion(linkTopIt->_it);
-        updateParent(linkTopIt);
-        if (!_onlyOrthologs) {
-            updateNextTopDup(linkTopIt);
-        }
-        updateParseDown(linkTopIt);
+        recursiveUpdateRefTopSegs(init, refSequence, refGenome);
     } else {
-        assert(_stack.size() > 0);
-        LinkedBottomIterator *linkBotIt = &_stack.top()->_bottom;
-        if (init == true) {
-            linkBotIt->_it = refSequence->getBottomSegmentIterator();
-            linkBotIt->_it->toSite(_stack.top()->_index, true);
-            linkBotIt->_dna = refGenome->getDnaIterator(_stack.top()->_index);
-            if (_stack.top()->_reversed) {
-                linkBotIt->_it->toReverseInPlace();
-                linkBotIt->_dna->toReverse();
-            }
-        } else {
-            assert(linkBotIt->_it.get() != NULL);
-
-            // catch up to nextfreeindex
-            linkBotIt->_it->slice(0, 0);
-            while (linkBotIt->_it->overlaps(_stack.top()->_index) == false) {
-                linkBotIt->_it->toRight();
-            }
-            bool rev = linkBotIt->_it->getReversed();
-            if (rev == true) {
-                linkBotIt->_it->toReverseInPlace();
-            }
-            assert(linkBotIt->_it->getReversed() == false);
-            hal_size_t offset = (hal_size_t)abs(_stack.top()->_index - linkBotIt->_it->getStartPosition());
-            linkBotIt->_it->slice(offset, linkBotIt->_it->getLength() - offset - 1);
-            linkBotIt->_dna->jumpTo(_stack.top()->_index);
-            if (rev == true) {
-                assert(linkBotIt->_dna->getReversed() == true);
-                linkBotIt->_it->toReverseInPlace();
-            }
-        }
-
-        assert(linkBotIt->_it->getStartPosition() == linkBotIt->_dna->getArrayIndex());
-        assert(linkBotIt->_dna->getArrayIndex() == _stack.top()->_index);
-
-        if (colMapInsert(linkBotIt->_dna) == false) {
-            _break = true;
-            return;
-        }
-        hal_size_t numChildren = refSequence->getGenome()->getNumChildren();
-        if (numChildren > linkBotIt->_children.size()) {
-            linkBotIt->_children.resize(numChildren, NULL);
-        }
-        assert(linkBotIt->_it->getStartPosition() == linkBotIt->_dna->getArrayIndex());
-        for (size_t child = 0; child < numChildren; ++child) {
-            updateChild(linkBotIt, child);
-        }
+        recursiveUpdateRefBottomSegs(init, refSequence, refGenome);
     }
 }
 
@@ -425,40 +469,47 @@ static stTree *getTreeNode(SegmentIteratorPtr segIt) {
     return ret;
 }
 
-// Recursive part of buildTree
-// tree parameter represents node corresponding to the genome with
-// bottom segment botIt
-static void buildTreeR(BottomSegmentIteratorPtr botSegIt, stTree *tree) {
-    const Genome *genome = botSegIt->getGenome();
+static void buildTreeRecurse(BottomSegmentIteratorPtr botSegIt, stTree *tree);
 
-    // attach a node and recurse for each of this segment's children
-    // (and paralogous segments)
-    for (hal_size_t i = 0; i < botSegIt->bseg()->getNumChildren(); i++) {
-        if (botSegIt->bseg()->hasChild(i)) {
-            const Genome *child = genome->getChild(i);
-            TopSegmentIteratorPtr topSegIt = child->getTopSegmentIterator();
-            topSegIt->toChild(botSegIt, i);
-            stTree *canonicalParalog = getTreeNode(topSegIt);
-            stTree_setParent(canonicalParalog, tree);
+// build tree for a child of botSegIt
+static void buildTreeChild(BottomSegmentIteratorPtr botSegIt, hal_size_t iChild, stTree *tree) {
+    const Genome *genome = botSegIt->getGenome();
+    const Genome *child = genome->getChild(iChild);
+    TopSegmentIteratorPtr topSegIt = child->getTopSegmentIterator();
+    topSegIt->toChild(botSegIt, iChild);
+    stTree *canonicalParalog = getTreeNode(topSegIt);
+    stTree_setParent(canonicalParalog, tree);
+    if (topSegIt->tseg()->hasParseDown()) {
+        BottomSegmentIteratorPtr childBotSegIt = child->getBottomSegmentIterator();
+        childBotSegIt->toParseDown(topSegIt);
+        buildTreeRecurse(childBotSegIt, canonicalParalog);
+    }
+    // Traverse the paralogous segments cycle and add those segments as well
+    if (topSegIt->tseg()->hasNextParalogy()) {
+        topSegIt->toNextParalogy();
+        while (!topSegIt->tseg()->isCanonicalParalog()) {
+            stTree *paralog = getTreeNode(topSegIt);
+            stTree_setParent(paralog, tree);
             if (topSegIt->tseg()->hasParseDown()) {
                 BottomSegmentIteratorPtr childBotSegIt = child->getBottomSegmentIterator();
                 childBotSegIt->toParseDown(topSegIt);
-                buildTreeR(childBotSegIt, canonicalParalog);
+                buildTreeRecurse(childBotSegIt, paralog);
             }
-            // Traverse the paralogous segments cycle and add those segments as well
-            if (topSegIt->tseg()->hasNextParalogy()) {
-                topSegIt->toNextParalogy();
-                while (!topSegIt->tseg()->isCanonicalParalog()) {
-                    stTree *paralog = getTreeNode(topSegIt);
-                    stTree_setParent(paralog, tree);
-                    if (topSegIt->tseg()->hasParseDown()) {
-                        BottomSegmentIteratorPtr childBotSegIt = child->getBottomSegmentIterator();
-                        childBotSegIt->toParseDown(topSegIt);
-                        buildTreeR(childBotSegIt, paralog);
-                    }
-                    topSegIt->toNextParalogy();
-                }
-            }
+            topSegIt->toNextParalogy();
+        }
+    }
+
+}
+
+// Recursive part of buildTree
+// tree parameter represents node corresponding to the genome with
+// bottom segment botIt
+static void buildTreeRecurse(BottomSegmentIteratorPtr botSegIt, stTree *tree) {
+    // attach a node and recurse for each of this segment's children
+    // (and paralogous segments)
+    for (hal_size_t iChild = 0; iChild < botSegIt->bseg()->getNumChildren(); iChild++) {
+        if (botSegIt->bseg()->hasChild(iChild)) {
+            buildTreeChild(botSegIt, iChild, tree);
         }
     }
 }
@@ -514,7 +565,7 @@ stTree *ColumnIterator::buildTree() const {
         tree = getTreeNode(topSegIt);
     } else {
         tree = getTreeNode(botSegIt);
-        buildTreeR(botSegIt, tree);
+        buildTreeRecurse(botSegIt, tree);
     }
 
     if (_onlyOrthologs || _noDupes || !_targets.empty()) {
@@ -614,7 +665,7 @@ void ColumnIterator::updateChild(LinkedBottomIterator *linkBotIt, hal_size_t ind
         assert(index < linkBotIt->_children.size());
         const Genome *childGenome = genome->getChild(index);
 
-        // no linked iterator for child. we create a new one and add linke in
+        // no linked iterator for child. we create a new one and add links in
         // both directions
         if (linkBotIt->_children[index] == NULL) {
             assert(childGenome != NULL);

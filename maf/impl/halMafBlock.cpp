@@ -92,7 +92,11 @@ void MafBlock::initEntry(MafBlockEntry *entry, const Sequence *sequence, DnaIter
             entry->_start = entry->_srcLength - 1 - entry->_start;
         }
         if ((entry->_name  == "BTERRESTRIS.NC_015770.1") and (entry->_strand == '-') ) {  // FIXME hack
-            throw hal_exception("FIXME: Reference entry in MAF block created on negative strand: " + entry->_name);
+            if (false) {
+                throw hal_exception("FIXME: Reference entry in MAF block created on negative strand: " + entry->_name);
+            } else {
+                cerr << "FIXME: Reference entry in MAF block created on negative strand: " << entry->_name << endl;
+            }
         }
     } else {
         // no start position, so we wait till next time
@@ -291,6 +295,64 @@ stTree *MafBlock::buildTree(ColumnIteratorPtr colIt, bool modifyEntries) {
     return tree;
 }
 
+// No DNA Iterator for this sequence.  We just give it an empty entry
+void MafBlock::initBlockEmpty(ColumnMap::const_iterator& colMapIt) {
+    const Sequence *sequence = colMapIt->first;
+    Entries::iterator entryIt = _entries.lower_bound(sequence);
+    if (entryIt == _entries.end() || entryIt->first != sequence) {
+        MafBlockEntry *entry = new MafBlockEntry(_stringBuffers);
+        initEntry(entry, sequence, DnaIteratorPtr());
+        entryIt = _entries.insert(Entries::value_type(sequence, entry));
+    } else {
+        assert(entryIt->first == sequence);
+        assert(entryIt->second->_name == getName(sequence));
+        initEntry(entryIt->second, sequence, DnaIteratorPtr());
+    }
+}
+
+// Have DNA Iterator for this sequence, so fill in the block
+void MafBlock::initBlockFill(ColumnMap::const_iterator& colMapIt) {
+    const Sequence *sequence = colMapIt->first;
+    Entries::iterator entryIt = _entries.lower_bound(sequence);
+    for (DNASet::const_iterator d = colMapIt->second->begin(); d != colMapIt->second->end(); ++d) {
+        // search for colMapIt's sequence in _entries.
+        // we conly call find() once.  afterwards we just move forward
+        // in the map since they are both sorted by the same key.
+        if (entryIt == _entries.begin()) {
+            entryIt = _entries.lower_bound(sequence);
+            if (entryIt == _entries.end() || entryIt->first != sequence) {
+                entryIt = _entries.end();
+            }
+        } else {
+            while ((entryIt->first != colMapIt->first) && (entryIt != _entries.end())) {
+                ++entryIt;
+            }
+        }
+        if (entryIt == _entries.end()) {
+            MafBlockEntry *entry = new MafBlockEntry(_stringBuffers);
+            initEntry(entry, sequence, *d);
+            assert(entry->_name == getName(sequence));
+            entryIt = _entries.insert(Entries::value_type(sequence, entry));
+        } else {
+            initEntry(entryIt->second, sequence, *d);
+        }
+        ++entryIt;
+    }
+}
+
+// initialize the reference
+void MafBlock::initBlockInitReference(ColumnIteratorPtr col) {
+    const Sequence *referenceSequence = col->getReferenceSequence();
+    Entries::iterator entryIt = _entries.lower_bound(referenceSequence);
+    if (entryIt == _entries.end() || entryIt->first != referenceSequence) {
+        entryIt = _entries.begin();
+    }
+    _reference = entryIt->second;
+    if (entryIt->first == referenceSequence) {
+        _refIndex = col->getReferenceSequencePosition();
+    }
+}
+
 void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree) {
     if (printTree && _tree != NULL) {
         stTree_destruct(_tree);
@@ -299,70 +361,24 @@ void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree) 
     _fullNames = fullNames;
     _printTree = printTree;
     const ColumnMap *colMap = col->getColumnMap();
-    Entries::iterator e = _entries.begin();
     static int cnt_FIXME = 0;
 
-    for (ColumnMap::const_iterator c = colMap->begin(); c != colMap->end(); ++c) {
-        const Sequence *sequence = c->first;
+    for (ColumnMap::const_iterator colMapIt = colMap->begin(); colMapIt != colMap->end(); ++colMapIt) {
+        const Sequence *sequence = colMapIt->first; // FIXME
         if (sequence->getName() == "NC_015770.1") { // FIXME
             cnt_FIXME++;
             cerr << "initBlock on " << sequence->getName() << " " << cnt_FIXME << endl;
         }
 
-        // No DNA Iterator for this sequence.  We just give it an empty
-        // entry
-        if (c->second->empty()) {
-            e = _entries.lower_bound(sequence);
-            if (e == _entries.end() || e->first != sequence) {
-                MafBlockEntry *entry = new MafBlockEntry(_stringBuffers);
-                initEntry(entry, sequence, DnaIteratorPtr());
-                e = _entries.insert(Entries::value_type(sequence, entry));
-            } else {
-                assert(e->first == sequence);
-                assert(e->second->_name == getName(sequence));
-                initEntry(e->second, sequence, DnaIteratorPtr());
-            }
+        if (colMapIt->second->empty()) {
+            initBlockEmpty(colMapIt);
         } else {
-            for (DNASet::const_iterator d = c->second->begin(); d != c->second->end(); ++d) {
-                // search for c's sequence in _entries.
-                // we conly call find() once.  afterwards we just move forward
-                // in the map since they are both sorted by the same key.
-                if (e == _entries.begin()) {
-                    e = _entries.lower_bound(sequence);
-                    if (e == _entries.end() || e->first != sequence) {
-                        e = _entries.end();
-                    }
-                } else {
-                    while (e->first != c->first && e != _entries.end()) {
-                        ++e;
-                    }
-                }
-                if (e == _entries.end()) {
-                    MafBlockEntry *entry = new MafBlockEntry(_stringBuffers);
-                    initEntry(entry, sequence, *d);
-                    assert(entry->_name == getName(sequence));
-                    e = _entries.insert(Entries::value_type(sequence, entry));
-                } else {
-                    initEntry(e->second, sequence, *d);
-                }
-                ++e;
-            }
+            initBlockFill(colMapIt);
         }
     }
 
     if (_reference == NULL) {
-        const Sequence *referenceSequence = col->getReferenceSequence();
-        e = _entries.lower_bound(referenceSequence);
-        if (e == _entries.end() || e->first != referenceSequence) {
-            e = _entries.begin();
-        }
-        _reference = e->second;
-        if (e->first == referenceSequence) {
-            _refIndex = col->getReferenceSequencePosition();
-        }
-    }
-    if (_reference->_strand == '-') {
-        throw hal_exception("Reference entry in MAF block created on negative strand: " + _reference->_name);
+        initBlockInitReference(col);
     }
 
     if (_printTree) {
@@ -478,6 +494,12 @@ static void printTreeEntries(stTree *tree, ostream &os) {
     }
 }
 
+void MafBlock::checkRefStrand() const {
+    if ((_reference != NULL) and (_reference->_strand == '-')) {
+        throw hal_exception("Reference entry in MAF block created on negative strand: " + _reference->_name);
+    }
+}
+
 ostream &MafBlock::printBlockWithTree(ostream &os) const {
     // Sort tree so that the reference comes first.
     prioritizeNodeInTree(_reference->_tree);
@@ -488,7 +510,7 @@ ostream &MafBlock::printBlockWithTree(ostream &os) const {
 
     // Print entries in post order.
     printTreeEntries(_tree, os);
-
+    checkRefStrand(); // after block is written
     return os;
 }
 
@@ -512,6 +534,7 @@ ostream &MafBlock::printBlock(ostream &os) const {
             os << *e->second;
         }
     }
+    checkRefStrand(); // after block is written so it can be looked at.
     return os;
 }
 

@@ -129,6 +129,12 @@ namespace hal {
         typedef ColumnIteratorStack::Entry StackEntry;
 
       private:
+        void recursiveUpdateRefTopSegs(bool init,
+                                       const Sequence *refSequence,
+                                       const Genome *refGenome);
+        void recursiveUpdateRefBottomSegs(bool init,
+                                          const Sequence *refSequence,
+                                          const Genome *refGenome);
         void recursiveUpdate(bool init);
         bool handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt);
         bool handleInsertion(const TopSegmentIteratorPtr &inputTopSegIt);
@@ -149,10 +155,12 @@ namespace hal {
 
         stTree *buildTree() const;
         void clearTree();
-
+        std::ostream& printColumn(std::ostream &os, const std::string& indent) const;
+        
       private:
         std::set<const Genome *> _targets;
         std::set<const Genome *> _scope;
+
         ColumnIteratorStack _stack;
         ColumnIteratorStack _indelStack;
         const Sequence *_refSeq;
