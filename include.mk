@@ -25,15 +25,13 @@ sonLibRootDir ?= ${rootDir}/../sonLib
 sonLibDir = ${sonLibRootDir}/lib
 
 # update PYTHONPATH for tests
-export PYTHONPATH := $(abspath ${rootDir}/..):${PYTHONPATH}
+export PYTHONPATH := $(abspath ${rootDir}/../sonLib/src):${PYTHONPATH}
 
 export PATH := $(abspath ${rootDir}/bin):${PATH}
 
 .SECONDARY: 
 
 include  ${sonLibRootDir}/include.mk
-
-dataSetsDir=/Users/hickey/Documents/Devel/genomes/datasets
 
 #
 # The -D_GLIBCXX_USE_CXX11_ABI=1 flag prevents errors with

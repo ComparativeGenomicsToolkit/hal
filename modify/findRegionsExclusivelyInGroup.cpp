@@ -79,18 +79,15 @@ int main(int argc, char *argv[]) {
                 inRegion = true;
             } else {
                 if (wasInRegion) {
-                    const hal_index_t pos = colIt->getReferenceSequencePosition();
-                    curBedLine._end = pos;
+                    curBedLine._end = colIt->getReferenceSequencePosition();
                     curBedLine.write(os);
                 }
                 inRegion = false;
             }
             if (inRegion && !wasInRegion) {
                 // start of single-copy region, output start of bed entry
-                const Sequence *seq = colIt->getReferenceSequence();
-                const hal_index_t pos = colIt->getReferenceSequencePosition();
-                curBedLine._chrName = seq->getName();
-                curBedLine._start = pos;
+                curBedLine._chrName = colIt->getReferenceSequence()->getName();
+                curBedLine._start = colIt->getReferenceSequencePosition();
             }
             if (colIt->lastColumn()) {
                 // Have to break here instead of at the beginning of the loop to
@@ -98,8 +95,7 @@ int main(int argc, char *argv[]) {
                 // UPDATE TO LATEST CODE FROM ABOVE (OR STOP BEING LAZY)
                 if (inRegion) {
                     // current single-copy region has ended, finish bed entry
-                    const hal_index_t pos = colIt->getReferenceSequencePosition();
-                    curBedLine._end = pos;
+                    curBedLine._end = colIt->getReferenceSequencePosition();
                     curBedLine.write(os);
                 }
                 break;

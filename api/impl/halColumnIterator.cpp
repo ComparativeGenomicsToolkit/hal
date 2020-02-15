@@ -15,29 +15,29 @@
 using namespace std;
 using namespace hal;
 
-static const bool DEBUG = true;
-static int toRight_cnt_FIXME = 0;
+static bool OLD_WAY = true; // FIXME
+static bool DEBUG = false;  // FIXME
+static bool DANGER_CHECK = false;  // FIXME
 
 ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *> *targets, hal_index_t columnIndex,
                                hal_index_t lastColumnIndex, hal_size_t maxInsertLength, bool noDupes, bool noAncestors,
-                               bool reverseStrand, bool unique, bool onlyOrthologs)
-    : _maxInsertionLength(maxInsertLength), _noDupes(noDupes), _noAncestors(noAncestors),
-      _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs) {
-    assert(columnIndex >= 0 && lastColumnIndex >= columnIndex && lastColumnIndex < (hal_index_t)reference->getSequenceLength());
-    if (DEBUG) {
+                               bool reverseStrand, bool unique, bool onlyOrthologs):
+    _refGenome(reference), _refSeq(NULL), _refIndex(columnIndex),
+    _maxInsertionLength(maxInsertLength), _noDupes(noDupes),
+    _noAncestors(noAncestors), _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs) {
+    assert((columnIndex >= 0) && (lastColumnIndex >= columnIndex) && (lastColumnIndex < hal_index_t(reference->getSequenceLength())));
+    if (DEBUG) {  // FIXME:
         cerr << "ColumnIterator new: " << reference->getName() << ":" << columnIndex << endl;
     }
     // allocate temp iterators
     if (reference->getNumTopSegments() > 0) {
         _top = reference->getTopSegmentIterator(0);
-        _next = _top->clone();
     } else if (reference->getChild(0) != NULL) {
         _top = reference->getChild(0)->getTopSegmentIterator(0);
-        _next = _top->clone();
     }
 
     if (_maxInsertionLength > 0) {
-        // need to allocate the rearrangement from
+        // need to allocate the rearrangement object for reference gaps
         if (reference->getParent() != NULL) {
             _rearrangement = reference->getRearrangement(0, 0, 1., true);
         } else if (reference->getNumChildren() > 0) {
@@ -58,7 +58,18 @@ ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *
     // note columnIndex in genome (not sequence) coordinates
     _stack.push(_refSeq, columnIndex, lastColumnIndex, reverseStrand);
 
-    toRight();
+    if (OLD_WAY) { // FIXME     
+        toRight();
+    } else {
+        recursiveUpdate(true);
+        _prevRefSequence = _refSeq; // FIXME: 
+        _prevRefIndex = _stack[0]->_index - _refSeq->getStartPosition();
+    }
+    if (DEBUG) {
+        cerr << "====== init ======" << endl;
+        print(cerr);
+        cerr << "====== done ======" << endl;
+    }
 }
 
 ColumnIterator::~ColumnIterator() {
@@ -67,21 +78,96 @@ ColumnIterator::~ColumnIterator() {
     clearTree();
 }
 
+/* once step in the toRight, sets _break to false when at the position */
+void ColumnIterator::toRightStep() {
+    // clean stack
+    moveToNextUnvisitedIndex();
+    while (_stack.size() > 1 && !_stack.topInBounds()) {
+        _stack.popDelete();
+        moveToNextUnvisitedIndex();
+    }
+
+    // compatible with old interface which allowed toRight() to go out
+    // of bounds without crashing.
+    if ((_stack.size() == 1) && (!_stack.topInBounds())) {
+        return;
+    }
+
+    _indelStack.clear();
+
+    // [REFASSUM] FIXME
+    bool init = (_stack.top()->_index == _stack.top()->_firstIndex) ||
+        ((_stack.top()->_bottom._it.get() == NULL) && (_stack.top()->_top._it.get() == NULL));
+    if (not OLD_WAY) {
+        init = false;  // FIXME;
+    }
+    try { // FIXME:
+        recursiveUpdate(init);
+    } catch (const exception& ex) {
+        cerr << "EXCEPTION: ";
+        print(cerr);
+        cerr << endl;
+        throw;
+    }
+
+    // move the index right
+    // [REFASSUM] FIXME
+    if (_stack.top()->_reversed) {
+        _stack.top()->_index--;
+        _refIndex--; // FIXME: tmp
+    } else {
+        _stack.top()->_index++;
+        _refIndex++; // FIXME: tmp
+    }
+
+    // jump to next sequence in genome if necessary
+    const Sequence *seq = _stack.top()->_sequence;
+    if ((_stack.size() == 1) &&
+        ((_stack.top()->_index < seq->getStartPosition()) ||
+         ((_stack.top()->_index >= hal_index_t(seq->getStartPosition() + seq->getSequenceLength())) &&
+          (_stack.top()->_index < hal_index_t(seq->getGenome()->getSequenceLength()))))) {
+        _stack.top()->_sequence = seq->getGenome()->getSequenceBySite(_stack.top()->_index);
+        assert(_stack.top()->_sequence != NULL);
+        _refSeq = _stack.top()->_sequence;
+    }
+    // FIXME: tmp, will not work if dups in sequence
+    if (DANGER_CHECK && (seq == _refSeq)) {
+        if (_refIndex != _stack.top()->_index) {
+            cerr << "@@@@ DANGER _refIndex != _stack.top()->_index " << _refIndex << " != " << _stack.top()->_index << endl;
+        }
+        if ((_stack.top()->_top._it != NULL)
+            && (_stack.top()->_top._dna->getArrayIndex() != _refIndex)) {
+            cerr << "@@@@ DANGER _stack.top()->_top._dna->getArrayIndex() != _refIndex " << _stack.top()->_top._dna->getArrayIndex() << " != " << _refIndex << endl;
+        }
+        if ((_stack.top()->_bottom._it != NULL)
+            && (_stack.top()->_bottom._dna->getArrayIndex() != _refIndex)) {
+            cerr << "@@@@ DANGER _stack.top()->_bottom._dna->getArrayIndex() != _refIndex " << _stack.top()->_bottom._dna->getArrayIndex() << " != " << _refIndex << endl;
+        }
+        
+    }
+}
+
 void ColumnIterator::toRight() {
+    clearTree();
+
+#if 0  // FIXME
+    static int toRight_cnt_FIXME = 0;
     toRight_cnt_FIXME++;
     if (toRight_cnt_FIXME >= 4) {
         cerr << "@@@@@@@@@ toRight " << toRight_cnt_FIXME << endl;
     }
-    clearTree();
-
+    cerr << "===== toRight =====" << endl;
+    print(cerr);
+#endif
+    
     // keep the current position so that when client calls
     // getReferenceXXX() methods, they get the state before
     // toRight is called.
+    // FIXME: this is needed because constructor initialize the stack to the
+    // column zero and then calls toRight()  (markd)
     _prevRefSequence = _refSeq;
     _prevRefIndex = _stack[0]->_index - _refSeq->getStartPosition();
 
-    cerr << "===== toRight =====" << endl;
-    print(cerr);
     
     // compatible with old interface which allowed toRight() to go out
     // of bounds without crashing.
@@ -91,61 +177,23 @@ void ColumnIterator::toRight() {
     assert(_indelStack.size() == 0);
 
     do {
-        // clean stack
-        nextFreeIndex();
-        while (_stack.size() > 1 && !_stack.topInBounds()) {
-            _stack.popDelete();
-            nextFreeIndex();
-        }
-
-        // compatible with old interface which allowed toRight() to go out
-        // of bounds without crashing.
-        if (_stack.size() == 1 && !_stack.topInBounds()) {
-            return;
-        }
-
-        _indelStack.clear();
-
-        bool init = (_stack.top()->_index == _stack.top()->_firstIndex) ||
-            ((_stack.top()->_bottom._it.get() == NULL) && (_stack.top()->_top._it.get() == NULL));
-        
-        try { // FIXME:
-            recursiveUpdate(init);
-        } catch (const exception& ex) {
-            cerr << "EXCEPTION: ";
-            print(cerr) << endl;
-            throw;
-        }
-
-        // move the index right
-        if (_stack.top()->_reversed) {
-            _stack.top()->_index--;
-        } else {
-            _stack.top()->_index++;
-        }
-
-        // jump to next sequence in genome if necessary
-        const Sequence *seq = _stack.top()->_sequence;
-        if (_stack.size() == 1 &&
-            (_stack.top()->_index < seq->getStartPosition() ||
-             (_stack.top()->_index >= (hal_index_t)(seq->getStartPosition() + seq->getSequenceLength()) &&
-            _stack.top()->_index < (hal_index_t)(seq->getGenome()->getSequenceLength())))) {
-            _stack.top()->_sequence = seq->getGenome()->getSequenceBySite(_stack.top()->_index);
-            assert(_stack.top()->_sequence != NULL);
-            _refSeq = _stack.top()->_sequence;
-        }
-    } while (_break == true);
+        toRightStep();
+    } while (_break);
 
     // push the indel stack.
     _stack.pushStack(_indelStack);
 
     // clean stack again
-    nextFreeIndex();
+    moveToNextUnvisitedIndex();
     while (_stack.size() > 1 && !_stack.topInBounds()) {
         _stack.popDelete();
-        nextFreeIndex();
+        moveToNextUnvisitedIndex();
     }
 
+    if (DEBUG) {
+        cerr << "====== toRight ======" << endl;
+        print(cerr);
+    }
 #ifndef NDEBUG
     set<pair<const Sequence *, hal_index_t>> coordSet;
     ColumnMap::const_iterator i, iNext;
@@ -170,39 +218,20 @@ void ColumnIterator::toSite(hal_index_t columnIndex, hal_index_t lastColumnIndex
     assert(_refSeq != NULL);
     _stack.clear();
     _indelStack.clear();
-    if (clearCache == true) {
+    if (clearCache) {
         clearVisitCache();
     }
     defragment();
     // note columnIndex in genome (not sequence) coordinates
     _stack.push(_refSeq, columnIndex, lastColumnIndex);
-    toRight();
+    if (OLD_WAY) { // FIXME:
+        toRight();
+    } else {
+        recursiveUpdate(true);
+        _prevRefSequence = _refSeq; // FIXME: 
+        _prevRefIndex = _stack[0]->_index - _refSeq->getStartPosition();   // [REFASSUM] FIXME
+    }
     assert(getReferenceSequencePosition() + _refSeq->getStartPosition() == columnIndex);
-}
-
-bool ColumnIterator::lastColumn() const {
-    return _stack.size() == 1 && _stack.top()->pastEnd();
-}
-
-const Genome *ColumnIterator::getReferenceGenome() const {
-    return _prevRefSequence->getGenome();
-}
-
-const Sequence *ColumnIterator::getReferenceSequence() const {
-    return _prevRefSequence;
-}
-
-hal_index_t ColumnIterator::getReferenceSequencePosition() const {
-    return _prevRefIndex;
-}
-
-const ColumnIterator::ColumnMap *ColumnIterator::getColumnMap() const {
-    return &_colMap;
-}
-
-hal_index_t ColumnIterator::getArrayIndex() const {
-    assert(_stack.size() > 0);
-    return _stack[0]->_index;
 }
 
 void ColumnIterator::defragment() {
@@ -219,16 +248,6 @@ void ColumnIterator::defragment() {
     }
 
     _stack.resetLinks();
-}
-
-bool ColumnIterator::isCanonicalOnRef() const {
-    assert(_stack.size() > 0);
-    assert(_leftmostRefPos >= 0 && (hal_size_t)_leftmostRefPos < _stack[0]->_sequence->getGenome()->getSequenceLength());
-    return _leftmostRefPos >= _stack[0]->_firstIndex && _leftmostRefPos <= _stack[0]->_lastIndex;
-}
-
-ColumnIterator::VisitCache *ColumnIterator::getVisitCache() {
-    return &_visitCache;
 }
 
 void ColumnIterator::clearVisitCache() {
@@ -255,12 +274,12 @@ std::ostream &ColumnIterator::printColumn(ostream &os, const string& indent) con
     return os;
 }
 
-std::ostream &ColumnIterator::print(ostream &os) const {
+void ColumnIterator::print(ostream &os) const {
     os << "ColumnIterator: ref: ";
     if (_refSeq == NULL) {
         os << "NULL";
     } else {
-        os << _refSeq->getGenome()->getName() << ":" << _refSeq->getName();
+        os << _refGenome->getName() << ":" << _refSeq->getName() << " colIndex=" << _refIndex;
     }
     os << endl;
     os << "  column:" << endl;
@@ -269,7 +288,6 @@ std::ostream &ColumnIterator::print(ostream &os) const {
     _stack.print(os, "    ");
     os << "  indelStack:" << endl;
     _indelStack.print(os, "    ");
-    return os;
 }
 
 void ColumnIterator::recursiveUpdateRefTopSegs(bool init,
@@ -289,7 +307,7 @@ void ColumnIterator::recursiveUpdateRefTopSegs(bool init,
         // otherwise, we scan forward from last visisted column
         assert(linkTopIt->_it.get() != NULL);
 
-        // catch up to nextfreeindex
+        // catch up to moveToNextUnvisitedIndex
         linkTopIt->_it->slice(0, 0);
         while (linkTopIt->_it->overlaps(_stack.top()->_index) == false) {
             linkTopIt->_it->toRight();
@@ -341,7 +359,7 @@ void ColumnIterator::recursiveUpdateRefBottomSegs(bool init,
         // otherwise, we scan forward from last visisted column
         assert(linkBotIt->_it.get() != NULL);
 
-        // catch up to nextfreeindex
+        // catch up to moveToNextUnvisitedIndex
         linkBotIt->_it->slice(0, 0);
         while (linkBotIt->_it->overlaps(_stack.top()->_index) == false) {
             linkBotIt->_it->toRight();
@@ -386,10 +404,11 @@ void ColumnIterator::recursiveUpdate(bool init) {
     resetColMap();
     clearTree();
     _break = false;
-    _leftmostRefPos = _stack[0]->_index;
+    _leftmostRefPos = _stack[0]->_index; // [REFASSUM] FIXME
     assert(_stack.size() > 0);
 
-    const Sequence *refSequence = _stack.top()->_sequence;
+    // [REFASSUM] FIXME
+    const Sequence *refSequence = _stack.top()->_sequence;  // FIXME: don't do this
     const Genome *refGenome = refSequence->getGenome();
     if (refSequence->getNumTopSegments() > 0) {
         recursiveUpdateRefTopSegs(init, refSequence, refGenome);
@@ -399,8 +418,8 @@ void ColumnIterator::recursiveUpdate(bool init) {
 }
 
 bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) {
-    if (_maxInsertionLength > 0 && inputTopSegIt->tseg()->hasParent() == true) {
-        _top->copy(inputTopSegIt);
+    if (_maxInsertionLength > 0 && inputTopSegIt->tseg()->hasParent()) {
+        _top->copy(inputTopSegIt); // [REFASSUM] FIXME
         // only handle a deletion if we are immediately left of the breakpoint
         if (_top->getEndOffset() == 0) {
             const Genome *genome = _top->getTopSegment()->getGenome();
@@ -801,10 +820,10 @@ void ColumnIterator::updateParseDown(LinkedTopIterator *linkTopIt) {
 // moves index "right" until unvisited base is found
 // if none exists in the current range, index is left one
 // spot out of bounds (invalid) and return false.
-void ColumnIterator::nextFreeIndex() {
+void ColumnIterator::moveToNextUnvisitedIndex() {
     hal_index_t index = _stack.top()->_index;
 
-    if (_unique == true || _stack.size() > 1) {
+    if (_unique || (_stack.size() > 1)) {
         const VisitCache::iterator cacheIt = _visitCache.find(_stack.top()->_sequence->getGenome());
         if (cacheIt != _visitCache.end()) {
             PositionCache *posCache = cacheIt->second;
@@ -868,6 +887,7 @@ bool ColumnIterator::colMapInsert(DnaIteratorPtr dnaIt) {
 
     // update leftmost ref pos which is used by isCanonicalOnRef()
     if (genome == _stack[0]->_sequence->getGenome()) {
+        // [REFASSUM] FIXME
         _leftmostRefPos = min(_leftmostRefPos, dnaIt->getArrayIndex());
     }
     return !found;

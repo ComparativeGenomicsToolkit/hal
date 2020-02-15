@@ -146,7 +146,7 @@ namespace hal {
         };
 
         // NEEDS TO BE ADDED TO SEGMENT INTERFACE
-        virtual std::ostream &print(std::ostream &os) const;
+        virtual void print(std::ostream &os) const;
 
         // SEGMENT INTERFACE
         virtual void setArrayIndex(Genome *genome, hal_index_t arrayIndex);

@@ -132,10 +132,6 @@ struct ColumnIteratorDepthTest : public AlignmentTest {
                 CuAssertTrue(_testCase, i->second->size() == 1);
                 DnaIteratorPtr dnaIt = *i->second->begin();
 
-                /*        cout << "column=" << columnNumber
-                           << " genome=" << dnaIt->getGenome()->getName()
-                           << " index=" << dnaIt->getArrayIndex() << endl;
-                */
                 CuAssertTrue(_testCase, dnaIt->getArrayIndex() == (hal_index_t)columnNumber);
             }
             colIterator->toRight();

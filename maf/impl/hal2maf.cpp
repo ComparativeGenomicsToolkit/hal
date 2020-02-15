@@ -48,8 +48,8 @@ static void initParser(CLParser &optionsParser) {
                                 false);
     optionsParser.addOptionFlag("unique", "only write column whose left-most reference "
                                           "coordinate is in the specified range.  this "
-                                          "is used to insure that the same column isnt "
-                                          "sampled twice (due to ducplications) by mafs "
+                                          "is used to insure that the same column isn't "
+                                          "sampled twice (due to duplication) by MAFs "
                                           "generated on distinct ranges.",
                                 false);
     optionsParser.addOptionFlag("append", "append to instead of overwrite output file.", false);

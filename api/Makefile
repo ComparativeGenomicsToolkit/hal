@@ -66,11 +66,11 @@ halHdf5Tests: all
 halApiTests: hdf5.halApiTestsStorage mmap.halApiTestsStorage
 
 %.halApiTestsStorage:
-	${MAKE} runHaltApiTest halStorageFormat=$*
+	${MAKE} runHalApiTest halStorageFormat=$*
 
-runHaltApiTest: ${halApiTest_names:%=%.runHaltApiTest}
+runHalApiTest: ${halApiTest_names:%=%.runHalApiTest}
 
-%.runHaltApiTest:
+%.runHalApiTest:
 	${binDir}/$* ${halStorageFormat}
 
 doxy :

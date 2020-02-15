@@ -17,7 +17,7 @@ using namespace hal;
 //////////////////////////////////////////////////////////////////////////////
 // SEGMENT INTERFACE OVERRIDE
 //////////////////////////////////////////////////////////////////////////////
-std::ostream &TopSegmentIterator::print(ostream &os) const {
+void TopSegmentIterator::print(ostream &os) const {
     os << "TopSegIt: ";
     SegmentIterator::print(os);
 
@@ -28,7 +28,6 @@ std::ostream &TopSegmentIterator::print(ostream &os) const {
     if (ai != NULL_INDEX && !offRight) {
         os << " pIdx=" << tseg()->getParentIndex() << " npIdx=" << tseg()->getNextParalogyIndex();
     }
-    return os;
 }
 
 //////////////////////////////////////////////////////////////////////////////

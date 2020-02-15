@@ -111,10 +111,8 @@ int main(int argc, char *argv[]) {
         bool changedSequence = prevSequence != NULL && prevSequence != colIt->getReferenceSequence();
         if (inRegion && !wasInRegion) {
             // start of single-copy region, output start of bed entry
-            const Sequence *seq = colIt->getReferenceSequence();
-            const hal_index_t pos = colIt->getReferenceSequencePosition();
-            curBedLine._chrName = seq->getName();
-            curBedLine._start = pos;
+            curBedLine._chrName = colIt->getReferenceSequence()->getName();
+            curBedLine._start = colIt->getReferenceSequencePosition();
         }
         if (changedSequence || colIt->lastColumn()) {
             if (colIt->lastColumn() && inRegion && length == 1) {
@@ -137,8 +135,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
         } else if (!inRegion && wasInRegion) {
-            const hal_index_t pos = colIt->getReferenceSequencePosition();
-            curBedLine._end = pos;
+            curBedLine._end = colIt->getReferenceSequencePosition();
             curBedLine.write(os);
         }
         if (colIt->getReferenceSequencePosition() % 10000 == 0) {

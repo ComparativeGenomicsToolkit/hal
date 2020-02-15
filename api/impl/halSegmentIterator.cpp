@@ -123,7 +123,7 @@ bool SegmentIterator::isTop() const {
     return getSegment()->isTop();
 }
 
-std::ostream &SegmentIterator::print(ostream &os) const {
+void SegmentIterator::print(ostream &os) const {
     hal_index_t ai = getArrayIndex();
 
     os << "gen=" << getGenome()->getName() << " seq=" << getSequence()->getName() << " idx=" << ai;
@@ -136,7 +136,6 @@ std::ostream &SegmentIterator::print(ostream &os) const {
            << getStartOffset() << "," << getEndOffset() << "]"
            << " rev=" << getReversed();
     }
-    return os;
 }
 
 //////////////////////////////////////////////////////////////////////////////

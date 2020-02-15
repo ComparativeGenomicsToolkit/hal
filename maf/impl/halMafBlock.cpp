@@ -361,15 +361,8 @@ void MafBlock::initBlock(ColumnIteratorPtr col, bool fullNames, bool printTree) 
     _fullNames = fullNames;
     _printTree = printTree;
     const ColumnMap *colMap = col->getColumnMap();
-    static int cnt_FIXME = 0;
 
     for (ColumnMap::const_iterator colMapIt = colMap->begin(); colMapIt != colMap->end(); ++colMapIt) {
-        const Sequence *sequence = colMapIt->first; // FIXME
-        if (sequence->getName() == "NC_015770.1") { // FIXME
-            cnt_FIXME++;
-            cerr << "initBlock on " << sequence->getName() << " " << cnt_FIXME << endl;
-        }
-
         if (colMapIt->second->empty()) {
             initBlockEmpty(colMapIt);
         } else {

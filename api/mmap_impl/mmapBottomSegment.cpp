@@ -27,7 +27,6 @@ hal_offset_t MMapBottomSegment::getTopParseOffset() const {
     return offset;
 }
 
-std::ostream &MMapBottomSegment::print(std::ostream &os) const {
+void MMapBottomSegment::print(std::ostream &os) const {
     os << "MMapBottomSegment" << getStartPosition() << " " << getEndPosition() << std::endl;
-    return os;
 }

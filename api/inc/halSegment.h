@@ -109,7 +109,7 @@ namespace hal {
         virtual bool isTop() const = 0;
 
         /** Print contents of segment */
-        virtual std::ostream &print(std::ostream &os) const = 0;
+        virtual void print(std::ostream &os) const = 0;
 
       protected:
         Segment(Genome *genome, hal_index_t index) : _genome(genome), _index(index) {

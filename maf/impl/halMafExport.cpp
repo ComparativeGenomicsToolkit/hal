@@ -12,6 +12,8 @@
 using namespace std;
 using namespace hal;
 
+static bool OLD_WAY = true; // FIXME
+
 void MafExport::writeHeader() {
     assert(_mafStream != NULL);
     if (_mafStream->tellp() == streampos(0)) {
@@ -53,15 +55,15 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
         assert(_mafBlock.canAppendColumn(colIt) == true);
         _mafBlock.appendColumn(colIt);
         ++appendCount;
+        if (not OLD_WAY) {
+            colIt->toRight();
+        }
     }
     size_t numBlocks = 0;
-    int FIXME_cnt = 0;
     while (not colIt->lastColumn()) {
-        FIXME_cnt++;
-        if (FIXME_cnt >= 3) {
-            cerr << "going wrong here" << endl;
+        if (OLD_WAY) {
+            colIt->toRight();
         }
-        colIt->toRight();
         if (_unique == false || colIt->isCanonicalOnRef() == true) {
             if (appendCount == 0) {
                 _mafBlock.initBlock(colIt, _ucscNames, _printTree);
@@ -81,6 +83,9 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
             }
             _mafBlock.appendColumn(colIt);
             ++appendCount;
+        }
+        if (not OLD_WAY) {
+            colIt->toRight();
         }
     }
     // if nothing was ever added (seems to happen in corner case where
@@ -113,9 +118,11 @@ void MafExport::convertEntireAlignment(ostream &mafStream, AlignmentConstPtr ali
                                                             true,  // unique
                                                             _onlyOrthologs);
         colIt->setVisitCache(&visitCache);
+#if 1 // FIXME: wtf
         // So that we don't accidentally visit the first column if it's
         // already been visited.
         colIt->toSite(0, genome->getSequenceLength() - 1);
+#endif
         for (;;) {
             if (appendCount == 0) {
                 _mafBlock.initBlock(colIt, _ucscNames, _printTree);
@@ -135,11 +142,12 @@ void MafExport::convertEntireAlignment(ostream &mafStream, AlignmentConstPtr ali
             }
             _mafBlock.appendColumn(colIt);
             appendCount++;
-
-            if (colIt->lastColumn()) {
-                // Have to break here because otherwise
-                // colIt->toRight() will crash.
-                break;
+            if (OLD_WAY) {
+                if (colIt->lastColumn()) {
+                    // Have to break here because otherwise
+                    // colIt->toRight() will crash.
+                    break;
+                }
             }
             colIt->toRight();
         }

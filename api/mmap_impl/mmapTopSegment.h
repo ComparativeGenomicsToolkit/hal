@@ -29,7 +29,7 @@ namespace hal {
         hal_index_t getArrayIndex() const;
         bool isFirst() const;
         bool isLast() const;
-        std::ostream &print(std::ostream &os) const;
+        void print(std::ostream &os) const;
 
         // TOP SEGMENT INTERFACE
         hal_index_t getParentIndex() const {

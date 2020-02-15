@@ -27,15 +27,17 @@ namespace hal {
           public:
             LinkedBottomIterator() : _topParse(NULL), _entry(NULL) {
             }
-            std::ostream& print(std::ostream& os) const {
-                char strand = (_dna != NULL) ? _dna->getStrand() : 'N';
-                if (_it != NULL) {
-                    os << _it->print(os);
+            void print(std::ostream& os, const std::string& indent="") const {
+                os << indent << "bot: " << "nchild=" << _children.size();
+                if (_it == NULL) {
+                    os << " NULL" << std::endl;
                 } else {
-                    os << "NULL";
+                    os << std::endl << indent << "    ";
+                    _it->print(os);
+                    os << std::endl;
+                    os << indent << "    " << "dna: " << _dna->getStrand()
+                       << " idx: " << _dna->getArrayIndex() << std::endl;
                 }
-                os << " strand: " << strand  << " nchild: " << _children.size();
-                return os;
             }
             BottomSegmentIteratorPtr _it;
             DnaIteratorPtr _dna;
@@ -49,15 +51,17 @@ namespace hal {
           public:
             LinkedTopIterator() : _bottomParse(NULL), _parent(NULL), _nextDup(NULL), _entry(NULL) {
             }
-            std::ostream& print(std::ostream& os) const {
-                char strand = (_dna != NULL) ? _dna->getStrand() : 'N';
-                if (_it != NULL) {
-                    os << _it->print(os);
+            void print(std::ostream& os, const std::string& indent="") const {
+                os << indent << "top:";
+                if (_it == NULL) {
+                    os << " NULL" << std::endl;
                 } else {
-                    os << "NULL";
+                    os << std::endl << indent << "    ";
+                    _it->print(os);
+                    os << std::endl;
+                    os << indent << "    " << "dna: " << _dna->getStrand()
+                       << " idx: " << _dna->getArrayIndex() << std::endl;
                 }
-                os << " strand: " << strand;
-                return os;
             }
 
             TopSegmentIteratorPtr _it;
@@ -122,16 +126,13 @@ namespace hal {
                 _bottom._children.clear();
             }
 
-            std::ostream &print(std::ostream &os, const std::string& indent="") const {
-                os << indent << "entry: " << _sequence->getGenome()->getName() << " "
-                   << _firstIndex << ".." << _index << ".." << _lastIndex << " rev: " << _reversed << std::endl;
-                os << indent << "  top: ";
-                _top.print(os) << std::endl;
-                os << indent << "  bot: ";
-                _bottom.print(os) << std::endl;
-                return os;
+           void print(std::ostream &os, const std::string& indent="") const {
+                os << indent << "entry: " << _sequence->getGenome()->getName() << " " << "idx=" << _index
+                   << " range=" << _firstIndex << ".." << _lastIndex
+                   << " rev=" << _reversed << std::endl;
+                _top.print(os, indent + "   ");
+                _bottom.print(os, indent + "   ");
             }
-
             const Sequence *_sequence;
             hal_index_t _firstIndex;
             hal_index_t _index;
@@ -204,12 +205,11 @@ namespace hal {
             return e->_index >= e->_firstIndex && e->_index <= e->_lastIndex;
         }
 
-        std::ostream& print(std::ostream& os, const std::string& indent="") const {
+        void print(std::ostream& os, const std::string& indent="") const {
             for (int i = 0; i < _stack.size(); i++) {
-                os << indent << "entry " << i << ":" << std::endl;
+                os << indent << "entry: " << i << std::endl;
                 _stack[i]->print(os, indent + "    ");
             }
-            return os;
         }
 
       private:

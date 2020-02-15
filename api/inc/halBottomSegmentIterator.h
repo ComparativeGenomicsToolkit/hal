@@ -98,7 +98,7 @@ namespace hal {
             return _bottomSegment.get();
         }
 
-        virtual std::ostream &print(std::ostream &os) const;
+        virtual void print(std::ostream &os) const;
 
       private:
         virtual hal_size_t getNumSegmentsInGenome() const {
