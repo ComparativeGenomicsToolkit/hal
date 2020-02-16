@@ -78,8 +78,8 @@ ColumnIterator::~ColumnIterator() {
     clearTree();
 }
 
-/* once step in the toRight, sets _break to false when at the position */
-void ColumnIterator::toRightStep() {
+/* once step in the toRight, sets restart to false when at the position */
+bool ColumnIterator::toRightStep() {
     // clean stack
     moveToNextUnvisitedIndex();
     while (_stack.size() > 1 && !_stack.topInBounds()) {
@@ -90,7 +90,7 @@ void ColumnIterator::toRightStep() {
     // compatible with old interface which allowed toRight() to go out
     // of bounds without crashing.
     if ((_stack.size() == 1) && (!_stack.topInBounds())) {
-        return;
+        return true;
     }
 
     _indelStack.clear();
@@ -102,7 +102,9 @@ void ColumnIterator::toRightStep() {
         init = false;  // FIXME;
     }
     try { // FIXME:
-        recursiveUpdate(init);
+        if (recursiveUpdate(init)) {
+            return true; // restart
+        }
     } catch (const exception& ex) {
         cerr << "EXCEPTION: ";
         print(cerr);
@@ -145,6 +147,7 @@ void ColumnIterator::toRightStep() {
         }
         
     }
+    return false;
 }
 
 void ColumnIterator::toRight() {
@@ -176,9 +179,15 @@ void ColumnIterator::toRight() {
     }
     assert(_indelStack.size() == 0);
 
+    bool restart = false;
+    int cnt = 0; //FIXME
     do {
-        toRightStep();
-    } while (_break);
+        restart = toRightStep();
+        cnt++;
+        if (true && (cnt > 1)) {
+            cerr << "@@@@ toRightStep cnt: " << cnt << endl;
+        }
+    } while (restart);   // FIXME doc this
 
     // push the indel stack.
     _stack.pushStack(_indelStack);
@@ -290,7 +299,7 @@ void ColumnIterator::print(ostream &os) const {
     _indelStack.print(os, "    ");
 }
 
-void ColumnIterator::recursiveUpdateRefTopSegs(bool init,
+bool ColumnIterator::recursiveUpdateRefTopSegs(bool init,
                                                const Sequence *refSequence,
                                                const Genome *refGenome) {
     LinkedTopIterator *linkTopIt = &_stack.top()->_top;
@@ -331,18 +340,25 @@ void ColumnIterator::recursiveUpdateRefTopSegs(bool init,
     assert(linkTopIt->_it->getStartPosition() == linkTopIt->_dna->getArrayIndex());
 
     if (colMapInsert(linkTopIt->_dna) == false) {
-        _break = true;
+            return true; // restart
     } else {
         handleDeletion(linkTopIt->_it);
-        updateParent(linkTopIt);
-        if (!_onlyOrthologs) {
-            updateNextTopDup(linkTopIt);
+        if (updateParent(linkTopIt)) {
+            return true;  // restart
         }
-        updateParseDown(linkTopIt);
+        if (!_onlyOrthologs) {
+            if (updateNextTopDup(linkTopIt)) {
+                return true;  // restart
+            }
+        }
+        if (updateParseDown(linkTopIt)) {
+            return true;
+        }
     }
+    return false;
 }
 
-void ColumnIterator::recursiveUpdateRefBottomSegs(bool init,
+bool ColumnIterator::recursiveUpdateRefBottomSegs(bool init,
                                                   const Sequence *refSequence,
                                                   const Genome *refGenome) {
     LinkedBottomIterator *linkBotIt = &_stack.top()->_bottom;
@@ -382,7 +398,7 @@ void ColumnIterator::recursiveUpdateRefBottomSegs(bool init,
     assert(linkBotIt->_dna->getArrayIndex() == _stack.top()->_index);
 
     if (colMapInsert(linkBotIt->_dna) == false) {
-        _break = true;
+        return true;
     } else {
         hal_size_t numChildren = refSequence->getGenome()->getNumChildren();
         if (numChildren > linkBotIt->_children.size()) {
@@ -390,9 +406,12 @@ void ColumnIterator::recursiveUpdateRefBottomSegs(bool init,
         }
         assert(linkBotIt->_it->getStartPosition() == linkBotIt->_dna->getArrayIndex());
         for (size_t child = 0; child < numChildren; ++child) {
-            updateChild(linkBotIt, child);
+            if (updateChild(linkBotIt, child)) {
+                return true;  // restart
+            }
         }
     }
+    return false;
 }
 
 // Starting from the reference sequence which is determined
@@ -400,10 +419,9 @@ void ColumnIterator::recursiveUpdateRefBottomSegs(bool init,
 // if init is specified, all the initial iterators are created
 // then moved to the index (in the stack).  if init is false,
 // all the existing iterators are moved to the right.
-void ColumnIterator::recursiveUpdate(bool init) {
+bool ColumnIterator::recursiveUpdate(bool init) {
     resetColMap();
     clearTree();
-    _break = false;
     _leftmostRefPos = _stack[0]->_index; // [REFASSUM] FIXME
     assert(_stack.size() > 0);
 
@@ -411,14 +429,14 @@ void ColumnIterator::recursiveUpdate(bool init) {
     const Sequence *refSequence = _stack.top()->_sequence;  // FIXME: don't do this
     const Genome *refGenome = refSequence->getGenome();
     if (refSequence->getNumTopSegments() > 0) {
-        recursiveUpdateRefTopSegs(init, refSequence, refGenome);
+        return recursiveUpdateRefTopSegs(init, refSequence, refGenome);
     } else {
-        recursiveUpdateRefBottomSegs(init, refSequence, refGenome);
+        return recursiveUpdateRefBottomSegs(init, refSequence, refGenome);
     }
 }
 
 bool ColumnIterator::handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt) {
-    if (_maxInsertionLength > 0 && inputTopSegIt->tseg()->hasParent()) {
+    if ((_maxInsertionLength > 0) && inputTopSegIt->tseg()->hasParent()) {
         _top->copy(inputTopSegIt); // [REFASSUM] FIXME
         // only handle a deletion if we are immediately left of the breakpoint
         if (_top->getEndOffset() == 0) {
@@ -628,9 +646,9 @@ void ColumnIterator::clearTree() {
     }
 }
 
-void ColumnIterator::updateParent(LinkedTopIterator *linkTopIt) {
+bool ColumnIterator::updateParent(LinkedTopIterator *linkTopIt) {
     const Genome *genome = linkTopIt->_it->getTopSegment()->getGenome();
-    if (!_break && linkTopIt->_it->tseg()->hasParent() && parentInScope(genome) &&
+    if (linkTopIt->_it->tseg()->hasParent() && parentInScope(genome) &&
         (!_noDupes || linkTopIt->_it->tseg()->isCanonicalParalog())) {
         const Genome *parentGenome = genome->getParent();
 
@@ -658,29 +676,34 @@ void ColumnIterator::updateParent(LinkedTopIterator *linkTopIt) {
         linkTopIt->_parent->_dna->jumpTo(linkTopIt->_parent->_it->getStartPosition());
         linkTopIt->_parent->_dna->setReversed(linkTopIt->_parent->_it->getReversed());
         if (colMapInsert(linkTopIt->_parent->_dna) == false) {
-            _break = true;
-            return;
+            return true;  // restart
         }
 
         // recurse on parent's parse edge
-        updateParseUp(linkTopIt->_parent);
+        bool restart = updateParseUp(linkTopIt->_parent);
         if (linkTopIt->_parent->_it->bseg()->hasParseUp() && linkTopIt->_parent->_topParse->_it.get() != NULL) {
             handleDeletion(linkTopIt->_parent->_topParse->_it);
+        }
+        if (restart) {
+            return true;  // restart
         }
 
         // recurse on parent's child edges (siblings to linkTopIt)
         for (hal_size_t i = 0; i < linkTopIt->_parent->_children.size(); ++i) {
             if (linkTopIt->_parent->_children[i] == NULL ||
                 linkTopIt->_parent->_children[i]->_it->getTopSegment()->getGenome() != genome) {
-                updateChild(linkTopIt->_parent, i);
+                if (updateChild(linkTopIt->_parent, i)) {
+                    return true;  // restart
+                }
             }
         }
     }
+    return false;
 }
 
-void ColumnIterator::updateChild(LinkedBottomIterator *linkBotIt, hal_size_t index) {
+bool ColumnIterator::updateChild(LinkedBottomIterator *linkBotIt, hal_size_t index) {
     const Genome *genome = linkBotIt->_it->getBottomSegment()->getGenome();
-    if (!_break && linkBotIt->_it->bseg()->hasChild(index) && childInScope(genome, index)) {
+    if (linkBotIt->_it->bseg()->hasChild(index) && childInScope(genome, index)) {
         assert(index < linkBotIt->_children.size());
         const Genome *childGenome = genome->getChild(index);
 
@@ -700,30 +723,35 @@ void ColumnIterator::updateChild(LinkedBottomIterator *linkBotIt, hal_size_t ind
         linkBotIt->_children[index]->_dna->jumpTo(linkBotIt->_children[index]->_it->getStartPosition());
         linkBotIt->_children[index]->_dna->setReversed(linkBotIt->_children[index]->_it->getReversed());
         if (colMapInsert(linkBotIt->_children[index]->_dna) == false) {
-            _break = true;
-            return;
+            return true;  // restart
         }
         handleInsertion(linkBotIt->_children[index]->_it);
 
         // recurse on paralgous siblings
-        updateNextTopDup(linkBotIt->_children[index]);
+        if (updateNextTopDup(linkBotIt->_children[index])) {
+            return true;  // restart
+        }
 
         // recurse on child's parse edge
-        updateParseDown(linkBotIt->_children[index]);
+        if (updateParseDown(linkBotIt->_children[index])) {
+            return true;  // restart
+        }
     }
+    return false;
 }
 
-void ColumnIterator::updateNextTopDup(LinkedTopIterator *linkTopIt) {
+bool ColumnIterator::updateNextTopDup(LinkedTopIterator *linkTopIt) {
     assert(linkTopIt->_it.get() != NULL);
     const Genome *genome = linkTopIt->_it->getTopSegment()->getGenome();
-    if (_break || _noDupes == true || linkTopIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX ||
+    if (_noDupes == true || linkTopIt->_it->getTopSegment()->getNextParalogyIndex() == NULL_INDEX ||
         genome->getParent() == NULL || parentInScope(genome) == false) {
-        return;
+        return false;  // nothing to do
     }
 
     hal_index_t firstIndex = linkTopIt->_it->getTopSegment()->getArrayIndex();
     LinkedTopIterator *currentTopIt = linkTopIt;
 
+    bool restart = false;
     do {
         // no linked iterator for paralog. we create a new one and add link
         if (currentTopIt->_nextDup == NULL) {
@@ -740,22 +768,28 @@ void ColumnIterator::updateNextTopDup(LinkedTopIterator *linkTopIt) {
         currentTopIt->_nextDup->_dna->jumpTo(currentTopIt->_nextDup->_it->getStartPosition());
         currentTopIt->_nextDup->_dna->setReversed(currentTopIt->_nextDup->_it->getReversed());
         if (colMapInsert(currentTopIt->_nextDup->_dna) == false) {
-            _break = true;
-            return;
+            return true;  // restart
         }
         handleInsertion(currentTopIt->_nextDup->_it);
 
         // recurse on duplicate's parse edge
-        updateParseDown(currentTopIt->_nextDup);
+        if ((not restart) and updateParseDown(currentTopIt->_nextDup)) {
+            // remember we need to restart, but finish off handle insertions on
+            // dups first
+            // FIXME: not really sure if need to continue with update, but
+            // this is old behavior
+            restart = true;
+        }
 
         // advance current it to the next paralog
         currentTopIt = currentTopIt->_nextDup;
     } while (currentTopIt->_it->getTopSegment()->getNextParalogyIndex() != NULL_INDEX &&
              currentTopIt->_it->getTopSegment()->getNextParalogyIndex() != firstIndex);
+    return restart;
 }
 
-void ColumnIterator::updateParseUp(LinkedBottomIterator *linkBotIt) {
-    if (!_break && linkBotIt->_it->bseg()->hasParseUp()) {
+bool ColumnIterator::updateParseUp(LinkedBottomIterator *linkBotIt) {
+    if (linkBotIt->_it->bseg()->hasParseUp()) {
         const Genome *genome = linkBotIt->_it->getBottomSegment()->getGenome();
 
         // no linked iterator for top parse, we create a new one
@@ -773,17 +807,22 @@ void ColumnIterator::updateParseUp(LinkedBottomIterator *linkBotIt) {
         assert(linkBotIt->_topParse->_dna->getArrayIndex() == linkBotIt->_dna->getArrayIndex());
 
         // recurse on parse link's parent
-        updateParent(linkBotIt->_topParse);
+        if (updateParent(linkBotIt->_topParse)) {
+            return true;  // restart
+        }
 
         // recurse on parse link's paralogous siblings
         if (!_onlyOrthologs) {
-            updateNextTopDup(linkBotIt->_topParse);
+            if (updateNextTopDup(linkBotIt->_topParse)) {
+                return true;  // restart
+            }
         }
     }
+    return false;
 }
 
-void ColumnIterator::updateParseDown(LinkedTopIterator *linkTopIt) {
-    if (!_break && linkTopIt->_it->tseg()->hasParseDown()) {
+bool ColumnIterator::updateParseDown(LinkedTopIterator *linkTopIt) {
+    if (linkTopIt->_it->tseg()->hasParseDown()) {
         const Genome *genome = linkTopIt->_it->getTopSegment()->getGenome();
 
         // no linked iterator for down parse, we create a new one
@@ -812,9 +851,12 @@ void ColumnIterator::updateParseDown(LinkedTopIterator *linkTopIt) {
 
         // recurse on all the link's children
         for (hal_size_t i = 0; i < linkTopIt->_bottomParse->_children.size(); ++i) {
-            updateChild(linkTopIt->_bottomParse, i);
+            if (updateChild(linkTopIt->_bottomParse, i)) {
+                return true;  // restart
+            }
         }
     }
+    return false;
 }
 
 // moves index "right" until unvisited base is found

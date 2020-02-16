@@ -149,22 +149,22 @@ namespace hal {
         typedef ColumnIteratorStack::Entry StackEntry;
 
       private:
-        void recursiveUpdateRefTopSegs(bool init,
+        bool recursiveUpdateRefTopSegs(bool init,
                                        const Sequence *refSequence,
                                        const Genome *refGenome);
-        void recursiveUpdateRefBottomSegs(bool init,
+        bool recursiveUpdateRefBottomSegs(bool init,
                                           const Sequence *refSequence,
                                           const Genome *refGenome);
-        void toRightStep();
-        void recursiveUpdate(bool init);
+        bool toRightStep();
+        bool recursiveUpdate(bool init);
         bool handleDeletion(const TopSegmentIteratorPtr &inputTopSegIt);
         bool handleInsertion(const TopSegmentIteratorPtr &inputTopSegIt);
 
-        void updateParent(LinkedTopIterator *linkTopIt);
-        void updateChild(LinkedBottomIterator *linkBotIt, hal_size_t index);
-        void updateNextTopDup(LinkedTopIterator *linkTopIt);
-        void updateParseUp(LinkedBottomIterator *linkBotIt);
-        void updateParseDown(LinkedTopIterator *linkTopIt);
+        bool updateParent(LinkedTopIterator *linkTopIt);
+        bool updateChild(LinkedBottomIterator *linkBotIt, hal_size_t index);
+        bool updateNextTopDup(LinkedTopIterator *linkTopIt);
+        bool updateParseUp(LinkedBottomIterator *linkBotIt);
+        bool updateParseDown(LinkedTopIterator *linkTopIt);
 
         bool parentInScope(const Genome *) const;
         bool childInScope(const Genome *, hal_size_t child) const;
@@ -204,7 +204,6 @@ namespace hal {
         
         TopSegmentIteratorPtr _top;
         VisitCache _visitCache;
-        bool _break;
 
         const Sequence *_prevRefSequence;
         hal_index_t _prevRefIndex;
