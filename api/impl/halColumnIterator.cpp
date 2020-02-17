@@ -185,7 +185,8 @@ void ColumnIterator::toRight() {
         restart = toRightStep();
         cnt++;
         if (true && (cnt > 1)) {
-            cerr << "@@@@ toRightStep cnt: " << cnt << endl;
+            cerr << "@@@@@@@@@@@@@ toRightStep cnt: " << cnt << " @@@@@@@@@@@@@" << endl;
+            print(cerr);
         }
     } while (restart);   // FIXME doc this
 
