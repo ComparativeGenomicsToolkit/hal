@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
             printAlignmentMetaData(cout, alignment.get());
         } else {
             HalStats halStats(alignment.get());
-            cout << endl << "hal v" << alignment->getVersion() << "\n" << halStats;
+            cout << endl << "hal v" << alignment->getVersion() << endl << halStats;
         }
     } catch (hal_exception &e) {
         cerr << "hal exception caught: " << e.what() << endl;
@@ -316,11 +316,13 @@ void printSequenceStats(ostream &os, const Alignment *alignment, const string &g
         throw hal_exception(string("Genome ") + genomeName + " not found.");
     }
     if (genome->getNumSequences() > 0) {
-        os << "SequenceName, Length, NumTopSegments, NumBottomSegments" << endl;
+        os << "SequenceName, Length, NumTopSegments, NumBottomSegments, StartPosition, EndPosition" << endl;
 
         for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
             os << seqIt->getSequence()->getName() << ", " << seqIt->getSequence()->getSequenceLength() << ", "
-               << seqIt->getSequence()->getNumTopSegments() << ", " << seqIt->getSequence()->getNumBottomSegments() << "\n";
+               << seqIt->getSequence()->getNumTopSegments() << ", " << seqIt->getSequence()->getNumBottomSegments()
+               << ", " << seqIt->getSequence()->getStartPosition()
+               << ", " << seqIt->getSequence()->getEndPosition() << endl;
         }
     }
     os << endl;
@@ -333,7 +335,7 @@ void printBedSequenceStats(ostream &os, const Alignment *alignment, const string
     }
     if (genome->getNumSequences() > 0) {
         for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
-            os << seqIt->getSequence()->getName() << "\t" << 0 << "\t" << seqIt->getSequence()->getSequenceLength() << "\n";
+            os << seqIt->getSequence()->getName() << "\t" << 0 << "\t" << seqIt->getSequence()->getSequenceLength() << endl;
         }
     }
     os << endl;
