@@ -46,7 +46,6 @@ struct GenomeMetaTest : public AlignmentTest {
 };
 
 struct GenomeCreateTest : public AlignmentTest {
-    std::string _string;
     void createCallBack(Alignment *alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);

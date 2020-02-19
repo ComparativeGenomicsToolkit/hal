@@ -109,7 +109,7 @@ struct ColumnIteratorDepthTest : public AlignmentTest {
             bi->getBottomSegment()->setChildReversed(0, false);
             bi->getBottomSegment()->setChildIndex(1, i);
             bi->getBottomSegment()->setChildReversed(1, false);
-            ;
+
             bs.set(i * segLength, segLength, i);
             bs.applyTo(bi);
 

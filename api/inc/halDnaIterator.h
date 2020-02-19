@@ -132,7 +132,7 @@ namespace hal {
         assert(inRange());
         char c = _dnaAccess->getBase(_index);
         if (_reversed) {
-            c = reverseComplement(c);
+            c = complement(c);
         }
         return c;
     }
@@ -144,10 +144,10 @@ namespace hal {
             throw hal_exception(std::string("Trying to set invalid character: ") + c);
         }
         if (_reversed) {
-            c = reverseComplement(c);
+            c = complement(c);
         }
         _dnaAccess->setBase(_index, c);
-        assert(getBase() == !_reversed ? c : reverseComplement(c));
+        assert(getBase() == !_reversed ? c : complement(c));
     }
 
     inline bool DnaIterator::equals(DnaIteratorPtr &other) const {

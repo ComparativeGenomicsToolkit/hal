@@ -56,7 +56,6 @@ struct ValidateManyGenomesTest : public AlignmentTest {
     void createCallBack(Alignment *alignment) {
         // hdf5 runs out of memory on Travis.
         if (alignment->getStorageFormat() == "mmap") {
-            cout << "running" << endl;
             createRandomAlignment(rng, alignment, 0.75, 0.1, 363, 400, 1, 10, 1, 2);
         }
     }

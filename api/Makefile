@@ -25,7 +25,8 @@ halApiTest_names = halAlignmentTreesTest \
 	halRearrangementTest \
 	halSequenceTest \
 	halTopSegmentTest \
-	halValidateTest
+	halValidateTest \
+	halTestBuilderTest
 halApiTest_progs = ${halApiTest_names:%=${binDir}/%}
 
 # make magic to generate the variables containing the objects for the link rule.

@@ -39,10 +39,10 @@ namespace hal {
     /** convert a string to an integer */
     hal_index_t strToInt(const std::string &str);
     
-    /** Get the DNA reverse complement of a character.
+    /** Get the DNA complement of a character.
      * If the input is not a nucleotide, then just return it as is
      * (ie no error checking) */
-    inline char reverseComplement(char c) {
+    inline char complement(char c) {
         switch (c) {
         case 'A':
             return 'T';
@@ -68,6 +68,9 @@ namespace hal {
 
     /** Get the reversed complement of a string (in place) */
     void reverseComplement(std::string &s);
+
+    /** Get the complement (not reversed) of a string (in place) */
+    void complement(std::string &s);
 
     /** Reverse the gaps in the string (gap i -> len-1-i) which
      * is not done above (does not reverse dna) */

@@ -67,18 +67,24 @@ void hal::reverseComplement(std::string &s) {
 
             if (i >= j || s[i] == '-' || s[j] == '-') {
                 if (i == j && s[i] != '-') {
-                    s[i] = reverseComplement(s[i]);
+                    s[i] = complement(s[i]);
                 }
                 break;
             }
 
-            buf = reverseComplement(s[i]);
-            s[i] = reverseComplement(s[j]);
+            buf = complement(s[i]);
+            s[i] = complement(s[j]);
             s[j] = buf;
 
             ++i;
             --j;
         } while (true);
+    }
+}
+
+void hal::complement(std::string &s) {
+    for (size_t i = 0; i < s.size(); i++) {
+        s[i] = complement(s[i]);
     }
 }
 
