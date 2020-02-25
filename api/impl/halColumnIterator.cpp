@@ -25,7 +25,7 @@ ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *
     _refGenome(reference), _refSeq(NULL), _refIndex(columnIndex),
     _maxInsertionLength(maxInsertLength), _noDupes(noDupes),
     _noAncestors(noAncestors), _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs) {
-    assert((columnIndex >= 0) && (lastColumnIndex >= columnIndex) && (lastColumnIndex < hal_index_t(reference->getSequenceLength())));
+    assert((columnIndex >= 0) && (lastColumnIndex >= columnIndex) && (lastColumnIndex < (hal_index_t)reference->getSequenceLength()));
     if (DEBUG) {  // FIXME:
         cerr << "ColumnIterator new: " << reference->getName() << ":" << columnIndex << endl;
     }
@@ -126,8 +126,8 @@ bool ColumnIterator::toRightStep() {
     const Sequence *seq = _stack.top()->_sequence;
     if ((_stack.size() == 1) &&
         ((_stack.top()->_index < seq->getStartPosition()) ||
-         ((_stack.top()->_index >= hal_index_t(seq->getStartPosition() + seq->getSequenceLength())) &&
-          (_stack.top()->_index < hal_index_t(seq->getGenome()->getSequenceLength()))))) {
+         ((_stack.top()->_index >= (hal_index_t)seq->getStartPosition() + seq->getSequenceLength()) &&
+         (_stack.top()->_index < (hal_index_t)seq->getGenome()->getSequenceLength())))) {
         _stack.top()->_sequence = seq->getGenome()->getSequenceBySite(_stack.top()->_index);
         assert(_stack.top()->_sequence != NULL);
         _refSeq = _stack.top()->_sequence;
