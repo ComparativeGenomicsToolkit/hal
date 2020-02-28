@@ -2,14 +2,14 @@ rootDir = ..
 include ${rootDir}/include.mk
 modObjDir = ${objDir}/synteny
 
-hal2synteny_srcs = impl/main.cpp impl/hal2psl.cpp impl/psl_io.cpp impl/psl_merger.cpp
-hal2synteny_objs = ${hal2synteny_srcs:%.cpp=${modObjDir}/%.o}
-srcs = ${hal2synteny_srcs}
+halSynteny_srcs = impl/halSynteny.cpp impl/hal2psl.cpp impl/psl_io.cpp impl/psl_merger.cpp
+halSynteny_objs = ${halSynteny_srcs:%.cpp=${modObjDir}/%.o}
+srcs = ${halSynteny_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
 inclSpec += -I${rootDir}/liftover/inc
 otherLibs += ${libHalLiftover}
-progs = ${binDir}/hal2synteny
+progs = ${binDir}/halSynteny
 
 all: progs
 libs:
