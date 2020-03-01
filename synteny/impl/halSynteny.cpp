@@ -14,7 +14,7 @@
 using namespace hal;
 
 static void initParser(CLParser &optionsParser) {
-    optionsParser.addArgument("alignments", "input file in hal or psl format");
+    optionsParser.addArgument("alignment", "input file in hal or psl format");
     optionsParser.addOption("queryGenome", "source genome", "\"\"");
     optionsParser.addOption("targetGenome", "reference genome name", "\"\"");
     optionsParser.addArgument("outPslPath", "output psl file ffor synteny blocks");
@@ -32,9 +32,9 @@ const Genome *openGenomeOrThrow(const Alignment *alignment, const std::string &g
     return genome;
 }
 
-const Alignment *openAlignmentOrThrow(const std::string &alignments, const CLParser &optionsParser) {
+const Alignment *openAlignmentOrThrow(const std::string &alignmentFile, const CLParser &optionsParser) {
 
-    auto alignment = openHalAlignment(alignments, &optionsParser);
+    auto alignment = openHalAlignment(alignmentFile, &optionsParser);
     if (alignment->getNumGenomes() == 0) {
         throw hal_exception("hal alignment is empty");
     }
@@ -57,7 +57,7 @@ void validateInputOrThrow(const std::string &queryGenomeName, const std::string 
 int main(int argc, char *argv[]) {
     CLParser optionsParser;
     initParser(optionsParser);
-    std::string alignments;
+    std::string alignmentFile;
     std::string outPslPath;
     std::string queryGenomeName;
     std::string targetGenomeName;
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     hal_size_t maxAnchorDistance;
     try {
         optionsParser.parseOptions(argc, argv);
-        alignments = optionsParser.getArgument<std::string>("alignments");
+        alignmentFile = optionsParser.getArgument<std::string>("alignment");
         queryGenomeName = optionsParser.getOption<std::string>("queryGenome");
         targetGenomeName = optionsParser.getOption<std::string>("targetGenome");
         outPslPath = optionsParser.getArgument<std::string>("outPslPath");
@@ -82,16 +82,16 @@ int main(int argc, char *argv[]) {
     validateInputOrThrow(queryGenomeName, targetGenomeName, queryChromosome);
     try {
         std::vector<PslBlock> blocks;
-        if (halFile.substr(halFile.find_last_of(".") + 1) == "hal") {
-            auto alignment = openAlignmentOrThrow(alignments, optionsParser);
+        if (alignmentFile.substr(alignmentFile.find_last_of(".") + 1) == "hal") {
+            auto alignment = openAlignmentOrThrow(alignmentFile, optionsParser);
             auto targetGenome = openGenomeOrThrow(alignment, targetGenomeName);
             auto queryGenome = openGenomeOrThrow(alignment, queryGenomeName);
 
             auto hal2psl = hal::Hal2Psl();
             blocks = hal2psl.convert2psl(alignment, queryGenome, targetGenome, queryChromosome);
         }
-        else if (halFile.substr(halFile.find_last_of(".") + 1) == "psl") {
-            blocks = psl_io::get_blocks_set(alignment);
+        else if (alignmentFile.substr(alignmentFile.find_last_of(".") + 1) == "psl") {
+            blocks = psl_io::get_blocks_set(alignmentFile);
         }
         else {
             throw hal_exception("Alignment file should have .hal or .psl extension");
