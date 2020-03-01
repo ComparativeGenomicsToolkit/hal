@@ -1,6 +1,20 @@
 DAG-based Reconstruction of Synteny Blocks
 =====
 
+Run-timepParameters
+-----
+ Option |  Effect
+--- | ---
+`--maxAnchorDistance <value>`  | upper bound on distance for syntenic blocks, default is 5Kb 
+`--minBlockSize <value>`        | lower bound on synteny block length, default is 5Kb 
+`--queryChromosome <value>`     | chromosome to infer synteny, default is whole genome 
+`--queryGenome <value>`         | source genome name 
+`--targetGenome <value>`        | reference genome name 
+
+Other parameters describe the options for handling alignment file, in particular HDF5 options (applicable if alignments are in HAL format). Detailed information can be found in the main [README.md](https://github.com/ComparativeGenomicsToolkit/hal/blob/master/README.md)
+    
+Algorithm
+-----
 In order to build a set of most continuous synteny blocks covering as much of genomes as possible we build a graph and apply the algorithm:
     
 1. Initialize weight labels of vertices and edges:
@@ -19,18 +33,18 @@ In order to build a set of most continuous synteny blocks covering as much of ge
 
 Sample Usage
 -----
-* Create synteny blocks in psl format for the alignment cactus.hal including genomes Genom1 and Genome2
+* Create synteny blocks for the alignment cactus.hal including genomes Genome1 and Genome2
 
-    `hal2synteny cactus.hal out.psl --queryGenome Genome2 --targetGenome Genome1 --maxAnchorDistance 1000000 --minBlockSize 1000000`
+    `halSynteny  --queryGenome Genome2 --targetGenome Genome1 --maxAnchorDistance 1000000 --minBlockSize 1000000 cactus.hal out.psl`
 
-* Create synteny blocks in psl format just for query chromosome chrA 
+* Create synteny blocks for alignments in [PSL](http://genome.ucsc.edu/FAQ/FAQformat#format2) format from for query chromosome chrA 
 
-    `hal2synteny cactus.hal out.psl --queryGenome Genome2 --targetGenome Genome1 --queryChromosome chrA --maxAnchorDistance 1000000 --minBlockSize 1000000`
+    `halSynteny --queryGenome Genome2 --targetGenome Genome1 --queryChromosome chrA --maxAnchorDistance 1000000 --minBlockSize 1000000 cactus.hal out.psl`
 
 Code Contributors
 -----
-* Ksenia Krasheninnikova (Theodosius Dobzhansky Center for Genome Bioinformatics)
-* Joel Armstrong (UCSC)
-* Mark Diekhans (UCSC)
+* Ksenia Krasheninnikova
+* Joel Armstrong 
+* Mark Diekhans 
 
 
