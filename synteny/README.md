@@ -1,7 +1,7 @@
 DAG-based Reconstruction of Synteny Blocks
 =====
 
-Run-timepParameters
+Run-time Parameters
 -----
  Option |  Effect
 --- | ---
