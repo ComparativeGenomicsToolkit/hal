@@ -11,22 +11,6 @@
 using namespace std;
 using namespace hal;
 
-/* GenomeSpec with state */
-class TestBuilder::GenomeBld: public GenomeSpec {
-    public:
-    GenomeBld(const GenomeSpec& genome):
-        GenomeSpec(genome) {
-    }
-
-    void addSeqBld(SeqBld* seqBld) {
-        _seqBlds.push_back(seqBld);
-    }
-    void print(ostream& os) const;
-    
-    private:
-    vector<SeqBld*> _seqBlds;
-};
-
 /* SeqSpec with state */
 class TestBuilder::SeqBld: public SeqSpec {
     public:
@@ -46,6 +30,43 @@ class TestBuilder::SeqBld: public SeqSpec {
     private:
     GenomeBld* _genomeBld;
     string _bases;
+};
+
+/* GenomeSpec with state */
+class TestBuilder::GenomeBld: public GenomeSpec {
+    public:
+    GenomeBld(const GenomeSpec& genome,
+              GenomeBld *parentBld):
+        GenomeSpec(genome), _parentBld(parentBld), _length(0) {
+    }
+
+    void addSeqBld(SeqBld* seqBld) {
+        _seqBlds.push_back(seqBld);
+        _length += seqBld->getLength();
+    }
+    
+    SeqBldVec getSeqBlds() {
+        return _seqBlds;
+    }
+    
+    GenomeBld* getParentBld() {
+        return _parentBld;
+    }
+    GenomeBldVec& getChildrenBlds() {
+        return _childBlds;
+    }
+
+    hal_index_t getLength() const {
+        return _length;
+    }
+    
+    void print(ostream& os) const;
+    
+    private:
+    GenomeBld *_parentBld;
+    GenomeBldVec _childBlds;
+    SeqBldVec _seqBlds;
+    hal_index_t _length;
 };
 
 /* RowSpec with state */
@@ -82,6 +103,20 @@ void TestBuilder::GenomeBld::print(ostream& os) const {
 }
 
 
+/* used to build segments between two sequences in a pair of genomes */
+class TestBuilder::SeqSegBld {
+    public:
+    SeqSegBld() {
+    }
+    private:
+};
+
+/* used to build segments between a pair of genomes */
+class TestBuilder::SegBld {
+    public:
+    private:
+};
+
 static hal_index_t countBases(const string& s) {
     hal_index_t cnt = 0;
     for (auto i = 0; i < s.size(); i++) {
@@ -93,10 +128,14 @@ static hal_index_t countBases(const string& s) {
 }
 
 void TestBuilder::addGenome(const GenomeSpec& genome) {
-    if (_genomeBlds.find(genome.getName()) != _genomeBlds.end()) {
+    if (findGenomeBld(genome.getName()) != nullptr) {
         throw hal_exception("test genome already defined: " + genome.getName());
     }
-    _genomeBlds.insert({genome.getName(), new GenomeBld(genome)});
+    GenomeBld *parentBld = (genome.getParentName() != "")
+        ? getGenomeBld(genome.getParentName()) : nullptr;
+    
+    GenomeBld *gb = new GenomeBld(genome, parentBld);
+    _genomeBlds.insert({genome.getName(), gb});
 }
     
 void TestBuilder::addGenomes(const GenomeSpecVec& genomes) {
@@ -109,10 +148,7 @@ void TestBuilder::addSeq(const SeqSpec& seq) {
     if (_seqBlds.find(seq.getFullName()) != _seqBlds.end()) {
         throw hal_exception("sequence already defined: " + seq.getFullName());
     }
-    GenomeBld* genomeBld = findGenomeBld(seq.getGenomeName());
-    if (genomeBld == nullptr) {
-        throw hal_exception("genome not defined for sequence: " + seq.getFullName());
-    }
+    GenomeBld* genomeBld = getGenomeBld(seq.getGenomeName());
     SeqBld* seqBld = new SeqBld(seq, genomeBld);
     genomeBld->addSeqBld(seqBld);
     _seqBlds.insert({seq.getFullName(), seqBld});
@@ -123,6 +159,22 @@ void TestBuilder::addSeqs(const SeqSpecVec& seqs) {
     for (auto it = seqs.begin(); it != seqs.end(); it++) {
         addSeq(*it);
     }
+}
+
+TestBuilder::GenomeBld* TestBuilder::getGenomeBld(const std::string& name) {
+    GenomeBld* gb = findGenomeBld(name);
+    if (gb == nullptr) {
+        throw hal_exception("gencode " + name + " not found, was it defined before this use?");
+    }
+    return gb;
+}
+
+TestBuilder::SeqBld* TestBuilder::getSeqBld(const std::string& fullName) {
+    SeqBld* gb = findSeqBld(fullName);
+    if (gb == nullptr) {
+        throw hal_exception("sequence " + fullName + " not found, was it defined before this use?");
+    }
+    return gb;
 }
 
 TestBuilder::SeqBld* TestBuilder::checkRow(const RowSpec& row) {
@@ -212,6 +264,9 @@ void TestBuilder::fakeUnfilledBases() {
 void TestBuilder::buildSeqs() {
     fillBasesFromBlocks();
     fakeUnfilledBases();
+}
+
+void TestBuilder::buildSegments() {
 }
 
 void TestBuilder::build(Alignment *alignment) {

@@ -14,6 +14,9 @@
  * 
  * It would be possible to have a text format file, such as JSON, as an
  * alternative to building in code.
+ *
+ * The *Spec objects are supplied by the client, they are extended as *Bld objects
+ * with all the internal bookkeeping needed to build the HAL.
  */
 
 #ifndef HALTESTBUILDER_H
@@ -152,13 +155,23 @@ namespace hal {
      **/
     class TestBuilder {
         public:
+
+        /* parent must be define before children */
         void addGenome(const GenomeSpec& genome);
+
+        /* parent must be define before children */
         void addGenomes(const GenomeSpecVec& genomes);
 
+        /* genome must already be defined */
         void addSeq(const SeqSpec& seq);
+
+        /* genome must already be defined */
         void addSeqs(const SeqSpecVec& seqs);
         
+        /* sequence must already be defined */
         void addBlock(const BlockSpec& block);
+
+        /* sequence must already be defined */
         void addBlocks(const BlockSpecVec& blocks);
 
         void add(const GenomeSpecVec& genomes,
@@ -181,22 +194,31 @@ namespace hal {
         class SeqBld;
         class RowBld;
         class BlockBld;
+        class SeqSegBld;
+        class SegBld;
+
+        typedef std::vector <GenomeBld*> GenomeBldVec;
+        typedef std::vector<SeqBld*> SeqBldVec;
         
         GenomeBld* findGenomeBld(const std::string& name) {
             auto it = _genomeBlds.find(name);
             return (it != _genomeBlds.end()) ? it->second : nullptr;
         }
+        GenomeBld* getGenomeBld(const std::string& name);
 
         SeqBld* findSeqBld(const std::string& fullName) {
             auto it = _seqBlds.find(fullName);
             return (it != _seqBlds.end()) ? it->second : nullptr;
         }
 
+        SeqBld* getSeqBld(const std::string& fullName);
+
         SeqBld* checkRow(const RowSpec& row);
         void fillBases(RowBld* rowBld);
         void fillBasesFromBlocks();
         void fakeUnfilledBases();
         void buildSeqs();
+        void buildSegments();
 
         /* pointers are stored so don't worry about objects being relocated */
         std::map<const std::string, GenomeBld*> _genomeBlds;

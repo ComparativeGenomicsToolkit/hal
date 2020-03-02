@@ -43,9 +43,9 @@ namespace hal {
          * start coordinate of this top segment */
         virtual hal_index_t getBottomParseIndex() const = 0;
 
-        /** Set the index of the bototm segment in the genome that contains the
+        /** Set the index of the bottom segment in the genome that contains the
          * start coordinate of this top segment
-         * @param botParseIndx index to set */
+         * @param botParseIndex index to set */
         virtual void setBottomParseIndex(hal_index_t botParseIdx) = 0;
 
         /** Get the offset in the bottom parse segment that aligns with the
