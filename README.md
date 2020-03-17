@@ -85,11 +85,11 @@ From the same parent directory where you downloaded HAL:
 	  git clone git://github.com/benedictpaten/sonLib.git
 	  pushd sonLib && make && popd
 
-If sonLib and HAL are not sister directories, update hal/include and change
+If sonLib and HAL are not sister directories, update hal/include.mk and change
 
-`sonLibRootPath=${rootPath}/../sonLib`
+`sonLibRootDir=${rootPath}/../sonLib`
 
-to reflect the directory where you installed sonLib
+to reflect the absolute pathname of the directory where you installed sonLib
 
 #### Optional support of reading HAL files over HTTP via UCSC's URL Data Cache (UDC)
 
