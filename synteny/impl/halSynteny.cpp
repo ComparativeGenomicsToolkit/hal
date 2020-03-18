@@ -14,7 +14,7 @@
 using namespace hal;
 
 static void initParser(CLParser &optionsParser) {
-    optionsParser.addArgument("alignment", "input file in hal or psl format");
+    optionsParser.addArgument("alignment", "input file in HAL or PSL format (PSL must end in .psl)");
     optionsParser.addOption("queryGenome", "source genome", "\"\"");
     optionsParser.addOption("targetGenome", "reference genome name", "\"\"");
     optionsParser.addArgument("outPslPath", "output psl file ffor synteny blocks");
@@ -82,19 +82,15 @@ int main(int argc, char *argv[]) {
     validateInputOrThrow(queryGenomeName, targetGenomeName, queryChromosome);
     try {
         std::vector<PslBlock> blocks;
-        if (alignmentFile.substr(alignmentFile.find_last_of(".") + 1) == "hal") {
+        if (alignmentFile.substr(alignmentFile.find_last_of(".") + 1) == "psl") {
+            blocks = psl_io::get_blocks_set(alignmentFile);
+        } else {
             auto alignment = openAlignmentOrThrow(alignmentFile, optionsParser);
             auto targetGenome = openGenomeOrThrow(alignment, targetGenomeName);
             auto queryGenome = openGenomeOrThrow(alignment, queryGenomeName);
 
             auto hal2psl = hal::Hal2Psl();
             blocks = hal2psl.convert2psl(alignment, queryGenome, targetGenome, queryChromosome);
-        }
-        else if (alignmentFile.substr(alignmentFile.find_last_of(".") + 1) == "psl") {
-            blocks = psl_io::get_blocks_set(alignmentFile);
-        }
-        else {
-            throw hal_exception("Alignment file should have .hal or .psl extension");
         }
         std::cout << "merging " << blocks.size() << " blocks" << std::endl;
         auto merged_blocks = dag_merge(blocks, minBlockSize, maxAnchorDistance);
