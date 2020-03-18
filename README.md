@@ -82,14 +82,16 @@ From the parent directory of where you want HAL installed:
 
 From the same parent directory where you downloaded HAL:
 
-	  git clone git://github.com/benedictpaten/sonLib.git
+	  git clone git://github.com/ComparativeGenomicsToolkit/sonLib.git
 	  pushd sonLib && make && popd
 
-If sonLib and HAL are not sister directories, update hal/include.mk and change
+If sonLib and HAL are not sister directories, set the sonLibRootDir `make` macro to reflect the absolute pathname of the directory where you installed sonLib:
 
-`sonLibRootDir=${rootPath}/../sonLib`
+    sonLibRootDir=/path/to/sonLib
 
-to reflect the absolute pathname of the directory where you installed sonLib
+either in an include.local.mk file top level hal/ directory, or as a `make` command argument, e.g.:
+
+    pushd sonLib && make sonLibRootDir=/path/to/sonLib && popd
 
 #### Optional support of reading HAL files over HTTP via UCSC's URL Data Cache (UDC)
 
