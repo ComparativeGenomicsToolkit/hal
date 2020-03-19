@@ -9,13 +9,13 @@
 """
 import os, re, time
 from sonLib.bioio import system  
-from jobTree.scriptTree.target import Target
+from toil.job import Job
 from optparse import OptionGroup
 from hal.assemblyHub.assemblyHubCommon import *
 
-class LiftoverWigFiles( Target ):
+class LiftoverWigFiles( Job ):
     def __init__(self, indir, halfile, genome2seq2len, bigwigdir, noLiftover, outdir):
-        Target.__init__(self)
+        Job.__init__(self)
         self.indir = indir
         self.halfile = halfile
         self.genome2seq2len = genome2seq2len
@@ -23,7 +23,7 @@ class LiftoverWigFiles( Target ):
         self.noLiftover = noLiftover
         self.outdir = outdir
 
-    def run(self):
+    def run(self, fileStore):
         #wigdir has the hierachy: indir/genome/chr1.wig, chr2.wig...
         #for each genome in wigdir, liftover the wig records of that genome to the coordinate of all other genomes
          
@@ -56,13 +56,13 @@ class LiftoverWigFiles( Target ):
                 if not self.noLiftover:
                     for othergenome in genomes:
                         if othergenome != genome:
-                            self.addChildTarget( LiftoverWig(genomeoutdir, tempwig, genome, othergenome, self.halfile, self.outdir) )
+                            self.addChild( LiftoverWig(genomeoutdir, tempwig, genome, othergenome, self.halfile, self.outdir) )
             tempwigs.append( tempwig )
-        self.setFollowOnTarget( CleanupFiles(tempwigs) )
+        self.addFollowOn( CleanupFiles(tempwigs) )
 
-class LiftoverWig( Target ):
+class LiftoverWig( Job ):
     def __init__(self, genomeoutdir, wig, genome, othergenome, halfile, outdir):
-        Target.__init__(self)
+        Job.__init__(self)
         self.genomeoutdir = genomeoutdir
         self.wig = wig
         self.genome = genome
@@ -70,7 +70,7 @@ class LiftoverWig( Target ):
         self.halfile = halfile
         self.outdir = outdir
 
-    def run(self):
+    def run(self, fileStore):
         liftovertempwig = "%s.wig" % os.path.join(self.genomeoutdir, self.othergenome)
         system("halWiggleLiftover %s %s %s %s %s" %(self.halfile, self.genome, self.wig, self.othergenome, liftovertempwig))
         outbigwig = os.path.join(self.genomeoutdir, "%s.bw" %self.othergenome)
@@ -132,11 +132,11 @@ def writeTrackDb_bigwigs(f, bigwigdir, genomes, currgenome, properName):
         f.write("\n")
 
 def addWigOptions(parser):
-    group = OptionGroup(parser, "WIGGLE-FORMATTED ANNOTATIONS", "All annotations in wiggle or bigWig formats.")
-    group.add_option('--wigDirs', dest='wigdirs', help='comma separated list of directories containing wig files of the input genomes. Each directory represents a type of annotation. The annotations of each genome will then be liftovered to all other genomes in the MSA. Example: "genes,genomicIsland,tRNA". Format of each directory: wigDir/ then genome1/ then chr1.wig, chr2.wig... Default=%default' )
-    group.add_option('--finalBigwigDirs', dest='bwdirs', help='comma separated list of directories containing final big wig files to be displayed. No liftover will be done for these files. Each directory represents a type of annotation. Example: "readCoverage,". Format of each directory: bwDir/ then queryGenome/ then targetGenome1.bw, targetGenome2.bw ... (so annotation of queryGenome has been mapped to targetGenomes and will be display on the targetGenome browsers). Default=%default' )
-    group.add_option('--nowigLiftover', dest='noWigLiftover', action='store_true', default=False, help='If specified, will not lift over the wig annotations. Default=%default')
-    parser.add_option_group(group)
+    group = parser.add_argument_group("WIGGLE-FORMATTED ANNOTATIONS", "All annotations in wiggle or bigWig formats.")
+    group.add_argument('--wigDirs', dest='wigdirs', help='comma separated list of directories containing wig files of the input genomes. Each directory represents a type of annotation. The annotations of each genome will then be liftovered to all other genomes in the MSA. Example: "genes,genomicIsland,tRNA". Format of each directory: wigDir/ then genome1/ then chr1.wig, chr2.wig... ' )
+    group.add_argument('--finalBigwigDirs', dest='bwdirs', help='comma separated list of directories containing final big wig files to be displayed. No liftover will be done for these files. Each directory represents a type of annotation. Example: "readCoverage,". Format of each directory: bwDir/ then queryGenome/ then targetGenome1.bw, targetGenome2.bw ... (so annotation of queryGenome has been mapped to targetGenomes and will be display on the targetGenome browsers). ' )
+    group.add_argument('--nowigLiftover', dest='noWigLiftover', action='store_true', default=False, help='If specified, will not lift over the wig annotations. ')
+    group = parser.add_argument_group(group)
 
 def checkWigOptions(parser, options):
     options.bigwigdirs = []

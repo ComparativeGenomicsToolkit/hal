@@ -43,10 +43,10 @@ def writeTrackDb_rmsk(f, rmskdir, genomedir):
     f.write("\n")
 
 def addRmskOptions(parser):
-    #group = OptionGroup(parser, "REPEATMASKER", "RepeatMasker options.")
-    group = OptionGroup(parser, "REPEATMASKER")
-    group.add_option('--rmskDir', dest='rmskdir', help="Directory containing repeatMasker's output files for each genome. Format: rmskDir/ then genome1/ then genome.rmsk.SINE.bb, genome.rmsk.LINE.bb, ... Default=%default")
-    parser.add_option_group(group)
+    #group = parser.add_argument_group("REPEATMASKER", "RepeatMasker options.")
+    group = parser.add_argument_group("REPEATMASKER")
+    group.add_argument('--rmskDir', dest='rmskdir', help="Directory containing repeatMasker's output files for each genome. Format: rmskDir/ then genome1/ then genome.rmsk.SINE.bb, genome.rmsk.LINE.bb, ... ")
+    group = parser.add_argument_group(group)
 
 def checkRmskOptions(parser, options):
     if options.rmskdir:
