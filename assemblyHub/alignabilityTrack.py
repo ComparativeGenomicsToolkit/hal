@@ -8,17 +8,17 @@
 """Creating Alignability (Alignment Depth) track for the hubs
 """
 import os
-from sonLib.bioio import system  
-from jobTree.scriptTree.target import Target
+from sonLib.bioio import system
+from toil.job import Job
 
-class GetAlignability( Target ):
+class GetAlignability( Job ):
     def __init__(self, genomedir, genome, halfile):
-        Target.__init__(self)
+        Job.__init__(self)
         self.genomedir = genomedir
         self.genome = genome
         self.halfile = halfile
 
-    def run(self):
+    def run(self, fileStore):
         outfile = os.path.join(self.genomedir, "%s.alignability.bw" %self.genome)
         tempwig = os.path.join(self.genomedir, "%s.alignability.wig" %self.genome)
         system("halAlignmentDepth %s %s > %s" %(self.halfile, self.genome, tempwig))
@@ -49,8 +49,8 @@ def writeTrackDb_alignability(f, genome, genomeCount):
 
 def addAlignabilityOptions(parser):
     from optparse import OptionGroup
-    #group = OptionGroup(parser, "ALIGNABILITY", "Alignability: the number of genomes aligned to each position.")
-    group = OptionGroup(parser, "ALIGNABILITY")
-    group.add_option('--alignability', dest='alignability', action='store_true', default=False, help='If specified, make Alignability (aka Alignment Depth) tracks. Default=%default')
-    parser.add_option_group(group)
+    #group = parser.add_argument_group("ALIGNABILITY", "Alignability: the number of genomes aligned to each position.")
+    group = parser.add_argument_group("ALIGNABILITY")
+    group.add_argument('--alignability', dest='alignability', action='store_true', default=False, help='If specified, make Alignability (aka Alignment Depth) tracks. ')
+    group = parser.add_argument_group(group)
 

@@ -5,7 +5,7 @@ Mon Oct  7 15:27:23 PDT 2013
 If a gene contains large intron, break it into separate bed entries
 '''
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from sonLib.bioio import system  
 
 #========= FILTER LONG INTRONS ==========

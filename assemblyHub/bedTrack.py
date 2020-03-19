@@ -9,14 +9,14 @@
 """
 import os, re, time
 from sonLib.bioio import system  
-from jobTree.scriptTree.target import Target
+from toil.job import Job
 from optparse import OptionGroup
 from hal.assemblyHub.assemblyHubCommon import CleanupFiles, getProperName
 from hal.assemblyHub.bedCommon import filterLongIntrons, tabifyBed, untabifyBed
 
-class LiftoverBedFiles( Target ):
+class LiftoverBedFiles( Job ):
     def __init__(self, indir, halfile, genome2seq2len, bigbeddir, noLiftover, tab, outdir, options):
-        Target.__init__(self)
+        Job.__init__(self)
         self.indir = indir
         self.halfile = halfile
         self.genome2seq2len = genome2seq2len
@@ -26,7 +26,7 @@ class LiftoverBedFiles( Target ):
         self.outdir = outdir
         self.options = options
 
-    def run(self):
+    def run(self, fileStore):
         #beddir has the hierachy: indir/genome/chr1.bed, chr2.bed...
         #for each genome in beddir, lifeover the bed records of that genome to the coordinate of all other genomes
          
@@ -105,14 +105,14 @@ class LiftoverBedFiles( Target ):
                 for othergenome in genomes:
                     if othergenome == genome:
                         continue
-                    self.addChildTarget( LiftoverBed(genomeoutdir, tempbed, self.tab, asfile, extrafields, numfield, genome, othergenome, self.halfile, self.outdir, self.options) )
+                    self.addChild( LiftoverBed(genomeoutdir, tempbed, self.tab, asfile, extrafields, numfield, genome, othergenome, self.halfile, self.outdir, self.options) )
             tempbeds.append( tempbed )
             tempbeds.append( filterbed )
-        self.setFollowOnTarget( CleanupFiles(tempbeds) )
+        self.addFollowOn( CleanupFiles(tempbeds) )
 
-class LiftoverBed( Target ):
+class LiftoverBed( Job ):
     def __init__(self, genomeoutdir, bed, tab, asfile, extrafields, numfield, genome, othergenome, halfile, outdir, options):
-        Target.__init__(self)
+        Job.__init__(self)
         self.genomeoutdir = genomeoutdir
         self.bed = bed
         self.tab = tab
@@ -125,7 +125,7 @@ class LiftoverBed( Target ):
         self.outdir = outdir
         self.options = options
 
-    def run(self):
+    def run(self, fileStore):
         liftovertempbed = "%s.bed" % os.path.join(self.genomeoutdir, self.othergenome)
         cmd = "halLiftover %s %s %s %s %s" %(self.halfile, self.genome, self.bed, self.othergenome, liftovertempbed)
         if len(self.extrafields) > 0:
@@ -366,14 +366,14 @@ def getBedExtraFieldsFromAsFile(asfile):
 
 #========= OPTIONS ==============
 def addBedOptions(parser):
-    group = OptionGroup(parser, "BED-FORMATTED ANNOTATIONS", "All annotations in bed or bigbed formats.")
-    group.add_option('--bedDirs', dest='beddirs', help='comma separated list of directories containing bed files of the input genomes. Each directory represents a type of annotation. The annotations of each genome will then be liftovered to all other genomes in the MSA. Example: "genes,genomicIsland,tRNA". Format of each directory: bedDir/ then genome1/ then chr1.bed, chr2.bed... Default=%default' )
-    group.add_option('--finalBigBedDirs', dest='bbdirs', help='comma separated list of directories containing final big bed files to be displayed. No liftover will be done for these files. Each directory represents a type of annotation. Example: "genes,genomicIsland,tRNA". Format of each directory: bbDir/ then queryGenome/ then targetGenome1.bb, targetGenome2.bb ... (so annotation of queryGenome has been mapped to targetGenomes and will be display on the targetGenome browsers). Default=%default' )
-    group.add_option('--bedDirs2', dest='beddirs2', help='Similar to --bedDirs, except these tracks will be kept separately and out of the composite track. Default=%default')
-    group.add_option('--finalBigBedDirs2', dest='bbdirs2', help='Similar to --finalBigBedDirs, except these tracks will be kept separately and out of the composite track. Default=%default')
-    group.add_option('--noBedLiftover', dest='noBedLiftover', action='store_true', default=False, help='If specified, will not lift over the bed annotations. Default=%default')
-    group.add_option('--tabBed', dest='tabbed', action='store_true', default=False, help='If specified, treat tab as the delimiter of all the bed files. Default: any white space.')
-    parser.add_option_group(group)
+    group = parser.add_argument_group("BED-FORMATTED ANNOTATIONS", "All annotations in bed or bigbed formats.")
+    group.add_argument('--bedDirs', dest='beddirs', help='comma separated list of directories containing bed files of the input genomes. Each directory represents a type of annotation. The annotations of each genome will then be liftovered to all other genomes in the MSA. Example: "genes,genomicIsland,tRNA". Format of each directory: bedDir/ then genome1/ then chr1.bed, chr2.bed... ' )
+    group.add_argument('--finalBigBedDirs', dest='bbdirs', help='comma separated list of directories containing final big bed files to be displayed. No liftover will be done for these files. Each directory represents a type of annotation. Example: "genes,genomicIsland,tRNA". Format of each directory: bbDir/ then queryGenome/ then targetGenome1.bb, targetGenome2.bb ... (so annotation of queryGenome has been mapped to targetGenomes and will be display on the targetGenome browsers). ' )
+    group.add_argument('--bedDirs2', dest='beddirs2', help='Similar to --bedDirs, except these tracks will be kept separately and out of the composite track. ')
+    group.add_argument('--finalBigBedDirs2', dest='bbdirs2', help='Similar to --finalBigBedDirs, except these tracks will be kept separately and out of the composite track. ')
+    group.add_argument('--noBedLiftover', dest='noBedLiftover', action='store_true', default=False, help='If specified, will not lift over the bed annotations. ')
+    group.add_argument('--tabBed', dest='tabbed', action='store_true', default=False, help='If specified, treat tab as the delimiter of all the bed files. Default: any white space.')
+    group = parser.add_argument_group(group)
 
 def checkBedOptions(parser, options):
     if options.beddirs:

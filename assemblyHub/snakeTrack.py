@@ -11,11 +11,11 @@ from optparse import OptionGroup
 import re
 
 def addSnakeOptions(parser):
-    group = OptionGroup(parser, "SNAKE TRACKS", "Snake track options")
-    group.add_option('--selfAlignmentSnakes', dest="selfAlignmentTrack",
+    group = parser.add_argument_group("SNAKE TRACKS", "Snake track options")
+    group.add_argument('--selfAlignmentSnakes', dest="selfAlignmentTrack",
                      help="Produce a self-alignment snake track for every genome",
                      action="store_true", default=False)
-    parser.add_option_group(group)
+    group = parser.add_argument_group(group)
 
 def writeTrackDb_snakes(f, halfile, genomes, subgenomes, currgenome, properName, snpwidth=None, doSelfAlignment=False):
     for i, genome in enumerate(genomes):

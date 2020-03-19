@@ -151,17 +151,17 @@ def readRename(file):
 
 #=========== OPTIONS =============
 def addHubOptions(parser):
-    group = OptionGroup(parser, "HUB INFORMATION")
-    group.add_option('--hub', dest='hubLabel', default='myHub', help='a single-word name of the directory containing the track hub files. Not displayed to hub users. Default=%default')
-    group.add_option('--shortLabel', dest='shortLabel', default='my hub', help='the short name for the track hub. Suggested maximum length is 17 characters. Displayed as the hub name on the Track Hubs page and the track group name on the browser tracks page. Default=%default')
-    group.add_option('--longLabel', dest='longLabel', default='my hub', help='a longer descriptive label for the track hub. Suggested maximum length is 80 characters. Displayed in the description field on the Track Hubs page. Default=%default')
-    group.add_option('--email', dest='email', default='NoEmail', help='the contact to whom questions regarding the track hub should be directed. Default=%default')
-    group.add_option('--genomes', dest='genomes', help='File specified list of genomes to make browser for. If specified, only create browsers for these genomes in the order provided by the list. Otherwise create browsers for all genomes in the input hal file')
-    group.add_option('--rename', dest='rename', help='File that maps halfile genomeNames to names displayed on the browser. Format: <halGenomeName>\\t<genomeNameToDisplayOnBrowser>. Default=%default') 
-    group.add_option('--tree', dest='treeFile', help='Newick binary tree. The order of the tracks and the default track layout will be based on this tree if option "genomes" is not specified. If not specified, try to extract the newick tree from the input halfile.')
-    group.add_option('--url', dest='url', help='Public url of the hub location')
-    group.add_option('--twobitdir', dest='twobitdir', help='Optional. Directory containing the 2bit files of each genomes. Default: extract from the input hal file.')
-    parser.add_option_group(group)
+    group = parser.add_argument_group("HUB INFORMATION")
+    group.add_argument('--hub', dest='hubLabel', default='myHub', help='a single-word name of the directory containing the track hub files. Not displayed to hub users. ')
+    group.add_argument('--shortLabel', dest='shortLabel', default='my hub', help='the short name for the track hub. Suggested maximum length is 17 characters. Displayed as the hub name on the Track Hubs page and the track group name on the browser tracks page. ')
+    group.add_argument('--longLabel', dest='longLabel', default='my hub', help='a longer descriptive label for the track hub. Suggested maximum length is 80 characters. Displayed in the description field on the Track Hubs page. ')
+    group.add_argument('--email', dest='email', default='NoEmail', help='the contact to whom questions regarding the track hub should be directed. ')
+    group.add_argument('--genomes', dest='genomes', help='File specified list of genomes to make browser for. If specified, only create browsers for these genomes in the order provided by the list. Otherwise create browsers for all genomes in the input hal file')
+    group.add_argument('--rename', dest='rename', help='File that maps halfile genomeNames to names displayed on the browser. Format: <halGenomeName>\\t<genomeNameToDisplayOnBrowser>. ') 
+    group.add_argument('--tree', dest='treeFile', help='Newick binary tree. The order of the tracks and the default track layout will be based on this tree if option "genomes" is not specified. If not specified, try to extract the newick tree from the input halfile.')
+    group.add_argument('--url', dest='url', help='Public url of the hub location')
+    group.add_argument('--twobitdir', dest='twobitdir', help='Optional. Directory containing the 2bit files of each genomes. Default: extract from the input hal file.')
+    group = parser.add_argument_group(group)
 
 def checkHubOptions(parser, options):
     if options.genomes:

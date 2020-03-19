@@ -9,15 +9,15 @@
 """
 import os
 from sonLib.bioio import system  
-from jobTree.scriptTree.target import Target
+from toil.job import Job
 
-class GetGCpercent( Target ):
+class GetGCpercent( Job ):
     def __init__(self, genomedir, genome):
-        Target.__init__(self)
+        Job.__init__(self)
         self.genomedir = genomedir
         self.genome = genome
 
-    def run(self):
+    def run(self, fileStore):
         twobitfile = os.path.join(self.genomedir, "%s.2bit" %self.genome)
         tempfile = os.path.join(self.genomedir, "%s.gc.wigVarStep.gz" %self.genome)
         cmd = "hgGcPercent -wigOut -doGaps -file=stdout -win=5 -verbose=0 %s %s | gzip -c > %s" %(self.genome, twobitfile, tempfile)
@@ -51,8 +51,8 @@ def writeTrackDb_gcPercent(f, genome):
 
 def addGcOptions(parser):
     from optparse import OptionGroup
-    #group = OptionGroup(parser, "GC PERCENT", "GC Percent in 5-base Window.")
-    group = OptionGroup(parser, "GC PERCENT")
-    group.add_option('--gcContent', dest='gcContent', action='store_true', default=False, help='If specified, make GC-content tracks. Default=%default')
-    parser.add_option_group(group)
+    #group = parser.add_argument_group("GC PERCENT", "GC Percent in 5-base Window.")
+    group = parser.add_argument_group("GC PERCENT")
+    group.add_argument('--gcContent', dest='gcContent', action='store_true', default=False, help='If specified, make GC-content tracks. ')
+    group = parser.add_argument_group(group)
 

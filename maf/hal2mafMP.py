@@ -328,6 +328,8 @@ def main(argv=None):
                                "incompatible with --length option")
     if args.sliceSize is not None and args.smallSize >= args.sliceSize:
         raise RuntimeError("--smallSize must be less than --sliceSize")
+    if not (args.splitBySequence or args.refTargets or args.refSequence):
+        raise RuntimeError("--splitBySequence, --refTargets or --refSequence required")
 
     # make a little id tag for temporary maf slices
     S = string.ascii_uppercase + string.digits

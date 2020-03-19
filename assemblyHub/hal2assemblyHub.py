@@ -19,11 +19,11 @@
 #http://genomewiki.ucsc.edu/index.php/Browser_Track_Construction
 
 import os, sys, re, time
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from sonLib.bioio import system, getTempFile
-from jobTree.scriptTree.target import Target
-from jobTree.scriptTree.stack import Stack
+from toil.job import Job
+from toil.common import Toil
 
 from hal.assemblyHub.prepareLodFiles import *
 from hal.assemblyHub.prepareHubFiles import *
@@ -40,16 +40,16 @@ from hal.assemblyHub.treeCommon import *
 from hal.assemblyHub.docs.makeDocs import *
 
 ###################### MAIN PIPELINE #####################
-class Setup( Target ):
+class Setup( Job ):
     '''Setting up the pipeline
     '''
     def __init__(self, halfile, outdir, options):
-        Target.__init__(self)
+        Job.__init__(self)
         self.halfile = halfile
         self.outdir = outdir
         self.options = options
 
-    def run(self):
+    def run(self, fileStore):
         writeHubFile(self.outdir, self.options)
         annotations = []
         if self.options.beddirs:
@@ -99,22 +99,22 @@ class Setup( Target ):
                                             self.options.ucscNames)
         #Get basic files (2bit, chrom.sizes) for each genome:
         for genome in genomes: 
-            self.addChildTarget( GetBasicFiles(genome, genome2seq2len[genome], self.halfile, self.outdir, self.options) )
+            self.addChild( GetBasicFiles(genome, genome2seq2len[genome], self.halfile, self.outdir, self.options) )
         
-        self.setFollowOnTarget( MakeTracks(genomes, genome2seq2len, self.halfile, self.outdir, self.options) )
+        self.addFollowOn( MakeTracks(genomes, genome2seq2len, self.halfile, self.outdir, self.options) )
 
-class GetBasicFiles( Target ):
+class GetBasicFiles( Job ):
     '''Get 2bit and chrom.sizes for each genome
     '''
     def __init__(self, genome, seq2len, halfile, outdir, options):
-        Target.__init__(self)
+        Job.__init__(self)
         self.genome = genome
         self.seq2len = seq2len
         self.halfile = halfile
         self.outdir = outdir
         self.options = options
 
-    def run(self):
+    def run(self, fileStore):
         genomedir = os.path.join(self.outdir, self.genome)
         system("mkdir -p %s" % genomedir)
         if not self.options.twobitdir:
@@ -144,23 +144,23 @@ class GetBasicFiles( Target ):
         system("faToTwoBit %s %s" %(fafile2, twobitfile))
         system("rm %s" %fafile2)
 
-class MakeTracks( Target ):
+class MakeTracks( Job ):
     def __init__(self, genomes, genome2seq2len, halfile, outdir, options):
-        Target.__init__(self)
+        Job.__init__(self)
         self.genomes = genomes
         self.genome2seq2len = genome2seq2len
         self.halfile = halfile
         self.outdir = outdir
         self.options = options
 
-    def run(self):
+    def run(self, fileStore):
         #GC content & Alignability
         for genome in self.genomes:
             genomedir = os.path.join(self.outdir, genome)
             if self.options.gcContent:
-                self.addChildTarget( GetGCpercent(genomedir, genome) ) #genomedir/genome.gc.bw
+                self.addChild( GetGCpercent(genomedir, genome) ) #genomedir/genome.gc.bw
             if self.options.alignability:
-                self.addChildTarget( GetAlignability(genomedir, genome, self.halfile) )#genomedir/genome.alignability.bw
+                self.addChild( GetAlignability(genomedir, genome, self.halfile) )#genomedir/genome.alignability.bw
         
         #Compute conservation track:
         if self.options.conservation:
@@ -168,7 +168,7 @@ class MakeTracks( Target ):
             conservationDir = os.path.join(self.outdir, "conservation")
             if not self.options.conservationDir: 
                 system("mkdir -p %s" %conservationDir)
-                self.addChildTarget( GetConservationFiles(self.halfile, conservationDir, self.options) )
+                self.addChild( GetConservationFiles(self.halfile, conservationDir, self.options) )
             else:
                 if os.path.abspath(self.options.conservationDir) != os.path.abspath(conservationDir):
                     system("ln -s %s %s" %(os.path.abspath(self.options.conservationDir), conservationDir))
@@ -176,36 +176,36 @@ class MakeTracks( Target ):
 
         #Make bed tracks:
         preprocessAnnotationInputs(self.options, self.outdir, "bed") 
-        self.addChildTarget( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "bed") )
+        self.addChild( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "bed") )
         
         #Make bed2 tracks:
         preprocessAnnotationInputs(self.options, self.outdir, "bed2") 
-        self.addChildTarget( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "bed2") )
+        self.addChild( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "bed2") )
         
         #Make wig tracks:
         preprocessAnnotationInputs(self.options, self.outdir, "wig") 
-        self.addChildTarget( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "wig") )
+        self.addChild( MakeAnnotationTracks(self.options, self.outdir, self.halfile, self.genome2seq2len, "wig") )
 
         #Make clade-exclusive tracks:
         if self.options.tree and self.options.cladeExclusive:
-            self.addChildTarget(GetCladeExclusiveRegions(self.halfile, self.options.tree, os.path.join(self.outdir, "liftoverbeds"), self.options.maxOut, self.options.minIn))
+            self.addChild(GetCladeExclusiveRegions(self.halfile, self.options.tree, os.path.join(self.outdir, "liftoverbeds"), self.options.maxOut, self.options.minIn))
             self.options.bigbeddirs.append( os.path.join(self.outdir, "liftoverbeds", "CladeExclusive") )
 
         #Get LOD if needed, and Write trackDb files
-        self.setFollowOnTarget( WriteGenomesFile(self.genomes, self.genome2seq2len, self.halfile, self.options, self.outdir) )
+        self.addFollowOn( WriteGenomesFile(self.genomes, self.genome2seq2len, self.halfile, self.options, self.outdir) )
 
-class WriteGenomesFile(Target):
+class WriteGenomesFile(Job):
     '''Write genome for all samples in hal file
     '''
     def __init__(self, genomes, genome2seq2len, halfile, options, outdir):
-        Target.__init__(self)
+        Job.__init__(self)
         self.genomes = genomes
         self.genome2seq2len = genome2seq2len
         self.halfile = halfile
         self.options = options
         self.outdir = outdir
 
-    def run(self):
+    def run(self, fileStore):
         options = self.options
         localHalfile = os.path.join(self.outdir, os.path.basename(self.halfile))
         if os.path.abspath(localHalfile) != os.path.abspath(self.halfile):
@@ -243,9 +243,9 @@ class WriteGenomesFile(Target):
 
             #create trackDb for the current genome:
             if lodtxtfile == '':
-                self.addChildTarget( WriteTrackDbFile(self.genomes, "../%s" % os.path.basename(self.halfile), genomedir, options) )
+                self.addChild( WriteTrackDbFile(self.genomes, "../%s" % os.path.basename(self.halfile), genomedir, options) )
             else:
-                self.addChildTarget( WriteTrackDbFile(self.genomes, "../%s" % os.path.basename(lodtxtfile), genomedir, options) )
+                self.addChild( WriteTrackDbFile(self.genomes, "../%s" % os.path.basename(lodtxtfile), genomedir, options) )
             f.write("trackDb %s/trackDb.txt\n" %genome)
             
             #other info
@@ -264,15 +264,15 @@ class WriteGenomesFile(Target):
             f.write("\n")
         f.close()
 
-class WriteTrackDbFile( Target ):
+class WriteTrackDbFile( Job ):
     def __init__(self, genomes, halfile, outdir, options):
-        Target.__init__(self)
+        Job.__init__(self)
         self.genomes = genomes
         self.halfile = halfile
         self.outdir = outdir
         self.options = options
 
-    def run(self):
+    def run(self, fileStore):
         currgenome = self.outdir.rstrip('/').split("/")[-1]
         filename = os.path.join(self.outdir, "trackDb.txt")
         f = open(filename, 'w')
@@ -391,8 +391,8 @@ def linkTwoBitSeqFile(genome, twobitdir, outdir):
         system("ln -s %s %s" %(intwobitfile, twobitfile))
 
 def addOptions(parser):
-    parser.add_option('--cpHalFileToOut', dest='cpHal', action='store_true', default=False, help='If specified, copy the input halfile to the output directory (instead of just make a softlink). Default=%default')
-    parser.add_option('--ucscNames', dest='ucscNames', action='store_true',
+    parser.add_argument('--cpHalFileToOut', dest='cpHal', action='store_true', default=False, help='If specified, copy the input halfile to the output directory (instead of just make a softlink). Default=False')
+    parser.add_argument('--ucscNames', dest='ucscNames', action='store_true',
                       default=False,
                       help='Assume that sequence headers use the UCSC '
                       'naming convention, (i.e. "genome.chr"), and  '
@@ -409,18 +409,22 @@ def addOptions(parser):
     addExclusiveRegionOptions(parser)
     addSnakeOptions(parser)
 
-def checkOptions(parser, args, options):
-    if len(args) < 2:
-        parser.error("Required two input arguments, %d was provided\n" %len(args))
-    if not os.path.exists(args[0]):
-        parser.error("Input hal file %s does not exist.\n" %args[0])
-    if not os.path.exists(args[1]):
-        system("mkdir -p %s" %args[1])
-    elif not os.path.isdir(args[1]):
-        parser.error("Output directory specified (%s) is not a directory\n" %args[1])
+def checkOptions(parser, options):
+
+    # This is not a full Toil port.  Files will still be accessed
+    # directly from disk
+    options.halfile = os.path.abspath(options.halfile)
+    options.outputDirectory = os.path.abspath(options.outputDirectory)
+    if options.batchSystem != 'singleMachine':
+        raise RuntimeError("singleMachine is the only supported batchSystem")
     
-    if not options.jobTree:
-        options.jobTree = os.path.join(args[1], "jobTree")
+    if not os.path.exists(options.halfile):
+        raise RuntimeError("Input hal file %s does not exist.\n" %options.halfile)
+    if not os.path.exists(options.outputDirectory):
+        system("mkdir -p %s" %options.outputDirectory)
+    elif not os.path.isdir(options.outputDirectory):
+        raise RuntimeError("Output directory specified (%s) is not a directory\n" %options.outputDirectory)
+    
     options.snpwidth = None
     checkHubOptions(parser, options)
     checkBedOptions(parser, options)
@@ -430,19 +434,17 @@ def checkOptions(parser, args, options):
 
 def main():
     usage = '%prog <halFile> <outputDirectory> [options]'
-    parser = OptionParser(usage = usage)
+    parser = ArgumentParser()
+    Job.Runner.addToilOptions(parser)
+    parser.add_argument('halfile', help='input hal file')
+    parser.add_argument('outputDirectory', help='output directory')
     addOptions(parser)
-    Stack.addJobTreeOptions(parser)
-    options, args = parser.parse_args()
-    checkOptions(parser, args, options)
-    
-    halfile = args[0]
-    outdir = args[1]
+    options = parser.parse_args()
+    checkOptions(parser, options)
 
-    i = Stack( Setup(halfile, outdir, options) ).startJobTree(options)
-    if i:
-        raise RuntimeError("The jobtree contains %d failed jobs.\n" %i)
-
+    with Toil(options) as toil:
+        toil.start(Setup(options.halfile, options.outputDirectory, options))
+        
 if __name__ == '__main__':
     from hal.assemblyHub.hal2assemblyHub import *
     main()

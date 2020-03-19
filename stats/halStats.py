@@ -40,7 +40,7 @@ def runParallelShellCommands(cmdList, numProc):
         # specifying a timeout allows keyboard interrupts to work?!
         # http://stackoverflow.com/questions/1408356/keyboard-interrupts-with-pythons-multiprocessing-pool
         try:
-            result.get(sys.maxsize)
+            result.get(20000000)
         except KeyboardInterrupt:
             mpPool.terminate()
             raise RuntimeError("Keyboard interrupt")

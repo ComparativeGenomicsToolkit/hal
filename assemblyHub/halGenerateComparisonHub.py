@@ -10,8 +10,8 @@ import os
 from argparse import ArgumentParser
 
 from sonLib.bioio import system, popenCatch, getTempFile
-from jobTree.scriptTree.target import Target
-from jobTree.scriptTree.stack import Stack
+from toil.job import Job
+from toil.common import Toil
 from functools import reduce
 
 def getGenomesInHal(halFile):
@@ -137,31 +137,40 @@ def createHub(target, genomes, opts):
                  hubName="_vs_".join(opts.labels))
     writeGenomesFile(os.path.join(opts.hubDir, 'genomes.txt'), opts.hals[0], genomes)
     for genome in genomes:
-        target.addChildTargetFn(writeSequenceData, (genome, opts.hals[0], opts.hubDir))
+        target.addChildFn(writeSequenceData, (genome, opts.hals[0], opts.hubDir))
     relativeHalPaths = linkHals(opts.hubDir, opts.hals)
 
     # Liftover all genomes
     for genome1 in genomes:
         for genome2 in genomes:
             pass
-            # target.addChildTargetFn(liftoverEntireGenome, (opts.hal1, genome1, genome2))
-            # target.addChildTargetFn(liftoverEntireGenome, (opts.hal2, genome1, genome2))
+            # target.addChildFn(liftoverEntireGenome, (opts.hal1, genome1, genome2))
+            # target.addChildFn(liftoverEntireGenome, (opts.hal2, genome1, genome2))
     # Create trackDbs
     for genome in genomes:
-        target.addChildTargetFn(createTrackDb, (genome, genomes, relativeHalPaths, opts.labels, opts.hubDir))
+        target.addChildFn(createTrackDb, (genome, genomes, relativeHalPaths, opts.labels, opts.hubDir))
     # Create the bed files that display differential coverage
 
 def parse_args():
     """Parses arguments from sys.argv."""
     parser = ArgumentParser(description=__doc__)
+    Job.Runner.addToilOptions(parser)
     parser.add_argument('hubDir', help='Directory to place the finished hub in')
     parser.add_argument('hals', type=os.path.abspath, nargs='+', help='Hal files')
     parser.add_argument('--labels', nargs='+', help='Labels for hal files (default: hal file name)')
-    Stack.addJobTreeOptions(parser)
+
     return parser.parse_args()
 
 def main():
+
+    parser = ArgumentParser()
+    Job.Runner.addToilOptions(parser)
     opts = parse_args()
+    opts.hubDir = os.path.abspath(opts.hubDir)
+    opts.hals = [os.path.abspath(hal) for hal in opts.hals]
+    if opts.batchSystem != 'singleMachine':
+        raise RuntimeError("singleMachine is the only supported batchSystem")
+
     # Create labels for the HALs if none were provided
     if opts.labels is None:
         opts.labels = [os.path.basename(hal) for hal in opts.hals]
@@ -175,7 +184,8 @@ def main():
     if len(genomes) == 0:
         raise ValueError("No genomes in common between the HALs.")
 
-    Stack(Target.makeTargetFn(createHub, (genomes, opts))).startJobTree(opts)
-
+    with Toil(opts) as toil:
+        toil.start(Job.wrapJobFn(createHub, genomes, opts))
+    
 if __name__ == '__main__':
     main()

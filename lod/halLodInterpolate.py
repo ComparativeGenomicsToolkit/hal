@@ -167,7 +167,7 @@ def createLods(halPath, outLodPath, outDir, maxBlock, scale, overwrite,
         
         lodFile.write("%d %s\n" % (maxQueryLength, lodPath))
 
-        if prevStep > steps[-1]:
+        if prevStep is not None and prevStep > steps[-1]:
             break
         prevStep = step
         curStepFactor *= scaleCorFac

@@ -140,7 +140,7 @@ def getNeighbors(tree, name):
             neighbors.append(n)
     if currindex < len(sortedNames):
         middleindex = (len(sortedNames) + currindex)/2
-        neighbors.append(sortedNames[middleindex])
+        neighbors.append(sortedNames[int(middleindex)])
     return neighbors
 
 
