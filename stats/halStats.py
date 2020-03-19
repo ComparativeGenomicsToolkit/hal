@@ -17,7 +17,7 @@ from multiprocessing import Pool
 
 
 
-def runShellCommand(command):
+def runShellCommand(command, ascii=True):
     try:
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                    stderr=sys.stderr, bufsize=-1)
@@ -26,7 +26,7 @@ def runShellCommand(command):
         if sts != 0:
             raise RuntimeError("Command: %s exited with non-zero status %i" %
                                (command, sts))
-        return output
+        return output.decode() if ascii else output
     except KeyboardInterrupt:
         raise RuntimeError("Aborting %s" % command)
 
@@ -40,7 +40,7 @@ def runParallelShellCommands(cmdList, numProc):
         # specifying a timeout allows keyboard interrupts to work?!
         # http://stackoverflow.com/questions/1408356/keyboard-interrupts-with-pythons-multiprocessing-pool
         try:
-            result.get(sys.maxsize)
+            result.get(20000000)
         except KeyboardInterrupt:
             mpPool.terminate()
             raise RuntimeError("Keyboard interrupt")

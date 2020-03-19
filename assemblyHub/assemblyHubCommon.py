@@ -10,18 +10,18 @@ Objects & functions that are used by multiple assemblyHub modules
 """
 import os, re, time
 from sonLib.bioio import system  
-from jobTree.scriptTree.target import Target
+from toil.job import Job
 
-class MakeAnnotationTracks( Target ):
+class MakeAnnotationTracks( Job ):
     def __init__(self, options, outdir, halfile, genome2seq2len, type):
-        Target.__init__(self)
+        Job.__init__(self)
         self.options = options
         self.outdir = outdir
         self.halfile = halfile
         self.genome2seq2len = genome2seq2len
         self.type = type #type has to be bed or wiggle
 
-    def run(self):
+    def run(self, fileStore):
         #Lift-over Bed/Wiggle annotations of each sample to all other samples
         if self.type == 'bed':
             indirs = self.options.beddirs
@@ -36,17 +36,17 @@ class MakeAnnotationTracks( Target ):
                 bigdir = os.path.join(self.outdir, "liftover%s" %self.type, annotation)
                 if self.type == "wig":
                     from hal.assemblyHub.wigTrack import LiftoverWigFiles
-                    self.addChildTarget( LiftoverWigFiles(indir, self.halfile, self.genome2seq2len, bigdir, self.options.noWigLiftover, self.outdir) )
+                    self.addChild( LiftoverWigFiles(indir, self.halfile, self.genome2seq2len, bigdir, self.options.noWigLiftover, self.outdir) )
                 else:
                     from hal.assemblyHub.bedTrack import LiftoverBedFiles
-                    self.addChildTarget( LiftoverBedFiles(indir, self.halfile, self.genome2seq2len, bigdir, self.options.noBedLiftover, self.options.tabbed, self.outdir, self.options) )
+                    self.addChild( LiftoverBedFiles(indir, self.halfile, self.genome2seq2len, bigdir, self.options.noBedLiftover, self.options.tabbed, self.outdir, self.options) )
 
-class CleanupFiles(Target):
+class CleanupFiles(Job):
     def __init__(self, files):
-        Target.__init__(self)
+        Job.__init__(self)
         self.files = files
 
-    def run(self):
+    def run(self, fileStore):
         if len(self.files) > 0:
             system( "rm -f %s" % " ".join(self.files) ) #cleanup
 

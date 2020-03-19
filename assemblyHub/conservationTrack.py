@@ -9,19 +9,19 @@
 """
 import os
 from sonLib.bioio import system  
-from jobTree.scriptTree.target import Target
+from toil.job import Job
 from optparse import OptionGroup
 
-class GetConservationFiles( Target ):
+class GetConservationFiles( Job ):
     '''Compute conservation bigWig for the input genome and lift it over to all other genomes
     '''
     def __init__(self, halfile, outdir, options):
-        Target.__init__(self)
+        Job.__init__(self)
         self.halfile = halfile
         self.outdir = outdir
         self.options = options
 
-    def run(self):
+    def run(self, fileStore):
         #First create the model:
         #halPhyloPTrain.py ../../out.hal reference genesMin66Samples.bed ref.mod --numProc 16 --tree rootedTree.nw
         modfile = os.path.join(self.outdir, "%s.mod" % self.options.conservationGenomeName)
@@ -32,20 +32,20 @@ class GetConservationFiles( Target ):
             cmd += " --tree %s" %self.options.conservationTree
         system(cmd)
 
-        self.setFollowOnTarget( GetConservationFiles2(self.halfile, self.outdir, modfile, self.options.conservationNumProc) )
+        self.addFollowOn( GetConservationFiles2(self.halfile, self.outdir, modfile, self.options.conservationNumProc) )
 
-class GetConservationFiles2( Target ):
+class GetConservationFiles2( Job ):
     '''Modify mod file to convert small branch lengths (change all the xxxe-1y to xxxe-08)
        Then do liftover
     '''
     def __init__(self, halfile, outdir, modfile, numproc):
-        Target.__init__(self)
+        Job.__init__(self)
         self.halfile = halfile
         self.outdir = outdir
         self.modfile = modfile
         self.numproc = numproc
 
-    def run(self):
+    def run(self, fileStore):
         newmodfile = "%s-modified" %self.modfile
         #modify small branch lengths (change all the xxxe-1y to xxxe-10)
         system("sed 's/e-1./e-08/g' %s > %s" %(self.modfile, newmodfile))
@@ -78,13 +78,13 @@ def writeTrackDb_conservation(f, genome, conservationDir):
         f.write("\n")
 
 def addConservationOptions(parser):
-    group = OptionGroup(parser, "CONSERVATION TRACKS", "Necessary information for computing conservation tracks") 
-    group.add_option('--conservation', dest='conservation', help='Bed file providing regions to calculate the conservation tracks.')
-    group.add_option('--conservationDir', dest='conservationDir', help='Optional. Directory contains conservation bigwigs if available. These bigwigs will be used. If this is not specified, the program will compute the conservation tracks.')
-    group.add_option('--conservationGenomeName', dest='conservationGenomeName', help='Name of the genome of the bed file provided in the "--conversation" option')
-    group.add_option('--conservationTree', dest='conservationTree', help='Optional. Newick tree for the conservation track')
-    group.add_option('--conservationNumProc', dest='conservationNumProc', type='int', default=1, help='Optional. Number of processors to run conservation')
-    parser.add_option_group(group)
+    group = parser.add_argument_group("CONSERVATION TRACKS", "Necessary information for computing conservation tracks") 
+    group.add_argument('--conservation', dest='conservation', help='Bed file providing regions to calculate the conservation tracks.')
+    group.add_argument('--conservationDir', dest='conservationDir', help='Optional. Directory contains conservation bigwigs if available. These bigwigs will be used. If this is not specified, the program will compute the conservation tracks.')
+    group.add_argument('--conservationGenomeName', dest='conservationGenomeName', help='Name of the genome of the bed file provided in the "--conversation" option')
+    group.add_argument('--conservationTree', dest='conservationTree', help='Optional. Newick tree for the conservation track')
+    group.add_argument('--conservationNumProc', dest='conservationNumProc', type=int, default=1, help='Optional. Number of processors to run conservation')
+    group = parser.add_argument_group(group)
 
 def checkConservationOptions(parser, options):
     if options.conservationDir:

@@ -10,7 +10,8 @@ halLodExtract_objs = ${halLodExtract_srcs:%.cpp=${modObjDir}/%.o}
 srcs = ${libHalLod_srcs} ${halLodExtract_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
-progs = ${binDir}/halLodExtract
+pyprogs = ${binDir}/halLodInterpolate.py
+progs = ${binDir}/halLodExtract ${pyprogs}
 otherLibs = ${libHalLod}
 
 all : libs progs
@@ -20,6 +21,11 @@ progs: ${progs}
 clean : 
 	rm -f ${libHalLod} ${objs} ${progs} ${depends}
 test:
+
+${binDir}/%.py: %.py
+	@mkdir -p $(dir $@)
+	cp -f $< $@
+	chmod +x,-w $@
 
 include ${rootDir}/rules.mk
 

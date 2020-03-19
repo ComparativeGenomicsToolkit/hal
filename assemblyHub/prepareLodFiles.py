@@ -71,8 +71,8 @@ def getLod(options, localHalfile, outdir):
         options.lodOpts += '--minCovFrac %f ' % options.lodMinCovFrac
     if options.lodChunk is not None:
         options.lodOpts += '--chunk %d ' % options.lodChunk
-    if int(options.maxThreads) > 1 and (options.lod or len(options.lodOpts) > 0):
-        options.lodOpts += '--numProc %d ' % int(options.maxThreads)
+    if options.maxCores and int(options.maxCores) > 1 and (options.lod or len(options.lodOpts) > 0):
+        options.lodOpts += '--numProc %d ' % int(options.maxCores)
     if len(options.lodOpts) > 0:
         print(options.lodOpts)
         options.lod = True
@@ -97,17 +97,17 @@ def getLodLowestLevel(lodtxtfile):
     return level
 
 def addLodOptions(parser):
-    group = OptionGroup(parser, "LEVEL OF DETAILS", "Level-of-detail (LOD) options.")
-    group.add_option('--lod', dest='lod', action="store_true", default=False, help='If specified, create "level of detail" (lod) hal files and will put the lod.txt at the bigUrl instead of the original hal file. Default=%default')
-    group.add_option('--lodTxtFile', dest='lodtxtfile', help='"hal Level of detail" lod text file. If specified, will put this at the bigUrl instead of the hal file. Default=%default')
-    group.add_option('--lodDir', dest='loddir', help='"hal Level of detail" lod dir. If specified, will put this at the bigUrl instead of the hal file. Default=%default')
-    group.add_option('--lodMaxBlock', dest='lodMaxBlock', type='int', help='Maximum number of blocks to display in a hal level of detail (see halLodInterpolate.py --help for the default value).', default=None)
-    group.add_option('--lodScale', dest='lodScale', type='float', help='Scaling factor between two successive levels of detail (see halLodInterpolate.py --help for the default value).', default=None)
-    group.add_option('--lodMaxDNA', dest='lodMaxDNA', type='int', help='Maximum query length such that its hal level of detail will contain nucleotide information. Default=%default (see halLodInterpolate.py --help for the default value).', default=None)
-    group.add_option('--lodInMemory', dest='lodInMemory', action='store_true', help='Load entire hal file into memory when generating levels of detail instead of using hdf5 cache. Could result in drastic speedup. Default=%default.', default=False)
-    group.add_option('--lodMinSeqFrac', dest='lodMinSeqFrac', type='float', help='Minumum sequence length to sample as fraction of step size for level of detail generation: ie sequences with length <= floor(minSeqFrac * step) are ignored (see halLodExtract --help for default value).', default=None)
-    group.add_option('--lodMinCovFrac', dest='lodMinCovFrac', type='float', help='Minimum fraction of a genome that must be covered by sequences that exceed --minSeqFrac * step.  LODs that would violate this threshold will not be generated (or displayed in  the browser).  This is seen a better than the alternative, which is to produce unreasonably sparse LODs because half the sequences were not sampled (see halLodInterpolate.py --help for default value).', default=None)
-    group.add_option('--lodChunk', dest='lodChunk', type='int', help='HDF5 chunk size for generated levels of detail (see halLodExtract --help for default value).', default=None)
-    #group.add_option('--snpwidth', dest='snpwidth', type='int', default=5000, help='Maximum window size to display SNPs. Default=%default')
-    parser.add_option_group(group)
+    group = parser.add_argument_group("LEVEL OF DETAILS", "Level-of-detail (LOD) options.")
+    group.add_argument('--lod', dest='lod', action="store_true", default=False, help='If specified, create "level of detail" (lod) hal files and will put the lod.txt at the bigUrl instead of the original hal file. ')
+    group.add_argument('--lodTxtFile', dest='lodtxtfile', help='"hal Level of detail" lod text file. If specified, will put this at the bigUrl instead of the hal file. ')
+    group.add_argument('--lodDir', dest='loddir', help='"hal Level of detail" lod dir. If specified, will put this at the bigUrl instead of the hal file. ')
+    group.add_argument('--lodMaxBlock', dest='lodMaxBlock', type=int, help='Maximum number of blocks to display in a hal level of detail (see halLodInterpolate.py --help for the default value).', default=None)
+    group.add_argument('--lodScale', dest='lodScale', type=float, help='Scaling factor between two successive levels of detail (see halLodInterpolate.py --help for the default value).', default=None)
+    group.add_argument('--lodMaxDNA', dest='lodMaxDNA', type=int, help='Maximum query length such that its hal level of detail will contain nucleotide information.  (see halLodInterpolate.py --help for the default value).', default=None)
+    group.add_argument('--lodInMemory', dest='lodInMemory', action='store_true', help='Load entire hal file into memory when generating levels of detail instead of using hdf5 cache. Could result in drastic speedup. .', default=False)
+    group.add_argument('--lodMinSeqFrac', dest='lodMinSeqFrac', type=float, help='Minumum sequence length to sample as fraction of step size for level of detail generation: ie sequences with length <= floor(minSeqFrac * step) are ignored (see halLodExtract --help for default value).', default=None)
+    group.add_argument('--lodMinCovFrac', dest='lodMinCovFrac', type=float, help='Minimum fraction of a genome that must be covered by sequences that exceed --minSeqFrac * step.  LODs that would violate this threshold will not be generated (or displayed in  the browser).  This is seen a better than the alternative, which is to produce unreasonably sparse LODs because half the sequences were not sampled (see halLodInterpolate.py --help for default value).', default=None)
+    group.add_argument('--lodChunk', dest='lodChunk', type=int, help='HDF5 chunk size for generated levels of detail (see halLodExtract --help for default value).', default=None)
+    #group.add_argument('--snpwidth', dest='snpwidth', type=int, default=5000, help='Maximum window size to display SNPs. ')
+    group = parser.add_argument_group(group)
 
