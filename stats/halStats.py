@@ -17,7 +17,7 @@ from multiprocessing import Pool
 
 
 
-def runShellCommand(command):
+def runShellCommand(command, ascii=True):
     try:
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                    stderr=sys.stderr, bufsize=-1)
@@ -26,7 +26,7 @@ def runShellCommand(command):
         if sts != 0:
             raise RuntimeError("Command: %s exited with non-zero status %i" %
                                (command, sts))
-        return output
+        return output.decode() if ascii else output
     except KeyboardInterrupt:
         raise RuntimeError("Aborting %s" % command)
 
