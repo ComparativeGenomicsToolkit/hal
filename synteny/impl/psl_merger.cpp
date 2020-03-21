@@ -100,7 +100,7 @@ struct {
         if (a.qStart < b.qStart)
             return true;
         else if (a.qStart == b.qStart) {
-            return a.tStart <= b.tStart;
+            return a.tStart < b.tStart;
         }
         return false;
     }

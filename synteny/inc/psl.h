@@ -13,32 +13,28 @@ struct PslBlock {
     hal_size_t tStart;
     hal_size_t tEnd;
     hal_size_t size;
-    hal_size_t tSize;
-    hal_size_t qSize;
+    std::string strand;
     std::string qName;
     std::string tName;
-    std::string tSeq;
+    hal_size_t qSize;
+    hal_size_t tSize;
     std::string qSeq;
-    std::string strand;
+    std::string tSeq;
     PslBlock(hal_size_t qStart, hal_size_t tStart, hal_size_t size, std::string strand, const std::string &qName,
-             const std::string &tName, int qSize, int tSize, const std::string &qSeq = "", const std::string &tSeq = "") {
-        this->qStart = qStart;
-        this->qSize = qSize;
-        this->qEnd = qStart + size;
-        this->tStart = tStart;
-        this->tEnd = tStart + size;
-        this->tSize = tSize;
-        this->strand = strand;
-        this->size = size;
-        this->qName = qName;
-        this->tName = tName;
-        this->tSeq = tSeq;
-        this->qSeq = qSeq;
+             const std::string &tName, int qSize, int tSize, const std::string &qSeq = "", const std::string &tSeq = ""):
+        qStart(qStart), qEnd(qStart + size), tStart(tStart), tEnd(tStart + size),
+        size(size), strand(strand), qName(qName), tName(tName),
+        qSize(qSize), tSize(tSize), qSeq(qSeq), tSeq(tSeq) {
     }
-    PslBlock() {
+    PslBlock():
+        qStart(0), qEnd(0), tStart(0), tEnd(0),
+        size(0), qSize(0), tSize(0) {
     }
 
-    // void initBlock(ColumnIteratorPtr col);
+    std::string get_description() const {
+        return qName + ":" + std::to_string(qStart) + "-" + std::to_string(qEnd) + " <> "
+            + tName + ":" + std::to_string(tStart) + "-" + std::to_string(tEnd);
+    }
 };
 
 class Psl {
