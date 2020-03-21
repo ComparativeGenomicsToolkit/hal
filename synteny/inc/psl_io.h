@@ -19,6 +19,8 @@ namespace psl_io {
 
     Psl construct_psl(std::vector<PslBlock> blocks);
 
+    void write_psl(const std::vector<std::vector<PslBlock>> &merged_blocks, std::ofstream &ofs);
+
     void write_psl(const std::vector<std::vector<PslBlock>> &merged_blocks, const std::string &outFilePath);
 }
 

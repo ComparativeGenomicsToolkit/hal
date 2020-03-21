@@ -76,19 +76,18 @@ namespace psl_io {
         return psl;
     }
 
-    void write_psl(const std::vector<std::vector<PslBlock>> &merged_blocks, const std::string &outFilePath) {
-        std::ofstream ofs;
-        ofs.open(outFilePath, std::ofstream::out);
-        if (ofs.fail()) {
-            throw hal_exception("can not open " + outFilePath);
-        }
+    void write_psl(const std::vector<std::vector<PslBlock>> &merged_blocks, std::ofstream &ofs) {
         for (auto path : merged_blocks) {
             auto psl = construct_psl(path);
             ofs << psl << std::endl;
         }
+    }
+
+    void write_psl(const std::vector<std::vector<PslBlock>> &merged_blocks, const std::string &outFilePath) {
+        std::ofstream ofs;
+        ofs.exceptions(std::ofstream::failbit|std::ofstream::badbit);
+        ofs.open(outFilePath, std::ofstream::out);
+        write_psl(merged_blocks, ofs);
         ofs.close();
-        if (ofs.fail()) {
-            throw hal_exception("write failed on " + outFilePath);
-        }
     }
 }
