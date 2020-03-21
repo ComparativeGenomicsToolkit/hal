@@ -26,7 +26,7 @@ test1: output/rand1.hal
 
 output/rand1.hal:
 	@mkdir -p output
-	../bin/halRandGen --seed 0 --testRand --format hdf5
+	../bin/halRandGen --seed 0 --testRand --format hdf5 $@
 
 
 include ${rootDir}/rules.mk
