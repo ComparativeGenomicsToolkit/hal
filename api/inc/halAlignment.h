@@ -28,6 +28,11 @@ namespace hal {
         /** Close the alignment */
         virtual void close() = 0;
 
+        /** Close the alignment */
+        void close() const {
+            const_cast<Alignment*>(this)->close();
+        }
+
         /** Get the name of the storage engine.
          **/
         virtual const std::string &getStorageFormat() const = 0;

@@ -39,7 +39,6 @@ std::vector<PslBlock> Hal2Psl::convert2psl(const Alignment *alignment, const Gen
             if (srcChrom != "\"\"" && srcChrom != chrName) {
                 continue;
             }
-            // else {std::cout << srcChrom << std::endl;}
             _bedLine._start = 0;
             _bedLine._end = _srcSequence->getSequenceLength();
             _mappedBlocks.clear();
