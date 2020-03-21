@@ -14,7 +14,8 @@
 using namespace hal;
 
 static void initParser(CLParser &optionsParser) {
-    optionsParser.addArgument("alignment", "input file in hal or psl format");
+    optionsParser.addArgument("alignment", "input file in HAL or PSL format (PSL must specify --alignmentIsPsl)");
+    optionsParser.addOptionFlag("alignmentIsPsl", "alignment is in PSL format", false);
     optionsParser.addOption("queryGenome", "source genome", "\"\"");
     optionsParser.addOption("targetGenome", "reference genome name", "\"\"");
     optionsParser.addArgument("outPslPath", "output psl file ffor synteny blocks");
@@ -58,6 +59,7 @@ int main(int argc, char *argv[]) {
     CLParser optionsParser;
     initParser(optionsParser);
     std::string alignmentFile;
+    bool alignmentIsPsl;
     std::string outPslPath;
     std::string queryGenomeName;
     std::string targetGenomeName;
@@ -67,6 +69,7 @@ int main(int argc, char *argv[]) {
     try {
         optionsParser.parseOptions(argc, argv);
         alignmentFile = optionsParser.getArgument<std::string>("alignment");
+        alignmentIsPsl = optionsParser.getFlag("alignmentIsPsl");
         queryGenomeName = optionsParser.getOption<std::string>("queryGenome");
         targetGenomeName = optionsParser.getOption<std::string>("targetGenome");
         outPslPath = optionsParser.getArgument<std::string>("outPslPath");
@@ -82,19 +85,15 @@ int main(int argc, char *argv[]) {
     validateInputOrThrow(queryGenomeName, targetGenomeName, queryChromosome);
     try {
         std::vector<PslBlock> blocks;
-        if (alignmentFile.substr(alignmentFile.find_last_of(".") + 1) == "hal") {
+        if (alignmentIsPsl) {
+            blocks = psl_io::get_blocks_set(alignmentFile);
+        } else {
             auto alignment = openAlignmentOrThrow(alignmentFile, optionsParser);
             auto targetGenome = openGenomeOrThrow(alignment, targetGenomeName);
             auto queryGenome = openGenomeOrThrow(alignment, queryGenomeName);
 
             auto hal2psl = hal::Hal2Psl();
             blocks = hal2psl.convert2psl(alignment, queryGenome, targetGenome, queryChromosome);
-        }
-        else if (alignmentFile.substr(alignmentFile.find_last_of(".") + 1) == "psl") {
-            blocks = psl_io::get_blocks_set(alignmentFile);
-        }
-        else {
-            throw hal_exception("Alignment file should have .hal or .psl extension");
         }
         std::cout << "merging " << blocks.size() << " blocks" << std::endl;
         auto merged_blocks = dag_merge(blocks, minBlockSize, maxAnchorDistance);

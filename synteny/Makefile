@@ -16,8 +16,18 @@ libs:
 progs: ${progs}
 
 clean : 
-	rm -f ${objs} ${progs} ${depends}
-test:
+	rm -f ${objs} ${progs} ${depends} output
+
+test: test1
+
+test1: output/rand1.hal
+	../bin/halSynteny --queryGenome "Genome_14" --targetGenome "Genome_18" $<  output/$@.psl
+	diff tests/expected/$@.psl output/$@.psl
+
+output/rand1.hal:
+	@mkdir -p output
+	../bin/halRandGen --seed 0 --testRand --format hdf5 $@
+
 
 include ${rootDir}/rules.mk
 

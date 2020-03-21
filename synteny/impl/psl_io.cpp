@@ -71,29 +71,24 @@ namespace psl_io {
         psl.strand = blocks[0].strand;
         psl.blockCount = blocks.size();
         psl.blocks = blocks;
-        // if (psl.strand == "++") {
         psl.tStart = blocks.front().tStart;
         psl.tEnd = blocks.back().tEnd;
-        /*}
-        else if (psl.strand == "+-") {
-            psl.tEnd = psl.tSize - blocks[0].tStart;
-            psl.tStart = psl.tSize - blocks.back().tEnd;
-            //??for (auto b: psl.blocks) {
-            //    b.tStart = psl.tSize - b.tStart;
-            //}
-            //std::reverse(psl.blocks.begin(),psl.blocks.end());
-
-        }*/
         return psl;
     }
 
     void write_psl(const std::vector<std::vector<PslBlock>> &merged_blocks, const std::string &outFilePath) {
         std::ofstream ofs;
         ofs.open(outFilePath, std::ofstream::out);
+        if (ofs.fail()) {
+            throw hal_exception("can not open " + outFilePath);
+        }
         for (auto path : merged_blocks) {
             auto psl = construct_psl(path);
             ofs << psl << std::endl;
         }
         ofs.close();
+        if (ofs.fail()) {
+            throw hal_exception("write failed on " + outFilePath);
+        }
     }
 }
