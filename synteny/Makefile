@@ -16,7 +16,7 @@ libs:
 progs: ${progs}
 
 clean : 
-	rm -f ${objs} ${progs} ${depends}
+	rm -f ${objs} ${progs} ${depends} output
 
 test: test1
 
