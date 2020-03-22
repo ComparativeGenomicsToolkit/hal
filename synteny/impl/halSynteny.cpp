@@ -55,6 +55,66 @@ void validateInputOrThrow(const std::string &queryGenomeName, const std::string 
     }
 }
 
+static void makeSyntenyBlocks(std::vector<PslBlock>& blocks, hal_size_t minBlockSize,
+                              hal_size_t maxAnchorDistance, std::ofstream &pslFh) {
+    auto merged_blocks = dag_merge(blocks, minBlockSize, maxAnchorDistance);
+    psl_io::write_psl(merged_blocks, pslFh);
+}
+
+static void syntenyFromPsl(std::string alignmentFile, hal_size_t minBlockSize,
+                           hal_size_t maxAnchorDistance, std::string outPslPath) {
+    auto blocks = psl_io::get_blocks_set(alignmentFile);
+    std::ofstream pslFh;
+    pslFh.exceptions(std::ofstream::failbit|std::ofstream::badbit);
+    pslFh.open(outPslPath, std::ofstream::out);
+    makeSyntenyBlocks(blocks, minBlockSize, maxAnchorDistance, pslFh);
+    pslFh.close();
+}
+
+static std::vector<std::string> getChromNames(const Genome *genome) {
+    std::vector<std::string> chromNames;
+    for (auto seqIt = genome->getSequenceIterator();
+         not seqIt->atEnd(); seqIt->toNext()) {
+        chromNames.push_back(seqIt->getSequence()->getName());
+    }
+    std::sort(chromNames.begin(), chromNames.end());
+    return chromNames;
+}
+
+static void syntenyBlockForChrom(const Alignment *alignment,
+                                 const Genome *targetGenome, const Genome *queryGenome,
+                                 std::string queryChromosome, hal_size_t minBlockSize,
+                                 hal_size_t maxAnchorDistance, std::ofstream &pslFh) {
+    auto hal2psl = hal::Hal2Psl();
+    auto blocks = hal2psl.convert2psl(alignment, queryGenome, targetGenome, queryChromosome);
+    makeSyntenyBlocks(blocks, minBlockSize, maxAnchorDistance, pslFh);
+}
+
+
+/* do one chromosome at a time to reduce memory */
+static void syntenyFromHal(const Alignment *alignment, std::string queryGenomeName,
+                           std::string targetGenomeName, std::string queryChromosome,
+                           hal_size_t minBlockSize, hal_size_t maxAnchorDistance, std::string outPslPath) {
+    auto targetGenome = openGenomeOrThrow(alignment, targetGenomeName);
+    auto queryGenome = openGenomeOrThrow(alignment, queryGenomeName);
+    std::vector<std::string> chromNames;
+    if (queryChromosome != "\"\"") {
+        chromNames.push_back(queryChromosome);
+    } else {
+        chromNames = getChromNames(queryGenome);
+    }
+
+
+    std::ofstream pslFh;
+    pslFh.exceptions(std::ofstream::failbit|std::ofstream::badbit);
+    pslFh.open(outPslPath, std::ofstream::out);
+    for (auto chromIt = chromNames.begin(); chromIt != chromNames.end(); chromIt++) {
+        syntenyBlockForChrom(alignment, targetGenome, queryGenome,
+                             *chromIt, minBlockSize, maxAnchorDistance, pslFh);
+    }
+    pslFh.close();
+}
+
 int main(int argc, char *argv[]) {
     CLParser optionsParser;
     initParser(optionsParser);
@@ -86,19 +146,12 @@ int main(int argc, char *argv[]) {
     try {
         std::vector<PslBlock> blocks;
         if (alignmentIsPsl) {
-            blocks = psl_io::get_blocks_set(alignmentFile);
+            syntenyFromPsl(alignmentFile, minBlockSize, maxAnchorDistance, outPslPath);
         } else {
             auto alignment = openAlignmentOrThrow(alignmentFile, optionsParser);
-            auto targetGenome = openGenomeOrThrow(alignment, targetGenomeName);
-            auto queryGenome = openGenomeOrThrow(alignment, queryGenomeName);
-
-            auto hal2psl = hal::Hal2Psl();
-            blocks = hal2psl.convert2psl(alignment, queryGenome, targetGenome, queryChromosome);
+            syntenyFromHal(alignment, queryGenomeName, targetGenomeName, queryChromosome, minBlockSize, maxAnchorDistance, outPslPath);
+            alignment->close();
         }
-        std::cout << "merging " << blocks.size() << " blocks" << std::endl;
-        auto merged_blocks = dag_merge(blocks, minBlockSize, maxAnchorDistance);
-        std::cout << "writing psl " << std::endl;
-        psl_io::write_psl(merged_blocks, outPslPath);
     } catch (std::exception &e) {
         std::cerr << "Exception caught: " << e.what() << std::endl;
         return 1;
