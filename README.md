@@ -230,7 +230,7 @@ DNA sequences (without any alignment information) can be extracted from HAL file
 
 ### Displaying in the UCSC Genome Browser using Assembly Hubs
 
-HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To create an assembly hub, run
+HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To create an assembly hub, use the [Comparative Annotation Toolkit](https://github.com/ComparativeGenomicsToolkit/Comparative-Annotation-Toolkit) or run
 
 	hal2assemblyHub.py mammals.hal outputDirectory
 
@@ -297,6 +297,8 @@ halLiftover attempts to autodetect the BED version of the input.  This can be ov
 By default, halLiftover uses spaces and/or tabs to separate columns. To use only tabs (ie to allow spaces within names), use the `--tab` option.
 
 Annotations in [Wiggle](http://genome.ucsc.edu/goldenPath/help/wiggle.html) format can likewise be mapped using `halWiggleLiftover`
+
+See also the [Comparative Annotation Toolkit](https://github.com/ComparativeGenomicsToolkit/Comparative-Annotation-Toolkit) for generating and working with HAL annotations.
 
 #### Alignment Depth
 
