@@ -15,21 +15,21 @@ ${binDir}/%.py : %.py
 # multiple times, so do it atomically.
 ${modObjDir}/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	${cpp} -MM -MT $@ ${cppflags} ${inclSpec} -c $< >$*.depend
-	${cpp} ${cppflags} ${inclSpec} -c $< -o $@
+	${CXX} -MM -MT $@ ${CXXFLAGS} ${inclSpec} -c $< >$*.depend
+	${CXX} ${CXXFLAGS} ${inclSpec} -c $< -o $@
 
 ${modObjDir}/%.o: %.c
 	@mkdir -p $(dir $@)
-	${CC} -MM -MT $@ ${cflags} ${inclSpec} -c $< >$*.depend
-	${CC} ${cflags} ${inclSpec} -c $< -o $@
+	${CC} -MM -MT $@ ${CFLAGS} ${inclSpec} -c $< >$*.depend
+	${CC} ${CFLAGS} ${inclSpec} -c $< -o $@
 
 # compile a program.
 # ${prog_objs} - has object files specific for ${prog}
 # otherLibs - other libraries to used
 .SECONDEXPANSION:
-${binDir}/% : $${$$*_objs} ${libHal} ${otherLibs} ${basicLibsDependencies}
+${binDir}/% : $${$$*_objs} ${libHal} ${otherLibs} ${LIBDEPENDS}
 	@mkdir -p $(dir $@)
-	${cpp} ${cppflags} ${inclSpec} -I tests -o $@ ${${*}_objs} ${otherLibs} ${libHal} ${basicLibs}
+	${CXX} ${CXXFLAGS} ${inclSpec} -I tests -o $@ ${${*}_objs} ${otherLibs} ${libHal} ${LDLIBS}
 
 
 # build a library
@@ -37,5 +37,5 @@ ${binDir}/% : $${$$*_objs} ${libHal} ${otherLibs} ${basicLibsDependencies}
 .SECONDEXPANSION:
 ${libDir}/%.a: $${$$*_objs}
 	@mkdir -p $(dir $@)
-	ar rc $@ ${$*_objs}
-	ranlib $@
+	${AR} rc $@ ${$*_objs}
+	${RANLIB} $@

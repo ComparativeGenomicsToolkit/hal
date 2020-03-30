@@ -51,21 +51,21 @@ ifeq (${CXX_ABI_DEF},)
     CXX_ABI_DEF = -D_GLIBCXX_USE_CXX11_ABI=1
 endif
 
-cflags += -I${sonLibDir} -fPIC
-cppflags += -I${sonLibDir} -fPIC ${CXX_ABI_DEF} -std=c++11 -Wno-sign-compare
+CFLAGS += -I${sonLibDir} -fPIC
+CXXFLAGS += -I${sonLibDir} -fPIC ${CXX_ABI_DEF} -std=c++11 -Wno-sign-compare
 
-basicLibs += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
-basicLibsDependencies += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
+LDLIBS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
+LIBDEPENDS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 
 # hdf5 compilation is done through its wrappers.  See README.md for discussion of
 # h5prefix
-cpp = h5c++ ${h5prefix}
-cxx = h5cc ${h5prefix}
+CXX = h5c++ ${h5prefix}
+CC = h5cc ${h5prefix}
 
 #
 # phyloP support
 #
-phyloPcppflags = 
+phyloPCXXFLAGS = 
 phyloPlibs = 
 
 ifdef ENABLE_PHYLOP
@@ -84,12 +84,12 @@ ifeq (${CLAPACKPATH},)
 endif
 
 ifeq ($(TARGETOS), Darwin)
-    cppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
-    basicLibs += -L${PHAST}/lib -lphast -lc -framework Accelerate
+    CXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
+    LDLIBS += -L${PHAST}/lib -lphast -lc -framework Accelerate
 else
     F2CPATH=${CLAPACKPATH}/F2CLIBS
-    cppflags += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
-    basicLibs += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
+    CXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+    LDLIBS += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
 endif
 
 endif
@@ -104,10 +104,9 @@ ifdef ENABLE_PHYLOP
 endif
     #  Find htslib as in kent/src/inc/common.mk:
     MACHTYPE = x86_64
-    cppflags += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
-    # FIXME: standarize var names
-    cflags += -Wall -Werror -std=c99 -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
-    basicLibs += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lcurl -lssl -lcrypto
+    CXXFLAGS += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
+    CFLAGS += -Wall -Werror -std=c99 -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
+    LDLIBS += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lcurl -lssl -lcrypto 
 endif
 
 
@@ -115,3 +114,5 @@ endif
 # test includes and libs uses buy several modules
 halApiTestIncl = ${rootDir}/api/tests
 halApiTestSupportLibs = ${objDir}/api/tests/halApiTestSupport.o ${objDir}/api/tests/halRandomData.o
+
+LDLIBS += ${LIBS}
