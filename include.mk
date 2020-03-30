@@ -51,8 +51,8 @@ ifeq (${CXX_ABI_DEF},)
     CXX_ABI_DEF = -D_GLIBCXX_USE_CXX11_ABI=1
 endif
 
-CFLAGS += -I${sonLibDir} -fPIC
-CXXFLAGS += -I${sonLibDir} -fPIC ${CXX_ABI_DEF} -std=c++11 -Wno-sign-compare
+CFLAGS += -I${sonLibDir}
+CXXFLAGS += -I${sonLibDir} ${CXX_ABI_DEF} -std=c++11 -Wno-sign-compare
 
 LDLIBS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 LIBDEPENDS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
