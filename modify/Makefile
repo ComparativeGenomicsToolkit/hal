@@ -42,7 +42,7 @@ progs = ${binDir}/halRemoveGenome ${binDir}/halAddToBranch ${binDir}/halReplaceG
 inclSpec += -I${rootDir}/liftover/inc
 otherLibs += ${libHalLiftover}
 ifdef ENABLE_PHYLOP
-inclSpec += ${phyloPcppflags}
+inclSpec += ${phyloPCXXFLAGS}
 otherLibs += ${phyloPlibs}
 phast_progs = ${binDir}/ancestorsML ${binDir}/ancestorsMLMP.py
 endif
