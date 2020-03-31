@@ -36,11 +36,15 @@ Installation
 
 From the parent directory of where you want HAL installed:
 
-	 git clone git@github.com:ComparativeGenomicsToolkit/hal.git
+	 git clone https://github.com/ComparativeGenomicsToolkit/hal.git
 
 ### Installing Dependencies
 
 #### HDF5 1.10.1 with C++ API enabled
+
+* Using apt (Ubuntu 18.04)
+
+    sudo apt install libhdf5-dev
 
 * Using [MacPorts](http://www.macports.org/):   
 
@@ -82,7 +86,7 @@ From the parent directory of where you want HAL installed:
 
 From the same parent directory where you downloaded HAL:
 
-	  git clone git://github.com/benedictpaten/sonLib.git
+	  git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
 	  pushd sonLib && make && popd
 
 If sonLib and HAL are not sister directories, update hal/include and change
