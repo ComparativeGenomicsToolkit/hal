@@ -66,7 +66,6 @@ hal2MafMPTargetGenomesTest: output/small.hdf5.hal
 	./hal2mafMP.py --splitBySequence output/small.hdf5.hal output/$@.maf
 	diff tests/expected/hal2MafSmallTest.maf output/$@_Genome_0_seq.maf
 
-
 output/small.mmap.hal:
 	@mkdir -p output
 	../bin/halRandGen --preset small --seed 0 --testRand --format mmap output/small.mmap.hal
@@ -82,6 +81,9 @@ ${binDir}/%.py: %.py
 	@mkdir -p $(dir $@)
 	cp -f $< $@
 	chmod +x,-w $@
+
+flake8:
+	${PYTHON} -m flake8 *.py
 
 include ${rootDir}/rules.mk
 
