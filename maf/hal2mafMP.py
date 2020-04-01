@@ -71,34 +71,33 @@ def computeSlices(options, seqLen):
         if options.sliceSize is None or options.sliceSize >= inLength:
             yield (inStart, inLength, None)
         else:
-            for i in range(inLength / options.sliceSize):
+            for i in range(inLength // options.sliceSize):
                 yield (inStart + i * options.sliceSize, options.sliceSize, i)
             r = inLength % options.sliceSize
             if r > 0:
-                i = inLength / options.sliceSize
+                i = inLength // options.sliceSize
                 yield (inStart + i * options.sliceSize, r, i)
 
 def concatenateSlices(sliceOpts, sliceCmds):
     assert len(sliceOpts) > 0
     assert len(sliceOpts) == len(sliceCmds)
-    if (sliceOpts[0].sliceSize is not None):
-        for opt, cmd in zip(sliceOpts, sliceCmds):
-            first = opt.sliceNumber == 0
-            sliceMafPath = makeOutMafPath(opt)
-            if os.path.isfile(sliceMafPath) and opt.sliceNumber is not None:
-                sliceNum = opt.sliceNumber
-                opt.sliceNumber = None
-                outMafPath = makeOutMafPath(opt)
-                opt.sliceNumber = sliceNum
-                if first:
-                    os.rename(sliceMafPath, outMafPath)
-                else:
-                    with open(outMafPath, "a") as tgt:
-                        with open(sliceMafPath, "r") as src:
-                            for line in src:
-                                if not line[0] == '#':
-                                    tgt.write(line)
-                    os.remove(sliceMafPath)
+    for opt, cmd in zip(sliceOpts, sliceCmds):
+        first = opt.sliceNumber == 0
+        sliceMafPath = makeOutMafPath(opt)
+        if os.path.isfile(sliceMafPath) and opt.sliceNumber is not None:
+            sliceNum = opt.sliceNumber
+            opt.sliceNumber = None
+            outMafPath = makeOutMafPath(opt)
+            opt.sliceNumber = sliceNum
+            if first:
+                os.rename(sliceMafPath, outMafPath)
+            else:
+                with open(outMafPath, "a") as tgt:
+                    with open(sliceMafPath, "r") as src:
+                        for line in src:
+                            if not line[0] == '#':
+                                tgt.write(line)
+                os.remove(sliceMafPath)
 
 def splitBed(bed, numParts):
     """Split up a bed file by lines into N parts, return the paths of the

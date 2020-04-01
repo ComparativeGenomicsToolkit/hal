@@ -35,41 +35,38 @@ halMafTests:
 naiveLiftUpTests:
 	${PYTHON} -m pytest impl/naiveLiftUp.py
 
-hal2mafCmdTests: hal2MafSmallMMapTest hal2MafSmallHdf5Test hal2MafSeqTest hal2MafSeqPartTest
+hal2mafCmdTests: hal2mafSmallMMapTest hal2mafSmallHdf5Test hal2mafSeqTest hal2mafSeqPartTest
 
-hal2MafSmallMMapTest: output/small.mmap.hal
+hal2mafSmallMMapTest: output/small.mmap.hal
 	../bin/hal2maf output/small.mmap.hal output/$@.maf
-	diff tests/expected/hal2MafSmallTest.maf output/$@.maf
+	diff tests/expected/hal2mafSmallTest.maf output/$@.maf
 
-hal2MafSmallHdf5Test: output/small.hdf5.hal
+hal2mafSmallHdf5Test: output/small.hdf5.hal
 	../bin/hal2maf output/small.hdf5.hal output/$@.maf
-	diff tests/expected/hal2MafSmallTest.maf output/$@.maf
+	diff tests/expected/hal2mafSmallTest.maf output/$@.maf
 
-hal2MafSeqTest: output/small.mmap.hal
+hal2mafSeqTest: output/small.mmap.hal
 	../bin/hal2maf --refGenome Genome_2 --refSequence Genome_2_seq output/small.mmap.hal output/$@.maf
 	diff tests/expected/$@.maf output/$@.maf
 
-hal2MafSeqPartTest: output/small.mmap.hal
+hal2mafSeqPartTest: output/small.mmap.hal
 	../bin/hal2maf --refGenome Genome_2 --refSequence Genome_2_seq --start 1000 --length 2000 output/small.mmap.hal output/$@.maf
 	diff tests/expected/$@.maf output/$@.maf
 
 ##
 # hal2mafMP
 ##
-hal2mafMPTests: hal2MafMPBySeqTest hal2MafMPTargetGenomesTest
+hal2mafMPTests: hal2mafMPBySeqTest hal2mafMPTargetGenomesTest hal2mafMPRefTargetsGenomesTest
 
-# --refTargets hasn't worked in a while
-# hal2MafMPRefTargetsGenomesTest
+hal2mafMPBySeqTest: output/small.hdf5.hal
+	./hal2mafMP.py --sliceSize=250 --splitBySequence output/small.hdf5.hal output/$@.maf
+	diff tests/expected/$@_Genome_0_seq.maf output/$@_Genome_0_seq.maf
 
-hal2MafMPBySeqTest: output/small.hdf5.hal
-	./hal2mafMP.py --splitBySequence output/small.hdf5.hal output/$@.maf
-	diff tests/expected/hal2MafSmallTest.maf output/$@_Genome_0_seq.maf
-
-hal2MafMPTargetGenomesTest: output/small.hdf5.hal
+hal2mafMPTargetGenomesTest: output/small.hdf5.hal
 	./hal2mafMP.py --refGenome Genome_3 --targetGenomes Genome_1,Genome_2 output/small.hdf5.hal output/$@.maf
 	diff tests/expected/$@.maf output/$@.maf
 
-hal2MafMPRefTargetsGenomesTest: output/small.hdf5.hal
+hal2mafMPRefTargetsGenomesTest: output/small.hdf5.hal
 	./hal2mafMP.py --refTargets=tests/input/small-Genome_0.bed output/small.hdf5.hal output/$@.maf
 	diff tests/expected/$@.maf output/$@.maf
 
