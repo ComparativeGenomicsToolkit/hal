@@ -58,13 +58,20 @@ hal2MafSeqPartTest: output/small.mmap.hal
 ##
 hal2mafMPTests: hal2MafMPBySeqTest hal2MafMPTargetGenomesTest
 
-hal2MafMPBySeqTest: output/small.hdf5.hal
-	./hal2mafMP.py --refGenome Genome_3 --targetGenomes Genome_1,Genome_2 output/small.hdf5.hal output/$@.maf
-	diff tests/expected/hal2MafSmallTest.maf output/$@.maf
+# --refTargets hasn't worked in a while
+# hal2MafMPRefTargetsGenomesTest
 
-hal2MafMPTargetGenomesTest: output/small.hdf5.hal
+hal2MafMPBySeqTest: output/small.hdf5.hal
 	./hal2mafMP.py --splitBySequence output/small.hdf5.hal output/$@.maf
 	diff tests/expected/hal2MafSmallTest.maf output/$@_Genome_0_seq.maf
+
+hal2MafMPTargetGenomesTest: output/small.hdf5.hal
+	./hal2mafMP.py --refGenome Genome_3 --targetGenomes Genome_1,Genome_2 output/small.hdf5.hal output/$@.maf
+	diff tests/expected/$@.maf output/$@.maf
+
+hal2MafMPRefTargetsGenomesTest: output/small.hdf5.hal
+	./hal2mafMP.py --refTargets=tests/input/small-Genome_0.bed output/small.hdf5.hal output/$@.maf
+	diff tests/expected/$@.maf output/$@.maf
 
 output/small.mmap.hal:
 	@mkdir -p output
