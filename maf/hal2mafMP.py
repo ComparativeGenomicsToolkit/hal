@@ -13,6 +13,7 @@ import sys
 import copy
 import random
 import math
+import statistics
 import string
 from glob import glob
 from sonLib.bioio import system
@@ -28,10 +29,10 @@ def getHal2MafCmd(options):
     cmd = "hal2maf %s %s --unique" % (options.halFile, makeOutMafPath(options))
     for opt, val in list(options.__dict__.items()):
         if (val is not None and
-            ((not isinstance(val, bool) or val) and
-             (opt in 'cacheMDC', 'cacheRDC', 'cacheW0', 'cacheBytes', 'inMemory', 'refGenome',
-              'refSequence', 'refTargets', 'start', 'length', 'rootGenome',
-              'targetGenomes', 'maxRefGap', 'noDupes', 'noAncestors', 'onlySequenceNames'))):
+            ((not isinstance(val, bool) or (val == True)) and
+             (opt in ('cacheMDC', 'cacheRDC', 'cacheW0', 'cacheBytes', 'inMemory', 'refGenome',
+                      'refSequence', 'refTargets', 'start', 'length', 'rootGenome',
+                      'targetGenomes', 'maxRefGap', 'noDupes', 'noAncestors', 'onlySequenceNames')))):
             if val is not True:
                 cmd += ' --%s %s' % (opt, str(val))
             else:
@@ -45,6 +46,7 @@ def getHal2MafCmd(options):
 def makeOutMafPath(options):
     mafFile = os.path.basename(options.mafFile)
     mafName = os.path.splitext(mafFile)[0]
+
     mafDir = os.path.dirname(options.mafFile)
     if options.smallFile:
         mafName += '_small'
@@ -120,7 +122,7 @@ def partitionRefTargets(options):
         seqOpts.sliceNumber = i
         sliceCmds.append(getHal2MafCmd(seqOpts))
         sliceOpts.append(seqOpts)
-    return sliceCmds, seqOpts
+    return sliceCmds, sliceOpts
 
 def partitionBySeqCoords(options, refGenome):
     "we are going to deal with sequence coordinates"
@@ -142,7 +144,7 @@ def partitionBySeqCoords(options, refGenome):
                 sliceOpts.append(copy.deepcopy(seqOpts))
             if seqOpts.smallFile is True and seqLen > 0:
                 options.firstSmallFile = False
-    return sliceCmds, seqOpts
+    return sliceCmds, sliceOpts
 
 def partitionByGenomeCoords(options, refGenome):
     "we are slicing the gnome coordinates directly"
@@ -150,21 +152,25 @@ def partitionByGenomeCoords(options, refGenome):
     sliceOpts = []
     seqOpts = copy.deepcopy(options)
     assert seqOpts.splitBySequence is False
-    genomeLen = getHalGenomeLength(seqOpts.halFile, refGenome)
+    refSequenceStats = getHalSequenceStats(options.halFile, refGenome)
     # auto compute slice size from numprocs
     if seqOpts.sliceSize is None and seqOpts.numProc > 1:
-        refLen = genomeLen
         if seqOpts.length is not None and seqOpts.length > 0:
             refLen = seqOpts.length
-        seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
+        else:
+            # use median of sequence lengths
+            refLen = int(statistics.median([r[1] for r in refSequenceStats]))
+        seqOpts.sliceSize = math.ceil(math.ceil(refLen / seqOpts.numProc))
 
-    for sStart, sLen, sIdx in computeSlices(seqOpts, genomeLen):
-        seqOpts.start = sStart
-        seqOpts.length = sLen
-        seqOpts.sliceNumber = sIdx
-        sliceCmds.append(getHal2MafCmd(seqOpts))
-        sliceOpts.append(copy.deepcopy(seqOpts))
-    return sliceCmds, seqOpts
+    for refSeqStat in refSequenceStats:
+        seqOpts.refSequence = refSeqStat[0]
+        for sStart, sLen, sIdx in computeSlices(seqOpts, refSeqStat[1]):
+            seqOpts.start = sStart
+            seqOpts.length = sLen
+            seqOpts.sliceNumber = sIdx
+            sliceCmds.append(getHal2MafCmd(seqOpts))
+            sliceOpts.append(copy.deepcopy(seqOpts))
+    return sliceCmds, sliceOpts
 
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes.
