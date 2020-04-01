@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-#Copyright (C) 2013 by Glenn Hickey
+# Copyright (C) 2013 by Glenn Hickey
 # Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 #
-#Released under the MIT license, see LICENSE.txt
-#!/usr/bin/env python3
+# Released under the MIT license, see LICENSE.txt
 
 """Run hal2maf in parallel by slicing along reference genome.
 """
@@ -12,21 +11,13 @@ import argparse
 import os
 import sys
 import copy
-import subprocess
-import time
-import inspect
-import math
 import random
+import math
 import string
-from collections import defaultdict
-from multiprocessing import Pool
 from glob import glob
-from sonLib.bioio import system, popenCatch
+from sonLib.bioio import system
 
 from hal.stats.halStats import runParallelShellCommands
-from hal.stats.halStats import getHalGenomes
-from hal.stats.halStats import getHalNumSegments
-from hal.stats.halStats import getHalStats
 from hal.stats.halStats import getHalSequenceStats
 from hal.stats.halStats import getHalGenomeLength
 from hal.stats.halStats import getHalRootName
@@ -35,25 +26,12 @@ from hal.stats.halStats import getHalRootName
 # Wrapper for hal2maf
 def getHal2MafCmd(options):
     cmd = "hal2maf %s %s --unique" % (options.halFile, makeOutMafPath(options))
-    for opt,val in list(options.__dict__.items()):
+    for opt, val in list(options.__dict__.items()):
         if (val is not None and
-            (type(val) != bool or val == True) and
-            (opt == 'cacheMDC' or
-             opt == 'cacheRDC' or
-             opt == 'cacheW0' or
-             opt == 'cacheBytes' or
-             opt == 'inMemory' or
-             opt == 'refGenome' or
-             opt == 'refSequence' or
-             opt == 'refTargets' or
-             opt == 'start' or
-             opt == 'length' or
-             opt == 'rootGenome' or
-             opt == 'targetGenomes' or
-             opt == 'maxRefGap' or
-             opt == 'noDupes' or
-             opt == 'noAncestors' or
-             opt == 'onlySequenceNames')):
+            ((not isinstance(val, bool) or val) and
+             (opt in 'cacheMDC', 'cacheRDC', 'cacheW0', 'cacheBytes', 'inMemory', 'refGenome',
+              'refSequence', 'refTargets', 'start', 'length', 'rootGenome',
+              'targetGenomes', 'maxRefGap', 'noDupes', 'noAncestors', 'onlySequenceNames'))):
             if val is not True:
                 cmd += ' --%s %s' % (opt, str(val))
             else:
@@ -121,13 +99,72 @@ def concatenateSlices(sliceOpts, sliceCmds):
                     os.remove(sliceMafPath)
 
 def splitBed(bed, numParts):
-    """Split up a bed file by lines into N parts, return the paths of the split files"""
+    """Split up a bed file by lines into N parts, return the paths of the
+    split files"""
     with open(bed) as f:
         numLines = sum(1 for line in f)
     # Random suffix so two runs on the same file don't collide
     suffix = "".join([random.choice(string.ascii_uppercase) for _ in range(7)])
-    system("split -l %d %s %s.temp.%s" % (math.ceil(float(numLines)/numParts), bed, bed, suffix))
+    system("split -l %d %s %s.temp.%s" % (math.ceil(float(numLines)/numParts),
+                                          bed, bed, suffix))
     return glob('%s.temp.%s*' % (bed, suffix))
+
+def partitionRefTargets(options):
+    "partition by refTargets option"
+    splitBedFiles = splitBed(options.refTargets, options.numProc)
+    sliceCmds = []
+    sliceOpts = []
+    for i, splitBedFile in enumerate(splitBedFiles):
+        seqOpts = copy.deepcopy(options)
+        seqOpts.refTargets = splitBedFile
+        seqOpts.sliceNumber = i
+        sliceCmds.append(getHal2MafCmd(seqOpts))
+        sliceOpts.append(seqOpts)
+    return sliceCmds, seqOpts
+
+def partitionBySeqCoords(options, refGenome):
+    "we are going to deal with sequence coordinates"
+    refSequenceStats = getHalSequenceStats(options.halFile, refGenome)
+    sliceCmds = []
+    sliceOpts = []
+    for sequence, seqLen, nt, nb in refSequenceStats:
+        if options.refSequence is None or sequence == options.refSequence:
+            seqOpts = copy.deepcopy(options)
+            if seqLen < options.smallSize:
+                seqOpts.smallFile = True
+            seqOpts.refGenome = refGenome
+            seqOpts.refSequence = sequence
+            for sStart, sLen, sIdx in computeSlices(seqOpts, seqLen):
+                seqOpts.start = sStart
+                seqOpts.length = sLen
+                seqOpts.sliceNumber = sIdx
+                sliceCmds.append(getHal2MafCmd(seqOpts))
+                sliceOpts.append(copy.deepcopy(seqOpts))
+            if seqOpts.smallFile is True and seqLen > 0:
+                options.firstSmallFile = False
+    return sliceCmds, seqOpts
+
+def partitionByGenomeCoords(options, refGenome):
+    "we are slicing the gnome coordinates directly"
+    sliceCmds = []
+    sliceOpts = []
+    seqOpts = copy.deepcopy(options)
+    assert seqOpts.splitBySequence is False
+    genomeLen = getHalGenomeLength(seqOpts.halFile, refGenome)
+    # auto compute slice size from numprocs
+    if seqOpts.sliceSize is None and seqOpts.numProc > 1:
+        refLen = genomeLen
+        if seqOpts.length is not None and seqOpts.length > 0:
+            refLen = seqOpts.length
+        seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
+
+    for sStart, sLen, sIdx in computeSlices(seqOpts, genomeLen):
+        seqOpts.start = sStart
+        seqOpts.length = sLen
+        seqOpts.sliceNumber = sIdx
+        sliceCmds.append(getHal2MafCmd(seqOpts))
+        sliceOpts.append(copy.deepcopy(seqOpts))
+    return sliceCmds, seqOpts
 
 # Decompose HAL file into slices according to the options then launch
 # hal2maf in parallel processes.
@@ -135,56 +172,14 @@ def runParallelSlices(options):
     refGenome = options.refGenome
     if refGenome is None:
         refGenome = getHalRootName(options.halFile)
-    refSequenceStats = getHalSequenceStats(options.halFile, refGenome)
     options.smallFile = False
     options.firstSmallFile = True
-    sliceCmds = []
-    sliceOpts = []
     if options.refTargets:
-        splitBedFiles = splitBed(options.refTargets, options.numProc)
-        for i, splitBedFile in enumerate(splitBedFiles):
-            seqOpts = copy.deepcopy(options)
-            seqOpts.refTargets = splitBedFile
-            seqOpts.sliceNumber = i
-            sliceCmds.append(getHal2MafCmd(seqOpts))
-            sliceOpts.append(seqOpts)
-    # we are going to deal with sequence coordinates
+        sliceCmds, sliceOpts = partitionRefTargets(options)
     elif options.splitBySequence is True or options.refSequence is not None:
-        for sequence, seqLen, nt, nb in refSequenceStats:
-            if options.refSequence is None or sequence == options.refSequence:
-                seqOpts = copy.deepcopy(options)
-                if seqLen < options.smallSize:
-                    seqOpts.smallFile = True
-                seqOpts.refGenome = refGenome
-                seqOpts.refSequence = sequence
-                index = 0
-                for sStart, sLen, sIdx in computeSlices(seqOpts, seqLen):
-                    seqOpts.start = sStart
-                    seqOpts.length = sLen
-                    seqOpts.sliceNumber = sIdx
-                    sliceCmds.append(getHal2MafCmd(seqOpts))
-                    sliceOpts.append(copy.deepcopy(seqOpts))
-                if seqOpts.smallFile is True and seqLen > 0:
-                    options.firstSmallFile = False
-    # we are slicing the gnome coordinates directly
+        sliceCmds, sliceOpts = partitionBySeqCoords(options, refGenome)
     else:
-        seqOpts = copy.deepcopy(options)
-        assert seqOpts.splitBySequence is False
-        genomeLen = getHalGenomeLength(seqOpts.halFile, refGenome)
-        # auto compute slice size from numprocs
-        if seqOpts.sliceSize == None and seqOpts.numProc > 1:
-            refLen = genomeLen
-            if seqOpts.length is not None and seqOpts.length > 0:
-                refLen = seqOpts.length
-            seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
-
-        index = 0
-        for sStart, sLen, sIdx in computeSlices(seqOpts, genomeLen):
-            seqOpts.start = sStart
-            seqOpts.length = sLen
-            seqOpts.sliceNumber = sIdx
-            sliceCmds.append(getHal2MafCmd(seqOpts))
-            sliceOpts.append(copy.deepcopy(seqOpts))
+        sliceCmds, sliceOpts = partitionByGenomeCoords(options, refGenome)
 
     # run in parallel
     runParallelShellCommands(sliceCmds, options.numProc)
@@ -228,7 +223,7 @@ def main():
                         type=int, default=0)
 
     ##################################################################
-    #HDF5 OPTIONS (as copied from hal/api/hdf5_impl/hdf5CLParser.cpp)
+    # HDF5 OPTIONS (as copied from hal/api/hdf5_impl/hdf5CLParser.cpp)
     ##################################################################
     hdf5Grp = parser.add_argument_group('HDF5 HAL Options')
     hdf5Grp.add_argument("--cacheMDC",
@@ -254,7 +249,7 @@ def main():
                          default=False)
 
     ##################################################################
-    #HAL2MAF OPTIONS (as copied from hal/maf/impl/hal2maf.cpp)
+    # HAL2MAF OPTIONS (as copied from hal/maf/impl/hal2maf.cpp)
     ##################################################################
     h2mGrp = parser.add_argument_group('hal2maf Options')
     h2mGrp.add_argument("--refGenome",
@@ -292,7 +287,7 @@ def main():
                         action="store_true",
                         default=False)
     h2mGrp.add_argument("--noAncestors",
-                        help= "don't write ancestral sequences. IMPORTANT: "
+                        help="don't write ancestral sequences. IMPORTANT: "
                         "Must be used in conjunction with --refGenome"
                         " to set a non-ancestral genome as the reference"
                         " because the default reference is the root.",
