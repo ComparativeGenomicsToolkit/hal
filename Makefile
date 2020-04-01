@@ -6,7 +6,7 @@ modules = api stats randgen validate mutations fasta alignmentDepth liftover lod
 
 .PHONY: all libs %.libs progs %.progs clean %.clean doxy %.doxy
 
-all : libs progs
+all : libs progs hal
 
 libs: ${modules:%=%.libs}
 %.libs:
@@ -17,9 +17,15 @@ progs: ${modules:%=%.progs}
 	cd $* && ${MAKE} progs
 
 clean: ${modules:%=%.clean}
+	rm -f hal
 	rm -rf lib bin objs
 	rm -f *.pyc */*.pyc */*/*.pyc
 	rm -rf __pycache__ */__pycache__ */*/__pycache__
+
+# create symbolic links so that python packages work without assuming name of
+# directory
+hal:
+	ln -sf . hal
 
 %.clean:
 	cd $* && ${MAKE} clean

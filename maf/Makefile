@@ -27,7 +27,7 @@ progs: ${progs}
 clean : 
 	rm -rf ${libHalMaf} ${objs} ${progs} ${depends} output
 
-test: halMafTests hal2mafCmdTests naiveLiftUpTests
+test: halMafTests hal2mafCmdTests hal2mafMPTests naiveLiftUpTests
 
 halMafTests:
 	${binDir}/halMafTests
@@ -52,6 +52,20 @@ hal2MafSeqTest: output/small.mmap.hal
 hal2MafSeqPartTest: output/small.mmap.hal
 	../bin/hal2maf --refGenome Genome_2 --refSequence Genome_2_seq --start 1000 --length 2000 output/small.mmap.hal output/$@.maf
 	diff tests/expected/$@.maf output/$@.maf
+
+##
+# hal2mafMP
+##
+hal2mafMPTests: hal2MafMPBySeqTest hal2MafMPTargetGenomesTest
+
+hal2MafMPBySeqTest: output/small.hdf5.hal
+	./hal2mafMP.py --refGenome Genome_3 --targetGenomes Genome_1,Genome_2 output/small.hdf5.hal output/$@.maf
+	diff tests/expected/hal2MafSmallTest.maf output/$@.maf
+
+hal2MafMPTargetGenomesTest: output/small.hdf5.hal
+	./hal2mafMP.py --splitBySequence output/small.hdf5.hal output/$@.maf
+	diff tests/expected/hal2MafSmallTest.maf output/$@_Genome_0_seq.maf
+
 
 output/small.mmap.hal:
 	@mkdir -p output

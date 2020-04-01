@@ -128,9 +128,9 @@ def splitBed(bed, numParts):
     suffix = "".join([random.choice(string.ascii_uppercase) for _ in range(7)])
     system("split -l %d %s %s.temp.%s" % (math.ceil(float(numLines)/numParts), bed, bed, suffix))
     return glob('%s.temp.%s*' % (bed, suffix))
-            
+
 # Decompose HAL file into slices according to the options then launch
-# hal2maf in parallel processes. 
+# hal2maf in parallel processes.
 def runParallelSlices(options):
     refGenome = options.refGenome
     if refGenome is None:
@@ -177,7 +177,7 @@ def runParallelSlices(options):
             if seqOpts.length is not None and seqOpts.length > 0:
                 refLen = seqOpts.length
             seqOpts.sliceSize = int(math.ceil(refLen / seqOpts.numProc))
-                
+
         index = 0
         for sStart, sLen, sIdx in computeSlices(seqOpts, genomeLen):
             seqOpts.start = sStart
@@ -185,7 +185,7 @@ def runParallelSlices(options):
             seqOpts.sliceNumber = sIdx
             sliceCmds.append(getHal2MafCmd(seqOpts))
             sliceOpts.append(copy.deepcopy(seqOpts))
-            
+
     # run in parallel
     runParallelShellCommands(sliceCmds, options.numProc)
 
@@ -198,10 +198,7 @@ def runParallelSlices(options):
     concatenateSlices(sliceOpts, sliceCmds)
 
 
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
+def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Multi-Process wrapper for hal2maf.")
@@ -260,14 +257,14 @@ def main(argv=None):
     #HAL2MAF OPTIONS (as copied from hal/maf/impl/hal2maf.cpp)
     ##################################################################
     h2mGrp = parser.add_argument_group('hal2maf Options')
-    h2mGrp.add_argument("--refGenome", 
-                        help="name of reference genome (root if empty)", 
+    h2mGrp.add_argument("--refGenome",
+                        help="name of reference genome (root if empty)",
                         default=None)
     h2mGrp.add_argument("--refSequence",
                         help="name of reference sequence within reference "
                         "genome (all sequences if empty)",
                         default=None)
-    h2mGrp.add_argument("--refTargets", 
+    h2mGrp.add_argument("--refTargets",
                         help="bed file coordinates of intervals in the"
                         " reference genome to export",
                         default=None)
@@ -280,21 +277,21 @@ def main(argv=None):
                         " if specified) to convert.  If set to 0,"
                         " the entire thing is converted", type=int,
                         default=None)
-    h2mGrp.add_argument("--rootGenome", 
-                        help="name of root genome (none if empty)", 
+    h2mGrp.add_argument("--rootGenome",
+                        help="name of root genome (none if empty)",
                         default=None)
     h2mGrp.add_argument("--targetGenomes",
                         help="comma-separated (no spaces) list of target "
                         "genomes (others are excluded) (vist all if empty)",
                         default=None)
-    h2mGrp.add_argument("--maxRefGap", 
+    h2mGrp.add_argument("--maxRefGap",
                         help="maximum gap length in reference", type=int,
                         default=None)
-    h2mGrp.add_argument("--noDupes", 
-                        help="ignore paralogy edges", 
+    h2mGrp.add_argument("--noDupes",
+                        help="ignore paralogy edges",
                         action="store_true",
                         default=False)
-    h2mGrp.add_argument("--noAncestors", 
+    h2mGrp.add_argument("--noAncestors",
                         help= "don't write ancestral sequences. IMPORTANT: "
                         "Must be used in conjunction with --refGenome"
                         " to set a non-ancestral genome as the reference"
@@ -307,8 +304,17 @@ def main(argv=None):
                         "convention of Genome.Sequence is used",
                         action="store_true",
                         default=False)
-    
+
     args = parser.parse_args()
+    if args.refTargets and any([args.splitBySequence, args.sliceSize, args.start, args.length, args.refSequence]):
+        parser.error("--refTargets not compatible with --splitBySequence, --sliceSize, --start, --length, or --refSequence")
+    if args.splitBySequence:
+        if args.start is not None:
+            parser.error("--splitBySequence option currently incompatible with --start option")
+        if args.length is not None:
+            parser.error("--splitBySequence option currently incompatible with --length option")
+    if args.sliceSize is not None and args.smallSize >= args.sliceSize:
+        parser.error("--smallSize must be less than --sliceSize")
 
     if not os.path.isfile(args.halFile):
         raise RuntimeError("Input hal file %s not found" % args.halFile)
@@ -317,24 +323,10 @@ def main(argv=None):
     test.write("\n")
     test.close()
     os.remove(args.mafFile)
-    if args.refTargets and any([args.splitBySequence, args.sliceSize, args.start, args.length, args.refSequence]):
-        raise RuntimeError("--refTargets not compatible with --splitBySequence, --sliceSize, --start, --length, or --refSequence")
-    if args.splitBySequence:
-        if args.start is not None:
-            raise RuntimeError("--splitBySequence option currently "
-                               "incompatible with --start option")
-        if args.length is not None:
-            raise RuntimeError("--splitBySequence option currently "
-                               "incompatible with --length option")
-    if args.sliceSize is not None and args.smallSize >= args.sliceSize:
-        raise RuntimeError("--smallSize must be less than --sliceSize")
-    if not (args.splitBySequence or args.refTargets or args.refSequence):
-        raise RuntimeError("--splitBySequence, --refTargets or --refSequence required")
-
     # make a little id tag for temporary maf slices
     S = string.ascii_uppercase + string.digits
     args.tempID = 'hal2mafTemp' + ''.join(random.choice(S) for x in range(5))
     runParallelSlices(args)
-    
+
 if __name__ == "__main__":
     sys.exit(main())
