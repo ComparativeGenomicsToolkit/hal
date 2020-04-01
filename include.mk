@@ -24,8 +24,9 @@ inclSpec += -I${rootDir}/api/inc -Iimpl -Iinc -I${rootDir}/liftover/inc
 sonLibRootDir ?= ${rootDir}/../sonLib
 sonLibDir = ${sonLibRootDir}/lib
 
-# update PYTHONPATH and PATH for tests
-export PYTHONPATH := $(abspath ${sonLibRootDir}/src):$(abspath ${rootDir}/..):${PYTHONPATH}
+# update PYTHONPATH and PATH for tests, symlink 'hal' allows checkout directory to have
+# any name
+export PYTHONPATH := $(abspath ${sonLibRootDir}/src):$(abspath ${rootDir}):${PYTHONPATH}
 
 export PATH := $(abspath ${rootDir}/bin):${PATH}
 
