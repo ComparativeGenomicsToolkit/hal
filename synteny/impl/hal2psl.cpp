@@ -13,9 +13,7 @@ void Hal2Psl::storePslResults(std::vector<PslBlock> &pslBlocks) {
 
     BedList::iterator i = _outBedLines.begin();
     for (; i != _outBedLines.end(); ++i) {
-        if (_addExtraColumns == false) {
-            i->_extra.clear();
-        }
+        i->_extra.clear();  // not valid in PSLs
         makeUpPsl(i->_psl, i->_blocks, i->_strand, i->_start, i->_chrName, pslBlocks);
     }
 }
@@ -28,7 +26,6 @@ std::vector<PslBlock> Hal2Psl::convert2psl(const Alignment *alignment, const Gen
         _tgtGenome = tgtGenome;
         _coalescenceLimit = NULL;
         _traverseDupes = true;
-        _addExtraColumns = false;
         _missedSet.clear();
         _tgtSet.clear();
         _tgtSet.insert(tgtGenome);

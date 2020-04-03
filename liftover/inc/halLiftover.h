@@ -23,7 +23,7 @@ namespace hal {
         virtual ~Liftover();
 
         void convert(const Alignment *alignment, const Genome *srcGenome, std::istream *inputFile, const Genome *tgtGenome,
-                     std::ostream *outputFile, bool addExtraColumns = false,
+                     std::ostream *outputFile, int bedType = 0,
                      bool traverseDupes = true, bool outPSL = false, bool outPSLWithName = false,
                      const Genome *coalescenceLimit = NULL);
 
@@ -46,7 +46,7 @@ namespace hal {
       protected:
         AlignmentConstPtr _alignment;
         std::ostream *_outBedStream;
-        bool _addExtraColumns;
+        bool _bedType;
         bool _traverseDupes;
         BedList _outBedLines;
         bool _outPSL;

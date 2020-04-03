@@ -21,13 +21,13 @@ Liftover::~Liftover() {
 }
 
 void Liftover::convert(const Alignment *alignment, const Genome *srcGenome, istream *inBedStream, const Genome *tgtGenome,
-                       ostream *outBedStream, bool addExtraColumns, bool traverseDupes,
+                       ostream *outBedStream, int bedType, bool traverseDupes,
                        bool outPSL, bool outPSLWithName, const Genome *coalescenceLimit) {
     _srcGenome = srcGenome;
     _tgtGenome = tgtGenome;
     _coalescenceLimit = coalescenceLimit;
     _outBedStream = outBedStream;
-    _addExtraColumns = addExtraColumns;
+    _bedType = bedType;
     _traverseDupes = traverseDupes;
     _outPSL = outPSL;
     _outPSLWithName = outPSLWithName;
@@ -37,14 +37,14 @@ void Liftover::convert(const Alignment *alignment, const Genome *srcGenome, istr
 
     _tgtSet.insert(tgtGenome);
 
-    scan(inBedStream);
+    scan(inBedStream, bedType);
 }
 
 void Liftover::visitBegin() {
 }
 
 void Liftover::visitLine() {
-    if ((_outPSL || _outPSLWithName) && (_bedLine._version < 12)) {
+    if ((_outPSL || _outPSLWithName) && (_bedLine._bedType < 12)) {
         // forcing to BED12 makes PSL code simpler
         _bedLine.expandToBed12();
     }
@@ -64,24 +64,24 @@ void Liftover::visitLine() {
         return;
     }
 
-    else if (_bedLine._version > 9 && _bedLine._blocks.empty()) {
+    else if (_bedLine._bedType > 9 && _bedLine._blocks.empty()) {
         std::cerr << "Skipping input line with 0 blocks" << endl;
         return;
     }
 
     _mappedBlocks.clear();
-    if (_bedLine._version <= 9) {
+    if (_bedLine._bedType <= 9) {
         liftInterval(_mappedBlocks);
     } else {
         assert(!_bedLine._blocks.empty());
         liftBlockIntervals();
     }
 
-    if (_mappedBlocks.size() > 0 && _bedLine._version > 9) {
+    if (_mappedBlocks.size() > 0 && _bedLine._bedType > 9) {
         // fill them with mapped blocks
         assignBlocksToIntervals();
     }
-    if (_bedLine._version <= 9) {
+    if (_bedLine._bedType <= 9) {
         // only map the blocks and forget about the intervals
         writeBlocksAsIntervals();
     }
@@ -97,9 +97,6 @@ void Liftover::visitEOF() {
 void Liftover::writeLineResults() {
     BedList::iterator i = _outBedLines.begin();
     for (; i != _outBedLines.end(); ++i) {
-        if (_addExtraColumns == false) {
-            i->_extra.clear();
-        }
         if (_outPSL == false) {
             i->write(*_outBedStream);
         } else {
@@ -314,7 +311,7 @@ void Liftover::liftBlockIntervals() {
 // do a little postprocessing on the lifted intervals to make sure
 // they are bed compliant
 void Liftover::cleanResults() {
-    if (_bedLine._version > 6) {
+    if (_bedLine._bedType > 6) {
         BedList::iterator i;
         BedList::iterator j;
         for (i = _outBedLines.begin(); i != _outBedLines.end(); i = j) {
@@ -335,7 +332,7 @@ void Liftover::cleanResults() {
                 assert(i->_thickStart == 0 && i->_thickEnd == 0);
             }
 
-            if (_bedLine._version > 9) {
+            if (_bedLine._bedType > 9) {
                 if (i->_blocks.size() > 0) {
                     if (_outPSL == true) {
                         assert(i->_psl.size() == 1);

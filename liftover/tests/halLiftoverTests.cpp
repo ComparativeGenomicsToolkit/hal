@@ -261,7 +261,7 @@ void BedLiftoverTest::liftAndCheck(const Alignment *alignment,
     stringstream bedFile(inBed);
     stringstream outStream;
     liftover.convert(alignment, srcGenome, &bedFile, tgtGenome, &outStream,
-                     false, true, outPSL, outPSLWithName);
+                     0, true, outPSL, outPSLWithName);
     if (outStream.str() != expectBed) {
         cerr << "Got: " << endl << outStream.str() << endl;
         cerr << "Expected: " << endl << expectBed << endl;
