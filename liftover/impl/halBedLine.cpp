@@ -16,44 +16,49 @@
 using namespace std;
 using namespace hal;
 
-BedLine::BedLine() : _start(NULL_INDEX), _end(NULL_INDEX), _strand('+'), _version(NULL_INDEX), _srcStart(NULL_INDEX) {
+BedLine::BedLine() : _start(NULL_INDEX), _end(NULL_INDEX), _strand('+'), _bedType(NULL_INDEX), _srcStart(NULL_INDEX) {
 }
 
 BedLine::~BedLine() {
 }
 
-istream &BedLine::read(istream &is, string &lineBuffer) {
+/* bedType is zero or the number of standard bed columns.  All others
+ * are saved as extra */
+istream &BedLine::read(istream &is, string &lineBuffer, int bedType) {
+    _bedType = bedType;
     std::getline(is, lineBuffer);
     std::vector<std::string> row = chopString(lineBuffer, "\t");
     if (row.size() < 3) {
         throw hal_exception("Expected at least three columns in BED record: " + lineBuffer);
     }
-    _version = min(int(row.size()), 12);
+    if (_bedType == 0) {
+        _bedType = min(int(row.size()), 12);
+    }
     _chrName = row[0];
     _start = strToInt(row[1]);
     _end = strToInt(row[2]);
     if (_start >= _end) {
         throw hal_exception("Error zero or negative length BED range: " + lineBuffer);
     }
-    if (row.size() > 3) {
+    if (_bedType > 3) {
         _name = row[3];
     }
-    if (row.size() > 4) {
+    if (_bedType > 4) {
         _score = strToInt(row[4]);
     }
-    if (row.size() > 5) {
+    if (_bedType > 5) {
         _strand = row[5][0];
         if (_strand != '.' && _strand != '+' && _strand != '-') {
             throw hal_exception("Strand character must be + or - or ." + lineBuffer);
         }
     }
-    if (row.size() > 6) {
+    if (_bedType > 6) {
         _thickStart = strToInt(row[6]);
     }
-    if (row.size() > 7) {
+    if (_bedType > 7) {
         _thickEnd = strToInt(row[7]);
     }
-   if (row.size() > 8) {
+   if (_bedType > 8) {
         vector<string> rgbTokens = chopString(row[8], ",");
         if (rgbTokens.size() > 3 || rgbTokens.size() == 0) {
             throw hal_exception("Error parsing BED itemRGB: " + lineBuffer);
@@ -67,8 +72,8 @@ istream &BedLine::read(istream &is, string &lineBuffer) {
             _itemB= strToInt(rgbTokens[2]);;
         }
     }
-    if (row.size() > 9) {
-        if (row.size() < 12) {
+    if (_bedType > 9) {
+        if (_bedType < 12) {
             throw hal_exception("Error parsing BED, insufficient columns for blocks: " + lineBuffer);
         }
         size_t numBlocks = strToInt(row[9]);
@@ -89,7 +94,7 @@ istream &BedLine::read(istream &is, string &lineBuffer) {
             }
         }
     }
-    for (int i = 12; i < row.size(); i++) {
+    for (int i = _bedType; i < row.size(); i++) {
         _extra.push_back(row[i]);
     }
     return is;
@@ -98,25 +103,25 @@ istream &BedLine::read(istream &is, string &lineBuffer) {
 ostream &BedLine::write(ostream &os) {
     os << _chrName << '\t' << _start << '\t' << _end;
 
-    if (_version > 3) {
+    if (_bedType > 3) {
         os << '\t' << _name;
     }
-    if (_version > 4) {
+    if (_bedType > 4) {
         os << '\t' << _score;
     }
-    if (_version > 5) {
+    if (_bedType > 5) {
         os << '\t' << _strand;
     }
-    if (_version > 6) {
+    if (_bedType > 6) {
         os << '\t' << _thickStart;
     }
-    if (_version > 7) {
+    if (_bedType > 7) {
         os << '\t' << _thickEnd;
     }
-    if (_version > 8) {
+    if (_bedType > 8) {
         os << '\t' << _itemR << ',' << _itemG << ',' << _itemB;
     }
-    if (_version > 9) {
+    if (_bedType > 9) {
         os << '\t' << _blocks.size();
         for (size_t i = 0; i < _blocks.size(); ++i) {
             if (i == 0) {
@@ -145,30 +150,30 @@ ostream &BedLine::write(ostream &os) {
 }
 
 void BedLine::expandToBed12() {
-    if (_version <= 3) {
+    if (_bedType <= 3) {
         _name = "";
     }
-    if (_version <= 4) {
+    if (_bedType <= 4) {
         _score = 0;
     }
-    if (_version <= 5) {
+    if (_bedType <= 5) {
         _strand = '+';
     }
-    if (_version <= 6) {
+    if (_bedType <= 6) {
         _thickStart = _start;
     }
-    if (_version <= 7) {
+    if (_bedType <= 7) {
         _thickEnd = _end;
     }
-    if (_version <= 8) {
+    if (_bedType <= 8) {
         _itemR = _itemG = _itemB = 0;
     }
-    if (_version <= 9) {
+    if (_bedType <= 9) {
         _blocks.resize(1);
         _blocks[0]._start = 0;
         _blocks[0]._length = _end - _start;
     }
-    _version = 12;
+    _bedType = 12;
 }
 
 bool BedBlock::operator<(const BedBlock &other) const {

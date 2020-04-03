@@ -31,7 +31,7 @@ void Extract4d::visitLine() {
     _outBedLines.clear();
     _refSequence = _refGenome->getSequence(_bedLine._chrName);
     if (_refSequence != NULL) {
-        if (_bedLine._version <= 9) {
+        if (_bedLine._bedType <= 9) {
             throw hal_exception("Only compatible with BED12 input. 4d sites are sensitive to frame."
                                 " Even if your genes are all single-exon, please convert them "
                                 "to BED12 first.");

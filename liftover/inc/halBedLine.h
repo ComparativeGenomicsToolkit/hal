@@ -50,7 +50,7 @@ namespace hal {
     struct BedLine {
         BedLine();
         virtual ~BedLine();
-        std::istream &read(std::istream &is, std::string &lineBuffer);
+        std::istream &read(std::istream &is, std::string &lineBuffer, int bedType);
         std::ostream &write(std::ostream &os);
         std::ostream &writePSL(std::ostream &os, bool prefixWithName = false);
         bool validatePSL() const;
@@ -69,7 +69,7 @@ namespace hal {
         hal_index_t _itemB;
         std::vector<BedBlock> _blocks;
         std::vector<std::string> _extra;
-        int _version;
+        int _bedType; // number of standard columns
 
         // not part of output, but needed to preserve ordering
         hal_index_t _srcStart;

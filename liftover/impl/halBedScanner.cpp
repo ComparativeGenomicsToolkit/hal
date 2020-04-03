@@ -22,11 +22,11 @@ BedScanner::BedScanner() : _bedStream(NULL) {
 BedScanner::~BedScanner() {
 }
 
-void BedScanner::scan(const string &bedPath) {
+void BedScanner::scan(const string &bedPath, int bedType) {
     assert(_bedStream == NULL);
     _bedStream = new ifstream(bedPath.c_str());
     try {
-        scan(_bedStream);
+        scan(_bedStream, bedType);
     } catch (hal_exception &e) {
         delete _bedStream;
         _bedStream = NULL;
@@ -37,7 +37,7 @@ void BedScanner::scan(const string &bedPath) {
     _bedStream = NULL;
 }
 
-void BedScanner::scan(istream *is) {
+void BedScanner::scan(istream *is, int bedType) {
     visitBegin();
     _bedStream = is;
     if (_bedStream->bad()) {
@@ -49,7 +49,7 @@ void BedScanner::scan(istream *is) {
         skipWhiteSpaces(_bedStream);
         while (_bedStream->good()) {
             ++_lineNumber;
-            _bedLine.read(*_bedStream, lineBuffer);
+            _bedLine.read(*_bedStream, lineBuffer, bedType);
             visitLine();
             skipWhiteSpaces(_bedStream);
         }
