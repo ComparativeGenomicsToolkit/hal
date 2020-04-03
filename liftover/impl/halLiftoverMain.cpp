@@ -36,7 +36,10 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.addOptionFlag("outPSLWithName", "write output as input BED name followed by PSL line instead of "
                                                   "bed format",
                                 false);
-    optionsParser.setDescription("Map BED genome interval coordinates between "
+    optionsParser.addOption("bedType", "number of standard columns (3 to 12), columns beyond this are passed "
+                            "through.  This only needs to be specified for BEDs with less than 12 columns and "
+                            "having non-standard extra columns.", 0);
+    optionsParser.setDescription("Map BED or PSL genome interval coordinates between "
                                  "two genomes.");
 }
 
@@ -52,6 +55,7 @@ int main(int argc, char **argv) {
     string coalescenceLimitName;
     bool noDupes;
     bool append;
+    int bedType;
     bool outPSL;
     bool outPSLWithName;
     try {
@@ -64,6 +68,14 @@ int main(int argc, char **argv) {
         coalescenceLimitName = optionsParser.getOption<string>("coalescenceLimit");
         noDupes = optionsParser.getFlag("noDupes");
         append = optionsParser.getFlag("append");
+        if (optionsParser.specifiedOption("bedType")) {
+            bedType = optionsParser.getOption<int>("bedType");
+            if ((bedType < 3) or (bedType > 12)) {
+                throw hal_exception("--bedType must be between 3 and 12");
+            }
+        } else {
+            bedType = 0;
+        }
         outPSL = optionsParser.getFlag("outPSL");
         outPSLWithName = optionsParser.getFlag("outPSLWithName");
     } catch (exception &e) {
@@ -124,7 +136,7 @@ int main(int argc, char **argv) {
         }
 
         BlockLiftover liftover;
-        liftover.convert(alignment.get(), srcGenome, srcBedPtr, tgtGenome, tgtBedPtr, false,
+        liftover.convert(alignment.get(), srcGenome, srcBedPtr, tgtGenome, tgtBedPtr, bedType,
                          !noDupes, outPSL, outPSLWithName, coalescenceLimit);
 
 

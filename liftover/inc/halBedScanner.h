@@ -24,8 +24,8 @@ namespace hal {
       public:
         BedScanner();
         virtual ~BedScanner();
-        virtual void scan(const std::string &bedPath);
-        virtual void scan(std::istream *bedStream);
+        virtual void scan(const std::string &bedPath, int bedType=0);
+        virtual void scan(std::istream *bedStream, int bedType=0);
 
         static size_t getNumColumns(const std::string &bedLine);
 

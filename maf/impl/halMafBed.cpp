@@ -28,7 +28,7 @@ void MafBed::visitLine() {
              << _refGenome->getName() << '\n';
         return;
     }
-    if (_bedLine._version <= 9) {
+    if (_bedLine._bedType <= 9) {
         if (_bedLine._end <= _bedLine._start || _bedLine._end > (hal_index_t)refSequence->getSequenceLength()) {
             cerr << "Line " << _lineNumber << ": BED coordinates invalid\n";
         } else {

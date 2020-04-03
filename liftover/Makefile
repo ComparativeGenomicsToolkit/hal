@@ -30,7 +30,8 @@ clean:
 	rm -rf ${libHalLiftover} ${objs} ${progs} ${depends} output
 
 test: unitTests halLiftoverBed12Test halLiftoverPsl12Test \
-	 halLiftoverBed3Test halLiftoverPsl3Test
+	halLiftoverBed3Test halLiftoverPsl3Test \
+	halLiftoverBed12ExtraTest halLiftoverBed4ExtraTest
 
 unitTests:
 	${binDir}/halLiftoverTests 
@@ -50,6 +51,16 @@ halLiftoverBed3Test: output/small.hdf5.hal
 halLiftoverPsl3Test: output/small.hdf5.hal
 	${binDir}/halLiftover --outPSL output/small.hdf5.hal Genome_0 tests/input/test1.bed3 Genome_2 output/$@.psl
 	diff -u tests/expected/$@.psl output/$@.psl
+
+# extra columns after 12
+halLiftoverBed12ExtraTest: output/small.hdf5.hal
+	${binDir}/halLiftover output/small.hdf5.hal Genome_0 tests/input/test1.bed12+2 Genome_2 output/$@.bed
+	diff -u tests/expected/$@.bed output/$@.bed
+
+# extra columns after 4
+halLiftoverBed4ExtraTest: output/small.hdf5.hal
+	${binDir}/halLiftover --bedType 4 output/small.hdf5.hal Genome_0 tests/input/test1.bed4+2 Genome_2 output/$@.bed
+	diff -u tests/expected/$@.bed output/$@.bed
 
 output/small.hdf5.hal: ../bin/halRandGen
 	@mkdir -p output
