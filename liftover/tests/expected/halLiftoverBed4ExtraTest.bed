@@ -1,1 +1,5 @@
 Genome_2_seq	0	128	region1	Fred	Wilma
+Genome_2_seq	128	256	region2	Pebbles	Dino
+Genome_2_seq	256	512	region3	Barney	Betty
+Genome_2_seq	2051	2270	region3	Barney	Betty
+Genome_2_seq	3223	3442	region3	Barney	Betty
