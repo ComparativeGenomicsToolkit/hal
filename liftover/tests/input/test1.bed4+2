@@ -1,1 +1,3 @@
 Genome_0_seq	0	128	region1	Fred	Wilma
+Genome_0_seq	128	256	region2	Pebbles	Dino
+Genome_0_seq	256	512	region3	Barney	Betty

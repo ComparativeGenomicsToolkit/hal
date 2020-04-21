@@ -94,6 +94,7 @@ istream &BedLine::read(istream &is, string &lineBuffer, int bedType) {
             }
         }
     }
+    _extra.clear();
     for (int i = _bedType; i < row.size(); i++) {
         _extra.push_back(row[i]);
     }
