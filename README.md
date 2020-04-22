@@ -89,7 +89,7 @@ From the same parent directory where you downloaded HAL:
 	  git clone https://github.com/ComparativeGenomicsToolkit/sonLib.git
 	  pushd sonLib && make && popd
 
-If sonLib and HAL are not sister directories, set the sonLibRootDir `make` macro to reflect the absolute pathname of the directory where you installed sonLib:
+If sonLib and HAL are not sister directories, set the sonLibRootDir `make` variable to reflect the absolute pathname of the directory where you installed sonLib:
 
     sonLibRootDir=/path/to/sonLib
 
