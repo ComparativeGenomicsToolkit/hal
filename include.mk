@@ -78,10 +78,10 @@ endif
 #  Defaults to local Linux install (phast and clapack sister dirs to hal/)
 # (note CLAPACKPATH not needed in Mac)
 ifeq (${PHAST},)
-    PHAST=../../phast
+    PHAST=${rootDir}/../phast
 endif
 ifeq (${CLAPACKPATH},)
-    CLAPACKPATH=../../clapack
+    CLAPACKPATH=${rootDir}/../clapack
 endif
 
 ifeq ($(TARGETOS), Darwin)
