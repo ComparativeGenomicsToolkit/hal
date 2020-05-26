@@ -25,7 +25,7 @@ test:
 ${binDir}/%.py: %.py
 	@mkdir -p $(dir $@)
 	cp -f $< $@
-	chmod +x,-w $@
+	chmod a+x,-w $@
 
 include ${rootDir}/rules.mk
 

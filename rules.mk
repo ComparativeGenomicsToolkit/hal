@@ -8,7 +8,7 @@
 ${binDir}/%.py : %.py
 	@mkdir -p $(dir $@)
 	cp -f $< $@
-	chmod u+x,a-w $@
+	chmod a+x,a-w $@
 
 # Generate .depend and compile objects. Due to some test code is being
 # compiled by different modules, it is possible to generate the .depend file

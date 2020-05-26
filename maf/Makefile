@@ -84,7 +84,7 @@ output/small.hdf5.hal:
 ${binDir}/%.py: %.py
 	@mkdir -p $(dir $@)
 	cp -f $< $@
-	chmod +x,-w $@
+	chmod a+x,-w $@
 
 flake8:
 	${PYTHON} -m flake8 *.py
