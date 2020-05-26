@@ -14,7 +14,7 @@ test:
 ${binDir}/%.py : neutralIndel/%.py
 	@mkdir -p $(dir $@)
 	cp -f $< $@
-	chmod u+x,a-w $@
+	chmod a+x,a-w $@
 
 # Local Variables:
 # mode: makefile-gmake
