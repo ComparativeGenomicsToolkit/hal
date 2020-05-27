@@ -86,11 +86,11 @@ def computeSlices(options, seqLen):
         if options.sliceSize is None or options.sliceSize >= inLength:
             yield (inStart, inLength, None)
         else:
-            for i in range(inLength / options.sliceSize):
+            for i in range(inLength // options.sliceSize):
                 yield (inStart + i * options.sliceSize, options.sliceSize, i)
             r = inLength % options.sliceSize
             if r > 0:
-                i = inLength / options.sliceSize
+                i = inLength // options.sliceSize
                 yield (inStart + i * options.sliceSize, r, i)
 
 def concatenateSlices(sliceOpts, sliceCmds):
