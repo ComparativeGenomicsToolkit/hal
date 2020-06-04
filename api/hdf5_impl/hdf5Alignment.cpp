@@ -179,9 +179,14 @@ void Hdf5Alignment::open() {
     }
 #endif
     _file = new H5File(_alignmentPath.c_str(), _flags, _cprops, _aprops);
+#if 0
+    // This check is not really correct, as the HAL API version doesn't correspond
+    // to the file format version, which we try to keep backwards compatible.
+    // FIXME: need of API version compatibility to version recorded in header.
     if (!compatibleWithVersion(getVersion())) {
         throw hal_exception("HAL API v" + HAL_VERSION + " incompatible with format v" + getVersion() + " HAL file.");
     }
+#endif
     _metaData = new HDF5MetaData(_file, MetaGroupName);
     loadTree();
     if (stTree_getNumNodes(_tree) > 199) {
