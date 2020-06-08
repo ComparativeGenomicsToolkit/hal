@@ -336,7 +336,6 @@ void printBedSequenceStats(ostream &os, const Alignment *alignment, const string
             os << seqIt->getSequence()->getName() << "\t" << 0 << "\t" << seqIt->getSequence()->getSequenceLength() << "\n";
         }
     }
-    os << endl;
 }
 
 static void printBranchPath(ostream &os, const Alignment *alignment, const vector<string> &genomeNames, bool keepRoot) {
