@@ -1,7 +1,7 @@
 rootDir = .
 include include.mk
 
-modules = api stats randgen validate mutations fasta alignmentDepth liftover lod maf blockViz extract analysis phyloP modify assemblyHub synteny
+modules = api stats randgen validate mutations fasta alignmentDepth liftover lod maf blockViz extract analysis phyloP modify assemblyHub synteny paf
 
 
 .PHONY: all libs %.libs progs %.progs clean %.clean doxy %.doxy
