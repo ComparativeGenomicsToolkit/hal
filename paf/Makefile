@@ -18,17 +18,25 @@ clean:
 
 test: hal2pafSmallMMapTest hal2pafMouseRatTest
 
-hal2pafSmallMMapTest: tests/output/small.mmap1.0.hal
-	../bin/hal2paf tests/output/small.mmap1.0.hal --onlySequenceNames | gzip > tests/output/$@.paf.gz
-	zdiff tests/expected/$@.paf.gz tests/output/$@.paf.gz
+hal2pafSmallMMapTest: tests/output/small.mmap1.0.hal tests/output/hal2pafSmallMMapTest.paf.baseline
+	../bin/hal2paf tests/output/small.mmap1.0.hal --onlySequenceNames > tests/output/$@.paf
+	diff tests/output/$@.paf tests/output/hal2pafSmallMMapTest.paf.baseline
 
-hal2pafMouseRatTest:
-	../bin/hal2paf tests/input/mr.hal | gzip > tests/output/$@.paf.gz
-	zdiff tests/expected/$@.paf.gz tests/output/$@.paf.gz
+hal2pafMouseRatTest: tests/output/hal2pafMouseRatTest.paf.baseline
+	../bin/hal2paf tests/input/mr.hal > tests/output/$@.paf
+	diff tests/output/$@.paf tests/output/hal2pafMouseRatTest.paf.baseline
 
-tests/output/small.mmap1.0.hal:
-	mkdir -p tests/output
+tests/output/small.mmap1.0.hal: output
 	bunzip2 -dc ../extract/tests/input/small.mmap1.0.hal.bz2 > tests/output/small.mmap1.0.hal
+
+tests/output/hal2pafSmallMMapTest.paf.baseline: output
+	gzip -dc tests/expected/hal2pafSmallMMapTest.paf.gz > tests/output/hal2pafSmallMMapTest.paf.baseline
+
+tests/output/hal2pafMouseRatTest.paf.baseline: output
+	gzip -dc tests/expected/hal2pafMouseRatTest.paf.gz > tests/output/hal2pafMouseRatTest.paf.baseline
+
+output:
+	mkdir -p tests/output
 
 include ${rootDir}/rules.mk
 
