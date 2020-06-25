@@ -18,9 +18,9 @@ using namespace hal;
 static void printSequenceLine(ostream &outStream, const Sequence *sequence, hal_size_t start, hal_size_t length,
                               string &buffer, bool upper);
 static void printSequence(ostream &outStream, const Sequence *sequence, hal_size_t lineWidth, hal_size_t start,
-                          hal_size_t length, bool upper);
+                          hal_size_t length, bool fullNames, bool upper);
 static void printGenome(ostream &outStream, const Genome *genome, const Sequence *sequence, hal_size_t lineWidth,
-                        hal_size_t start, hal_size_t length, bool upper);
+                        hal_size_t start, hal_size_t length, bool fullNames, bool upper);
 
 static const hal_size_t StringBufferSize = 1024;
 
@@ -28,6 +28,10 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.addArgument("inHalPath", "input hal file");
     optionsParser.addArgument("genome", "genome to export");
     optionsParser.addOption("outFaPath", "output fasta file (stdout if none)", "stdout");
+    optionsParser.addOptionFlag("onlySequenceNames", "use only sequence names "
+                                "for output names.  By default, the UCSC convention of Genome.Sequence "
+                                "is used",
+                                false);
     optionsParser.addOption("lineWidth", "Line width for output", 80);
     optionsParser.addOption("sequence", "sequence name to export ("
                                         "all sequences by default)",
@@ -51,6 +55,7 @@ int main(int argc, char **argv) {
 
     string halPath;
     string faPath;
+    bool fullNames;    
     hal_size_t lineWidth;
     string genomeName;
     string sequenceName;
@@ -63,6 +68,7 @@ int main(int argc, char **argv) {
         halPath = optionsParser.getArgument<string>("inHalPath");
         genomeName = optionsParser.getArgument<string>("genome");
         faPath = optionsParser.getOption<string>("outFaPath");
+        fullNames = !optionsParser.getFlag("onlySequenceNames");
         lineWidth = optionsParser.getOption<hal_size_t>("lineWidth");
         sequenceName = optionsParser.getOption<string>("sequence");
         start = optionsParser.getOption<hal_size_t>("start");
@@ -120,7 +126,7 @@ int main(int argc, char **argv) {
                 }
             }
 
-            printGenome(outStream, genome, sequence, lineWidth, start, length, upper);
+            printGenome(outStream, genome, sequence, lineWidth, start, length, fullNames, upper);
 
             if (subtree) {
                 vector<string> childs = alignment->getChildNames(curName);
@@ -158,7 +164,7 @@ void printSequenceLine(ostream &outStream, const Sequence *sequence, hal_size_t 
     }
 }
 
-void printSequence(ostream &outStream, const Sequence *sequence, hal_size_t lineWidth, hal_size_t start, hal_size_t length, bool upper) {
+void printSequence(ostream &outStream, const Sequence *sequence, hal_size_t lineWidth, hal_size_t start, hal_size_t length, bool fullNames, bool upper) {
     hal_size_t seqLen = sequence->getSequenceLength();
     if (length == 0) {
         length = seqLen - start;
@@ -169,7 +175,7 @@ void printSequence(ostream &outStream, const Sequence *sequence, hal_size_t line
                             "out of range for sequence " + sequence->getName() + ", which has length " +
                             std::to_string(seqLen));
     }
-    outStream << '>' << sequence->getName() << '\n';
+    outStream << '>' << (fullNames ? sequence->getFullName() : sequence->getName()) << '\n';
     hal_size_t readLen;
     string buffer;
     for (hal_size_t i = start; i < last; i += lineWidth) {
@@ -180,9 +186,9 @@ void printSequence(ostream &outStream, const Sequence *sequence, hal_size_t line
 }
 
 void printGenome(ostream &outStream, const Genome *genome, const Sequence *sequence, hal_size_t lineWidth, hal_size_t start,
-                 hal_size_t length, bool upper) {
+                 hal_size_t length, bool fullNames, bool upper) {
     if (sequence != NULL) {
-        printSequence(outStream, sequence, lineWidth, start, length, upper);
+        printSequence(outStream, sequence, lineWidth, start, length, fullNames, upper);
     } else {
         if (start + length > genome->getSequenceLength()) {
             throw hal_exception("Specified range [" + std::to_string(start) + "," + std::to_string(length) + "] is" +
@@ -203,7 +209,7 @@ void printGenome(ostream &outStream, const Genome *genome, const Sequence *seque
                 hal_size_t readStart = seqStart >= start ? 0 : seqStart - start;
                 hal_size_t readLen = std::min(seqLen - start, length - runningLength);
 
-                printSequence(outStream, sequence, lineWidth, readStart, readLen, upper);
+                printSequence(outStream, sequence, lineWidth, readStart, readLen, fullNames, upper);
                 runningLength += readLen;
             }
         }
