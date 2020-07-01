@@ -19,7 +19,7 @@ namespace hal {
     class DnaAccess {
       public:
         /* Destructor */
-        virtual ~DnaAccess() {
+        virtual ~DnaAccess() noexcept(false) {
             if (_dirty) {
                 throw hal_exception("DnaAccess is dirty, flush() should have been called");
             }
