@@ -265,7 +265,7 @@ void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
 
             // make our cigar
             string cigar_string;
-            if (botIt1->getReversed() && false) {
+            if (botIt1->getReversed()) {
                 for (vector<string>::reverse_iterator ci = cigar.rbegin(); ci != cigar.rend(); ++ci) {
                     cigar_string += *ci;
                 }
