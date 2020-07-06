@@ -36,7 +36,7 @@ namespace hal {
         typedef std::map<StrPair, MutationsStats> BranchMap;
 
         BranchMap _branchMap;
-        AlignmentConstPtr _alignment;
+        const Alignment* _alignment;
         hal_size_t _gapThreshold;
         double _nThreshold;
         bool _justSubs;

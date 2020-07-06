@@ -57,14 +57,12 @@ void SummarizeMutations::analyzeAlignment(const Alignment *alignment, hal_size_t
     _justSubs = justSubs;
     _targetSet = targetSet;
     _branchMap.clear();
-    _alignment = AlignmentConstPtr(alignment);
+    _alignment = alignment;
 
     if (_alignment->getNumGenomes() > 0) {
         string root = _alignment->getRootName();
         analyzeGenomeRecursive(root);
     }
-
-    _alignment = AlignmentConstPtr();
 }
 
 void SummarizeMutations::analyzeGenomeRecursive(const string &genomeName) {
