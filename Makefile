@@ -6,7 +6,7 @@ modules = api stats randgen validate mutations fasta alignmentDepth liftover lod
 
 .PHONY: all libs %.libs progs %.progs clean %.clean doxy %.doxy
 
-all : libs progs hal
+all : libs progs
 
 libs: ${modules:%=%.libs}
 %.libs:
@@ -22,15 +22,19 @@ clean: ${modules:%=%.clean}
 	rm -f *.pyc */*.pyc */*/*.pyc
 	rm -rf __pycache__ */__pycache__ */*/__pycache__
 
-# create symbolic links so that python packages work without assuming name of
-# directory
-hal:
-	ln -sf . hal
-
 %.clean:
 	cd $* && ${MAKE} clean
 
-test: ${modules:%=%.test}
+# create symbolic links for test so that python packages work without assuming name of
+# directory, but then remove, as it can cause grief for naive copy programs
+test:
+	rm -f hal
+	ln -sf . hal
+	${MAKE} doTests
+	rm -f hal
+
+
+doTests: ${modules:%=%.test}
 
 %.test: all
 	cd $* && ${MAKE} test
