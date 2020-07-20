@@ -66,9 +66,6 @@ int main(int argc, char *argv[]) {
 
     Alignment *alignment = openHalAlignment(halPath, &optParser);
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception("Genome " + genomeName + " not found in alignment.");
-    }
     if (genome->getNumChildren() == 0) {
         throw hal_exception("Genome " + genomeName + " is a leaf genome.");
     }

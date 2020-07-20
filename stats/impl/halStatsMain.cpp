@@ -296,9 +296,6 @@ void printGenomes(ostream &os, const Alignment *alignment) {
 
 void printSequences(ostream &os, const Alignment *alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception(string("Genome ") + genomeName + " not found.");
-    }
     if (genome->getNumSequences() > 0) {
         for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
             if (!seqIt->equals(genome->getSequenceIterator())) {
@@ -312,9 +309,6 @@ void printSequences(ostream &os, const Alignment *alignment, const string &genom
 
 void printSequenceStats(ostream &os, const Alignment *alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception(string("Genome ") + genomeName + " not found.");
-    }
     if (genome->getNumSequences() > 0) {
         os << "SequenceName, Length, NumTopSegments, NumBottomSegments" << endl;
 
@@ -328,9 +322,6 @@ void printSequenceStats(ostream &os, const Alignment *alignment, const string &g
 
 void printBedSequenceStats(ostream &os, const Alignment *alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception(string("Genome ") + genomeName + " not found.");
-    }
     if (genome->getNumSequences() > 0) {
         for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
             os << seqIt->getSequence()->getName() << "\t" << 0 << "\t" << seqIt->getSequence()->getSequenceLength() << "\n";
@@ -342,9 +333,6 @@ static void printBranchPath(ostream &os, const Alignment *alignment, const vecto
     set<const Genome *> inputSet;
     for (size_t i = 0; i < genomeNames.size(); ++i) {
         const Genome *genome = alignment->openGenome(genomeNames[i]);
-        if (genome == NULL) {
-            throw hal_exception(string("Genome ") + genomeNames[i] + " not found");
-        }
         inputSet.insert(genome);
     }
     set<const Genome *> outputSet;
@@ -438,9 +426,6 @@ void printBranchLength(ostream &os, const Alignment *alignment, const string &ge
 
 void printNumSegments(ostream &os, const Alignment *alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception(string("Genome ") + genomeName + " not found.");
-    }
     os << genome->getNumTopSegments() << " " << genome->getNumBottomSegments() << endl;
 }
 
@@ -458,9 +443,6 @@ void printBaseComp(ostream &os, const Alignment *alignment, const string &baseCo
     }
 
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception(string("Genome ") + genomeName + " not found.");
-    }
     hal_size_t numA = 0;
     hal_size_t numC = 0;
     hal_size_t numG = 0;
@@ -503,9 +485,6 @@ void printBaseComp(ostream &os, const Alignment *alignment, const string &baseCo
 
 void printGenomeMetaData(ostream &os, const Alignment *alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception("Genome not found: " + genomeName);
-    }
     const MetaData *metaData = genome->getMetaData();
     const map<string, string> metaDataMap = metaData->getMap();
     map<string, string>::const_iterator mapIt = metaDataMap.begin();
@@ -526,9 +505,6 @@ void printAlignmentMetaData(ostream &os, const Alignment *alignment) {
 
 void printChromSizes(ostream &os, const Alignment *alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception(string("Genome ") + genomeName + " not found.");
-    }
     if (genome->getNumSequences() > 0) {
 
         for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
@@ -539,9 +515,6 @@ void printChromSizes(ostream &os, const Alignment *alignment, const string &geno
 
 void printPercentID(ostream &os, const Alignment *alignment, const string &genomeName) {
     const Genome *refGenome = alignment->openGenome(genomeName);
-    if (!refGenome) {
-        throw hal_exception("Genome " + genomeName + " does not exist.");
-    }
 
     ColumnIteratorPtr colIt = refGenome->getColumnIterator();
     // A bit sloppy, but a mapping from genome to (# identical bases, # aligned sites)
@@ -640,9 +613,6 @@ void printPercentID(ostream &os, const Alignment *alignment, const string &genom
 
 void printCoverage(ostream &os, const Alignment *alignment, const string &genomeName) {
     const Genome *refGenome = alignment->openGenome(genomeName);
-    if (!refGenome) {
-        throw hal_exception("Genome " + genomeName + " does not exist.");
-    }
 
     ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0, NULL_INDEX, false, false, false, true);
     map<const Genome *, vector<hal_size_t> *> histograms;
@@ -723,9 +693,6 @@ void printCoverage(ostream &os, const Alignment *alignment, const string &genome
 
 static void printSegments(ostream &os, const Alignment *alignment, const string &genomeName, bool top) {
     const Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception("Genome " + genomeName + " does not exist.");
-    }
     hal_size_t numSegments = 0;
     SegmentIteratorPtr segment;
     if (top == true) {

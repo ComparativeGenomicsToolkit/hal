@@ -433,6 +433,9 @@ Genome *Hdf5Alignment::openGenome(const string &name) {
         genome = new Hdf5Genome(name, this, _file, _dcprops, _inMemory);
         _openGenomes.insert(pair<string, Hdf5Genome *>(name, genome));
     }
+    if (genome == NULL) {
+        throw GenomeNotFoundException(name);
+    }
     return genome;
 }
 

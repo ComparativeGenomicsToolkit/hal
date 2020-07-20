@@ -89,8 +89,8 @@ int main(int argc, char **argv) {
         if (outAlignment->getNumGenomes() != 0) {
             throw hal_exception("Output hal Alignmnent cannot be initialized");
         }
-        if (rootName != "\"\"" && inAlignment->openGenome(rootName) == NULL) {
-            throw hal_exception(string("Genome ") + rootName + " not found");
+        if (rootName != "\"\"") {
+            inAlignment->openGenome(rootName); // check alignment exists
         }
         if (rootName == "\"\"") {
             rootName = "";

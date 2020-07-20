@@ -71,7 +71,11 @@ struct GenomeCreateTest : public AlignmentTest {
     }
 
     void checkCallBack(const Alignment *alignment) {
-        const Genome *dudGenome = alignment->openGenome("Zebra");
+        const Genome *dudGenome = NULL;
+        try {
+            dudGenome = alignment->openGenome("Zebra");
+        } catch (const GenomeNotFoundException& ex) {
+        }
         CuAssertTrue(_testCase, dudGenome == NULL);
         const Genome *ancGenome = alignment->openGenome("AncGenome");
         const MetaData *ancMeta = ancGenome->getMetaData();

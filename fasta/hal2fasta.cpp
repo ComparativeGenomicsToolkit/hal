@@ -114,10 +114,6 @@ int main(int argc, char **argv) {
             bfsQueue.pop_front();
 
             const Genome *genome = alignment->openGenome(curName);
-            if (genome == NULL) {
-                throw hal_exception(string("Genome ") + curName + " not found");
-            }
-
             const Sequence *sequence = NULL;
             if (sequenceName != "\"\"") {
                 sequence = genome->getSequence(sequenceName);

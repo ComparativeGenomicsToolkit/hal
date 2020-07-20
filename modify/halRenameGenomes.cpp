@@ -33,10 +33,6 @@ int main(int argc, char *argv[]) {
     // of the new genome names.
     for (map<string, string>::iterator it = renameMap.begin(); it != renameMap.end(); it++) {
         Genome *genome = alignment->openGenome(it->first);
-        if (genome == NULL) {
-            throw hal_exception("Genome " + it->first + " not found in alignment");
-        }
-
         genome = alignment->openGenome(it->second);
         if (genome != NULL) {
             throw hal_exception("Attempting to rename " + it->first + " to " + it->second + " failed: " + it->second +

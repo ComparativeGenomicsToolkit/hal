@@ -335,7 +335,6 @@ void writeNucleotides(stTree *tree, const Alignment *alignment, const Genome *ta
         return;
     }
     const Genome *genome = alignment->openGenome(stTree_getLabel(tree));
-    assert(genome != NULL);
     DnaIteratorPtr dnaIt = genome->getDnaIterator(data->pos);
     if (data->reversed) {
         dnaIt->toReverse();

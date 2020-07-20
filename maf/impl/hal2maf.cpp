@@ -123,9 +123,6 @@ static void hal2maf(AlignmentConstPtr alignment, const MafOptions &opts) {
     set<const Genome *> targetSet;
     if (opts.rootGenomeName != "") {
         rootGenome = alignment->openGenome(opts.rootGenomeName);
-        if (rootGenome == NULL) {
-            throw hal_exception("Root genome " + opts.rootGenomeName + ", not found in alignment");
-        }
         if (opts.rootGenomeName != alignment->getRootName()) {
             getGenomesInSubTree(rootGenome, targetSet);
         }
@@ -135,9 +132,6 @@ static void hal2maf(AlignmentConstPtr alignment, const MafOptions &opts) {
         vector<string> targetNames = chopString(opts.targetGenomes, ",");
         for (size_t i = 0; i < targetNames.size(); ++i) {
             const Genome *tgtGenome = alignment->openGenome(targetNames[i]);
-            if (tgtGenome == NULL) {
-                throw hal_exception(string("Target genome, ") + targetNames[i] + ", not found in alignment");
-            }
             targetSet.insert(tgtGenome);
         }
     }
@@ -145,9 +139,6 @@ static void hal2maf(AlignmentConstPtr alignment, const MafOptions &opts) {
     const Genome *refGenome = NULL;
     if (opts.refGenomeName != "") {
         refGenome = alignment->openGenome(opts.refGenomeName);
-        if (refGenome == NULL) {
-            throw hal_exception("Reference genome, " + opts.refGenomeName + ", not found in alignment");
-        }
     } else {
         refGenome = alignment->openGenome(alignment->getRootName());
     }
