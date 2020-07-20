@@ -100,9 +100,6 @@ int main(int argc, char **argv) {
 
         const Genome *refGenome = NULL;
         refGenome = alignment->openGenome(refGenomeName);
-        if (refGenome == NULL) {
-            throw hal_exception(string("Reference genome, ") + refGenomeName + ", not found in alignment");
-        }
         if (refGenome->getName() == alignment->getRootName()) {
             throw hal_exception("Reference genome must denote bottom node in "
                                 "a branch, and therefore cannot be the root.");

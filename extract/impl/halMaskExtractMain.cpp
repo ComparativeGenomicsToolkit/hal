@@ -52,10 +52,6 @@ int main(int argc, char **argv) {
         AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
 
         const Genome *genome = alignment->openGenome(genomeName);
-        if (genome == NULL) {
-            throw hal_exception(string("Genome ") + genomeName + " not found.");
-        }
-
         ostream *bedStream = &cout;
         bool newBed = false;
         if (bedPath != "stdout") {

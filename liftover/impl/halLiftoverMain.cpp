@@ -94,20 +94,11 @@ int main(int argc, char **argv) {
         }
 
         const Genome *srcGenome = alignment->openGenome(srcGenomeName);
-        if (srcGenome == NULL) {
-            throw hal_exception(string("srcGenome, ") + srcGenomeName + ", not found in alignment");
-        }
         const Genome *tgtGenome = alignment->openGenome(tgtGenomeName);
-        if (tgtGenome == NULL) {
-            throw hal_exception(string("tgtGenome, ") + tgtGenomeName + ", not found in alignment");
-        }
 
         const Genome *coalescenceLimit = NULL;
         if (coalescenceLimitName != "") {
             coalescenceLimit = alignment->openGenome(coalescenceLimitName);
-            if (coalescenceLimit == NULL) {
-                throw hal_exception("coalescence limit genome " + coalescenceLimitName + " not found in alignment\n");
-            }
         }
 
         ifstream srcBed;

@@ -38,9 +38,6 @@ int main(int argc, char *argv[]) {
         metadata->set(key, value);
     } else {
         Genome *genome = alignment->openGenome(genomeName);
-        if (genome == NULL) {
-            throw hal_exception("No genome named " + genomeName + " in alignment");
-        }
         MetaData *metadata = genome->getMetaData();
         metadata->set(key, value);
     }

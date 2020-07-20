@@ -30,9 +30,6 @@ int main(int argc, char *argv[]) {
 
     AlignmentPtr alignment(openHalAlignment(halPath, &optionsParser, WRITE_ACCESS | READ_ACCESS));
     Genome *genome = alignment->openGenome(genomeName);
-    if (genome == NULL) {
-        throw hal_exception("Genome " + genomeName + " not found in alignment");
-    }
     map<string, string> renameMap = ingestRenameFile(renamePath);
 
     for (map<string, string>::iterator it = renameMap.begin(); it != renameMap.end(); it++) {

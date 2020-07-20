@@ -78,7 +78,13 @@ void PhyloP::init(AlignmentConstPtr alignment, const string &modFilePath, ostrea
     char **names = (char **)smalloc(numleaf * sizeof(char *));
     for (int i = 0; i < lst_size(leafNames); i++) {
         string targetName = string(((String *)lst_get_ptr(leafNames, i))->chars);
-        const Genome *tgtGenome = _alignment->openGenome(targetName);
+       
+        const Genome *tgtGenome = NULL;
+        try {
+            tgtGenome = _alignment->openGenome(targetName);
+        } catch (const GenomeNotFoundException& ex) {
+        }
+
         if (tgtGenome == NULL) {
             cerr << "Genome" << targetName << " not found in alignment; pruning from tree" << endl;
             lst_push(pruneNames, lst_get_ptr(leafNames, i));

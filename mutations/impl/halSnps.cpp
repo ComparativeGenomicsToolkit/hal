@@ -89,17 +89,11 @@ int main(int argc, char **argv) {
 
         const Genome *refGenome = NULL;
         refGenome = alignment->openGenome(refGenomeName);
-        if (refGenome == NULL) {
-            throw hal_exception(string("Reference genome, ") + refGenomeName + ", not found in alignment");
-        }
 
         vector<string> targetGenomeNames = chopString(targetGenomesString, ",");
         set<const Genome *> targetGenomes;
         for (hal_size_t i = 0; i < targetGenomeNames.size(); i++) {
             const Genome *genome = alignment->openGenome(targetGenomeNames[i]);
-            if (genome == NULL) {
-                throw hal_exception("Target genome " + targetGenomeNames[i] + " not found in alignment.");
-            }
             targetGenomes.insert(genome);
         }
 

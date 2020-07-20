@@ -64,10 +64,6 @@ int main(int argc, char **argv) {
         } else {
             rootGenome = alignment->openGenome(alignment->getRootName());
         }
-        if (rootGenome == NULL) {
-            throw hal_exception(string("Root genome, ") + rootGenomeName + 
-                                ", not found in alignment");
-        }
         const Genome* parentGenome = rootGenome;
 
         vector<string> childs = alignment->getChildNames(rootGenome->getName());
