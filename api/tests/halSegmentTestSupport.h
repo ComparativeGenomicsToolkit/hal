@@ -121,7 +121,7 @@ struct BottomSegmentStruct {
     }
 };
 
-static inline void addIdenticalParentChild(Alignment *alignment, size_t numSequences, size_t numSegmentsPerSequence, size_t segmentLength) {
+static inline void addIdenticalParentChild(AlignmentPtr alignment, size_t numSequences, size_t numSegmentsPerSequence, size_t segmentLength) {
     vector<Sequence::Info> seqVec(numSequences);
 
     BottomSegmentIteratorPtr bi;

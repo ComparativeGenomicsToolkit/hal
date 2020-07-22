@@ -17,7 +17,7 @@ void Hal2Psl::storePslResults(std::vector<PslBlock> &pslBlocks) {
         makeUpPsl(i->_psl, i->_blocks, i->_strand, i->_start, i->_chrName, pslBlocks);
     }
 }
-std::vector<PslBlock> Hal2Psl::convert2psl(const Alignment *alignment, const Genome *srcGenome, const Genome *tgtGenome,
+std::vector<PslBlock> Hal2Psl::convert2psl(AlignmentConstPtr alignment, const Genome *srcGenome, const Genome *tgtGenome,
                                            const std::string srcChrom) {
 
     std::vector<PslBlock> pslBlocks;

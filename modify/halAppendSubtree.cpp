@@ -26,7 +26,7 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.addOptionFlag("merge", "merge appended root and node that is appended to", false);
 }
 
-void addSubtree(Alignment *mainAlignment, const Alignment *appendAlignment, string currNode) {
+void addSubtree(AlignmentPtr mainAlignment, AlignmentConstPtr appendAlignment, string currNode) {
     Genome *outGenome = mainAlignment->openGenome(currNode);
     const Genome *inGenome = appendAlignment->openGenome(currNode);
     vector<string> children = appendAlignment->getChildNames(currNode);
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
         }
         assert(branchLength == 0.0);
     }
-    addSubtree(mainAlignment.get(), appendAlignment.get(), rootName);
+    addSubtree(mainAlignment, appendAlignment, rootName);
 
     // Need proper bottom segments for parent genome
     Genome *mainParentGenome = mainAlignment->openGenome(parentName);
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (!noMarkAncestors) {
-        markAncestorsForUpdate(mainAlignment.get(), rootName);
+        markAncestorsForUpdate(mainAlignment, rootName);
     }
     return 0;
 }

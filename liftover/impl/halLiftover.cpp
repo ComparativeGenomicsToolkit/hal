@@ -20,7 +20,7 @@ Liftover::Liftover()
 Liftover::~Liftover() {
 }
 
-void Liftover::convert(const Alignment *alignment, const Genome *srcGenome, istream *inBedStream, const Genome *tgtGenome,
+void Liftover::convert(AlignmentConstPtr alignment, const Genome *srcGenome, istream *inBedStream, const Genome *tgtGenome,
                        ostream *outBedStream, int bedType, bool traverseDupes,
                        bool outPSL, bool outPSLWithName, const Genome *coalescenceLimit) {
     _srcGenome = srcGenome;

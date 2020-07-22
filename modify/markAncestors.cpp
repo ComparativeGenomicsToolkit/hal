@@ -5,7 +5,7 @@ using namespace hal;
 
 // Mark that all nodes above this one (but not this one) need to be
 // updated.
-void markAncestorsForUpdate(Alignment *alignment, string node) {
+void markAncestorsForUpdate(AlignmentPtr alignment, string node) {
     Genome *parent = NULL;
     try {
         parent = alignment->openGenome(alignment->getParentName(node));

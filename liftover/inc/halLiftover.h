@@ -22,7 +22,7 @@ namespace hal {
         Liftover();
         virtual ~Liftover();
 
-        void convert(const Alignment *alignment, const Genome *srcGenome, std::istream *inputFile, const Genome *tgtGenome,
+        void convert(AlignmentConstPtr alignment, const Genome *srcGenome, std::istream *inputFile, const Genome *tgtGenome,
                      std::ostream *outputFile, int bedType = 0,
                      bool traverseDupes = true, bool outPSL = false, bool outPSLWithName = false,
                      const Genome *coalescenceLimit = NULL);

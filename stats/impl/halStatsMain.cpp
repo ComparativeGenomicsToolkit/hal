@@ -13,26 +13,26 @@
 using namespace std;
 using namespace hal;
 
-static void printGenomes(ostream &os, const Alignment *alignment);
-static void printSequences(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printSequenceStats(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printBedSequenceStats(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printBranchPath(ostream &os, const Alignment *alignment, const vector<string> &genomeNames, bool keepRoot);
-static void printBranches(ostream &os, const Alignment *alignment);
-static void printChildren(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printParent(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printRootName(ostream &os, const Alignment *alignment);
-static void printBranchLength(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printBranches(ostream &os, const Alignment *alignment);
-static void printNumSegments(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printBaseComp(ostream &os, const Alignment *alignment, const string &baseCompPair);
-static void printGenomeMetaData(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printAlignmentMetaData(ostream &os, const Alignment *alignment);
-static void printChromSizes(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printPercentID(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printCoverage(ostream &os, const Alignment *alignment, const string &genomeName);
-static void printSegments(ostream &os, const Alignment *alignment, const string &genomeName, bool top);
-static void printAllCoverage(ostream &os, const Alignment *alignment);
+static void printGenomes(ostream &os, AlignmentConstPtr alignment);
+static void printSequences(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printSequenceStats(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printBedSequenceStats(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printBranchPath(ostream &os, AlignmentConstPtr alignment, const vector<string> &genomeNames, bool keepRoot);
+static void printBranches(ostream &os, AlignmentConstPtr alignment);
+static void printChildren(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printParent(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printRootName(ostream &os, AlignmentConstPtr alignment);
+static void printBranchLength(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printBranches(ostream &os, AlignmentConstPtr alignment);
+static void printNumSegments(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printBaseComp(ostream &os, AlignmentConstPtr alignment, const string &baseCompPair);
+static void printGenomeMetaData(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printAlignmentPtrMetaData(ostream &os, AlignmentConstPtr alignment);
+static void printChromSizes(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printPercentID(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printCoverage(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
+static void printSegments(ostream &os, AlignmentConstPtr alignment, const string &genomeName, bool top);
+static void printAllCoverage(ostream &os, AlignmentConstPtr alignment);
 
 int main(int argc, char **argv) {
     CLParser optionsParser;
@@ -220,51 +220,51 @@ int main(int argc, char **argv) {
         AlignmentConstPtr alignment(openHalAlignment(path, &optionsParser));
         // FIXME: why are strings of '""' used for no value instead of empty strings.
         if (listGenomes == true && alignment->getNumGenomes() > 0) {
-            printGenomes(cout, alignment.get());
+            printGenomes(cout, alignment);
         } else if (sequencesFromGenome != "\"\"") {
-            printSequences(cout, alignment.get(), sequencesFromGenome);
+            printSequences(cout, alignment, sequencesFromGenome);
         } else if (tree == true) {
             cout << alignment->getNewickTree() << endl;
         } else if (sequenceStatsFromGenome != "\"\"") {
-            printSequenceStats(cout, alignment.get(), sequenceStatsFromGenome);
+            printSequenceStats(cout, alignment, sequenceStatsFromGenome);
         } else if (bedSequencesFromGenome != "\"\"") {
-            printBedSequenceStats(cout, alignment.get(), bedSequencesFromGenome);
+            printBedSequenceStats(cout, alignment, bedSequencesFromGenome);
         } else if (spanGenomes != "\"\"") {
-            printBranchPath(cout, alignment.get(), chopString(spanGenomes, ","), false);
+            printBranchPath(cout, alignment, chopString(spanGenomes, ","), false);
         } else if (spanRootGenomes != "\"\"") {
-            printBranchPath(cout, alignment.get(), chopString(spanRootGenomes, ","), true);
+            printBranchPath(cout, alignment, chopString(spanRootGenomes, ","), true);
         } else if (branches == true) {
-            printBranches(cout, alignment.get());
+            printBranches(cout, alignment);
         } else if (childrenFromGenome != "\"\"") {
-            printChildren(cout, alignment.get(), childrenFromGenome);
+            printChildren(cout, alignment, childrenFromGenome);
         } else if (parentFromGenome != "\"\"") {
-            printParent(cout, alignment.get(), parentFromGenome);
+            printParent(cout, alignment, parentFromGenome);
         } else if (printRoot == true) {
-            printRootName(cout, alignment.get());
+            printRootName(cout, alignment);
         } else if (nameForBL != "\"\"") {
-            printBranchLength(cout, alignment.get(), nameForBL);
+            printBranchLength(cout, alignment, nameForBL);
         } else if (numSegmentsGenome != "\"\"") {
-            printNumSegments(cout, alignment.get(), numSegmentsGenome);
+            printNumSegments(cout, alignment, numSegmentsGenome);
         } else if (baseCompPair != "\"\"") {
-            printBaseComp(cout, alignment.get(), baseCompPair);
+            printBaseComp(cout, alignment, baseCompPair);
         } else if (genomeMetaData != "\"\"") {
-            printGenomeMetaData(cout, alignment.get(), genomeMetaData);
+            printGenomeMetaData(cout, alignment, genomeMetaData);
         } else if (chromSizesFromGenome != "\"\"") {
-            printChromSizes(cout, alignment.get(), chromSizesFromGenome);
+            printChromSizes(cout, alignment, chromSizesFromGenome);
         } else if (percentID != "\"\"") {
-            printPercentID(cout, alignment.get(), percentID);
+            printPercentID(cout, alignment, percentID);
         } else if (coverage != "\"\"") {
-            printCoverage(cout, alignment.get(), coverage);
+            printCoverage(cout, alignment, coverage);
         } else if (topSegments != "\"\"") {
-            printSegments(cout, alignment.get(), topSegments, true);
+            printSegments(cout, alignment, topSegments, true);
         } else if (bottomSegments != "\"\"") {
-            printSegments(cout, alignment.get(), bottomSegments, false);
+            printSegments(cout, alignment, bottomSegments, false);
         } else if (allCoverage) {
-            printAllCoverage(cout, alignment.get());
+            printAllCoverage(cout, alignment);
         } else if (metaData) {
-            printAlignmentMetaData(cout, alignment.get());
+            printAlignmentPtrMetaData(cout, alignment);
         } else {
-            HalStats halStats(alignment.get());
+            HalStats halStats(alignment);
             cout << endl << "hal v" << alignment->getVersion() << "\n" << halStats;
         }
     } catch (hal_exception &e) {
@@ -278,7 +278,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void printGenomes(ostream &os, const Alignment *alignment) {
+void printGenomes(ostream &os, AlignmentConstPtr alignment) {
     const Genome *root = alignment->openGenome(alignment->getRootName());
     set<const Genome *> genomes;
     getGenomesInSubTree(root, genomes);
@@ -294,7 +294,7 @@ void printGenomes(ostream &os, const Alignment *alignment) {
     os << endl;
 }
 
-void printSequences(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printSequences(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
     if (genome->getNumSequences() > 0) {
         for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
@@ -307,7 +307,7 @@ void printSequences(ostream &os, const Alignment *alignment, const string &genom
     os << endl;
 }
 
-void printSequenceStats(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printSequenceStats(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
     if (genome->getNumSequences() > 0) {
         os << "SequenceName, Length, NumTopSegments, NumBottomSegments" << endl;
@@ -320,7 +320,7 @@ void printSequenceStats(ostream &os, const Alignment *alignment, const string &g
     os << endl;
 }
 
-void printBedSequenceStats(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printBedSequenceStats(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
     if (genome->getNumSequences() > 0) {
         for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
@@ -329,7 +329,7 @@ void printBedSequenceStats(ostream &os, const Alignment *alignment, const string
     }
 }
 
-static void printBranchPath(ostream &os, const Alignment *alignment, const vector<string> &genomeNames, bool keepRoot) {
+static void printBranchPath(ostream &os, AlignmentConstPtr alignment, const vector<string> &genomeNames, bool keepRoot) {
     set<const Genome *> inputSet;
     for (size_t i = 0; i < genomeNames.size(); ++i) {
         const Genome *genome = alignment->openGenome(genomeNames[i]);
@@ -377,7 +377,7 @@ static void printBranchPath(ostream &os, const Alignment *alignment, const vecto
     os << endl;
 }
 
-static void printBranches(ostream &os, const Alignment *alignment) {
+static void printBranches(ostream &os, AlignmentConstPtr alignment) {
     const Genome *root = alignment->openGenome(alignment->getRootName());
     set<const Genome *> genomes;
     getGenomesInSubTree(root, genomes);
@@ -396,7 +396,7 @@ static void printBranches(ostream &os, const Alignment *alignment) {
     os << endl;
 }
 
-void printChildren(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printChildren(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     vector<string> children = alignment->getChildNames(genomeName);
     for (size_t i = 0; i < children.size(); ++i) {
         os << children[i];
@@ -407,29 +407,29 @@ void printChildren(ostream &os, const Alignment *alignment, const string &genome
     os << endl;
 }
 
-void printParent(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printParent(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     if (genomeName != alignment->getRootName()) {
         os << alignment->getParentName(genomeName) << endl;
     }
 }
 
-void printRootName(ostream &os, const Alignment *alignment) {
+void printRootName(ostream &os, AlignmentConstPtr alignment) {
     os << alignment->getRootName() << endl;
 }
 
-void printBranchLength(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printBranchLength(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     if (genomeName != alignment->getRootName()) {
         string parentName = alignment->getParentName(genomeName);
         os << alignment->getBranchLength(parentName, genomeName) << endl;
     }
 }
 
-void printNumSegments(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printNumSegments(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
     os << genome->getNumTopSegments() << " " << genome->getNumBottomSegments() << endl;
 }
 
-void printBaseComp(ostream &os, const Alignment *alignment, const string &baseCompPair) {
+void printBaseComp(ostream &os, AlignmentConstPtr alignment, const string &baseCompPair) {
     string genomeName;
     hal_size_t step = 0;
     vector<string> tokens = chopString(baseCompPair, ",");
@@ -483,7 +483,7 @@ void printBaseComp(ostream &os, const Alignment *alignment, const string &baseCo
        << '\n';
 }
 
-void printGenomeMetaData(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printGenomeMetaData(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
     const MetaData *metaData = genome->getMetaData();
     const map<string, string> metaDataMap = metaData->getMap();
@@ -494,7 +494,7 @@ void printGenomeMetaData(ostream &os, const Alignment *alignment, const string &
     alignment->closeGenome(genome);
 }
 
-void printAlignmentMetaData(ostream &os, const Alignment *alignment) {
+void printAlignmentPtrMetaData(ostream &os, AlignmentConstPtr alignment) {
     const MetaData *metaData = alignment->getMetaData();
     const map<string, string> metaDataMap = metaData->getMap();
     map<string, string>::const_iterator mapIt = metaDataMap.begin();
@@ -503,7 +503,7 @@ void printAlignmentMetaData(ostream &os, const Alignment *alignment) {
     }
 }
 
-void printChromSizes(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printChromSizes(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
     if (genome->getNumSequences() > 0) {
 
@@ -513,7 +513,7 @@ void printChromSizes(ostream &os, const Alignment *alignment, const string &geno
     }
 }
 
-void printPercentID(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printPercentID(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     const Genome *refGenome = alignment->openGenome(genomeName);
 
     ColumnIteratorPtr colIt = refGenome->getColumnIterator();
@@ -611,7 +611,7 @@ void printPercentID(ostream &os, const Alignment *alignment, const string &genom
     }
 }
 
-void printCoverage(ostream &os, const Alignment *alignment, const string &genomeName) {
+void printCoverage(ostream &os, AlignmentConstPtr alignment, const string &genomeName) {
     const Genome *refGenome = alignment->openGenome(genomeName);
 
     ColumnIteratorPtr colIt = refGenome->getColumnIterator(NULL, 0, 0, NULL_INDEX, false, false, false, true);
@@ -691,7 +691,7 @@ void printCoverage(ostream &os, const Alignment *alignment, const string &genome
     }
 }
 
-static void printSegments(ostream &os, const Alignment *alignment, const string &genomeName, bool top) {
+static void printSegments(ostream &os, AlignmentConstPtr alignment, const string &genomeName, bool top) {
     const Genome *genome = alignment->openGenome(genomeName);
     hal_size_t numSegments = 0;
     SegmentIteratorPtr segment;
@@ -715,8 +715,8 @@ static void printSegments(ostream &os, const Alignment *alignment, const string 
 }
 
 // Print coverage for all leaves vs. all leaves efficiently.
-static void printAllCoverage(ostream &os, const Alignment *alignment) {
-    vector<const Genome *> leafGenomes = getLeafGenomes(alignment);
+static void printAllCoverage(ostream &os, AlignmentConstPtr alignment) {
+    vector<const Genome *> leafGenomes = getLeafGenomes(alignment.get());
     ColumnIterator::VisitCache visitCache;
     map<pair<const Genome *, const Genome *>, vector<hal_size_t> *> histograms;
     for (hal_size_t i = 0; i < leafGenomes.size(); i++) {

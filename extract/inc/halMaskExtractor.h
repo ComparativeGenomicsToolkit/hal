@@ -20,7 +20,7 @@ namespace hal {
         MaskExtractor();
         virtual ~MaskExtractor();
 
-        void extract(const Alignment *alignment, const Genome *genome, std::ostream *bedStream, hal_size_t extend,
+        void extract(AlignmentConstPtr alignment, const Genome *genome, std::ostream *bedStream, hal_size_t extend,
                      double extendPct);
 
       protected:

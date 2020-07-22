@@ -22,38 +22,38 @@ using namespace hal;
 static RandNumberGen rng;
 
 struct ValidateSmallTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         createRandomAlignment(rng, alignment, 0.75, 0.1, 2, 5, 10, 1000, 5, 10);
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
     }
 };
 
 struct ValidateMediumTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         createRandomAlignment(rng, alignment, 1.25, 0.7, 10, 20, 2, 50, 1000, 50000);
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
     }
 };
 
 struct ValidateLargeTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         createRandomAlignment(rng, alignment, 2.0, 1.0, 50, 100, 2, 10, 10000, 500000);
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
     }
 
 };
 
 struct ValidateManyGenomesTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         // hdf5 runs out of memory on Travis.
         if (alignment->getStorageFormat() == "mmap") {
             cout << "running" << endl;
@@ -61,9 +61,9 @@ struct ValidateManyGenomesTest : public AlignmentTest {
         }
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         if (alignment->getStorageFormat() == "mmap") {
-            validateAlignment(alignment);
+            validateAlignment(alignment.get());
         }
     }
 };

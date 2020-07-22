@@ -19,7 +19,7 @@ using namespace std;
 using namespace hal;
 
 struct MetaDataTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -40,7 +40,7 @@ struct MetaDataTest : public AlignmentTest {
         CuAssertTrue(_testCase, meta->getMap().size() == 3);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const MetaData *meta = alignment->getMetaData();
 
         CuAssertTrue(_testCase, meta->get("colour") == "black");

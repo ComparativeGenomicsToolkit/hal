@@ -22,9 +22,9 @@ namespace hal {
         WiggleLiftover();
         virtual ~WiggleLiftover();
 
-        void preloadOutput(const Alignment *alignment, const Genome *tgtGenome, std::istream *inputFile);
+        void preloadOutput(AlignmentConstPtr alignment, const Genome *tgtGenome, std::istream *inputFile);
 
-        void convert(const Alignment *alignment, const Genome *srcGenome, std::istream *inputFile, const Genome *tgtGenome,
+        void convert(AlignmentConstPtr alignment, const Genome *srcGenome, std::istream *inputFile, const Genome *tgtGenome,
                      std::ostream *outputFile, bool traverseDupes = true, bool unique = false);
 
         static const double DefaultValue;

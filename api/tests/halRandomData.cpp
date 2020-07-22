@@ -41,7 +41,7 @@ static inline void mutateString(RandNumberGen &rng, string &buffer, double branc
     }
 }
 
-static void createRandomAlignmentGenome(RandNumberGen &rng, Alignment *newAlignment, deque<string> &genomeNameQueue) {
+static void createRandomAlignmentGenome(RandNumberGen &rng, AlignmentPtr newAlignment, deque<string> &genomeNameQueue) {
     Genome *genome = newAlignment->openGenome(genomeNameQueue.back());
     genomeNameQueue.pop_back();
 
@@ -59,7 +59,7 @@ static void createRandomAlignmentGenome(RandNumberGen &rng, Alignment *newAlignm
     newAlignment->closeGenome(genome);
 }
 
-void hal::createRandomAlignment(RandNumberGen &rng, Alignment *newAlignment, double meanDegree, double maxBranchLength,
+void hal::createRandomAlignment(RandNumberGen &rng, AlignmentPtr newAlignment, double meanDegree, double maxBranchLength,
                                 hal_size_t minGenomes, hal_size_t maxGenomes, hal_size_t minSegmentLength,
                                 hal_size_t maxSegmentLength, hal_size_t minSegments, hal_size_t maxSegments) {
     if (meanDegree <= 0.0) {
@@ -99,7 +99,7 @@ void hal::createRandomAlignment(RandNumberGen &rng, Alignment *newAlignment, dou
     }
 }
 
-static void createRandomTreeGenome(RandNumberGen &rng, Alignment *newAlignment, double meanDegree, double maxBranchLength,
+static void createRandomTreeGenome(RandNumberGen &rng, AlignmentPtr newAlignment, double meanDegree, double maxBranchLength,
                                    hal_size_t minGenomes, hal_size_t maxGenomes, size_t &genomeCount,
                                    deque<string> &genomeNameQueue) {
     Genome *genome = newAlignment->openGenome(genomeNameQueue.back());
@@ -119,7 +119,7 @@ static void createRandomTreeGenome(RandNumberGen &rng, Alignment *newAlignment, 
     }
 }
 
-void hal::createRandomTree(RandNumberGen &rng, Alignment *newAlignment, double meanDegree, double maxBranchLength,
+void hal::createRandomTree(RandNumberGen &rng, AlignmentPtr newAlignment, double meanDegree, double maxBranchLength,
                            hal_size_t minGenomes, hal_size_t maxGenomes) {
     assert(newAlignment->getNumGenomes() == 0);
 
@@ -149,7 +149,7 @@ static hal_size_t calcNumTopSegments(Genome *parent, hal_size_t length, hal_size
     return numTopSegments;
 }
 
-static void createGenomeDimensions(RandNumberGen &rng, Alignment *alignment, hal_size_t minSegmentLength,
+static void createGenomeDimensions(RandNumberGen &rng, AlignmentPtr alignment, hal_size_t minSegmentLength,
                                    hal_size_t maxSegmentLength, hal_size_t minSegments, hal_size_t maxSegments,
                                    deque<string> &genomeNameQueue) {
     Genome *genome = alignment->openGenome(genomeNameQueue.back());
@@ -215,7 +215,7 @@ static void createGenomeDimensions(RandNumberGen &rng, Alignment *alignment, hal
     }
 }
 
-void hal::createRandomDimensions(RandNumberGen &rng, Alignment *alignment, hal_size_t minSegmentLength,
+void hal::createRandomDimensions(RandNumberGen &rng, AlignmentPtr alignment, hal_size_t minSegmentLength,
                                  hal_size_t maxSegmentLength, hal_size_t minSegments, hal_size_t maxSegments) {
     deque<string> genomeNameQueue;
     genomeNameQueue.push_front(alignment->getRootName());
@@ -225,7 +225,7 @@ void hal::createRandomDimensions(RandNumberGen &rng, Alignment *alignment, hal_s
     }
 }
 
-static void createRandomRootGenome(RandNumberGen &rng, Alignment *alignment, Genome *genome) {
+static void createRandomRootGenome(RandNumberGen &rng, AlignmentPtr alignment, Genome *genome) {
     DnaIteratorPtr dnaIt = genome->getDnaIterator();
     hal_size_t length = genome->getSequenceLength();
     for (hal_size_t i = 0; i < length; ++i) {
@@ -235,7 +235,7 @@ static void createRandomRootGenome(RandNumberGen &rng, Alignment *alignment, Gen
     dnaIt->flush();
 }
 
-static void createRandomDescendantGenome(RandNumberGen &rng, Alignment *alignment, Genome *genome, Genome *parent) {
+static void createRandomDescendantGenome(RandNumberGen &rng, AlignmentPtr alignment, Genome *genome, Genome *parent) {
     set<pair<hal_index_t, hal_index_t>> edgeSet;
     vector<string> parentChildNames = alignment->getChildNames(parent->getName());
     hal_size_t indexInParent = parentChildNames.size();
@@ -256,7 +256,7 @@ static void createRandomDescendantGenome(RandNumberGen &rng, Alignment *alignmen
     }
 }
 
-void hal::createRandomGenome(RandNumberGen &rng, Alignment *alignment, Genome *genome) {
+void hal::createRandomGenome(RandNumberGen &rng, AlignmentPtr alignment, Genome *genome) {
     Genome *parent = genome->getParent();
     if (parent == NULL) {
         createRandomRootGenome(rng, alignment, genome);

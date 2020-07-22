@@ -50,7 +50,7 @@ void SummarizeMutations::printCsv(ostream &outStream) const {
     outStream << endl;
 }
 
-void SummarizeMutations::analyzeAlignment(const Alignment *alignment, hal_size_t gapThreshold, double nThreshold, bool justSubs,
+void SummarizeMutations::analyzeAlignmentPtr(AlignmentConstPtr alignment, hal_size_t gapThreshold, double nThreshold, bool justSubs,
                                           const set<string> *targetSet) {
     _gapThreshold = gapThreshold;
     _nThreshold = nThreshold;

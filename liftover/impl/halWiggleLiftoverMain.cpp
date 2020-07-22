@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
             // with the new data from the liftover.
             ifstream tgtWig(tgtWigPath.c_str());
             if (tgtWig) {
-                liftover.preloadOutput(alignment.get(), tgtGenome, &tgtWig);
+                liftover.preloadOutput(alignment, tgtGenome, &tgtWig);
             }
         }
 
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        liftover.convert(alignment.get(), srcGenome, srcWigPtr, tgtGenome, tgtWigPtr, !noDupes, unique);
+        liftover.convert(alignment, srcGenome, srcWigPtr, tgtGenome, tgtWigPtr, !noDupes, unique);
     } catch (hal_exception &e) {
         cerr << "hal exception caught: " << e.what() << endl;
         return 1;

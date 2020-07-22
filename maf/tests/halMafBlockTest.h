@@ -17,8 +17,8 @@
 using namespace hal;
 
 struct MafBlockCreateTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment);
-    void checkCallBack(const Alignment *alignment);
+    void createCallBack(AlignmentPtr alignment);
+    void checkCallBack(AlignmentConstPtr alignment);
 };
 
 #endif

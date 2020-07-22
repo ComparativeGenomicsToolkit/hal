@@ -25,7 +25,7 @@ namespace hal {
         WiggleLoader();
         virtual ~WiggleLoader();
 
-        void load(const Alignment *alignment, const Genome *genome, std::istream *inputFile, WiggleTiles<double> *vals);
+        void load(AlignmentConstPtr alignment, const Genome *genome, std::istream *inputFile, WiggleTiles<double> *vals);
 
       protected:
         virtual void visitLine();

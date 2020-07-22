@@ -21,7 +21,7 @@ using namespace hal;
 
 class AlignmentTestTrees : public AlignmentTest {
   public:
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -37,7 +37,7 @@ class AlignmentTestTrees : public AlignmentTest {
         alignment->updateBranchLength("Root", "Leaf2", 5.1);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         CuAssertTrue(_testCase, alignment->getRootName() == "NewRoot");
         CuAssertTrue(_testCase,
                      alignment->getNewickTree() == "((Leaf:10,Leaf1:3,Leaf2:5.1,Leaf3:6.1,Leaf4:7.1)Root:15)NewRoot;");

@@ -22,12 +22,12 @@ using namespace hal;
 static RandNumberGen rng;
 
 struct ColumnIteratorBaseTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         createRandomAlignment(rng, alignment, 10, 1e-10, 2, 3, 77, 77, 10, 10);
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *genome = alignment->openGenome(alignment->getRootName());
         const Sequence *sequence = genome->getSequenceBySite(0);
         assert(genome != NULL);
@@ -53,7 +53,7 @@ struct ColumnIteratorBaseTest : public AlignmentTest {
 };
 
 struct ColumnIteratorDepthTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         double branchLength = 1e-10;
 
         alignment->addRootGenome("grandpa");
@@ -142,8 +142,8 @@ struct ColumnIteratorDepthTest : public AlignmentTest {
         }
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *genome = alignment->openGenome("grandpa");
         checkGenome(genome);
         genome = alignment->openGenome("dad");
@@ -156,7 +156,7 @@ struct ColumnIteratorDepthTest : public AlignmentTest {
 };
 
 struct ColumnIteratorDupTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         double branchLength = 1e-10;
 
         alignment->addRootGenome("dad");
@@ -268,8 +268,8 @@ struct ColumnIteratorDupTest : public AlignmentTest {
         }
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *genome = alignment->openGenome("dad");
         checkGenome(genome);
         genome = alignment->openGenome("son1");
@@ -280,7 +280,7 @@ struct ColumnIteratorDupTest : public AlignmentTest {
 };
 
 struct ColumnIteratorInvTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         double branchLength = 1e-10;
 
         alignment->addRootGenome("grandpa");
@@ -449,15 +449,15 @@ struct ColumnIteratorInvTest : public AlignmentTest {
         }
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *genome = alignment->openGenome("son1");
         checkGenome(genome);
     }
 };
 
 struct ColumnIteratorGapTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         double branchLength = 1e-10;
 
         alignment->addRootGenome("grandpa");
@@ -509,8 +509,8 @@ struct ColumnIteratorGapTest : public AlignmentTest {
         dad->setString("ACGTGGGG");
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *dad = alignment->openGenome("dad");
         const Sequence *dadSeq = dad->getSequence("dseq");
         const Genome *grandpa = alignment->openGenome("grandpa");
@@ -540,7 +540,7 @@ struct ColumnIteratorGapTest : public AlignmentTest {
 };
 
 struct ColumnIteratorMultiGapTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         double branchLength = 1e-10;
 
         alignment->addRootGenome("adam");
@@ -635,8 +635,8 @@ struct ColumnIteratorMultiGapTest : public AlignmentTest {
         dad->setString("ACGTGGGG");
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
 
         const Genome *dad = alignment->openGenome("dad");
         const Sequence *dadSeq = dad->getSequence("dseq");
@@ -735,7 +735,7 @@ struct ColumnIteratorMultiGapTest : public AlignmentTest {
 };
 
 struct ColumnIteratorMultiGapInvTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         double branchLength = 1e-10;
 
         alignment->addRootGenome("adam");
@@ -837,8 +837,8 @@ struct ColumnIteratorMultiGapInvTest : public AlignmentTest {
         dad->setString("ACGTGGGG");
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *dad = alignment->openGenome("dad");
         const Sequence *dadSeq = dad->getSequence("dseq");
         const Genome *grandpa = alignment->openGenome("grandpa");
@@ -932,11 +932,11 @@ struct ColumnIteratorMultiGapInvTest : public AlignmentTest {
 };
 
 struct ColumnIteratorPositionCacheTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         alignment->addRootGenome("foobar");
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         size_t trials = 10;
         size_t sizes[] = {10, 100, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 1000000};
         size_t entries = 10000;

@@ -12,7 +12,7 @@
 using namespace std;
 using namespace hal;
 
-static void setupSharedAlignment(Alignment *alignment) {
+static void setupSharedAlignment(AlignmentPtr alignment) {
     Genome *root = alignment->addRootGenome("root");
     Genome *child1 = alignment->addLeafGenome("child1", "root", 1);
     Genome *leaf1 = alignment->addLeafGenome("leaf1", "root", 1);
@@ -251,7 +251,7 @@ static void setupSharedAlignment(Alignment *alignment) {
     alignment->closeGenome(leaf3);
 }
 
-void BedLiftoverTest::liftAndCheck(const Alignment *alignment,
+void BedLiftoverTest::liftAndCheck(AlignmentConstPtr alignment,
                                    const Genome *srcGenome,
                                    const Genome *tgtGenome,
                                    const string& inBed,
@@ -269,7 +269,7 @@ void BedLiftoverTest::liftAndCheck(const Alignment *alignment,
     CuAssertTrue(_testCase, outStream.str() == expectBed);
 }
 
-void BedLiftoverTest::testOneBranchLifts(const Alignment *alignment) {
+void BedLiftoverTest::testOneBranchLifts(AlignmentConstPtr alignment) {
     BlockLiftover liftover;
     const Genome *root = alignment->openGenome("root");
     const Genome *child1 = alignment->openGenome("child1");
@@ -316,7 +316,7 @@ void BedLiftoverTest::testOneBranchLifts(const Alignment *alignment) {
     alignment->closeGenome(leaf3);
 }
 
-void BedLiftoverTest::testMultiBranchLifts(const Alignment *alignment) {
+void BedLiftoverTest::testMultiBranchLifts(AlignmentConstPtr alignment) {
     BlockLiftover liftover;
     const Genome *root = alignment->openGenome("root");
     const Genome *child1 = alignment->openGenome("child1");
@@ -378,11 +378,11 @@ void BedLiftoverTest::testMultiBranchLifts(const Alignment *alignment) {
     alignment->closeGenome(leaf3);
 }
 
-void BedLiftoverTest::createCallBack(Alignment *alignment) {
+void BedLiftoverTest::createCallBack(AlignmentPtr alignment) {
     setupSharedAlignment(alignment);
 }
 
-void BedLiftoverTest::checkCallBack(const Alignment *alignment) {
+void BedLiftoverTest::checkCallBack(AlignmentConstPtr alignment) {
     testOneBranchLifts(alignment);
     testMultiBranchLifts(alignment);
 }
@@ -399,7 +399,7 @@ void WiggleLiftoverTest::checkWigHasEntry(vector<string> &wig,
 }
 */
 
-void WiggleLiftoverTest::testOneBranchLifts(const Alignment *alignment) {
+void WiggleLiftoverTest::testOneBranchLifts(AlignmentConstPtr alignment) {
 #if 0 // FIXME: implement
     const Genome *root = alignment->openGenome("root");
     const Genome *child1 = alignment->openGenome("child1");
@@ -431,14 +431,14 @@ void WiggleLiftoverTest::testOneBranchLifts(const Alignment *alignment) {
 #endif
 }
 
-void WiggleLiftoverTest::testMultiBranchLifts(const Alignment *alignment) {
+void WiggleLiftoverTest::testMultiBranchLifts(AlignmentConstPtr alignment) {
 }
 
-void WiggleLiftoverTest::createCallBack(Alignment *alignment) {
+void WiggleLiftoverTest::createCallBack(AlignmentPtr alignment) {
     setupSharedAlignment(alignment);
 }
 
-void WiggleLiftoverTest::checkCallBack(const Alignment *alignment) {
+void WiggleLiftoverTest::checkCallBack(AlignmentConstPtr alignment) {
     testOneBranchLifts(alignment);
     testMultiBranchLifts(alignment);
 }

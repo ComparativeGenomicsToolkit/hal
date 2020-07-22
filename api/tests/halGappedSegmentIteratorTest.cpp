@@ -15,7 +15,7 @@ using namespace std;
 using namespace hal;
 
 struct GappedSegmentSimpleIteratorTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         addIdenticalParentChild(alignment, 2, 100, 5);
         Genome *parent = alignment->openGenome(alignment->getRootName());
         Genome *child = parent->getChild(0);
@@ -32,7 +32,7 @@ struct GappedSegmentSimpleIteratorTest : public AlignmentTest {
         }
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *child = alignment->openGenome("child");
         const Genome *parent = alignment->openGenome("parent");
 
@@ -101,7 +101,7 @@ struct GappedSegmentSimpleIteratorTest : public AlignmentTest {
 };
 
 struct GappedSegmentSimpleIteratorTest2 : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         addIdenticalParentChild(alignment, 2, 100, 5);
         Genome *parent = alignment->openGenome(alignment->getRootName());
         Genome *child = parent->getChild(0);
@@ -123,7 +123,7 @@ struct GappedSegmentSimpleIteratorTest2 : public AlignmentTest {
         }
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *child = alignment->openGenome("child");
         const Genome *parent = alignment->openGenome("parent");
 
@@ -214,7 +214,7 @@ struct GappedSegmentSimpleIteratorTest2 : public AlignmentTest {
 };
 
 struct GappedSegmentIteratorIndelTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         addIdenticalParentChild(alignment, 1, 20, 5);
         Genome *parent = alignment->openGenome(alignment->getRootName());
         Genome *child = parent->getChild(0);
@@ -245,7 +245,7 @@ struct GappedSegmentIteratorIndelTest : public AlignmentTest {
                  }*/
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *child = alignment->openGenome("child");
         const Genome *parent = alignment->openGenome("parent");
 

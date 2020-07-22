@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
         }
 
         LodExtract lodExtract;
-        lodExtract.createInterpolatedAlignment(inAlignment.get(), outAlignment.get(), scale, outTree, rootName, keepSequences,
+        lodExtract.createInterpolatedAlignment(inAlignment, outAlignment, scale, outTree, rootName, keepSequences,
                                                allSequences, probeFrac, minSeqFrac);
     } catch (hal_exception &e) {
         cerr << "hal exception caught: " << e.what() << endl;

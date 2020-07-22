@@ -14,17 +14,17 @@
 namespace hal {
     class RandNumberGen;
 
-    void createRandomAlignment(RandNumberGen &rng, Alignment *emptyAlignment, double meanDegree, double maxBranchLength,
+    void createRandomAlignment(RandNumberGen &rng, AlignmentPtr emptyAlignment, double meanDegree, double maxBranchLength,
                                hal_size_t minGenomes, hal_size_t maxGenomes, hal_size_t minSegmentLength,
                                hal_size_t maxSegmentLength, hal_size_t minSegments, hal_size_t maxSegments);
 
-    void createRandomTree(RandNumberGen &rng, Alignment *emptyAlignment, double meanDegree, double maxBranchLength,
+    void createRandomTree(RandNumberGen &rng, AlignmentPtr emptyAlignment, double meanDegree, double maxBranchLength,
                           hal_size_t minGenomes, hal_size_t maxGenomes);
 
-    void createRandomDimensions(RandNumberGen &rng, Alignment *alignment, hal_size_t minSegmentLength,
+    void createRandomDimensions(RandNumberGen &rng, AlignmentPtr alignment, hal_size_t minSegmentLength,
                                 hal_size_t maxSegmentLength, hal_size_t minSegments, hal_size_t maxSegments);
 
-    void createRandomGenome(RandNumberGen &rng, Alignment *alignment, Genome *genome);
+    void createRandomGenome(RandNumberGen &rng, AlignmentPtr alignment, Genome *genome);
 
     void createRandomSegment(RandNumberGen &rng, Genome *genome, hal_size_t indexInParent,
                              std::set<std::pair<hal_index_t, hal_index_t>> &edgeSet, TopSegmentIteratorPtr topIter,

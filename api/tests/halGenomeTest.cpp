@@ -24,7 +24,7 @@ using namespace std;
 using namespace hal;
 
 struct GenomeMetaTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -34,7 +34,7 @@ struct GenomeMetaTest : public AlignmentTest {
         ancMeta->set("Young", "Jeezy");
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("AncGenome");
         const MetaData *ancMeta = ancGenome->getMetaData();
         CuAssertTrue(_testCase, ancMeta->get("Young") == "Jeezy");
@@ -47,7 +47,7 @@ struct GenomeMetaTest : public AlignmentTest {
 
 struct GenomeCreateTest : public AlignmentTest {
     std::string _string;
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -70,7 +70,7 @@ struct GenomeCreateTest : public AlignmentTest {
         leaf3Genome->setDimensions(seqVec);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *dudGenome = NULL;
         try {
             dudGenome = alignment->openGenome("Zebra");
@@ -103,7 +103,7 @@ struct GenomeCreateTest : public AlignmentTest {
 };
 
 struct GenomeUpdateTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -115,7 +115,7 @@ struct GenomeUpdateTest : public AlignmentTest {
         ancGenome->setDimensions(seqVec);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("AncGenome");
         CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
         CuAssertTrue(_testCase, ancGenome->getSequenceLength() == 10000005);
@@ -126,7 +126,7 @@ struct GenomeUpdateTest : public AlignmentTest {
 
 struct GenomeStringTest : public AlignmentTest {
     std::string _string;
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
         hal_size_t seqLength = 28889943;
@@ -139,7 +139,7 @@ struct GenomeStringTest : public AlignmentTest {
         ancGenome->setString(_string);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("AncGenome");
         CuAssertTrue(_testCase, ancGenome->getName() == "AncGenome");
         string genomeString;
@@ -152,7 +152,7 @@ struct GenomeCopyTest : public AlignmentTest {
     std::string _path;
     AlignmentPtr _secondAlignment;
     
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -266,7 +266,7 @@ struct GenomeCopyTest : public AlignmentTest {
         _secondAlignment->close();
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         // FIXME: halAlignment->open() fails miserably but
         // openHalAlignmentReadOnly works? Probably some state isn't cleared
         // on close.
@@ -400,7 +400,7 @@ struct GenomeCopySegmentsWhenSequencesOutOfOrderTest : public AlignmentTest {
     // "Sequence1" positions, and "Sequence2" to "Sequence2", but try
     // copying the segments to an alignment with "Sequence2" before
     // "Sequence1" in the ordering.
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -507,7 +507,7 @@ struct GenomeCopySegmentsWhenSequencesOutOfOrderTest : public AlignmentTest {
     void checkTopSegments(Genome *genome, hal_size_t width, CuTest *testCase) {
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         // FIXME: halAlignment->open() fails miserably but
         // openHalAlignmentReadOnly works? Probably some state isn't cleared
         // on close.

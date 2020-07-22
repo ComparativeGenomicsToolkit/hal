@@ -11,7 +11,7 @@ static void initParser(CLParser &optionsParser) {
                                             " except for the branch lengths");
 }
 
-void updateBranches(Alignment *alignment, Genome *genome, stTree *newTree) {
+void updateBranches(AlignmentPtr alignment, Genome *genome, stTree *newTree) {
     if (genome->getNumChildren() == 0) {
         return;
     }
@@ -51,5 +51,5 @@ int main(int argc, char *argv[]) {
                                             WRITE_ACCESS | READ_ACCESS));
     stTree *newTree = stTree_parseNewickString(newickTree.c_str());
     // recursively update branches
-    updateBranches(alignment.get(), alignment->openGenome(alignment->getRootName()), newTree);
+    updateBranches(alignment, alignment->openGenome(alignment->getRootName()), newTree);
 }

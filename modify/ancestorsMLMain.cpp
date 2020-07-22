@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     }
     lst_free(phastList);
 
-    Alignment *alignment = openHalAlignment(halPath, &optParser);
+    AlignmentPtr alignment = openHalAlignment(halPath, &optParser);
     const Genome *genome = alignment->openGenome(genomeName);
     if (genome->getNumChildren() == 0) {
         throw hal_exception("Genome " + genomeName + " is a leaf genome.");

@@ -23,14 +23,14 @@ namespace hal {
     class HalStats {
       public:
         HalStats();
-        HalStats(const Alignment *alignment);
+        HalStats(AlignmentConstPtr alignment);
         virtual ~HalStats();
 
         void printCsv(std::ostream &outStream) const;
-        void readAlignment(const Alignment *alignment);
+        void readAlignmentPtr(AlignmentConstPtr alignment);
 
       protected:
-        void readGenomeRecursive(const Alignment *alignment, const Genome *genome);
+        void readGenomeRecursive(AlignmentConstPtr alignment, const Genome *genome);
 
         std::string _tree;
         std::vector<GenomeStats> _genomeStatsVec;

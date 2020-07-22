@@ -19,7 +19,7 @@ WiggleLoader::WiggleLoader() {
 WiggleLoader::~WiggleLoader() {
 }
 
-void WiggleLoader::load(const Alignment *alignment, const Genome *genome, istream *inputFile, WiggleTiles<double> *vals) {
+void WiggleLoader::load(AlignmentConstPtr alignment, const Genome *genome, istream *inputFile, WiggleTiles<double> *vals) {
     _alignment = AlignmentConstPtr(alignment);
     _srcGenome = genome;
     _srcSequence = NULL;

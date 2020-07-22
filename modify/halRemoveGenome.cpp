@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     }
     AlignmentPtr alignment(openHalAlignment(inPath, &optionsParser, READ_ACCESS | WRITE_ACCESS));
     if (!noMarkAncestors) {
-        markAncestorsForUpdate(alignment.get(), deleteNode);
+        markAncestorsForUpdate(alignment, deleteNode);
     }
     alignment->removeGenome(deleteNode);
     return 0;
