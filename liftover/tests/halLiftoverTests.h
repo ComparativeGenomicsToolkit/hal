@@ -19,24 +19,24 @@ using namespace hal;
 
 struct BedLiftoverTest : public AlignmentTest {
     private:
-    void liftAndCheck(const Alignment *alignment,
+    void liftAndCheck(AlignmentConstPtr alignment,
                       const Genome *srcGenome,
                       const Genome *tgtGenome,
                       const std::string& inBed,
                       const std::string& expectBed,
                       bool outPSL = false, bool outPSLWithName = false);
     public:
-    void createCallBack(Alignment *alignment);
-    void checkCallBack(const Alignment *alignment);
-    void testOneBranchLifts(const Alignment *alignment);
-    void testMultiBranchLifts(const Alignment *alignment);
+    void createCallBack(AlignmentPtr alignment);
+    void checkCallBack(AlignmentConstPtr alignment);
+    void testOneBranchLifts(AlignmentConstPtr alignment);
+    void testMultiBranchLifts(AlignmentConstPtr alignment);
 };
 
 struct WiggleLiftoverTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment);
-    void checkCallBack(const Alignment *alignment);
-    void testOneBranchLifts(const Alignment *alignment);
-    void testMultiBranchLifts(const Alignment *alignment);
+    void createCallBack(AlignmentPtr alignment);
+    void checkCallBack(AlignmentConstPtr alignment);
+    void testOneBranchLifts(AlignmentConstPtr alignment);
+    void testMultiBranchLifts(AlignmentConstPtr alignment);
 };
 
 CuSuite *halLiftoverTestSuite();

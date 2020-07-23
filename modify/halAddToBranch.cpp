@@ -99,6 +99,6 @@ int main(int argc, char *argv[]) {
     // Copy the entire genome for the leaf from the bottom alignment.
     inLeafGenome->copy(outLeafGenome);
     if (!noMarkAncestors) {
-        markAncestorsForUpdate(mainAlignment.get(), insertName);
+        markAncestorsForUpdate(mainAlignment, insertName);
     }
 }

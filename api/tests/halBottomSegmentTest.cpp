@@ -18,7 +18,7 @@ using namespace hal;
 struct BottomSegmentSimpleIteratorTest : public AlignmentTest {
     std::vector<BottomSegmentStruct> _bottomSegments;
 
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         Genome *ancGenome = alignment->addRootGenome("Anc0", 0);
         size_t numChildren = 9;
         for (size_t i = 0; i < numChildren; ++i) {
@@ -48,7 +48,7 @@ struct BottomSegmentSimpleIteratorTest : public AlignmentTest {
         }
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("Anc0");
         CuAssertTrue(_testCase, ancGenome->getNumBottomSegments() == _bottomSegments.size());
         BottomSegmentIteratorPtr bsIt = ancGenome->getBottomSegmentIterator(0);
@@ -103,7 +103,7 @@ struct BottomSegmentSequenceTest : public AlignmentTest {
     std::vector<BottomSegmentStruct> _bottomSegments;
     std::vector<std::string> _sequences;
 
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         Genome *ancGenome = alignment->addRootGenome("Anc0", 0);
         vector<Sequence::Info> seqVec(1);
         seqVec[0] = Sequence::Info("Sequence", 1000000, 5000, 700000);
@@ -114,7 +114,7 @@ struct BottomSegmentSequenceTest : public AlignmentTest {
         bsIt->getBottomSegment()->setCoordinates(500, 9);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("Anc0");
         BottomSegmentIteratorPtr bsIt = ancGenome->getBottomSegmentIterator(100);
         CuAssertTrue(_testCase, bsIt->getBottomSegment()->getStartPosition() == 500);
@@ -130,7 +130,7 @@ struct BottomSegmentSequenceTest : public AlignmentTest {
 
 struct BottomSegmentIteratorParseTest : public AlignmentTest {
 
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         vector<Sequence::Info> seqVec(1);
 
         BottomSegmentIteratorPtr bi;
@@ -206,7 +206,7 @@ struct BottomSegmentIteratorParseTest : public AlignmentTest {
         bs.applyTo(bi);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         BottomSegmentIteratorPtr bi;
         TopSegmentIteratorPtr ti;
 
@@ -256,7 +256,7 @@ struct BottomSegmentIteratorParseTest : public AlignmentTest {
 };
 
 struct BottomSegmentIteratorToSiteTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         vector<Sequence::Info> seqVec(1);
 
         BottomSegmentIteratorPtr bi;
@@ -308,7 +308,7 @@ struct BottomSegmentIteratorToSiteTest : public AlignmentTest {
         }
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         BottomSegmentIteratorPtr bi;
 
         // case 1
@@ -323,7 +323,7 @@ struct BottomSegmentIteratorToSiteTest : public AlignmentTest {
 
 struct BottomSegmentIteratorReverseTest : public AlignmentTest {
 
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         vector<Sequence::Info> seqVec(1);
 
         BottomSegmentIteratorPtr bi;
@@ -360,7 +360,7 @@ struct BottomSegmentIteratorReverseTest : public AlignmentTest {
         ts.applyTo(ti);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         BottomSegmentIteratorPtr bi, bi2;
         TopSegmentIteratorPtr ti;
 
@@ -422,7 +422,7 @@ struct BottomSegmentIteratorReverseTest : public AlignmentTest {
 };
 
 struct BottomSegmentIsGapTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         size_t numSequences = 3;
         vector<Sequence::Info> seqVec(numSequences);
 
@@ -480,7 +480,7 @@ struct BottomSegmentIsGapTest : public AlignmentTest {
         ti->getTopSegment()->setParentIndex(NULL_INDEX);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         BottomSegmentIteratorPtr bi;
         TopSegmentIteratorPtr ti;
 

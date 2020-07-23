@@ -28,7 +28,7 @@ namespace hal {
       public:
         Hal2Psl() {
         }
-        std::vector<PslBlock> convert2psl(const Alignment *alignment, const Genome *srcGenome, const Genome *tgtGenome,
+        std::vector<PslBlock> convert2psl(AlignmentConstPtr alignment, const Genome *srcGenome, const Genome *tgtGenome,
                                           const std::string srcChrom);
     };
 }

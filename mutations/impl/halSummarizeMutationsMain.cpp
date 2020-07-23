@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
         }
 
         SummarizeMutations mutations;
-        mutations.analyzeAlignment(alignment.get(), maxGap, nThreshold, justSubs, targetSet.empty() ? NULL : &targetNames);
+        mutations.analyzeAlignmentPtr(alignment, maxGap, nThreshold, justSubs, targetSet.empty() ? NULL : &targetNames);
 
         cout << endl << mutations;
     } catch (hal_exception &e) {

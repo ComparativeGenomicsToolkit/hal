@@ -40,7 +40,7 @@ namespace hal {
          * lodFile containing only "0 halPath"*/
         void loadSingeHALFile(const std::string &halPath, const CLParser *options = NULL);
 
-        const Alignment *getAlignment(hal_size_t queryLength, bool needDNA);
+        AlignmentConstPtr getAlignment(hal_size_t queryLength, bool needDNA);
 
         /** Check if query length corresponds to LOD 0 (ie original HAL) */
         bool isLod0(hal_size_t queryLenth) const;
@@ -58,7 +58,7 @@ namespace hal {
       private:
         std::string resolvePath(const std::string &lodPath, const std::string &halPath);
         void checkMap(const std::string &lodPath);
-        void checkAlignment(hal_size_t minQuery, const std::string &path, const Alignment *alignment);
+        void checkAlignment(hal_size_t minQuery, const std::string &path, AlignmentConstPtr alignment);
         void preloadAlignments();
 
         typedef std::pair<std::string, AlignmentConstPtr> PathAlign;

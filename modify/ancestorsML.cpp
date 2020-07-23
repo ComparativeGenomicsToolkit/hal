@@ -121,7 +121,7 @@ void removeAndPrune(stTree *tree) {
 }
 
 // Build site-specific tree below this genome.
-void buildTree(const Alignment *alignment, const Genome *genome, hal_index_t pos, stTree *tree, bool reversed,
+void buildTree(AlignmentConstPtr alignment, const Genome *genome, hal_index_t pos, stTree *tree, bool reversed,
                map<string, int> *nameToId = NULL) {
     stTree_setLabel(tree, genome->getName().c_str());
     felsensteinData *data = (felsensteinData *)malloc(sizeof(felsensteinData));
@@ -328,7 +328,7 @@ void walkFelsenstein(TreeModel *mod, stTree *tree, char assignment, double thres
     }
 }
 
-void writeNucleotides(stTree *tree, const Alignment *alignment, const Genome *target, hal_index_t targetPos,
+void writeNucleotides(stTree *tree, AlignmentConstPtr alignment, const Genome *target, hal_index_t targetPos,
                       bool printWrites = false) {
     felsensteinData *data = (felsensteinData *)stTree_getClientData(tree);
     if (stTree_getChildNumber(tree) == 0) {
@@ -370,7 +370,7 @@ void freeClientData(stTree *tree) {
     free(data);
 }
 
-void reEstimate(TreeModel *mod, const Alignment *alignment, const Genome *genome, hal_index_t startPos, hal_index_t endPos,
+void reEstimate(TreeModel *mod, AlignmentConstPtr alignment, const Genome *genome, hal_index_t startPos, hal_index_t endPos,
                 map<string, int> &nameToId, double threshold, bool printWrites, bool writePosts) {
     threshold = log(threshold);
     stTree *tree = NULL;

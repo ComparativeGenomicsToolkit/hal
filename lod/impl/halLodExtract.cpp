@@ -23,11 +23,11 @@ LodExtract::LodExtract() {
 LodExtract::~LodExtract() {
 }
 
-void LodExtract::createInterpolatedAlignment(const Alignment *inAlignment, Alignment *outAlignment, double scale,
+void LodExtract::createInterpolatedAlignment(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, double scale,
                                              const string &tree, const string &rootName, bool keepSequences, bool allSequences,
                                              double probeFrac, double minSeqFrac) {
-    _inAlignment = AlignmentConstPtr(inAlignment);
-    _outAlignment = AlignmentPtr(outAlignment);
+    _inAlignment = inAlignment;
+    _outAlignment = outAlignment;
     _keepSequences = keepSequences;
     _allSequences = allSequences;
     _probeFrac = probeFrac;
@@ -124,7 +124,7 @@ void LodExtract::convertInternalNode(const string &genomeName, double scale) {
     const Genome *grandParent = NULL; // TEMP HACK  parent->getParent();
     hal_size_t minAvgBlockSize = getMinAvgBlockSize(parent, children, grandParent);
     hal_size_t step = (hal_size_t)(scale * minAvgBlockSize);
-    _graph.build(_inAlignment.get(), parent, children, grandParent, step, _allSequences, _probeFrac, _minSeqFrac);
+    _graph.build(_inAlignment, parent, children, grandParent, step, _allSequences, _probeFrac, _minSeqFrac);
 
     map<const Sequence *, hal_size_t> segmentCounts;
     countSegmentsInGraph(segmentCounts);

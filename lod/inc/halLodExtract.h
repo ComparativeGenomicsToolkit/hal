@@ -33,7 +33,7 @@ namespace hal {
         LodExtract();
         ~LodExtract();
 
-        void createInterpolatedAlignment(const Alignment *inAlignment, Alignment *outAlignment, double scale,
+        void createInterpolatedAlignment(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, double scale,
                                          const std::string &tree, const std::string &rootName, bool keepSequences,
                                          bool allSequences, double probeFrac, double minSeqFrac);
 

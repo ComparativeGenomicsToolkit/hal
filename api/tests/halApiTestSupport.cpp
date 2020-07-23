@@ -21,15 +21,15 @@ using namespace hal;
  */
 static string storageDriverToTest;
 
-Alignment *getTestAlignmentInstances(const std::string &storageFormat, const std::string &alignmentPath, unsigned mode) {
+AlignmentPtr getTestAlignmentInstances(const std::string &storageFormat, const std::string &alignmentPath, unsigned mode) {
     if (storageFormat == STORAGE_FORMAT_HDF5) {
-        return hdf5AlignmentInstance(alignmentPath, mode, hdf5DefaultFileCreatPropList(), hdf5DefaultFileAccPropList(),
-                                     hdf5DefaultDSetCreatPropList());
+        return AlignmentPtr(hdf5AlignmentInstance(alignmentPath, mode, hdf5DefaultFileCreatPropList(), hdf5DefaultFileAccPropList(),
+                                                  hdf5DefaultDSetCreatPropList()));
 
     } else if (storageFormat == hal::STORAGE_FORMAT_MMAP) {
         // We use a default init size of only 1GiB here, because the test
         // alignments we create are relatively small.
-        return mmapAlignmentInstance(alignmentPath, mode, 1024 * 1024 * 1024);
+        return AlignmentPtr(mmapAlignmentInstance(alignmentPath, mode, 1024 * 1024 * 1024));
     } else {
         throw hal_exception("invalid storage format: " + storageFormat);
     }
@@ -127,13 +127,13 @@ void AlignmentTest::checkOne(CuTest *testCase, const string &storageFormat) {
     // test with created
     AlignmentPtr calignment(getTestAlignmentInstances(storageFormat, alignmentPath, CREATE_ACCESS));
     _createPath = alignmentPath;
-    createCallBack(calignment.get());
+    createCallBack(calignment);
     calignment->close();
 
     // test with existing alignment
     AlignmentPtr ralignment(getTestAlignmentInstances(storageFormat, alignmentPath, READ_ACCESS));
     _checkPath = alignmentPath;
-    checkCallBack(ralignment.get());
+    checkCallBack(ralignment);
     ralignment->close();
 
     ::unlink(alignmentPath.c_str());

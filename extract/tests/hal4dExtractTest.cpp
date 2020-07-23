@@ -6,7 +6,7 @@ using namespace std;
 using namespace hal;
 
 struct ConservedBed4dExtractTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         Genome *root = alignment->addRootGenome("root");
         Genome *leaf1 = alignment->addLeafGenome("leaf1", "root", 1);
         Genome *leaf2 = alignment->addLeafGenome("leaf2", "root", 1);
@@ -52,7 +52,7 @@ struct ConservedBed4dExtractTest : public AlignmentTest {
         topIt->tseg()->setBottomParseIndex(NULL_INDEX);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *genome = alignment->openGenome("root");
         stringstream bedFile("rootSequence\t0\t192\tFORWARD\t0\t+\n"
                              "rootSequence\t0\t192\tREV\t0\t-\n");
@@ -73,7 +73,7 @@ struct ConservedBed4dExtractTest : public AlignmentTest {
 };
     
 struct Bed4dExtractTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         Genome *genome = alignment->addRootGenome("root");
         vector<Sequence::Info> seqVec(1);
         seqVec[0] = Sequence::Info("rootSequence", 192, 0, 0);
@@ -84,7 +84,7 @@ struct Bed4dExtractTest : public AlignmentTest {
                           "ggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *genome = alignment->openGenome("root");
         stringstream bedFile("rootSequence\t0\t192\tFORWARD\t0\t+\n"
                              "rootSequence\t0\t192\tREV\t0\t-\n");
@@ -102,7 +102,7 @@ struct Bed4dExtractTest : public AlignmentTest {
 };
 
 struct Block4dExtractTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         Genome *genome = alignment->addRootGenome("root");
         vector<Sequence::Info> seqVec(1);
         seqVec[0] = Sequence::Info("rootSequence", 192, 0, 0);
@@ -113,7 +113,7 @@ struct Block4dExtractTest : public AlignmentTest {
                           "ggatgcagccgcggctggaggcgggggtgtagtcgtggtttaatactagtattcatcctcgtcttgatgctggtgtttattcttgttt");
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *genome = alignment->openGenome("root");
         // test frame shift
         stringstream bedFile("rootSequence\t0\t192\tFORWARD\t0\t+\t0\t192\t0\t3\t17,6,7\t0,30,60\n"
@@ -134,7 +134,7 @@ struct Block4dExtractTest : public AlignmentTest {
 };
 
 struct ConservedBlock4dExtractTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         Genome *root = alignment->addRootGenome("root");
         Genome *leaf1 = alignment->addLeafGenome("leaf1", "root", 1);
         Genome *leaf2 = alignment->addLeafGenome("leaf2", "root", 1);
@@ -208,7 +208,7 @@ struct ConservedBlock4dExtractTest : public AlignmentTest {
         topIt->tseg()->setBottomParseIndex(NULL_INDEX);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *genome = alignment->openGenome("root");
         // test frame shift
         stringstream bedFile("rootSequence\t0\t192\tFORWARD\t0\t+\t0\t192\t0\t3\t17,6,7\t0,30,60\n"
@@ -236,7 +236,7 @@ struct ConservedBlock4dExtractTest : public AlignmentTest {
 };
 
 struct CDS4dExtractTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         Genome *genome = alignment->addRootGenome("root");
         vector<Sequence::Info> seqVec(1);
         seqVec[0] = Sequence::Info("rootSequence", 213, 0, 0);
@@ -249,7 +249,7 @@ struct CDS4dExtractTest : public AlignmentTest {
                           "tgttt");
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *genome = alignment->openGenome("root");
         stringstream bedFile("rootSequence\t1\t212\tFORWARD\t0\t+\t21\t88\t0\t5\t10,19,6,8,10\t0,18,50,80,90\n"
                              "rootSequence\t1\t213\tREV\t0\t-\t25\t198\t0\t2\t13,17\t20,195\n");

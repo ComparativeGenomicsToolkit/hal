@@ -22,7 +22,7 @@ using namespace hal;
 static RandNumberGen rng;
 
 struct MappedSegmentMapUpTest : virtual public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         vector<Sequence::Info> seqVec(1);
 
         BottomSegmentIteratorPtr bi;
@@ -182,7 +182,7 @@ struct MappedSegmentMapUpTest : virtual public AlignmentTest {
         }
     }
 
-    void testTopSegment(const Alignment *alignment, TopSegmentIteratorPtr top, const string &ancName) {
+    void testTopSegment(AlignmentConstPtr alignment, TopSegmentIteratorPtr top, const string &ancName) {
         const Genome *parent = alignment->openGenome(ancName);
         MappedSegmentSet results;
         halMapSegmentSP(top, results, parent, NULL, false);
@@ -206,8 +206,8 @@ struct MappedSegmentMapUpTest : virtual public AlignmentTest {
         CuAssertTrue(_testCase, mseg->getReversed() == bottom->getReversed());
     }
 
-    virtual void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    virtual void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *child1 = alignment->openGenome("child1");
         const Genome *child2 = alignment->openGenome("child2");
         TopSegmentIteratorPtr top = child2->getTopSegmentIterator();
@@ -240,7 +240,7 @@ struct MappedSegmentMapUpTest : virtual public AlignmentTest {
 };
 
 struct MappedSegmentParseTest : virtual public MappedSegmentMapUpTest {
-    void testTopSegment(const Alignment *alignment, TopSegmentIteratorPtr top) {
+    void testTopSegment(AlignmentConstPtr alignment, TopSegmentIteratorPtr top) {
         const Genome *parent = alignment->openGenome("parent");
         MappedSegmentSet results;
         halMapSegmentSP(top, results, parent, NULL, false);
@@ -274,8 +274,8 @@ struct MappedSegmentParseTest : virtual public MappedSegmentMapUpTest {
         }
     }
 
-    virtual void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    virtual void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *g1 = alignment->openGenome("g1");
         const Genome *g2 = alignment->openGenome("g2");
         const Genome *g3 = alignment->openGenome("g3");
@@ -294,7 +294,7 @@ struct MappedSegmentParseTest : virtual public MappedSegmentMapUpTest {
 };
 
 struct MappedSegmentMapDownTest : public MappedSegmentMapUpTest {
-    void testBottomSegment(const Alignment *alignment, BottomSegmentIteratorPtr bottom,
+    void testBottomSegment(AlignmentConstPtr alignment, BottomSegmentIteratorPtr bottom,
                            hal_size_t childIndex) {
         const Genome *child = bottom->getGenome()->getChild(childIndex);
         MappedSegmentSet results;
@@ -313,8 +313,8 @@ struct MappedSegmentMapDownTest : public MappedSegmentMapUpTest {
         CuAssertTrue(_testCase, mseg->getReversed() == top->getReversed());
     }
 
-    virtual void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    virtual void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *parent = alignment->openGenome("parent");
 
         BottomSegmentIteratorPtr bottom = parent->getBottomSegmentIterator();
@@ -330,7 +330,7 @@ struct MappedSegmentMapDownTest : public MappedSegmentMapUpTest {
 };
 
 struct MappedSegmentMapAcrossTest : public MappedSegmentMapUpTest {
-    void testTopSegment(const Alignment *alignment, TopSegmentIteratorPtr top) {
+    void testTopSegment(AlignmentConstPtr alignment, TopSegmentIteratorPtr top) {
         const Genome *parent = top->getGenome()->getParent();
         const Genome *other =
             top->getGenome()->getName() == "child1" ? alignment->openGenome("child2") : alignment->openGenome("child1");
@@ -352,8 +352,8 @@ struct MappedSegmentMapAcrossTest : public MappedSegmentMapUpTest {
         CuAssertTrue(_testCase, mseg->getReversed() == sister->getReversed());
     }
 
-    void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *child1 = alignment->openGenome("child1");
         const Genome *child2 = alignment->openGenome("child2");
         TopSegmentIteratorPtr top = child2->getTopSegmentIterator();
@@ -372,7 +372,7 @@ struct MappedSegmentMapAcrossTest : public MappedSegmentMapUpTest {
 };
 
  struct MappedSegmentMapDupeTest : virtual public AlignmentTest {
-    virtual void createCallBack(Alignment *alignment) {
+    virtual void createCallBack(AlignmentPtr alignment) {
         vector<Sequence::Info> seqVec(1);
 
         BottomSegmentIteratorPtr bi;
@@ -423,8 +423,8 @@ struct MappedSegmentMapAcrossTest : public MappedSegmentMapUpTest {
         ts.applyTo(ti);
     }
 
-    virtual void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    virtual void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
         const Genome *parent = alignment->openGenome("parent");
         const Genome *child1 = alignment->openGenome("child1");
         const Genome *child2 = alignment->openGenome("child2");
@@ -476,7 +476,7 @@ struct MappedSegmentMapAcrossTest : public MappedSegmentMapUpTest {
 };
 
 struct MappedSegmentMapExtraParalogsTest : virtual public AlignmentTest {
-    virtual void createCallBack(Alignment *alignment) {
+    virtual void createCallBack(AlignmentPtr alignment) {
         vector<Sequence::Info> seqVec(1);
 
         BottomSegmentIteratorPtr bi;
@@ -563,8 +563,8 @@ struct MappedSegmentMapExtraParalogsTest : virtual public AlignmentTest {
         parent->fixParseInfo();
     }
 
-    virtual void checkCallBack(const Alignment *alignment) {
-        validateAlignment(alignment);
+    virtual void checkCallBack(AlignmentConstPtr alignment) {
+        validateAlignment(alignment.get());
 
         const Genome *grandChild1 = alignment->openGenome("grandChild1");
         const Genome *grandChild2 = alignment->openGenome("grandChild2");
@@ -618,12 +618,12 @@ struct MappedSegmentColCompareTest : virtual public AlignmentTest {
     const Genome *_ref;
     const Genome *_tgt;
 
-    virtual void checkCallBack(const Alignment *alignment) {
+    virtual void checkCallBack(AlignmentConstPtr alignment) {
         if (alignment->getNumGenomes() == 0) {
             return;
         }
 
-        validateAlignment(alignment);
+        validateAlignment(alignment.get());
         set<const Genome *> genomeSet;
         hal::getGenomesInSubTree(alignment->openGenome(alignment->getRootName()), genomeSet);
         for (set<const Genome *>::iterator i = genomeSet.begin(); i != genomeSet.end(); ++i) {
@@ -759,39 +759,39 @@ struct MappedSegmentColCompareTest : virtual public AlignmentTest {
 };
 
 struct MappedSegmentColCompareTestCheck1 : virtual public MappedSegmentMapUpTest, virtual public MappedSegmentColCompareTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         MappedSegmentMapUpTest::createCallBack(alignment);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         MappedSegmentColCompareTest::checkCallBack(alignment);
     }
 };
 
 struct MappedSegmentColCompareTestCheck2 : virtual public MappedSegmentMapDupeTest, virtual public MappedSegmentColCompareTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         MappedSegmentMapDupeTest::createCallBack(alignment);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         MappedSegmentColCompareTest::checkCallBack(alignment);
     }
 };
 
 struct MappedSegmentColCompareTest1 : public MappedSegmentColCompareTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         createRandomAlignment(rng, alignment, 2, 0.1, 2, 6, 10, 1000, 5, 10);
     }
 };
 
 struct MappedSegmentColCompareTest2 : public MappedSegmentColCompareTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         createRandomAlignment(rng, alignment, 1.25, 0.7, 2, 8, 2, 50, 10, 500);
     }
 };
 
 struct MappedSegmentColCompareTest3 : public MappedSegmentColCompareTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         createRandomAlignment(rng, alignment, 1.5, 0.7, 6, 12, 1, 100, 50, 1000);
     }
 };

@@ -12,13 +12,13 @@
 using namespace std;
 using namespace hal;
 
-static void getDimensions(const Alignment *outAlignment, const Genome *genome, vector<Sequence::Info> &dimensions);
+static void getDimensions(AlignmentConstPtr outAlignment, const Genome *genome, vector<Sequence::Info> &dimensions);
 
 static void copyGenome(const Genome *inGenome, Genome *outGenome);
 
-static void extractTree(const Alignment *inAlignment, AlignmentPtr outAlignment, const string &rootName);
+static void extractTree(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, const string &rootName);
 
-static void extract(const Alignment *inAlignment, AlignmentPtr outAlignment, const string &rootName);
+static void extract(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, const string &rootName);
 
 static void initParser(CLParser &optionsParser) {
     optionsParser.addArgument("inHalPath", "input hal file");
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     }
 
     try {
-        const Alignment *inAlignment = openHalAlignment(inHalPath, &optionsParser);
+        AlignmentConstPtr inAlignment(openHalAlignment(inHalPath, &optionsParser));
         if (inAlignment->getNumGenomes() == 0) {
             throw hal_exception("input hal alignmenet is empty");
         }
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void getDimensions(const Alignment *outAlignment, const Genome *genome, vector<Sequence::Info> &dimensions) {
+void getDimensions(AlignmentConstPtr outAlignment, const Genome *genome, vector<Sequence::Info> &dimensions) {
     assert(dimensions.size() == 0);
 
     bool root = outAlignment->getParentName(genome->getName()).empty();
@@ -143,7 +143,7 @@ void copyGenome(const Genome *inGenome, Genome *outGenome) {
     }
 }
 
-static void extractTree(const Alignment *inAlignment, AlignmentPtr outAlignment, const string &rootName) {
+static void extractTree(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, const string &rootName) {
     const Genome *genome = inAlignment->openGenome(rootName);
     Genome *newGenome = NULL;
     if (outAlignment->getNumGenomes() == 0 || genome->getParent() == NULL) {
@@ -165,7 +165,7 @@ static void extractTree(const Alignment *inAlignment, AlignmentPtr outAlignment,
     }
 }
 
-void extract(const Alignment *inAlignment, AlignmentPtr outAlignment, const string &rootName) {
+void extract(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, const string &rootName) {
     const Genome *genome = inAlignment->openGenome(rootName);
     Genome *newGenome = outAlignment->openGenome(rootName);
     assert(newGenome != NULL);

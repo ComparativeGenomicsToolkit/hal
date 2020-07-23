@@ -21,7 +21,7 @@ using namespace std;
 using namespace hal;
 
 struct SequenceCreateTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -36,7 +36,7 @@ struct SequenceCreateTest : public AlignmentTest {
         ancGenome->setDimensions(seqVec);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("AncGenome");
 
         hal_size_t numSequences = ancGenome->getNumSequences();
@@ -88,7 +88,7 @@ struct SequenceCreateTest : public AlignmentTest {
 };
 
 struct SequenceIteratorTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -104,7 +104,7 @@ struct SequenceIteratorTest : public AlignmentTest {
         ancGenome->setDimensions(seqVec);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("AncGenome");
 
         hal_size_t numSequences = ancGenome->getNumSequences();
@@ -140,7 +140,7 @@ struct SequenceIteratorTest : public AlignmentTest {
 };
 
 struct SequenceUpdateTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         hal_size_t alignmentSize = alignment->getNumGenomes();
         CuAssertTrue(_testCase, alignmentSize == 0);
 
@@ -172,7 +172,7 @@ struct SequenceUpdateTest : public AlignmentTest {
         ancGenome->updateBottomDimensions(updateVec);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("AncGenome");
 
         hal_size_t numSequences = ancGenome->getNumSequences();
@@ -227,7 +227,7 @@ struct SequenceUpdateTest : public AlignmentTest {
 };
 
 struct SequenceRenameTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         Genome *ancGenome = alignment->addRootGenome("AncGenome", 0);
 
         vector<Sequence::Info> seqVec;
@@ -244,7 +244,7 @@ struct SequenceRenameTest : public AlignmentTest {
         ancGenome->getSequence("short")->setName("again");
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         const Genome *ancGenome = alignment->openGenome("AncGenome");
 
         CuAssertTrue(_testCase, ancGenome->getNumSequences() == 3);

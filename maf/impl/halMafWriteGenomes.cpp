@@ -133,7 +133,7 @@ void MafWriteGenomes::createGenomes() {
             Genome *childGenome = _alignment->openGenome(childName);
 
             childGenome->setDimensions(genomeDimensions);
-            if (_topSegment.get() == NULL && childGenome->getNumTopSegments() > 0) {
+            if (_topSegment == NULL && childGenome->getNumTopSegments() > 0) {
                 _topSegment = childGenome->getTopSegmentIterator();
                 _paraTop = childGenome->getTopSegmentIterator();
             }

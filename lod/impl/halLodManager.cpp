@@ -116,7 +116,7 @@ void LodManager::loadSingeHALFile(const string &halPath, const CLParser *options
     checkMap(halPath);
 }
 
-const Alignment *LodManager::getAlignment(hal_size_t queryLength, bool needDNA) {
+AlignmentConstPtr LodManager::getAlignment(hal_size_t queryLength, bool needDNA) {
     assert(_map.size() > 0);
     AlignmentMap::iterator mapIt;
     if (needDNA == true) {
@@ -133,10 +133,10 @@ const Alignment *LodManager::getAlignment(hal_size_t queryLength, bool needDNA) 
     }
     if (alignment.get() == NULL) {
         alignment = AlignmentConstPtr(openHalAlignment(mapIt->second.first, _options));
-        checkAlignment(mapIt->first, mapIt->second.first, alignment.get());
+        checkAlignment(mapIt->first, mapIt->second.first, alignment);
     }
     assert(mapIt->second.second.get() != NULL);
-    return alignment.get();
+    return alignment;
 }
 
 bool LodManager::isLod0(hal_size_t queryLength) const {
@@ -172,7 +172,7 @@ void LodManager::checkMap(const string &lodPath) {
     }
 }
 
-void LodManager::checkAlignment(hal_size_t minQuery, const string &path, const Alignment *alignment) {
+void LodManager::checkAlignment(hal_size_t minQuery, const string &path, AlignmentConstPtr alignment) {
     if (alignment->getNumGenomes() == 0) {
         throw hal_exception("No genomes found in base alignment specified in " + path);
     }

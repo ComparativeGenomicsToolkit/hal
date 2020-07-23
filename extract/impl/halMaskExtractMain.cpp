@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
         }
 
         MaskExtractor mask;
-        mask.extract(alignment.get(), genome, bedStream, extend, extendPct);
+        mask.extract(alignment, genome, bedStream, extend, extendPct);
 
         if (newBed) {
             delete bedStream;

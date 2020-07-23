@@ -15,7 +15,7 @@ using namespace std;
 using namespace hal;
 
 struct RearrangementInsertionTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         size_t numSequences = 3;
         size_t numSegmentsPerSequence = 10;
         size_t segmentLength = 50;
@@ -47,7 +47,7 @@ struct RearrangementInsertionTest : public AlignmentTest {
         // insertion larger than gap threshold but that contains gaps
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         BottomSegmentIteratorPtr bi;
         TopSegmentIteratorPtr ti;
 
@@ -69,7 +69,7 @@ struct RearrangementInsertionTest : public AlignmentTest {
 };
 
 struct RearrangementSimpleInversionTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         size_t numSequences = 3;
         size_t numSegmentsPerSequence = 10;
         size_t segmentLength = 50;
@@ -98,7 +98,7 @@ struct RearrangementSimpleInversionTest : public AlignmentTest {
         ti->getTopSegment()->setParentReversed(true);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         BottomSegmentIteratorPtr bi;
         TopSegmentIteratorPtr ti;
 
@@ -122,7 +122,7 @@ struct RearrangementSimpleInversionTest : public AlignmentTest {
 };
 
 struct RearrangementGappedInversionTest : public AlignmentTest {
-    void createCallBack(Alignment *alignment) {
+    void createCallBack(AlignmentPtr alignment) {
         size_t numSequences = 3;
         size_t numSegmentsPerSequence = 10;
         size_t segmentLength = 5;
@@ -174,7 +174,7 @@ struct RearrangementGappedInversionTest : public AlignmentTest {
         ti->getTopSegment()->setParentReversed(true);
     }
 
-    void checkCallBack(const Alignment *alignment) {
+    void checkCallBack(AlignmentConstPtr alignment) {
         BottomSegmentIteratorPtr bi;
         TopSegmentIteratorPtr ti;
 

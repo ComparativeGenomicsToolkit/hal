@@ -25,14 +25,14 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.setDescription("Convert alignments into synteny blocks");
 }
 
-const Genome *openGenomeOrThrow(const Alignment *alignment, const std::string &genomeName) {
+const Genome *openGenomeOrThrow(AlignmentConstPtr alignment, const std::string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
     return genome;
 }
 
-const Alignment *openAlignmentOrThrow(const std::string &alignmentFile, const CLParser &optionsParser) {
+AlignmentConstPtr openAlignmentOrThrow(const std::string &alignmentFile, const CLParser &optionsParser) {
 
-    auto alignment = openHalAlignment(alignmentFile, &optionsParser);
+    AlignmentConstPtr alignment(openHalAlignment(alignmentFile, &optionsParser));
     if (alignment->getNumGenomes() == 0) {
         throw hal_exception("hal alignment is empty");
     }
@@ -78,7 +78,7 @@ static std::vector<std::string> getChromNames(const Genome *genome) {
     return chromNames;
 }
 
-static void syntenyBlockForChrom(const Alignment *alignment,
+static void syntenyBlockForChrom(AlignmentConstPtr alignment,
                                  const Genome *targetGenome, const Genome *queryGenome,
                                  std::string queryChromosome, hal_size_t minBlockSize,
                                  hal_size_t maxAnchorDistance, std::ofstream &pslFh) {
@@ -89,7 +89,7 @@ static void syntenyBlockForChrom(const Alignment *alignment,
 
 
 /* do one chromosome at a time to reduce memory */
-static void syntenyFromHal(const Alignment *alignment, std::string queryGenomeName,
+static void syntenyFromHal(AlignmentConstPtr alignment, std::string queryGenomeName,
                            std::string targetGenomeName, std::string queryChromosome,
                            hal_size_t minBlockSize, hal_size_t maxAnchorDistance, std::string outPslPath) {
     auto targetGenome = alignment->openGenome(targetGenomeName);

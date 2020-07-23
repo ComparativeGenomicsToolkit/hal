@@ -23,15 +23,15 @@ WiggleLiftover::WiggleLiftover() {
 WiggleLiftover::~WiggleLiftover() {
 }
 
-void WiggleLiftover::preloadOutput(const Alignment *alignment, const Genome *tgtGenome, istream *inputFile) {
+void WiggleLiftover::preloadOutput(AlignmentConstPtr alignment, const Genome *tgtGenome, istream *inputFile) {
     WiggleLoader loader;
     _outVals.init(tgtGenome->getSequenceLength(), DefaultValue, DefaultTileSize);
     loader.load(alignment, tgtGenome, inputFile, &_outVals);
 }
 
-void WiggleLiftover::convert(const Alignment *alignment, const Genome *srcGenome, istream *inputFile, const Genome *tgtGenome,
+void WiggleLiftover::convert(AlignmentConstPtr alignment, const Genome *srcGenome, istream *inputFile, const Genome *tgtGenome,
                              ostream *outputFile, bool traverseDupes, bool unique) {
-    _alignment = AlignmentConstPtr(alignment);
+    _alignment = alignment;
     _srcGenome = srcGenome;
     _tgtGenome = tgtGenome;
     _outStream = outputFile;

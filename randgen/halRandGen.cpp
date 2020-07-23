@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
     try {
         AlignmentPtr alignment(openHalAlignment(options._halFile, &optionsParser, hal::CREATE_ACCESS));
         // call the crappy unit-test simulator
-        createRandomAlignment(rng, alignment.get(), options._meanDegree, options._maxBranchLength, options._minGenomes,
+        createRandomAlignment(rng, alignment, options._meanDegree, options._maxBranchLength, options._minGenomes,
                               options._maxGenomes, options._minSegmentLength, options._maxSegmentLength, options._minSegments,
                               options._maxSegments);
 

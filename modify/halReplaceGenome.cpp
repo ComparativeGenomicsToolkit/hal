@@ -31,7 +31,7 @@ static void initParser(CLParser &optionsParser) {
         false);
 }
 
-void copyFromTopAlignment(const Alignment *topAlignment, Alignment *mainAlignment, const string &genomeName) {
+void copyFromTopAlignment(AlignmentConstPtr topAlignment, AlignmentPtr mainAlignment, const string &genomeName) {
     Genome *mainReplacedGenome = mainAlignment->openGenome(genomeName);
     const Genome *topReplacedGenome = topAlignment->openGenome(genomeName);
     topReplacedGenome->copyTopDimensions(mainReplacedGenome);
@@ -56,7 +56,7 @@ void copyFromTopAlignment(const Alignment *topAlignment, Alignment *mainAlignmen
     }
 }
 
-void copyFromBottomAlignment(const Alignment *bottomAlignment, Alignment *mainAlignment, const string &genomeName) {
+void copyFromBottomAlignment(AlignmentConstPtr bottomAlignment, AlignmentPtr mainAlignment, const string &genomeName) {
     Genome *mainReplacedGenome = mainAlignment->openGenome(genomeName);
     const Genome *botReplacedGenome = bottomAlignment->openGenome(genomeName);
     // Add children if needed
@@ -139,10 +139,10 @@ int main(int argc, char *argv[]) {
         throw hal_exception("Root genome is also a leaf genome.");
     }
     if (useBottomAlignment) {
-        copyFromBottomAlignment(bottomAlignment.get(), mainAlignment.get(), genomeName);
+        copyFromBottomAlignment(bottomAlignment, mainAlignment, genomeName);
     }
     if (useTopAlignment) {
-        copyFromTopAlignment(topAlignment.get(), mainAlignment.get(), genomeName);
+        copyFromTopAlignment(topAlignment, mainAlignment, genomeName);
     }
 
     // Clear update flag if present, since the genome has just been updated.
@@ -152,6 +152,6 @@ int main(int argc, char *argv[]) {
     }
 
     if (!noMarkAncestors) {
-        markAncestorsForUpdate(mainAlignment.get(), genomeName);
+        markAncestorsForUpdate(mainAlignment, genomeName);
     }
 }

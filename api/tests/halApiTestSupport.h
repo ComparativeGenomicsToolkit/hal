@@ -18,7 +18,7 @@ extern "C" {
 using namespace hal;
 using namespace std;
 
-Alignment *getTestAlignmentInstances(const string &storageFormat, const string &alignmentPath, unsigned mode);
+AlignmentPtr getTestAlignmentInstances(const string &storageFormat, const string &alignmentPath, unsigned mode);
 
 /** parse command line and run a test suite for the given storage driver,
  * return exit code  */
@@ -33,9 +33,9 @@ class AlignmentTest {
     virtual ~AlignmentTest() {
     }
     void check(CuTest *testCase);
-    virtual void createCallBack(Alignment *alignment) {
+    virtual void createCallBack(AlignmentPtr alignment) {
     }
-    virtual void checkCallBack(const Alignment *alignment) {
+    virtual void checkCallBack(AlignmentConstPtr alignment) {
     }
     CuTest *_testCase;
     string _createPath;
