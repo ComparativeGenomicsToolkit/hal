@@ -27,6 +27,9 @@ static void initParser(CLParser &optionsParser) {
 
 const Genome *openGenomeOrThrow(AlignmentConstPtr alignment, const std::string &genomeName) {
     const Genome *genome = alignment->openGenome(genomeName);
+    if (genome == NULL) {
+        throw hal_exception(std::string("Reference genome, ") + genomeName + ", not found in alignment");
+    }
     return genome;
 }
 
@@ -92,8 +95,8 @@ static void syntenyBlockForChrom(AlignmentConstPtr alignment,
 static void syntenyFromHal(AlignmentConstPtr alignment, std::string queryGenomeName,
                            std::string targetGenomeName, std::string queryChromosome,
                            hal_size_t minBlockSize, hal_size_t maxAnchorDistance, std::string outPslPath) {
-    auto targetGenome = alignment->openGenome(targetGenomeName);
-    auto queryGenome = alignment->openGenome(queryGenomeName);
+    auto targetGenome = openGenomeOrThrow(alignment, targetGenomeName);
+    auto queryGenome = openGenomeOrThrow(alignment, queryGenomeName);
     std::vector<std::string> chromNames;
     if (queryChromosome != "\"\"") {
         chromNames.push_back(queryChromosome);

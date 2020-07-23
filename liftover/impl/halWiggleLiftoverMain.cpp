@@ -78,7 +78,13 @@ int main(int argc, char **argv) {
         }
 
         const Genome *srcGenome = alignment->openGenome(srcGenomeName);
+        if (srcGenome == NULL) {
+            throw hal_exception(string("srcGenome, ") + srcGenomeName + ", not found in alignment");
+        }
         const Genome *tgtGenome = alignment->openGenome(tgtGenomeName);
+        if (tgtGenome == NULL) {
+            throw hal_exception(string("tgtGenome, ") + tgtGenomeName + ", not found in alignment");
+        }
 
         ifstream srcWig;
         istream *srcWigPtr;

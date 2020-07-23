@@ -568,10 +568,8 @@ extern "C" struct hal_chromosome_t *halGetChroms(int halHandle, char *speciesNam
         // read the lowest level of detail because it's fastest
         AlignmentConstPtr alignment = getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), false);
 
-        const Genome *genome = NULL;
-        try {
-            genome = alignment->openGenome(speciesName);
-        } catch (const GenomeNotFoundException& ex) {
+        const Genome *genome = alignment->openGenome(speciesName);
+        if (genome == NULL) {
             halUnlock();
             handleError("halGetChroms: species with name " + string(speciesName) + " not found in alignment with handle " +
                             std::to_string(halHandle),
@@ -615,13 +613,11 @@ extern "C" char *halGetDna(int halHandle, char *speciesName, char *chromName, ha
     char *dna = NULL;
     try {
         AlignmentConstPtr alignment = getExistingAlignment(halHandle, 0, true);
-        const Genome *genome = NULL;
-        try {
-            genome = alignment->openGenome(speciesName);
-        } catch (const GenomeNotFoundException& ex) {
+        const Genome *genome = alignment->openGenome(speciesName);
+        if (genome == NULL) {
             halUnlock();
             handleError("halGetChroms: species with name " + string(speciesName) + " not found in alignment with handle " +
-                            std::to_string(halHandle),
+                        std::to_string(halHandle),
                         errStr);
             return NULL;
         }
@@ -695,8 +691,17 @@ static void checkHandle(int handle) {
 
 static void checkGenomes(int halHandle, AlignmentConstPtr alignment, const string &qSpecies, const string &tSpecies,
                          const string &tChrom) {
-    alignment->closeGenome(alignment->openGenome(qSpecies)); // check for existance
+    const Genome *qGenome = alignment->openGenome(qSpecies);
+    if (qGenome == NULL) {
+        throw hal_exception("Query species " + qSpecies + " not found in alignment with " + "handle " +
+                            std::to_string(halHandle));
+    }
     const Genome *tGenome = alignment->openGenome(tSpecies);
+    if (tGenome == NULL) {
+        throw hal_exception("Reference species " + tSpecies + " not found in alignment with " + "handle " +
+                            std::to_string(halHandle));
+    }
+
     const Sequence *tSequence = tGenome->getSequence(tChrom);
     if (tSequence == NULL) {
         throw hal_exception("Unable to locate sequence " + tChrom + " in genome " + tSpecies);
@@ -743,6 +748,9 @@ static hal_block_results_t *readBlocks(AlignmentConstPtr seqAlignment, const Seq
 
         if (coalescenceLimitName != NULL) {
             coalescenceLimit = alignment->openGenome(coalescenceLimitName);
+            if (coalescenceLimit == NULL) {
+                throw hal_exception("Could not find coalescence limit " + string(coalescenceLimitName) + " in alignment");
+            }
         }
 
         blockMapper.init(tGenome, qGenome, absStart, absEnd, tReversed, doDupes, 0, doAdjes, coalescenceLimit);
@@ -831,12 +839,19 @@ static void readBlock(AlignmentConstPtr seqAlignment, hal_block_t *cur, vector<M
     cur->qSequence = NULL;
     if (getSequenceString != 0) {
         const Genome *qSeqGenome = seqAlignment->openGenome(qSequence->getGenome()->getName());
+        if (qSeqGenome == NULL) {
+            throw hal_exception("Unable to open genome " + qSequence->getGenome()->getName() + " for DNA sequence extraction");
+        }
         const Sequence *qSeqSequence = qSeqGenome->getSequence(qSequence->getName());
         if (qSeqSequence == NULL) {
             throw hal_exception("Unable to open sequence " + qSequence->getName() + " for DNA sequence extraction");
         }
 
         const Genome *tSeqGenome = seqAlignment->openGenome(tSequence->getGenome()->getName());
+        if (tSeqGenome == NULL) {
+            throw hal_exception("Unable to open genome " + tSequence->getGenome()->getName() + " for DNA sequence extraction");
+        }
+
         const Sequence *tSeqSequence = tSeqGenome->getSequence(tSequence->getName());
         if (tSeqSequence == NULL) {
             throw hal_exception("Unable to open sequence " + tSequence->getName() + " for DNA sequence extraction");
@@ -1083,6 +1098,9 @@ extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle, const char
         AlignmentConstPtr alignment = getExistingAlignment(halHandle, numeric_limits<hal_size_t>::max(), false);
 
         const Genome *genome = alignment->openGenome(genomeName);
+        if (genome == NULL) {
+            throw hal_exception("Genome " + string(genomeName) + " not found in alignment");
+        }
         const MetaData *metaData = genome->getMetaData();
         const map<string, string> metaDataMap = metaData->getMap();
 

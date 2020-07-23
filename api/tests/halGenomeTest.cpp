@@ -70,12 +70,8 @@ struct GenomeCreateTest : public AlignmentTest {
         leaf3Genome->setDimensions(seqVec);
     }
 
-    void checkCallBack(AlignmentConstPtr alignment) {
-        const Genome *dudGenome = NULL;
-        try {
-            dudGenome = alignment->openGenome("Zebra");
-        } catch (const GenomeNotFoundException& ex) {
-        }
+    void checkCallBack(const Alignment *alignment) {
+        const Genome *dudGenome = alignment->openGenome("Zebra");
         CuAssertTrue(_testCase, dudGenome == NULL);
         const Genome *ancGenome = alignment->openGenome("AncGenome");
         const MetaData *ancMeta = ancGenome->getMetaData();

@@ -69,9 +69,12 @@ int main(int argc, char **argv) {
         AlignmentPtr alignment;
         if (append == true) {
             alignment = AlignmentPtr(openHalAlignment(halPath, &optionsParser, WRITE_ACCESS));
-            const Genome *refGenome = alignment->openGenome(refGenomeName);
-            if (alignment->openGenome(refGenomeName)->getNumChildren() > 0) {
-                throw hal_exception("Reference genome " + refGenomeName + " not a leaf in hal file");
+            if (alignment->openGenome(refGenomeName) == NULL) {
+                throw hal_exception("Reference genome " + refGenomeName + " not found "
+                                                                          "in hal file");
+            } else if (alignment->openGenome(refGenomeName)->getNumChildren() > 0) {
+                throw hal_exception("Reference genome " + refGenomeName + " not a leaf "
+                                                                          "in hal file");
             }
         } else {
             alignment = AlignmentPtr(openHalAlignment(halPath, &optionsParser, CREATE_ACCESS));

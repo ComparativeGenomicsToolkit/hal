@@ -6,11 +6,9 @@ using namespace hal;
 // Mark that all nodes above this one (but not this one) need to be
 // updated.
 void markAncestorsForUpdate(AlignmentPtr alignment, string node) {
-    Genome *parent = NULL;
-    try {
-        parent = alignment->openGenome(alignment->getParentName(node));
-    } catch (const GenomeNotFoundException& ex) {
-        return;  // ignore, not sure why, original code did this.
+    Genome *parent = alignment->openGenome(alignment->getParentName(node));
+    if (!parent) {
+        return;
     }
     MetaData *metadata = parent->getMetaData();
     metadata->set("needsUpdate", "true");

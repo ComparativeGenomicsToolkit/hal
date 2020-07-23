@@ -77,6 +77,9 @@ int main(int argc, char **argv) {
         const Genome *rootGenome = NULL;
         if (rootGenomeName != "\"\"") {
             rootGenome = alignment->openGenome(rootGenomeName);
+            if (rootGenome == NULL) {
+                throw hal_exception(string("Root genome, ") + rootGenomeName + ", not found in alignment");
+            }
             if (rootGenomeName != alignment->getRootName()) {
                 getGenomesInSubTree(rootGenome, targetSet);
             } else {
@@ -88,6 +91,9 @@ int main(int argc, char **argv) {
             vector<string> targetNames = chopString(targetGenomes, ",");
             for (size_t i = 0; i < targetNames.size(); ++i) {
                 const Genome *tgtGenome = alignment->openGenome(targetNames[i]);
+                if (tgtGenome == NULL) {
+                    throw hal_exception(string("Target genome, ") + targetNames[i] + ", not found in alignment");
+                }
                 targetSet.insert(tgtGenome);
             }
         }

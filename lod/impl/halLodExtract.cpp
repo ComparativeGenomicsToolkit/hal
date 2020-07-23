@@ -88,7 +88,12 @@ void LodExtract::createTree(const string &tree, const string &rootName) {
         if (label == NULL) {
             throw hal_exception("Error parsing tree: unlabeled node");
         }
-        _inAlignment->closeGenome(_inAlignment->openGenome(label)); // check for genome
+        const Genome *test = _inAlignment->openGenome(label);
+        if (test == NULL) {
+            throw hal_exception(string("Genome in tree: ") + string(label) + "doesn't exist in source alignment");
+        } else {
+            _inAlignment->closeGenome(test);
+        }
         if (node == root) {
             _outAlignment->addRootGenome(label);
         } else {
@@ -116,6 +121,7 @@ void LodExtract::createTree(const string &tree, const string &rootName) {
 
 void LodExtract::convertInternalNode(const string &genomeName, double scale) {
     const Genome *parent = _inAlignment->openGenome(genomeName);
+    assert(parent != NULL);
     vector<string> childNames = _outAlignment->getChildNames(genomeName);
     vector<const Genome *> children;
     for (hal_size_t i = 0; i < childNames.size(); ++i) {
@@ -247,7 +253,8 @@ void LodExtract::writeSequences(const Genome *inParent, const vector<const Genom
     vector<const Genome *> inGenomes = inChildren;
     inGenomes.push_back(inParent);
     const Genome *outParent = _outAlignment->openGenome(inParent->getName());
-    assert(outParent->getNumBottomSegments() > 0);
+    (void)outParent;
+    assert(outParent != NULL && outParent->getNumBottomSegments() > 0);
     string buffer;
 
     for (hal_size_t i = 0; i < inGenomes.size(); ++i) {
@@ -271,7 +278,7 @@ void LodExtract::writeSegments(const Genome *inParent, const vector<const Genome
     vector<const Genome *> inGenomes = inChildren;
     inGenomes.push_back(inParent);
     const Genome *outParent = _outAlignment->openGenome(inParent->getName());
-    assert(outParent->getNumBottomSegments() > 0);
+    assert(outParent != NULL && outParent->getNumBottomSegments() > 0);
     BottomSegmentIteratorPtr bottom;
     TopSegmentIteratorPtr top;
     SegmentIteratorPtr outSegment;
@@ -344,7 +351,7 @@ void LodExtract::writeHomologies(const Genome *inParent, const vector<const Geno
     vector<const Genome *> inGenomes = inChildren;
     inGenomes.push_back(inParent);
     Genome *outParent = _outAlignment->openGenome(inParent->getName());
-    assert(outParent->getNumBottomSegments() > 0);
+    assert(outParent != NULL && outParent->getNumBottomSegments() > 0);
     assert(inChildren.size() > 0);
     Genome *outChild = _outAlignment->openGenome(inChildren[0]->getName());
     BottomSegmentIteratorPtr bottom = outParent->getBottomSegmentIterator();
