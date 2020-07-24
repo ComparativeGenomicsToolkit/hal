@@ -13,14 +13,7 @@
 #include <vector>
 
 namespace hal {
-    /* thrown when alignment not found */
-    class GenomeNotFoundException: public hal_exception {
-        public:
-        GenomeNotFoundException(const std::string &name):
-            hal_exception("Genome not found: " + name) {
-        }
-    };
-    
+
     /**
      * Interface for a hierarhcical alignment.  Responsible for creating
      * and accessing genomes and tree information.  Accesssing a HAL file must
@@ -72,14 +65,11 @@ namespace hal {
 
         /** Open an exsting genome for reading
          * @param name Name of genome to open
-         * @throws GenomeNotFoundException
-         * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome()
-         */
+         * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
         virtual const Genome *openGenome(const std::string &name) const = 0;
 
         /** Open an existing genome for reading and updating
          * @param name Name of genome to open.
-         * @throws GenomeNotFoundException
          * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
         virtual Genome *openGenome(const std::string &name) = 0;
 

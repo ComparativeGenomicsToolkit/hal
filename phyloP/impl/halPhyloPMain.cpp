@@ -122,6 +122,9 @@ int main(int argc, char **argv) {
         const Genome *refGenome = NULL;
         if (refGenomeName != "\"\"") {
             refGenome = alignment->openGenome(refGenomeName);
+            if (refGenome == NULL) {
+                throw hal_exception(string("Reference genome, ") + refGenomeName + ", not found in alignment");
+            }
         } else {
             refGenome = alignment->openGenome(alignment->getRootName());
         }

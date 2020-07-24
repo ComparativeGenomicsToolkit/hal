@@ -61,6 +61,10 @@ int main(int argc, char **argv) {
         }
 
         const Genome *genome = inAlignment->openGenome(genomeName);
+
+        if (genome == NULL) {
+            throw hal_exception(string("Unable to open genome ") + genomeName + "in alignment.");
+        }
         if (genome->getParent() != NULL) {
             ostream *bedStream = &cout;
             if (outBedPath != "stdout") {

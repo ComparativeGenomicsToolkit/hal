@@ -131,6 +131,7 @@ void MafWriteGenomes::createGenomes() {
                     Sequence::Info(sequenceName(i->first), i->second->_length, i->second->_numSegments, 0));
             }
             Genome *childGenome = _alignment->openGenome(childName);
+            assert(childGenome != NULL);
 
             childGenome->setDimensions(genomeDimensions);
             if (_topSegment == NULL && childGenome->getNumTopSegments() > 0) {
@@ -175,6 +176,7 @@ void MafWriteGenomes::initBlockInfo(size_t col) {
             assert(_dimMap->find(_block[i]._sequenceName) != _dimMap->end());
             _blockInfo[i]._record = _dimMap->find(_block[i]._sequenceName)->second;
             _blockInfo[i]._genome = _alignment->openGenome(genomeName(_block[i]._sequenceName));
+            assert(_blockInfo[i]._genome != NULL);
             _blockInfo[i]._skip = false;
             // correction for - strand: need to iterate index right to left
             // so keep a correctly flipped maf line here (rather than doing it
@@ -262,6 +264,7 @@ void MafWriteGenomes::initParaMap() {
     for (size_t i = 0; i < _rows; ++i) {
         Row &row = _block[i];
         Genome *genome = _alignment->openGenome(genomeName(row._sequenceName));
+        assert(genome != NULL);
         Sequence *sequence = genome->getSequence(sequenceName(row._sequenceName));
         assert(sequence != NULL);
         Paralogy para = {sequence->getStartPosition() + static_cast<hal_index_t>(row._startPosition), i};

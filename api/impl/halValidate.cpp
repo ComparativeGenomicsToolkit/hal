@@ -311,6 +311,9 @@ void hal::validateAlignment(const Alignment *alignment) {
         bfQueue.pop_back();
         if (name.empty() == false) {
             const Genome *genome = alignment->openGenome(name);
+            if (genome == NULL) {
+                throw hal_exception("Failure to open genome " + name);
+            }
             validateGenome(genome);
             vector<string> childNames = alignment->getChildNames(name);
             for (size_t i = 0; i < childNames.size(); ++i) {

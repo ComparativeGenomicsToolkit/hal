@@ -200,6 +200,7 @@ vector<const Genome *> hal::getLeafGenomes(const Alignment *alignment) {
     vector<const Genome *> leafGenomes;
     for (hal_size_t i = 0; i < leafNames.size(); i++) {
         const Genome *genome = alignment->openGenome(leafNames[i]);
+        assert(genome != NULL);
         leafGenomes.push_back(genome);
     }
     return leafGenomes;

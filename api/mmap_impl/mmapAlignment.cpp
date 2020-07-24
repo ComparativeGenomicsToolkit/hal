@@ -166,17 +166,17 @@ Genome *MMapAlignment::_openGenome(const string &name) const {
         return _openGenomes[name];
     }
     if (_genomeNameHash == NULL) {
-        throw GenomeNotFoundException(name);
+        return NULL;
     }
     hal_index_t genomeIndex = _genomeNameHash->getIndex(name);
     if (genomeIndex == NULL_INDEX) {
-        throw GenomeNotFoundException(name);
+        return NULL;
     }
     // FIXME: put this in a function
     MMapGenomeData *genomeDataArray =
         (MMapGenomeData *)resolveOffset(_data->_genomeArrayOffset, _data->_numGenomes * sizeof(MMapGenomeData));
     if (genomeDataArray[genomeIndex].getName(const_cast<MMapAlignment *>(this)) != name) {
-        throw GenomeNotFoundException(name); // name not in perfect hash
+        return NULL; // name not in perfect hash
     }
     MMapGenome *genome = new MMapGenome(const_cast<MMapAlignment *>(this), &genomeDataArray[genomeIndex], genomeIndex);
     _openGenomes[name] = genome;

@@ -419,6 +419,9 @@ int main(int argc, char *argv[]) {
 
     AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
     const Genome *refGenome = alignment->openGenome(refGenomeName);
+    if (refGenome == NULL) {
+        throw hal_exception("Genome " + refGenomeName + " does not exist");
+    }
     if (refGenome->getParent() == NULL) {
         throw hal_exception("Cannot use the root genome as a reference.");
     }

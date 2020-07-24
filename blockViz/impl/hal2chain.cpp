@@ -69,6 +69,9 @@ int main(int argc, char **argv) {
         AlignmentConstPtr alignment(openHalAlignment(halPath, &optionsParser));
 
         const Genome *genome = alignment->openGenome(genomeName);
+        if (genome == NULL) {
+            throw hal_exception(string("Genome not found: ") + genomeName);
+        }
         hal_index_t endPosition = length > 0 ? start + length : genome->getSequenceLength();
 
         const Sequence *sequence = NULL;

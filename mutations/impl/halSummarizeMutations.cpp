@@ -67,6 +67,7 @@ void SummarizeMutations::analyzeAlignmentPtr(AlignmentConstPtr alignment, hal_si
 
 void SummarizeMutations::analyzeGenomeRecursive(const string &genomeName) {
     const Genome *genome = _alignment->openGenome(genomeName);
+    assert(genome != NULL);
     const Genome *parent = genome->getParent();
     MutationsStats stats = {0};
     stats._genomeLength = genome->getSequenceLength();

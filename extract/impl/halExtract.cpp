@@ -145,6 +145,9 @@ void copyGenome(const Genome *inGenome, Genome *outGenome) {
 
 static void extractTree(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, const string &rootName) {
     const Genome *genome = inAlignment->openGenome(rootName);
+    if (genome == NULL) {
+        throw hal_exception(string("Genome not found: ") + rootName);
+    }
     Genome *newGenome = NULL;
     if (outAlignment->getNumGenomes() == 0 || genome->getParent() == NULL) {
         newGenome = outAlignment->addRootGenome(rootName);
