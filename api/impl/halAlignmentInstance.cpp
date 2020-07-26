@@ -121,8 +121,8 @@ const std::string &hal::detectHalAlignmentFormat(const std::string &path, const 
     }
 }
 
-Alignment *hal::openHalAlignment(const std::string &path, const CLParser *options, unsigned mode,
-                                 const std::string &overrideFormat) {
+AlignmentPtr hal::openHalAlignment(const std::string &path, const CLParser *options, unsigned mode,
+                                   const std::string &overrideFormat) {
     std::string fmt;
     if (not overrideFormat.empty()) {
         fmt = overrideFormat;
@@ -138,16 +138,16 @@ Alignment *hal::openHalAlignment(const std::string &path, const CLParser *option
     }
     if (fmt == STORAGE_FORMAT_HDF5) {
         if (options == NULL) {
-            return new Hdf5Alignment(path, mode, hdf5DefaultFileCreatPropList(), hdf5DefaultFileAccPropList(),
-                                     hdf5DefaultDSetCreatPropList());
+            return AlignmentPtr(new Hdf5Alignment(path, mode, hdf5DefaultFileCreatPropList(), hdf5DefaultFileAccPropList(),
+                                                  hdf5DefaultDSetCreatPropList()));
         } else {
-            return new Hdf5Alignment(path, mode, options);
+            return AlignmentPtr(new Hdf5Alignment(path, mode, options));
         }
     } else if (fmt == STORAGE_FORMAT_MMAP) {
         if (options == NULL) {
-            return new MMapAlignment(path, mode);
+            return AlignmentPtr(new MMapAlignment(path, mode));
         } else {
-            return new MMapAlignment(path, mode, options);
+            return AlignmentPtr(new MMapAlignment(path, mode, options));
         }
     } else {
         throw hal_exception("invalid --format argument " + fmt + ", expected one of " + STORAGE_FORMAT_HDF5 + " or " +
