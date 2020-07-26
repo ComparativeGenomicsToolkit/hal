@@ -16,6 +16,13 @@
 #include <vector>
 
 namespace hal {
+    /* thrown when sequence not found in genome */
+    class SequenceNotFoundException: public hal_exception {
+        public:
+        SequenceNotFoundException(const Genome* genome,
+                                  const std::string &name);
+    };
+
 
     /**
      * Interface for a genome within a hal alignment.  The genome
@@ -71,6 +78,24 @@ namespace hal {
 
         /** Get a (read-only) sequence by name */
         virtual const Sequence *getSequence(const std::string &name) const = 0;
+
+        /** Get a sequence by name, raise exception if not found */
+        Sequence *getSequenceCheck(const std::string &name) {
+            Sequence *sequence = getSequence(name);
+            if (sequence == NULL) {
+                throw SequenceNotFoundException(this, name);
+            }
+            return sequence;
+        }
+
+        /** Get a (read-only) sequence by name, raise exception if not found */
+        const Sequence *getSequenceCheck(const std::string &name) const {
+            const Sequence *sequence = getSequence(name);
+            if (sequence == NULL) {
+                throw SequenceNotFoundException(this, name);
+            }
+            return sequence;
+        }
 
         /** Get a sequence by base's position (in genome coordinates) */
         virtual Sequence *getSequenceBySite(hal_size_t position) = 0;

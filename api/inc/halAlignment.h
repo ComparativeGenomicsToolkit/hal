@@ -13,6 +13,13 @@
 #include <vector>
 
 namespace hal {
+    /* thrown when genome not found in alignment */
+    class GenomeNotFoundException: public hal_exception {
+        public:
+        GenomeNotFoundException(const std::string &name):
+            hal_exception("Genome not found: '" + name + "'") {
+        }
+    };
 
     /**
      * Interface for a hierarhcical alignment.  Responsible for creating
@@ -65,13 +72,41 @@ namespace hal {
 
         /** Open an exsting genome for reading
          * @param name Name of genome to open
+         * @return Genome object or NULL is not found
          * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
         virtual const Genome *openGenome(const std::string &name) const = 0;
 
         /** Open an existing genome for reading and updating
          * @param name Name of genome to open.
+         * @return Genome object or NULL is not found
          * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
         virtual Genome *openGenome(const std::string &name) = 0;
+
+        /** Open an exsting genome for reading, checking for missing genome
+         * @param name Name of genome to open
+         * @return Genome object 
+         * @throws GenomeNotFoundException
+         * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
+        const Genome *openGenomeCheck(const std::string &name) const {
+            const Genome *genome = openGenomeCheck(name);
+            if (genome == NULL) {
+                throw GenomeNotFoundException(name);
+            }
+            return genome;
+        }
+
+        /** Open an existing genome for reading and updating, checking for missing genome
+         * @param name Name of genome to open.
+         * @return Genome object 
+         * @throws GenomeNotFoundException
+         * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
+        Genome *openGenomeCheck(const std::string &name) {
+            Genome *genome = openGenomeCheck(name);
+            if (genome == NULL) {
+                throw GenomeNotFoundException(name);
+            }
+            return genome;
+        }
 
         /** Close an open genome.  All pointers to this genome become
          * invalid and openGenome needs to be called again to access it
