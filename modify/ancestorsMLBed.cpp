@@ -20,7 +20,7 @@ void AncestorsMLBed::visitLine() {
     string sequenceName = _bedLine._chrName;
     startPos = _bedLine._start;
     endPos = _bedLine._end;
-    const Sequence *sequence = _genome->getSequence(sequenceName);
+    const Sequence *sequence = _genome->getSequenceCheck(sequenceName);
     if (sequence == NULL) {
         throw hal_exception("Sequence name not found!");
     }

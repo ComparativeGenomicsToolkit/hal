@@ -36,10 +36,7 @@ int main(int argc, char *argv[]) {
     map<string, string> renameMap = ingestRenameFile(renamePath);
 
     for (map<string, string>::iterator it = renameMap.begin(); it != renameMap.end(); it++) {
-        Sequence *sequence = genome->getSequence(it->first);
-        if (sequence == NULL) {
-            throw hal_exception("Sequence " + it->first + " not found in alignment");
-        }
+        Sequence *sequence = genome->getSequenceCheck(it->first);
 
         sequence = genome->getSequence(it->second);
         if (sequence != NULL) {
