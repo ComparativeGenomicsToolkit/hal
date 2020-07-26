@@ -22,9 +22,9 @@ static void labelTestTreeNode(stTree *node, map<string, int> *nameToId, char dna
 
 static void doFelsensteinWorkedExampleTest(CuTest *testCase) {
     // Set up the PHAST substitution model.
-    FILE *modFile = fopen("testdata/mammals.mod", "r");
+    FILE *modFile = fopen("../testdata/mammals.mod", "r");
     if (modFile == NULL) {
-        throw hal_exception("can't find testdata/mammals.mod");
+        throw hal_exception("can't find ../testdata/mammals.mod");
     }
     TreeModel *mod = tm_new_from_file(modFile, true);
     // Map names to phast model IDs.

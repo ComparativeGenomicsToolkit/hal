@@ -28,13 +28,13 @@ halRenameSequences_srcs = halRenameSequences.cpp
 halRenameSequences_objs = ${halRenameSequences_srcs:%.cpp=${modObjDir}/%.o} ${renameFile_objs}
 ancestorsML_srcs = ancestorsML.cpp ancestorsMLMain.cpp ancestorsMLBed.cpp
 ancestorsML_objs = ${ancestorsML_srcs:%.cpp=${modObjDir}/%.o}
-halAncestorsMLTest_srcs = halAncestorsMLTest.cpp ancestorsML.cpp
-halAncestorsMLTest_objs = ${halAncestorsMLTest_srcs:%.cpp=${modObjDir}/%.o}
+ancestorsMLTest_srcs = ancestorsMLTest.cpp ancestorsML.cpp
+ancestorsMLTest_objs = ${ancestorsMLTest_srcs:%.cpp=${modObjDir}/%.o}
 srcs = ${markAncestors_srcs} ${renameFile_srcs} ${halRemoveGenome_srcs} ${halAddToBranch_srcs} \
     ${halReplaceGenome_srcs} ${halAppendSubtree_srcs} \
     ${findRegionsExclusivelyInGroup_srcs} ${halUpdateBranchLengths_srcs} \
     ${halWriteNucleotides_srcs} ${halSetMetadata_srcs} ${halRenameGenomes_srcs} \
-    ${halRenameSequences_srcs} ${ancestorsML_srcs} ${halAncestorsMLTest_srcs}
+    ${halRenameSequences_srcs} ${ancestorsML_srcs} ${ancestorsMLTest_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
 progs = ${binDir}/halRemoveGenome ${binDir}/halAddToBranch ${binDir}/halReplaceGenome ${binDir}/halAppendSubtree ${binDir}/findRegionsExclusivelyInGroup ${binDir}/halUpdateBranchLengths ${binDir}/halWriteNucleotides ${binDir}/halSetMetadata ${binDir}/halRenameGenomes ${binDir}/halRenameSequences
@@ -44,7 +44,7 @@ otherLibs += ${libHalLiftover}
 ifdef ENABLE_PHYLOP
 inclSpec += ${phyloPCXXFLAGS}
 otherLibs += ${phyloPlibs}
-phast_progs = ${binDir}/ancestorsML ${binDir}/ancestorsMLMP.py
+phast_progs = ${binDir}/ancestorsML ${binDir}/ancestorsMLMP.py ${binDir}/ancestorsMLTest
 endif
 
 ifdef ENABLE_PHYLOP
@@ -59,7 +59,15 @@ endif
 
 clean : 
 	rm -f ${objs} ${progs} ${phast_progs} ${depends}
-test:
+
+test: testAncestorsML
+
+ifdef ENABLE_PHYLOP
+testAncestorsML:
+	${binDir}/ancestorsMLTest
+else
+testAncestorsML:
+endif
 
 include ${rootDir}/rules.mk
 
