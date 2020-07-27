@@ -28,9 +28,8 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.addArgument("inHalPath", "input hal file");
     optionsParser.addArgument("genome", "genome to export");
     optionsParser.addOption("outFaPath", "output fasta file (stdout if none)", "stdout");
-    optionsParser.addOptionFlag("onlySequenceNames", "use only sequence names "
-                                "for output names.  By default, the UCSC convention of Genome.Sequence "
-                                "is used",
+    optionsParser.addOptionFlag("ucscSequenceNames", "Use the UCSC convention of Genome.Sequence for names."
+                                " By default, only sequence names are used",
                                 false);
     optionsParser.addOption("lineWidth", "Line width for output", 80);
     optionsParser.addOption("sequence", "sequence name to export ("
@@ -68,7 +67,7 @@ int main(int argc, char **argv) {
         halPath = optionsParser.getArgument<string>("inHalPath");
         genomeName = optionsParser.getArgument<string>("genome");
         faPath = optionsParser.getOption<string>("outFaPath");
-        fullNames = !optionsParser.getFlag("onlySequenceNames");
+        fullNames = optionsParser.getFlag("ucscSequenceNames");
         lineWidth = optionsParser.getOption<hal_size_t>("lineWidth");
         sequenceName = optionsParser.getOption<string>("sequence");
         start = optionsParser.getOption<hal_size_t>("start");
