@@ -101,15 +101,14 @@ namespace hal {
     const std::string &detectHalAlignmentFormat(const std::string &path, const CLParser *options = NULL);
 
     /** Get an alignment instance from a file by automatically detecting which
-     * implementation to use.  (will currently (and probably forever more)
-     * just return an HDF5 instance since that's all that exists)
+     * implementation to use.
      * @param path Path of file to open
      * @param options Command line options information
      * @param overrideFormat If not empty, this overrides any format in options.  Used for
      * command that both input and output HALs.
      */
-    Alignment *openHalAlignment(const std::string &path, const CLParser *options = NULL, unsigned mode = hal::READ_ACCESS,
-                                const std::string &overrideFormat = "");
+    AlignmentPtr openHalAlignment(const std::string &path, const CLParser *options = NULL, unsigned mode = hal::READ_ACCESS,
+                                  const std::string &overrideFormat = "");
 }
 
 #endif

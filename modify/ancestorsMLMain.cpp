@@ -80,10 +80,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (sequenceName != "") {
-        const Sequence *sequence = genome->getSequence(sequenceName);
-        if (sequence == NULL) {
-            throw hal_exception("Sequence name not found!");
-        }
+        const Sequence *sequence = genome->getSequenceCheck(sequenceName);
         startPos += sequence->getStartPosition();
         if (endPos == -1) {
             endPos = sequence->getEndPosition();
