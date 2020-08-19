@@ -236,7 +236,9 @@ DNA sequences (without any alignment information) can be extracted from HAL file
 
 #### Pangenome Graph Export (GFA and VG)
 
-A HAL file can be converted into a pangenome graph either directly by using [hal2vg](https://github.com/ComparativeGenomicsToolkit/hal2vg) or PAF and [seqwish](https://github.com/ekg/seqwish) as follows:
+A HAL file can be converted into a pangenome using [hal2vg](https://github.com/ComparativeGenomicsToolkit/hal2vg), which can be downloaded as a standalone binary [here](https://github.com/ekg/seqwish/issues/60).
+
+It is also possible to go through PAF and [seqwish](https://github.com/ekg/seqwish) as follows.  **But beware:**  [This approach will currently miss alignments between snps](https://github.com/ekg/seqwish/issues/60):
 
 ```
 hal2fasta mammals.hal $(halStats --root mammals.hal) --subtree --upper > mammals.fa
