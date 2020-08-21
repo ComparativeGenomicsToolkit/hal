@@ -241,9 +241,12 @@ A HAL file can be converted into a pangenome using [hal2vg](https://github.com/C
 It is also possible to go through PAF and [seqwish](https://github.com/ekg/seqwish) as follows.  **But beware:**  [This approach will currently miss alignments between snps](https://github.com/ekg/seqwish/issues/60):
 
 ```
-hal2fasta mammals.hal $(halStats --root mammals.hal) --subtree --upper > mammals.fa
+hal2fasta mammals.hal $(halStats --root mammals.hal) --subtree --upper --ucscSequenceNames > mammals.fa
 hal2paf mammals.hal --inMemory > mammals.paf
 seqwish -p mammals.paf -s mammals.fa -g mammals.gfa
+
+# Note, in the above, genome names are prepended to fasta sequence names when exporting paths to the graph.
+# To turn this off, remove --ucscSequenceNames from hal2fasta and add --onlySequenceNames to hal2paf
 ```
 
 This graph can then be imported into a compressed format to work with [vg](https://github.com/vgteam/vg)
