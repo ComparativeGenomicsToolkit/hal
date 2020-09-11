@@ -1,3 +1,5 @@
+# FIXME: remove --noDupes
+
 # Pairwise chaining and alignment mapping with HAL alignments
 
 This document describes how to produce UCSC browser-style pairwise chains from HAL alignments.  It also describes how to use these chains to project alignments or annotations between genomes (we refer to this as TransMap).
@@ -25,11 +27,13 @@ Next, the source genome sequence name full ranges are  obtained in BED format:
 halStats --bedSequences Homo_sapiens 600way.hal > Homo_sapiens.bed
 ```
 
-The BED is then used by ``halLiftover`` to create pairwise alignments:
+The BED is then used by ``halLiftover`` to create pairwise alignments,
+which are forced to the positive strand with `pslPosTarget`:
 
 ```
 halLiftover --outPSL --noDupes 600way.hal Homo_sapiens \
-      Homo_sapiens.bed Gallus_gallus Homo_sapiens-Gallus_gallus.psl
+      Homo_sapiens.bed Gallus_gallus /dev/stdout | \
+      pslPosTarget stdin Homo_sapiens-Gallus_gallus.psl
 ```
 
 The `halLiftover` may be run on a cluster by splitting the source BED into one sequence per job.  The resulting PSL files are then concatenated together.
