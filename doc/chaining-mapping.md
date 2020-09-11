@@ -31,7 +31,7 @@ The BED is then used by ``halLiftover`` to create pairwise alignments,
 which are forced to the positive strand with `pslPosTarget`:
 
 ```
-halLiftover --outPSL --noDupes 600way.hal Homo_sapiens \
+halLiftover --outPSL 600way.hal Homo_sapiens \
       Homo_sapiens.bed Gallus_gallus /dev/stdout | \
       pslPosTarget stdin Homo_sapiens-Gallus_gallus.psl
 ```
