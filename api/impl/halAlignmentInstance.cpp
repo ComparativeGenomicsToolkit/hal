@@ -16,10 +16,7 @@
 #include <fstream>
 #include <iostream>
 #ifdef ENABLE_UDC
-extern "C" {
-#include "common.h"
 #include "udc2.h"
-}
 #endif
 
 using namespace std;

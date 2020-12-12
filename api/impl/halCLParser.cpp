@@ -10,11 +10,7 @@
 #include <cassert>
 #include <iostream>
 #ifdef ENABLE_UDC
-extern "C" {
-#include "common.h"
 #include "udc2.h"
-#include "verbose.h"
-}
 #endif
 
 using namespace std;
@@ -154,7 +150,7 @@ void CLParser::parseOptions(int argc, char **argv) {
         udc2SetDefaultDir(const_cast<char *>(udcCacheDir.c_str()));
     }
     if (get<bool>("udcVerbose")) {
-        verboseSetLevel(100);
+        udc2VerboseSetLevel(100);
     }
 #endif
 }

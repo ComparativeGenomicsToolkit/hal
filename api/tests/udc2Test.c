@@ -29,7 +29,7 @@ static struct optionSpec options[] = {
 boolean raBuf = FALSE;   /* exercise the read-ahead buffer */
 boolean doFork = FALSE;
 boolean mmapAccess = FALSE; /* test access via mmap */
-char *protocol = "ftp";
+char *protocol = "http";
 unsigned int seed = 0;
 bits32 blockSize = 0;
 int size = 0;
@@ -450,11 +450,11 @@ protocol = optionVal("protocol", protocol);
 seed = optionInt("seed", seed);
 blockSize = optionInt("blockSize", blockSize);
 
-char *host = getenv("HOST");
+char *host = getenv("HOSTNAME");
 if (host == NULL || !startsWith("hgwdev", host))
     {
     // So that we don't break "make test" on other machines, use stdout and exit 0:
-    puts("Sorry, this must be run on hgwdev (with HOST=hgwdev)");
+    puts("Sorry, this must be run on hgwdev (with HOSTNAME=hgwdev)");
     exit(0);
     }
 errAbortDebugnPushPopErr();
@@ -462,7 +462,8 @@ char tmp[256];
 safef(tmp, sizeof tmp, "/data/tmp/%s/udcCache", getenv("USER"));
 char rmcmd[512];
 safef(rmcmd, sizeof(rmcmd), "rm -rf %s", tmp);
-system(rmcmd);
+if (system(rmcmd) != 0)
+    errAbort("command failed: %s", rmcmd);
 udc2SetDefaultDir(tmp);
 if (seed == 0)
     {

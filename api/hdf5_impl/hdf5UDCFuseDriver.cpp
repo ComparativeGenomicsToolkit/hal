@@ -31,6 +31,11 @@
 #include <string.h>
 #include <sys/stat.h>
 
+/* At some point, the HDF5 driver interface change.  The changes are left in
+ * as conditional compiles in case we need to support both, however this is not
+ * tested. */
+#define HDF5_OLD_API 0
+
 extern "C" {
 #include "common.h"
 #include "udc2.h"
@@ -214,7 +219,12 @@ static herr_t H5FD_udc_fuse_query(const H5FD_t *_f1, unsigned long *flags);
 static haddr_t H5FD_udc_fuse_alloc(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, hsize_t size);
 static haddr_t H5FD_udc_fuse_get_eoa(const H5FD_t *_file, H5FD_mem_t type);
 static herr_t H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr);
+    
+#if HDF5_OLD_API
 static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type);
+#else
+static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file);
+#endif
 static herr_t H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void **file_handle);
 static herr_t H5FD_udc_fuse_read(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, void *buf);
 static herr_t H5FD_udc_fuse_write(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, const void *buf);
@@ -225,7 +235,9 @@ static const H5FD_class_t H5FD_udc_fuse_g = {
     "udc_fuse",               /* name         */
     MAXADDR,                  /* maxaddr      */
     H5F_CLOSE_WEAK,           /* fc_degree    */
+#if HDF5_OLD_API
     NULL,                     /* terminate */
+#endif
     NULL,                     /* sb_size      */
     NULL,                     /* sb_encode    */
     NULL,                     /* sb_decode    */
@@ -613,7 +625,11 @@ static herr_t H5FD_udc_fuse_set_eoa(H5FD_t *_file, H5FD_mem_t /*UNUSED*/ type, h
  *
  *-------------------------------------------------------------------------
  */
+#if HDF5_OLD_API
 static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file, H5FD_mem_t type) {
+#else
+static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file) {
+#endif
     const H5FD_udc_fuse_t *file = (const H5FD_udc_fuse_t *)_file;
 
     /* Clear the error stack */

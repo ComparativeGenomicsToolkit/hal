@@ -15,14 +15,7 @@
 #include <sstream>
 
 #ifdef ENABLE_UDC
-extern "C" {
-#include "common.h"
 #include "udc2.h"
-// Dont want this macro ruining std::max
-#ifdef max
-#undef max
-#endif
-}
 #endif
 
 using namespace std;
@@ -61,7 +54,7 @@ void LodManager::loadLODFile(const string &lodPath, const CLParser *options) {
         throw hal_exception("Error udc-opening " + lodPath);
     }
     string cbufCpy(cbuffer);
-    freeMem(cbuffer);
+    udc2FreeMem(cbuffer);
     stringstream ifile(cbufCpy);
 #else
     ifstream ifile(lodPath.c_str());
