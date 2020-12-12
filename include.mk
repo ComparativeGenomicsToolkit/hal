@@ -96,13 +96,10 @@ endif
 endif
 
 # add compiler flag and kent paths if udc is enabled
-# relies on KENTSRC containing path to top level kent/ dir
+# relies on KENTSRC containing path to top level kent/src dir
 # and MACHTYPE being specified.
 # This MUST follow PHAST defs, as they both have a gff.h
 ifdef ENABLE_UDC
-ifdef ENABLE_PHYLOP
-     $(error can not compile with both ENABLE_UDC and ENABLE_PHYLOP due to link function name conflict)
-endif
     #  Find htslib as in kent/src/inc/common.mk:
     MACHTYPE = x86_64
     CXXFLAGS += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread

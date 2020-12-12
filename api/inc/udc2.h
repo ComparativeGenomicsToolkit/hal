@@ -18,10 +18,25 @@
  * level.
  *
  * The bitmap file contains time stamp and size data as well as an array with one bit
- * for each block of the file that has been fetched.  Currently the block size is 8K. */
+ * for each block of the file that has been fetched.  Currently the block size is 8K.
+ *
+ * This is a port of the UCSC browser code to speed up random access using HTTP/1.1.  It
+ * also was designed to not require including common.h, as that leads to name conflicts.
+ */
 
 #ifndef UDC2_H
 #define UDC2_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* this check allows file to compile without common.h */
+#ifndef COMMON_H
+#define bits64 unsigned long long  /* Wants to be unsigned 64 bits. */
+#define bits32 unsigned       /* Wants to be unsigned 32 bits. */
+#define bits16 unsigned short /* Wants to be unsigned 16 bits. */
+#define boolean int
+#endif
 
 struct udc2File;
 /* Handle to a cached file.  Inside of structure mysterious unless you are udc2.c. */
@@ -185,6 +200,18 @@ void *udc2MMapFetch(struct udc2File *file, bits64 offset, bits64 size);
  * called for first access to a range of the file or erroneous (zeros) data
  * maybe returned.  Maybe called multiple times on a range or overlapping
  * returns. */
+
+    
+/* below are added to avoid comflicts with including common.h */
+void udc2VerboseSetLevel(int l);
+/* set the verbose level; */
+
+void udc2FreeMem(void *mem);
+/* free memory allocated by udc2 functions */
+    
+#ifdef __cplusplus
+}  /* end of the 'extern "C"' block */
+#endif
 
 #endif /* UDC2_H */
 

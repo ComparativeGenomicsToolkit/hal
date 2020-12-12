@@ -31,9 +31,7 @@
 #define _XOPEN_SOURCE       /* required to get strptime on linux */
 #include <time.h>
 #undef _XOPEN_SOURCE
-#define __USE_BSD    /* required to get MAXNAMLEN on linux */
 #include <dirent.h>
-#undef __USE_BSD
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <curl/curl.h>
@@ -1968,6 +1966,18 @@ if (udc2CacheEnabled() && !sameString(file->protocol, "transparent"))
 return ((char*)file->mmapBase) + offset;
 }
 
+void udc2VerboseSetLevel(int l)
+/* set the verbose level; */
+{
+verboseSetLevel(l);
+}
+
+void udc2FreeMem(void *mem)
+/* free memory allocated by udc2 functions */
+{
+freeMem(mem);
+}
+    
 // Local Variables:
 // c-file-style: "jkent-c"
 // End:
