@@ -96,9 +96,14 @@ extern "C" int halOpenHalOrLod(char *lodFilePath, char **errStr) {
         int handle = openLodOrHal(lodFilePath, !isHal, errStr);
         halUnlock();
         return handle;
+    } catch (exception &e) {
+        halUnlock();
+        handleError("halOpenLodOrHal error: " + string(lodFilePath) + ": " + e.what(), errStr);
+        return -1;
     } catch (...) {
         halUnlock();
-        throw;
+        handleError("halOpenLodOrHal error: " + string(lodFilePath) + ": Unknown exception", errStr);
+        return -1;
     }
 }
 
