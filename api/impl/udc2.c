@@ -1000,7 +1000,7 @@ static void addElementToDy(struct dyString *dy, char *name)
 /* add one element of a path to a dyString, hashing it if it's longer 
  * than MAXNAMLEN */
 {
-if (strlen(name) > MAXNAMLEN)
+if (strlen(name) > SHA_DIGEST_LENGTH)
     {
     unsigned char hash[SHA_DIGEST_LENGTH];
     char newName[(SHA_DIGEST_LENGTH + 1) * 2];
