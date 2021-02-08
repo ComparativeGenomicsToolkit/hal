@@ -1,27 +1,44 @@
-# FIXME: remove --noDupes
-
 # Pairwise chaining and alignment mapping with HAL alignments
 
-This document describes how to produce UCSC browser-style pairwise chains from HAL alignments.  It also describes how to use these chains to project alignments or annotations between genomes (we refer to this as TransMap).
+This document describes how to produce UCSC browser-style pairwise chains from
+HAL alignments.  It also describes how to use these chains to project
+alignments or annotations between genomes.  Chaining outside of HAL is necessary,
+as the pairwise alignments extract from HAL are fragmented and lack long-range
+continuity.
+
+The goal is to generate UCSC alignment chains to use in projecting alignments
+or annotations on a *source* genome to a *destination* genome.   With a genomic
+alignment of genome *A* to genome *B*, one can project and annotation or 
+alignment of on genome *A* of *X*<sub>*A*</sub>. to genome *B*, producing *X*<sub>*B*</sub>.
 
 ##  Creating chains from HAL
 
-Creating chains uses the `halLiftover` program to produce pairwise alignments for each chromosome in PSL format.  These alignments are then chained using the UCSC browser chaining protocol.
+UCSC pairwise alignment formats (PSL and chain) alignments have the two sides
+of the alignment are the *query* and *target*.  Which of these is consider the
+*source* and *destination* alignment differs depending on the tool that is used.
+The UCSC `liftOver` program considered the *target* to be the source, so the these
+instructions create alignments where the *target* is the *source* genome.
 
-The names of the source (query) and target genomes are required, as specified in the HAL. The list of genome names in a HAL command.
+Creating chains uses the `halLiftover` program to produce pairwise alignments
+for each chromosome in PSL format.  These alignments are then chained using
+the UCSC browser chaining protocol.
+
+The names of the *source* and *destination* genomes are required, as specified
+in the HAL. The list of genome names in a HAL command.
 
 ```
 halStats --genomes 600way.hal
 ```
 
-The source and target genome sequences in UCSC two-bit format are required and obtained with:
+The *source* and *destination* genome sequences in UCSC two-bit format are
+required and obtained with:
 
 ```
 hal2fasta 600way.hal Homo_sapiens | faToTwoBit stdin Homo_sapiens.2bit
 hal2fasta 600way.hal Gallus_gallus | faToTwoBit stdin Gallus_gallus.2bit
 ```
 
-Next, the source genome sequence name full ranges are  obtained in BED format:
+Next, the *source* genome sequences are obtained in BED format:
 
 ```
 halStats --bedSequences Homo_sapiens 600way.hal > Homo_sapiens.bed
