@@ -1,5 +1,4 @@
 pytest
 newick
-git+https://github.com/DataBiosphere/toil.git
+toil[all]==4.2.0
 pathlib
-boto3
