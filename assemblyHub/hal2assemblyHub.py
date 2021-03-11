@@ -415,8 +415,11 @@ def checkOptions(parser, options):
     # directly from disk
     options.halfile = os.path.abspath(options.halfile)
     options.outputDirectory = os.path.abspath(options.outputDirectory)
-    if options.batchSystem != 'singleMachine':
-        raise RuntimeError("singleMachine is the only supported batchSystem")
+
+    jobStoreType, locator = Toil.parseLocator(options.jobStore)
+    if jobStoreType != "file":
+        raise RuntimeError("only local jobStores are supported")
+    assert False
     
     if not os.path.exists(options.halfile):
         raise RuntimeError("Input hal file %s does not exist.\n" %options.halfile)
@@ -446,6 +449,5 @@ def main():
         toil.start(Setup(options.halfile, options.outputDirectory, options))
         
 if __name__ == '__main__':
-    from hal.assemblyHub.hal2assemblyHub import *
     main()
 
