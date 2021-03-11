@@ -1,4 +1,4 @@
 pytest
 newick
-toil[all]==4.2.0
+toil==4.2.0
 pathlib
