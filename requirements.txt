@@ -1,4 +1,4 @@
 pytest
 newick
-toil==4.2.0
+toil[aws]==5.3.0
 pathlib

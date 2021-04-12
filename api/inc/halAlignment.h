@@ -88,7 +88,7 @@ namespace hal {
          * @throws GenomeNotFoundException
          * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
         const Genome *openGenomeCheck(const std::string &name) const {
-            const Genome *genome = openGenomeCheck(name);
+            const Genome *genome = openGenome(name);
             if (genome == NULL) {
                 throw GenomeNotFoundException(name);
             }
@@ -101,7 +101,7 @@ namespace hal {
          * @throws GenomeNotFoundException
          * DO NOT DELETE THE RETURNED OBJECT, USE closeGenome() */
         Genome *openGenomeCheck(const std::string &name) {
-            Genome *genome = openGenomeCheck(name);
+            Genome *genome = openGenome(name);
             if (genome == NULL) {
                 throw GenomeNotFoundException(name);
             }
