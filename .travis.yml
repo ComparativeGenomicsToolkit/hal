@@ -10,7 +10,7 @@ before_install:
 install:
   - sudo pip3 install setuptools --upgrade
   - pip3 install -r requirements.txt
-  - sh -c 'cd sonLib && git checkout e3e62163266f4d220b39cde563374acd299df229 && make'
+  - sh -c 'cd sonLib && git checkout c5e585bd8a7e915b58f42225adaf3fa5a2af3314 && make'
 script:
   - alias python=python3
   - alias pip=pip3
