@@ -125,8 +125,8 @@ From the same parent directory where you downloaded HAL:
 *  Install Phast (Mac or Linux)
 
      `git clone https://github.com/CshlSiepelLab/phast.git`  
-     `cd phast`
-     `git checkout 52e8de92a91e09434e60a03b7835e7363cf97007`
+     `cd phast`  
+     `git checkout 52e8de92a91e09434e60a03b7835e7363cf97007`  
      `cd src && make`  
      `cd ../..`  
 
