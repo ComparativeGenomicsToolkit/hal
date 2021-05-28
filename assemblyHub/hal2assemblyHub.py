@@ -419,7 +419,6 @@ def checkOptions(parser, options):
     jobStoreType, locator = Toil.parseLocator(options.jobStore)
     if jobStoreType != "file":
         raise RuntimeError("only local jobStores are supported")
-    assert False
     
     if not os.path.exists(options.halfile):
         raise RuntimeError("Input hal file %s does not exist.\n" %options.halfile)
