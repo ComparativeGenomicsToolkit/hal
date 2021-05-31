@@ -6,7 +6,7 @@ Copyright (C) 2012 - 2014 by Glenn Hickey (hickey@soe.ucsc.edu)
 Copyright (C) 2012-2019 by UCSC Computational Genomics Lab
 Released under the MIT license, see LICENSE.txt
 
-HAL is a structure to efficiently store and index multiple genome alignments and ancestral reconstructions.  HAL is a graph-based representation which provides several advantages over matrix/block-based formats such as MAF, such as improved scalability and the ability to perform queries with respect to an arbitrary reference or subtree. 
+HAL is a structure to efficiently store and index multiple genome alignments and ancestral reconstructions.  HAL is a graph-based representation which provides several advantages over matrix/block-based formats such as MAF, such as improved scalability and the ability to perform queries with respect to an arbitrary reference or subtree.
 
 This package includes the HAL API and several analysis and  conversion tools which are described below.  HAL files are presently stored in either [HDF5](http://www.hdfgroup.org/HDF5/) or `mmap` format, but we note that the tools and most of the API are format-independent, so other databases could be implemented in the future.
 
@@ -46,39 +46,39 @@ From the parent directory of where you want HAL installed:
 
     sudo apt install libhdf5-dev
 
-* Using [MacPorts](http://www.macports.org/):   
+* Using [MacPorts](http://www.macports.org/):
 
     sudo port install hdf5 @1.10.1 +cxx
 
 * From [Source](http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/):
 
-     `wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/hdf5-1.10.1.tar.gz`  
-	  `tar xzf  hdf5-1.10.1.tar.gz`  
-     `cd hdf5-1.10.1`  
-	  `./configure --enable-cxx`  
-	  `make && make install`  
+     `wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/hdf5-1.10.1.tar.gz`
+	  `tar xzf  hdf5-1.10.1.tar.gz`
+     `cd hdf5-1.10.1`
+	  `./configure --enable-cxx`
+	  `make && make install`
 
-* Local install from source into DIR (do not need root password)  
+* Local install from source into DIR (do not need root password)
 
      `mkdir DIR/hdf5`
      `wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/hdf5-1.10.1.tar.gz`
-	  `tar xzf  hdf5-1.10.1.tar.gz`  
-     `cd hdf5-1.10.1`  
-     `./configure --enable-cxx --prefix DIR/hdf5`  
-     `make && make install` 
-    
-     Before building HAL, update the following environment variables:  
-   
-     `export PATH=DIR/hdf5/bin:${PATH}`  
-     `export h5prefix=-prefix=DIR/hdf5`  
- 
+	  `tar xzf  hdf5-1.10.1.tar.gz`
+     `cd hdf5-1.10.1`
+     `./configure --enable-cxx --prefix DIR/hdf5`
+     `make && make install`
+
+     Before building HAL, update the following environment variables:
+
+     `export PATH=DIR/hdf5/bin:${PATH}`
+     `export h5prefix=-prefix=DIR/hdf5`
+
      or set these in include.local.mk.
 
     If you are using older version of HDF5, such as installed on Centos,
-    you may need to set 
-    
+    you may need to set
+
     `export CXX_ABI_DEF=-D_GLIBCXX_USE_CXX11_ABI=1`
-    
+
     If you get undefined functions base on string type with errors about
     `std::__cxx11::basic_string` vs `std::basic_string`.
 
@@ -99,36 +99,36 @@ either in an include.local.mk file top level hal/ directory, or as a `make` comm
 
 #### Optional support of reading HAL files over HTTP via UCSC's URL Data Cache (UDC)
 
-Define ENABLE_UDC before making, and specify the path of the Kent source tree using KENTSRC.  When built with this enabled, all HAL files opened read-only will be accessed using UDC which supports both local files and URLs. 
+Define ENABLE_UDC before making, and specify the path of the Kent source tree using KENTSRC.  When built with this enabled, all HAL files opened read-only will be accessed using UDC which supports both local files and URLs.
 
-	  export  ENABLE_UDC=1   
+	  export  ENABLE_UDC=1
 	  export  KENTSRC=<path to top level of Kent source tree>
 
-Those without the UCSC genome browser already installed locally will probably find it simpler to first mount URLs with [HTTPFS](http://httpfs.sourceforge.net/) before opening with HAL.  
+Those without the UCSC genome browser already installed locally will probably find it simpler to first mount URLs with [HTTPFS](http://httpfs.sourceforge.net/) before opening with HAL.
 
 #### Optional support of PhyloP evolutionary constraint annotation
 
-PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  In order to enable this support, Phast must be installed.  We recommend downloading the latest source using Subversion. 
+PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  In order to enable this support, Phast must be installed.  We recommend downloading the latest source using Subversion.
 
 From the same parent directory where you downloaded HAL:
 
 * First install CLAPACK (Linux only)
 
-    `wget http://www.netlib.org/clapack/clapack.tgz`  
-    `tar -xvzf clapack.tgz`  
-    `mv CLAPACK-3.2.1 clapack`  
-    `cd clapack`  
-    `cp make.inc.example make.inc && make f2clib && make blaslib && make lib`  
-    ``export CLAPACKPATH=`pwd` ``  
-    `cd ..`  
+    `wget http://www.netlib.org/clapack/clapack.tgz`
+    `tar -xvzf clapack.tgz`
+    `mv CLAPACK-3.2.1 clapack`
+    `cd clapack`
+    `cp make.inc.example make.inc && make f2clib && make blaslib && make lib`
+    `export CLAPACKPATH=$(pwd)` `
+    `cd ..`
 
 *  Install Phast (Mac or Linux)
 
-     `git clone https://github.com/CshlSiepelLab/phast.git`  
-     `cd phast`  
-     `git checkout 52e8de92a91e09434e60a03b7835e7363cf97007`  
-     `cd src && make`  
-     `cd ../..`  
+     `git clone https://github.com/CshlSiepelLab/phast.git`
+     `cd phast`
+     `git checkout v1.6`
+     `cd src && make`
+     `cd ../..`
 
 * Before building HAL
 
@@ -138,16 +138,16 @@ Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for
 
 ### Building HAL
 
-From the hal/ directory:  
+From the hal/ directory:
 
 	  make
 
-Before using HAL, add it to your path:   
+Before using HAL, add it to your path:
 
 	  export PATH=<path to hal>/bin:${PATH}
 
 The parent directory of hal/ should be in your PYTHONPATH in order to use any of the Python functionality.  This includes running `make test`
-	 
+	
 	  export PYTHONPATH=<parent of hal>:${PYTHONPATH}
 
 HAL Tools
@@ -161,11 +161,11 @@ HAL Tools
 Two stored formats are included with HAL: `HDF5` and `mmap`.  HDF5 is standard container format for larger data sets with good compression characteristics .  The `mmap` format stores the raw data structures in a file, which is access by mapping in into memory using the `mmap` system call.  HAL files in the `mmap` format a considerably bigger but often much faster to access.  The `halExtract` command can be used to copy between formats.
 
 
-All HAL tools compiled with HDF5 support expose some caching parameters.  Tools that create HAL files also include chunking and compression parameters.  In most cases, the default values of these options will suffice.  
+All HAL tools compiled with HDF5 support expose some caching parameters.  Tools that create HAL files also include chunking and compression parameters.  In most cases, the default values of these options will suffice.
 
-`--cacheBytes <value>:`    The maximum size of each array cache.  3 such caches can be allocated per genome in the alignment.  
+`--cacheBytes <value>:`    The maximum size of each array cache.  3 such caches can be allocated per genome in the alignment.
 
-`--cacheRDC <value>:`    The number of slots in each cache.  This number should be set to a prime number that is roughly 50 x [cacheBytes / chunk].  
+`--cacheRDC <value>:`    The number of slots in each cache.  This number should be set to a prime number that is roughly 50 x [cacheBytes / chunk].
 
 `--cacheMDC <value>:`    Size of the metadata cache.  There is presently no reason to touch this.
 
@@ -174,14 +174,14 @@ All HAL tools compiled with HDF5 support expose some caching parameters.  Tools 
 `--deflate <value>:`   Compression level.  Higher levels tend to not significantly decrease file sizes but do increase run time.  [0:none - 9:max] [default = 2]
 
 `--inMemory:`   Load all data in memory (and disable hdf5 cache). [default = False]
-   
+
 ### Importing from other formats
 
 #### MAF Import
 
-[MAF](http://genome.ucsc.edu/FAQ/FAQformat.html#format5) is a text format used at UCSC to store genome alignments.  MAFs are typically stored with respect to a reference genome.  MAFs can be imported into HAL as subtrees using the `maf2hal` command.  
+[MAF](http://genome.ucsc.edu/FAQ/FAQformat.html#format5) is a text format used at UCSC to store genome alignments.  MAFs are typically stored with respect to a reference genome.  MAFs can be imported into HAL as subtrees using the `maf2hal` command.
 
-To import primates.maf as a star tree where the first alignment row specifies the root, and all others the leaves:  
+To import primates.maf as a star tree where the first alignment row specifies the root, and all others the leaves:
 
      maf2hal primates.maf primates.hal
 
@@ -207,7 +207,7 @@ HAL is most beneficial when consensus reference or ancestral sequences are avail
 
 #### MAF Export
 
-MAF files can be generated from HAL alignments or sub-alignments.  The reference genome and alignment scope (subsequence of the reference and/or phylogenetic distance) are chosen through command-line options.  
+MAF files can be generated from HAL alignments or sub-alignments.  The reference genome and alignment scope (subsequence of the reference and/or phylogenetic distance) are chosen through command-line options.
 
 Export the HAL alignment as a MAF referenced at the root
 
@@ -225,7 +225,7 @@ Export a MAF consisting of the alignment of all apes referenced on gorilla
 
 		 hal2maf mammals.hal mammals.maf --rootGenome ape_ancestor --refGenome gorilla
 
-By default, no gaps are written to the reference sequence.  The `--maxRefGap` can be specified to allow gaps up to a certain size in the reference.  This is achieved by recursively following indels in the graph that could correspond to reference gaps.  
+By default, no gaps are written to the reference sequence.  The `--maxRefGap` can be specified to allow gaps up to a certain size in the reference.  This is achieved by recursively following indels in the graph that could correspond to reference gaps.
 
 Mafs can be generated in parallel using the hal2mafMP.py wrapper
 
@@ -261,9 +261,9 @@ HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To crea
 
 	hal2assemblyHub.py mammals.hal outputDirectory
 
-Larger alignments require the use of the `--lod` option to generate precomputed levels of detail.  
+Larger alignments require the use of the `--lod` option to generate precomputed levels of detail.
 
-Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. More details are available at [hal2assemblyHub Manual](assemblyHub#comparative-assembly-hub-manual). 
+Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. More details are available at [hal2assemblyHub Manual](assemblyHub#comparative-assembly-hub-manual).
 
 ### Summary Information
 
@@ -275,19 +275,19 @@ It is a good idea to check if a hal file is valid after creating it.
 
 #### halStats
 
-Some global information from a HAL file can be quickly obtained using `halStats`.  It will return the number of genomes, their phylogenetic tree, and the size of each array in each genome.  
+Some global information from a HAL file can be quickly obtained using `halStats`.  It will return the number of genomes, their phylogenetic tree, and the size of each array in each genome.
 
 	  halStats mammals.hal
 
-The `--tree`, `--sequences`, and `--genomes` options can be used to print out only specific information to simplify iterating over the alignment in shell or Python scripts. 
+The `--tree`, `--sequences`, and `--genomes` options can be used to print out only specific information to simplify iterating over the alignment in shell or Python scripts.
 
 #### halSummarizeMtuations
 
-A count of each type of mutation (Insertions, Deletions, Inversions, Duplications, Transpositions, Gap Insertions, Gap Deletions) in each branch of the alignment can be printed out in a table.  
+A count of each type of mutation (Insertions, Deletions, Inversions, Duplications, Transpositions, Gap Insertions, Gap Deletions) in each branch of the alignment can be printed out in a table.
 
      halSummarizeMutations mammals.hal
 
-Subtrees can be specified using the `--targetGenomes` or `--rootGenome` option.  The `--maxGap` option is used to distinguish from small, 'gap' indels and larger indels.  This distinction is somewhat arbitrary (but conventional).  HAL allows gap indels to be nested within larger rearrangements:  ex. an inversion with a gap deletion inside would be counted as a single inversion, but an inversion containing a non-gap event would be identified as multiple independent inversions. 
+Subtrees can be specified using the `--targetGenomes` or `--rootGenome` option.  The `--maxGap` option is used to distinguish from small, 'gap' indels and larger indels.  This distinction is somewhat arbitrary (but conventional).  HAL allows gap indels to be nested within larger rearrangements:  ex. an inversion with a gap deletion inside would be counted as a single inversion, but an inversion containing a non-gap event would be identified as multiple independent inversions.
 
      halSummarizeMutations mammals.hal --maxNFraction 0
 
@@ -313,7 +313,7 @@ Annotations in [BED](http://genome.ucsc.edu/FAQ/FAQformat.html#format1), ie tab-
 
      SequenceName     StartPosition    LastPosition+1
 
-can be lifted over between genomes using `halLiftover`.  halLiftover does a base-by-base mapping between any two sequences in the alignment (following paralogy relations as well).  The output is written in BED (default) or PSL format. 
+can be lifted over between genomes using `halLiftover`.  halLiftover does a base-by-base mapping between any two sequences in the alignment (following paralogy relations as well).  The output is written in BED (default) or PSL format.
 
 	 halLiftover mammals.hal human human_annotation.bed dog dog_annotation.bed
 
@@ -329,7 +329,7 @@ See also the [Comparative Annotation Toolkit](https://github.com/ComparativeGeno
 
 #### Alignment Depth
 
-The number of distinct genomes different bases of a set of target genomes align to can be computed using the `halAlignmentDepth` tool.  The output is in `.wig` format.  
+The number of distinct genomes different bases of a set of target genomes align to can be computed using the `halAlignmentDepth` tool.  The output is in `.wig` format.
 
 #### Mutation Annotation
 
@@ -339,7 +339,7 @@ To compute the point mutations (SNPs) between a given pair of genomes in the HAL
 
      halSnps mammals.hal human duck --bed human_duck_snps.bed
 
-will produce a BED files listing the SNPs in human coordinates between human and duck.  A count of the number of snps and the total aligned columns are printed to stdout.  
+will produce a BED files listing the SNPs in human coordinates between human and duck.  A count of the number of snps and the total aligned columns are printed to stdout.
 
 ### General mutations along branches
 
@@ -351,15 +351,15 @@ The ID's refer to the types of mutations described above, and are explained in t
 
 	 halBranchMutations mammals.hal human --refFile ins.bed --parFile del.bed
 
-Two bed files must be specified because the coordinates of inserted (and by convention inverted and transposed) segments are with respect to bases in the human genome (reference), where as deleted bases are in ancestral coordinates (parent).  
+Two bed files must be specified because the coordinates of inserted (and by convention inverted and transposed) segments are with respect to bases in the human genome (reference), where as deleted bases are in ancestral coordinates (parent).
 
-Point mutations can optionally be written using the `--snpFile <file>` option.  The '--maxGap' and '--maxNFraction' options can specify the gap indel threshold and missing data threshold, respectively, as described above in the *halSummarizeMtuations* section.  
+Point mutations can optionally be written using the `--snpFile <file>` option.  The '--maxGap' and '--maxNFraction' options can specify the gap indel threshold and missing data threshold, respectively, as described above in the *halSummarizeMtuations* section.
 
 ### Constrained Element Prediction
 
 (Under development)
 
-PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  
+PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.
 
 * Train a neutral model
 
@@ -385,7 +385,7 @@ The following is obtained by running h5ls -v -r (included with hdf5) on an ances
 * BOTTOM_ARRAY: The bottom segments of the genome (containing alignment mapping to the descendants).  The size of each entry is dependent on the number of descendants.
 * DNA_ARRAY: The DNA bases, stored as two bases / byte
 * SEQUENCE_ARRAY: The names and lengths of subsequences (ie chromosomes or scaffolds in the genome)
-* TOP_ARRAY: The top segments in the genome (containing alignment mapping to the parent).  Paralogous top segments are presently stored in a circular linked list.  
+* TOP_ARRAY: The top segments in the genome (containing alignment mapping to the parent).  Paralogous top segments are presently stored in a circular linked list.
 
 More information can be found in the manuscript:
 

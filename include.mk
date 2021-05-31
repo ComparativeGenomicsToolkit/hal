@@ -84,12 +84,14 @@ ifeq (${CLAPACKPATH},)
     CLAPACKPATH=${rootDir}/../clapack
 endif
 
+# pointing at both ${PHAST}/include/phast and ${PHAST}/include allows compiling
+# with v1.6 or v1.5
 ifeq ($(TARGETOS), Darwin)
-    CXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
+    CXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include/phast -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
     LDLIBS += -L${PHAST}/lib -lphast -lc -framework Accelerate
 else
     F2CPATH=${CLAPACKPATH}/F2CLIBS
-    CXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+    CXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include/phast -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
     LDLIBS += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
 endif
 
