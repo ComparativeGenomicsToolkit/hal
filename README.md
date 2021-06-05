@@ -126,7 +126,7 @@ From the same parent directory where you downloaded HAL:
 
      `git clone https://github.com/CshlSiepelLab/phast.git`
      `cd phast`
-     `git checkout v1.6`
+     `git checkout 85f7ed179dd097a86ba4added22d571785cc3e1d`
      `cd src && make`
      `cd ../..`
 
