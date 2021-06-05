@@ -223,7 +223,12 @@ static haddr_t H5FD_udc_fuse_get_eof(const H5FD_t *_file);
 static herr_t H5FD_udc_fuse_get_handle(H5FD_t *_file, hid_t fapl, void **file_handle);
 static herr_t H5FD_udc_fuse_read(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, void *buf);
 static herr_t H5FD_udc_fuse_write(H5FD_t *lf, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, const void *buf);
+// HDF5 change the type for flush function for 10.0.0 release, then change it back
+#if H5_VERSION_GE(1, 10, 0) && H5_VERSION_LE(1, 10, 0)
+static herr_t H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, unsigned closing);
+#else
 static herr_t H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, hbool_t closing);
+#endif
 static herr_t H5FD_udc_fuse_truncate(H5FD_t *_file, hid_t dxpl_id, hbool_t closing);
 
 static const H5FD_class_t H5FD_udc_fuse_g = {
@@ -807,7 +812,12 @@ static herr_t H5FD_udc_fuse_write(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id,
  *
  *-------------------------------------------------------------------------
  */
+// HDF5 change the type for flush function for 10.0.0 release, then change it back
+#if H5_VERSION_GE(1, 10, 0) && H5_VERSION_LE(1, 10, 0)
+static herr_t H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, unsigned closing) {
+#else
 static herr_t H5FD_udc_fuse_flush(H5FD_t *_file, hid_t dxpl_id, hbool_t closing) {
+#endif
     static const char *func = "H5FD_udc_fuse_flush"; /* Function Name for error reporting */
     H5Epush_ret(func, H5E_ERR_CLS, H5E_IO, H5E_WRITEERROR, "udc driver cannot flush", -1)
 

@@ -84,12 +84,15 @@ ifeq (${CLAPACKPATH},)
     CLAPACKPATH=${rootDir}/../clapack
 endif
 
+# pointing at both ${PHAST}/include/phast and ${PHAST}/include allows compiling
+# with v1.6 or v1.5.  However, only do the includes where needed, to avoid
+# include file name conflicts.
 ifeq ($(TARGETOS), Darwin)
-    CXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
+    PHASTCXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include/phast -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
     LDLIBS += -L${PHAST}/lib -lphast -lc -framework Accelerate
 else
     F2CPATH=${CLAPACKPATH}/F2CLIBS
-    CXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
+    PHASTCXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include/phast -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
     LDLIBS += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
 endif
 
@@ -102,9 +105,9 @@ endif
 ifdef ENABLE_UDC
     #  Find htslib as in kent/src/inc/common.mk:
     MACHTYPE = x86_64
-    CXXFLAGS += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
-    CFLAGS += -Wall -Werror -std=c99 -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
-    LDLIBS += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lcurl -lssl -lcrypto 
+    UDCCXXFLAGS += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
+    UDCCFLAGS += -Wall -Werror -std=c99 -I${KENTSRC}/inc -I${KENTSRC}/htslib
+    LDLIBS += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lcurl -lssl -lcrypto -pthread
 endif
 
 

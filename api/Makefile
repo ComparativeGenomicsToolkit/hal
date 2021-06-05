@@ -54,6 +54,14 @@ all : libs progs
 libs: ${libHal} ${halApiTestSupportLibs} 
 progs: ${progs}
 
+# only udc2.c should include kent .h files, to preven conflicts with older versions of
+# phast
+${modObjDir}/impl/udc2.o: impl/udc2.c
+	@mkdir -p $(dir $@)
+	${CC} -MM -MT $@ ${CFLAGS} ${UDCCFLAGS} ${inclSpec} -c $< >$*.depend
+	${CC} ${CFLAGS} ${inclSpec} -c $< -o $@
+
+
 clean : 
 	rm -f ${libHal} ${objs} ${progs} ${depends}
 

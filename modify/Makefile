@@ -39,7 +39,7 @@ objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
 progs = ${binDir}/halRemoveGenome ${binDir}/halAddToBranch ${binDir}/halReplaceGenome ${binDir}/halAppendSubtree ${binDir}/findRegionsExclusivelyInGroup ${binDir}/halUpdateBranchLengths ${binDir}/halWriteNucleotides ${binDir}/halSetMetadata ${binDir}/halRenameGenomes ${binDir}/halRenameSequences
 
-inclSpec += -I${rootDir}/liftover/inc
+inclSpec += -I${rootDir}/liftover/inc ${PHASTCXXFLAGS}
 otherLibs += ${libHalLiftover}
 ifdef ENABLE_PHYLOP
 inclSpec += ${phyloPCXXFLAGS}

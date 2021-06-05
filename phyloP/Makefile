@@ -9,7 +9,7 @@ objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
 progs =  ${binDir}/halPhyloP ${binDir}/halPhyloPTrain.py ${binDir}/halPhyloPMP.py ${binDir}/halTreePhyloP.py
 otherLibs = ${libHalLiftover}
-inclSpec += -I${rootDir}/liftover/inc
+inclSpec += -I${rootDir}/liftover/inc ${PHASTCXXFLAGS}
 
 ifdef ENABLE_PHYLOP
 all: progs
