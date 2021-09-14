@@ -71,8 +71,14 @@ namespace psl_io {
         psl.strand = blocks[0].strand;
         psl.blockCount = blocks.size();
         psl.blocks = blocks;
-        psl.tStart = blocks.front().tStart;
-        psl.tEnd = blocks.back().tEnd;
+        if (psl.strand == "++") {
+		psl.tStart = blocks.front().tStart;
+    		psl.tEnd = blocks.back().tEnd;
+    	}
+    	else if (psl.strand == "+-") {
+        	psl.tEnd = psl.tSize - blocks[0].tStart;
+        	psl.tStart = psl.tSize - blocks.back().tEnd;
+    	}
         return psl;
     }
 
