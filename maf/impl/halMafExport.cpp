@@ -14,7 +14,8 @@ using namespace hal;
 
 void MafExport::writeHeader() {
     assert(_mafStream != NULL);
-    if (_mafStream->tellp() == streampos(0)) {
+    // sometimes tellp() returns -1
+    if (_mafStream->tellp() <= streampos(0)) {
         *_mafStream << "##maf version=1 scoring=N/A\n"
                     << "# hal " << _alignment->getNewickTree() << endl
                     << endl;
