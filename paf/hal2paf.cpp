@@ -178,6 +178,20 @@ static char blockCat(const TopSegmentIteratorPtr& topIt1, const BottomSegmentIte
     return 'o';
 }
 
+static size_t countSnps(TopSegmentIteratorPtr& topIt, BottomSegmentIteratorPtr& botIt) {
+    string top_bases;
+    topIt->getString(top_bases);
+    string bot_bases;
+    botIt->getString(bot_bases);
+    assert(top_bases.length() == bot_bases.length());
+    size_t num_snps = 0;
+    for (size_t i = 0; i < top_bases.length(); ++i) {
+        if (fastUpper(top_bases[i]) != fastUpper(bot_bases[i])) {
+            ++num_snps;
+        }
+    }
+    return num_snps;
+}
 
 void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
     TopSegmentIteratorPtr topIt1 = genome->getTopSegmentIterator();
@@ -228,6 +242,8 @@ void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
     hal_index_t targetStart = botIt1->bseg()->getStartPosition();
     hal_index_t targetEnd = botIt1->bseg()->getEndPosition();
     size_t matches = topIt1->getLength();
+    size_t snps = countSnps(topIt1, botIt1);
+    size_t gaps = 0;
     size_t runningMatch = topIt1->getLength();
     vector<string> cigar;
         
@@ -283,8 +299,8 @@ void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
                       << targetName << "\t" << targetLength << "\t"
                       << (targetStart - botIt1->getSequence()->getStartPosition()) << "\t"
                       << (targetEnd - botIt1->getSequence()->getStartPosition() + 1) << "\t"
-                      << matches << "\t"
-                      << (queryEnd - queryStart + 1) << "\t" // shoudl we include deletions? 
+                      << (matches - snps)<< "\t"
+                      << (matches + gaps) << "\t"
                       << 255 << "\t"
                       << "cg:Z:" << cigar_string << endl;
 
@@ -302,6 +318,8 @@ void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
                 targetStart = botIt2->bseg()->getStartPosition();
                 targetEnd = botIt2->bseg()->getEndPosition();
                 matches = topIt2->getLength();
+                snps = countSnps(topIt2, botIt2);
+                gaps = 0;
                 runningMatch = topIt2->getLength();
             } 
         } else if (found_match) {
@@ -316,6 +334,7 @@ void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
                 hal_index_t ins_len = topIt2->getStartPosition() - topIt1->getEndPosition() - 1;
                 assert(ins_len > 0);
                 cigar.push_back(std::to_string(ins_len) + "I");
+                gaps += ins_len;
             } else if (cat == 'd') {
                 // extend with deltion
                 hal_index_t del_len;
@@ -326,10 +345,12 @@ void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
                 }
                 assert(del_len > 0);
                 cigar.push_back(std::to_string(del_len) + "D");
+                gaps += del_len;
             }
             if (cat != 'o') {
                 // no softclips, so always bookended by a match
                 matches += topIt2->getLength();
+                snps += countSnps(topIt2, botIt2);
                 runningMatch += topIt2->getLength();
             }
 
