@@ -71,19 +71,27 @@ void copyFromBottomAlignment(AlignmentConstPtr bottomAlignment, AlignmentPtr mai
         }
     }
 
-    // Copy genome & bottom segments for the genome that's being replaced
+    // Copy dimensions for the genome that's being replaced
     botReplacedGenome->copyDimensions(mainReplacedGenome);
-    botReplacedGenome->copySequence(mainReplacedGenome);
     botReplacedGenome->copyBottomDimensions(mainReplacedGenome);
-    botReplacedGenome->copyBottomSegments(mainReplacedGenome);
-    mainReplacedGenome->fixParseInfo();
 
-    // Copy top segments for the children
+    // Copy top dimensions for the children
     vector<string> children = mainAlignment->getChildNames(genomeName);
     for (size_t i = 0; i < children.size(); i++) {
         Genome *mainChild = mainAlignment->openGenome(children[i]);
         const Genome *botChild = bottomAlignment->openGenome(children[i]);
         botChild->copyTopDimensions(mainChild);
+    }
+
+    // Copy genome & bottom segments for the genome that's being replaced
+    botReplacedGenome->copySequence(mainReplacedGenome);
+    botReplacedGenome->copyBottomSegments(mainReplacedGenome);
+    mainReplacedGenome->fixParseInfo();
+
+    // Copy top segments for the children
+    for (size_t i = 0; i < children.size(); i++) {
+        Genome *mainChild = mainAlignment->openGenome(children[i]);
+        const Genome *botChild = bottomAlignment->openGenome(children[i]);
         botChild->copyTopSegments(mainChild);
         mainChild->fixParseInfo();
     }
