@@ -172,12 +172,26 @@ static char blockCat(const TopSegmentIteratorPtr& topIt1, const BottomSegmentIte
             if (is_del) {
                 return 'd';
             }
-        } 
+        }
     }
     
     return 'o';
 }
 
+static size_t countSnps(TopSegmentIteratorPtr& topIt, BottomSegmentIteratorPtr& botIt) {
+    string top_bases;
+    topIt->getString(top_bases);
+    string bot_bases;
+    botIt->getString(bot_bases);
+    assert(top_bases.length() == bot_bases.length());
+    size_t num_snps = 0;
+    for (size_t i = 0; i < top_bases.length(); ++i) {
+        if (fastUpper(top_bases[i]) != fastUpper(bot_bases[i])) {
+            ++num_snps;
+        }
+    }
+    return num_snps;
+}
 
 void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
     TopSegmentIteratorPtr topIt1 = genome->getTopSegmentIterator();
@@ -218,131 +232,99 @@ void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
         botIt1->copy(botIt2);
     }
 
-    // start up a fresh paf line
-    string queryName = fullNames ? topIt1->getSequence()->getFullName() : topIt1->getSequence()->getName();
-    size_t queryLength = topIt1->getSequence()->getSequenceLength();
-    hal_index_t queryStart = topIt1->getStartPosition();
-    hal_index_t queryEnd = topIt1->getEndPosition();
-    string targetName = fullNames ? botIt1->getSequence()->getFullName() : botIt1->getSequence()->getName();
-    size_t targetLength = botIt1->getSequence()->getSequenceLength();
-    hal_index_t targetStart = botIt1->bseg()->getStartPosition();
-    hal_index_t targetEnd = botIt1->bseg()->getEndPosition();
-    size_t matches = topIt1->getLength();
-    size_t runningMatch = topIt1->getLength();
-    vector<string> cigar;
-        
-    // go forward
-    while (!cigar.empty() || runningMatch > 0) {
-
-#ifdef debug
-        cerr << "t1 " << *topIt1 << endl;
-        cerr << "b1 " << *botIt1 << endl;
-        cerr << "t2 " << *topIt2 << endl;
-        cerr << "b2 " << *botIt2 << endl;        
-#endif
-        found_match = nextMatch(topIt1, botIt1, topIt2, botIt2);
-        bool newLine = !found_match;
+    while (found_match) {
+        // start a PAF line
+        string queryName = fullNames ? topIt1->getSequence()->getFullName() : topIt1->getSequence()->getName();
+        size_t queryLength = topIt1->getSequence()->getSequenceLength();
+        hal_index_t queryStart = topIt1->getStartPosition() - topIt1->getSequence()->getStartPosition();
+        hal_index_t queryEnd = topIt1->getEndPosition() - topIt1->getSequence()->getStartPosition() + 1;
+        string targetName = fullNames ? botIt1->getSequence()->getFullName() : botIt1->getSequence()->getName();
+        size_t targetLength = botIt1->getSequence()->getSequenceLength();
+        hal_index_t targetStart = botIt1->bseg()->getStartPosition() - botIt1->getSequence()->getStartPosition();
+        hal_index_t targetEnd = botIt1->bseg()->getEndPosition() - botIt1->getSequence()->getStartPosition() + 1;
+        size_t matches = 0;
+        size_t snps = 0;
+        size_t gaps = 0;
+        vector<pair<char, int64_t>> cigar;
         char cat = 'o';
-        if (!newLine) {
-            cat = blockCat(topIt1, botIt1, topIt2, botIt2, topIt3, botIt3, parentSet);
-            newLine = cat == 'o';
-        }
-#ifdef debug
-        cerr << "after match with cat " << string(1, cat) << " and found match " << found_match << endl;
-        cerr << "t1 " << *topIt1 << endl;
-        cerr << "b1 " << *botIt1 << endl;
-        cerr << "t2 " << *topIt2 << endl;        
-        cerr << "b2 " << *botIt2 << endl;
-        cerr << "---" << endl;
-#endif
-            
-        if (newLine) {
-            // resolve the running match
-            if (runningMatch > 0) {
-                cigar.push_back(std::to_string(runningMatch) + "M");
-                runningMatch = 0;
-            }
-
-            // make our cigar
-            string cigar_string;
-            if (botIt1->getReversed()) {
-                for (vector<string>::reverse_iterator ci = cigar.rbegin(); ci != cigar.rend(); ++ci) {
-                    cigar_string += *ci;
-                }
+        bool reversed = false;
+        // extend the PAF line until out of matches, or next match is "other"
+        do {
+            if (!cigar.empty() && cigar.back().first == 'M') {
+                // continue match
+                cigar.back().second += topIt1->getLength();
             } else {
-                for (vector<string>::iterator ci = cigar.begin(); ci != cigar.end(); ++ci) {
-                    cigar_string += *ci;
-                }
+                // new match
+                cigar.push_back(make_pair('M', topIt1->getLength()));
             }
-            
-            // write out the current paf line
-            outStream << queryName << "\t" << queryLength << "\t"
-                      << (queryStart - topIt1->getSequence()->getStartPosition()) << "\t"
-                      << (queryEnd - topIt1->getSequence()->getStartPosition() + 1) << "\t"
-                      << (botIt1->getReversed() ? "-" : "+") << "\t"
-                      << targetName << "\t" << targetLength << "\t"
-                      << (targetStart - botIt1->getSequence()->getStartPosition()) << "\t"
-                      << (targetEnd - botIt1->getSequence()->getStartPosition() + 1) << "\t"
-                      << matches << "\t"
-                      << (queryEnd - queryStart + 1) << "\t" // shoudl we include deletions? 
-                      << 255 << "\t"
-                      << "cg:Z:" << cigar_string << endl;
+            // update the match
+            snps += countSnps(topIt1, botIt1);
+            matches += topIt1->getLength();
+            // update the strand
+            reversed = botIt1->getReversed();
+            assert(reversed == botIt2->getReversed());
 
-            cigar.clear();
-            
+            cat = 'o';
+            // advance topit2/botit2 to next match
+            found_match = nextMatch(topIt1, botIt1, topIt2, botIt2);
             if (found_match) {
-                // start a new cigar
-                runningMatch = topIt2->getLength();
-                queryName = fullNames ? topIt2->getSequence()->getFullName() : topIt2->getSequence()->getName();
-                queryLength = topIt2->getSequence()->getSequenceLength();
-                queryStart = topIt2->getStartPosition();
-                queryEnd = topIt2->getEndPosition();
-                targetName = fullNames ? botIt2->getSequence()->getFullName() : botIt2->getSequence()->getName();
-                targetLength = botIt2->getSequence()->getSequenceLength();
-                targetStart = botIt2->bseg()->getStartPosition();
-                targetEnd = botIt2->bseg()->getEndPosition();
-                matches = topIt2->getLength();
-                runningMatch = topIt2->getLength();
-            } 
-        } else if (found_match) {
-            // dump out a running match before we add to the cigar
-            if ((cat == 'i' || cat == 'd') && runningMatch > 0) {
-                cigar.push_back(std::to_string(runningMatch) + "M");
-                runningMatch = 0;
-            }
-            // extend current paf line
-            if (cat == 'i') {
-                // extend with inseriton
-                hal_index_t ins_len = topIt2->getStartPosition() - topIt1->getEndPosition() - 1;
-                assert(ins_len > 0);
-                cigar.push_back(std::to_string(ins_len) + "I");
-            } else if (cat == 'd') {
-                // extend with deltion
-                hal_index_t del_len;
-                if (botIt1->getReversed()) {
-                    del_len = botIt1->bseg()->getStartPosition() - botIt2->bseg()->getEndPosition() - 1;
-                } else {
-                    del_len = botIt2->getStartPosition() - botIt1->getEndPosition() - 1; 
-                }
-                assert(del_len > 0);
-                cigar.push_back(std::to_string(del_len) + "D");
-            }
-            if (cat != 'o') {
-                // no softclips, so always bookended by a match
-                matches += topIt2->getLength();
-                runningMatch += topIt2->getLength();
-            }
+                cat = blockCat(topIt1, botIt1, topIt2, botIt2, topIt3, botIt3, parentSet);
+                int64_t len = 0;
+                if (cat == 'i') {
+                    // gobble up the insertion before next match
+                    len = topIt2->getStartPosition() - topIt1->getEndPosition() - 1;
+                    cigar.push_back(make_pair('I', len));
+                } else if (cat  == 'd') {
+                    // gobble up the deletion before next match
+                    if (botIt1->getReversed()) {
+                        len = botIt1->bseg()->getStartPosition() - botIt2->bseg()->getEndPosition() - 1;
+                    } else {
+                        len = botIt2->getStartPosition() - botIt1->getEndPosition() - 1; 
+                    }
+                    cigar.push_back(make_pair('D', len));
+                } 
+                gaps += len;
 
-            // update the range
-            queryEnd = topIt2->getEndPosition();
-            targetStart = std::min(targetStart, botIt1->bseg()->getStartPosition());
-            targetStart = std::min(targetStart, botIt2->bseg()->getStartPosition());
-            targetEnd = std::max(targetEnd, botIt1->bseg()->getEndPosition());
-            targetEnd = std::max(targetEnd, botIt2->bseg()->getEndPosition());
+                if (cat != 'o') {
+                    // update the query range to include next match
+                    queryEnd = topIt2->getEndPosition() - topIt2->getSequence()->getStartPosition() + 1;
+                    // update the target range to include next match
+                    targetStart = std::min(targetStart, botIt1->bseg()->getStartPosition() - botIt1->getSequence()->getStartPosition());
+                    targetStart = std::min(targetStart, botIt2->bseg()->getStartPosition() - botIt2->getSequence()->getStartPosition());
+                    targetEnd = std::max(targetEnd, botIt1->bseg()->getEndPosition() - botIt1->getSequence()->getStartPosition() + 1);
+                    targetEnd = std::max(targetEnd, botIt2->bseg()->getEndPosition() - botIt2->getSequence()->getStartPosition() + 1);
+                    assert(botIt1->getSequence() == botIt2->getSequnce() && topIt1->getSequnce() == topIt2->getSequnce());
+                }
+                
+                // scan the first iterators forward
+                topIt1->copy(topIt2);
+                botIt1->copy(botIt2);                
+            }
+        } while (cat != 'o');
+
+        // make our cigar string
+        string cigar_string;
+        if (reversed) {
+            for (vector<pair<char, int64_t>>::reverse_iterator ci = cigar.rbegin(); ci != cigar.rend(); ++ci) {
+                cigar_string += to_string(ci->second) + ci->first;
+            }
+        } else {
+            for (vector<pair<char, int64_t>>::iterator ci = cigar.begin(); ci != cigar.end(); ++ci) {
+                cigar_string += to_string(ci->second) + ci->first;
+            }
         }
-            
-        // scan the first iterators forward
-        topIt1->copy(topIt2);
-        botIt1->copy(botIt2);
+
+        // write out the current paf line
+        outStream << queryName << "\t" << queryLength << "\t"
+                  << queryStart << "\t"
+                  << queryEnd << "\t"
+                  << (reversed ? "-" : "+") << "\t"
+                  << targetName << "\t" << targetLength << "\t"
+                  << targetStart << "\t"
+                  << targetEnd << "\t"
+                  << (matches - snps)<< "\t"
+                  << (matches + gaps) << "\t"
+                  << 255 << "\t"
+                  << "cg:Z:" << cigar_string << endl;
     }
 }
