@@ -77,16 +77,16 @@ int main(int argc, char *argv[]) {
     botParentGenome->copyBottomSegments(parentGenome);
     parentGenome->fixParseInfo();
 
-    // Fix the parent's other children as well.
+    // Fix the parent's children
     vector<string> allChildren = mainAlignment->getChildNames(parentName);
     for (size_t i = 0; i < allChildren.size(); i++) {
-        if (allChildren[i] != insertName) {
+        //if (allChildren[i] != insertName) {
             Genome *outGenome = mainAlignment->openGenomeCheck(allChildren[i]);
             const Genome *topSegmentsGenome = topAlignment->openGenomeCheck(allChildren[i]);
             topSegmentsGenome->copyTopDimensions(outGenome);
             topSegmentsGenome->copyTopSegments(outGenome);
             outGenome->fixParseInfo();
-        }
+        //}
     }
 
     // Copy the top segments for the child genome from the bottom alignment.
