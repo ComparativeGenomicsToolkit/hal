@@ -293,7 +293,7 @@ void genome2PAF(ostream& outStream, const Genome* genome, bool fullNames) {
                     targetStart = std::min(targetStart, botIt2->bseg()->getStartPosition() - botIt2->getSequence()->getStartPosition());
                     targetEnd = std::max(targetEnd, botIt1->bseg()->getEndPosition() - botIt1->getSequence()->getStartPosition() + 1);
                     targetEnd = std::max(targetEnd, botIt2->bseg()->getEndPosition() - botIt2->getSequence()->getStartPosition() + 1);
-                    assert(botIt1->getSequence() == botIt2->getSequnce() && topIt1->getSequnce() == topIt2->getSequnce());
+                    assert(botIt1->getSequence() == botIt2->getSequence() && topIt1->getSequence() == topIt2->getSequence());
                 }
                 
                 // scan the first iterators forward
