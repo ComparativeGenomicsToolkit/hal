@@ -57,6 +57,8 @@ int main(int argc, char *argv[]) {
     const Genome *inLeafGenome = botAlignment->openGenomeCheck(leafName);
     inLeafGenome->copyDimensions(outLeafGenome);
 
+    ///////////////   Pass 1: Copy the dimensions  //////////////////
+    
     // Insert the new intermediate node.
     Genome *insertGenome = mainAlignment->openGenomeCheck(insertName);
     const Genome *topInsertGenome = topAlignment->openGenomeCheck(insertName);
@@ -64,18 +66,11 @@ int main(int argc, char *argv[]) {
     topInsertGenome->copyDimensions(insertGenome);
     topInsertGenome->copyTopDimensions(insertGenome);
     botInsertGenome->copyBottomDimensions(insertGenome);
-    topInsertGenome->copySequence(insertGenome);
-    topInsertGenome->copyTopSegments(insertGenome);
-    topInsertGenome->copyMetadata(insertGenome);
-    botInsertGenome->copyBottomSegments(insertGenome);
-    insertGenome->fixParseInfo();
 
     // Copy the bottom segments for the parent genome from the top alignment.
     Genome *parentGenome = mainAlignment->openGenomeCheck(parentName);
     const Genome *botParentGenome = topAlignment->openGenomeCheck(parentName);
     botParentGenome->copyBottomDimensions(parentGenome);
-    botParentGenome->copyBottomSegments(parentGenome);
-    parentGenome->fixParseInfo();
 
     // Fix the parent's other children as well.
     vector<string> allChildren = mainAlignment->getChildNames(parentName);
@@ -84,8 +79,6 @@ int main(int argc, char *argv[]) {
             Genome *outGenome = mainAlignment->openGenomeCheck(allChildren[i]);
             const Genome *topSegmentsGenome = topAlignment->openGenomeCheck(allChildren[i]);
             topSegmentsGenome->copyTopDimensions(outGenome);
-            topSegmentsGenome->copyTopSegments(outGenome);
-            outGenome->fixParseInfo();
         }
     }
 
@@ -93,6 +86,39 @@ int main(int argc, char *argv[]) {
     Genome *childGenome = mainAlignment->openGenomeCheck(childName);
     const Genome *topChildGenome = botAlignment->openGenomeCheck(childName);
     topChildGenome->copyTopDimensions(childGenome);
+
+    ///////////////   Pass 2: Copy the data  //////////////////
+
+    // Insert the new intermediate node.
+    insertGenome = mainAlignment->openGenomeCheck(insertName);
+    topInsertGenome = topAlignment->openGenomeCheck(insertName);
+    botInsertGenome = botAlignment->openGenomeCheck(insertName);
+    topInsertGenome->copySequence(insertGenome);
+    topInsertGenome->copyTopSegments(insertGenome);
+    topInsertGenome->copyMetadata(insertGenome);
+    botInsertGenome->copyBottomSegments(insertGenome);
+    insertGenome->fixParseInfo();
+
+    // Copy the bottom segments for the parent genome from the top alignment.
+    parentGenome = mainAlignment->openGenomeCheck(parentName);
+    botParentGenome = topAlignment->openGenomeCheck(parentName);
+    botParentGenome->copyBottomSegments(parentGenome);
+    parentGenome->fixParseInfo();
+
+    // Fix the parent's other children as well.
+    allChildren = mainAlignment->getChildNames(parentName);
+    for (size_t i = 0; i < allChildren.size(); i++) {
+        if (allChildren[i] != insertName) {
+            Genome *outGenome = mainAlignment->openGenomeCheck(allChildren[i]);
+            const Genome *topSegmentsGenome = topAlignment->openGenomeCheck(allChildren[i]);
+            topSegmentsGenome->copyTopSegments(outGenome);
+            outGenome->fixParseInfo();
+        }
+    }
+
+    // Copy the top segments for the child genome from the bottom alignment.
+    childGenome = mainAlignment->openGenomeCheck(childName);
+    topChildGenome = botAlignment->openGenomeCheck(childName);
     topChildGenome->copyTopSegments(childGenome);
     childGenome->fixParseInfo();
 
@@ -101,4 +127,5 @@ int main(int argc, char *argv[]) {
     if (!noMarkAncestors) {
         markAncestorsForUpdate(mainAlignment, insertName);
     }
+
 }
