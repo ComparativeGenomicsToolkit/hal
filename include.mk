@@ -105,7 +105,9 @@ endif
 ifdef ENABLE_UDC
     #  Find htslib as in kent/src/inc/common.mk:
     MACHTYPE = x86_64
-    UDCCXXFLAGS += -DENABLE_UDC -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
+    CXXFLAGS += -DENABLE_UDC
+    CFLAGS += -DENABLE_UDC
+    UDCCXXFLAGS += -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
     UDCCFLAGS += -Wall -Werror -std=c99 -I${KENTSRC}/inc -I${KENTSRC}/htslib
     LDLIBS += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lcurl -lssl -lcrypto -pthread
 endif
