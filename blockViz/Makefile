@@ -26,6 +26,23 @@ all: libs progs
 libs: ${libHalBlockViz}
 progs: ${progs}
 
+# only blockVizTest/Maf.cpp should include kent .h files, to preven conflicts with older versions of
+# phast
+${modObjDir}/tests/blockVizTest.o : tests/blockVizTest.cpp
+	@mkdir -p $(dir $@)
+	${CXX} -MM -MT $@ ${CXXFLAGS} ${UDCCXXFLAGS} ${inclSpec} -c $< >$*.depend
+	${CXX} ${CXXFLAGS} ${UDCCXXFLAGS} ${inclSpec} -c $< -o $@
+
+${modObjDir}/tests/blockVizMaf.o : tests/blockVizMaf.cpp
+	@mkdir -p $(dir $@)
+	${CXX} -MM -MT $@ ${CXXFLAGS} ${UDCCXXFLAGS} ${inclSpec} -c $< >$*.depend
+	${CXX} ${CXXFLAGS} ${UDCCXXFLAGS} ${inclSpec} -c $< -o $@
+
+${modObjDir}/tests/blockVizBed.o : tests/blockVizBed.cpp
+	@mkdir -p $(dir $@)
+	${CXX} -MM -MT $@ ${CXXFLAGS} ${UDCCXXFLAGS} ${inclSpec} -c $< >$*.depend
+	${CXX} ${CXXFLAGS} ${UDCCXXFLAGS} ${inclSpec} -c $< -o $@
+
 clean: 
 	rm -f ${libHalBlockViz} ${objs} ${progs} ${depends}
 	rm -rf ${testTmpDir}
