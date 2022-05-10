@@ -58,6 +58,12 @@ CXXFLAGS += -I${sonLibDir} ${CXX_ABI_DEF} -std=c++11 -Wno-sign-compare
 LDLIBS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 LIBDEPENDS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 
+# add libbdsg stuff
+libbdsgPath ?= ${rootDir}/../libbdsg-easy
+LDLIBS += ${libbdsgPath}/lib/libbdsg.a ${libbdsgPath}/lib/libhandlegraph.a ${libbdsgPath}/lib/libsdsl.a ${libbdsgPath}/lib/libdivsufsort.a ${libbdsgPath}/lib/libdivsufsort64.a
+LIBDEPNDS += ${libbdsgPath}/lib/libbdsg.a ${libbdsgPath}/lib/libhandlegraph.a ${libbdsgPath}/lib/libsdsl.a ${libbdsgPath}/lib/libdivsufsort.a ${libbdsgPath}/lib/libdivsufsort64.a
+CXXFLAGS += -I ${libbdsgPath}/include
+
 # hdf5 compilation is done through its wrappers.  See README.md for discussion of
 # h5prefix
 CXX = h5c++ ${h5prefix}

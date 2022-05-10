@@ -97,6 +97,13 @@ either in an include.local.mk file top level hal/ directory, or as a `make` comm
 
     pushd sonLib && make sonLibRootDir=/path/to/sonLib && popd
 
+#### libbdsg
+
+From the same parent directory where you downloaded HAL:
+
+	  git clone https://github.com/vgteam/libbdsg-easy.git --recursive
+	  pushd libbdsg-easy && make -j 8 && popd
+
 #### Optional support of reading HAL files over HTTP via UCSC's URL Data Cache (UDC)
 
 Define ENABLE_UDC before making, and specify the path of the Kent source tree using KENTSRC.  When built with this enabled, all HAL files opened read-only will be accessed using UDC which supports both local files and URLs.

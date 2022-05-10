@@ -29,7 +29,8 @@ namespace hal {
      */
     extern const std::string STORAGE_FORMAT_HDF5;
     extern const std::string STORAGE_FORMAT_MMAP;
-
+    extern const std::string STORAGE_FORMAT_YOMO;
+    
     /*
      * Open modes for files.
      */

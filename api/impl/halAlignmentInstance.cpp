@@ -25,6 +25,7 @@ using namespace hal;
 
 const std::string hal::STORAGE_FORMAT_HDF5 = "hdf5";
 const std::string hal::STORAGE_FORMAT_MMAP = "mmap";
+const std::string hal::STORAGE_FORMAT_YOMO = "yomo";
 
 /* get default FileCreatPropList with HAL default properties set */
 const H5::FileCreatPropList &hal::hdf5DefaultFileCreatPropList() {

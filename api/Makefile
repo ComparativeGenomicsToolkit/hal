@@ -2,7 +2,7 @@ rootDir = ..
 include ${rootDir}/include.mk
 modObjDir = ${objDir}/api
 
-libHal_srcs = $(wildcard impl/*.cpp) $(wildcard hdf5_impl/*.cpp) $(wildcard mmap_impl/*.cpp)
+libHal_srcs = $(wildcard impl/*.cpp) $(wildcard hdf5_impl/*.cpp) $(wildcard mmap_impl/*.cpp) $(wildcard yomo_impl/*.cpp)
 ifdef ENABLE_UDC
   libHal_c_srcs = impl/udc2.c
 endif
@@ -42,7 +42,7 @@ objs = ${srcs:%.cpp=${modObjDir}/%.o} ${c_srcs:%.c=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend} ${c_srcs:%.c=%.depend}
 
 progs = ${halHdf5Tests_progs} ${halApiTest_progs}
-inclSpec += -Ihdf5_impl -Immap_impl
+inclSpec += -Ihdf5_impl -Immap_impl -Iyomo_impl
 ifdef ENABLE_UDC
    # FIXME: standarize var names
    inclSpec += -I${KENTSRC}/inc -I${KENTSRC}/htslib
@@ -71,7 +71,7 @@ halHdf5Tests: all
 	${binDir}/halHdf5Tests
 
 
-halApiTests: hdf5.halApiTestsStorage mmap.halApiTestsStorage
+halApiTests: hdf5.halApiTestsStorage mmap.halApiTestsStorage yomo.halApiTestsStorage
 
 %.halApiTestsStorage:
 	${MAKE} runHalApiTest halStorageFormat=$*
