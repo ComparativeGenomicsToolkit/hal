@@ -127,23 +127,23 @@ class LiftoverBed( Job ):
 
     def run(self, fileStore):
         liftovertempbed = "%s.bed" % os.path.join(self.genomeoutdir, self.othergenome)
+
+        # bedSort (and, given that it's --tab option is gone, presumably halLiftover) expects tab-separated beds, so we have to do some
+        # format gymnastics here.
+        if not self.tab:
+            tabifyBed(self.bed)
+            
         cmd = "halLiftover %s %s %s %s %s" %(self.halfile, self.genome, self.bed, self.othergenome, liftovertempbed)
         if len(self.extrafields) > 0:
             cmd += " --keepExtra"
         else:
             cmd += " --bedType %d" %self.numfield
-        if self.tab:
-            cmd += " --tab"
         system(cmd) 
-        #system("bedSort %s %s" %(liftovertempbed, liftovertempbed))
 
         filterbed = "%s-filtered.bed" %os.path.join(self.genomeoutdir, self.othergenome)
         filterLongIntrons(liftovertempbed, filterbed, 100000, self.tab, self.options.ucscNames)
-        # bedSort expects tab-separated beds, so we have to do some
-        # format gymnastics here.
-        if not self.tab:
-            tabifyBed(filterbed)
         system( "bedSort %s %s" % (filterbed, liftovertempbed) )
+        
         if not self.tab:
             untabifyBed(liftovertempbed)
 
