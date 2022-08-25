@@ -131,7 +131,7 @@ class LiftoverBed( Job ):
         if len(self.extrafields) > 0:
             cmd += " --keepExtra"
         else:
-            cmd += " --outBedVersion %d" %self.numfield
+            cmd += " --bedType %d" %self.numfield
         if self.tab:
             cmd += " --tab"
         system(cmd) 
