@@ -259,9 +259,9 @@ vg convert -g mammals.gfa -p > mammals.pg
 
 HAL alignments can be displayed as Assembly Hubs in the Genome Browser.  To create an assembly hub, use the [Comparative Annotation Toolkit](https://github.com/ComparativeGenomicsToolkit/Comparative-Annotation-Toolkit) or run
 
-	hal2assemblyHub.py mammals.hal outputDirectory
+	hal2assemblyHub.py ./jobStore mammals.hal outputDirectory
 
-Larger alignments require the use of the `--lod` option to generate precomputed levels of detail.
+Larger alignments require the use of the `--lod` option to generate precomputed levels of detail. `./jobStore` here is just a location for Toil to use for temporary files.
 
 Note that this process is presently dependent on having UCSC's faToTwoBit installed.  The `outputDirectory` must be accessible as a URL in order to load the hub. More details are available at [hal2assemblyHub Manual](assemblyHub#comparative-assembly-hub-manual).
 

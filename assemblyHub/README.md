@@ -7,15 +7,17 @@ Quick Start
 -----
 From a multiple sequence alignment, users can quickly create browsers for all input genomes using the following command:
 
-`hal2assemblyHub.py <halFile> <outDir> --lod`
+`hal2assemblyHub.py <jobStore> <halFile> <outDir> --lod`
 
 or to run in parallel:
 
-`hal2assemblyHub.py <halFile> <outDir> --lod --batchSystem <batchType>`
+`hal2assemblyHub.py <jobStore> <halFile> <outDir> --lod --batchSystem <batchType>`
 
 or
 
-`hal2assemblyHub.py <halFile> <outDir> --lod --maxThreads <#ofThreads>`
+`hal2assemblyHub.py <jobStore> <halFile> <outDir> --lod --maxThreads <#ofThreads>`
+
+In the above, `<jobStore>` is a scratch directory that will be created by Toil for temporary files.  Unlike in `cactus`, aws buckets are not supported, it must be a local directory.
 
 * Option `--lod` is specified to compute the levels of detail, which is recommended for large datasets.
 * Option `--batchSystem`: the type of batch system to run the job(s). See [jobTree Manual](https:// github.com/benedictpaten/jobTree) for more details.
@@ -24,9 +26,9 @@ or
 #### Examples
 
 ```
-hal2assemblyHub.py alignment.hal outdir --lod
-hal2assemblyHub.py alignment.hal outdir --lod --batchSystem gridEngine
-hal2assemblyHub.py alignment.hal outdir --lod --maxThreads 24
+hal2assemblyHub.py ./jobStore alignment.hal outdir --lod
+hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --batchSystem gridEngine
+hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --maxThreads 24
 ```
 
 Procedural Levels of Detail
@@ -36,11 +38,11 @@ To improve browsing speed, especially for browsing at all levels of resolution (
 
 *hal2assemblyHub* takes care of generating levels of detail for the alignment if option `--lod` is specified. Example:
 
-```hal2assemblyHub.py alignment.hal outdir –lod```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir –lod```
 
 By default, no level of detail is generated. Users can independently generate them using the HAL Tools’ `halLodInterpolate.py`. Generating levels of detail can be time-consuming. Users can provide *hal2assemblyHub* with pre-computed levels of detail (and avoid re-computing them) by the options `--lodTxtFile` and `--lodDir`:
 
-```hal2assemblyHub.py alignment.hal outdir --lod --lodTxtFile lod.txt --lodDir loddir/```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --lodTxtFile lod.txt --lodDir loddir/```
 
 *lod.txt* and *loddir* are output files of `halLodInterpolate.py`. See `halLodInterpolate.py -h` for explanations of more options.
 * *lod.txt* is output text file with links to interpolated hal files, with each file is associated a value stating its minimum suggested query range (in bases).
@@ -73,7 +75,7 @@ Browsers With Annotation Tracks
 
 *Examples:*
 
-```hal2assemblyHub.py alignment.hal outdir --lod --cladeExclusiveRegions --alignability --gcContent --conservation conservationRegions.bed --conservationGenomeName hg19```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --cladeExclusiveRegions --alignability --gcContent --conservation conservationRegions.bed --conservationGenomeName hg19```
 
 * `--cladeExclusiveRegions`: for each node in the phylogenetic tree of the genomes in the alignment, regions that are genome-specific (leaf-node) or clade-specific (internal node), i.e. present only in genomes within the clade and absent in other genomes, are printed out in bigbed-formatted files. These files will be located at *outdir/liftoverbed/CladeExclusive*. The resulting comparative assembly hub contains one track for each genome. See `--maxOutgroupGenomes` and `--minIngroupGenomes` options (see `hal2assemblyHub.py --help`) for adjusting the definition of “clade exclusive”.
 
@@ -93,7 +95,7 @@ The computed conservation tracks are stored at *outdir/conservation*.
 
 Computing conservation scores could be expensive. Use option `--conservationDir` to use pre-computed conservation scores:
 
-`hal2assemblyHub.py alignment.hal outdir –lod –conservationDir myConservationDir/`
+`hal2assemblyHub.py ./jobStore alignment.hal outdir –lod –conservationDir myConservationDir/`
 
 * `--conservationDir`: Directory contains conservation bigwigs. Format:
 
@@ -111,7 +113,7 @@ myConservationDir/
 Currently, `hal2assemblyHub.py` supports two annotation formats: bed (or big bed) and wiggle (or bigwig), see http://genome.ucsc.edu/FAQ/FAQformat.html. Example annotations are genes, transcription levels, histone modifications, etc.
 
 #####Example 1:
-```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes --tabBed```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --bedDirs Genes --tabBed```
 
 * `--bedDirs`: comma separated list of paths to different annotation directories, one directory per annotation type. In this example, there is only one annotation type, which is Genes. The format of each annotation directory is:
 
@@ -131,17 +133,17 @@ Genes/
 * `--tabBed`: if the input bed files are tab-separated (recommended), this option must be specified. The default settings assume space-delimited. If the bed files are space-delimited, the field values must not contain any space.
 
 ##### Example 2:
-```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs allAnnotations/Genes,allAnnotations/CpG-Islands,allAnnotations/Variations --tabBed```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --bedDirs allAnnotations/Genes,allAnnotations/CpG-Islands,allAnnotations/Variations --tabBed```
 
 In this example, there are three different annotation types: *Genes*, *CpG-Islands*, and *Variations*, all located within the directory *allAnnotations/*.
 
 ##### Example 3:
-```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands,Variations --tabBed --noBedLiftover```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --bedDirs Genes,CpG-Islands,Variations --tabBed --noBedLiftover```
 
 * `--noBedLiftover`: if specified, the lift−over step is disable, i.e. only creates track for the input annotations and does not lift/map these annotations to other genomes.
 
 ##### Example 4:
-```hal2assemblyHub.py alignment.hal outdir --lod --finalBigBedDirs Genes,CpG-Islands,Variations --tabBed```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --finalBigBedDirs Genes,CpG-Islands,Variations --tabBed```
 
 * `--finalBigBedDirs`: comma separated list of directories containing final big bed files to be displayed. No liftover will be done for these files. Each directory represents a type of annotation. This option is useful when annotations have been previous lifted-over and can just be fed to the pipeline, to avoid rerunning the lift-over processes. Format of each directory:
 ```
@@ -158,22 +160,22 @@ Annotations of queryGenome have been lifted-over (mapped) to targetGenomes and w
 Note: it is not required that each annotation must be lifted over to all other genomes. The pipeline prepares one track for each bigBed file - users can choose which tracks to include.
 
 ##### Example 5:
-```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes --finalBigBedDirs CpG-Islands,Variations --tabBed```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --bedDirs Genes --finalBigBedDirs CpG-Islands,Variations --tabBed```
 
 In this example, the pipeline will not perform lifting-over for the *CpG-Islands* and *Variations* annotations (in bigBed format) - the corresponding tracks will be displayed on the resulting comparative hubs “as is”, while the *Genes* annotations (in bed format) will be lifted-over. This is applicable when users wish to include new annotations into their comparative assembly hubs, or to update some annotations while keeping the rest intact.
 
 ##### Example 6:
-```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands --bedDirs2 Variations --tabBed```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --bedDirs Genes,CpG-Islands --bedDirs2 Variations --tabBed```
 
 * `--bedDirs2`: Similar to `--bedDirs`, except the tracks for the annotations specified here will be kept separately and out of the composite track. In this case, the Genes and CpG-Islands tracks will be included in the composite track (hubCentral) while the V ariations tracks will be on its own.
 
 ##### Example 7:
-```hal2assemblyHub.py alignment.hal outdir --lod --finalBigBedDirs Genes,CpG-Islands --finalBigBedDirs2 Variations --tabBed```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --finalBigBedDirs Genes,CpG-Islands --finalBigBedDirs2 Variations --tabBed```
 
 * `--finalBigBedDirs2`: Similar to `--finalBigBedDirs`, except these tracks will be kept separately and out of the composite track.
 
 ##### Example 8:
-```hal2assemblyHub.py alignment.hal outdir --lod --bedDirs Genes,CpG-Islands --tabBed --wigDirs Transcription,Methylation```
+```hal2assemblyHub.py ./jobStore alignment.hal outdir --lod --bedDirs Genes,CpG-Islands --tabBed --wigDirs Transcription,Methylation```
 
 * `--wigDirs`: similar to `--bedDirs`, but for wiggle format files.
 
