@@ -39,6 +39,7 @@ void addSubtree(AlignmentPtr mainAlignment, AlignmentConstPtr appendAlignment, s
         Genome *mainChildGenome =
             mainAlignment->addLeafGenome(children[i], currNode, appendAlignment->getBranchLength(currNode, children[i]));
         const Genome *appendChildGenome = appendAlignment->openGenome(children[i]);
+        cerr << "[halAppendSubtree] Copying " << children[i] << endl;
         appendChildGenome->copy(mainChildGenome);
         mainAlignment->closeGenome(mainChildGenome);
         appendAlignment->closeGenome(appendChildGenome);
@@ -83,6 +84,7 @@ int main(int argc, char *argv[]) {
         bridgeAlignment = AlignmentConstPtr(openHalAlignment(bridgePath, &optionsParser));
         Genome *mainAppendedRoot = mainAlignment->addLeafGenome(rootName, parentName, branchLength);
         const Genome *appendAppendedRoot = appendAlignment->openGenome(rootName);
+        cerr << "[halAppendSubtree] Copying " << rootName << endl;
         appendAppendedRoot->copy(mainAppendedRoot);
         appendAlignment->closeGenome(appendAppendedRoot);
     } else {
