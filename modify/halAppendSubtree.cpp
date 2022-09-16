@@ -40,11 +40,15 @@ void addSubtree(AlignmentPtr mainAlignment, AlignmentConstPtr appendAlignment, s
             mainAlignment->addLeafGenome(children[i], currNode, appendAlignment->getBranchLength(currNode, children[i]));
         const Genome *appendChildGenome = appendAlignment->openGenome(children[i]);
         appendChildGenome->copy(mainChildGenome);
+        mainAlignment->closeGenome(mainChildGenome);
+        appendAlignment->closeGenome(appendChildGenome);
         addSubtree(mainAlignment, appendAlignment, children[i]);
     }
     inGenome->copyBottomDimensions(outGenome);
     inGenome->copyBottomSegments(outGenome);
     outGenome->fixParseInfo();
+    mainAlignment->closeGenome(outGenome);
+    appendAlignment->closeGenome(inGenome);
 }
 
 int main(int argc, char *argv[]) {
@@ -80,6 +84,7 @@ int main(int argc, char *argv[]) {
         Genome *mainAppendedRoot = mainAlignment->addLeafGenome(rootName, parentName, branchLength);
         const Genome *appendAppendedRoot = appendAlignment->openGenome(rootName);
         appendAppendedRoot->copy(mainAppendedRoot);
+        appendAlignment->closeGenome(appendAppendedRoot);
     } else {
         // the bridge alignment is equivalent to the append alignment in this case
         // (the append alignment will contain at least all the information that
@@ -99,6 +104,8 @@ int main(int argc, char *argv[]) {
     bridgeParentGenome->copyBottomDimensions(mainParentGenome);
     bridgeParentGenome->copyBottomSegments(mainParentGenome);
     mainParentGenome->fixParseInfo();
+    mainAlignment->closeGenome(mainParentGenome);
+    bridgeAlignment->closeGenome(bridgeParentGenome);
 
     // And top segments for its children
     vector<string> children = bridgeAlignment->getChildNames(parentName);
@@ -108,6 +115,8 @@ int main(int argc, char *argv[]) {
         bridgeChildGenome->copyTopDimensions(mainChildGenome);
         bridgeChildGenome->copyTopSegments(mainChildGenome);
         mainChildGenome->fixParseInfo();
+        mainAlignment->closeGenome(mainChildGenome);
+        bridgeAlignment->closeGenome(bridgeChildGenome);
     }
 
     if (!noMarkAncestors) {
