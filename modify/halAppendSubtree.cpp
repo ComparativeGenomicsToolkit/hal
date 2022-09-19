@@ -26,14 +26,30 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.addOptionFlag("merge", "merge appended root and node that is appended to", false);
 }
 
+void closeWithNeighbours(AlignmentConstPtr alignment, const Genome* genome) {
+    // Genome::copy() can open parent and child genomes
+    // but we want to make absolutely sure they're closed afterwards here so we can
+    // run with --inMemory
+    const Genome* parent = genome->getParent();
+    if (parent) {
+        alignment->closeGenome(parent);
+    }
+    size_t ccount = genome->getNumChildren();
+    for (size_t i = 0; i < ccount; ++i) {
+        const Genome* child = genome->getChild(i);
+        alignment->closeGenome(child);
+    }
+    alignment->closeGenome(genome);
+}
+
 void addSubtree(AlignmentPtr mainAlignment, AlignmentConstPtr appendAlignment, string currNode) {
-    Genome *outGenome = mainAlignment->openGenome(currNode);
-    const Genome *inGenome = appendAlignment->openGenome(currNode);
     vector<string> children = appendAlignment->getChildNames(currNode);
     for (size_t i = 0; i < children.size(); i++) {
-        if (mainAlignment->openGenome(children[i]) != NULL) {
+        Genome* testGenome = mainAlignment->openGenome(children[i]);
+        if (testGenome != NULL) {
             // Special case for a node that is being merged; we don't want
             // to append children that already exist.
+            mainAlignment->closeGenome(testGenome);
             continue;
         }
         Genome *mainChildGenome =
@@ -41,15 +57,17 @@ void addSubtree(AlignmentPtr mainAlignment, AlignmentConstPtr appendAlignment, s
         const Genome *appendChildGenome = appendAlignment->openGenome(children[i]);
         cerr << "[halAppendSubtree] Copying " << children[i] << endl;
         appendChildGenome->copy(mainChildGenome);
-        mainAlignment->closeGenome(mainChildGenome);
-        appendAlignment->closeGenome(appendChildGenome);
+        closeWithNeighbours(mainAlignment, mainChildGenome);        
+        closeWithNeighbours(appendAlignment, appendChildGenome);        
         addSubtree(mainAlignment, appendAlignment, children[i]);
     }
+    Genome *outGenome = mainAlignment->openGenome(currNode);
+    const Genome *inGenome = appendAlignment->openGenome(currNode);
     inGenome->copyBottomDimensions(outGenome);
     inGenome->copyBottomSegments(outGenome);
     outGenome->fixParseInfo();
-    mainAlignment->closeGenome(outGenome);
-    appendAlignment->closeGenome(inGenome);
+    closeWithNeighbours(mainAlignment, outGenome);
+    closeWithNeighbours(appendAlignment, inGenome);    
 }
 
 int main(int argc, char *argv[]) {
@@ -59,6 +77,7 @@ int main(int argc, char *argv[]) {
     double branchLength;
     bool noMarkAncestors;
     bool merge;
+    bool inMemory;
     try {
         optionsParser.parseOptions(argc, argv);
         mainPath = optionsParser.getArgument<string>("mainFile");
@@ -69,6 +88,7 @@ int main(int argc, char *argv[]) {
         branchLength = optionsParser.getOption<double>("branchLength");
         noMarkAncestors = optionsParser.getFlag("noMarkAncestors");
         merge = optionsParser.getFlag("merge");
+        inMemory = optionsParser.getFlag("hdf5InMemory") || optionsParser.getFlag("inMemory");
     } catch (exception &e) {
         optionsParser.printUsage(cerr);
         return 1;
@@ -76,6 +96,10 @@ int main(int argc, char *argv[]) {
     AlignmentPtr mainAlignment(openHalAlignment(mainPath, &optionsParser, READ_ACCESS | WRITE_ACCESS));
     AlignmentConstPtr appendAlignment(openHalAlignment(appendPath, &optionsParser));
     AlignmentConstPtr bridgeAlignment;
+
+    if (!inMemory) {
+        cerr << "[halAppendSubtree] Warning this tool requires --hdf5InMemory to be set in order to run in a reasonable time" << endl;
+    }
 
     if (!merge) {
         if (bridgePath == "") {
