@@ -26,7 +26,7 @@ static void initParser(CLParser &optionsParser) {
     optionsParser.addOptionFlag("merge", "merge appended root and node that is appended to", false);
 }
 
-void closeWithNeighbours(AlignmentConstPtr alignment, const Genome* genome) {
+static void closeWithNeighbours(AlignmentConstPtr alignment, const Genome* genome) {
     // Genome::copy() can open parent and child genomes
     // but we want to make absolutely sure they're closed afterwards here so we can
     // run with --inMemory

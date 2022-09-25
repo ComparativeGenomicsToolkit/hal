@@ -143,6 +143,22 @@ void copyGenome(const Genome *inGenome, Genome *outGenome) {
     }
 }
 
+static void closeWithNeighbours(AlignmentConstPtr alignment, const Genome* genome) {
+    // Genome::copy() can open parent and child genomes
+    // but we want to make absolutely sure they're closed afterwards here so we can
+    // run with --inMemory
+    const Genome* parent = genome->getParent();
+    if (parent) {
+        alignment->closeGenome(parent);
+    }
+    size_t ccount = genome->getNumChildren();
+    for (size_t i = 0; i < ccount; ++i) {
+        const Genome* child = genome->getChild(i);
+        alignment->closeGenome(child);
+    }
+    alignment->closeGenome(genome);
+}
+
 static void extractTree(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, const string &rootName) {
     const Genome *genome = inAlignment->openGenome(rootName);
     if (genome == NULL) {
@@ -159,8 +175,8 @@ static void extractTree(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment
     }
     assert(newGenome != NULL);
 
-    inAlignment->closeGenome(genome);
-    outAlignment->closeGenome(newGenome);
+    closeWithNeighbours(inAlignment, genome);
+    closeWithNeighbours(outAlignment, newGenome);
 
     vector<string> childNames = inAlignment->getChildNames(rootName);
     for (size_t i = 0; i < childNames.size(); ++i) {
@@ -180,8 +196,8 @@ void extract(AlignmentConstPtr inAlignment, AlignmentPtr outAlignment, const str
     cout << "Extracting " << genome->getName() << endl;
     copyGenome(genome, newGenome);
 
-    inAlignment->closeGenome(genome);
-    outAlignment->closeGenome(newGenome);
+    closeWithNeighbours(inAlignment, genome);
+    closeWithNeighbours(outAlignment, newGenome);
 
     vector<string> childNames = inAlignment->getChildNames(rootName);
     for (size_t i = 0; i < childNames.size(); ++i) {
