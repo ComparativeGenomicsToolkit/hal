@@ -50,7 +50,7 @@ which are forced to the positive strand with `pslPosTarget`:
 ```
 halLiftover --outPSL 600way.hal Homo_sapiens \
       Homo_sapiens.bed Gallus_gallus /dev/stdout | \
-      pslPosTarget stdin Homo_sapiens-Gallus_gallus.psl
+      pslPosTarget stdin Homo_sapiens-to-Gallus_gallus.psl
 ```
 
 The `halLiftover` may be run on a cluster by splitting the source BED into one sequence per job.  The resulting PSL files are then concatenated together.
@@ -58,7 +58,7 @@ The `halLiftover` may be run on a cluster by splitting the source BED into one s
 These alignments are then chained using the UCSC Browser `axtChain` program:
 
 ```
-axtChain -psl -linearGap=loose Homo_sapiens-Gallus_gallus.psl Gallus_gallus.2bit Homo_sapiens.2bit Homo_sapiens-Gallus_gallus.chain
+axtChain -psl -linearGap=loose Homo_sapiens-to-Gallus_gallus.psl Gallus_gallus.2bit Homo_sapiens.2bit Homo_sapiens-to-Gallus_gallus.chain
 ```
 
 Note the order of the two-bit files are in the order target, followed by source.  Consult the output of `axtChain` with no arguments for a description of the `-linearGap` option. It may also improve results to use the `-scoreScheme` option, although find the score files to is challenging.
