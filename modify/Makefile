@@ -8,6 +8,8 @@ renameFile_srcs = renameFile.cpp
 renameFile_objs = ${renameFile_srcs:%.cpp=${modObjDir}/%.o}
 halRemoveGenome_srcs = halRemoveGenome.cpp
 halRemoveGenome_objs = ${halRemoveGenome_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
+halRemoveSubtree_srcs = halRemoveSubtree.cpp
+halRemoveSubtree_objs = ${halRemoveSubtree_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
 halAddToBranch_srcs = halAddToBranch.cpp
 halAddToBranch_objs = ${halAddToBranch_srcs:%.cpp=${modObjDir}/%.o} ${markAncestors_objs}
 halReplaceGenome_srcs = halReplaceGenome.cpp
@@ -30,14 +32,14 @@ ancestorsML_srcs = ancestorsML.cpp ancestorsMLMain.cpp ancestorsMLBed.cpp
 ancestorsML_objs = ${ancestorsML_srcs:%.cpp=${modObjDir}/%.o}
 ancestorsMLTest_srcs = ancestorsMLTest.cpp ancestorsML.cpp
 ancestorsMLTest_objs = ${ancestorsMLTest_srcs:%.cpp=${modObjDir}/%.o}
-srcs = ${markAncestors_srcs} ${renameFile_srcs} ${halRemoveGenome_srcs} ${halAddToBranch_srcs} \
+srcs = ${markAncestors_srcs} ${renameFile_srcs} ${halRemoveGenome_srcs} ${halRemoveSubtree_srcs} ${halAddToBranch_srcs} \
     ${halReplaceGenome_srcs} ${halAppendSubtree_srcs} \
     ${findRegionsExclusivelyInGroup_srcs} ${halUpdateBranchLengths_srcs} \
     ${halWriteNucleotides_srcs} ${halSetMetadata_srcs} ${halRenameGenomes_srcs} \
     ${halRenameSequences_srcs} ${ancestorsML_srcs} ${ancestorsMLTest_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
-progs = ${binDir}/halRemoveGenome ${binDir}/halAddToBranch ${binDir}/halReplaceGenome ${binDir}/halAppendSubtree ${binDir}/findRegionsExclusivelyInGroup ${binDir}/halUpdateBranchLengths ${binDir}/halWriteNucleotides ${binDir}/halSetMetadata ${binDir}/halRenameGenomes ${binDir}/halRenameSequences
+progs = ${binDir}/halRemoveGenome ${binDir}/halRemoveSubtree ${binDir}/halAddToBranch ${binDir}/halReplaceGenome ${binDir}/halAppendSubtree ${binDir}/findRegionsExclusivelyInGroup ${binDir}/halUpdateBranchLengths ${binDir}/halWriteNucleotides ${binDir}/halSetMetadata ${binDir}/halRenameGenomes ${binDir}/halRenameSequences
 
 inclSpec += -I${rootDir}/liftover/inc ${PHASTCXXFLAGS}
 otherLibs += ${libHalLiftover}
