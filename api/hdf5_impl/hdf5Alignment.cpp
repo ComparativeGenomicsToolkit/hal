@@ -40,9 +40,12 @@ const H5std_string Hdf5Alignment::VersionGroupName = "Verison";
 
 const hsize_t Hdf5Alignment::DefaultChunkSize = 1000;
 const hsize_t Hdf5Alignment::DefaultCompression = 2;
+// to do: the C-api changed in 1.8 for metadata, and all signs point to the C++ api no longer working
+//        does this have any bearing on memory usage?
 const hsize_t Hdf5Alignment::DefaultCacheMDCElems = 113;
-const hsize_t Hdf5Alignment::DefaultCacheRDCElems = 599999;
-const hsize_t Hdf5Alignment::DefaultCacheRDCBytes = 15728640;
+// using hdf5 defaults as described here: https://docs.h5py.org/en/stable/high/file.html
+const hsize_t Hdf5Alignment::DefaultCacheRDCElems = 521;
+const hsize_t Hdf5Alignment::DefaultCacheRDCBytes = 1048576;
 const double Hdf5Alignment::DefaultCacheW0 = 0.75;
 const bool Hdf5Alignment::DefaultInMemory = false;
 
