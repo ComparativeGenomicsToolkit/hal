@@ -189,20 +189,6 @@ void Hdf5Alignment::open() {
 #endif
     _metaData = new HDF5MetaData(_file, MetaGroupName);
     loadTree();
-    if (stTree_getNumNodes(_tree) > 199) {
-        // We disable the HDF5 chunk cache with large numbers of species
-        // (over 200 genomes, or 100 leaves with a binary tree), because
-        // every genome opened will cause several new chunk caches to be
-        // initialized. This causes massive memory usage (well over 17
-        // GB for just running halStats on a 250-genome alignment).
-        close();
-        delete _file;
-        _aprops.setCache(0, 0, 0, 0.);
-        _file = new H5File(_alignmentPath.c_str(), _flags, _cprops, _aprops);
-        delete _metaData;
-        _metaData = new HDF5MetaData(_file, MetaGroupName);
-        loadTree();
-    }
 }
 
 void Hdf5Alignment::close() {
