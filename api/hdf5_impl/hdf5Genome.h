@@ -15,6 +15,7 @@
 #include "hdf5ExternalArray.h"
 #include "hdf5MetaData.h"
 #include <H5Cpp.h>
+#include <functional>
 
 namespace hal {
 
@@ -127,7 +128,11 @@ namespace hal {
         void readSequences();
         void writeSequences(const std::vector<hal::Sequence::Info> &sequenceDimensions);
         void deleteSequenceCache();
-        void loadSequencePosCache() const;
+        // all pos-cache access must be done via functions:
+        // if -1, load the whole cashe in 1 bin.  otherwise, load just the bin containing tgt_pos
+        void loadSequencePosCache(hal_index_t tgt_pos = -1) const;
+        void forEachSequenceInPosCache(std::function<void(Hdf5Sequence*)> fn) const;
+        //
         void loadSequenceNameCache() const;
         void setGenomeTopDimensions(const std::vector<hal::Sequence::UpdateInfo> &sequenceDimensions);
 
@@ -157,7 +162,14 @@ namespace hal {
         hal_size_t _totalSequenceLength;
         hal_size_t _numChunksInArrayBuffer;
 
-        mutable std::map<hal_size_t, Hdf5Sequence *> _sequencePosCache;
+        // the sequence pos cache is now two levels, where positions are grouped by bins
+        // each time the cache is accessed, only the relevant bin is filled
+        // (unless the name cache is used, then the whole thing is loaded into one bin)
+        // this is an attempt to optimize for the column iterator and hal2maf where
+        // loading an entire pos cache for each genome in the alignment takes too much memory
+        // note: we are indexing by upper bound, so a sequence with range [0,9] will be indexed at 10
+        mutable std::map<hal_size_t, std::map<hal_size_t, Hdf5Sequence *> > _sequencePosBinCache;
+        mutable hal_size_t _sequencePosFullBinCount;
         mutable std::vector<Hdf5Sequence *> _zeroLenPosCache;
         mutable std::map<std::string, Hdf5Sequence *> _sequenceNameCache;
 
@@ -168,6 +180,8 @@ namespace hal {
         static const std::string sequenceNameArrayName;
         static const std::string metaGroupName;
         static const std::string rupGroupName;
+        static const hal_size_t sequencePosMinBinSize;
+        static const hal_size_t sequencePosMaxBins;        
 
         static const double dnaChunkScale;
     };

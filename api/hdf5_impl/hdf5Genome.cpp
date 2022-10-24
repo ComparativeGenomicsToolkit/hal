@@ -34,11 +34,13 @@ const string Hdf5Genome::sequenceNameArrayName = "SEQNAME_ARRAY";
 const string Hdf5Genome::metaGroupName = "Meta";
 const string Hdf5Genome::rupGroupName = "Rup";
 const double Hdf5Genome::dnaChunkScale = 10.;
+const hal_size_t Hdf5Genome::sequencePosMinBinSize = 50000;
+const hal_size_t Hdf5Genome::sequencePosMaxBins = 10;
 
 Hdf5Genome::Hdf5Genome(const string &name, Hdf5Alignment *alignment, PortableH5Location *h5Parent,
                        const DSetCreatPropList &dcProps, bool inMemory)
     : Genome(alignment, name), _alignment(alignment), _h5Parent(h5Parent), _name(name), _numChildrenInBottomArray(0),
-      _totalSequenceLength(0), _numChunksInArrayBuffer(inMemory ? 0 : 1) {
+      _totalSequenceLength(0), _numChunksInArrayBuffer(inMemory ? 0 : 1), _sequencePosFullBinCount(0) {
     _dcprops.copy(dcProps);
     assert(!name.empty());
     assert(alignment != NULL && h5Parent != NULL);
@@ -174,15 +176,14 @@ void Hdf5Genome::updateTopDimensions(const vector<Sequence::UpdateInfo> &topDime
     // sequences (which are in the separate vector).  This is fine
     // here since we will never update them, but seems like it could be
     // dangerous if something were to change
-    map<hal_size_t, Hdf5Sequence *>::iterator posCacheIt;
     map<string, const Sequence::UpdateInfo *>::iterator inputIt;
-    for (posCacheIt = _sequencePosCache.begin(); posCacheIt != _sequencePosCache.end(); ++posCacheIt) {
-        Hdf5Sequence *sequence = posCacheIt->second;
-        inputIt = inputMap.find(sequence->getName());
-        if (inputIt == inputMap.end()) {
-            currentTopD.insert(pair<string, hal_size_t>(sequence->getName(), sequence->getNumTopSegments()));
-        }
-    }
+    forEachSequenceInPosCache([&](Hdf5Sequence* sequence) {
+            inputIt = inputMap.find(sequence->getName());
+            if (inputIt == inputMap.end()) {
+                currentTopD.insert(pair<string, hal_size_t>(sequence->getName(), sequence->getNumTopSegments()));
+            }
+        });
+    
     // scan through existing sequences, updating as necessary
     // build summary of all new and unchanged dimensions in newDimensions
     // Note to self: iterating the map in this way skips zero-length
@@ -193,23 +194,22 @@ void Hdf5Genome::updateTopDimensions(const vector<Sequence::UpdateInfo> &topDime
     vector<Sequence::UpdateInfo> newDimensions;
     Sequence::UpdateInfo newInfo;
     hal_size_t topArrayIndex = 0;
-    for (posCacheIt = _sequencePosCache.begin(); posCacheIt != _sequencePosCache.end(); ++posCacheIt) {
-        Hdf5Sequence *sequence = posCacheIt->second;
-        sequence->setTopSegmentArrayIndex(topArrayIndex);
-        inputIt = inputMap.find(sequence->getName());
-        if (inputIt != inputMap.end()) {
-            const Sequence::UpdateInfo *updateInfo = inputIt->second;
-            newDimensions.push_back(*updateInfo);
-        } else {
-            currentIt = currentTopD.find(sequence->getName());
-            assert(currentIt != currentTopD.end());
-            newInfo._name = posCacheIt->first;
-            newInfo._numSegments = currentIt->second;
-            newDimensions.push_back(newInfo);
-        }
-        sequence->setNumTopSegments(newDimensions.back()._numSegments);
-        topArrayIndex += newDimensions.back()._numSegments;
-    }
+    forEachSequenceInPosCache([&](Hdf5Sequence* sequence) {
+            sequence->setTopSegmentArrayIndex(topArrayIndex);
+            inputIt = inputMap.find(sequence->getName());
+            if (inputIt != inputMap.end()) {
+                const Sequence::UpdateInfo *updateInfo = inputIt->second;
+                newDimensions.push_back(*updateInfo);
+            } else {
+                currentIt = currentTopD.find(sequence->getName());
+                assert(currentIt != currentTopD.end());
+                newInfo._name = sequence->getName();
+                newInfo._numSegments = currentIt->second;
+                newDimensions.push_back(newInfo);
+            }
+            sequence->setNumTopSegments(newDimensions.back()._numSegments);
+            topArrayIndex += newDimensions.back()._numSegments;
+        });
     setGenomeTopDimensions(newDimensions);
 }
 
@@ -238,15 +238,14 @@ void Hdf5Genome::updateBottomDimensions(const vector<Sequence::UpdateInfo> &bott
     // sequences (which are in the separate vector).  This is fine
     // here since we will never update them, but seems like it could be
     // dangerous if something were to change
-    map<hal_size_t, Hdf5Sequence *>::iterator posCacheIt;
     map<string, const Sequence::UpdateInfo *>::iterator inputIt;
-    for (posCacheIt = _sequencePosCache.begin(); posCacheIt != _sequencePosCache.end(); ++posCacheIt) {
-        Hdf5Sequence *sequence = posCacheIt->second;
-        inputIt = inputMap.find(sequence->getName());
-        if (inputIt == inputMap.end()) {
-            currentBottomD.insert(pair<string, hal_size_t>(sequence->getName(), sequence->getNumBottomSegments()));
-        }
-    }
+    forEachSequenceInPosCache([&](Hdf5Sequence* sequence) {
+            inputIt = inputMap.find(sequence->getName());
+            if (inputIt == inputMap.end()) {
+                currentBottomD.insert(pair<string, hal_size_t>(sequence->getName(), sequence->getNumBottomSegments()));
+            }
+        });
+    
     // scan through existing sequences, updating as necessary
     // build summary of all new and unchanged dimensions in newDimensions
     // Note to self: iterating the map in this way skips zero-length
@@ -257,8 +256,7 @@ void Hdf5Genome::updateBottomDimensions(const vector<Sequence::UpdateInfo> &bott
     vector<Sequence::UpdateInfo> newDimensions;
     Sequence::UpdateInfo newInfo;
     hal_size_t bottomArrayIndex = 0;
-    for (posCacheIt = _sequencePosCache.begin(); posCacheIt != _sequencePosCache.end(); ++posCacheIt) {
-        Hdf5Sequence *sequence = posCacheIt->second;
+    forEachSequenceInPosCache([&](Hdf5Sequence* sequence) {
         sequence->setBottomSegmentArrayIndex(bottomArrayIndex);
         inputIt = inputMap.find(sequence->getName());
         if (inputIt != inputMap.end()) {
@@ -267,13 +265,13 @@ void Hdf5Genome::updateBottomDimensions(const vector<Sequence::UpdateInfo> &bott
         } else {
             currentIt = currentBottomD.find(sequence->getName());
             assert(currentIt != currentBottomD.end());
-            newInfo._name = posCacheIt->first;
+            newInfo._name = sequence->getName();
             newInfo._numSegments = currentIt->second;
             newDimensions.push_back(newInfo);
         }
         sequence->setNumBottomSegments(newDimensions.back()._numSegments);
         bottomArrayIndex += newDimensions.back()._numSegments;
-    }
+        });
     setGenomeBottomDimensions(newDimensions);
 }
 
@@ -340,16 +338,25 @@ const Sequence *Hdf5Genome::getSequence(const string &name) const {
 }
 
 Sequence *Hdf5Genome::getSequenceBySite(hal_size_t position) {
-    loadSequencePosCache();
-    map<hal_size_t, Hdf5Sequence *>::iterator i;
-    i = _sequencePosCache.upper_bound(position);
-    if (i != _sequencePosCache.end()) {
-        if (position >= (hal_size_t)i->second->getStartPosition()) {
-            assert(position < i->second->getStartPosition() + i->second->getSequenceLength());
-            return i->second;
-        }
+    loadSequencePosCache(position);
+
+    assert(_sequencePosFullBinCount > 0);
+    std::map<hal_size_t, std::map<hal_size_t, Hdf5Sequence *> >::iterator posCacheBin =
+        _sequencePosBinCache.upper_bound(position);
+    
+    if (posCacheBin == _sequencePosBinCache.end()) {
+        throw hal_exception("Internal error looking up sequence by site " + std::to_string(position) + " in " + getName());
     }
-    return NULL;
+    
+    map<hal_size_t, Hdf5Sequence *>::iterator i = posCacheBin->second.upper_bound(position);
+    
+    if (i == posCacheBin->second.end() ||
+        position < i->second->getStartPosition() ||
+        position >= (i->second->getStartPosition() + i->second->getSequenceLength())) {
+        throw hal_exception("Internal error looking up sequence by site " + std::to_string(position) + " in " + getName());
+    }
+
+    return i->second;
 }
 
 const Sequence *Hdf5Genome::getSequenceBySite(hal_size_t position) const {
@@ -575,64 +582,161 @@ void Hdf5Genome::readSequences() {
 }
 
 void Hdf5Genome::deleteSequenceCache() {
-    if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0) {
-        map<hal_size_t, Hdf5Sequence *>::iterator i;
-        for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i) {
-            delete i->second;
-        }
-        vector<Hdf5Sequence *>::iterator z;
-        for (z = _zeroLenPosCache.begin(); z != _zeroLenPosCache.end(); ++z) {
-            delete *z;
-        }
-    } else if (_sequenceNameCache.size() > 0) {
+    if (_sequenceNameCache.size() > 0) {
         map<string, Hdf5Sequence *>::iterator i;
         for (i = _sequenceNameCache.begin(); i != _sequenceNameCache.end(); ++i) {
             delete i->second;
         }
     }
-    _sequencePosCache.clear();
+    else if (_sequencePosBinCache.size() > 0 || _zeroLenPosCache.size() > 0) {
+        forEachSequenceInPosCache([&](Hdf5Sequence* sequence) {
+                delete sequence;
+            });
+        vector<Hdf5Sequence *>::iterator z;
+        for (z = _zeroLenPosCache.begin(); z != _zeroLenPosCache.end(); ++z) {
+            delete *z;
+        }
+    }
+    _sequencePosBinCache.clear();
     _zeroLenPosCache.clear();
     _sequenceNameCache.clear(); // I share my pointers with above.
 }
 
-void Hdf5Genome::loadSequencePosCache() const {
-    if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0) {
+void Hdf5Genome::loadSequencePosCache(hal_index_t position) const {
+
+    hal_size_t numSequences = _sequenceNameArray.getSize();
+
+    if (_sequencePosFullBinCount > 0 && _sequencePosBinCache.size() == _sequencePosFullBinCount) {
+        // cache is full
         return;
     }
-    hal_size_t totalReadLen = 0;
-    hal_size_t numSequences = _sequenceNameArray.getSize();
 
     if (_sequenceNameCache.size() > 0) {
         assert(_sequenceNameCache.size() == numSequences);
+        if (_sequencePosBinCache.empty()) {
+            // just make one bin for everything        
+            _sequencePosBinCache[numeric_limits<hal_size_t>::max()] = map<hal_size_t, Hdf5Sequence *>();
+        }
         map<std::string, Hdf5Sequence *>::const_iterator i;
         for (i = _sequenceNameCache.begin(); i != _sequenceNameCache.end(); ++i) {
             if (i->second->getSequenceLength() > 0) {
-                _sequencePosCache.insert(pair<hal_size_t, Hdf5Sequence *>(
+                std::map<hal_size_t, std::map<hal_size_t, Hdf5Sequence *> >::iterator posCacheBin =
+                    _sequencePosBinCache.upper_bound(i->second->getStartPosition());
+                posCacheBin->second.insert(pair<hal_size_t, Hdf5Sequence *>(
                     i->second->getStartPosition() + i->second->getSequenceLength(), i->second));
-                totalReadLen += i->second->getSequenceLength();
             } else {
                 // FIXME: _zeroLenPosCache.push_back(i->second);
             }
         }
+        _sequencePosFullBinCount = _sequencePosBinCache.size();
     } else {
-        for (hal_size_t i = 0; i < numSequences; ++i) {
-            Hdf5Sequence *seq =
-                new Hdf5Sequence(const_cast<Hdf5Genome *>(this), const_cast<Hdf5ExternalArray *>(&_sequenceIdxArray),
-                                 const_cast<Hdf5ExternalArray *>(&_sequenceNameArray), i);
-            if (seq->getSequenceLength() > 0) {
-                _sequencePosCache.insert(
-                    pair<hal_size_t, Hdf5Sequence *>(seq->getStartPosition() + seq->getSequenceLength(), seq));
-                totalReadLen += seq->getSequenceLength();
-            } else {
-                // FIXME: _zeroLenPosCache.push_back(seq);
+        // we begin by setting up the bins if necessary            
+        if (_sequencePosBinCache.empty()) {
+            assert(_sequencePosFullBinCount == 0);
+
+            // always need one bin ending at infinity
+            _sequencePosBinCache[numeric_limits<hal_size_t>::max()] = map<hal_size_t, Hdf5Sequence *>();
+
+            hal_size_t numBins = 1;
+            hal_size_t binSize = numSequences;
+            if (position != -1 && numSequences > sequencePosMinBinSize) {
+                numBins = numSequences / sequencePosMinBinSize;
+                if (numSequences % sequencePosMinBinSize) {
+                    ++numBins;
+                }
+                if (numBins > sequencePosMaxBins) {
+                    numBins = sequencePosMaxBins;
+                }
+                binSize = numSequences / numBins;
             }
+
+            // add on the other bins
+            vector<hal_size_t> seqStarts;
+            if (numBins > 1) {                
+                for (hal_size_t i = 0; i < numSequences; ++i) {
+                    Hdf5Sequence seq(const_cast<Hdf5Genome *>(this), const_cast<Hdf5ExternalArray *>(&_sequenceIdxArray),
+                                     const_cast<Hdf5ExternalArray *>(&_sequenceNameArray), i);
+                    seqStarts.push_back(seq.getStartPosition());
+                }
+            }
+            std::sort(seqStarts.begin(), seqStarts.end());
+            for (size_t i = binSize; i < seqStarts.size(); i += binSize) {
+                _sequencePosBinCache[seqStarts[i]] = map<hal_size_t, Hdf5Sequence *>();
+            }
+
+            assert(_sequencePosBinCache.size() == numBins);
+        }
+
+        if (position != -1) {
+            // find the bin for "position"
+            std::map<hal_size_t, std::map<hal_size_t, Hdf5Sequence *> >::iterator posCacheBinIt =                        
+                _sequencePosBinCache.upper_bound(position);
+
+            // fill it if it's empty
+            if (posCacheBinIt->second.empty()) {
+                hal_size_t last_bin_pos = (hal_size_t)posCacheBinIt->first;
+                hal_size_t first_bin_pos;
+                if (posCacheBinIt == _sequencePosBinCache.begin()) {
+                    first_bin_pos = 0;
+                } else {
+                    std::map<hal_size_t, std::map<hal_size_t, Hdf5Sequence *> >::iterator posCacheBinIt2 = posCacheBinIt;
+                    --posCacheBinIt2;
+                    first_bin_pos = posCacheBinIt2->first;
+                }
+                
+                // now we scan out all our sequences                
+                for (hal_size_t i = 0; i < numSequences; ++i) {
+                    Hdf5Sequence *seq =
+                        new Hdf5Sequence(const_cast<Hdf5Genome *>(this), const_cast<Hdf5ExternalArray *>(&_sequenceIdxArray),
+                                         const_cast<Hdf5ExternalArray *>(&_sequenceNameArray), i);
+                    bool need_free = true;
+                    if (seq->getSequenceLength() > 0) {
+                        if (seq->getStartPosition() >= first_bin_pos && seq->getStartPosition() < last_bin_pos) {
+                            posCacheBinIt->second[seq->getStartPosition() + seq->getSequenceLength()] = seq;
+                            need_free = false;
+                        }
+                    } else {
+                        // FIXME: _zeroLenPosCache.push_back(seq);
+                    }
+                    if (need_free) {
+                        delete seq;
+                    }
+                }
+                ++_sequencePosFullBinCount;
+            }
+        } else{
+            // we have a partial cache but want to load everything -- just check each one
+            for (hal_size_t i = 0; i < numSequences; ++i) {
+                Hdf5Sequence *seq =
+                    new Hdf5Sequence(const_cast<Hdf5Genome *>(this), const_cast<Hdf5ExternalArray *>(&_sequenceIdxArray),
+                                     const_cast<Hdf5ExternalArray *>(&_sequenceNameArray), i);
+                bool need_free = true;
+                if (seq->getSequenceLength() > 0) {
+                    std::map<hal_size_t, std::map<hal_size_t, Hdf5Sequence *> >::iterator posCacheBinIt =                        
+                        _sequencePosBinCache.upper_bound(position);
+                    if (!posCacheBinIt->second.count(seq->getStartPosition() + seq->getSequenceLength())) {
+                        posCacheBinIt->second[seq->getStartPosition() + seq->getSequenceLength()] = seq;
+                        need_free = false;
+                    }
+                } else {
+                    // FIXME: _zeroLenPosCache.push_back(seq);
+                }
+                if (need_free) {
+                    delete seq;
+                }
+            }
+            _sequencePosFullBinCount = _sequencePosBinCache.size();
         }
     }
-    if (_totalSequenceLength > 0 && totalReadLen != _totalSequenceLength) {
-        throw hal_exception("Sequences for genome " + getName() + " have total length " + std::to_string(totalReadLen) +
-                            " but the (non-zero) DNA array contains " + std::to_string(_totalSequenceLength) +
-                            " elements. This is an internal error " + "or the file is corrupt.");
-    }
+}
+
+void Hdf5Genome::forEachSequenceInPosCache(function<void(Hdf5Sequence*)> fn) const {
+    for (std::map<hal_size_t, std::map<hal_size_t, Hdf5Sequence *> >::iterator i = _sequencePosBinCache.begin();
+         i != _sequencePosBinCache.end(); ++i) {
+        for (std::map<hal_size_t, Hdf5Sequence*>::iterator j = i->second.begin(); j != i->second.end(); ++j) {
+            fn(j->second);
+        }
+    }    
 }
 
 void Hdf5Genome::loadSequenceNameCache() const {
@@ -641,12 +745,11 @@ void Hdf5Genome::loadSequenceNameCache() const {
     }
     hal_size_t numSequences = _sequenceNameArray.getSize();
 
-    if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0) {
-        assert(_sequencePosCache.size() + _zeroLenPosCache.size() == numSequences);
-        map<hal_size_t, Hdf5Sequence *>::iterator i;
-        for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i) {
-            _sequenceNameCache.insert(pair<string, Hdf5Sequence *>(i->second->getName(), i->second));
-        }
+    if (_sequencePosBinCache.size() > 0 || _zeroLenPosCache.size() > 0) {
+        loadSequencePosCache(-1);
+        forEachSequenceInPosCache([&](Hdf5Sequence* sequence) {
+                _sequenceNameCache[sequence->getName()] = sequence;
+            });
         vector<Hdf5Sequence *>::iterator z;
         for (z = _zeroLenPosCache.begin(); z != _zeroLenPosCache.end(); ++z) {
             _sequenceNameCache.insert(pair<string, Hdf5Sequence *>((*z)->getName(), (*z)));
@@ -673,17 +776,12 @@ void Hdf5Genome::writeSequences(const vector<Sequence::Info> &sequenceDimensions
         Hdf5Sequence *seq = new Hdf5Sequence(this, &_sequenceIdxArray, &_sequenceNameArray, i - sequenceDimensions.begin());
         // write all the Sequence::Info into the hdf5 sequence record
         seq->set(startPosition, *i, topArrayIndex, bottomArrayIndex);
-        // Keep the object pointer in our caches
-        if (seq->getSequenceLength() > 0) {
-            _sequencePosCache.insert(pair<hal_size_t, Hdf5Sequence *>(startPosition + i->_length, seq));
-        } else {
-            // FIXME: _zeroLenPosCache.push_back(seq);
-        }
         _sequenceNameCache.insert(pair<string, Hdf5Sequence *>(i->_name, seq));
         startPosition += i->_length;
         topArrayIndex += i->_numTopSegments;
         bottomArrayIndex += i->_numBottomSegments;
     }
+    loadSequencePosCache(-1);
 }
 
 void Hdf5Genome::resetBranchCaches() {
