@@ -183,6 +183,32 @@ extern "C" int halClose(int handle, char **errStr) {
     return ret;
 }
 
+extern "C" int halCloseGenome(int handle, const char *genomeName, char**errStr) {
+    halLock();
+    try {
+        AlignmentConstPtr alignment = getExistingAlignment(handle, 0, true);
+        const Genome *genome = alignment->openGenome(genomeName);
+        if (genome == NULL) {
+            halUnlock();
+            handleError("halCloseGenome: genome with name " + string(genomeName) + " not found in alignment with handle " +
+                        std::to_string(handle),
+                        errStr);
+            return -1;
+        }
+        alignment->closeGenome(genome);
+    } catch (exception &e) {
+        halUnlock();
+        handleError("halCloseGenome: " + string(e.what()), errStr);
+        return -1;
+    } catch (...) {
+        halUnlock();
+        handleError("halCloseGenome: unknown exception", errStr);
+        return -1;
+    }
+    halUnlock();
+    return 0;
+}
+
 extern "C" void halFreeBlockResults(struct hal_block_results_t *results) {
     if (results != NULL) {
         halFreeBlocks(results->mappedBlocks);
