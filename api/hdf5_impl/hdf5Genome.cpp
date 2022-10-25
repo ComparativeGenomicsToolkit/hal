@@ -34,7 +34,8 @@ const string Hdf5Genome::sequenceNameArrayName = "SEQNAME_ARRAY";
 const string Hdf5Genome::metaGroupName = "Meta";
 const string Hdf5Genome::rupGroupName = "Rup";
 const double Hdf5Genome::dnaChunkScale = 10.;
-
+const hal_size_t Hdf5Genome::maxPosCache = 1000;
+    
 Hdf5Genome::Hdf5Genome(const string &name, Hdf5Alignment *alignment, PortableH5Location *h5Parent,
                        const DSetCreatPropList &dcProps, bool inMemory)
     : Genome(alignment, name), _alignment(alignment), _h5Parent(h5Parent), _name(name), _numChildrenInBottomArray(0),
@@ -340,15 +341,55 @@ const Sequence *Hdf5Genome::getSequence(const string &name) const {
 }
 
 Sequence *Hdf5Genome::getSequenceBySite(hal_size_t position) {
-    loadSequencePosCache();
+    hal_size_t numSequences = _sequenceNameArray.getSize();
+    if (numSequences <= maxPosCache) {
+        loadSequencePosCache();
+    }
+    
+    // check the cache
     map<hal_size_t, Hdf5Sequence *>::iterator i;
     i = _sequencePosCache.upper_bound(position);
     if (i != _sequencePosCache.end()) {
-        if (position >= (hal_size_t)i->second->getStartPosition()) {
-            assert(position < i->second->getStartPosition() + i->second->getSequenceLength());
+        if (position >= (hal_size_t)i->second->getStartPosition() && position <= (hal_size_t)i->second->getEndPosition()) {
             return i->second;
         }
     }
+    
+    // it wasn't in the pos cache.  we dig it out of the array using binary search
+    hal_index_t low_idx = 0;
+    hal_index_t high_idx = (hal_index_t)numSequences - 1;
+    
+    while (low_idx <= high_idx) {
+        hal_index_t mid_idx = (low_idx + high_idx) / 2;
+        Hdf5Sequence *seq =
+            new Hdf5Sequence(const_cast<Hdf5Genome *>(this), const_cast<Hdf5ExternalArray *>(&_sequenceIdxArray),
+                             const_cast<Hdf5ExternalArray *>(&_sequenceNameArray), mid_idx);
+        if (position >= seq->getStartPosition() && position <= seq->getEndPosition()) {
+            _sequencePosCache[seq->getStartPosition() + seq->getSequenceLength()] = seq;
+            return seq;
+        } else {
+            bool less = position < seq->getStartPosition();
+            delete seq;
+            if (less) {
+                high_idx = mid_idx - 1;
+            } else {
+                low_idx = mid_idx + 1;
+            }
+        }
+    }
+
+    // something went wrong (sequences stored out of order?!), fall back on the cache
+    if (numSequences > maxPosCache) {
+        cerr << "Binary search failed on " << getName() << ":" << position << " reverting to full cache" << endl;
+        loadSequencePosCache();
+        i = _sequencePosCache.upper_bound(position);
+        if (i != _sequencePosCache.end()) {
+            if (position >= (hal_size_t)i->second->getStartPosition() && position <= (hal_size_t)i->second->getEndPosition()) {
+                return i->second;
+            }
+        }
+    }
+    throw hal_exception("Position cache fail on " + getName() + ":" + std::to_string(position));
     return NULL;
 }
 

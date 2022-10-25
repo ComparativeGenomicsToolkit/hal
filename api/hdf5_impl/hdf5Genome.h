@@ -168,6 +168,7 @@ namespace hal {
         static const std::string sequenceNameArrayName;
         static const std::string metaGroupName;
         static const std::string rupGroupName;
+        static const hal_size_t maxPosCache;
 
         static const double dnaChunkScale;
     };
