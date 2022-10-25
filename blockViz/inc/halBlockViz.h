@@ -152,6 +152,15 @@ int halOpen(char *halFilePath, char **errStr);
  */
 int halClose(int halHandle, char **errStr);
 
+/** Close a HAL genome, freeing up its cached data from memory
+ * @param halHandle previously obtained from halOpen
+ * @param genomeName name of genome to close
+ * @param errStr pointer to a string that contains an error message on
+ * failure. If NULL, throws an exception on failure instead.
+ * @return 0: success -1: failure
+ */
+int halCloseGenome(int halHandle, char *genomeName, char **errStr);
+    
 /** Free block results structure */
 void halFreeBlockResults(struct hal_block_results_t *results);
 
