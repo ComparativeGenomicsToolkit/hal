@@ -159,7 +159,7 @@ int halClose(int halHandle, char **errStr);
  * failure. If NULL, throws an exception on failure instead.
  * @return 0: success -1: failure
  */
-int halCloseGenome(int halHandle, char *genomeName, char **errStr);
+int halCloseGenome(int halHandle, const char *genomeName, char **errStr);
     
 /** Free block results structure */
 void halFreeBlockResults(struct hal_block_results_t *results);

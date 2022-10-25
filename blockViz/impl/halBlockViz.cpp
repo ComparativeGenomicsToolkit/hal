@@ -183,7 +183,7 @@ extern "C" int halClose(int handle, char **errStr) {
     return ret;
 }
 
-extern "C" int halCloseGenome(int handle, char *genomeName, char**errStr) {
+extern "C" int halCloseGenome(int handle, const char *genomeName, char**errStr) {
     halLock();
     try {
         AlignmentConstPtr alignment = getExistingAlignment(handle, 0, true);
