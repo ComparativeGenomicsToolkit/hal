@@ -123,27 +123,38 @@ int main(int argc, char *argv[]) {
         assert(branchLength == 0.0);
     }
     addSubtree(mainAlignment, appendAlignment, rootName);
-
+    
     // Need proper bottom segments for parent genome
+    // 1) Copy dimensions for the genome that's being appended
     Genome *mainParentGenome = mainAlignment->openGenome(parentName);
     const Genome *bridgeParentGenome = bridgeAlignment->openGenome(parentName);
     bridgeParentGenome->copyBottomDimensions(mainParentGenome);
-    bridgeParentGenome->copyBottomSegments(mainParentGenome);
-    mainParentGenome->fixParseInfo();
-    mainAlignment->closeGenome(mainParentGenome);
-    bridgeAlignment->closeGenome(bridgeParentGenome);
-
-    // And top segments for its children
+    
+    // 2) Copy top dimensions for the children
     vector<string> children = bridgeAlignment->getChildNames(parentName);
     for (size_t i = 0; i < children.size(); i++) {
         Genome *mainChildGenome = mainAlignment->openGenome(children[i]);
         const Genome *bridgeChildGenome = bridgeAlignment->openGenome(children[i]);
         bridgeChildGenome->copyTopDimensions(mainChildGenome);
+    }
+
+    // 3) copy bottom segments for the genome that's being appended
+    bridgeParentGenome->copyBottomSegments(mainParentGenome);
+    mainParentGenome->fixParseInfo();
+    
+    // 4) copu top segments for its children
+    for (size_t i = 0; i < children.size(); i++) {
+        Genome *mainChildGenome = mainAlignment->openGenome(children[i]);
+        const Genome *bridgeChildGenome = bridgeAlignment->openGenome(children[i]);
         bridgeChildGenome->copyTopSegments(mainChildGenome);
         mainChildGenome->fixParseInfo();
         mainAlignment->closeGenome(mainChildGenome);
         bridgeAlignment->closeGenome(bridgeChildGenome);
-    }
+    } 
+    
+    mainAlignment->closeGenome(mainParentGenome);
+    bridgeAlignment->closeGenome(bridgeParentGenome);
+
 
     if (!noMarkAncestors) {
         markAncestorsForUpdate(mainAlignment, rootName);
