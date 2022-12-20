@@ -45,7 +45,7 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
 
     ColumnIteratorPtr colIt = seq->getColumnIterator(&targets, _maxRefGap, startPosition, lastPosition, _noDupes, _noAncestors,
                                                      false, // reverseStrand,
-                                                     true,  // unique
+                                                     _unique,
                                                      _onlyOrthologs);
 
     hal_size_t appendCount = 0;
