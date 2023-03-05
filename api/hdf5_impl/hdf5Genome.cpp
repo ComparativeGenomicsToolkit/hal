@@ -744,7 +744,9 @@ void Hdf5Genome::rename(const string &newName) {
 
 void Hdf5Genome::renameSequence(const string &oldName, size_t index, const string &newName) {
     if (oldName.size() < newName.size()) {
-        resizeNameArray(newName.size());
+        size_t currentMaxSize = _sequenceNameArray.getDataType().getSize();
+        size_t newMaxSize = currentMaxSize + (newName.size() - oldName.size());
+        resizeNameArray(newMaxSize);
     }
     char *arrayBuffer = _sequenceNameArray.getUpdate(index);
     strcpy(arrayBuffer, newName.c_str());
