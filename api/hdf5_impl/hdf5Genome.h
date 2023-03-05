@@ -132,7 +132,7 @@ namespace hal {
         void setGenomeTopDimensions(const std::vector<hal::Sequence::UpdateInfo> &sequenceDimensions);
 
         void setGenomeBottomDimensions(const std::vector<hal::Sequence::UpdateInfo> &sequenceDimensions);
-        void resizeNameArray(size_t newMaxSize);
+        void resizeNameArray(size_t newMaxNameLength);
 
       private:
         Hdf5Alignment *_alignment;

@@ -752,9 +752,9 @@ void Hdf5Genome::renameSequence(const string &oldName, size_t index, const strin
     readSequences();
 }
 
-void Hdf5Genome::resizeNameArray(size_t newMaxSize) {
-    size_t currentMaxSize = _sequenceNameArray.getDataType().getSize();
-    if (newMaxSize > currentMaxSize) {
+void Hdf5Genome::resizeNameArray(size_t newMaxNameLength) {
+    size_t currMaxNameLength = _sequenceNameArray.getDataType().getSize() - 1;
+    if (newMaxNameLength > currMaxNameLength) {
         vector<string> names;
         size_t numSequences = getNumSequences();
         for (hal_size_t i = 0; i < numSequences; ++i) {
@@ -769,7 +769,7 @@ void Hdf5Genome::resizeNameArray(size_t newMaxSize) {
         } catch (H5::Exception &) {
         }
 
-        _sequenceNameArray.create(&_group, sequenceNameArrayName, Hdf5Sequence::nameDataType(newMaxSize + 1), numSequences,
+        _sequenceNameArray.create(&_group, sequenceNameArrayName, Hdf5Sequence::nameDataType(newMaxNameLength), numSequences,
                                   &_dcprops, _numChunksInArrayBuffer);
         for (size_t i = 0; i < numSequences; i++) {
             char *arrayBuffer = _sequenceNameArray.getUpdate(i);
