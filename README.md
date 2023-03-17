@@ -28,6 +28,9 @@ Code Contributors
 Installation
 -----
 
+> **Note**
+> HAL is included in Cactus, which is released as [pre-built binaries and Docker images](https://github.com/ComparativeGenomicsToolkit/cactus/releases)
+
 ### Requirements
 * gcc 4.2 or newer
 * git
@@ -206,6 +209,8 @@ HAL is most beneficial when consensus reference or ancestral sequences are avail
 ### Exporting to other formats
 
 #### MAF Export
+
+> **Note** We recommend using [cactus-hal2maf](https://github.com/ComparativeGenomicsToolkit/cactus/blob/master/doc/progressive.md#maf) to convert HAL to MAF.
 
 MAF files can be generated from HAL alignments or sub-alignments.  The reference genome and alignment scope (subsequence of the reference and/or phylogenetic distance) are chosen through command-line options.
 
