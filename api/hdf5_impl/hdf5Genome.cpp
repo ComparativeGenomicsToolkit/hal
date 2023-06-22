@@ -682,25 +682,29 @@ void Hdf5Genome::loadSequenceNameCache() const {
     }
     hal_size_t numSequences = _sequenceNameArray.getSize();
 
-    if (_sequencePosCache.size() > 0 || _zeroLenPosCache.size() > 0) {
-        assert(_sequencePosCache.size() + _zeroLenPosCache.size() == numSequences);
-        map<hal_size_t, Hdf5Sequence *>::iterator i;
-        for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i) {
-            _sequenceNameCache.insert(pair<string, Hdf5Sequence *>(i->second->getName(), i->second));
-        }
-        vector<Hdf5Sequence *>::iterator z;
-        for (z = _zeroLenPosCache.begin(); z != _zeroLenPosCache.end(); ++z) {
-            _sequenceNameCache.insert(pair<string, Hdf5Sequence *>((*z)->getName(), (*z)));
-        }
-    } else {
+    // load what we can from the pos cache (which can be partial)
+    map<hal_size_t, Hdf5Sequence *>::iterator i;
+    for (i = _sequencePosCache.begin(); i != _sequencePosCache.end(); ++i) {
+        _sequenceNameCache.insert(pair<string, Hdf5Sequence *>(i->second->getName(), i->second));
+    }
+    vector<Hdf5Sequence *>::iterator z;
+    for (z = _zeroLenPosCache.begin(); z != _zeroLenPosCache.end(); ++z) {
+        _sequenceNameCache.insert(pair<string, Hdf5Sequence *>((*z)->getName(), (*z)));
+    }
+    // load everything else
+    if (_sequenceNameCache.size() < numSequences) {        
         for (hal_size_t i = 0; i < numSequences; ++i) {
             Hdf5Sequence *seq =
                 new Hdf5Sequence(const_cast<Hdf5Genome *>(this), const_cast<Hdf5ExternalArray *>(&_sequenceIdxArray),
                                  const_cast<Hdf5ExternalArray *>(&_sequenceNameArray), i);
-
-            _sequenceNameCache.insert(pair<string, Hdf5Sequence *>(seq->getName(), seq));
+            if (!_sequenceNameCache.count(seq->getName())) {
+                _sequenceNameCache.insert(pair<string, Hdf5Sequence *>(seq->getName(), seq));
+            } else {
+                delete seq;
+            }
         }
     }
+    assert(_sequenceNameCache.size() == numSequences);
 }
 
 void Hdf5Genome::writeSequences(const vector<Sequence::Info> &sequenceDimensions) {
