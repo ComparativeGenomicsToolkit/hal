@@ -74,6 +74,9 @@ static void cleanTargetDupesList(vector<hal_target_dupe_list_t *> &dupeList);
 
 static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList);
 
+static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
+                                     MappedSegmentSet& outParalogies);
+
 /* return an error in errStr if not NULL, otherwise throw and exception with
  * the message. */
 static void handleError(const string &msg, char **errStr) {
@@ -321,7 +324,9 @@ extern "C" struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle, 
         }
 
         results = readBlocks(seqAlignment, tSequence, absStart, absEnd, tReversed != 0, qGenome, getSequenceString,
-                             dupMode != HAL_NO_DUPS, dupMode == HAL_QUERY_AND_TARGET_DUPS, mapBackAdjacencies != 0,
+                             dupMode != HAL_NO_DUPS, dupMode == HAL_QUERY_AND_TARGET_DUPS,
+                             //mapBackAdjacencies != 0,
+                             false,
                              coalescenceLimitName);
     } catch (exception &e) {
         halUnlock();
@@ -790,10 +795,11 @@ static hal_block_results_t *readBlocks(AlignmentConstPtr seqAlignment, const Seq
     MappedSegmentSet paraSet;
     hal_size_t totalLength = 0;
     hal_size_t reversedLength = 0;
-    if (doDupes == true && qGenome != tGenome) {
-        blockMapper.extractReferenceParalogies(paraSet);
-    }
     MappedSegmentSet &segMap = blockMapper.getMap();
+
+    if (doDupes == true && qGenome != tGenome) {
+        chainReferenceParalogies(segMap, absStart, absEnd, paraSet);
+    }
     vector<MappedSegmentPtr> fragments;
     set<hal_index_t> queryCutSet;
     set<hal_index_t> targetCutSet;
@@ -1120,6 +1126,153 @@ static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList) {
             }
         }
     }
+}
+
+/// This function replaces the old BlockMapper::extractReferenceParalogies() function.
+/// The main job of both of these functions is to make sure that the query genome is single copy 
+/// in the returned segments.  So let's say we're looking at a snake track for Gorilla against
+/// a human reference.  Any position on Gorilla can only appear once on screen.  In the old BlockMapper
+/// function, it would sort on Gorilla, find equivalience classes of all the dupes, and then
+/// keep the copy with the lowest reference coordinate.
+///
+/// This heuristic can lead to brutal fragmentation and gaps and left shifting etc.  What we really
+/// want instead is a way to chain the pairwise alignments together better, which is what's attempted
+/// here.
+///
+/// This new function replaces the "just pick leftmost" logic with a greedy chain.
+///
+/// Recall: MappedSegmentSet is sorted on "Target", with "Source" breaking ties only. 
+static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
+                                     MappedSegmentSet& outParalogies) {
+    MappedSegmentSet::iterator i = segMap.begin();
+    MappedSegmentSet::iterator j = segMap.end();
+    MappedSegmentSet::iterator k;
+    MappedSegmentSet::iterator prev = segMap.end();
+    hal_index_t iStart = NULL_INDEX;
+    hal_index_t iEnd = NULL_INDEX;
+    bool iIns = false;
+    hal_index_t jStart;
+    hal_index_t jEnd;
+
+    // iterate through the map.  Note that it's sorted on query (target) coordinates
+    while (i != segMap.end()) {
+        iIns = false;
+        iStart = (*i)->getStartPosition();
+        iEnd = (*i)->getEndPosition();
+        cerr << "istart = " << iStart << " iend = " << iEnd << " target genome " << (*i)->getGenome()->getName() << endl;
+        if ((*i)->getReversed()) {
+            swap(iStart, iEnd);
+        }
+        j = i;
+        ++j;
+
+        // scooch forward to make our equivalence class [i, j)
+        // ie all the segments with the same query coordinate -- we can only choose 1!
+        hal_index_t copies = 1;
+        while (j != segMap.end()) {
+            jStart = (*j)->getStartPosition();
+            jEnd = (*j)->getEndPosition();
+            cerr << "jstart = " << jStart << " jend = " << jEnd << endl;            
+            if ((*j)->getReversed()) {
+                swap(jStart, jEnd);
+            }
+            if (iStart == jStart) {
+                assert(iEnd == jEnd);
+                ++j;
+                ++copies;
+            } else {
+                break;
+            }
+        }
+
+        // now we need to choose our best copy.
+        // there are three cases to consider
+        MappedSegmentSet::iterator chosen;
+        if (copies == 1) {
+            // 1) easiest case: there's only one copy
+            chosen = i;
+        } else if (prev == segMap.end()) {
+            // 2) there is no previous block, take the first in-frame block
+            cerr << "first of multicopy)" << endl;
+            chosen = i;
+            hal_index_t chosen_src_start = (*chosen)->getSource()->getStartPosition();
+            hal_index_t chosen_src_end = (*chosen)->getSource()->getEndPosition();
+            for (k = i; k != j; ++k) {
+                hal_index_t k_src_start = (*k)->getSource()->getStartPosition();
+                hal_index_t k_src_end = (*k)->getSource()->getEndPosition();
+                if (k_src_start >= absStart && k_src_start < absEnd) {
+                    // we're in frame
+                    if (chosen_src_start < absStart ||
+                        k_src_start - absStart < chosen_src_start - absStart) {
+                        // we're closer to start
+                        chosen = k;
+                        chosen_src_start = k_src_start;
+                        chosen_src_end = k_src_end;                            
+                    }
+                }
+            }
+        } else {
+            // 3) there is a previous block.  we find a segment that chains nicest with it
+            //    (using very simple greedy avg. dist criteria)
+            cerr << " ***********************************8seraching " << copies << endl;
+            int64_t chosen_mean_dist = numeric_limits<hal_index_t>::max();
+            for (k = i; k != j; ++k) {
+                bool same_strand = (*prev)->getReversed() == (*k)->getReversed();
+                hal_index_t src_delta = (*k)->getSource()->getStartPosition() - (*prev)->getSource()->getEndPosition();
+                hal_index_t tgt_delta = min((*k)->getStartPosition(), (*k)->getEndPosition()) -
+                    max((*prev)->getStartPosition(), (*prev)->getEndPosition());
+                cerr << "srcdelta " << src_delta << " tgtdelta " << tgt_delta << endl;
+                //hal_index_t k_dist = 0.5 * (abs(src_delta) + abs(tgt_delta));
+                hal_index_t k_dist = src_delta; // don't do abs value here as we never want to go left incrementally
+                if (!same_strand) {
+                    // penalize strand switch
+                    k_dist *= 2000;
+                }
+                if (src_delta < 0 || tgt_delta < 0) {
+                    // penalize overlap
+                    // k_dist *= 2;
+                }
+                if (k_dist < chosen_mean_dist) {
+//                if (k_dist > chosen_mean_dist) {
+                    chosen = k;
+                    chosen_mean_dist = k_dist;
+                    cerr << "select " << k_dist << endl;
+                }
+            }
+        }
+
+        // we've chosen our block, now we need to erase everything else, and
+        // remember it as a paralogy (though not sure that's actually used)
+        vector<MappedSegmentSet::iterator> to_erase;
+        bool added = false;            
+        for (k = i; k != j; ++k) {
+            if (k != chosen) {
+                if (!added) {
+                    outParalogies.insert(*k);
+                    added = true;
+                }
+                to_erase.push_back(k);
+            }
+        }
+        for (hal_index_t te = 0; te < to_erase.size(); ++te) {
+            segMap.erase(*to_erase[te]);
+        }
+        // scan forward in the set
+        prev = i;
+        i = j;
+    }
+
+#ifndef _NDEBUG
+    for (i = segMap.begin(); i != segMap.end(); ++i) {
+        j = i;
+        ++j;
+        if (j != segMap.end()) {
+            iEnd = max((*i)->getEndPosition(), (*i)->getStartPosition());
+            jStart = min((*j)->getStartPosition(), (*j)->getEndPosition());
+            assert(jStart > iEnd);
+        }
+    }
+#endif
 }
 
 extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle, const char *genomeName, char **errStr) {
