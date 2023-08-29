@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unordered_map>
 
 #ifdef ENABLE_UDC
 #include <pthread.h>
@@ -1144,135 +1145,100 @@ static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList) {
 /// Recall: MappedSegmentSet is sorted on "Target", with "Source" breaking ties only. 
 static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
                                      MappedSegmentSet& outParalogies) {
-    MappedSegmentSet::iterator i = segMap.begin();
-    MappedSegmentSet::iterator j = segMap.end();
-    MappedSegmentSet::iterator k;
+
+    // do one scan to find all the chains (greedily)
+    vector<vector<MappedSegmentSet::iterator>> chains;
+    vector<hal_index_t> chain_sizes;
+    unordered_map<MappedSegment*, hal_index_t> to_chain;
+    vector<MappedSegmentSet::iterator> paralogies;
     MappedSegmentSet::iterator prev = segMap.end();
-    hal_index_t iStart = NULL_INDEX;
-    hal_index_t iEnd = NULL_INDEX;
-    bool iIns = false;
-    hal_index_t jStart;
-    hal_index_t jEnd;
+    for (MappedSegmentSet::iterator i = segMap.begin(); i != segMap.end(); ++i) {
 
-    // iterate through the map.  Note that it's sorted on query (target) coordinates
-    while (i != segMap.end()) {
-        iIns = false;
-        iStart = (*i)->getStartPosition();
-        iEnd = (*i)->getEndPosition();
-        cerr << "istart = " << iStart << " iend = " << iEnd << " target genome " << (*i)->getGenome()->getName() << endl;
-        if ((*i)->getReversed()) {
-            swap(iStart, iEnd);
+        bool is_dupe = prev != segMap.end() && ((*prev)->getStartPosition() == (*i)->getStartPosition() ||
+                                                (*prev)->getEndPosition() == (*i)->getStartPosition());
+        if (is_dupe) {
+            paralogies.push_back(i);
         }
-        j = i;
-        ++j;
 
-        // scooch forward to make our equivalence class [i, j)
-        // ie all the segments with the same query coordinate -- we can only choose 1!
-        hal_index_t copies = 1;
-        while (j != segMap.end()) {
-            jStart = (*j)->getStartPosition();
-            jEnd = (*j)->getEndPosition();
-            cerr << "jstart = " << jStart << " jend = " << jEnd << endl;            
-            if ((*j)->getReversed()) {
-                swap(jStart, jEnd);
+        hal_index_t chain = -1;
+        // find best existing chain
+        // (linear scan that could be sped up with better data structure, but we only expect a few chains in a given window)
+        for (int64_t j = chains.size() - 1; j >= 0; --j) {
+            hal_index_t best_delta = numeric_limits<hal_index_t>::max();
+            hal_index_t best_chain = -1;
+            hal_index_t delta = (*i)->getSource()->getStartPosition() - (*chains[j].back())->getSource()->getEndPosition();
+            if (delta >= 0 && delta < best_delta) {
+                best_delta = delta;
+                best_chain = j;
             }
-            if (iStart == jStart) {
-                assert(iEnd == jEnd);
-                ++j;
-                ++copies;
-            } else {
-                break;
+            if (best_chain >= 0) {
+                chain = best_chain;
             }
         }
 
-        // now we need to choose our best copy.
-        // there are three cases to consider
-        MappedSegmentSet::iterator chosen;
-        if (copies == 1) {
-            // 1) easiest case: there's only one copy
-            chosen = i;
-        } else if (prev == segMap.end()) {
-            // 2) there is no previous block, take the first in-frame block
-            cerr << "first of multicopy)" << endl;
-            chosen = i;
-            hal_index_t chosen_src_start = (*chosen)->getSource()->getStartPosition();
-            hal_index_t chosen_src_end = (*chosen)->getSource()->getEndPosition();
-            for (k = i; k != j; ++k) {
-                hal_index_t k_src_start = (*k)->getSource()->getStartPosition();
-                hal_index_t k_src_end = (*k)->getSource()->getEndPosition();
-                if (k_src_start >= absStart && k_src_start < absEnd) {
-                    // we're in frame
-                    if (chosen_src_start < absStart ||
-                        k_src_start - absStart < chosen_src_start - absStart) {
-                        // we're closer to start
-                        chosen = k;
-                        chosen_src_start = k_src_start;
-                        chosen_src_end = k_src_end;                            
-                    }
-                }
-            }
+        // add to chosen chain
+        if (chain >= 0) {
+            chains[chain].push_back(i);
+            chain_sizes[chain] += (*i)->getLength();
         } else {
-            // 3) there is a previous block.  we find a segment that chains nicest with it
-            //    (using very simple greedy avg. dist criteria)
-            cerr << " ***********************************8seraching " << copies << endl;
-            int64_t chosen_mean_dist = numeric_limits<hal_index_t>::max();
-            for (k = i; k != j; ++k) {
-                bool same_strand = (*prev)->getReversed() == (*k)->getReversed();
-                hal_index_t src_delta = (*k)->getSource()->getStartPosition() - (*prev)->getSource()->getEndPosition();
-                hal_index_t tgt_delta = min((*k)->getStartPosition(), (*k)->getEndPosition()) -
-                    max((*prev)->getStartPosition(), (*prev)->getEndPosition());
-                cerr << "srcdelta " << src_delta << " tgtdelta " << tgt_delta << endl;
-                //hal_index_t k_dist = 0.5 * (abs(src_delta) + abs(tgt_delta));
-                hal_index_t k_dist = src_delta; // don't do abs value here as we never want to go left incrementally
-                if (!same_strand) {
-                    // penalize strand switch
-                    k_dist *= 2000;
-                }
-                if (src_delta < 0 || tgt_delta < 0) {
-                    // penalize overlap
-                    // k_dist *= 2;
-                }
-                if (k_dist < chosen_mean_dist) {
-//                if (k_dist > chosen_mean_dist) {
-                    chosen = k;
-                    chosen_mean_dist = k_dist;
-                    cerr << "select " << k_dist << endl;
-                }
-            }
+            // there's no chain we can add to, so start a new one
+            chains.push_back({i});
+            chain_sizes.push_back((*i)->getLength());
+            chain = 0;
         }
 
-        // we've chosen our block, now we need to erase everything else, and
-        // remember it as a paralogy (though not sure that's actually used)
-        vector<MappedSegmentSet::iterator> to_erase;
-        bool added = false;            
-        for (k = i; k != j; ++k) {
-            if (k != chosen) {
-                if (!added) {
-                    outParalogies.insert(*k);
-                    added = true;
-                }
-                to_erase.push_back(k);
-            }
+        // remember which chain it came from if in a paralogy
+        if (is_dupe) {
+            to_chain[i->get()] = chain;
         }
-        for (hal_index_t te = 0; te < to_erase.size(); ++te) {
-            segMap.erase(*to_erase[te]);
-        }
-        // scan forward in the set
         prev = i;
-        i = j;
     }
 
-#ifndef _NDEBUG
-    for (i = segMap.begin(); i != segMap.end(); ++i) {
-        j = i;
-        ++j;
-        if (j != segMap.end()) {
-            iEnd = max((*i)->getEndPosition(), (*i)->getStartPosition());
-            jStart = min((*j)->getStartPosition(), (*j)->getEndPosition());
-            assert(jStart > iEnd);
+    // pass 2: filter out source paralogies by choosing instance in the biggest chain
+    for (int64_t pi = 0; pi < paralogies.size(); ++pi) {
+        hal_index_t i_start = (*paralogies[pi])->getStartPosition();
+        hal_index_t i_end = (*paralogies[pi])->getEndPosition();
+        if ((*paralogies[pi])->getReversed()) {
+            swap(i_start, i_end);
+        }        
+        hal_index_t pj = pi + 1;
+        hal_index_t best_paralogy = pi;
+        hal_index_t best_chain = to_chain.at(paralogies[pi]->get());
+        // scan the equivalance class of target paralogies
+        // finding the one with the biggest chain
+        // (todo: tie breaking?)
+        while (pj < paralogies.size()) {
+            hal_index_t j_start = (*paralogies[pj])->getStartPosition();
+            hal_index_t j_end = (*paralogies[pj])->getEndPosition();
+            if ((*paralogies[pj])->getReversed()) {
+                swap(j_start, j_end);
+            }
+            if (i_start != j_start) {
+                break;
+            } else {
+                hal_index_t chain = to_chain.at(paralogies[pj]->get());
+                if (chain_sizes[chain] > chain_sizes[best_chain]) {
+                    best_paralogy = pj;
+                    best_chain = chain;
+                }                
+            }
+            ++pj;
+        }
+        // now we need to erase the unchosen paralgoies
+        // and add one copy to outMap
+        bool added = false;
+        for (int64_t pk = pi; pk < pj; ++pk) {
+            if (pk != best_paralogy) {
+                if (!added) {
+                    outParalogies.insert(*paralogies[pk]);
+                }
+                segMap.erase(paralogies[pk]);
+            }
         }
     }
-#endif
+
+    // todo: another pass to filter out the tiny chains
+
 }
 
 extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle, const char *genomeName, char **errStr) {
