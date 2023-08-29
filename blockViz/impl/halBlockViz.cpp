@@ -76,7 +76,7 @@ static void cleanTargetDupesList(vector<hal_target_dupe_list_t *> &dupeList);
 static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList);
 
 static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
-                                     MappedSegmentSet& outParalogies, double min_chain_pct = 0.05);
+                                     MappedSegmentSet& outParalogies, double min_chain_pct = 0.001);
 
 /* return an error in errStr if not NULL, otherwise throw and exception with
  * the message. */
@@ -326,7 +326,8 @@ extern "C" struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle, 
 
         results = readBlocks(seqAlignment, tSequence, absStart, absEnd, tReversed != 0, qGenome, getSequenceString,
                              dupMode != HAL_NO_DUPS, dupMode == HAL_QUERY_AND_TARGET_DUPS,
-                             mapBackAdjacencies != 0,
+                             //mapBackAdjacencies != 0,
+                             false,
                              coalescenceLimitName);
     } catch (exception &e) {
         halUnlock();
@@ -1178,6 +1179,9 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
             for (hal_index_t csi = chain_stack.size() - 1; csi >= 0; --csi) {
                 MappedSegmentSet::iterator& chain_back = chains[chain_stack[csi]].back();
                 hal_index_t delta = (*k)->getSource()->getStartPosition() - (*chain_back)->getSource()->getEndPosition();
+                if ((*k)->getReversed()) {
+                    delta = -delta;
+                }
                 if (delta >= 0 &&
                     delta < best_delta &&
                     (*k)->getStartPosition() > (*chain_back)->getEndPosition() &&
@@ -1191,6 +1195,11 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
                          << (*k)->getStartPosition() << " hoo=" << (*k)->getSource()->getStartPosition()
                          << " with chain idx " << best_stack_idx << " and base chain "
                          << (*chain_back)->getStartPosition() << " hoo=" << (*chain_back)->getSource()->getStartPosition() << endl;
+
+                    if (delta <= 1) {
+                        cerr << "   fasttrack at " << csi << " / " << chain_stack.size() << endl;
+                        break;
+                    }
                 }
             }
             // if we have no chain, we fall back to leftmost on target
