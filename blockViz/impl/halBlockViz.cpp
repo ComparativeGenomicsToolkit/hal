@@ -76,7 +76,7 @@ static void cleanTargetDupesList(vector<hal_target_dupe_list_t *> &dupeList);
 static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList);
 
 static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
-                                     MappedSegmentSet& outParalogies, double min_chain_pct = 0.001);
+                                     MappedSegmentSet& outParalogies, double min_chain_pct = 0.0001);
 
 /* return an error in errStr if not NULL, otherwise throw and exception with
  * the message. */
@@ -1170,7 +1170,7 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
         }
 
         // greedily choose a chain to add this to
-        hal_index_t best_delta = numeric_limits<hal_index_t>::max();
+        hal_index_t best_score = -numeric_limits<int32_t>::max();
         hal_index_t best_stack_idx = -1;
         MappedSegmentSet::iterator best = segMap.end();
         MappedSegmentSet::iterator leftmost = segMap.end();
@@ -1178,27 +1178,23 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
         for (MappedSegmentSet::iterator k = i; k != j; ++k) {
             for (hal_index_t csi = chain_stack.size() - 1; csi >= 0; --csi) {
                 MappedSegmentSet::iterator& chain_back = chains[chain_stack[csi]].back();
-                hal_index_t delta = (*k)->getSource()->getStartPosition() - (*chain_back)->getSource()->getEndPosition();
+                hal_index_t src_delta = (*k)->getSource()->getStartPosition() - (*chain_back)->getSource()->getEndPosition();
                 if ((*k)->getReversed()) {
-                    delta = -delta;
+                    src_delta = -src_delta;
                 }
-                if (delta >= 0 &&
-                    delta < best_delta &&
-                    (*k)->getStartPosition() > (*chain_back)->getEndPosition() &&
-                    (*k)->getReversed() == (*chain_back)->getReversed()) {
-                    // we've found the best open chain to put this on
-                    best_stack_idx = csi;
-                    best_delta = delta;
-                    best = k;
+                hal_index_t tgt_delta = (*k)->getStartPosition() - (*chain_back)->getEndPosition();
+                if (src_delta >= 0 && tgt_delta >= 0) {
+                    hal_index_t score = chain_sizes[chain_stack[csi]] * 2 - tgt_delta - src_delta;
+                    if (score > best_score) {
+                        // we've found the best open chain to put this on
+                        best_stack_idx = csi;
+                        best_score = score;
+                        best = k;
 
-                    cerr << " found best match of copy delta=" << delta << " " 
-                         << (*k)->getStartPosition() << " hoo=" << (*k)->getSource()->getStartPosition()
-                         << " with chain idx " << best_stack_idx << " and base chain "
-                         << (*chain_back)->getStartPosition() << " hoo=" << (*chain_back)->getSource()->getStartPosition() << endl;
-
-                    if (delta <= 1) {
-                        cerr << "   fasttrack at " << csi << " / " << chain_stack.size() << endl;
-                        break;
+                        cerr << " found best match of copy score=" << score << " " 
+                             << (*k)->getStartPosition() << " hoo=" << (*k)->getSource()->getStartPosition()
+                             << " with chain idx " << best_stack_idx << " and base chain "
+                             << (*chain_back)->getStartPosition() << " hoo=" << (*chain_back)->getSource()->getStartPosition() << endl;
                     }
                 }
             }
