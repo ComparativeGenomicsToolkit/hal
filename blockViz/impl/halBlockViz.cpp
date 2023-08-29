@@ -76,7 +76,7 @@ static void cleanTargetDupesList(vector<hal_target_dupe_list_t *> &dupeList);
 static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList);
 
 static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
-                                     MappedSegmentSet& outParalogies);
+                                     MappedSegmentSet& outParalogies, double min_chain_pct = 0.05);
 
 /* return an error in errStr if not NULL, otherwise throw and exception with
  * the message. */
@@ -326,8 +326,7 @@ extern "C" struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle, 
 
         results = readBlocks(seqAlignment, tSequence, absStart, absEnd, tReversed != 0, qGenome, getSequenceString,
                              dupMode != HAL_NO_DUPS, dupMode == HAL_QUERY_AND_TARGET_DUPS,
-                             //mapBackAdjacencies != 0,
-                             false,
+                             mapBackAdjacencies != 0,
                              coalescenceLimitName);
     } catch (exception &e) {
         halUnlock();
@@ -1144,11 +1143,14 @@ static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList) {
 ///
 /// Recall: MappedSegmentSet is sorted on "Target", with "Source" breaking ties only. 
 static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
-                                     MappedSegmentSet& outParalogies) {
+                                     MappedSegmentSet& outParalogies, double min_chain_pct) {
 
     // do one scan to find all the chains (greedily)
     vector<vector<MappedSegmentSet::iterator>> chains;
     vector<hal_index_t> chain_sizes;
+    // the integers are offsets in chains array
+    // levels are dictated by paralogies
+    deque<vector<hal_index_t>> chain_level_stack; 
     unordered_map<MappedSegment*, hal_index_t> to_chain;
     vector<MappedSegmentSet::iterator> paralogies;
     MappedSegmentSet::iterator prev = segMap.end();
@@ -1156,40 +1158,74 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
 
         bool is_dupe = prev != segMap.end() && ((*prev)->getStartPosition() == (*i)->getStartPosition() ||
                                                 (*prev)->getEndPosition() == (*i)->getStartPosition());
-        if (is_dupe) {
+        MappedSegmentSet::iterator next = i;
+        ++next;
+        bool is_dupe_next = next != segMap.end() && ((*next)->getStartPosition() == (*i)->getStartPosition() ||
+                                                     (*next)->getEndPosition() == (*i)->getStartPosition());
+        if (is_dupe || is_dupe_next) {
             paralogies.push_back(i);
         }
 
-        hal_index_t chain = -1;
+        cerr << "\nvisit " << "gor=" << (*i)->getStartPosition() << ",hoo=" << (*i)->getSource()->getStartPosition()
+             << " prev-dupe " << is_dupe << " next-dupe " << is_dupe_next << endl;
+
+        pair<hal_index_t, hal_index_t> chain_li = make_pair(-1,-1); // offset in chain_stack
         // find best existing chain
-        // (linear scan that could be sped up with better data structure, but we only expect a few chains in a given window)
-        for (int64_t j = chains.size() - 1; j >= 0; --j) {
+        for (int64_t j = chain_level_stack.size() - 1; j >= 0; --j) {
             hal_index_t best_delta = numeric_limits<hal_index_t>::max();
-            hal_index_t best_chain = -1;
-            hal_index_t delta = (*i)->getSource()->getStartPosition() - (*chains[j].back())->getSource()->getEndPosition();
-            if (delta >= 0 && delta < best_delta) {
-                best_delta = delta;
-                best_chain = j;
+            hal_index_t best_k = -1;
+            for (int64_t k = 0; k < chain_level_stack[j].size(); ++k) {
+                int64_t chain_idx = chain_level_stack[j][k];
+                hal_index_t delta = (*i)->getSource()->getStartPosition() - (*chains[chain_idx].back())->getSource()->getEndPosition();
+                if (delta >= 0 &&
+                    (*i)->getStartPosition() > (*chains[chain_idx].back())->getEndPosition() &&
+                    (*i)->getReversed() == (*chains[chain_idx].back())->getReversed() &&
+                    delta < best_delta) {
+                    // we've foudn a compatible chain, choose it
+                    best_delta = delta;
+                    best_k = k;
+                }
             }
-            if (best_chain >= 0) {
-                chain = best_chain;
+            if (best_k >= 0) {
+                chain_li = make_pair(j, best_k);
+                break;
             }
         }
 
-        // add to chosen chain
-        if (chain >= 0) {
-            chains[chain].push_back(i);
-            chain_sizes[chain] += (*i)->getLength();
+        if (chain_li.first >= 0 && chain_li.second >= 0) {
+                    
+            cerr << "found chain stack idx " << chain_li.first << "," <<chain_li.second << " in stack of size "
+                 << chain_level_stack.size() << endl;
+
+            chains[chain_level_stack[chain_li.first][chain_li.second]].push_back(i);
+            chain_sizes[chain_level_stack[chain_li.first][chain_li.second]] += (*i)->getLength();
+
+            // we've foudn a chain in the stack.  close everything below it.
+            while (chain_level_stack.size() - 1 > chain_li.first) {
+                cerr <<"popping level stack of size " << chain_level_stack.size() << endl;;
+                chain_level_stack.pop_back();
+            }
+
         } else {
+
+            cerr << "pushing new chain " << chains.size() << " to stack of size " << chain_level_stack.size() << endl;
+            // there's no chain we can add to, start a new one
             // there's no chain we can add to, so start a new one
             chains.push_back({i});
             chain_sizes.push_back((*i)->getLength());
-            chain = 0;
+            if (is_dupe) {
+                chain_level_stack.back().push_back(chains.size() - 1);
+            } else {                
+                chain_level_stack.push_back({(hal_index_t)(chains.size() - 1)});
+            }
+            chain_li = make_pair(chain_level_stack.size() - 1, chain_level_stack.back().size() - 1);
+            assert(chain_li.first >= 0);
+            assert(chain_li.second >= 0);
         }
-
+ 
         // remember which chain it came from if in a paralogy
-        if (is_dupe) {
-            to_chain[i->get()] = chain;
+        if (is_dupe || is_dupe_next) {
+            to_chain[i->get()] = chain_level_stack[chain_li.first][chain_li.second];
         }
         prev = i;
     }
@@ -1224,7 +1260,7 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
             }
             ++pj;
         }
-        // now we need to erase the unchosen paralgoies
+        // now we need to erase the unchosen paralogies
         // and add one copy to outMap
         bool added = false;
         for (int64_t pk = pi; pk < pj; ++pk) {
@@ -1232,13 +1268,28 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
                 if (!added) {
                     outParalogies.insert(*paralogies[pk]);
                 }
+                hal_index_t chain = to_chain.at(paralogies[pk]->get());
+                chain_sizes[chain] -= (*paralogies[pk])->getLength();
+                assert(chain_sizes[chain] >= 0);
                 segMap.erase(paralogies[pk]);
             }
         }
     }
 
-    // todo: another pass to filter out the tiny chains
-
+    // another pass to filter out the tiny chains
+    // todo: better parameters (could also speed up)
+    hal_index_t total_chain_size = 0;
+    for (int64_t chain = 0; chain < chains.size(); ++chain) {
+        total_chain_size += chain_sizes[chain];        
+    }
+    for (int64_t chain = 0; chain < chains.size(); ++chain) {
+        double chain_pct = (double)chain_sizes[chain] / (double)total_chain_size;
+        if (chain_pct < min_chain_pct) {
+            for (int64_t ci = 0; ci < chains[chain].size(); ++ci) {
+                segMap.erase(chains[chain][ci]);
+            }
+        }
+    }
 }
 
 extern "C" struct hal_metadata_t *halGetGenomeMetadata(int halHandle, const char *genomeName, char **errStr) {
