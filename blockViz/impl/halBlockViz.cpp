@@ -69,12 +69,6 @@ static void readBlock(AlignmentConstPtr seqAlignment, hal_block_t *cur, vector<M
 
 static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, MappedSegmentSet &paraSet);
 
-static void readTargetRange(hal_target_dupe_list_t *cur, vector<MappedSegmentPtr> &fragments);
-
-static void cleanTargetDupesList(vector<hal_target_dupe_list_t *> &dupeList);
-
-static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList);
-
 static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
                                      MappedSegmentSet& outParalogies, double min_chain_pct = 0.0001);
 
@@ -937,197 +931,119 @@ struct DupeStartLess {
     }
 };
 
+struct DupeListLess {
+    bool operator()(const pair<set<hal_index_t>, hal_index_t>& d1, const pair<set<hal_index_t>, hal_index_t>& d2) {
+        return *d1.first.begin() < *d2.first.begin();
+    }
+};
+
 static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, MappedSegmentSet &paraSet) {
-    vector<hal_target_dupe_list_t *> tempList;
-    vector<MappedSegmentPtr> fragments;
-    MappedSegmentSet emptySet;
-    set<hal_index_t> queryCutSet;
-    set<hal_index_t> targetCutSet;
-    targetCutSet.insert(blockMapper.getAbsRefFirst());
-    targetCutSet.insert(blockMapper.getAbsRefLast());
 
-    // make a dupe list for each merged segment
-    for (MappedSegmentSet::iterator segMapIt = paraSet.begin(); segMapIt != paraSet.end(); ++segMapIt) {
-        assert((*segMapIt)->getSource()->getReversed() == false);
-        hal_target_dupe_list_t *cur = (hal_target_dupe_list_t *)calloc(1, sizeof(hal_target_dupe_list_t));
-        BlockMapper::extractSegment(segMapIt, emptySet, fragments, &paraSet, targetCutSet, queryCutSet);
-        // fragments.clear(); fragments.push_back(*segMapIt);
-        readTargetRange(cur, fragments);
-        tempList.push_back(cur);
-    }
+    // a dupe list is a set of homologous intervals in the reference (which is Source in the mapped segments)
+    // we store as size and start points
+    vector<pair<set<hal_index_t>, hal_index_t>> dupe_lists;
 
-    cleanTargetDupesList(tempList);
-
-    map<const char *, hal_int_t, CStringLess> idMap;
-    pair<map<const char *, hal_int_t, CStringLess>::iterator, bool> idRes;
-    vector<hal_target_dupe_list_t *>::iterator i;
-    vector<hal_target_dupe_list_t *>::iterator j;
-    vector<hal_target_dupe_list_t *>::iterator k;
-    for (i = tempList.begin(); i != tempList.end(); i = j) {
-        j = i;
+    for (MappedSegmentSet::iterator i = paraSet.begin(); i != paraSet.end();) {
+        
+        // find the equivalence class of identical source intervals
+        MappedSegmentSet::iterator j = i;
         ++j;
-        // merge dupe lists with overlapping ids by prepending j's
-        // target range to i
-        // (recall we've stuck query start coordinates into the id)
-        while (j != tempList.end() && (*i)->id == (*j)->id) {
-            assert((*i)->next == NULL);
-            assert((*j)->next == NULL);
-            assert(j != i);
-            k = j;
-            ++k;
-            assert((*j)->tRange->size == (*i)->tRange->size);
-            (*j)->tRange->next = (*i)->tRange;
-            (*i)->tRange = (*j)->tRange;
-            (*j)->tRange = NULL;
-            // DupeIdLess sorting comparator should ensure that these
-            // elemens are added in the proper order so that trange list
-            // stays sorted here
-            assert((*i)->tRange->tStart <= (*i)->tRange->next->tStart);
-            halFreeTargetDupeLists(*j);
-            *j = NULL;
-            j = k;
+        hal_index_t copies = 1;
+        while (j != paraSet.end() && ((*j)->getStartPosition() == (*i)->getStartPosition() ||
+                                     (*j)->getEndPosition() == (*i)->getStartPosition())) {
+            ++j;
+            ++copies;
         }
+        set<hal_index_t> dupe_starts;
+        for (MappedSegmentSet::iterator k = i; k != j; ++k) {
+            dupe_starts.insert((*k)->getSource()->getStartPosition());
+        }
+        dupe_lists.push_back(make_pair(dupe_starts, (hal_index_t)(*i)->getLength()));
 
-        idRes = idMap.insert(pair<const char *, hal_int_t>((*i)->qChrom, 0));
-        (*i)->id = idRes.first->second++;
+        i = j;
     }
 
-    std::sort(tempList.begin(), tempList.end(), DupeStartLess());
-    mergeCompatibleDupes(tempList);
+    // sort the dupe lists
+    std::sort(dupe_lists.begin(), dupe_lists.end(), DupeListLess());
 
-    hal_target_dupe_list_t *head = NULL;
-    hal_target_dupe_list_t *prev = NULL;
-    for (i = tempList.begin(); i != tempList.end() && *i != NULL; ++i) {
-        if (head == NULL) {
-            head = *i;
-        } else {
-            prev->next = *i;
-        }
-        prev = *i;
-    }
-
-    return head;
-}
-
-static void readTargetRange(hal_target_dupe_list_t *cur, vector<MappedSegmentPtr> &fragments) {
-    MappedSegmentPtr firstQuerySeg = fragments.front();
-    MappedSegmentPtr lastQuerySeg = fragments.back();
-    const SlicedSegment *firstRefSeg = firstQuerySeg->getSource();
-    const SlicedSegment *lastRefSeg = lastQuerySeg->getSource();
-    const Sequence *qSequence = firstQuerySeg->getSequence();
-    const Sequence *tSequence = firstRefSeg->getSequence();
-    assert(qSequence == lastQuerySeg->getSequence());
-    assert(tSequence == lastRefSeg->getSequence());
-    assert(firstRefSeg->getReversed() == false);
-    assert(lastRefSeg->getReversed() == false);
-
-    cur->tRange = (hal_target_range_t *)calloc(1, sizeof(hal_target_range_t));
-
-    cur->tRange->tStart = std::min(std::min(firstRefSeg->getStartPosition(), firstRefSeg->getEndPosition()),
-                                   std::min(lastRefSeg->getStartPosition(), lastRefSeg->getEndPosition()));
-    cur->tRange->tStart -= tSequence->getStartPosition();
-
-    hal_index_t qStart = std::min(std::min(firstQuerySeg->getStartPosition(), firstQuerySeg->getEndPosition()),
-                                  std::min(lastQuerySeg->getStartPosition(), lastQuerySeg->getEndPosition()));
-    qStart -= qSequence->getStartPosition();
-
-    hal_index_t tEnd = std::max(std::max(firstRefSeg->getStartPosition(), firstRefSeg->getEndPosition()),
-                                std::max(lastRefSeg->getStartPosition(), lastRefSeg->getEndPosition()));
-    tEnd -= tSequence->getStartPosition();
-
-    cur->tRange->size = 1 + tEnd - cur->tRange->tStart;
-
-    // use query start as proxy for unique id right now
-    cur->id = qStart;
-
-    string qSeqName = qSequence->getName();
-    cur->qChrom = (char *)malloc(qSeqName.length() * sizeof(char) + 1);
-    strcpy(cur->qChrom, qSeqName.c_str());
-}
-
-static void cleanTargetDupesList(vector<hal_target_dupe_list_t *> &dupeList) {
-    // sort based on target start coordinate
-    std::sort(dupeList.begin(), dupeList.end(), DupeStartLess());
-
-    map<hal_int_t, hal_int_t> idMap;
-    map<hal_int_t, hal_int_t>::iterator idMapIt;
-
-    size_t deadCount = 0;
-
-    vector<hal_target_dupe_list_t *>::iterator i;
-    vector<hal_target_dupe_list_t *>::iterator j;
-    vector<hal_target_dupe_list_t *>::iterator k;
-    for (j = dupeList.begin(); j != dupeList.end(); j = k) {
-        k = j;
-        ++k;
-        if (j == dupeList.begin() ||
-            // note that we should eventually clean up overlapping
-            // segments but don't have the energy to do right now, and
-            // have yet to see it actually happen in an example
-            strcmp((*j)->qChrom, (*i)->qChrom) != 0 || (*j)->tRange->tStart != (*i)->tRange->tStart ||
-            (*j)->tRange->size != (*i)->tRange->size) {
-            i = j;
-        } else {
-            idMap.insert(pair<hal_int_t, hal_int_t>((*j)->id, (*i)->id));
-            // insert this one to make sure we dont remap it down the road
-            idMap.insert(pair<hal_int_t, hal_int_t>((*i)->id, (*i)->id));
-            halFreeTargetDupeLists(*j);
-            *j = NULL;
-            ++deadCount;
-        }
-    }
-
-    for (i = dupeList.begin(); i != dupeList.end(); ++i) {
-        if (*i != NULL) {
-            idMapIt = idMap.find((*i)->id);
-            if (idMapIt != idMap.end()) {
-                (*i)->id = idMapIt->second;
-            }
-        }
-    }
-
-    // sort based on query coordinate
-    std::sort(dupeList.begin(), dupeList.end(), DupeIdLess());
-
-    // sort puts NULL items at end. we resize them out.
-    dupeList.resize(dupeList.size() - deadCount);
-}
-
-static bool areRangesCompatible(hal_target_range_t *range1, hal_target_range_t *range2) {
-    for (; range1 != NULL; range1 = range1->next, range2 = range2->next) {
-        if ((range1->next == NULL) != (range2->next == NULL) || range2->tStart != range1->tStart + range1->size ||
-            (range1->next != NULL && range1->next->tStart - (range1->tStart + range1->size) < range2->size)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList) {
-    vector<hal_target_dupe_list_t *>::iterator i;
-    vector<hal_target_dupe_list_t *>::iterator j;
-    vector<hal_target_dupe_list_t *>::iterator k;
-
-    for (i = dupeList.begin(); i != dupeList.end() && *i != NULL; i = j) {
-        j = i;
-        bool compatible = true;
-        for (++j; j != dupeList.end() && *j != NULL && compatible; ++j) {
-            hal_target_range_t *range1 = (*i)->tRange;
-            hal_target_range_t *range2 = (*j)->tRange;
-            compatible = areRangesCompatible(range1, range2);
-            if (compatible == true) {
-                range2 = (*j)->tRange;
-                for (range1 = (*i)->tRange; range1 != NULL; range1 = range1->next) {
-                    assert(range2 != NULL);
-                    range1->size += range2->size;
-                    range2 = range2->next;
+    // merge the dupe lists
+    int64_t merge_count = 0;
+    for (int64_t i = 0; i < dupe_lists.size();) {
+        int64_t j = i + 1 + merge_count;
+        merge_count = 0;
+        for (;j < dupe_lists.size(); ++j) {
+            bool merged = false;
+            if (dupe_lists[j].first.size() == dupe_lists[i].first.size()) {
+                set<hal_index_t>::iterator k1 = dupe_lists[i].first.begin();
+                set<hal_index_t>::iterator k2 = dupe_lists[j].first.begin();
+                hal_index_t max_overlap = 0;
+                for (; k1 != dupe_lists[i].first.end(); ++k1, ++k2) {
+                    max_overlap = max(max_overlap, *k1 + dupe_lists[i].second - *k2);
                 }
-                halFreeTargetDupeLists(*j);
-                *j = NULL;
+                if (max_overlap >= 0) {
+                    // we will extend i by len(j) - max_overlap
+                    int64_t remainder = dupe_lists[j].second - max_overlap;
+                    if (remainder > 0) {
+                        dupe_lists[i].second += remainder;
+                        dupe_lists[j].second -= remainder;
+                    }
+                    if (remainder <= 0) {
+                        dupe_lists[j].second = 0;
+                    }
+                    ++merge_count;
+                    merged = true;
+                } else {
+                    merged =false;
+                }
+            }
+            if (!merged) {
+                break;
             }
         }
+        if (merge_count == 0) {
+            i = j;
+        }
     }
+
+    // make the C structs
+    hal_target_dupe_list_t* dupes_head = NULL;
+    hal_target_dupe_list_t* dupes_tail = NULL;
+    int64_t cur_id = 0;
+    string chrom_name = (*paraSet.begin())->getSource()->getSequence()->getName();
+    hal_index_t chrom_offset = (*paraSet.begin())->getSource()->getSequence()->getStartPosition();
+
+    for (int64_t i = 0; i < dupe_lists.size(); ++i) {
+        if (dupe_lists[i].second == 0) {
+            // this list was merged
+            continue;
+        }
+        hal_target_dupe_list_t* dupe = (hal_target_dupe_list_t *)calloc(1, sizeof(hal_target_dupe_list_t));
+        dupe->id = cur_id++;
+        dupe->qChrom = (char *)malloc(chrom_name.length() * sizeof(char) + 1);
+        strcpy(dupe->qChrom, chrom_name.c_str());
+        hal_target_range_t* range_tail = NULL;
+        for (set<hal_index_t>::iterator j = dupe_lists[i].first.begin(); j != dupe_lists[i].first.end(); ++j) {
+            hal_target_range_t* range = (hal_target_range_t*)(calloc(1, sizeof(hal_target_range_t)));
+            range->tStart = *j - chrom_offset;
+            range->size = dupe_lists[i].second;
+            if (range_tail == NULL) {
+                dupe->tRange = range;
+            } else {
+                range_tail->next = range;
+            }
+            range_tail = range;
+        }
+        if (dupes_head == NULL) {
+            dupes_head = dupe;
+        } else {
+            dupes_tail->next = dupe;
+        }
+        dupes_tail = dupe;
+    }
+
+    return dupes_head;
 }
+    
 
 /// This function replaces the old BlockMapper::extractReferenceParalogies() function.
 /// The main job of both of these functions is to make sure that the query genome is single copy 
@@ -1228,15 +1144,10 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
         // remove all but best paralogy, saving at least 1 for outParalgoies
         if (copies > 1) {
             for (MappedSegmentSet::iterator k = i; k!= j; ++k) {
-                bool added = false;
+                outParalogies.insert(*k);
                 if (k != best) {
-                    if (!added) {
-                        outParalogies.insert(*k);
-                        added =true;
-                    }
                     filtered_paralogies.push_back(k);
                 }
-
             }
         }
         
