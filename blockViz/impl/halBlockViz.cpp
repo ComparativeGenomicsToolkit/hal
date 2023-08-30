@@ -70,7 +70,7 @@ static void readBlock(AlignmentConstPtr seqAlignment, hal_block_t *cur, vector<M
 static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, MappedSegmentSet &paraSet);
 
 static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
-                                     MappedSegmentSet& outParalogies, double min_chain_pct = 0.0025);
+                                     MappedSegmentSet& outParalogies, double min_chain_pct = 0.025);
 
 /* return an error in errStr if not NULL, otherwise throw and exception with
  * the message. */
