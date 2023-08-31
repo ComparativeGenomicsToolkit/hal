@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unordered_map>
 
 #ifdef ENABLE_UDC
 #include <pthread.h>
@@ -68,11 +69,8 @@ static void readBlock(AlignmentConstPtr seqAlignment, hal_block_t *cur, vector<M
 
 static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, MappedSegmentSet &paraSet);
 
-static void readTargetRange(hal_target_dupe_list_t *cur, vector<MappedSegmentPtr> &fragments);
-
-static void cleanTargetDupesList(vector<hal_target_dupe_list_t *> &dupeList);
-
-static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList);
+static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
+                                     MappedSegmentSet& outParalogies, double min_chain_pct = 0.025);
 
 /* return an error in errStr if not NULL, otherwise throw and exception with
  * the message. */
@@ -321,7 +319,8 @@ extern "C" struct hal_block_results_t *halGetBlocksInTargetRange(int halHandle, 
         }
 
         results = readBlocks(seqAlignment, tSequence, absStart, absEnd, tReversed != 0, qGenome, getSequenceString,
-                             dupMode != HAL_NO_DUPS, dupMode == HAL_QUERY_AND_TARGET_DUPS, mapBackAdjacencies != 0,
+                             dupMode != HAL_NO_DUPS, dupMode == HAL_QUERY_AND_TARGET_DUPS,
+                             mapBackAdjacencies != 0,
                              coalescenceLimitName);
     } catch (exception &e) {
         halUnlock();
@@ -790,10 +789,11 @@ static hal_block_results_t *readBlocks(AlignmentConstPtr seqAlignment, const Seq
     MappedSegmentSet paraSet;
     hal_size_t totalLength = 0;
     hal_size_t reversedLength = 0;
-    if (doDupes == true && qGenome != tGenome) {
-        blockMapper.extractReferenceParalogies(paraSet);
-    }
     MappedSegmentSet &segMap = blockMapper.getMap();
+
+    if (doDupes == true && qGenome != tGenome) {
+        chainReferenceParalogies(segMap, absStart, absEnd, paraSet);
+    }
     vector<MappedSegmentPtr> fragments;
     set<hal_index_t> queryCutSet;
     set<hal_index_t> targetCutSet;
@@ -930,193 +930,245 @@ struct DupeStartLess {
     }
 };
 
+struct DupeListLess {
+    bool operator()(const pair<set<hal_index_t>, hal_index_t>& d1, const pair<set<hal_index_t>, hal_index_t>& d2) {
+        return *d1.first.begin() < *d2.first.begin();
+    }
+};
+
 static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, MappedSegmentSet &paraSet) {
-    vector<hal_target_dupe_list_t *> tempList;
-    vector<MappedSegmentPtr> fragments;
-    MappedSegmentSet emptySet;
-    set<hal_index_t> queryCutSet;
-    set<hal_index_t> targetCutSet;
-    targetCutSet.insert(blockMapper.getAbsRefFirst());
-    targetCutSet.insert(blockMapper.getAbsRefLast());
 
-    // make a dupe list for each merged segment
-    for (MappedSegmentSet::iterator segMapIt = paraSet.begin(); segMapIt != paraSet.end(); ++segMapIt) {
-        assert((*segMapIt)->getSource()->getReversed() == false);
-        hal_target_dupe_list_t *cur = (hal_target_dupe_list_t *)calloc(1, sizeof(hal_target_dupe_list_t));
-        BlockMapper::extractSegment(segMapIt, emptySet, fragments, &paraSet, targetCutSet, queryCutSet);
-        // fragments.clear(); fragments.push_back(*segMapIt);
-        readTargetRange(cur, fragments);
-        tempList.push_back(cur);
-    }
+    // a dupe list is a set of homologous intervals in the reference (which is Source in the mapped segments)
+    // we store as size and start points
+    vector<pair<set<hal_index_t>, hal_index_t>> dupe_lists;
 
-    cleanTargetDupesList(tempList);
-
-    map<const char *, hal_int_t, CStringLess> idMap;
-    pair<map<const char *, hal_int_t, CStringLess>::iterator, bool> idRes;
-    vector<hal_target_dupe_list_t *>::iterator i;
-    vector<hal_target_dupe_list_t *>::iterator j;
-    vector<hal_target_dupe_list_t *>::iterator k;
-    for (i = tempList.begin(); i != tempList.end(); i = j) {
-        j = i;
+    for (MappedSegmentSet::iterator i = paraSet.begin(); i != paraSet.end();) {
+        
+        // find the equivalence class of identical source intervals
+        MappedSegmentSet::iterator j = i;
         ++j;
-        // merge dupe lists with overlapping ids by prepending j's
-        // target range to i
-        // (recall we've stuck query start coordinates into the id)
-        while (j != tempList.end() && (*i)->id == (*j)->id) {
-            assert((*i)->next == NULL);
-            assert((*j)->next == NULL);
-            assert(j != i);
-            k = j;
-            ++k;
-            assert((*j)->tRange->size == (*i)->tRange->size);
-            (*j)->tRange->next = (*i)->tRange;
-            (*i)->tRange = (*j)->tRange;
-            (*j)->tRange = NULL;
-            // DupeIdLess sorting comparator should ensure that these
-            // elemens are added in the proper order so that trange list
-            // stays sorted here
-            assert((*i)->tRange->tStart <= (*i)->tRange->next->tStart);
-            halFreeTargetDupeLists(*j);
-            *j = NULL;
-            j = k;
+        hal_index_t copies = 1;
+        while (j != paraSet.end() && ((*j)->getStartPosition() == (*i)->getStartPosition() ||
+                                     (*j)->getEndPosition() == (*i)->getStartPosition())) {
+            ++j;
+            ++copies;
         }
+        set<hal_index_t> dupe_starts;
+        for (MappedSegmentSet::iterator k = i; k != j; ++k) {
+            dupe_starts.insert((*k)->getSource()->getStartPosition());
+        }
+        dupe_lists.push_back(make_pair(dupe_starts, (hal_index_t)(*i)->getLength()));
 
-        idRes = idMap.insert(pair<const char *, hal_int_t>((*i)->qChrom, 0));
-        (*i)->id = idRes.first->second++;
+        i = j;
     }
 
-    std::sort(tempList.begin(), tempList.end(), DupeStartLess());
-    mergeCompatibleDupes(tempList);
+    // sort the dupe lists
+    std::sort(dupe_lists.begin(), dupe_lists.end(), DupeListLess());
 
-    hal_target_dupe_list_t *head = NULL;
-    hal_target_dupe_list_t *prev = NULL;
-    for (i = tempList.begin(); i != tempList.end() && *i != NULL; ++i) {
-        if (head == NULL) {
-            head = *i;
-        } else {
-            prev->next = *i;
+    // merge the dupe lists
+    for (int64_t i = 0; i < dupe_lists.size(); ++i) {
+        if (dupe_lists[i].second <= 0) {
+            continue;
         }
-        prev = *i;
-    }
-
-    return head;
-}
-
-static void readTargetRange(hal_target_dupe_list_t *cur, vector<MappedSegmentPtr> &fragments) {
-    MappedSegmentPtr firstQuerySeg = fragments.front();
-    MappedSegmentPtr lastQuerySeg = fragments.back();
-    const SlicedSegment *firstRefSeg = firstQuerySeg->getSource();
-    const SlicedSegment *lastRefSeg = lastQuerySeg->getSource();
-    const Sequence *qSequence = firstQuerySeg->getSequence();
-    const Sequence *tSequence = firstRefSeg->getSequence();
-    assert(qSequence == lastQuerySeg->getSequence());
-    assert(tSequence == lastRefSeg->getSequence());
-    assert(firstRefSeg->getReversed() == false);
-    assert(lastRefSeg->getReversed() == false);
-
-    cur->tRange = (hal_target_range_t *)calloc(1, sizeof(hal_target_range_t));
-
-    cur->tRange->tStart = std::min(std::min(firstRefSeg->getStartPosition(), firstRefSeg->getEndPosition()),
-                                   std::min(lastRefSeg->getStartPosition(), lastRefSeg->getEndPosition()));
-    cur->tRange->tStart -= tSequence->getStartPosition();
-
-    hal_index_t qStart = std::min(std::min(firstQuerySeg->getStartPosition(), firstQuerySeg->getEndPosition()),
-                                  std::min(lastQuerySeg->getStartPosition(), lastQuerySeg->getEndPosition()));
-    qStart -= qSequence->getStartPosition();
-
-    hal_index_t tEnd = std::max(std::max(firstRefSeg->getStartPosition(), firstRefSeg->getEndPosition()),
-                                std::max(lastRefSeg->getStartPosition(), lastRefSeg->getEndPosition()));
-    tEnd -= tSequence->getStartPosition();
-
-    cur->tRange->size = 1 + tEnd - cur->tRange->tStart;
-
-    // use query start as proxy for unique id right now
-    cur->id = qStart;
-
-    string qSeqName = qSequence->getName();
-    cur->qChrom = (char *)malloc(qSeqName.length() * sizeof(char) + 1);
-    strcpy(cur->qChrom, qSeqName.c_str());
-}
-
-static void cleanTargetDupesList(vector<hal_target_dupe_list_t *> &dupeList) {
-    // sort based on target start coordinate
-    std::sort(dupeList.begin(), dupeList.end(), DupeStartLess());
-
-    map<hal_int_t, hal_int_t> idMap;
-    map<hal_int_t, hal_int_t>::iterator idMapIt;
-
-    size_t deadCount = 0;
-
-    vector<hal_target_dupe_list_t *>::iterator i;
-    vector<hal_target_dupe_list_t *>::iterator j;
-    vector<hal_target_dupe_list_t *>::iterator k;
-    for (j = dupeList.begin(); j != dupeList.end(); j = k) {
-        k = j;
-        ++k;
-        if (j == dupeList.begin() ||
-            // note that we should eventually clean up overlapping
-            // segments but don't have the energy to do right now, and
-            // have yet to see it actually happen in an example
-            strcmp((*j)->qChrom, (*i)->qChrom) != 0 || (*j)->tRange->tStart != (*i)->tRange->tStart ||
-            (*j)->tRange->size != (*i)->tRange->size) {
-            i = j;
-        } else {
-            idMap.insert(pair<hal_int_t, hal_int_t>((*j)->id, (*i)->id));
-            // insert this one to make sure we dont remap it down the road
-            idMap.insert(pair<hal_int_t, hal_int_t>((*i)->id, (*i)->id));
-            halFreeTargetDupeLists(*j);
-            *j = NULL;
-            ++deadCount;
-        }
-    }
-
-    for (i = dupeList.begin(); i != dupeList.end(); ++i) {
-        if (*i != NULL) {
-            idMapIt = idMap.find((*i)->id);
-            if (idMapIt != idMap.end()) {
-                (*i)->id = idMapIt->second;
+        for (int64_t j = i + 1;j < dupe_lists.size(); ++j) {
+            bool merged = false;
+            if (dupe_lists[j].first.size() == dupe_lists[i].first.size()) {
+                set<hal_index_t>::iterator k1 = dupe_lists[i].first.begin();
+                set<hal_index_t>::iterator k2 = dupe_lists[j].first.begin();
+                hal_index_t min_extension = numeric_limits<hal_index_t>::max();
+                for (; k1 != dupe_lists[i].first.end(); ++k1, ++k2) {
+                    // how much does the left side of k2 overlap k1
+                    // 0: directly adjacent
+                    // >0: overlap
+                    // <0: disjoint
+                    hal_index_t left_overlap = -1;
+                    if (*k2 >= *k1) {
+                        left_overlap = (*k1 + dupe_lists[i].second) - *k2;
+                        if (left_overlap > 0) {
+                            left_overlap = min(left_overlap, dupe_lists[j].second);
+                        }
+                    }
+                    // anything remaining after the overlap can be an extension
+                    hal_index_t right_extension = left_overlap < 0 ? -1 : left_overlap - dupe_lists[j].second;
+                    min_extension = min(min_extension, right_extension);
+                }
+                if (min_extension == 0) {
+                    // j contained in i
+                    dupe_lists[j].second = 0;
+                } else if (min_extension > 0) {
+                    dupe_lists[i].second += min_extension;
+                    dupe_lists[j].second -= min_extension;
+                }
+                merged = min_extension >= 0;
+            }
+            if (!merged) {
+                break;
             }
         }
     }
 
-    // sort based on query coordinate
-    std::sort(dupeList.begin(), dupeList.end(), DupeIdLess());
-
-    // sort puts NULL items at end. we resize them out.
-    dupeList.resize(dupeList.size() - deadCount);
-}
-
-static bool areRangesCompatible(hal_target_range_t *range1, hal_target_range_t *range2) {
-    for (; range1 != NULL; range1 = range1->next, range2 = range2->next) {
-        if ((range1->next == NULL) != (range2->next == NULL) || range2->tStart != range1->tStart + range1->size ||
-            (range1->next != NULL && range1->next->tStart - (range1->tStart + range1->size) < range2->size)) {
-            return false;
+    // make the C structs
+    hal_target_dupe_list_t* dupes_head = NULL;
+    hal_target_dupe_list_t* dupes_tail = NULL;
+    int64_t cur_id = 0;
+    string chrom_name = (*paraSet.begin())->getSource()->getSequence()->getName();
+    hal_index_t chrom_offset = (*paraSet.begin())->getSource()->getSequence()->getStartPosition();
+    hal_index_t prev = -1;
+    for (int64_t i = 0; i < dupe_lists.size(); ++i) {
+        if (dupe_lists[i].second == 0) {
+            // this list was merged
+            continue;
         }
+        hal_target_dupe_list_t* dupe = (hal_target_dupe_list_t *)calloc(1, sizeof(hal_target_dupe_list_t));
+        if (prev >=0) {
+            // apply id smoothing by giving overlapping adjacent sets same ID
+            hal_index_t prev_end = *dupe_lists[prev].first.begin() + dupe_lists[prev].second;
+            if (*dupe_lists[i].first.begin() > prev_end) {
+                ++cur_id;
+            }
+        }
+        dupe->id = cur_id;
+        dupe->qChrom = (char *)malloc(chrom_name.length() * sizeof(char) + 1);
+        strcpy(dupe->qChrom, chrom_name.c_str());
+        hal_target_range_t* range_tail = NULL;
+        for (set<hal_index_t>::iterator j = dupe_lists[i].first.begin(); j != dupe_lists[i].first.end(); ++j) {
+            hal_target_range_t* range = (hal_target_range_t*)(calloc(1, sizeof(hal_target_range_t)));
+            range->tStart = *j - chrom_offset;
+            range->size = dupe_lists[i].second;
+            if (range_tail == NULL) {
+                dupe->tRange = range;
+            } else {
+                range_tail->next = range;
+            }
+            range_tail = range;
+        }
+        if (dupes_head == NULL) {
+            dupes_head = dupe;
+        } else {
+            dupes_tail->next = dupe;
+        }
+        dupes_tail = dupe;
+        prev = i;
     }
-    return true;
+
+    return dupes_head;
 }
+    
 
-static void mergeCompatibleDupes(vector<hal_target_dupe_list_t *> &dupeList) {
-    vector<hal_target_dupe_list_t *>::iterator i;
-    vector<hal_target_dupe_list_t *>::iterator j;
-    vector<hal_target_dupe_list_t *>::iterator k;
+/// This function replaces the old BlockMapper::extractReferenceParalogies() function.
+/// The main job of both of these functions is to make sure that the query genome is single copy 
+/// in the returned segments.  So let's say we're looking at a snake track for Gorilla against
+/// a human reference.  Any position on Gorilla can only appear once on screen.  In the old BlockMapper
+/// function, it would sort on Gorilla, find equivalience classes of all the dupes, and then
+/// keep the copy with the lowest reference coordinate.
+///
+/// This heuristic can lead to brutal fragmentation and gaps and left shifting etc.  What we really
+/// want instead is a way to chain the pairwise alignments together better, which is what's attempted
+/// here.
+///
+/// This new function replaces the "just pick leftmost" logic with a greedy chain.
+///
+/// Recall: MappedSegmentSet is sorted on "Target", with "Source" breaking ties only. 
+static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absStart, hal_index_t absEnd,
+                                     MappedSegmentSet& outParalogies, double min_chain_pct) {
 
-    for (i = dupeList.begin(); i != dupeList.end() && *i != NULL; i = j) {
-        j = i;
-        bool compatible = true;
-        for (++j; j != dupeList.end() && *j != NULL && compatible; ++j) {
-            hal_target_range_t *range1 = (*i)->tRange;
-            hal_target_range_t *range2 = (*j)->tRange;
-            compatible = areRangesCompatible(range1, range2);
-            if (compatible == true) {
-                range2 = (*j)->tRange;
-                for (range1 = (*i)->tRange; range1 != NULL; range1 = range1->next) {
-                    assert(range2 != NULL);
-                    range1->size += range2->size;
-                    range2 = range2->next;
+    // do one scan to find all the chains (greedily)
+    vector<vector<MappedSegmentSet::iterator>> chains;
+    vector<hal_index_t> chain_sizes;
+    // these are indexes in chain array above
+    // only chains in the stack can be added to at any given time
+    deque<hal_index_t> chain_stack;
+    vector<MappedSegmentSet::iterator> filtered_paralogies;
+    
+    for (MappedSegmentSet::iterator i = segMap.begin(); i != segMap.end();) {
+
+        // find the equivalence class of identical source intervals
+        MappedSegmentSet::iterator j = i;
+        ++j;
+        hal_index_t copies = 1;
+        while (j != segMap.end() && ((*j)->getStartPosition() == (*i)->getStartPosition() ||
+                                     (*j)->getEndPosition() == (*i)->getStartPosition())) {
+            ++j;
+            ++copies;
+        }
+
+        // greedily choose a chain to add this to
+        hal_index_t best_score = -numeric_limits<int32_t>::max();
+        hal_index_t best_stack_idx = -1;
+        MappedSegmentSet::iterator best = segMap.end();
+        MappedSegmentSet::iterator leftmost = segMap.end();
+        hal_index_t left_src_pos = numeric_limits<hal_index_t>::max();
+        for (MappedSegmentSet::iterator k = i; k != j; ++k) {
+            for (hal_index_t csi = chain_stack.size() - 1; csi >= 0; --csi) {
+                MappedSegmentSet::iterator& chain_back = chains[chain_stack[csi]].back();
+                hal_index_t src_delta = (*k)->getSource()->getStartPosition() - (*chain_back)->getSource()->getEndPosition();
+                if ((*k)->getReversed()) {
+                    src_delta = -src_delta;
                 }
-                halFreeTargetDupeLists(*j);
-                *j = NULL;
+                hal_index_t tgt_delta = (*k)->getStartPosition() - (*chain_back)->getEndPosition();
+                if (src_delta >= 0 && tgt_delta >= 0) {
+                    hal_index_t score = chain_sizes[chain_stack[csi]] * 2 - tgt_delta - src_delta;
+                    if (score > best_score) {
+                        // we've found the best open chain to put this on
+                        best_stack_idx = csi;
+                        best_score = score;
+                        best = k;
+                    }
+                }
+            }
+            // if we have no chain, we fall back to leftmost on target
+            hal_index_t mpos = min((*k)->getStartPosition(), (*k)->getEndPosition());
+            if (mpos < left_src_pos) {
+                left_src_pos = mpos;
+                leftmost = k;
+            }
+        }
+
+        if (best_stack_idx < 0) {
+            // we need to start a new chain
+            best = leftmost;
+            chains.push_back({best});
+            chain_sizes.push_back((*best)->getLength());
+            chain_stack.push_back(chains.size() - 1);
+        } else {
+            // we add to an existing chain
+            chains[chain_stack[best_stack_idx]].push_back(best);
+            chain_sizes[chain_stack[best_stack_idx]] += (*best)->getLength();
+            // we close all child chains
+            while (chain_stack.size() - 1 > best_stack_idx) {
+                chain_stack.pop_back();
+            }
+        }
+
+        // remove all but best paralogy, saving at least 1 for outParalgoies
+        if (copies > 1) {
+            for (MappedSegmentSet::iterator k = i; k!= j; ++k) {
+                outParalogies.insert(*k);
+                if (k != best) {
+                    filtered_paralogies.push_back(k);
+                }
+            }
+        }
+        
+        i = j;
+    }
+
+    // clean the filtered paralogies
+    for (hal_index_t i = 0; i < filtered_paralogies.size(); ++i) {
+        segMap.erase(filtered_paralogies[i]);
+    }
+
+    // another pass to filter out the tiny chains
+    // todo: better parameters (could also speed up)
+    hal_index_t total_chain_size = 0;
+    for (int64_t chain = 0; chain < chains.size(); ++chain) {
+        total_chain_size += chain_sizes[chain];        
+    }
+    for (int64_t chain = 0; chain < chains.size(); ++chain) {
+        double chain_pct = (double)chain_sizes[chain] / (double)total_chain_size;
+        if (chain_pct < min_chain_pct) {
+            for (int64_t ci = 0; ci < chains[chain].size(); ++ci) {
+                segMap.erase(chains[chain][ci]);
             }
         }
     }

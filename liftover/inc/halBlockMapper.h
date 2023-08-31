@@ -31,7 +31,6 @@ namespace hal {
                   bool targetReversed, bool doDupes, hal_size_t minLength, bool mapTargetAdjacencies,
                   const Genome *coalescenceLimit = NULL);
         void map();
-        void extractReferenceParalogies(MappedSegmentSet &outParalogies);
 
         const MappedSegmentSet &getMap() const;
         MappedSegmentSet &getMap();

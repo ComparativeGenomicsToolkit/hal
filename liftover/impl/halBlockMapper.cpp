@@ -118,76 +118,6 @@ void BlockMapper::map() {
     }
 }
 
-void BlockMapper::extractReferenceParalogies(MappedSegmentSet &outParalogies) {
-    MappedSegmentSet::iterator i = _segSet.begin();
-    MappedSegmentSet::iterator j = _segSet.end();
-    MappedSegmentSet::iterator k;
-    hal_index_t iStart = NULL_INDEX;
-    hal_index_t iEnd = NULL_INDEX;
-    bool iIns = false;
-    hal_index_t jStart;
-    hal_index_t jEnd;
-    while (i != _segSet.end()) {
-        // we divide list sorted on query segments into equivalence
-        // classes based on their query coordinates.  these classes
-        // are ordered by their reference coordinates.  we keep
-        // the lowest entry in each class (by ref coordinates) and
-        // extract all the others into outParalogies
-        if (iStart == NULL_INDEX) {
-            iIns = false;
-            iStart = (*i)->getStartPosition();
-            iEnd = (*i)->getEndPosition();
-            if ((*i)->getReversed()) {
-                swap(iStart, iEnd);
-            }
-        }
-        j = i;
-        ++j;
-        // if (_adjSet.find(*i) == _adjSet.end())
-        {
-            while (j != _segSet.end()) {
-                jStart = (*j)->getStartPosition();
-                jEnd = (*j)->getEndPosition();
-                if ((*j)->getReversed()) {
-                    swap(jStart, jEnd);
-                }
-                // note we should not have overlaps here because the mappedSegment
-                // results cuts everything to be same or disjoint
-                if (iStart == jStart) {
-                    assert(iEnd == jEnd);
-                    if (!iIns) {
-                        iIns = true;
-                        outParalogies.insert(*i);
-                    }
-                    outParalogies.insert(*j);
-                    k = j;
-                    ++k;
-                    _segSet.erase(*j);
-                    j = k;
-                } else {
-                    assert(iStart > jEnd || iEnd < jStart);
-                    iStart = NULL_INDEX;
-                    iIns = false;
-                    break;
-                }
-            }
-        }
-        i = j;
-    }
-
-#ifndef _NDEBUG
-    for (i = _segSet.begin(); i != _segSet.end(); ++i) {
-        j = i;
-        ++j;
-        if (j != _segSet.end()) {
-            iEnd = max((*i)->getEndPosition(), (*i)->getStartPosition());
-            jStart = min((*j)->getStartPosition(), (*j)->getEndPosition());
-            assert(jStart > iEnd);
-        }
-    }
-#endif
-}
-
 void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt) {
     assert(_segSet.empty() == false && segIt != _segSet.end());
     MappedSegmentPtr mappedQuerySeg(*segIt);
@@ -255,6 +185,7 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt) {
         ++iter;
     }
 
+    MappedSegmentSet outSet;
     // flip the results and copy back to our main set.
     for (MappedSegmentSet::iterator i = backResults.begin(); i != backResults.end(); ++i) {
         MappedSegmentPtr mseg(*i);
@@ -275,11 +206,42 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt) {
                            (*j)->overlaps(mseg->getStartPosition()) || (*j)->overlaps(mseg->getEndPosition());
             }
             if (overlaps == false) {
-                _segSet.insert(mseg);
-                _adjSet.insert(mseg);
+                outSet.insert(mseg);
             }
         }
     }
+
+    // clean up dupes before adding to output
+    for (MappedSegmentSet::iterator i = outSet.begin(); i != outSet.end();) {
+        
+        // find the equivalence class of identical target intervals
+        MappedSegmentSet::iterator j = i;
+        ++j;
+        hal_index_t copies = 1;
+        while (j != outSet.end() && ((*j)->getStartPosition() == (*i)->getStartPosition() ||
+                                     (*j)->getEndPosition() == (*i)->getStartPosition())) {
+            ++j;
+            ++copies;
+        }
+
+        // choose the best copy based on Source distance to input (ie nearest in screen coordinates)
+        MappedSegmentSet::iterator best;
+        hal_index_t best_delta = numeric_limits<hal_index_t>::max();
+        for (MappedSegmentSet::iterator k = i; k !=j; ++k) {
+            hal_index_t delta = min(abs((*k)->getSource()->getStartPosition() - (*segIt)->getSource()->getStartPosition()),
+                                    abs((*k)->getSource()->getEndPosition() - (*segIt)->getSource()->getStartPosition()));
+            if (delta < best_delta) {
+                best_delta = delta;
+                best = k;
+            }
+        }
+
+        _segSet.insert(*best);
+        _adjSet.insert(*best);
+       
+        i = j;
+    }
+
 }
 
 SegmentIteratorPtr BlockMapper::makeIterator(MappedSegmentPtr &mappedSegment, hal_index_t &minIndex, hal_index_t &maxIndex) {
