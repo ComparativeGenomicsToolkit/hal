@@ -224,11 +224,6 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt) {
             ++copies;
         }
 
-        if (copies > 1 || true) {
-            cerr << "FAMMING " << copies << " input " << ((*segIt)->getSource()->getStartPosition() - (*segIt)->getSource()->getSequence()->getStartPosition())
-                 << ", " << ((*segIt)->getSource()->getEndPosition() - (*segIt)->getSource()->getSequence()->getEndPosition())
-                  << endl;
-        }
         // choose the best copy based on Source distance to input (ie nearest in screen coordinates)
         MappedSegmentSet::iterator best;
         hal_index_t best_delta = numeric_limits<hal_index_t>::max();
@@ -239,12 +234,7 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt) {
                 best_delta = delta;
                 best = k;
             }
-
-            cerr << "Candidate Source Position " << ((*k)->getSource()->getStartPosition() - (*k)->getSource()->getSequence()->getStartPosition()) << endl;
-
         }
-
-        cerr << "Best Source Position " << ((*best)->getSource()->getStartPosition() - (*best)->getSource()->getSequence()->getStartPosition()) << endl;
 
         _segSet.insert(*best);
         _adjSet.insert(*best);

@@ -966,26 +966,11 @@ static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, Mapp
     std::sort(dupe_lists.begin(), dupe_lists.end(), DupeListLess());
 
     // merge the dupe lists
-    cerr << " processing dupe_list list of size " << dupe_lists.size() << endl;
     for (int64_t i = 0; i < dupe_lists.size(); ++i) {
         if (dupe_lists[i].second <= 0) {
             continue;
         }
-        cerr << "i= " << i << ": size=" << dupe_lists[i].second << " -- ";
-        for (set<hal_index_t>::iterator xx = dupe_lists[i].first.begin(); xx != dupe_lists[i].first.end(); ++xx)   {
-            cerr << "(" << *xx << "," << (*xx+dupe_lists[i].second) << "),";
-        }
-        cerr << endl;
-
-        
         for (int64_t j = i + 1;j < dupe_lists.size(); ++j) {
-
-            cerr << "j= " << j << ": size=" << dupe_lists[j].second << " -- ";
-            for (set<hal_index_t>::iterator xx = dupe_lists[j].first.begin(); xx != dupe_lists[j].first.end(); ++xx)   {
-                cerr << "(" << *xx << "," << (*xx+dupe_lists[j].second) << "),";                
-            }
-            cerr << endl;
-
             bool merged = false;
             if (dupe_lists[j].first.size() == dupe_lists[i].first.size()) {
                 set<hal_index_t>::iterator k1 = dupe_lists[i].first.begin();
@@ -1097,9 +1082,6 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
     
     for (MappedSegmentSet::iterator i = segMap.begin(); i != segMap.end();) {
 
-        cerr <<"\n" << "visit gorilla=" << (*i)->getStartPosition() << " hoo=" << (*i)->getSource()->getStartPosition()
-             << " rev=" << (*i)->getReversed() << endl;
-        
         // find the equivalence class of identical source intervals
         MappedSegmentSet::iterator j = i;
         ++j;
@@ -1131,11 +1113,6 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
                         best_stack_idx = csi;
                         best_score = score;
                         best = k;
-
-                        cerr << " found best match of copy score=" << score << " " 
-                             << (*k)->getStartPosition() << " hoo=" << (*k)->getSource()->getStartPosition()
-                             << " with chain idx " << best_stack_idx << " and base chain "
-                             << (*chain_back)->getStartPosition() << " hoo=" << (*chain_back)->getSource()->getStartPosition() << endl;
                     }
                 }
             }
@@ -1153,15 +1130,12 @@ static void chainReferenceParalogies(MappedSegmentSet& segMap, hal_index_t absSt
             chains.push_back({best});
             chain_sizes.push_back((*best)->getLength());
             chain_stack.push_back(chains.size() - 1);
-            cerr << "   adding leftmost to chain at level " << (chain_stack.size() - 1) << endl;;
         } else {
             // we add to an existing chain
             chains[chain_stack[best_stack_idx]].push_back(best);
             chain_sizes[chain_stack[best_stack_idx]] += (*best)->getLength();
-            cerr << "   adding best to chain at level " << (chain_stack.size() - 1) << endl;;
             // we close all child chains
             while (chain_stack.size() - 1 > best_stack_idx) {
-                cerr << "   popping level " << (chain_stack.size() - 1) << endl;
                 chain_stack.pop_back();
             }
         }
