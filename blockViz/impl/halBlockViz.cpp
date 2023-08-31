@@ -966,41 +966,59 @@ static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, Mapp
     std::sort(dupe_lists.begin(), dupe_lists.end(), DupeListLess());
 
     // merge the dupe lists
-    int64_t merge_count = 0;
-    for (int64_t i = 0; i < dupe_lists.size();) {
-        int64_t j = i + 1 + merge_count;
-        merge_count = 0;
-        for (;j < dupe_lists.size(); ++j) {
+    cerr << " processing dupe_list list of size " << dupe_lists.size() << endl;
+    for (int64_t i = 0; i < dupe_lists.size(); ++i) {
+        if (dupe_lists[i].second <= 0) {
+            continue;
+        }
+        cerr << "i= " << i << ": size=" << dupe_lists[i].second << " -- ";
+        for (set<hal_index_t>::iterator xx = dupe_lists[i].first.begin(); xx != dupe_lists[i].first.end(); ++xx)   {
+            cerr << "(" << *xx << "," << (*xx+dupe_lists[i].second) << "),";
+        }
+        cerr << endl;
+
+        
+        for (int64_t j = i + 1;j < dupe_lists.size(); ++j) {
+
+            cerr << "j= " << j << ": size=" << dupe_lists[j].second << " -- ";
+            for (set<hal_index_t>::iterator xx = dupe_lists[j].first.begin(); xx != dupe_lists[j].first.end(); ++xx)   {
+                cerr << "(" << *xx << "," << (*xx+dupe_lists[j].second) << "),";                
+            }
+            cerr << endl;
+
             bool merged = false;
             if (dupe_lists[j].first.size() == dupe_lists[i].first.size()) {
                 set<hal_index_t>::iterator k1 = dupe_lists[i].first.begin();
                 set<hal_index_t>::iterator k2 = dupe_lists[j].first.begin();
-                hal_index_t max_overlap = 0;
+                hal_index_t min_extension = numeric_limits<hal_index_t>::max();
                 for (; k1 != dupe_lists[i].first.end(); ++k1, ++k2) {
-                    max_overlap = max(max_overlap, *k1 + dupe_lists[i].second - *k2);
-                }
-                if (max_overlap >= 0) {
-                    // we will extend i by len(j) - max_overlap
-                    int64_t remainder = dupe_lists[j].second - max_overlap;
-                    if (remainder > 0) {
-                        dupe_lists[i].second += remainder;
-                        dupe_lists[j].second -= remainder;
+                    // how much does the left side of k2 overlap k1
+                    // 0: directly adjacent
+                    // >0: overlap
+                    // <0: disjoint
+                    hal_index_t left_overlap = -1;
+                    if (*k2 >= *k1) {
+                        left_overlap = (*k1 + dupe_lists[i].second) - *k2;
+                        if (left_overlap > 0) {
+                            left_overlap = min(left_overlap, dupe_lists[j].second);
+                        }
                     }
-                    if (remainder <= 0) {
-                        dupe_lists[j].second = 0;
-                    }
-                    ++merge_count;
-                    merged = true;
-                } else {
-                    merged =false;
+                    // anything remaining after the overlap can be an extension
+                    hal_index_t right_extension = left_overlap < 0 ? -1 : left_overlap - dupe_lists[j].second;
+                    min_extension = min(min_extension, right_extension);
                 }
+                if (min_extension == 0) {
+                    // j contained in i
+                    dupe_lists[j].second = 0;
+                } else if (min_extension > 0) {
+                    dupe_lists[i].second += min_extension;
+                    dupe_lists[j].second -= min_extension;
+                }
+                merged = min_extension >= 0;
             }
             if (!merged) {
                 break;
             }
-        }
-        if (merge_count == 0) {
-            i = j;
         }
     }
 
