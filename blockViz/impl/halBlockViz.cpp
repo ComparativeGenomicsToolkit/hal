@@ -1028,14 +1028,21 @@ static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, Mapp
     int64_t cur_id = 0;
     string chrom_name = (*paraSet.begin())->getSource()->getSequence()->getName();
     hal_index_t chrom_offset = (*paraSet.begin())->getSource()->getSequence()->getStartPosition();
-
+    hal_index_t prev = -1;
     for (int64_t i = 0; i < dupe_lists.size(); ++i) {
         if (dupe_lists[i].second == 0) {
             // this list was merged
             continue;
         }
         hal_target_dupe_list_t* dupe = (hal_target_dupe_list_t *)calloc(1, sizeof(hal_target_dupe_list_t));
-        dupe->id = cur_id++;
+        if (prev >=0) {
+            // apply id smoothing by giving overlapping adjacent sets same ID
+            hal_index_t prev_end = *dupe_lists[prev].first.begin() + dupe_lists[prev].second;
+            if (*dupe_lists[i].first.begin() > prev_end) {
+                ++cur_id;
+            }
+        }
+        dupe->id = cur_id;
         dupe->qChrom = (char *)malloc(chrom_name.length() * sizeof(char) + 1);
         strcpy(dupe->qChrom, chrom_name.c_str());
         hal_target_range_t* range_tail = NULL;
@@ -1056,6 +1063,7 @@ static hal_target_dupe_list_t *processTargetDupes(BlockMapper &blockMapper, Mapp
             dupes_tail->next = dupe;
         }
         dupes_tail = dupe;
+        prev = i;
     }
 
     return dupes_head;
