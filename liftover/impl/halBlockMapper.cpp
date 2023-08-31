@@ -185,6 +185,7 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt) {
         ++iter;
     }
 
+    MappedSegmentSet outSet;
     // flip the results and copy back to our main set.
     for (MappedSegmentSet::iterator i = backResults.begin(); i != backResults.end(); ++i) {
         MappedSegmentPtr mseg(*i);
@@ -205,11 +206,52 @@ void BlockMapper::mapAdjacencies(MappedSegmentSet::const_iterator segIt) {
                            (*j)->overlaps(mseg->getStartPosition()) || (*j)->overlaps(mseg->getEndPosition());
             }
             if (overlaps == false) {
-                _segSet.insert(mseg);
-                _adjSet.insert(mseg);
+                outSet.insert(mseg);
             }
         }
     }
+
+    // clean up dupes before adding to output
+    for (MappedSegmentSet::iterator i = outSet.begin(); i != outSet.end();) {
+        
+        // find the equivalence class of identical target intervals
+        MappedSegmentSet::iterator j = i;
+        ++j;
+        hal_index_t copies = 1;
+        while (j != outSet.end() && ((*j)->getStartPosition() == (*i)->getStartPosition() ||
+                                     (*j)->getEndPosition() == (*i)->getStartPosition())) {
+            ++j;
+            ++copies;
+        }
+
+        if (copies > 1 || true) {
+            cerr << "FAMMING " << copies << " input " << ((*segIt)->getSource()->getStartPosition() - (*segIt)->getSource()->getSequence()->getStartPosition())
+                 << ", " << ((*segIt)->getSource()->getEndPosition() - (*segIt)->getSource()->getSequence()->getEndPosition())
+                  << endl;
+        }
+        // choose the best copy based on Source distance to input (ie nearest in screen coordinates)
+        MappedSegmentSet::iterator best;
+        hal_index_t best_delta = numeric_limits<hal_index_t>::max();
+        for (MappedSegmentSet::iterator k = i; k !=j; ++k) {
+            hal_index_t delta = min(abs((*k)->getSource()->getStartPosition() - (*segIt)->getSource()->getStartPosition()),
+                                    abs((*k)->getSource()->getEndPosition() - (*segIt)->getSource()->getStartPosition()));
+            if (delta < best_delta) {
+                best_delta = delta;
+                best = k;
+            }
+
+            cerr << "Candidate Source Position " << ((*k)->getSource()->getStartPosition() - (*k)->getSource()->getSequence()->getStartPosition()) << endl;
+
+        }
+
+        cerr << "Best Source Position " << ((*best)->getSource()->getStartPosition() - (*best)->getSource()->getSequence()->getStartPosition()) << endl;
+
+        _segSet.insert(*best);
+        _adjSet.insert(*best);
+       
+        i = j;
+    }
+
 }
 
 SegmentIteratorPtr BlockMapper::makeIterator(MappedSegmentPtr &mappedSegment, hal_index_t &minIndex, hal_index_t &maxIndex) {
