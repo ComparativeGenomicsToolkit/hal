@@ -1,9 +1,9 @@
 [![Build Status](https://api.travis-ci.org/ComparativeGenomicsToolkit/hal.svg?branch=master)]
 
-Hierarchical Alignment (HAL) Format API (v2.2)
+Hierarchical Alignment (HAL) Format API (v2.3)
 =====
 Copyright (C) 2012 - 2014 by Glenn Hickey (hickey@soe.ucsc.edu)
-Copyright (C) 2012-2022 by UCSC Computational Genomics Lab
+Copyright (C) 2012-2023 by UCSC Computational Genomics Lab
 Released under the MIT license, see LICENSE.txt
 
 HAL is a structure to efficiently store and index multiple genome alignments and ancestral reconstructions.  HAL is a graph-based representation which provides several advantages over matrix/block-based formats such as MAF, such as improved scalability and the ability to perform queries with respect to an arbitrary reference or subtree.
@@ -16,6 +16,24 @@ Glenn Hickey, Benedict Paten, Dent Earl, Daniel Zerbino, and David
 Haussler.  HAL: A Hierarchical Format for Storing and Analyzing
 Multiple Genome Alignments. Bioinformatics. 2013. [Advance Online Access](http://bioinformatics.oxfordjournals.org/content/early/2013/03/16/bioinformatics.btt128.abstract)
 
+## Table of Contents
+
+* [Code Contributors](#code-contributors)
+* [Installation](#installation)
+* [HAL Tools](#hal-tools)
+     * [General Options](#general-options)
+     * [Importing](#importing-from-other-formats)
+     * [Exporting](#exporting-to-other-formats)
+     * [Browser Display](#displaying-in-the-ucsc-genome-browser-using-assembly-hubs)
+     * [Summary Information](#summary-information)
+     * [Anaylsis](#analysis)
+* [Related Tools](#related-tools)
+     * [Cactus](#cactus)
+     * [hal2vg](#hal2vg)
+     * [HALPER](#halper)
+* [Example of HAL Genome Representation](#example-of-hal-genome-representation)
+
+
 Code Contributors
 -----
 * Glenn Hickey (UCSC)
@@ -24,6 +42,8 @@ Code Contributors
 * Benedict Paten (UCSC)
 * Melissa Jane Hubisz (Cornell)
 * Mark Diekhans (UCSC)
+
+
 
 Installation
 -----
@@ -332,6 +352,10 @@ Annotations in [Wiggle](http://genome.ucsc.edu/goldenPath/help/wiggle.html) form
 
 See also the [Comparative Annotation Toolkit](https://github.com/ComparativeGenomicsToolkit/Comparative-Annotation-Toolkit) for generating and working with HAL annotations.
 
+#### halSynteny
+
+`halSynteny` applies some additional chaining after `halLiftover` to give syntenic blocks as described in [the halSynteny paper](https://doi.org/10.1093%2Fgigascience%2Fgiaa047).
+
 #### Alignment Depth
 
 The number of distinct genomes different bases of a set of target genomes align to can be computed using the `halAlignmentDepth` tool.  The output is in `.wig` format.
@@ -380,6 +404,28 @@ PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), a
 	 `halTreePhyloP.py mammals.hal neutralModel.mod outdir --bigWig --numProc 12`
 
 Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for their work on extending their tools to work with HAL.
+
+
+Related Tools
+-----
+
+These are links to other tools that can be used with HAL:
+
+### Cactus
+
+[Cactus](https://github.com/ComparativeGenomicsToolkit/cactus) is the alignment software for generating hal alignments for both progressive and pangenome alignments. It includes `cactus-hal2maf`, which is the recommended way of exporting to MAF.  Cactus releases are also the easiest way to install HAL.
+
+### hal2vg
+
+[hal2vg](https://github.com/ComparativeGenomicsToolkit/hal2vg) is a converter for pangenome alignments.  Note that it does not work reliably for large progressive alignments.
+
+[(hal2vg citation)](https://doi.org/10.1038/s41587-023-01793-w)
+
+### HALPER
+
+[HALPER](https://github.com/pfenninglab/halLiftover-postprocessing) is a tool for making continuous orthologs from outputs of `halLiftover`. 
+
+[(HALPER citation)](https://academic.oup.com/bioinformatics/article/36/15/4339/5837107)
 
 
 Example of HAL Genome Representation
