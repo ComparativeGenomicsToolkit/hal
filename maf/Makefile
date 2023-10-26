@@ -46,7 +46,7 @@ hal2mafSmallHdf5Test: output/small.hdf5.hal
 	diff tests/expected/hal2mafSmallTest.maf output/$@.maf
 
 hal2mafSeqTest: output/small.mmap.hal
-	../bin/hal2maf --refGenome Genome_2 --refSequence Genome_2_seq output/small.mmap.hal output/$@.maf
+	../bin/hal2maf --refGenome Genome_2 --refSequence Genome_2_seq --unique output/small.mmap.hal output/$@.maf
 	diff tests/expected/$@.maf output/$@.maf
 
 hal2mafSeqPartTest: output/small.mmap.hal
