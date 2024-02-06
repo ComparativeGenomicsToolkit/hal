@@ -378,7 +378,7 @@ Annotation files, as described above, can be generated from the alignment to pro
 
 The ID's refer to the types of mutations described above, and are explained in the header of each generated file.   To generate tables of rearrangement mutations between human and its most recent ancestor in the alignment, run
 
-	 halBranchMutations mammals.hal human --refFile ins.bed --parFile del.bed
+	 halBranchMutations mammals.hal human --refFile ins.bed --parentFile del.bed
 
 Two bed files must be specified because the coordinates of inserted (and by convention inverted and transposed) segments are with respect to bases in the human genome (reference), where as deleted bases are in ancestral coordinates (parent).
 
