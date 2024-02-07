@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
     for (const Sequence* refseq : sequences) {
         if (refseq != NULL) {
-            cerr << "\nCoverage on " << refseq->getName() << endl;
+            cout << "\nCoverage on " << refseq->getName() << endl;
         }
         map<const Genome*, vector<hal_size_t>>& coverage = coverage_by_sequence[refseq];
         for (map<const Genome *, vector<hal_size_t>>::iterator it = coverage.begin(); it != coverage.end(); it++) {
