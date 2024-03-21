@@ -305,6 +305,11 @@ def main():
                         action="store_true",
                         default=False)
 
+    # if you really want to use this script, comment out these next two lines (but you've been warned!)
+    sys.stderr.write('\nERROR: hal2mafMP.py is deprecated. Please use cactus-hal2maf (included in Cactus and\n'
+                     '       described in the Progressive Cactus documentation) instead.\n\n')
+    return 1
+    
     args = parser.parse_args()
     if args.refTargets and any([args.splitBySequence, args.sliceSize, args.start, args.length, args.refSequence]):
         parser.error("--refTargets not compatible with --splitBySequence, --sliceSize, --start, --length, or --refSequence")
