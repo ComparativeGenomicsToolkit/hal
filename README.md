@@ -230,31 +230,7 @@ HAL is most beneficial when consensus reference or ancestral sequences are avail
 
 #### MAF Export
 
-> **Note** We recommend using [cactus-hal2maf](https://github.com/ComparativeGenomicsToolkit/cactus/blob/master/doc/progressive.md#maf) to convert HAL to MAF.
-
-MAF files can be generated from HAL alignments or sub-alignments.  The reference genome and alignment scope (subsequence of the reference and/or phylogenetic distance) are chosen through command-line options.
-
-Export the HAL alignment as a MAF referenced at the root
-
-		 hal2maf mammals.hal mammals.maf
-
-Export a MAF with referenced at sequence *chr6* in the human genome
-
-		 hal2maf mammals.hal mammals.maf --refGenome human --refSequence chr6
-
-Export a MAF consisting of the alignment of human with respect to *chr2* in chimp
-
-		 hal2maf mammals.hal mammals.maf --refGenome chimp --refSequence chr2 --targetGenomes human
-
-Export a MAF consisting of the alignment of all apes referenced on gorilla
-
-		 hal2maf mammals.hal mammals.maf --rootGenome ape_ancestor --refGenome gorilla
-
-By default, no gaps are written to the reference sequence.  The `--maxRefGap` can be specified to allow gaps up to a certain size in the reference.  This is achieved by recursively following indels in the graph that could correspond to reference gaps.
-
-Mafs can be generated in parallel using the hal2mafMP.py wrapper
-
-		 hal2mafMP.py mammals.hal mammals.maf --numProc 10
+Please see the Maf Export / `cactus-hal2maf` documentation in the [Progressive Cactus Manual](https://github.com/ComparativeGenomicsToolkit/cactus/blob/master/doc/progressive.md).  `hal2mafMP.py` is deprecated and we strongly recommend against running `hal2maf` directly.  Use `cactus-hal2maf` instead. 
 
 #### FASTA Export
 
