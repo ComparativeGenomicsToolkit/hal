@@ -55,8 +55,9 @@ hal2mafSeqPartTest: output/small.mmap.hal
 
 ##
 # hal2mafMP
-##
-hal2mafMPTests: hal2mafMPBySeqTest hal2mafMPTargetGenomesTest hal2mafMPRefTargetsGenomesTest
+## (deprecated)
+#hal2mafMPTests: hal2mafMPBySeqTest hal2mafMPTargetGenomesTest hal2mafMPRefTargetsGenomesTest
+hal2mafMPTests:
 
 hal2mafMPBySeqTest: output/small.hdf5.hal
 	./hal2mafMP.py --sliceSize=250 --splitBySequence output/small.hdf5.hal output/$@.maf
