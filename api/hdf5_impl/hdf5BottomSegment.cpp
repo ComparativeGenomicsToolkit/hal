@@ -74,12 +74,22 @@ H5::CompType Hdf5BottomSegment::dataType(hal_size_t numChildren) {
     dataType.insertMember("genomeIdx", genomeIndexOffset, PredType::NATIVE_INT64);
     dataType.insertMember("length", lengthOffset, PredType::NATIVE_HSIZE);
     dataType.insertMember("topIdx", topIndexOffset, PredType::NATIVE_INT64);
-    for (hsize_t i = 0; i < numChildren; ++i) {
-        dataType.insertMember("childIdx" + std::to_string(i), firstChildOffset + i * (sizeof(hal_index_t) + sizeof(bool)),
-                              PredType::NATIVE_INT64);
-        dataType.insertMember("reverseFlag" + std::to_string(i),
-                              firstChildOffset + i * (sizeof(hal_index_t) + sizeof(bool)) + sizeof(hal_index_t),
-                              PredType::NATIVE_CHAR);
+
+    // note: I'm refactoring the old explicit representation into an array
+    // with the same layout interleaving index and reverse flag. this
+    // preserves compatibility with the original layout that put
+    // everything as a field in "dataType" but exceeded hdf5's header
+    // limit when numChildren > 500
+    // https://github.com/ComparativeGenomicsToolkit/cactus/issues/477
+    // https://github.com/ComparativeGenomicsToolkit/hal/issues/212
+    if (numChildren > 0) {
+        H5::CompType childIdxType(PredType::NATIVE_INT64.getSize() + PredType::NATIVE_CHAR.getSize());
+        childIdxType.insertMember("childIdx", 0, PredType::NATIVE_INT64);
+        childIdxType.insertMember("reverseFlag", PredType::NATIVE_INT64.getSize(), PredType::NATIVE_CHAR);
+        hsize_t dims = numChildren;
+        ArrayType childIdxArrayType(childIdxType, 1, &dims);
+        dataType.insertMember("childIndexes", firstChildOffset, childIdxArrayType);
     }
+    
     return dataType;
 }
