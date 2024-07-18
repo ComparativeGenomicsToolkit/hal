@@ -311,7 +311,7 @@ void Hdf5Genome::setGenomeBottomDimensions(const vector<Sequence::UpdateInfo> &b
     hsize_t chunk;
     _dcprops.getChunk(1, &chunk);
     double scale = numChildren < 10 ? 1. : 10. / numChildren;
-    chunk *= scale;
+    chunk = (hsize_t)max(1., scale * chunk);
     DSetCreatPropList botDC;
     botDC.copy(_dcprops);
     botDC.setChunk(1, &chunk);
