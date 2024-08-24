@@ -61,8 +61,14 @@ These alignments are then chained using the UCSC Browser `axtChain` program:
 axtChain -psl -linearGap=loose Homo_sapiens-to-Gallus_gallus.psl Gallus_gallus.2bit Homo_sapiens.2bit Homo_sapiens-to-Gallus_gallus.chain
 ```
 
-Note the order of the two-bit files are in the order target, followed by source.  Consult the output of `axtChain` with no arguments for a description of the `-linearGap` option. It may also improve results to use the `-scoreScheme` option, although find the score files to is challenging.
+Note the order of the two-bit files are in the order target, followed by source.  Consult the output of `axtChain` with no arguments for a description of the `-linearGap` option. It may also improve results to use the `-scoreScheme` option, although find the score files to challenging.
+
 
 # Projection alignments using the TransMap protocol.
 
 coming soon
+
+pslMap ${clspsl} -chainMapFile ${chains} /dev/stdout | \
+    pslMapPostChain /dev/stdin /dev/stdout | \
+    sort -k14,14 -k 16,16n -k17,17n |\
+    pslRecalcMatch /dev/stdin ${asm2bit} ${hs2bit} ${pslout}.tmp
