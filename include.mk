@@ -109,7 +109,11 @@ ifdef ENABLE_UDC
     CFLAGS += -DENABLE_UDC
     UDCCXXFLAGS += -I${KENTSRC}/inc -I${KENTSRC}/htslib -pthread
     UDCCFLAGS += -Wall -Werror -std=c99 -I${KENTSRC}/inc -I${KENTSRC}/htslib
-    LDLIBS += ${KENTSRC}/lib/${MACHTYPE}/jkweb.a  ${KENTSRC}/htslib/libhts.a -lcurl -lssl -lcrypto -pthread
+    KENT_LIBS = ${KENTSRC}/lib/${MACHTYPE}/jkweb.a ${KENTSRC}/htslib/libhts.a
+ifeq (${KENT_LIB_DEPS},)
+    KENT_LIB_DEPS = -lcurl -lssl -lcrypto -pthread
+endif
+    LDLIBS += ${KENT_LIBS} ${KENT_LIB_DEPS}
 endif
 
 
