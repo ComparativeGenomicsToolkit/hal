@@ -130,9 +130,9 @@ void Hdf5Alignment::defineOptions(CLParser *parser, unsigned mode) {
 
 /* initialize class from options */
 void Hdf5Alignment::initializeFromOptions(const CLParser *parser) {
-    _cprops.copy(H5::FileCreatPropList::DEFAULT);
-    _dcprops.copy(H5::DSetCreatPropList::DEFAULT);
-    _aprops.copy(H5::FileAccPropList::DEFAULT);
+    _cprops.copy(hdf5DefaultFileCreatPropList());
+    _dcprops.copy(hdf5DefaultDSetCreatPropList());
+    _aprops.copy(hdf5DefaultFileAccPropList());
     _inMemory = parser->getFlagAlt("hdf5InMemory", "inMemory");
     if ((_mode & CREATE_ACCESS) || (_mode & WRITE_ACCESS)) {
         // these are only available on create

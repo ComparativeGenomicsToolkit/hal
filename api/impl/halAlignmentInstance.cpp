@@ -42,7 +42,19 @@ const H5::FileAccPropList &hal::hdf5DefaultFileAccPropList() {
     static bool initialize = false;
     static H5::FileAccPropList fileAccessProps;
     if (not initialize) {
+#if H5_VERSION_GE(1, 14, 4)
+        // hdf5 stopped working with HAL in 1.14.4
+        // haven't had time to dig too deep but it seems like there's some new strictness
+        // about metadata checksums or unused bits or something
+        // luckily we can turn off using this (C-only) API call
+        // https://support.hdfgroup.org/documentation/hdf5/latest/group___f_a_p_l.html#gafa8e677af3200e155e9208522f8e05c0        
+        hid_t fapl_id = H5Pcreate(H5P_FILE_ACCESS);
+        H5Pset_relax_file_integrity_checks(fapl_id, H5F_RFIC_ALL);
+        fileAccessProps.copy(H5::FileAccPropList(fapl_id));
+        H5Pclose(fapl_id);
+#else
         fileAccessProps.copy(H5::FileAccPropList::DEFAULT);
+#endif
         fileAccessProps.setCache(Hdf5Alignment::DefaultCacheMDCElems, Hdf5Alignment::DefaultCacheRDCElems,
                                  Hdf5Alignment::DefaultCacheRDCBytes, Hdf5Alignment::DefaultCacheW0);
         initialize = true;
