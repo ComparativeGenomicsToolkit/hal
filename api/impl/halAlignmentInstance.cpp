@@ -51,6 +51,7 @@ const H5::FileAccPropList &hal::hdf5DefaultFileAccPropList() {
         hid_t fapl_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pset_relax_file_integrity_checks(fapl_id, H5F_RFIC_ALL);
         fileAccessProps.copy(H5::FileAccPropList(fapl_id));
+        H5Pclose(fapl_id);
 #else
         fileAccessProps.copy(H5::FileAccPropList::DEFAULT);
 #endif
