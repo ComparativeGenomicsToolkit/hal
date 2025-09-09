@@ -33,6 +33,7 @@ static void printPercentID(ostream &os, AlignmentConstPtr alignment, const strin
 static void printCoverage(ostream &os, AlignmentConstPtr alignment, const string &genomeName);
 static void printSegments(ostream &os, AlignmentConstPtr alignment, const string &genomeName, bool top);
 static void printAllCoverage(ostream &os, AlignmentConstPtr alignment);
+static void printAssemblyStats(ostream &os, AlignmentConstPtr alignment);
 
 int main(int argc, char **argv) {
     CLParser optionsParser;
@@ -109,6 +110,9 @@ int main(int argc, char **argv) {
     optionsParser.addOptionFlag("allCoverage", "print histogram of coverage from all genomes to"
                                                " all genomes",
                                 false);
+    optionsParser.addOptionFlag("assembly", "print assembly stats for each genome",
+                                false);
+    
 
     string path;
     bool listGenomes;
@@ -133,6 +137,7 @@ int main(int argc, char **argv) {
     string topSegments;
     string bottomSegments;
     bool allCoverage;
+    bool assembly;
     try {
         optionsParser.parseOptions(argc, argv);
         path = optionsParser.getArgument<string>("halFile");
@@ -158,6 +163,7 @@ int main(int argc, char **argv) {
         topSegments = optionsParser.getOption<string>("topSegments");
         bottomSegments = optionsParser.getOption<string>("bottomSegments");
         allCoverage = optionsParser.getFlag("allCoverage");
+        assembly = optionsParser.getFlag("assembly");
 
         size_t optCount = listGenomes == true ? 1 : 0;
         if (sequencesFromGenome != "\"\"")
@@ -202,13 +208,15 @@ int main(int argc, char **argv) {
             ++optCount;
         if (allCoverage)
             ++optCount;
+        if (assembly)
+            ++optCount;
         if (optCount > 1) {
             throw hal_exception("--genomes, --sequences, --tree, --span, --spanRoot, "
                                 "--branches, --sequenceStats, --children, --parent, "
                                 "--bedSequences, --root, --numSegments, --baseComp, "
                                 "--genomeMetaData, --chromSizes, --percentID, "
                                 "--coverage,  --topSegments, --bottomSegments, "
-                                "--allCoverage, --metaData "
+                                "--allCoverage, --assembly, --metaData "
                                 "and --branchLength options are exclusive");
         }
     } catch (exception &e) {
@@ -263,6 +271,8 @@ int main(int argc, char **argv) {
             printAllCoverage(cout, alignment);
         } else if (metaData) {
             printAlignmentPtrMetaData(cout, alignment);
+        } else if (assembly) {
+            printAssemblyStats(cout, alignment);
         } else {
             HalStats halStats(alignment);
             cout << endl << "hal v" << alignment->getVersion() << "\n" << halStats;
@@ -845,5 +855,57 @@ static void printAllCoverage(ostream &os, AlignmentConstPtr alignment) {
             }
         }
         os << endl;
+    }
+}
+
+static void printAssemblyStats(ostream &os, AlignmentConstPtr alignment) {
+    const Genome *root = alignment->openGenome(alignment->getRootName());
+    set<const Genome *> genomes;
+    getGenomesInSubTree(root, genomes);
+    genomes.insert(root);
+    os << "Genome, TotalLength, NumContigs, MinContigLength, MaxContigLength, MeanContigLength, MedianContigLength, N50, L50" << endl;
+    for (set<const Genome *>::iterator i = genomes.begin(); i != genomes.end(); ++i) {
+        const Genome* genome = *i;
+        multiset<int64_t> length_set;
+        int64_t total_length = 0;
+        for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
+            int64_t sequence_length = seqIt->getSequence()->getSequenceLength();
+            length_set.insert(sequence_length);
+            total_length += sequence_length;
+        }
+        int64_t min_length = 0;
+        int64_t max_length = 0;
+        int64_t avg_length = 0;
+        int64_t med_length = 0;
+        if (!length_set.empty()) {
+            min_length = *length_set.begin();
+            max_length = *length_set.rbegin();
+            avg_length = (double)total_length / (double)length_set.size();
+        }
+        int64_t running_length = 0;
+        int64_t running_count = 0;
+        int64_t l50 = 0;
+        int64_t n50 = 0;
+        for (multiset<int64_t>::reverse_iterator j = length_set.rbegin(); j != length_set.rend(); ++j) {
+            running_length += *j;
+            ++running_count;
+            if (l50 == 0 && running_length >= total_length / 2) {
+                n50 = *j;
+                l50 = running_count;
+            }
+            if(running_count  == length_set.size() / 2) {
+                med_length = *j;
+            }
+        }
+       
+        os << genome->getName() << ", "
+           << total_length << ", "
+           << length_set.size() << ", "
+           << min_length << ", "
+           << max_length << ", "
+           << avg_length << ", "
+           << med_length << ", "
+           << n50 << ", "
+           << l50 << endl;
     }
 }
