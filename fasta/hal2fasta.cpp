@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 
             if (subtree) {
                 vector<string> childs = alignment->getChildNames(curName);
-                for (int i = 0; i < childs.size(); ++i) {
+                for (size_t i = 0; i < childs.size(); ++i) {
                     bfsQueue.push_back(childs[i]);
                 }
             }
@@ -155,7 +155,7 @@ void printSequenceLine(ostream &outStream, const Sequence *sequence, hal_size_t 
         readLen = std::min(StringBufferSize, last - i);
         sequence->getSubString(buffer, i, readLen);
         if (upper) {
-            for (int j = 0; j < buffer.size(); ++j) {
+            for (size_t j = 0; j < buffer.size(); ++j) {
                 buffer[j] = std::toupper(buffer[j]);
             }
         }
@@ -165,6 +165,10 @@ void printSequenceLine(ostream &outStream, const Sequence *sequence, hal_size_t 
 
 void printSequence(ostream &outStream, const Sequence *sequence, hal_size_t lineWidth, hal_size_t start, hal_size_t length, bool fullNames, bool upper) {
     hal_size_t seqLen = sequence->getSequenceLength();
+    if (start > seqLen) {
+        throw hal_exception("Start position " + std::to_string(start) + " is out of range for sequence " +
+                            sequence->getName() + ", which has length " + std::to_string(seqLen));
+    }
     if (length == 0) {
         length = seqLen - start;
     }
@@ -198,18 +202,27 @@ void printGenome(ostream &outStream, const Genome *genome, const Sequence *seque
             length = genome->getSequenceLength() - start;
         }
 
-        hal_size_t runningLength = 0;
         for (SequenceIteratorPtr seqIt = genome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
             const Sequence *sequence = seqIt->getSequence();
             hal_size_t seqLen = sequence->getSequenceLength();
             hal_size_t seqStart = (hal_size_t)sequence->getStartPosition();
 
-            if (start + length >= seqStart && start < seqStart + seqLen && runningLength < length) {
-                hal_size_t readStart = seqStart >= start ? 0 : seqStart - start;
-                hal_size_t readLen = std::min(seqLen - start, length - runningLength);
+            if (start + length > seqStart && start < seqStart + seqLen) {
+                // Calculate offset into sequence (0 if query starts before sequence)
+                hal_size_t readStart = start < seqStart ? 0 : start - seqStart;
 
+                // Calculate length to read
+                hal_size_t readLen;
+                if (start + length >= seqStart + seqLen) {
+                    // Query range extends past end of sequence - read to end of sequence
+                    readLen = seqLen - readStart;
+                } else {
+                    // Query range ends within sequence - read to end of query range
+                    readLen = start + length - seqStart - readStart;
+                }
                 printSequence(outStream, sequence, lineWidth, readStart, readLen, fullNames, upper);
-                runningLength += readLen;
+            } else if (start + length <= seqStart) {
+                break;
             }
         }
     }
