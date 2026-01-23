@@ -288,6 +288,9 @@ void printSequence(ostream &outStream, const Sequence *sequence, const set<const
         }
 
         pos += step;
+        if (pos > last) {
+            break;
+        }
         if (step == 1) {
             /** Move the iterator one position to the right */
             colIt->toRight();
