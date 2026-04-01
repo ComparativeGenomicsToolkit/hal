@@ -7,14 +7,18 @@
 
 #include "halBlockLiftover.h"
 #include "halBlockMapper.h"
+#include "halBottomSegmentIterator.h"
+#include "halMappedSegment.h"
 #include "halSegmentMapper.h"
+#include "halTopSegmentIterator.h"
 #include <cassert>
 #include <deque>
+#include <list>
 
 using namespace std;
 using namespace hal;
 
-BlockLiftover::BlockLiftover() : Liftover() {
+BlockLiftover::BlockLiftover() : Liftover(), _useBatchPath(false), _closeGenomes(false) {
 }
 
 BlockLiftover::~BlockLiftover() {
@@ -41,6 +45,47 @@ void BlockLiftover::visitBegin() {
     inputSet.insert(_coalescenceLimit);
     inputSet.insert(_tgtGenome);
     getGenomesInSpanningTree(inputSet, _downwardPath);
+
+    // Decide whether to use the batch path (genome-closing optimization).
+    // Only possible when coalescenceLimit == MRCA.
+    _useBatchPath = (_coalescenceLimit == _mrca);
+    if (_useBatchPath) {
+        _mrcaName = _mrca->getName();
+        _downwardPathNames.clear();
+        for (set<const Genome *>::const_iterator i = _downwardPath.begin(); i != _downwardPath.end(); ++i) {
+            _downwardPathNames.insert((*i)->getName());
+        }
+    }
+}
+
+void BlockLiftover::liftIntervalBatchMap(hal_index_t globalStart, hal_index_t globalEnd, bool flip) {
+    // Collect all source segments into a list of MappedSegments.
+    list<MappedSegmentPtr> sourceSegs;
+    while (_refSeg->getArrayIndex() < _lastIndex && _refSeg->getStartPosition() <= globalEnd) {
+        if (flip == true) {
+            _refSeg->toReverseInPlace();
+        }
+
+        SegmentIteratorPtr srcClone;
+        SegmentIteratorPtr tgtClone;
+        if (_refSeg->isTop()) {
+            srcClone = dynamic_cast<const TopSegmentIterator *>(_refSeg.get())->clone();
+            tgtClone = dynamic_cast<const TopSegmentIterator *>(_refSeg.get())->clone();
+        } else {
+            srcClone = dynamic_cast<const BottomSegmentIterator *>(_refSeg.get())->clone();
+            tgtClone = dynamic_cast<const BottomSegmentIterator *>(_refSeg.get())->clone();
+        }
+        sourceSegs.push_back(MappedSegmentPtr(new MappedSegment(srcClone, tgtClone)));
+
+        if (flip == true) {
+            _refSeg->toReverseInPlace();
+        }
+        _refSeg->toRight(globalEnd);
+    }
+
+    // Map all segments through the tree in one batched pass.
+    halMapSegmentBatch(sourceSegs, _mappedSegments, _tgtGenome, _downwardPathNames, _traverseDupes, 0, _mrcaName,
+                       _srcGenome);
 }
 
 void BlockLiftover::liftInterval(BedList &mappedBedLines) {
@@ -60,15 +105,24 @@ void BlockLiftover::liftInterval(BedList &mappedBedLines) {
     assert(_refSeg->getStartPosition() == globalStart);
     assert(_refSeg->getEndPosition() <= globalEnd);
 
-    while (_refSeg->getArrayIndex() < _lastIndex && _refSeg->getStartPosition() <= globalEnd) {
-        if (flip == true) {
-            _refSeg->toReverseInPlace();
+    if (_useBatchPath && _closeGenomes) {
+        // Batch path: collect all segments and map through the tree in one
+        // pass, closing intermediate genomes to save memory.
+        liftIntervalBatchMap(globalStart, globalEnd, flip);
+    } else {
+        // Per-segment path: required when coalescenceLimit != MRCA because
+        // mapRecursiveParalogies re-traverses intermediate genomes.
+        while (_refSeg->getArrayIndex() < _lastIndex && _refSeg->getStartPosition() <= globalEnd) {
+            if (flip == true) {
+                _refSeg->toReverseInPlace();
+            }
+            halMapSegment(_refSeg.get(), _mappedSegments, _tgtGenome, &_downwardPath, _traverseDupes, 0, _coalescenceLimit,
+                          _mrca);
+            if (flip == true) {
+                _refSeg->toReverseInPlace();
+            }
+            _refSeg->toRight(globalEnd);
         }
-        halMapSegment(_refSeg.get(), _mappedSegments, _tgtGenome, &_downwardPath, _traverseDupes, 0, _coalescenceLimit, _mrca);
-        if (flip == true) {
-            _refSeg->toReverseInPlace();
-        }
-        _refSeg->toRight(globalEnd);
     }
 
     vector<MappedSegmentPtr> fragments;

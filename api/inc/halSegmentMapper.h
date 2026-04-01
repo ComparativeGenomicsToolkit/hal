@@ -9,6 +9,7 @@
 #define _HALSEGMENTMAPPER_H
 #include "halDefs.h"
 #include "halSegmentIterator.h"
+#include <list>
 #include <set>
 
 namespace hal {
@@ -47,5 +48,23 @@ namespace hal {
     hal_size_t halMapSegmentSP(const SegmentIteratorPtr &source, MappedSegmentSet &outSegments, const Genome *tgtGenome,
                                const std::set<const Genome *> *genomesOnPath = NULL, bool doDupes = true,
                                hal_size_t minLength = 0, const Genome *coalescenceLimit = NULL, const Genome *mrca = NULL);
+
+    /** Batch-map a list of source segments from srcGenome to tgtGenome,
+      * processing all segments through one genome-step at a time.
+      * Intermediate genomes are closed after all segments pass through,
+      * keeping peak memory to ~2-3 genomes.
+      * Only supports coalescenceLimit == mrca (the default).
+      * @param sourceSegs  Input segments (source==target, both in srcGenome).
+      *                    Consumed (cleared) by this function.
+      * @param outSegments Output mapped segments in tgtGenome.
+      * @param tgtGenome   Target genome.
+      * @param genomesOnPath Genomes on the path from mrca down to tgtGenome.
+      * @param doDupes     Follow paralogy edges.
+      * @param minLength   Minimum segment length filter.
+      * @param mrca        MRCA of srcGenome and tgtGenome.
+      * @param srcGenome   Source genome (never closed). */
+    hal_size_t halMapSegmentBatch(std::list<MappedSegmentPtr> &sourceSegs, MappedSegmentSet &outSegments,
+                                  const Genome *tgtGenome, const std::set<std::string> &namesOnPath, bool doDupes,
+                                  hal_size_t minLength, const std::string &mrcaName, const Genome *srcGenome);
 }
 #endif

@@ -5,8 +5,10 @@
  * Released under the MIT license, see LICENSE.txt
  */
 #include "halSegmentMapper.h"
+#include "halAlignment.h"
 #include "halBottomSegmentIterator.h"
 #include "halCommon.h"
+#include "halGenome.h"
 #include "halMappedSegment.h"
 #include "halSegment.h"
 #include "halSegmentIterator.h"
@@ -674,4 +676,110 @@ hal_size_t hal::halMapSegmentSP(const SegmentIteratorPtr &source, MappedSegmentS
                                 const std::set<const Genome *> *genomesOnPath, bool doDupes, hal_size_t minLength,
                                 const Genome *coalescenceLimit, const Genome *mrca) {
     return halMapSegment(source.get(), outSegments, tgtGenome, genomesOnPath, doDupes, minLength, coalescenceLimit, mrca);
+}
+
+hal_size_t hal::halMapSegmentBatch(list<MappedSegmentPtr> &sourceSegs, MappedSegmentSet &outSegments,
+                                   const Genome *tgtGenome, const set<string> &namesOnPath, bool doDupes,
+                                   hal_size_t minLength, const string &mrcaName, const Genome *srcGenome) {
+    assert(tgtGenome != NULL);
+    assert(srcGenome != NULL);
+
+    if (sourceSegs.empty()) {
+        return 0;
+    }
+
+    // Open the MRCA genome (may have been closed by a previous batch call).
+    const Alignment *alignment = srcGenome->getAlignment();
+    const Genome *mrca = alignment->openGenome(mrcaName);
+    if (mrca == NULL) {
+        throw hal_exception("Could not open MRCA genome " + mrcaName);
+    }
+
+    list<MappedSegmentPtr> buf;
+    list<MappedSegmentPtr> *inputPtr = &sourceSegs;
+    list<MappedSegmentPtr> *outputPtr = &buf;
+
+    // Phase 1: Map all segments up to MRCA, one genome-step at a time.
+    while (!inputPtr->empty() && (*inputPtr->begin())->getGenome() != mrca) {
+        const Genome *curGenome = (*inputPtr->begin())->getGenome();
+        const Genome *nextGenome = curGenome->getParent();
+        if (nextGenome == NULL) {
+            throw hal_exception("Reached top of tree when attempting to batch map up from " + curGenome->getName() +
+                                " to " + mrca->getName());
+        }
+
+        outputPtr->clear();
+        for (list<MappedSegmentPtr>::iterator i = inputPtr->begin(); i != inputPtr->end(); ++i) {
+            assert((*i)->getGenome() == curGenome);
+            mapUp(*i, *outputPtr, true, minLength);
+        }
+
+        // All references to curGenome's segment data are in inputPtr.
+        // Clear them, then optionally close the genome to free memory.
+        inputPtr->clear();
+        if (curGenome != srcGenome) {
+            curGenome->getAlignment()->closeGenome(curGenome);
+        }
+
+        swap(inputPtr, outputPtr);
+    }
+
+    // Phase 2: Map all segments down from MRCA to target, one genome-step at a time.
+    while (!inputPtr->empty() && (*inputPtr->begin())->getGenome() != tgtGenome) {
+        const Genome *curGenome = (*inputPtr->begin())->getGenome();
+        assert(curGenome != NULL);
+
+        // Find the correct child to move down into.
+        const Genome *nextGenome = NULL;
+        hal_size_t nextChildIndex = numeric_limits<hal_size_t>::max();
+        const Alignment *alignment = curGenome->getAlignment();
+        vector<string> childNames = alignment->getChildNames(curGenome->getName());
+        for (hal_size_t child = 0; nextGenome == NULL && child < childNames.size(); ++child) {
+            if (childNames[child] == tgtGenome->getName() || namesOnPath.find(childNames[child]) != namesOnPath.end()) {
+                const Genome *childGenome = curGenome->getChild(child);
+                nextGenome = childGenome;
+                nextChildIndex = child;
+            }
+        }
+        if (nextGenome == NULL) {
+            throw hal_exception("Could not find correct child that leads from " + curGenome->getName() + " to " +
+                                tgtGenome->getName());
+        }
+
+        // Map all segments down one level.
+        outputPtr->clear();
+        for (list<MappedSegmentPtr>::iterator i = inputPtr->begin(); i != inputPtr->end(); ++i) {
+            assert((*i)->getGenome() == curGenome);
+            mapDown(*i, nextChildIndex, *outputPtr, minLength);
+        }
+
+        // All references to curGenome's segment data are in inputPtr.
+        // Clear them, then optionally close the genome to free memory.
+        inputPtr->clear();
+        if (curGenome != srcGenome && curGenome != tgtGenome) {
+            curGenome->getAlignment()->closeGenome(curGenome);
+        }
+
+        // Expand paralogs in the child genome (mapSelf only touches the child).
+        if (doDupes) {
+            swap(inputPtr, outputPtr);
+            outputPtr->clear();
+            for (list<MappedSegmentPtr>::iterator i = inputPtr->begin(); i != inputPtr->end(); ++i) {
+                assert((*i)->getGenome() == nextGenome);
+                mapSelf(*i, *outputPtr, minLength);
+            }
+        }
+
+        swap(inputPtr, outputPtr);
+    }
+
+    // Sort and deduplicate, then insert into output set with overlap resolution.
+    inputPtr->sort(MappedSegment::LessSourcePtr());
+    inputPtr->unique(MappedSegment::EqualToPtr());
+
+    for (list<MappedSegmentPtr>::iterator i = inputPtr->begin(); i != inputPtr->end(); ++i) {
+        insertAndBreakOverlaps(*i, outSegments);
+    }
+
+    return outSegments.size();
 }

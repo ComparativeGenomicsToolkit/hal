@@ -21,8 +21,16 @@ namespace hal {
         BlockLiftover();
         virtual ~BlockLiftover();
 
+        /** Enable closing intermediate genomes during batch liftover
+         *  to reduce peak memory.  Only safe when the caller does not
+         *  hold open Genome pointers to intermediate genomes. */
+        void setCloseGenomes(bool close) {
+            _closeGenomes = close;
+        }
+
       protected:
         void liftInterval(BedList &mappedBedLines);
+        void liftIntervalBatchMap(hal_index_t globalStart, hal_index_t globalEnd, bool flip);
         void visitBegin();
 
         void cleanTargetParalogies();
@@ -34,6 +42,10 @@ namespace hal {
         hal_index_t _lastIndex;
         std::set<const Genome *> _downwardPath;
         const Genome *_mrca;
+        bool _useBatchPath;
+        bool _closeGenomes;
+        std::string _mrcaName;
+        std::set<std::string> _downwardPathNames;
     };
 }
 #endif

@@ -136,6 +136,7 @@ int main(int argc, char **argv) {
         }
 
         BlockLiftover liftover;
+        liftover.setCloseGenomes(true);
         liftover.convert(alignment, srcGenome, srcBedPtr, tgtGenome, tgtBedPtr, bedType,
                          !noDupes, outPSL, outPSLWithName, coalescenceLimit);
 
