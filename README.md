@@ -54,6 +54,7 @@ Installation
 ### Requirements
 * gcc 4.2 or newer
 * git
+* liblz4-dev and libzstd-dev (for LZ4 and Zstd compression support)
 
 ### Downloading HAL
 
@@ -104,6 +105,22 @@ From the parent directory of where you want HAL installed:
 
     If you get undefined functions base on string type with errors about
     `std::__cxx11::basic_string` vs `std::basic_string`.
+
+#### LZ4 and Zstd compression libraries
+
+HAL supports LZ4 and Zstd as alternative HDF5 compression codecs (see `--hdf5Codec` below).
+
+* Using apt (Ubuntu/Debian):
+
+      sudo apt install liblz4-dev libzstd-dev
+
+* Using [MacPorts](http://www.macports.org/):
+
+      sudo port install lz4 zstd
+
+* Using [Homebrew](https://brew.sh/):
+
+      brew install lz4 zstd
 
 #### sonLib
 
@@ -181,10 +198,16 @@ HAL Tools
 *Detailed command line options can be obtained by running each tool with the `--help` option.*
 
 
-Two stored formats are included with HAL: `HDF5` and `mmap`.  HDF5 is standard container format for larger data sets with good compression characteristics .  The `mmap` format stores the raw data structures in a file, which is access by mapping in into memory using the `mmap` system call.  HAL files in the `mmap` format a considerably bigger but often much faster to access.  The `halExtract` command can be used to copy between formats.
+Two stored formats are included with HAL: `HDF5` and `mmap`.  HDF5 is standard container format for larger data sets with good compression characteristics .  The `mmap` format stores the raw data structures in a file, which is access by mapping in into memory using the `mmap` system call.  HAL files in the `mmap` format a considerably bigger but often much faster to access.  The `halExtract` command can be used to copy between formats and compression codecs.  For example, to convert an existing HAL file to use Zstd compression:
+
+    halExtract --hdf5Codec zstd input.hal output.hal
 
 
 All HAL tools compiled with HDF5 support expose some caching parameters.  Tools that create HAL files also include chunking and compression parameters.  In most cases, the default values of these options will suffice.
+
+`--hdf5Codec <value>:`   Compression codec for HDF5 datasets.  Options are `deflate` (gzip, the default), `lz4`, `zstd`, and `none`.  **LZ4** offers the fastest decompression but larger files.  **Zstd** provides the best balance: smaller files than deflate with faster decompression.  **Deflate** is the original codec and is compatible with any HDF5 installation.  LZ4 and Zstd filters are compiled into HAL, so no external HDF5 plugins are needed for HAL tools to read these files.  External tools (e.g. `h5dump`, `h5repack`) will require the appropriate [HDF5 filter plugin](https://github.com/HDFGroup/hdf5_plugins) to be installed.  [default = deflate]
+
+`--hdf5Compression <value>:`   Compression level.  For deflate: 0 (none) to 9 (max).  For zstd: 1 to 22.  Ignored for lz4.  Higher levels produce smaller files at the cost of slower *compression* (file creation), but decompression speed (file reading) is largely unaffected.  [default = 2]
 
 `--cacheBytes <value>:`    The maximum size of each array cache.  3 such caches can be allocated per genome in the alignment.
 

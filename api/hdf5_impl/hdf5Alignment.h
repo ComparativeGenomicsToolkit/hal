@@ -14,6 +14,7 @@
 #include "hdf5MetaData.h"
 #include <H5Cpp.h>
 #include <map>
+#include <string>
 
 typedef struct _stTree stTree;
 
@@ -104,6 +105,7 @@ namespace hal {
       public:
         static const hsize_t DefaultChunkSize;
         static const hsize_t DefaultCompression;
+        static const std::string DefaultCodec;
         static const hsize_t DefaultCacheMDCElems;
         static const hsize_t DefaultCacheRDCElems;
         static const hsize_t DefaultCacheRDCBytes;
