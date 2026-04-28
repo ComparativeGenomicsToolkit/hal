@@ -58,6 +58,11 @@ CXXFLAGS += -I${sonLibDir} ${CXX_ABI_DEF} -std=c++11 -Wno-sign-compare
 LDLIBS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 LIBDEPENDS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 
+# hdf5Filters.cpp implements custom HDF5 zstd/lz4 filters that reference
+# libzstd / liblz4. h5c++'s wrapper config doesn't pull them in, so add them
+# here for every binary that links libHal.a.
+LDLIBS += -lzstd -llz4
+
 # hdf5 compilation is done through its wrappers.  See README.md for discussion of
 # h5prefix
 CXX = h5c++ ${h5prefix}
@@ -75,25 +80,33 @@ ifndef TARGETOS
   TARGETOS := $(shell uname -s)
 endif
 
-#  Defaults to local Linux install (phast and clapack sister dirs to hal/)
-# (note CLAPACKPATH not needed in Mac)
+#  Defaults to local Linux install (phast as sister dir to hal/)
 ifeq (${PHAST},)
     PHAST=${rootDir}/../phast
 endif
-ifeq (${CLAPACKPATH},)
-    CLAPACKPATH=${rootDir}/../clapack
+
+# phast v1.9.3+ moved to a cmake build and dropped the bundled CLAPACK and PCRE.
+# libphast.a now lives in <build>/src/lib/ (default ${PHAST}/build/src/lib),
+# system BLAS/LAPACK/PCRE supply what CLAPACK + bundled pcre used to provide.
+ifeq (${PHAST_BUILD_DIR},)
+    PHAST_BUILD_DIR=${PHAST}/build
 endif
 
 # pointing at both ${PHAST}/include/phast and ${PHAST}/include allows compiling
 # with v1.6 or v1.5.  However, only do the includes where needed, to avoid
 # include file name conflicts.
 ifeq ($(TARGETOS), Darwin)
-    PHASTCXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include/phast -I${PHAST}/include -I${PHAST}/src/lib/pcre -DVECLIB
-    LDLIBS += -L${PHAST}/lib -lphast -lc -framework Accelerate
+    PHASTCXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include/phast -I${PHAST}/include -DVECLIB
+    LDLIBS += -L${PHAST_BUILD_DIR}/src/lib -lphast -lpcre -lc -framework Accelerate
 else
-    F2CPATH=${CLAPACKPATH}/F2CLIBS
-    PHASTCXXFLAGS += -DENABLE_PHYLOP -I${PHAST}/include/phast -I${PHAST}/include -I${PHAST}/src/lib/pcre -I${CLAPACKPATH}/INCLUDE -I${F2CPATH}
-    LDLIBS += -L${PHAST}/lib -lphast -L${CLAPACKPATH} -L${F2CPATH} -llapack -ltmg -lblaswr -lf2c 
+    PHASTCXXFLAGS += -DENABLE_PHYLOP -DPHAST_USE_SYSTEM_LAPACK -fopenmp -I${PHAST}/include/phast -I${PHAST}/include
+    # Match cactus's downloadPhast static-linking strategy: link libblas.a /
+    # liblapack.a from libblas-dev / liblapack-dev, libpcre.a from libpcre3-dev,
+    # and libgfortran.a from libgfortran-N-dev. The whole-archive isn't needed —
+    # the linker pulls only the symbols libphast.a actually references.
+    # phast v1.9.7 added OpenMP-parallelized tree likelihoods, so libphast.a
+    # has GOMP_/omp_ refs; -fopenmp links libgomp.
+    LDLIBS += -L${PHAST_BUILD_DIR}/src/lib -lphast -l:libpcre.a -l:liblapack.a -l:libblas.a -l:libgfortran.a -l:libquadmath.a -lgomp -lm -lpthread
 endif
 
 endif

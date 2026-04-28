@@ -285,7 +285,8 @@ double PhyloP::pval(const ColumnIterator::ColumnMap *cmap) {
     if (_mod->subtree_root == NULL) {
         _mod->scale = 1;
         tm_set_subst_matrices(_mod);
-        null_lnl = col_compute_log_likelihood(_mod, _msa, 0, _colfitdata->fels_scratch[0]);
+        // phast v1.9.2 renamed col_compute_log_likelihood -> col_compute_scaled_log_likelihood.
+        null_lnl = col_compute_scaled_log_likelihood(_mod, _msa, 0, _colfitdata->fels_scratch[0]);
         vec_set(_colfitdata->params, 0, _colfitdata->init_scale);
         opt_newton_1d(col_likelihood_wrapper_1d, &_colfitdata->params->data[0], _colfitdata, &alt_lnl, sigfigs,
                       _colfitdata->lb->data[0], _colfitdata->ub->data[0], NULL, NULL, NULL);

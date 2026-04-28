@@ -131,31 +131,32 @@ Those without the UCSC genome browser already installed locally will probably fi
 
 #### Optional support of PhyloP evolutionary constraint annotation
 
-PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.  In order to enable this support, Phast must be installed.  We recommend downloading the latest source using Subversion.
+[PhyloP](http://compgen.bscb.cornell.edu/phast/) (part of the Phast package) tests for genomic positions under selective pressure. HAL ships a `halPhyloP` binary that runs phyloP directly against a HAL file; building it requires Phast (v1.9.7 or newer) plus its system dependencies.
+
+> Most users at whole-genome / many-species scale should use `cactus-phast` from [Cactus](https://github.com/ComparativeGenomicsToolkit/cactus) instead — it parallelizes the workflow over a cluster and avoids halPhyloP's serial-only execution. See the [phyloP Conservation section in the Cactus docs](https://github.com/ComparativeGenomicsToolkit/cactus/blob/master/doc/progressive.md#phylop-conservation). The instructions below build `halPhyloP` for users who want to invoke phast against a HAL directly.
 
 From the same parent directory where you downloaded HAL:
 
-* First install CLAPACK (Linux only)
+* Install Phast's system dependencies (Linux):
 
-    `wget http://www.netlib.org/clapack/clapack.tgz`
-    `tar -xvzf clapack.tgz`
-    `mv CLAPACK-3.2.1 clapack`
-    `cd clapack`
-    `cp make.inc.example make.inc && make f2clib && make blaslib && make lib`
-    `export CLAPACKPATH=$(pwd)` `
-    `cd ..`
+    `sudo apt-get install libblas-dev liblapack-dev libpcre3-dev libgfortran-13-dev cmake`
 
-*  Install Phast (Mac or Linux)
+  (substitute `libgfortran-N-dev` with whatever gcc version your system has; the package ships both `libgfortran.a` and `libquadmath.a`). On macOS the Accelerate framework supplies BLAS/LAPACK; only PCRE needs to be installed (`brew install pcre`).
+
+*  Install Phast (Mac or Linux):
 
      `git clone https://github.com/CshlSiepelLab/phast.git`
      `cd phast`
-     `git checkout 85f7ed179dd097a86ba4added22d571785cc3e1d`
-     `cd src && make`
-     `cd ../..`
+     `git checkout v1.9.7`
+     `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release`
+     `cmake --build build -j`
+     `cd ..`
 
-* Before building HAL
+* Before building HAL:
 
      `export ENABLE_PHYLOP=1`
+
+  By default `hal/include.mk` looks for `${PHAST}/build/src/lib/libphast.a` (where `${PHAST}` defaults to `${rootDir}/../phast`). Override `PHAST` and/or `PHAST_BUILD_DIR` to point elsewhere.
 
 Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for their work on extending their tools to work with HAL.
 
@@ -362,22 +363,17 @@ Point mutations can optionally be written using the `--snpFile <file>` option.  
 
 ### Constrained Element Prediction
 
-(Under development)
+> ⚠ **`halPhyloPTrain.py` and `halPhyloPMP.py` are no longer maintained.** They were prototypes for running phyloP directly against a HAL file via Python multiprocessing on a single machine; both are stale and not recommended. The supported workflow is to export the alignment to MAF with `cactus-hal2maf` and run phyloP via `cactus-phast`, which is Toil-parallelized over a cluster, ships hardened against the numerical-breakdown failure modes the prototypes never handled, and supports `--root` (clade-specific models) and `--subtree` (lineage-specific LRT) tracks. See the [phyloP Conservation section of the Cactus docs](https://github.com/ComparativeGenomicsToolkit/cactus/blob/master/doc/progressive.md#phylop-conservation).
 
-PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/), and can be used to test for genomic positions that are under selective pressure.  We are working on prototype support for running PhyloP on HAL files.
+PhyloP is part of the [Phast Package](http://compgen.bscb.cornell.edu/phast/) and is used to test for genomic positions under selective pressure. The `halPhyloP` binary built from this repository (with `ENABLE_PHYLOP=1`) runs phyloP directly against a HAL file; it remains useful for small / single-machine analyses but is single-threaded and lacks the chunked I/O and error-tolerance of the cactus-phast pipeline.
 
-* Train a neutral model
+* Train a neutral model:
 
-     See `halPhyloPTrain.py`
+     See `halPhyloPTrain.py` (deprecated — prefer `cactus-phast --mode phyloFit`).
 
-* Detect constrained elements
+* Detect constrained elements:
 
-     See `halPhyloPMP.py`
-
-* Examples:
-
-	 `halPhyloPTrain.py mammals.hal human neutralRegions.bed neutralModel.mod --numProc 12`
-	 `halTreePhyloP.py mammals.hal neutralModel.mod outdir --bigWig --numProc 12`
+     See `halPhyloPMP.py` (deprecated — prefer `cactus-phast --mode phyloP`).
 
 Special thanks to Melissa Jane Hubiz and Adam Siepel from Cornell University for their work on extending their tools to work with HAL.
 

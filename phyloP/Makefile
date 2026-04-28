@@ -7,7 +7,7 @@ halPhyloP_objs = ${halPhyloP_srcs:%.cpp=${modObjDir}/%.o}
 srcs = ${halPhyloP_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
-progs =  ${binDir}/halPhyloP ${binDir}/halPhyloPTrain.py ${binDir}/halPhyloPMP.py ${binDir}/halTreePhyloP.py
+progs =  ${binDir}/halPhyloP ${binDir}/halTreePhyloP.py
 otherLibs = ${libHalLiftover}
 inclSpec += -I${rootDir}/liftover/inc ${PHASTCXXFLAGS}
 
