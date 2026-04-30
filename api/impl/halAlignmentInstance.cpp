@@ -9,6 +9,7 @@
 #include "halCLParser.h"
 #include "halCommon.h"
 #include "hdf5Alignment.h"
+#include "hdf5Filters.h"
 #include "mmapAlignment.h"
 #include <cassert>
 #include <cstdlib>
@@ -42,6 +43,8 @@ const H5::FileAccPropList &hal::hdf5DefaultFileAccPropList() {
     static bool initialize = false;
     static H5::FileAccPropList fileAccessProps;
     if (not initialize) {
+        // Register LZ4/Zstd filters so we can read files using them
+        halRegisterCompressors();
 #if H5_VERSION_GE(1, 14, 4)
         // hdf5 stopped working with HAL in 1.14.4
         // haven't had time to dig too deep but it seems like there's some new strictness

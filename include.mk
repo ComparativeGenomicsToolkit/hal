@@ -55,7 +55,7 @@ endif
 CFLAGS += -I${sonLibDir}
 CXXFLAGS += -I${sonLibDir} ${CXX_ABI_DEF} -std=c++11 -Wno-sign-compare
 
-LDLIBS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
+LDLIBS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a -llz4 -lzstd
 LIBDEPENDS += ${sonLibDir}/sonLib.a ${sonLibDir}/cuTest.a
 
 # hdf5 compilation is done through its wrappers.  See README.md for discussion of

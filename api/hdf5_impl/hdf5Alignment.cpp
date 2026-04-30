@@ -10,6 +10,7 @@
 #include "halCommon.h"
 #include "halSequenceIterator.h"
 #include "hdf5Common.h"
+#include "hdf5Filters.h"
 #include "hdf5Genome.h"
 #include "hdf5MetaData.h"
 #include <algorithm>
@@ -40,6 +41,7 @@ const H5std_string Hdf5Alignment::VersionGroupName = "Verison";
 
 const hsize_t Hdf5Alignment::DefaultChunkSize = 1000;
 const hsize_t Hdf5Alignment::DefaultCompression = 2;
+const std::string Hdf5Alignment::DefaultCodec = "deflate";
 // to do: the C-api changed in 1.8 for metadata, and all signs point to the C++ api no longer working
 //        does this have any bearing on memory usage?
 const hsize_t Hdf5Alignment::DefaultCacheMDCElems = 113;
@@ -107,8 +109,10 @@ void Hdf5Alignment::defineOptions(CLParser *parser, unsigned mode) {
         parser->addOption("hdf5Chunk", "hdf5 chunk size", DefaultChunkSize);
         parser->addOption("chunk", "obsolete name for --hdf5Chunk ", DefaultChunkSize);
 
-        parser->addOption("hdf5Compression", "hdf5 compression factor [0:none - 9:max]", DefaultCompression);
+        parser->addOption("hdf5Compression", "hdf5 compression factor [0:none - 9:max for deflate/zstd, ignored for lz4]", DefaultCompression);
         parser->addOption("deflate", "obsolete name for --hdf5Compression", DefaultCompression);
+
+        parser->addOption("hdf5Codec", "compression codec: deflate (default), lz4, zstd, none", DefaultCodec);
     }
     parser->addOption("hdf5CacheMDC", "number of metadata slots in hdf5 cache", DefaultCacheMDCElems);
     parser->addOption("cacheMDC", "obsolete name for --hdf5CacheMDC ", DefaultCacheMDCElems);
@@ -138,7 +142,30 @@ void Hdf5Alignment::initializeFromOptions(const CLParser *parser) {
         // these are only available on create
         hsize_t chunk = parser->getOptionAlt<hsize_t>("hdf5Chunk", "chunk");
         _dcprops.setChunk(1, &chunk);
-        _dcprops.setDeflate(parser->getOptionAlt<hsize_t>("hdf5Compression", "deflate"));
+
+        string codec = parser->getOption<string>("hdf5Codec");
+        hsize_t level = parser->getOptionAlt<hsize_t>("hdf5Compression", "deflate");
+
+        // Remove any existing compression filter from default props before
+        // setting the requested one
+        _dcprops.setDeflate(0);
+        H5Premove_filter(_dcprops.getId(), H5Z_FILTER_ALL);
+
+        if (codec == "deflate") {
+            _dcprops.setDeflate(level);
+        } else if (codec == "lz4") {
+            halRegisterCompressors();
+            unsigned int cd_values[1] = {0}; // block size 0 = auto
+            H5Pset_filter(_dcprops.getId(), H5Z_FILTER_LZ4, H5Z_FLAG_MANDATORY, 1, cd_values);
+        } else if (codec == "zstd") {
+            halRegisterCompressors();
+            unsigned int cd_values[1] = {(unsigned int)level};
+            H5Pset_filter(_dcprops.getId(), H5Z_FILTER_ZSTD, H5Z_FLAG_MANDATORY, 1, cd_values);
+        } else if (codec == "none") {
+            // no compression
+        } else {
+            throw hal_exception("Unknown hdf5 codec: " + codec + ". Must be deflate, lz4, zstd, or none");
+        }
     }
     _aprops.setCache(
         parser->getOptionAlt<hsize_t>("hdf5CacheMDC", "cacheMDC"), parser->getOptionAlt<hsize_t>("hdf5CacheRDC", "cacheRDC"),
