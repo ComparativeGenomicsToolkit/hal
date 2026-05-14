@@ -20,7 +20,7 @@ namespace hal {
       public:
         MafExport():
             _mafStream(NULL), _maxRefGap(0), _noDupes(false), _noAncestors(false),
-            _ucscNames(false), _unique(false), _append(false), _printTree(false),
+            _ucscNames(false), _unique(false), _novel(false), _append(false), _printTree(false),
             _onlyOrthologs(false), _keepEmptyRefBlocks(false) {
         }
         
@@ -51,6 +51,9 @@ namespace hal {
         void setUnique(bool unique) {
             _unique = unique;
         }
+        void setNovel(bool novel) {
+            _novel = novel;
+        }
         void setAppend(bool append) {
             _append = append;
         }
@@ -79,6 +82,7 @@ namespace hal {
         bool _noAncestors;
         bool _ucscNames;
         bool _unique;
+        bool _novel;
         bool _append;
         bool _printTree;
         bool _onlyOrthologs;

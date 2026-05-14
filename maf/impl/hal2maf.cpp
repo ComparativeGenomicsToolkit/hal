@@ -52,6 +52,8 @@ static void initParser(CLParser &optionsParser) {
                                           "sampled twice (due to duplications) by mafs "
                                           "generated on distinct ranges.",
                                 false);
+    optionsParser.addOptionFlag("novel", "only write column if reference position has no alignment in parent",
+                                false);
     optionsParser.addOptionFlag("append", "append to instead of overwrite output file.", false);
     optionsParser.addOption("maxBlockLen", "maximum length of MAF block in output", MafBlock::defaultMaxLength);
     optionsParser.addOptionFlag("global", "output all columns in alignment, "
@@ -84,6 +86,7 @@ class MafOptions {
     bool noAncestors;
     bool ucscNames;
     bool unique;
+    bool novel;
     bool append;
     bool global;
     bool printTree;
@@ -187,6 +190,7 @@ static void hal2maf(AlignmentConstPtr alignment, const MafOptions &opts) {
     mafExport.setNoAncestors(opts.noAncestors);
     mafExport.setUcscNames(opts.ucscNames);
     mafExport.setUnique(opts.unique);
+    mafExport.setNovel(opts.novel);
     mafExport.setAppend(opts.append);
     mafExport.setMaxBlockLength(opts.maxBlockLen);
     mafExport.setPrintTree(opts.printTree);
@@ -242,6 +246,7 @@ int main(int argc, char **argv) {
         opts.noAncestors = optionsParser.getFlag("noAncestors");
         opts.ucscNames = !optionsParser.getFlag("onlySequenceNames");
         opts.unique = optionsParser.getFlag("unique");
+        opts.novel = optionsParser.getFlag("novel");
         opts.append = optionsParser.getFlag("append");
         opts.global = optionsParser.getFlag("global");
         opts.printTree = optionsParser.getFlag("printTree");
@@ -259,6 +264,12 @@ int main(int argc, char **argv) {
         if ((not opts.refTargetsPath.empty()) and
             ((opts.start != 0) || (opts.length != 0) || (not opts.refSequenceName.empty()))) {
             throw hal_exception("--refSequence, --start, and --length options are unsupported when using BED input");
+        }
+        if (opts.novel && opts.global) {
+            throw hal_exception("--novel and --global are mutually exclusive");
+        }
+        if (opts.novel && opts.maxRefGap > 0) {
+            throw hal_exception("--novel is not supported with --maxRefGap > 0");
         }
 
     } catch (exception &e) {

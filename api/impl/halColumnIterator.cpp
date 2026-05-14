@@ -17,9 +17,9 @@ using namespace hal;
 
 ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *> *targets, hal_index_t columnIndex,
                                hal_index_t lastColumnIndex, hal_size_t maxInsertLength, bool noDupes, bool noAncestors,
-                               bool reverseStrand, bool unique, bool onlyOrthologs)
+                               bool reverseStrand, bool unique, bool onlyOrthologs, bool novel)
     : _maxInsertionLength(maxInsertLength), _noDupes(noDupes), _noAncestors(noAncestors),
-      _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs) {
+      _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs), _novel(novel) {
     assert(columnIndex >= 0 && lastColumnIndex >= columnIndex && lastColumnIndex < (hal_index_t)reference->getSequenceLength());
     // allocate temp iterators
     if (reference->getNumTopSegments() > 0) {
@@ -556,6 +556,15 @@ void ColumnIterator::clearTree() {
 
 void ColumnIterator::updateParent(LinkedTopIterator *linkTopIt) {
     const Genome *genome = linkTopIt->_it->getTopSegment()->getGenome();
+    // novel: if the reference base maps up to its parent, skip the entire column.
+    // detected here because this is the unique point where we walk up from the
+    // reference (genome == _stack[0] genome) and the segment-level hasParent()
+    // tells us whether the base at this column has a parent base in the alignment.
+    if (_novel && !_break && genome == _stack[0]->_sequence->getGenome() &&
+        linkTopIt->_it->tseg()->hasParent()) {
+        _break = true;
+        return;
+    }
     if (!_break && linkTopIt->_it->tseg()->hasParent() && parentInScope(genome) &&
         (!_noDupes || linkTopIt->_it->tseg()->isCanonicalParalog())) {
         const Genome *parentGenome = genome->getParent();

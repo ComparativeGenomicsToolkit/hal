@@ -46,7 +46,8 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
     ColumnIteratorPtr colIt = seq->getColumnIterator(&targets, _maxRefGap, startPosition, lastPosition, _noDupes, _noAncestors,
                                                      false, // reverseStrand,
                                                      _unique,
-                                                     _onlyOrthologs);
+                                                     _onlyOrthologs,
+                                                     _novel);
 
     hal_size_t appendCount = 0;
     if (_unique == false || colIt->isCanonicalOnRef() == true) {

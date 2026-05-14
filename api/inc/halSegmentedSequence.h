@@ -84,7 +84,7 @@ namespace hal {
                                                     hal_size_t maxInsertLength = 0, hal_index_t position = 0,
                                                     hal_index_t lastPosition = NULL_INDEX, bool noDupes = false,
                                                     bool noAncestors = false, bool reverseStrand = false, bool unique = false,
-                                                    bool onlyOrthologs = false) const = 0;
+                                                    bool onlyOrthologs = false, bool novel = false) const = 0;
 
         /** Get the character string underlying the segmented sequence
          * @param outString String object into which we copy the result */

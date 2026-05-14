@@ -32,7 +32,7 @@ namespace hal {
         /* constructor */
         ColumnIterator(const Genome *reference, const std::set<const Genome *> *targets, hal_index_t columnIndex,
                        hal_index_t lastColumnIndex, hal_size_t maxInsertLength, bool noDupes, bool noAncestors,
-                       bool reverseStrand, bool unique, bool onlyOrthologs);
+                       bool reverseStrand, bool unique, bool onlyOrthologs, bool novel = false);
 
         /** Destructor */
         virtual ~ColumnIterator();
@@ -175,6 +175,7 @@ namespace hal {
         mutable stTree *_treeCache;
         bool _unique;
         bool _onlyOrthologs;
+        bool _novel;
     };
 
     inline std::ostream &operator<<(std::ostream &os, const ColumnIterator &cit) {

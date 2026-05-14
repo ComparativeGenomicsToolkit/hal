@@ -144,7 +144,8 @@ DnaIteratorPtr Hdf5Sequence::getDnaIterator(hal_index_t position) const {
 
 ColumnIteratorPtr Hdf5Sequence::getColumnIterator(const std::set<const Genome *> *targets, hal_size_t maxInsertLength,
                                                   hal_index_t position, hal_index_t lastPosition, bool noDupes,
-                                                  bool noAncestors, bool reverseStrand, bool unique, bool onlyOrthologs) const {
+                                                  bool noAncestors, bool reverseStrand, bool unique, bool onlyOrthologs,
+                                                  bool novel) const {
     hal_index_t idx = (hal_index_t)(position + getStartPosition());
     hal_index_t lastIdx;
     if (lastPosition == NULL_INDEX) {
@@ -157,7 +158,7 @@ ColumnIteratorPtr Hdf5Sequence::getColumnIterator(const std::set<const Genome *>
                             std::to_string(lastPosition) + ") out of bounds");
     }
     ColumnIterator *colIt = new ColumnIterator(getGenome(), targets, idx, lastIdx, maxInsertLength, noDupes, noAncestors,
-                                               reverseStrand, unique, onlyOrthologs);
+                                               reverseStrand, unique, onlyOrthologs, novel);
     return ColumnIteratorPtr(colIt);
 }
 
