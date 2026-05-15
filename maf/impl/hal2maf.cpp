@@ -54,6 +54,10 @@ static void initParser(CLParser &optionsParser) {
                                 false);
     optionsParser.addOptionFlag("novel", "only write column if reference position has no alignment in parent",
                                 false);
+    optionsParser.addOptionFlag("noRefDupes", "only write a duplicated reference column once, at its canonical "
+                                              "paralog (skip columns where the reference segment is a non-canonical "
+                                              "paralog). mutually exclusive with --noDupes.",
+                                false);
     optionsParser.addOptionFlag("append", "append to instead of overwrite output file.", false);
     optionsParser.addOption("maxBlockLen", "maximum length of MAF block in output", MafBlock::defaultMaxLength);
     optionsParser.addOptionFlag("global", "output all columns in alignment, "
@@ -87,6 +91,7 @@ class MafOptions {
     bool ucscNames;
     bool unique;
     bool novel;
+    bool noRefDupes;
     bool append;
     bool global;
     bool printTree;
@@ -184,6 +189,7 @@ static void hal2maf(AlignmentConstPtr alignment, const MafOptions &opts) {
     mafExport.setUcscNames(opts.ucscNames);
     mafExport.setUnique(opts.unique);
     mafExport.setNovel(opts.novel);
+    mafExport.setNoRefDupes(opts.noRefDupes);
     mafExport.setAppend(opts.append);
     mafExport.setMaxBlockLength(opts.maxBlockLen);
     mafExport.setPrintTree(opts.printTree);
@@ -240,6 +246,7 @@ int main(int argc, char **argv) {
         opts.ucscNames = !optionsParser.getFlag("onlySequenceNames");
         opts.unique = optionsParser.getFlag("unique");
         opts.novel = optionsParser.getFlag("novel");
+        opts.noRefDupes = optionsParser.getFlag("noRefDupes");
         opts.append = optionsParser.getFlag("append");
         opts.global = optionsParser.getFlag("global");
         opts.printTree = optionsParser.getFlag("printTree");
@@ -263,6 +270,9 @@ int main(int argc, char **argv) {
         }
         if (opts.novel && opts.maxRefGap > 0) {
             throw hal_exception("--novel is not supported with --maxRefGap > 0");
+        }
+        if (opts.noRefDupes && opts.noDupes) {
+            throw hal_exception("--noRefDupes and --noDupes are mutually exclusive");
         }
 
     } catch (exception &e) {

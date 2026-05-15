@@ -47,7 +47,8 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
                                                      false, // reverseStrand,
                                                      _unique,
                                                      _onlyOrthologs,
-                                                     _novel);
+                                                     _novel,
+                                                     _noRefDupes);
 
     hal_size_t appendCount = 0;
     if (colIt->empty() == false && (_unique == false || colIt->isCanonicalOnRef() == true)) {

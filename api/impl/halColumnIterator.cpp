@@ -17,9 +17,9 @@ using namespace hal;
 
 ColumnIterator::ColumnIterator(const Genome *reference, const set<const Genome *> *targets, hal_index_t columnIndex,
                                hal_index_t lastColumnIndex, hal_size_t maxInsertLength, bool noDupes, bool noAncestors,
-                               bool reverseStrand, bool unique, bool onlyOrthologs, bool novel)
+                               bool reverseStrand, bool unique, bool onlyOrthologs, bool novel, bool noRefDupes)
     : _maxInsertionLength(maxInsertLength), _noDupes(noDupes), _noAncestors(noAncestors),
-      _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs), _novel(novel) {
+      _treeCache(NULL), _unique(unique), _onlyOrthologs(onlyOrthologs), _novel(novel), _noRefDupes(noRefDupes) {
     assert(columnIndex >= 0 && lastColumnIndex >= columnIndex && lastColumnIndex < (hal_index_t)reference->getSequenceLength());
     // allocate temp iterators
     if (reference->getNumTopSegments() > 0) {
@@ -577,6 +577,16 @@ void ColumnIterator::updateParent(LinkedTopIterator *linkTopIt) {
     // tells us whether the base at this column has a parent base in the alignment.
     if (_novel && !_break && genome == _stack[0]->_sequence->getGenome() &&
         linkTopIt->_it->tseg()->hasParent()) {
+        _break = true;
+        return;
+    }
+    // noRefDupes: emit a duplicated reference column only once, at its canonical
+    // paralog.  skip the column when the reference segment is a non-canonical
+    // member of a paralogy cycle (the canonical anchor's column already contains
+    // the whole cycle + every copy's subtree, so this is lossless -- provided
+    // _noDupes is off, which the caller enforces).
+    if (_noRefDupes && !_break && genome == _stack[0]->_sequence->getGenome() &&
+        linkTopIt->_it->tseg()->hasNextParalogy() && !linkTopIt->_it->tseg()->isCanonicalParalog()) {
         _break = true;
         return;
     }
