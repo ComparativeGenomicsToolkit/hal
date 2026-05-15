@@ -50,7 +50,7 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
                                                      _novel);
 
     hal_size_t appendCount = 0;
-    if (_unique == false || colIt->isCanonicalOnRef() == true) {
+    if (colIt->empty() == false && (_unique == false || colIt->isCanonicalOnRef() == true)) {
         _mafBlock.initBlock(colIt, _ucscNames, _printTree);
         assert(_mafBlock.canAppendColumn(colIt) == true);
         _mafBlock.appendColumn(colIt);
@@ -59,7 +59,7 @@ void MafExport::convertSequence(ostream &mafStream, AlignmentConstPtr alignment,
     size_t numBlocks = 0;
     while (colIt->lastColumn() == false) {
         colIt->toRight();
-        if (_unique == false || colIt->isCanonicalOnRef() == true) {
+        if (colIt->empty() == false && (_unique == false || colIt->isCanonicalOnRef() == true)) {
             if (appendCount == 0) {
                 _mafBlock.initBlock(colIt, _ucscNames, _printTree);
                 assert(_mafBlock.canAppendColumn(colIt) == true);

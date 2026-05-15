@@ -108,6 +108,12 @@ namespace hal {
          * duplications, then this function will always return true. */
         virtual bool isCanonicalOnRef() const;
 
+        /** Check whether the current column has no entries.  This happens
+         * when toRight() runs out of range while skipping a column (eg the
+         * last in-range column was novel): the dangling column is cleared
+         * and clients should not emit it. */
+        virtual bool empty() const;
+
         /** Print contents of column iterator */
         virtual void print(std::ostream &os) const;
 

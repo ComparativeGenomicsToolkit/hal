@@ -89,6 +89,12 @@ void ColumnIterator::toRight() {
         // compatible with old interface which allowed toRight() to go out
         // of bounds without crashing.
         if (_stack.size() == 1 && !_stack.topInBounds()) {
+            // if we ran out of range while still trying to skip a column
+            // (e.g. the last in-range column was novel), don't leave that
+            // half-built, to-be-skipped column visible to the client.
+            if (_break) {
+                resetColMap();
+            }
             return;
         }
 
@@ -209,6 +215,15 @@ bool ColumnIterator::isCanonicalOnRef() const {
     assert(_stack.size() > 0);
     assert(_leftmostRefPos >= 0 && (hal_size_t)_leftmostRefPos < _stack[0]->_sequence->getGenome()->getSequenceLength());
     return _leftmostRefPos >= _stack[0]->_firstIndex && _leftmostRefPos <= _stack[0]->_lastIndex;
+}
+
+bool ColumnIterator::empty() const {
+    for (ColumnMap::const_iterator i = _colMap.begin(); i != _colMap.end(); ++i) {
+        if (!i->second->empty()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 ColumnIterator::VisitCache *ColumnIterator::getVisitCache() {
