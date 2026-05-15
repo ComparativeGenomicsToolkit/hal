@@ -37,10 +37,10 @@ static void initParser(CLParser &optionsParser) {
                             "");
     optionsParser.addOption("maxRefGap", "maximum gap length in reference", 0);
     optionsParser.addOptionFlag("noDupes", "ignore paralogy edges", false);
-    optionsParser.addOptionFlag("noAncestors", "don't write ancestral sequences. IMPORTANT: "
-                                               "Must be used in conjunction with --refGenome"
-                                               " to set a non-ancestral genome as the reference"
-                                               " because the default reference is the root.",
+    optionsParser.addOptionFlag("noAncestors", "don't write ancestral sequences, with the exception "
+                                               "of the reference genome itself. if the reference is "
+                                               "ancestral, the output contains the reference plus "
+                                               "leaves but no other ancestors.",
                                 false);
     optionsParser.addOptionFlag("onlySequenceNames", "use only sequence names "
                                                      "for output names.  By default, the UCSC convention of Genome.Sequence "
@@ -153,13 +153,6 @@ static void hal2maf(AlignmentConstPtr alignment, const MafOptions &opts) {
         }
     } else {
         refGenome = alignment->openGenome(alignment->getRootName());
-    }
-    if (opts.noAncestors && refGenome->getNumChildren() != 0 && !opts.global) {
-        throw hal_exception(string("Since the reference genome to be used for the"
-                                   " MAF is ancestral (") +
-                            refGenome->getName() + "), the --noAncestors option is invalid.  The "
-                                                   "--refGenome option can be used to specify a "
-                                                   "different reference.");
     }
 
     const Sequence *refSequence = NULL;

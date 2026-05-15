@@ -776,9 +776,10 @@ bool ColumnIterator::colMapInsert(DnaIteratorPtr dnaIt) {
     const Sequence *sequence = dnaIt->getSequence();
     const Genome *genome = dnaIt->getGenome();
     assert(sequence != NULL);
+    const Genome *refGenome = _stack[0]->_sequence->getGenome();
 
     // All reference bases need to get added to the cache
-    bool updateCache = genome == _stack[0]->_sequence->getGenome();
+    bool updateCache = genome == refGenome;
     if (_maxInsertionLength == 0) {
         // Unless we don't do indels.  Here we just add reference elements
         // that are to right of the starting point
@@ -807,8 +808,11 @@ bool ColumnIterator::colMapInsert(DnaIteratorPtr dnaIt) {
         found = cacheIt != _visitCache.end() && cacheIt->second->find(dnaIt->getArrayIndex()) == true;
     }
 
-    // insert into the column data structure to pass out to client
-    if (found == false && (!_noAncestors || genome->getNumChildren() == 0) &&
+    // insert into the column data structure to pass out to client.
+    // when _noAncestors is set we still keep the reference genome itself,
+    // even if it is ancestral, so an ancestral reference can be used with
+    // --noAncestors to get "reference + leaves, no other ancestors".
+    if (found == false && (!_noAncestors || genome->getNumChildren() == 0 || genome == refGenome) &&
         (_targets.empty() || _targets.find(genome) != _targets.end())) {
         ColumnMap::iterator i = _colMap.lower_bound(sequence);
         if (i != _colMap.end() && !(_colMap.key_comp()(sequence, i->first))) {
@@ -821,7 +825,7 @@ bool ColumnIterator::colMapInsert(DnaIteratorPtr dnaIt) {
     }
 
     // update leftmost ref pos which is used by isCanonicalOnRef()
-    if (genome == _stack[0]->_sequence->getGenome()) {
+    if (genome == refGenome) {
         _leftmostRefPos = min(_leftmostRefPos, dnaIt->getArrayIndex());
     }
     return !found;
