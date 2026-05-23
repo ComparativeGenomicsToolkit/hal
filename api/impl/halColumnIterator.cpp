@@ -577,8 +577,31 @@ void ColumnIterator::updateParent(LinkedTopIterator *linkTopIt) {
     // tells us whether the base at this column has a parent base in the alignment.
     if (_novel && !_break && genome == _stack[0]->_sequence->getGenome() &&
         linkTopIt->_it->tseg()->hasParent()) {
-        _break = true;
-        return;
+        // The naive intent of --novel is "filter columns where the parent's
+        // own iteration already emits this position."  Two HAL pathologies
+        // break that intent and require defensive checks before filtering:
+        //
+        //   (1) Asymmetric edges -- a top->parent index pointing UP exists
+        //       without the parent's bottom segment pointing back DOWN at
+        //       this top.  Iterating the parent never visits this column.
+        //   (2) Orphaned root -- `halExtract` re-roots the tree but leaves
+        //       hasParent()==true on the new root's top segments while
+        //       getParent() returns NULL.  No parent iteration happens.
+        //
+        // In either case filtering here drops the column from BOTH sides
+        // (the .uni.maf row vanishes entirely).  Verify a usable parent
+        // first; only filter when iterating that parent would actually
+        // re-emit the same column.
+        const Genome *parentGenome = genome->getParent();
+        if (parentGenome != NULL) {
+            BottomSegmentIteratorPtr parentBot = parentGenome->getBottomSegmentIterator();
+            parentBot->toParent(linkTopIt->_it);
+            if (parentBot->bseg()->getChildIndexG(genome) == linkTopIt->_it->getArrayIndex()) {
+                _break = true;
+                return;
+            }
+        }
+        // Fall through to emit the column in both pathological cases.
     }
     // noRefDupes: emit a duplicated reference column only once, at its canonical
     // paralog.  skip the column when the reference segment is a non-canonical

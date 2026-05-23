@@ -55,7 +55,15 @@ bool Hdf5TopSegment::isCanonicalParalog() const {
     bool isCanon = false;
     if (hasParent()) {
         Hdf5Genome *parGenome = const_cast<Hdf5Genome *>(dynamic_cast<const Hdf5Genome *>(_genome->getParent()));
-
+        // Orphaned-root guard: a HAL extracted with `halExtract` re-roots
+        // the tree but does NOT clear the top-segment hasParent bits on
+        // the new root, so hasParent() returns true while getParent()
+        // returns NULL.  Treat as canonical (so --noRefDupes does NOT
+        // skip the position): better to emit duplicates than to drop the
+        // column entirely when there's no parent to consult.
+        if (parGenome == NULL) {
+            return true;
+        }
         Hdf5BottomSegment parent(parGenome, &parGenome->_bottomArray, getParentIndex());
         hal_index_t childGenomeIndex = parGenome->getChildIndex(_genome);
         isCanon = parent.getChildIndex(childGenomeIndex) == _index;

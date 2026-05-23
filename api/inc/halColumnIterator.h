@@ -191,7 +191,14 @@ namespace hal {
         return os;
     }
     inline bool ColumnIterator::parentInScope(const Genome *genome) const {
-        assert(genome != NULL && genome->getParent() != NULL);
+        // Defensive: a HAL extracted with `halExtract` re-roots the tree but
+        // does NOT clear the top-segment hasParent bits on the new root, so
+        // top segments at the new root can return hasParent()==true while
+        // getParent() returns NULL.  Treat the orphaned case as out-of-scope
+        // so the parent-walk code never dereferences a null parent.
+        if (genome == NULL || genome->getParent() == NULL) {
+            return false;
+        }
         return _scope.empty() || _scope.find(genome->getParent()) != _scope.end();
     }
 
