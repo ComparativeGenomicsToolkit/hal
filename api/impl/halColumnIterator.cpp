@@ -611,8 +611,21 @@ void ColumnIterator::updateParent(LinkedTopIterator *linkTopIt) {
     // member of a paralogy cycle (the canonical anchor's column already contains
     // the whole cycle + every copy's subtree, so this is lossless -- provided
     // _noDupes is off, which the caller enforces).
+    //
+    // Gated on parentInScope(genome): "canonical paralog" is defined by the
+    // parent's bottom-segment child pointer, which is meaningless when the
+    // parent isn't in the iteration scope (orphaned root after halExtract,
+    // OR --rootGenome cutoff above the reference).  In that case, the
+    // paralog ring isn't walked either (updateNextTopDup short-circuits on
+    // the same condition), so filtering here would drop non-canonical
+    // members entirely -- their bases would map to ZERO universal columns,
+    // violating the per-base "exactly 0 or 1 column" invariant.  Without
+    // the gate, each cycle member emits as its own column, which is the
+    // semantics consistent with "reference is the root, nothing above it
+    // is meaningful."
     if (_noRefDupes && !_break && genome == _stack[0]->_sequence->getGenome() &&
-        linkTopIt->_it->tseg()->hasNextParalogy() && !linkTopIt->_it->tseg()->isCanonicalParalog()) {
+        linkTopIt->_it->tseg()->hasNextParalogy() && !linkTopIt->_it->tseg()->isCanonicalParalog() &&
+        parentInScope(genome)) {
         _break = true;
         return;
     }
