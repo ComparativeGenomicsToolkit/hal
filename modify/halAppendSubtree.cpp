@@ -159,5 +159,16 @@ int main(int argc, char *argv[]) {
     if (!noMarkAncestors) {
         markAncestorsForUpdate(mainAlignment, rootName);
     }
+
+    // Close explicitly rather than leaving it to the smart pointer.  That
+    // destructor runs after the return value has already been fixed, so a
+    // failure to write the hal there could not change the exit status, and
+    // this program reported success for a file it had not finished writing.
+    try {
+        mainAlignment->close();
+    } catch (exception &e) {
+        cerr << "Failed to write " << mainPath << ": " << e.what() << endl;
+        return 1;
+    }
     return 0;
 }

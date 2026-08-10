@@ -8,6 +8,7 @@
 #include "hdf5Alignment.h"
 #include "mmapAlignment.h"
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 #ifdef ENABLE_UDC
 #include "udc2.h"
@@ -99,9 +100,42 @@ bool CLParser::specifiedFlag(const string &name) const {
     return i != _options.end() && i->second._flag == true && i->second._specified;
 }
 
+/* Report a failed write to standard output when the program exits.
+ *
+ * Nearly every tool here writes its result to standard output and leaves the
+ * caller to redirect it.  A C++ stream reports a failed write -- a full disk, a
+ * quota, a read-only mount -- by setting a flag that nothing is obliged to
+ * read, and the flush that happens at exit discards any error, so without this
+ * a truncated fasta, maf, bed or wig and a complete one are indistinguishable
+ * and the tool still exits successfully.  A short maf is still a valid maf.
+ *
+ * This is installed from parseOptions because all 39 tools call it, which makes
+ * it the single place that covers every one of them.  It deliberately does not
+ * cover output written to a named file with --outFile and friends: those
+ * streams belong to the individual tools and cannot be reached from here.
+ *
+ * The flush has to happen here because atexit handlers run before the runtime
+ * flushes the streams, and _Exit is used because calling exit() from an atexit
+ * handler is undefined.
+ */
+static void checkStdoutOnExit() {
+    std::cout.flush();
+    if (std::cout.fail() || std::cout.bad()) {
+        std::cerr << "Failed to write to standard output, so its contents are incomplete. "
+                     "Check the free space, the quota and the permissions on the file system "
+                     "holding it." << std::endl;
+        _Exit(EXIT_FAILURE);
+    }
+}
+
 void CLParser::parseOptions(int argc, char **argv) {
     if (argc == 0) {
         return;
+    }
+    static bool stdoutCheckInstalled = false;
+    if (not stdoutCheckInstalled) {
+        stdoutCheckInstalled = true;
+        atexit(checkStdoutOnExit);
     }
     _exeName = argv[0];
     size_t argNum = 0;

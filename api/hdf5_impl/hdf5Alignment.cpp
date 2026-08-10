@@ -245,6 +245,10 @@ void Hdf5Alignment::close() {
             Hdf5Genome *genome = mapIt->second;
             if (not isReadOnly()) {
                 genome->write();
+                // before the delete, so that a dataset that could not be
+                // written throws here rather than having its failure swallowed
+                // by the H5::DataSet destructor
+                genome->closeArrays();
             }
             delete genome;
         }
@@ -460,6 +464,11 @@ void Hdf5Alignment::closeGenome(const Genome *genome) const {
                             "Should not even be possible");
     }
     mapIt->second->write();
+    if (not isReadOnly()) {
+        // as in close(): the datasets have to be closed while a failure can
+        // still be reported, rather than left to the destructor
+        mapIt->second->closeArrays();
+    }
     delete mapIt->second;
     _openGenomes.erase(mapIt);
 

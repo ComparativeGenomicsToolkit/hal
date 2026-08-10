@@ -70,6 +70,18 @@ namespace hal {
         /** Write the memory buffer back to the file */
         void write();
 
+        /** Write the buffer back and close the dataset, reporting a failure
+         * to do either.
+         *
+         * This has to be called explicitly before the array is destroyed.  A
+         * chunked dataset's dirty chunks are handed to the file by H5Dclose,
+         * and the H5::DataSet destructor catches the failure of that close and
+         * does no more than print a line to standard error, so without this a
+         * genome whose data never reached the disk still looks like one that
+         * was written successfully.  Does nothing if the array was never
+         * created or loaded. */
+        void close();
+
         /** Access the raw data at given index
          * @param i index of element to retrieve for reading
          */

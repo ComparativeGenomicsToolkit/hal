@@ -567,6 +567,14 @@ void Hdf5Genome::write() {
     _sequenceNameArray.write();
 }
 
+void Hdf5Genome::closeArrays() {
+    _dnaArray.close();
+    _topArray.close();
+    _bottomArray.close();
+    _sequenceIdxArray.close();
+    _sequenceNameArray.close();
+}
+
 void Hdf5Genome::read() {
     bool dnaLoaded = false;
     try {

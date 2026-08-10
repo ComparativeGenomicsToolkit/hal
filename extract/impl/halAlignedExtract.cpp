@@ -69,11 +69,20 @@ int main(int argc, char **argv) {
             ostream *bedStream = &cout;
             if (outBedPath != "stdout") {
                 bedStream = new ofstream(outBedPath.c_str());
-            }
-            if (!bedStream) {
-                throw hal_exception(string("Error opening ") + outBedPath + " for writing");
+                // dereferenced: new never returns null, it throws, so testing
+                // the pointer never detected a failed open at all
+                if (!*bedStream) {
+                    throw hal_exception(string("Error opening ") + outBedPath + " for writing");
+                }
             }
             extractAlignedRegions(genome, bedStream, complement, viewParentCoords);
+            // the stream was never deleted, so its destructor never ran and the
+            // last buffer was never flushed;  the bed came out short on every
+            // run that wrote to a file rather than to standard output
+            checkOutputStream(*bedStream, outBedPath);
+            if (bedStream != &cout) {
+                delete bedStream;
+            }
         }
     } catch (hal_exception &e) {
         cerr << "hal exception caught: " << e.what() << endl;

@@ -117,6 +117,14 @@ namespace hal {
 
         // HDF5 SPECIFIC
         void write();
+
+        /** Close this genome's datasets, reporting any failure to write them.
+         *
+         * Must be called before the genome is destroyed.  Destroying it closes
+         * the datasets through the H5::DataSet destructor instead, which
+         * swallows the failure of the close that actually hands a chunked
+         * dataset's dirty chunks to the file. */
+        void closeArrays();
         void read();
         void create();
         void resetTreeCache();
