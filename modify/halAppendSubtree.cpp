@@ -169,6 +169,13 @@ int main(int argc, char *argv[]) {
     } catch (exception &e) {
         cerr << "Failed to write " << mainPath << ": " << e.what() << endl;
         return 1;
+    } catch (...) {
+        // H5::Exception does not derive from std::exception, so the clause
+        // above cannot catch what an hdf5 close actually throws.  Without this
+        // the failure would reach std::terminate and abort rather than
+        // returning, which is the very thing the close was added to avoid.
+        cerr << "Failed to write " << mainPath << endl;
+        return 1;
     }
     return 0;
 }
