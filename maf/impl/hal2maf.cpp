@@ -214,6 +214,12 @@ static void hal2maf(AlignmentConstPtr alignment, const MafOptions &opts) {
             std::remove(opts.mafPath.c_str());
         }
     }
+    // Checking that the file merely opened, as above, catches a bad path but
+    // not a disk that fills up part way through.  Standard output is covered by
+    // the check installed from CLParser::parseOptions, but a maf written to a
+    // named file is not, and a truncated maf is still a valid maf.  This has to
+    // come after the tellp above, which needs the stream still open.
+    checkOutputStream(mafStream, opts.mafPath);
 }
 
 int main(int argc, char **argv) {
