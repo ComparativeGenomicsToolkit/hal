@@ -8,6 +8,7 @@
 #include "halAlignment.h"
 #include "halGenome.h"
 #include <cassert>
+#include <fstream>
 #include <map>
 #include <sstream>
 #include <sys/stat.h>
@@ -51,6 +52,22 @@ hal_index_t hal::strToInt(const string &str) {
     return i;
 }
 
+
+void hal::checkOutputStream(std::ostream &os, const std::string &path) {
+    os.flush();
+    // for a file, closing is the last point at which buffered data reaches the
+    // operating system, so a write that fails there is reported nowhere else;
+    // the destructor would close it and discard the failure
+    std::ofstream *ofs = dynamic_cast<std::ofstream *>(&os);
+    if ((ofs != NULL) && ofs->is_open()) {
+        ofs->close();
+    }
+    if (os.fail() || os.bad()) {
+        throw hal_exception("Failed to write " + path + ", so its contents are incomplete. "
+                            "Check the free space, the quota and the permissions on the file "
+                            "system holding it.");
+    }
+}
 
 void hal::reverseComplement(std::string &s) {
     if (!s.empty()) {

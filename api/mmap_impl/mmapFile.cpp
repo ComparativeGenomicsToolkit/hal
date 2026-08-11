@@ -158,6 +158,15 @@ void hal::MMapFileLocal::close() {
     if (_mode & WRITE_ACCESS) {
         adjustFileSize(_header->nextOffset);
         _header->dirty = false;
+        // munmap neither waits for writeback nor reports its failure, so on its
+        // own it cannot tell a mapping whose pages reached the disk from one
+        // whose did not.  Syncing turns a full disk or a failing device into an
+        // error rather than a hal quietly missing whatever was never written
+        // back.  This belongs here rather than in unmapFile, which the
+        // destructor also calls, and throwing from a destructor terminates.
+        if (::msync(const_cast<void *>(_basePtr), _fileSize, MS_SYNC) < 0) {
+            throw hal_errno_exception(_alignmentPath, "msync failed", errno);
+        }
     }
     unmapFile();
     closeFile();

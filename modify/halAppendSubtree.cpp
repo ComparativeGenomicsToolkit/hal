@@ -159,5 +159,23 @@ int main(int argc, char *argv[]) {
     if (!noMarkAncestors) {
         markAncestorsForUpdate(mainAlignment, rootName);
     }
+
+    // Close explicitly rather than leaving it to the smart pointer.  That
+    // destructor runs after the return value has already been fixed, so a
+    // failure to write the hal there could not change the exit status, and
+    // this program reported success for a file it had not finished writing.
+    try {
+        mainAlignment->close();
+    } catch (exception &e) {
+        cerr << "Failed to write " << mainPath << ": " << e.what() << endl;
+        return 1;
+    } catch (...) {
+        // H5::Exception does not derive from std::exception, so the clause
+        // above cannot catch what an hdf5 close actually throws.  Without this
+        // the failure would reach std::terminate and abort rather than
+        // returning, which is the very thing the close was added to avoid.
+        cerr << "Failed to write " << mainPath << endl;
+        return 1;
+    }
     return 0;
 }

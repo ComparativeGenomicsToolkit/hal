@@ -10,6 +10,7 @@
 
 #include "halDefs.h"
 #include <cassert>
+#include <iosfwd>
 #include <locale>
 #include <map>
 #include <set>
@@ -65,6 +66,23 @@ namespace hal {
         }
         return c;
     }
+
+    /** Flush an output stream, close it if it is a file, and throw if any of
+     * the writing failed.
+     *
+     * A C++ stream reports a failed write -- a full disk, a quota, a read-only
+     * mount -- by setting a flag that nothing is obliged to read, and the
+     * flush that happens at exit discards any error.  Without this a truncated
+     * output file is indistinguishable from a complete one and the tool still
+     * exits successfully.  A short fasta, bed or wig is still a valid one.
+     *
+     * Checking that the file merely opened is not enough:  that catches a bad
+     * path, not a disk that fills up half way through.
+     *
+     * Call once, at the end of the work, inside the try block so that the
+     * existing handler turns it into a message and a non-zero exit.  path is
+     * used in the message, and may be "stdout". */
+    void checkOutputStream(std::ostream &os, const std::string &path);
 
     /** Get the reversed complement of a string (in place) */
     void reverseComplement(std::string &s);

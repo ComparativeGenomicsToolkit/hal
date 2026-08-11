@@ -120,6 +120,20 @@ void Hdf5ExternalArray::write() {
     }
 }
 
+// Write the buffer back and close the dataset, reporting a failure to do
+// either.  The destructor would otherwise do this close and swallow its
+// failure, which for a chunked dataset is where the dirty chunks actually
+// reach the file.
+void Hdf5ExternalArray::close() {
+    if (_file == NULL) {
+        // never created or loaded, so there is no dataset to close
+        return;
+    }
+    write();
+    _dataSet.close(); // throws on failure, unlike ~DataSet()
+    _file = NULL;
+}
+
 // Page chunk containing index i into memory
 void Hdf5ExternalArray::page(hsize_t i) {
     if (_dirty) {

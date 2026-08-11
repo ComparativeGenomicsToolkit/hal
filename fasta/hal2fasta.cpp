@@ -137,6 +137,12 @@ int main(int argc, char **argv) {
             alignment->closeGenome(genome);
         }
 
+        // The open was checked above, which catches a bad path but not a disk
+        // that fills up part way through.  Standard output is covered by the
+        // check installed from CLParser::parseOptions, but a fasta written to a
+        // named file is not, and a short fasta is still a valid fasta.
+        checkOutputStream(outStream, faPath);
+
     } catch (hal_exception &e) {
         cerr << "hal exception caught: " << e.what() << endl;
         return 1;

@@ -101,7 +101,17 @@ Hdf5Alignment::Hdf5Alignment(const std::string &alignmentPath, unsigned mode, co
 }
 
 Hdf5Alignment::~Hdf5Alignment() {
-    close();
+    try {
+        close();
+    } catch (...) {
+        // A destructor is noexcept, so anything escaping here terminates the
+        // process instead of reporting.  close() writes, and writing is
+        // exactly what fails on a full disk, which is the case the checks in
+        // it were added for -- so this is now a path that gets taken rather
+        // than a theoretical one.  Callers that need to know the hal was
+        // written call close() explicitly and handle it there; by the time
+        // the object is being destroyed there is no one left to tell.
+    }
 }
 
 void Hdf5Alignment::defineOptions(CLParser *parser, unsigned mode) {
@@ -240,15 +250,30 @@ void Hdf5Alignment::close() {
             _metaData = NULL;
         }
         writeVersion();
-        map<string, Hdf5Genome *>::iterator mapIt;
-        for (mapIt = _openGenomes.begin(); mapIt != _openGenomes.end(); ++mapIt) {
+        // Take each genome off the map before writing it, rather than clearing
+        // the map after the loop.  These writes can throw -- that is the point
+        // of the closeArrays() below -- and close() is re-entered afterwards,
+        // by the destructor and by any caller that retries.  Erasing as we go
+        // means the second pass cannot reach a genome this one already
+        // deleted, which iterating a still-populated map would do.
+        while (not _openGenomes.empty()) {
+            map<string, Hdf5Genome *>::iterator mapIt = _openGenomes.begin();
             Hdf5Genome *genome = mapIt->second;
-            if (not isReadOnly()) {
-                genome->write();
+            _openGenomes.erase(mapIt);
+            try {
+                if (not isReadOnly()) {
+                    genome->write();
+                    // before the delete, so that a dataset that could not be
+                    // written throws here rather than having its failure
+                    // swallowed by the H5::DataSet destructor
+                    genome->closeArrays();
+                }
+            } catch (...) {
+                delete genome;
+                throw;
             }
             delete genome;
         }
-        _openGenomes.clear();
         if (not isReadOnly()) {
             _file->flush(H5F_SCOPE_LOCAL);
         }
@@ -460,6 +485,11 @@ void Hdf5Alignment::closeGenome(const Genome *genome) const {
                             "Should not even be possible");
     }
     mapIt->second->write();
+    if (not isReadOnly()) {
+        // as in close(): the datasets have to be closed while a failure can
+        // still be reported, rather than left to the destructor
+        mapIt->second->closeArrays();
+    }
     delete mapIt->second;
     _openGenomes.erase(mapIt);
 
