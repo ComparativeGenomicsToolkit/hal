@@ -7,6 +7,7 @@
 
 #include "hdf5ExternalArray.h"
 #include <cassert>
+#include <cstring>
 #include <iostream>
 
 using namespace hal;
@@ -30,6 +31,17 @@ void Hdf5ExternalArray::initBuf() {
     _bufEnd = _bufSize - 1;
     delete[] _buf;
     _buf = new char[_bufSize * _dataSize];
+    // Zero it.  Not every byte of the buffer is written before it is flushed -- the
+    // bottom segment "length" field never is, since lengths are derived from the next
+    // segment's start -- and whatever the allocator handed back would otherwise be
+    // serialised into the file, leaving two runs that produced the same alignment
+    // differing byte for byte.
+    //
+    // This has to cover load() as well as create(): a file opened for modification
+    // reaches its arrays through Hdf5Genome::read(), which loads them, and segments
+    // are then written through those buffers.  Zeroing only on create() leaves
+    // uninitialised bytes in the merged output of halAppendSubtree.
+    memset(_buf, 0, _bufSize * _dataSize);
 }
 
 // Create a new dataset in specifed location
