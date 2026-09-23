@@ -134,5 +134,79 @@ PYEOF
     echo "  ok   $ndup --noDupes runs pick from the traversed copies ($ndupAgree agree with halLiftover's pointers)"
 fi
 
+echo "hal3ToMaf against hal2maf:"
+if [ ! -x "$BIN/hal2maf" ] || [ ! -x "$BIN/halStats" ]; then
+    echo "  skip (needs hal2maf and halStats: build the maf and stats modules)"
+else
+    # Blocks are cut differently by design; what must agree is every column holding a
+    # reference base: the reference base and every other base in it, with strand and
+    # letter.  (--noDupes is left out: halRandGen's canonical-paralog pointers are
+    # arbitrary, see the liftover tests.)
+    cat >"$TMP/mafcols.py" <<'PYEOF'
+import sys
+rows = []
+out = sys.stdout
+def fwd(r, p):
+    return p if r[2] == "+" else r[3] - 1 - p
+def flush():
+    if not rows: return
+    anc = rows[0]
+    apos, p = [], anc[1]
+    for c in anc[4]:
+        if c == "-": apos.append(None)
+        else: apos.append(fwd(anc, p)); p += 1
+    for x in apos:
+        if x is not None: out.write("REF\t%s\t%d\n" % (anc[0], x))
+    for r in rows[1:]:
+        p = r[1]
+        for i, c in enumerate(r[4]):
+            if c == "-": continue
+            if apos[i] is not None:
+                out.write("%s\t%d\t%s\t%d\t%s\t%s\n" % (anc[0], apos[i], r[0], fwd(r, p), "+" if r[2] == anc[2] else "-", c))
+            p += 1
+for line in open(sys.argv[1]):
+    if line.startswith("a"):
+        flush(); rows = []
+    elif line.startswith("s"):
+        t = line.split()
+        rows.append((t[1], int(t[2]), t[4], int(t[5]), t[6]))
+flush()
+PYEOF
+    nmaf=0
+    for seed in 1 7; do
+        H="$TMP/r$seed.hdf5.hal"; A="$TMP/r$seed.hdf5"
+        genomes=($("$BIN/halStats" --genomes "$H"))
+        for ref in "${genomes[0]}" "${genomes[1]}" "${genomes[${#genomes[@]}-1]}"; do
+            for opt in "" --onlyOrthologs --noAncestors; do
+                if [ "$opt" = --noAncestors ] && [ "$("$BIN/halStats" "$H" | awk -F', ' -v g="$ref" '$1==g {print $2}')" != 0 ]; then
+                    # an ancestral reference: both must refuse
+                    if "$BIN/hal2maf" "$H" "$TMP/h.maf" --refGenome "$ref" $opt 2>/dev/null ||
+                       "$BIN/hal3ToMaf" "$A" "$TMP/f.maf" --refGenome "$ref" --uncompressed $opt 2>/dev/null; then
+                        echo "  FAIL seed $seed: --noAncestors with ancestral reference $ref was accepted"; fails=$((fails + 1))
+                    fi
+                    continue
+                fi
+                "$BIN/hal2maf" "$H" "$TMP/h.maf" --refGenome "$ref" $opt 2>/dev/null
+                "$BIN/hal3ToMaf" "$A" "$TMP/f.maf" --refGenome "$ref" --uncompressed $opt 2>/dev/null
+                python3 "$TMP/mafcols.py" "$TMP/h.maf" | LC_ALL=C sort >"$TMP/h.cols"
+                python3 "$TMP/mafcols.py" "$TMP/f.maf" | LC_ALL=C sort >"$TMP/f.cols"
+                if cmp -s "$TMP/h.cols" "$TMP/f.cols" && [ -s "$TMP/h.cols" ]; then
+                    nmaf=$((nmaf + 1))
+                else
+                    echo "  FAIL seed $seed ref $ref $opt: columns differ from hal2maf"; fails=$((fails + 1))
+                fi
+            done
+        done
+    done
+    echo "  ok   $nmaf exports: every reference column identical to hal2maf's, bases included"
+    "$BIN/hal3ToMaf" "$TMP/r7.hdf5" "$TMP/z.maf.gz" 2>/dev/null
+    "$BIN/hal3ToMaf" "$TMP/r7.hdf5" "$TMP/z.maf" --uncompressed 2>/dev/null
+    check "BGZF output decompresses to the plain output" cmp "$TMP/z.maf" <(gzip -dc "$TMP/z.maf.gz")
+    "$BIN/hal3ToMaf" "$TMP/r7.hdf5" "$TMP/c.maf" --uncompressed --chunk 777 2>/dev/null
+    python3 "$TMP/mafcols.py" "$TMP/z.maf" | LC_ALL=C sort >"$TMP/z.cols"
+    python3 "$TMP/mafcols.py" "$TMP/c.maf" | LC_ALL=C sort >"$TMP/c.cols"
+    check "a small chunk size changes blocks only, not columns" cmp "$TMP/z.cols" "$TMP/c.cols"
+fi
+
 if [ $fails -eq 0 ]; then echo "ALL PASS (0 failures)"; else echo "FAILURES ($fails)"; fi
 exit $((fails > 0))

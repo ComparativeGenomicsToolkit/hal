@@ -10,7 +10,7 @@ format3LDLIBS = -lz -lpthread $(shell nm ${liftmapDir}/libliftmap.a 2>/dev/null 
 
 # The core (manifest, validation) uses no HAL API and so no HDF5.  Only the converter
 # links libHal.
-libHal3_srcs = impl/hal3Manifest.cpp impl/hal3Alignment.cpp impl/hal3Liftover.cpp
+libHal3_srcs = impl/hal3Manifest.cpp impl/hal3Alignment.cpp impl/hal3Liftover.cpp impl/hal3MafExport.cpp
 libHal3_objs = ${libHal3_srcs:%.cpp=${modObjDir}/%.o}
 halToFormat3_srcs = impl/halToFormat3Main.cpp impl/hal3Convert.cpp
 halToFormat3_objs = ${halToFormat3_srcs:%.cpp=${modObjDir}/%.o}
@@ -18,14 +18,16 @@ hal3Validate_srcs = impl/hal3ValidateMain.cpp
 hal3Validate_objs = ${hal3Validate_srcs:%.cpp=${modObjDir}/%.o}
 hal3Liftover_srcs = impl/hal3LiftoverMain.cpp
 hal3Liftover_objs = ${hal3Liftover_srcs:%.cpp=${modObjDir}/%.o}
+hal3ToMaf_srcs = impl/hal3ToMafMain.cpp
+hal3ToMaf_objs = ${hal3ToMaf_srcs:%.cpp=${modObjDir}/%.o}
 # halLiftover's BED reading and writing, used as is (they need nothing of libHal but
 # halCommon's string helpers), compiled here so no HAL library is linked
 halShared_srcs = ${rootDir}/liftover/impl/halBedLine.cpp ${rootDir}/liftover/impl/halBedScanner.cpp ${rootDir}/api/impl/halCommon.cpp
 halShared_objs = $(addprefix ${modObjDir}/shared/,$(notdir ${halShared_srcs:%.cpp=%.o}))
-srcs = ${libHal3_srcs} ${halToFormat3_srcs} ${hal3Validate_srcs} ${hal3Liftover_srcs}
+srcs = ${libHal3_srcs} ${halToFormat3_srcs} ${hal3Validate_srcs} ${hal3Liftover_srcs} ${hal3ToMaf_srcs}
 objs = ${srcs:%.cpp=${modObjDir}/%.o}
 depends = ${srcs:%.cpp=%.depend}
-progs = ${binDir}/halToFormat3 ${binDir}/hal3Validate ${binDir}/hal3Liftover
+progs = ${binDir}/halToFormat3 ${binDir}/hal3Validate ${binDir}/hal3Liftover ${binDir}/hal3ToMaf
 otherLibs = ${format3Libs}
 LDLIBS += ${format3LDLIBS}
 
@@ -47,6 +49,10 @@ ${binDir}/hal3Validate: ${hal3Validate_objs} ${format3Libs}
 ${binDir}/hal3Liftover: ${hal3Liftover_objs} ${halShared_objs} ${format3Libs}
 	@mkdir -p $(dir $@)
 	${hal3CXX} -std=c++11 -o $@ ${hal3Liftover_objs} ${halShared_objs} ${format3Libs} ${format3LDLIBS}
+
+${binDir}/hal3ToMaf: ${hal3ToMaf_objs} ${halShared_objs} ${format3Libs}
+	@mkdir -p $(dir $@)
+	${hal3CXX} -std=c++11 -o $@ ${hal3ToMaf_objs} ${halShared_objs} ${format3Libs} ${format3LDLIBS}
 
 ${modObjDir}/shared/%.o: ${rootDir}/liftover/impl/%.cpp
 	@mkdir -p $(dir $@)

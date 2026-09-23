@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <list>
+#include <functional>
 #include <map>
 #include <set>
 #include <string>
@@ -64,6 +65,21 @@ class CursorCache {
     uint64_t _clock = 0;
     std::map<std::tuple<lmap_file *, int, uint32_t>, Entry> _open;
 };
+
+/* One branch at a time.  A piece relates a source interval to an interval of the
+ * genome currently reached (tgtSeq, tgtStart); these carry pieces over one branch.
+ *
+ * liftUpBranch: from g to its parent.  The parts with no parent position go to
+ * *unmapped (still in g's coordinates) when it is given.  canonicalOnly (--noDupes
+ * walks): a base goes up only if it is the canonical copy of its parent base (the copy
+ * with the smallest child coordinate); other copies stay behind as unmapped.
+ *
+ * liftDownBranch: from child's parent to child, every copy, or with dupes off the
+ * canonical copy of each parent base. */
+void liftUpBranch(const Genome *g, const std::vector<LiftPiece> &in, std::vector<LiftPiece> &out,
+                  std::vector<LiftPiece> *unmapped, CursorCache &cursors, bool canonicalOnly = false);
+void liftDownBranch(const Genome *child, bool dupes, const std::vector<LiftPiece> &in, std::vector<LiftPiece> &out,
+                    CursorCache &cursors);
 
 /* Map [start, end) of sequence srcSeq of src to tgt.  Throws std::runtime_error. */
 void liftInterval(const Genome *src, uint32_t srcSeq, int64_t start, int64_t end, const Genome *tgt, bool dupes,

@@ -25,90 +25,130 @@ namespace hal3 {
 
 namespace {
 
-/* A source interval paired with an interval of the genome currently reached. */
-struct Cur {
-    int64_t srcStart;
-    uint32_t seq;
-    int64_t start;
-    int64_t length;
-    bool reversed;
-};
-
 /* The sub-piece of c covering [lo, lo+len) of the current genome, carried to the next
  * genome at [nstart, nstart+len) of sequence nseq, with relative strand s. */
-Cur carry(const Cur &c, int64_t lo, int64_t len, uint32_t nseq, int64_t nstart, bool s) {
-    int64_t off = c.reversed ? (c.start + c.length) - (lo + len) : lo - c.start;
-    return Cur{c.srcStart + off, nseq, nstart, len, c.reversed != s};
+LiftPiece carry(const LiftPiece &c, int64_t lo, int64_t len, uint32_t nseq, int64_t nstart, bool s) {
+    int64_t off = c.reversed ? (c.tgtStart + c.length) - (lo + len) : lo - c.tgtStart;
+    return LiftPiece{c.srcStart + off, nseq, nstart, len, c.reversed != s};
 }
 
-/* Up the branch above g: each base has at most one parent position. */
-void stepUp(const Genome *g, vector<Cur> &cur, CursorCache &cc) {
-    vector<Cur> next;
-    vector<lmap_hit> hits;
-    for (const Cur &c : cur) {
-        cc.query(g, 0, c.seq, c.start, c.start + c.length, hits);
-        for (const lmap_hit &h : hits) next.push_back(carry(c, h.a, h.len, h.b_member, h.b, h.strand != 0));
+/* The copies of a parent interval [lo, hi) in child -- hits, the axis-b query result --
+ * reduced to one per parent base: the copy with the smallest child genome coordinate,
+ * which is HAL's canonical paralog in Cactus alignments.  emit(plo, phi, hit) for each
+ * stretch of the parent chosen from one hit.  Elementary intervals between hit
+ * boundaries are resolved by the concavity of the minimum of lines of slope +-1: if
+ * one hit is the minimum at both ends it is throughout, otherwise split. */
+void selectCanonical(const Genome *child, const vector<lmap_hit> &hits,
+                     const function<void(int64_t, int64_t, const lmap_hit &)> &emit) {
+    size_t n = hits.size();
+    if (n == 0) return;
+    if (n == 1) {
+        emit(hits[0].b, hits[0].b + hits[0].len, hits[0]);
+        return;
     }
-    cur.swap(next);
+    auto childCoord = [&](const lmap_hit &h, int64_t p) {
+        int64_t off = p - h.b;
+        return child->sequenceStart(h.a_member) + (h.strand ? h.a + h.len - 1 - off : h.a + off);
+    };
+    vector<int64_t> cuts;
+    for (const lmap_hit &h : hits) {
+        cuts.push_back(h.b);
+        cuts.push_back(h.b + h.len);
+    }
+    sort(cuts.begin(), cuts.end());
+    cuts.erase(unique(cuts.begin(), cuts.end()), cuts.end());
+    auto best = [&](int64_t p) {
+        int bi = -1;
+        int64_t bv = 0;
+        for (size_t k = 0; k < n; k++) {
+            const lmap_hit &h = hits[k];
+            if (p < h.b || p >= h.b + h.len) continue;
+            int64_t v = childCoord(h, p);
+            if (bi < 0 || v < bv) {
+                bi = (int)k;
+                bv = v;
+            }
+        }
+        return bi;
+    };
+    function<void(int64_t, int64_t)> resolve = [&](int64_t lo, int64_t hi) {
+        int k0 = best(lo), k1 = best(hi - 1);
+        if (k0 < 0) return;
+        if (k0 != k1) {
+            int64_t mid = lo + (hi - lo) / 2;
+            resolve(lo, mid);
+            resolve(mid, hi);
+            return;
+        }
+        emit(lo, hi, hits[k0]);
+    };
+    for (size_t k = 0; k + 1 < cuts.size(); k++) resolve(cuts[k], cuts[k + 1]);
 }
 
-/* Down the branch above child: every copy, or with dupes off the copy with the
- * smallest child genome coordinate at each parent base. */
-void stepDown(const Genome *child, bool dupes, vector<Cur> &cur, CursorCache &cc) {
-    vector<Cur> next;
+/* Do two clipped hits come from the same run (same child member, strand and diagonal)? */
+bool sameRun(const lmap_hit &x, const lmap_hit &y) {
+    if (x.a_member != y.a_member || x.b_member != y.b_member || x.strand != y.strand) return false;
+    return x.strand ? x.a + x.b + x.len == y.a + y.b + y.len : x.a - x.b == y.a - y.b;
+}
+}
+
+void liftUpBranch(const Genome *g, const vector<LiftPiece> &in, vector<LiftPiece> &out, vector<LiftPiece> *unmapped,
+                  CursorCache &cursors, bool canonicalOnly) {
+    out.clear();
+    if (unmapped) unmapped->clear();
+    vector<lmap_hit> hits, copies;
+    for (const LiftPiece &c : in) {
+        cursors.query(g, 0, c.tgtSeq, c.tgtStart, c.tgtStart + c.length, hits);   /* sorted on a */
+        int64_t pos = c.tgtStart;
+        auto keepUnmapped = [&](int64_t lo, int64_t hi) {
+            if (unmapped && hi > lo) unmapped->push_back(carry(c, lo, hi - lo, c.tgtSeq, lo, false));
+        };
+        for (const lmap_hit &h : hits) {
+            keepUnmapped(pos, h.a);
+            pos = h.a + h.len;
+            if (!canonicalOnly) {
+                out.push_back(carry(c, h.a, h.len, h.b_member, h.b, h.strand != 0));
+                continue;
+            }
+            /* only where this base is the canonical copy of its parent base; elsewhere
+             * the base stays here, as if it had no parent */
+            cursors.query(g, 1, h.b_member, h.b, h.b + h.len, copies);
+            int64_t upTo = h.a;     /* child coordinates of h handled so far (forward) */
+            vector<pair<int64_t, int64_t>> mine;   /* child intervals where h is canonical */
+            selectCanonical(g, copies, [&](int64_t plo, int64_t phi, const lmap_hit &k) {
+                if (!sameRun(k, h)) return;
+                int64_t alo = h.strand ? h.a + (h.b + h.len - phi) : h.a + (plo - h.b);
+                mine.push_back({alo, alo + (phi - plo)});
+            });
+            sort(mine.begin(), mine.end());
+            for (auto &m : mine) {
+                keepUnmapped(upTo, m.first);
+                int64_t blo = h.strand ? h.b + (h.a + h.len - m.second) : h.b + (m.first - h.a);
+                out.push_back(carry(c, m.first, m.second - m.first, h.b_member, blo, h.strand != 0));
+                upTo = m.second;
+            }
+            keepUnmapped(upTo, h.a + h.len);
+        }
+        keepUnmapped(pos, c.tgtStart + c.length);
+    }
+}
+
+void liftDownBranch(const Genome *child, bool dupes, const vector<LiftPiece> &in, vector<LiftPiece> &out,
+                    CursorCache &cursors) {
+    out.clear();
     vector<lmap_hit> hits;
-    for (const Cur &c : cur) {
-        cc.query(child, 1, c.seq, c.start, c.start + c.length, hits);
-        size_t n = hits.size();
-        if (dupes || n <= 1) {
-            for (const lmap_hit &h : hits) next.push_back(carry(c, h.b, h.len, h.a_member, h.a, h.strand != 0));
+    for (const LiftPiece &c : in) {
+        cursors.query(child, 1, c.tgtSeq, c.tgtStart, c.tgtStart + c.length, hits);
+        if (dupes) {
+            for (const lmap_hit &h : hits) out.push_back(carry(c, h.b, h.len, h.a_member, h.a, h.strand != 0));
             continue;
         }
-        const lmap_hit *hg = hits.data();
-        /* Elementary intervals of the parent axis between hit boundaries; in each, the
-         * candidates' child coordinates are lines of slope +-1, whose minimum is
-         * concave -- so if one hit is the minimum at both ends it is throughout, and
-         * otherwise the interval is split. */
-        auto childCoord = [&](const lmap_hit &h, int64_t p) {
-            int64_t off = p - h.b;
-            return child->sequenceStart(h.a_member) + (h.strand ? h.a + h.len - 1 - off : h.a + off);
-        };
-        vector<int64_t> cuts;
-        for (size_t k = 0; k < n; k++) {
-            cuts.push_back(hg[k].b);
-            cuts.push_back(hg[k].b + hg[k].len);
-        }
-        sort(cuts.begin(), cuts.end());
-        cuts.erase(unique(cuts.begin(), cuts.end()), cuts.end());
-        auto best = [&](int64_t p) {
-            int bi = -1;
-            int64_t bv = 0;
-            for (size_t k = 0; k < n; k++) {
-                const lmap_hit &h = hg[k];
-                if (p < h.b || p >= h.b + h.len) continue;
-                int64_t v = childCoord(h, p);
-                if (bi < 0 || v < bv) { bi = (int)k; bv = v; }
-            }
-            return bi;
-        };
-        function<void(int64_t, int64_t)> emit = [&](int64_t lo, int64_t hi) {   /* [lo, hi) */
-            int k0 = best(lo), k1 = best(hi - 1);
-            if (k0 < 0) return;
-            if (k0 != k1) {
-                int64_t mid = lo + (hi - lo) / 2;
-                emit(lo, mid);
-                emit(mid, hi);
-                return;
-            }
-            const lmap_hit &h = hg[k0];
+        selectCanonical(child, hits, [&](int64_t lo, int64_t hi, const lmap_hit &h) {
             int64_t off = lo - h.b, len = hi - lo;
             int64_t a = h.strand ? h.a + h.len - off - len : h.a + off;
-            next.push_back(carry(c, lo, len, h.a_member, a, h.strand != 0));
-        };
-        for (size_t k = 0; k + 1 < cuts.size(); k++) emit(cuts[k], cuts[k + 1]);
+            out.push_back(carry(c, lo, len, h.a_member, a, h.strand != 0));
+        });
     }
-    cur.swap(next);
-}
 }
 
 CursorCache::CursorCache(size_t bytesPerCursor, size_t maxCursors) : _bytes(bytesPerCursor), _max(maxCursors) {}
@@ -155,12 +195,18 @@ void liftInterval(const Genome *src, uint32_t srcSeq, int64_t start, int64_t end
     }
     if (end <= start) return;
     const Genome *mrca = lowestCommonAncestor(src, tgt);
-    vector<Cur> cur{Cur{start, srcSeq, start, end - start, false}};
-    for (const Genome *g = src; g != mrca && !cur.empty(); g = g->parent()) stepUp(g, cur, *cursors);
+    vector<LiftPiece> cur{LiftPiece{start, srcSeq, start, end - start, false}}, next;
+    for (const Genome *g = src; g != mrca && !cur.empty(); g = g->parent()) {
+        liftUpBranch(g, cur, next, nullptr, *cursors);
+        cur.swap(next);
+    }
     vector<const Genome *> down;
     for (const Genome *g = tgt; g != mrca; g = g->parent()) down.push_back(g);
-    for (auto it = down.rbegin(); it != down.rend() && !cur.empty(); ++it) stepDown(*it, dupes, cur, *cursors);
-    for (const Cur &c : cur) out.push_back(LiftPiece{c.srcStart, c.seq, c.start, c.length, c.reversed});
+    for (auto it = down.rbegin(); it != down.rend() && !cur.empty(); ++it) {
+        liftDownBranch(*it, dupes, cur, next, *cursors);
+        cur.swap(next);
+    }
+    out.swap(cur);
 }
 
 /* ---------------------------------------------------------------- halLiftover's output */
