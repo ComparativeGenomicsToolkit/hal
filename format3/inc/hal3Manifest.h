@@ -34,54 +34,54 @@
 
 namespace hal3 {
 
-    extern const char *const MANIFEST_MAGIC;     /* "#hal-manifest 3" */
-    extern const char *const MANIFEST_NAME;      /* "manifest", inside the alignment directory */
-    extern const char *const HGN_PROFILE;        /* "hal.branch" */
+extern const char *const MANIFEST_MAGIC;     /* "#hal-manifest 3" */
+extern const char *const MANIFEST_NAME;      /* "manifest", inside the alignment directory */
+extern const char *const HGN_PROFILE;        /* "hal.branch" */
 
-    struct GenomeEntry {
-        std::string name;
-        std::string parent;          /* "" for the root */
-        double branchLength = -1;    /* to the parent; -1 for the root */
-        uint64_t length = 0;         /* bases */
-        uint64_t numSequences = 0;
-        std::string hgnPath;
-        uint64_t hgnBytes = 0;
-        uint32_t hgnCrc = 0;
-        std::string dnaPath;         /* "" when the genome has no DNA */
-        uint64_t dnaBytes = 0;
-        uint32_t dnaCrc = 0;
-    };
+struct GenomeEntry {
+    std::string name;
+    std::string parent;          /* "" for the root */
+    double branchLength = -1;    /* to the parent; -1 for the root */
+    uint64_t length = 0;         /* bases */
+    uint64_t numSequences = 0;
+    std::string hgnPath;
+    uint64_t hgnBytes = 0;
+    uint32_t hgnCrc = 0;
+    std::string dnaPath;         /* "" when the genome has no DNA */
+    uint64_t dnaBytes = 0;
+    uint32_t dnaCrc = 0;
+};
 
-    struct Manifest {
-        std::string newick;
-        std::map<std::string, std::string> meta;
-        std::vector<GenomeEntry> genomes;    /* the root first, then preorder */
+struct Manifest {
+    std::string newick;
+    std::map<std::string, std::string> meta;
+    std::vector<GenomeEntry> genomes;    /* the root first, then preorder */
 
-        const GenomeEntry *find(const std::string &name) const;
+    const GenomeEntry *find(const std::string &name) const;
 
-        /* Write to `path` atomically (via path.partial).  Throws std::runtime_error. */
-        void write(const std::string &path) const;
-        /* Throws std::runtime_error with the line number on malformed input. */
-        static Manifest read(const std::string &path);
-        /* Does the start of a file look like a manifest? */
-        static bool isManifest(const std::string &initialBytes);
-    };
+    /* Write to `path` atomically (via path.partial).  Throws std::runtime_error. */
+    void write(const std::string &path) const;
+    /* Throws std::runtime_error with the line number on malformed input. */
+    static Manifest read(const std::string &path);
+    /* Does the start of a file look like a manifest? */
+    static bool isManifest(const std::string &initialBytes);
+};
 
-    /* A file-system-safe stem for a genome's files: the name, with anything outside
-     * [A-Za-z0-9._-] (and a leading '.') percent-encoded. */
-    std::string genomeFileStem(const std::string &genomeName);
+/* A file-system-safe stem for a genome's files: the name, with anything outside
+ * [A-Za-z0-9._-] (and a leading '.') percent-encoded. */
+std::string genomeFileStem(const std::string &genomeName);
 
-    /* CRC-32 (zlib) and size of a whole file.  Throws std::runtime_error. */
-    uint32_t fileCrc32(const std::string &path, uint64_t *bytes);
+/* CRC-32 (zlib) and size of a whole file.  Throws std::runtime_error. */
+uint32_t fileCrc32(const std::string &path, uint64_t *bytes);
 
-    /* A parsed Newick tree: each node's name, parent (-1 for the root) and branch
-     * length (-1 when absent).  Throws std::runtime_error on malformed input. */
-    struct NewickNode {
-        std::string name;
-        int parent;
-        double branchLength;
-    };
-    std::vector<NewickNode> parseNewick(const std::string &newick);
+/* A parsed Newick tree: each node's name, parent (-1 for the root) and branch
+ * length (-1 when absent).  Throws std::runtime_error on malformed input. */
+struct NewickNode {
+    std::string name;
+    int parent;
+    double branchLength;
+};
+std::vector<NewickNode> parseNewick(const std::string &newick);
 }
 
 #endif
