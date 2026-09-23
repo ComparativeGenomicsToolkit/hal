@@ -16,6 +16,11 @@ libHalMutations = ${libDir}/libHalMutations.a
 libHalLiftover = ${libDir}/libHalLiftover.a
 libHalLod = ${libDir}/libHalLod.a
 libHalMaf = ${libDir}/libHalMaf.a
+libHal3 = ${libDir}/libHal3.a
+
+# HAL format 3 (format3/) builds on liftmap and twobit64, from sibling checkouts by default
+liftmapDir ?= ${rootDir}/../liftmap
+twobit64Dir ?= ${rootDir}/../twobit64
 
 inclSpec += -I${rootDir}/api/inc -Iimpl -Iinc -I${rootDir}/liftover/inc
 
