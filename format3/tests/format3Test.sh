@@ -206,6 +206,122 @@ PYEOF
     python3 "$TMP/mafcols.py" "$TMP/z.maf" | LC_ALL=C sort >"$TMP/z.cols"
     python3 "$TMP/mafcols.py" "$TMP/c.maf" | LC_ALL=C sort >"$TMP/c.cols"
     check "a small chunk size changes blocks only, not columns" cmp "$TMP/z.cols" "$TMP/c.cols"
+
+    # insertion columns (--joinGap, on by default): valid MAF; no inserted base also in
+    # a reference column or twice in one column; every pair of bases sharing an
+    # insertion column aligned in HAL (a pair of hal2maf --global)
+    cat >"$TMP/check.py" <<'PYEOF'
+"""Checks for hal maf output with insertion columns.
+
+check.py validate f.maf     MAF validity and the insertion invariants; prints counts
+check.py inspairs f.maf     aligned pairs within columns that hold no reference base
+check.py allpairs f.maf     aligned pairs within every column (for hal2maf --global)
+
+A base is name:fwdpos; a pair is "a b rel" with a < b and rel + (same strand) or -.
+The anchor (reference) is the first row of each block.
+"""
+import sys
+
+
+def blocks(path):
+    rows = []
+    for line in open(path):
+        if line.startswith("a"):
+            if rows:
+                yield rows
+            rows = []
+        elif line.startswith("s"):
+            t = line.split()
+            rows.append((t[1], int(t[2]), int(t[3]), t[4], int(t[5]), t[6]))
+    if rows:
+        yield rows
+
+
+def fwd(strand, src, p):
+    return p if strand == "+" else src - 1 - p
+
+
+def columns(rows):
+    """For each column, the list of (name, fwdpos, strand) of rows with a base there."""
+    ncol = len(rows[0][5])
+    cols = [[] for _ in range(ncol)]
+    for name, start, size, strand, src, text in rows:
+        p = start
+        for i, c in enumerate(text):
+            if c != "-":
+                cols[i].append((name, fwd(strand, src, p), strand))
+                p += 1
+    return cols
+
+
+def pairs(col):
+    for i in range(len(col)):
+        for j in range(i + 1, len(col)):
+            a, b = col[i], col[j]
+            if (a[0], a[1]) > (b[0], b[1]):
+                a, b = b, a
+            print(f"{a[0]}:{a[1]}\t{b[0]}:{b[1]}\t{'+' if a[2] == b[2] else '-'}")
+
+
+mode, path = sys.argv[1], sys.argv[2]
+if mode == "validate":
+    bad = 0
+    nblocks = inscols = insbases = refcols = 0
+    inRef, inIns = set(), set()
+    insDup = 0
+    for rows in blocks(path):
+        nblocks += 1
+        ncol = len(rows[0][5])
+        for name, start, size, strand, src, text in rows:
+            if len(text) != ncol:
+                bad += 1; print("text length differs", name, start, file=sys.stderr)
+            if size != len(text) - text.count("-"):
+                bad += 1; print("size != bases", name, start, size, file=sys.stderr)
+            if start < 0 or start + size > src:
+                bad += 1; print("outside sequence", name, start, size, src, file=sys.stderr)
+        anc = rows[0][5]
+        for i, col in enumerate(columns(rows)):
+            if anc[i] != "-":
+                refcols += 1
+                for b in col[1:]:
+                    inRef.add((b[0], b[1]))
+            else:
+                inscols += 1
+                ks = [(b[0], b[1]) for b in col]
+                insbases += len(ks)
+                insDup += len(ks) - len(set(ks))       # twice in one column: wrong
+                inIns.update(ks)
+                if not col:
+                    bad += 1; print("empty column", file=sys.stderr)
+    both = inRef & inIns
+    print(f"blocks {nblocks}, reference columns {refcols}, insertion columns {inscols}, inserted bases {insbases}")
+    print(f"inserted bases also in a reference column: {len(both)}; inserted twice in one column: {insDup}; format errors: {bad}")
+    sys.exit(1 if (both or insDup or bad) else 0)
+elif mode in ("inspairs", "allpairs"):
+    for rows in blocks(path):
+        anc = rows[0][5]
+        for i, col in enumerate(columns(rows)):
+            if mode == "allpairs" or anc[i] == "-":
+                pairs(col)
+PYEOF
+    # short segments, so that there are insertions short enough to join
+    H="$TMP/short.hal"; A="$TMP/short"
+    "$BIN/halRandGen" --testRand --seed 11 --minSegmentLength 5 --maxSegmentLength 40 --minSegments 200 \
+        --maxSegments 400 "$H" >/dev/null 2>&1
+    "$BIN/hal" convert "$H" "$A" --check 2000 >/dev/null 2>&1
+    leaf=$("$BIN/halStats" "$H" | awk -F', ' 'NR>2 && $2==0 {print $1; exit}')
+    "$BIN/hal" maf "$A" "$TMP/j.maf" --refGenome "$leaf" --uncompressed 2>/dev/null
+    check "joined output: valid MAF, inserted bases in no reference column, none twice in a column" \
+        python3 "$TMP/check.py" validate "$TMP/j.maf"
+    "$BIN/hal2maf" "$H" "$TMP/g.maf" --global 2>/dev/null
+    python3 "$TMP/check.py" allpairs "$TMP/g.maf" | LC_ALL=C sort -u >"$TMP/g.pairs"
+    python3 "$TMP/check.py" inspairs "$TMP/j.maf" | LC_ALL=C sort -u >"$TMP/j.pairs"
+    check "insertion columns: $(wc -l <"$TMP/j.pairs") aligned pairs, all of them in hal2maf --global" \
+        test "$(wc -l <"$TMP/j.pairs")" -gt 100 -a "$(LC_ALL=C comm -23 "$TMP/j.pairs" "$TMP/g.pairs" | wc -l)" -eq 0
+    "$BIN/hal" maf "$A" "$TMP/j0.maf" --refGenome "$leaf" --uncompressed --joinGap 0 2>/dev/null
+    python3 "$TMP/mafcols.py" "$TMP/j.maf" | LC_ALL=C sort >"$TMP/j.cols"
+    python3 "$TMP/mafcols.py" "$TMP/j0.maf" | LC_ALL=C sort >"$TMP/j0.cols"
+    check "joining leaves every reference column as it was" cmp "$TMP/j.cols" "$TMP/j0.cols"
 fi
 
 echo "hal fasta against hal2fasta:"

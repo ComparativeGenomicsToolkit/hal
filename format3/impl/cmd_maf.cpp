@@ -18,7 +18,8 @@ static const char *MAF_USAGE =
     "usage: hal maf [options] <alignment> <out.maf>\n"
     "MAF blocks anchored on a reference genome.  out.maf may be stdout.  Written BGZF-compressed\n"
     "to a file and plain to stdout unless told otherwise.  Every column holding a reference base\n"
-    "is hal2maf's; blocks are cut differently (see --breakFrac, --gapBudget).\n"
+    "is hal2maf's; blocks are cut differently (see --breakFrac, --gapBudget) and joined across\n"
+    "insertions (--joinGap), as taffy norm does, with homologous inserted bases aligned.\n"
     "options:\n"
     "  --refGenome G        reference genome (default: the root)\n"
     "  --refSequence S      only this reference sequence\n"
@@ -30,6 +31,9 @@ static const char *MAF_USAGE =
     "  --onlyOrthologs      rows from liftover to each genome's common ancestor with the reference\n"
     "  --targetGenomes a,b  only rows for these genomes (and the reference)\n"
     "  --rootGenome R       only rows for the subtree of R (and the reference)\n"
+    "  --joinGap N          continue a row across up to N inserted bases (bases in no column\n"
+    "                       with a reference base), which get columns of their own, shared by\n"
+    "                       homologous bases (default 30; 0: no insertion columns)\n"
     "  --breakFrac F        cut a block where this share of its rows break (default 0.5; 0 cuts at\n"
     "                       every break)\n"
     "  --gapBudget G        cut a block before its gap cells exceed G x its aligned bases (default 1)\n"
@@ -50,7 +54,7 @@ int main_maf(int argc, char **argv) {
         enum {
             REF_GENOME = 1000, REF_SEQUENCE, START, LENGTH, REF_TARGETS, NO_ANCESTORS, NO_DUPES, ONLY_ORTHOLOGS,
             TARGET_GENOMES, ROOT_GENOME, BREAK_FRAC, GAP_BUDGET, MAX_BLOCK_COLS, MAX_BLOCK_CELLS, CHUNK, NO_DNA,
-            ONLY_SEQUENCE_NAMES, UNCOMPRESSED, BGZIP, MAX_REF_GAP, MAX_BLOCK_LEN
+            ONLY_SEQUENCE_NAMES, UNCOMPRESSED, BGZIP, MAX_REF_GAP, MAX_BLOCK_LEN, JOIN_GAP
         };
         static const option longOpts[] = {
             {"refGenome", required_argument, nullptr, REF_GENOME},
@@ -72,6 +76,7 @@ int main_maf(int argc, char **argv) {
             {"onlySequenceNames", no_argument, nullptr, ONLY_SEQUENCE_NAMES},
             {"uncompressed", no_argument, nullptr, UNCOMPRESSED},
             {"bgzip", no_argument, nullptr, BGZIP},
+            {"joinGap", required_argument, nullptr, JOIN_GAP},
             {"maxRefGap", required_argument, nullptr, MAX_REF_GAP},
             {"maxBlockLen", required_argument, nullptr, MAX_BLOCK_LEN},
             {"help", no_argument, nullptr, 'h'},
@@ -104,18 +109,18 @@ int main_maf(int argc, char **argv) {
             case ONLY_SEQUENCE_NAMES: opts.onlySequenceNames = true; break;
             case UNCOMPRESSED: uncompressed = true; break;
             case BGZIP: bgzipStdout = true; break;
+            case JOIN_GAP: opts.joinGap = parseInt("joinGap", optarg); break;
             case MAX_REF_GAP:
             case MAX_BLOCK_LEN:
-                throw CliError(string(c == MAX_REF_GAP ? "--maxRefGap" : "--maxBlockLen") +
-                               " is not supported: see --maxBlockCols / --maxBlockCells (insertion columns are "
-                               "not implemented yet)");
+                throw CliError(c == MAX_REF_GAP ? "--maxRefGap is not supported: see --joinGap"
+                                                : "--maxBlockLen is not supported: see --maxBlockCols / --maxBlockCells");
             case 'h': cout << MAF_USAGE; return 0;
             default: throw CliError("bad option");
             }
         }
         if (argc - optind != 2) throw CliError("expected 2 arguments, got " + to_string(argc - optind));
-        if (opts.maxBlockCols < 1 || opts.maxBlockCells < 1 || opts.chunk < 1)
-            throw CliError("--maxBlockCols, --maxBlockCells and --chunk must be positive");
+        if (opts.maxBlockCols < 1 || opts.maxBlockCells < 1 || opts.chunk < 1 || opts.joinGap < 0)
+            throw CliError("--maxBlockCols, --maxBlockCells and --chunk must be positive, --joinGap not negative");
         string dir = argv[optind], outPath = argv[optind + 1];
         Alignment aln(dir);
         const Genome *ref = refName.empty() ? aln.root() : aln.genome(refName);
@@ -157,7 +162,8 @@ int main_maf(int argc, char **argv) {
         sink->close();
         const MafExporter::Stats &st = exporter.stats();
         cerr << "hal maf: " << st.blocks << " blocks, " << st.columns << " columns, " << st.rows << " rows, "
-             << st.alignedBases << " aligned bases" << endl;
+             << st.alignedBases << " aligned bases; " << st.insertionColumns << " insertion columns ("
+             << st.insertedBases << " bases), " << st.joinsRejected << " joins refused" << endl;
         return 0;
     });
 }

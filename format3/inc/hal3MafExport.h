@@ -17,7 +17,15 @@
  * row.  A genome that jumps starts a new row; the block is not cut for it.  Blocks
  * are cut where a large share of rows break (breakFrac), where continuing would pad
  * the block with too many gap cells (gapBudget), at the caps, and at chunk and
- * sequence boundaries.  Columns are reference bases only (no insertion columns yet).
+ * sequence boundaries.
+ *
+ * Insertions (joinGap, as taffy norm's joining, but done while blocks form): a row
+ * also continues across up to joinGap bases of its genome that are in no column with
+ * a reference base -- checked exactly, by walking the bases up to their top ancestral
+ * bases ("top keys") and down towards the reference.  Those bases get columns without
+ * a reference base, placed at the reference boundary where the row's gap is; bases of
+ * different rows share such a column when they share a top key, i.e. descend from the
+ * same ancestral base, which is exactly HAL's homology (no re-alignment).
  *
  * Output is MAF (hal2maf's header, 'a' lines, tab-separated 's' lines named
  * genome.sequence), in reference order; the reference row first, then rows by genome
@@ -50,6 +58,7 @@ struct MafOptions {
     int64_t maxBlockCols = 10000;
     int64_t maxBlockCells = 5000000;
     int64_t chunk = 2000000;
+    int64_t joinGap = 30;               /* longest insertion a row continues across; 0: none */
     bool noDna = false;                 /* write N instead of bases */
     bool onlySequenceNames = false;
 };
@@ -77,16 +86,25 @@ class MafExporter {
 
     struct Stats {
         uint64_t blocks = 0, rows = 0, columns = 0, alignedBases = 0;
+        uint64_t insertionColumns = 0, insertedBases = 0, joinsRejected = 0;
     };
     const Stats &stats() const { return _stats; }
 
   private:
     struct Chain;
+    struct Key {   /* a top ancestral base: where a base's homology is decided */
+        const Genome *node;
+        uint32_t seq;
+        int64_t pos;
+        bool operator<(const Key &o) const;
+        bool operator==(const Key &o) const { return node == o.node && seq == o.seq && pos == o.pos; }
+    };
     const Alignment &_aln;
     const Genome *_ref;
     MafOptions _opts;
     MafSink &_out;
     std::set<const Genome *> _scope, _printed;
+    std::vector<const Genome *> _refPath;   /* the reference, its parent, ... up to _top */
     const Genome *_top = nullptr;
     CursorCache _cursors;
     std::map<const Genome *, tb_file *> _dna;
@@ -98,6 +116,7 @@ class MafExporter {
     void descend(const Genome *v, std::vector<LiftPiece> &in, const Genome *skipChild,
                  std::map<const Genome *, std::vector<LiftPiece>> &tops,
                  std::map<const Genome *, std::vector<LiftPiece>> &rows);
+    bool insertionKeys(const Genome *g, uint32_t seq, bool reversed, int64_t o1, int64_t o2, std::vector<Key> &keys);
     void fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, bool reversed, std::string &out);
 };
 }
