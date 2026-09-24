@@ -1,5 +1,5 @@
 /*
- * hal3Validate: check a HAL format 3 alignment (the unpacked directory form).
+ * hal validate: check a HAL format 3 alignment (the unpacked directory form).
  *
  * Uses only the manifest code, liftmap and twobit64 -- no HAL API, no HDF5.
  *
@@ -16,6 +16,7 @@
  *               the same sequences as axis a
  *   orphans     no .hgn or .2bit in genomes/ that the manifest does not name
  */
+#include "hal3Cli.h"
 #include "hal3Manifest.h"
 #include "liftmap.h"
 #include "twobit64.h"
@@ -23,6 +24,7 @@
 #include <cmath>
 #include <cstring>
 #include <dirent.h>
+#include <getopt.h>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -32,34 +34,44 @@
 
 using namespace std;
 
+namespace hal3 {
+
+static const char *VALIDATE_USAGE =
+    "usage: hal validate [options] <alignment>\n"
+    "Check an alignment: manifest, tree, files, checksums, and every genome file against its\n"
+    "parent's and its DNA.\n"
+    "options:\n"
+    "  --noCrc      skip the whole-file checksums\n"
+    "  -h, --help\n";
+
 static int errors = 0;
 static void fail(const string &what) {
     if (errors++ < 50) cerr << "  FAIL " << what << endl;
 }
 
-static void usage() {
-    cerr << "usage: hal3Validate alignment_dir [--noCrc]\n"
-            "Check a HAL format 3 alignment: manifest, tree, files, checksums, and every\n"
-            "genome file against its parent's and its DNA.\n";
-    exit(2);
-}
-
-int main(int argc, char **argv) {
-    string dir;
+static int validate(int argc, char **argv) {
     bool doCrc = true;
-    for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "--noCrc")) doCrc = false;
-        else if (argv[i][0] == '-') usage();
-        else if (dir.empty()) dir = argv[i];
-        else usage();
+    enum { NO_CRC = 1000 };
+    static const option longOpts[] = {{"noCrc", no_argument, nullptr, NO_CRC},
+                                      {"help", no_argument, nullptr, 'h'},
+                                      {nullptr, 0, nullptr, 0}};
+    int c;
+    while ((c = getopt_long(argc, argv, "h", longOpts, nullptr)) != -1) {
+        switch (c) {
+        case NO_CRC: doCrc = false; break;
+        case 'h': cout << VALIDATE_USAGE; return 0;
+        default: throw CliError("bad option");
+        }
     }
-    if (dir.empty()) usage();
+    if (argc - optind != 1) throw CliError("expected 1 argument, got " + to_string(argc - optind));
+    string dir = argv[optind];
+    errors = 0;
 
     hal3::Manifest m;
     try {
         m = hal3::Manifest::read(dir + "/" + hal3::MANIFEST_NAME);
     } catch (exception &e) {
-        cerr << "hal3Validate: " << e.what() << endl;
+        cerr << "hal validate: " << e.what() << endl;
         return 1;
     }
 
@@ -173,4 +185,7 @@ int main(int argc, char **argv) {
 
     cout << dir << ": " << m.genomes.size() << " genomes, " << (errors ? "FAILED (" + to_string(errors) + " problems)" : "ok") << endl;
     return errors ? 1 : 0;
+}
+
+int main_validate(int argc, char **argv) { return runCommand("validate", [&]() { return validate(argc, argv); }); }
 }

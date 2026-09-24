@@ -1,5 +1,6 @@
 /*
- * halToFormat3: convert a HAL alignment to HAL format 3 (the unpacked directory form).
+ * hal convert: a HAL (HDF5 or mmap) alignment to HAL format 3 (the unpacked directory
+ * form).  The one command that needs HDF5, and so libHal.
  *
  * Genomes are independent -- each reads only itself and its parent -- so they convert
  * in parallel, in worker processes (HDF5 is not thread-safe), each opening the input
@@ -7,12 +8,14 @@
  * is not mistaken for a finished alignment.
  */
 #include "hal.h"
+#include "hal3Cli.h"
 #include "hal3Convert.h"
 #include "hal3Manifest.h"
 
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <getopt.h>
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -21,18 +24,20 @@
 using namespace std;
 using namespace hal;
 
-static void initParser(CLParser *optionsParser) {
-    optionsParser->addArgument("inHalPath", "input HAL file");
-    optionsParser->addArgument("outDir", "output directory (the format 3 alignment); must not already hold a manifest");
-    optionsParser->addOption("threads", "genomes to convert at once (worker processes)", 1);
-    optionsParser->addOption("check", "random bases per genome to check against the input (0: none)", 10000);
-    optionsParser->addOption("chunkRuns", "at most this many runs per chunk", 8192);
-    optionsParser->addOption("chunkParentSpan", "at most this much parent sequence per chunk", 1000000);
-    optionsParser->addOptionFlag("noDna", "do not write .2bit files", false);
-    optionsParser->addOptionFlag("checkOnly", "convert nothing: check an existing outDir against inHalPath", false);
-    optionsParser->setDescription("Convert a HAL alignment to HAL format 3: a directory holding a manifest, and per "
-                                  "genome a .hgn genome file (its branch to the parent) and a .2bit of its DNA.");
-}
+static const char *CONVERT_USAGE =
+    "usage: hal convert [options] <in.hal> <outDir>\n"
+    "Convert a HAL (HDF5 or mmap) alignment to format 3: a directory holding a manifest, and per\n"
+    "genome a .hgn genome file (its branch to the parent) and a .2bit of its DNA.  outDir must\n"
+    "not already hold an alignment.  Every genome is checked against the input afterwards.\n"
+    "options:\n"
+    "  --threads N          genomes to convert at once, in worker processes (default 1)\n"
+    "  --check N            random bases per genome to check against the input (default 10000;\n"
+    "                       0: none)\n"
+    "  --checkOnly          convert nothing: check an existing outDir against in.hal\n"
+    "  --chunkRuns N        at most N runs per chunk (default 8192)\n"
+    "  --chunkParentSpan N  at most N bases of parent sequence per chunk (default 1000000)\n"
+    "  --noDna              do not write .2bit files\n"
+    "  -h, --help\n";
 
 static void mkdirOrDie(const string &path) {
     if (mkdir(path.c_str(), 0777) != 0 && errno != EEXIST)
@@ -45,31 +50,41 @@ static void preorder(const Alignment *aln, const string &name, vector<string> &o
     for (const string &c : aln->getChildNames(name)) preorder(aln, c, out);
 }
 
-int main(int argc, char **argv) {
-    CLParser optionsParser;
-    initParser(&optionsParser);
+static int convert(int argc, char **argv) {
     string inPath, outDir;
-    int threads;
-    uint64_t checkSamples;
-    bool checkOnly;
+    int threads = 1;
+    uint64_t checkSamples = 10000;
+    bool checkOnly = false;
     hal3::ConvertOptions opts;
-    try {
-        optionsParser.parseOptions(argc, argv);
-        inPath = optionsParser.getArgument<string>("inHalPath");
-        outDir = optionsParser.getArgument<string>("outDir");
-        threads = max(1, optionsParser.getOption<int>("threads"));
-        checkSamples = optionsParser.getOption<uint64_t>("check");
-        opts.chunkRuns = optionsParser.getOption<uint32_t>("chunkRuns");
-        opts.chunkParentSpan = optionsParser.getOption<uint64_t>("chunkParentSpan");
-        opts.dna = !optionsParser.getFlag("noDna");
-        checkOnly = optionsParser.getFlag("checkOnly");
-    } catch (exception &e) {
-        cerr << e.what() << endl;
-        optionsParser.printUsage(cerr);
-        return 1;
+    {
+        enum { THREADS = 1000, CHECK, CHECK_ONLY, CHUNK_RUNS, CHUNK_PARENT_SPAN, NO_DNA };
+        static const option longOpts[] = {{"threads", required_argument, nullptr, THREADS},
+                                          {"check", required_argument, nullptr, CHECK},
+                                          {"checkOnly", no_argument, nullptr, CHECK_ONLY},
+                                          {"chunkRuns", required_argument, nullptr, CHUNK_RUNS},
+                                          {"chunkParentSpan", required_argument, nullptr, CHUNK_PARENT_SPAN},
+                                          {"noDna", no_argument, nullptr, NO_DNA},
+                                          {"help", no_argument, nullptr, 'h'},
+                                          {nullptr, 0, nullptr, 0}};
+        int c;
+        while ((c = getopt_long(argc, argv, "h", longOpts, nullptr)) != -1) {
+            switch (c) {
+            case THREADS: threads = (int)max<int64_t>(1, hal3::parseInt("threads", optarg)); break;
+            case CHECK: checkSamples = (uint64_t)max<int64_t>(0, hal3::parseInt("check", optarg)); break;
+            case CHECK_ONLY: checkOnly = true; break;
+            case CHUNK_RUNS: opts.chunkRuns = (uint32_t)hal3::parseInt("chunkRuns", optarg); break;
+            case CHUNK_PARENT_SPAN: opts.chunkParentSpan = (uint64_t)hal3::parseInt("chunkParentSpan", optarg); break;
+            case NO_DNA: opts.dna = false; break;
+            case 'h': cout << CONVERT_USAGE; return 0;
+            default: throw hal3::CliError("bad option");
+            }
+        }
+        if (argc - optind != 2) throw hal3::CliError("expected 2 arguments, got " + to_string(argc - optind));
+        inPath = argv[optind];
+        outDir = argv[optind + 1];
     }
 
-    try {
+    {
         string manifestPath = outDir + "/" + hal3::MANIFEST_NAME;
         if (!checkOnly && access(manifestPath.c_str(), F_OK) == 0)
             throw hal_exception(outDir + " already holds an alignment (" + manifestPath + ")");
@@ -80,7 +95,7 @@ int main(int argc, char **argv) {
         hal3::Manifest manifest;
         vector<string> names;
         {
-            AlignmentConstPtr aln(openHalAlignment(inPath, &optionsParser));
+            AlignmentConstPtr aln(openHalAlignment(inPath, nullptr));
             manifest.newick = aln->getNewickTree();
             try {
                 for (const auto &kv : aln->getMetaData()->getMap()) manifest.meta[kv.first] = kv.second;
@@ -125,7 +140,7 @@ int main(int argc, char **argv) {
             }
             int rc = 0;
             try {
-                AlignmentConstPtr aln(openHalAlignment(inPath, &optionsParser));
+                AlignmentConstPtr aln(openHalAlignment(inPath, nullptr));
                 for (size_t k = (size_t)w; k < order.size(); k += (size_t)nw) {
                     const string &n = names[order[k]];
                     hal3::GenomeConversion c;
@@ -144,7 +159,7 @@ int main(int argc, char **argv) {
                     if (bad) rc = 1;
                 }
             } catch (exception &e) {
-                cerr << "halToFormat3: " << e.what() << endl;
+                cerr << "hal convert: " << e.what() << endl;
                 rc = 1;
             }
             cout.flush();
@@ -164,9 +179,10 @@ int main(int argc, char **argv) {
         }
         manifest.write(manifestPath);
         cout << "wrote " << manifestPath << " (" << manifest.genomes.size() << " genomes)" << endl;
-    } catch (exception &e) {
-        cerr << "halToFormat3: " << e.what() << endl;
-        return 1;
     }
     return 0;
+}
+
+int hal3::main_convert(int argc, char **argv) {
+    return hal3::runCommand("convert", [&]() { return convert(argc, argv); });
 }

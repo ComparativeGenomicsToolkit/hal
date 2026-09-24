@@ -6,9 +6,9 @@
 #     halToFormat3's own check against the input, and pass hal3Validate
 #   - the same alignment gives byte-identical genome files from either back end
 #   - an existing alignment is not overwritten
-#   - hal3Validate catches corruption, missing and orphaned files, a swapped genome
+#   - hal validate catches corruption, missing and orphaned files, a swapped genome
 #     file, a wrong parent, and a mis-ordered roster
-#   - halToFormat3 --checkOnly catches a genome's DNA replaced by another's
+#   - hal convert --checkOnly catches a genome's DNA replaced by another's
 #
 # usage: format3Test.sh BINDIR
 set -u
@@ -30,41 +30,41 @@ for seed in 1 7 23; do
     for fmt in hdf5 mmap; do
         "$BIN/halRandGen" --testRand --seed $seed --format $fmt "$TMP/r$seed.$fmt.hal" >/dev/null 2>&1
         check "seed $seed, $fmt: converts and passes the check against HAL" \
-            "$BIN/halToFormat3" "$TMP/r$seed.$fmt.hal" "$TMP/r$seed.$fmt" --threads 3 --check 2000
-        check "seed $seed, $fmt: hal3Validate passes" "$BIN/hal3Validate" "$TMP/r$seed.$fmt"
+            "$BIN/hal" convert "$TMP/r$seed.$fmt.hal" "$TMP/r$seed.$fmt" --threads 3 --check 2000
+        check "seed $seed, $fmt: hal3Validate passes" "$BIN/hal" validate "$TMP/r$seed.$fmt"
     done
     check "seed $seed: hdf5 and mmap inputs give identical genome files" \
         diff -r "$TMP/r$seed.hdf5/genomes" "$TMP/r$seed.mmap/genomes"
 done
-refuses "an existing alignment is not overwritten" "$BIN/halToFormat3" "$TMP/r1.hdf5.hal" "$TMP/r1.hdf5"
-check "--checkOnly passes on an intact alignment" "$BIN/halToFormat3" "$TMP/r1.hdf5.hal" "$TMP/r1.hdf5" --checkOnly
+refuses "an existing alignment is not overwritten" "$BIN/hal" convert "$TMP/r1.hdf5.hal" "$TMP/r1.hdf5"
+check "--checkOnly passes on an intact alignment" "$BIN/hal" convert "$TMP/r1.hdf5.hal" "$TMP/r1.hdf5" --checkOnly
 
-echo "hal3Validate catches:"
+echo "hal validate catches:"
 A="$TMP/r7.hdf5"
 G=($(ls "$A/genomes" | sed -n 's/\.hgn$//p'))       # genome file stems
 fresh() { rm -rf "$TMP/t"; cp -r "$A" "$TMP/t"; }
 fresh; printf '\x55' | dd of="$TMP/t/genomes/${G[1]}.hgn" bs=1 seek=300 conv=notrunc 2>/dev/null
-refuses "a corrupted .hgn" "$BIN/hal3Validate" "$TMP/t"
+refuses "a corrupted .hgn" "$BIN/hal" validate "$TMP/t"
 fresh; printf '\x55' | dd of="$TMP/t/genomes/${G[1]}.hgn" bs=1 seek=300 conv=notrunc 2>/dev/null
-refuses "a corrupted .hgn, even with --noCrc" "$BIN/hal3Validate" "$TMP/t" --noCrc
+refuses "a corrupted .hgn, even with --noCrc" "$BIN/hal" validate "$TMP/t" --noCrc
 fresh; rm "$TMP/t/genomes/${G[2]}.2bit"
-refuses "a missing .2bit" "$BIN/hal3Validate" "$TMP/t"
+refuses "a missing .2bit" "$BIN/hal" validate "$TMP/t"
 fresh; cp "$TMP/t/genomes/${G[1]}.hgn" "$TMP/t/genomes/extra.hgn"
-refuses "an orphaned genome file" "$BIN/hal3Validate" "$TMP/t"
+refuses "an orphaned genome file" "$BIN/hal" validate "$TMP/t"
 fresh; cp "$TMP/t/genomes/${G[1]}.hgn" "$TMP/t/genomes/${G[2]}.hgn"
-refuses "one genome's .hgn in place of another's (--noCrc)" "$BIN/hal3Validate" "$TMP/t" --noCrc
+refuses "one genome's .hgn in place of another's (--noCrc)" "$BIN/hal" validate "$TMP/t" --noCrc
 # re-parent the first non-root genome (a child of the root) under the last one listed
 fresh; awk -F'\t' 'BEGIN{OFS="\t"} NR==FNR {if ($1=="genome") last=$2; next}
     $1=="genome" && $3!="-" && !done {$3=last; done=1} {print}' "$A/manifest" "$A/manifest" >"$TMP/t/manifest"
-refuses "a wrong parent in the roster" "$BIN/hal3Validate" "$TMP/t"
+refuses "a wrong parent in the roster" "$BIN/hal" validate "$TMP/t"
 fresh; awk 'NR==1{print; next} /^genome\t/ && !held {held=$0; next} {print} END{print held}' "$A/manifest" >"$TMP/t/manifest"
-refuses "the root not listed first" "$BIN/hal3Validate" "$TMP/t"
+refuses "the root not listed first" "$BIN/hal" validate "$TMP/t"
 
-echo "halToFormat3 --checkOnly catches:"
+echo "hal convert --checkOnly catches:"
 fresh; cp "$TMP/t/genomes/${G[1]}.2bit" "$TMP/t/genomes/${G[2]}.2bit"
-refuses "one genome's DNA in place of another's" "$BIN/halToFormat3" "$TMP/r7.hdf5.hal" "$TMP/t" --checkOnly
+refuses "one genome's DNA in place of another's" "$BIN/hal" convert "$TMP/r7.hdf5.hal" "$TMP/t" --checkOnly
 
-echo "hal3Liftover against halLiftover:"
+echo "hal liftover against halLiftover:"
 if [ ! -x "$BIN/halLiftover" ] || [ ! -x "$BIN/halStats" ]; then
     echo "  skip (needs halLiftover and halStats: build the liftover and stats modules)"
 else
@@ -114,14 +114,14 @@ PYEOF
             [ "$src" = "$tgt" ] && continue
             for bed in in6 in12; do
                 "$BIN/halLiftover" "$H" "$src" "$TMP/$bed.bed" "$tgt" "$TMP/hal.bed" 2>/dev/null
-                "$BIN/hal3Liftover" "$A" "$src" "$TMP/$bed.bed" "$tgt" "$TMP/f3.bed" 2>/dev/null
+                "$BIN/hal" liftover "$A" "$src" "$TMP/$bed.bed" "$tgt" "$TMP/f3.bed" 2>/dev/null
                 case $(python3 "$TMP/cmp.py" same "$TMP/hal.bed" "$TMP/f3.bed") in
                     bytes) nb=$((nb + 1)) ;;
                     bases) nbase=$((nbase + 1)) ;;
                     *) echo "  FAIL $src -> $tgt $bed: different aligned bases"; fails=$((fails + 1)) ;;
                 esac
                 "$BIN/halLiftover" "$H" "$src" "$TMP/$bed.bed" "$tgt" "$TMP/haln.bed" --noDupes 2>/dev/null
-                "$BIN/hal3Liftover" "$A" "$src" "$TMP/$bed.bed" "$tgt" "$TMP/f3n.bed" --noDupes 2>/dev/null
+                "$BIN/hal" liftover "$A" "$src" "$TMP/$bed.bed" "$tgt" "$TMP/f3n.bed" --noDupes 2>/dev/null
                 ndup=$((ndup + 1))
                 [ "$(python3 "$TMP/cmp.py" same "$TMP/haln.bed" "$TMP/f3n.bed")" != DIFFERENT ] && ndupAgree=$((ndupAgree + 1))
                 if [ "$(python3 "$TMP/cmp.py" within "$TMP/f3n.bed" "$TMP/f3.bed")" != ok ]; then
@@ -134,7 +134,7 @@ PYEOF
     echo "  ok   $ndup --noDupes runs pick from the traversed copies ($ndupAgree agree with halLiftover's pointers)"
 fi
 
-echo "hal3ToMaf against hal2maf:"
+echo "hal maf against hal2maf:"
 if [ ! -x "$BIN/hal2maf" ] || [ ! -x "$BIN/halStats" ]; then
     echo "  skip (needs hal2maf and halStats: build the maf and stats modules)"
 else
@@ -181,13 +181,13 @@ PYEOF
                 if [ "$opt" = --noAncestors ] && [ "$("$BIN/halStats" "$H" | awk -F', ' -v g="$ref" '$1==g {print $2}')" != 0 ]; then
                     # an ancestral reference: both must refuse
                     if "$BIN/hal2maf" "$H" "$TMP/h.maf" --refGenome "$ref" $opt 2>/dev/null ||
-                       "$BIN/hal3ToMaf" "$A" "$TMP/f.maf" --refGenome "$ref" --uncompressed $opt 2>/dev/null; then
+                       "$BIN/hal" maf "$A" "$TMP/f.maf" --refGenome "$ref" --uncompressed $opt 2>/dev/null; then
                         echo "  FAIL seed $seed: --noAncestors with ancestral reference $ref was accepted"; fails=$((fails + 1))
                     fi
                     continue
                 fi
                 "$BIN/hal2maf" "$H" "$TMP/h.maf" --refGenome "$ref" $opt 2>/dev/null
-                "$BIN/hal3ToMaf" "$A" "$TMP/f.maf" --refGenome "$ref" --uncompressed $opt 2>/dev/null
+                "$BIN/hal" maf "$A" "$TMP/f.maf" --refGenome "$ref" --uncompressed $opt 2>/dev/null
                 python3 "$TMP/mafcols.py" "$TMP/h.maf" | LC_ALL=C sort >"$TMP/h.cols"
                 python3 "$TMP/mafcols.py" "$TMP/f.maf" | LC_ALL=C sort >"$TMP/f.cols"
                 if cmp -s "$TMP/h.cols" "$TMP/f.cols" && [ -s "$TMP/h.cols" ]; then
@@ -199,13 +199,33 @@ PYEOF
         done
     done
     echo "  ok   $nmaf exports: every reference column identical to hal2maf's, bases included"
-    "$BIN/hal3ToMaf" "$TMP/r7.hdf5" "$TMP/z.maf.gz" 2>/dev/null
-    "$BIN/hal3ToMaf" "$TMP/r7.hdf5" "$TMP/z.maf" --uncompressed 2>/dev/null
+    "$BIN/hal" maf "$TMP/r7.hdf5" "$TMP/z.maf.gz" 2>/dev/null
+    "$BIN/hal" maf "$TMP/r7.hdf5" "$TMP/z.maf" --uncompressed 2>/dev/null
     check "BGZF output decompresses to the plain output" cmp "$TMP/z.maf" <(gzip -dc "$TMP/z.maf.gz")
-    "$BIN/hal3ToMaf" "$TMP/r7.hdf5" "$TMP/c.maf" --uncompressed --chunk 777 2>/dev/null
+    "$BIN/hal" maf "$TMP/r7.hdf5" "$TMP/c.maf" --uncompressed --chunk 777 2>/dev/null
     python3 "$TMP/mafcols.py" "$TMP/z.maf" | LC_ALL=C sort >"$TMP/z.cols"
     python3 "$TMP/mafcols.py" "$TMP/c.maf" | LC_ALL=C sort >"$TMP/c.cols"
     check "a small chunk size changes blocks only, not columns" cmp "$TMP/z.cols" "$TMP/c.cols"
+fi
+
+echo "hal fasta against hal2fasta:"
+if [ ! -x "$BIN/hal2fasta" ] || [ ! -x "$BIN/halStats" ]; then
+    echo "  skip (needs hal2fasta and halStats: build the fasta and stats modules)"
+else
+    H="$TMP/r7.hdf5.hal"; A="$TMP/r7.hdf5"
+    genomes=($("$BIN/halStats" --genomes "$H"))
+    g="${genomes[2]}"
+    seq=$("$BIN/halStats" --sequenceStats "$g" "$H" | awk -F', ' 'NR==2 {print $1}')
+    same() {   # same "what" options...
+        local what=$1; shift
+        "$BIN/hal2fasta" "$H" "$@" >"$TMP/h.fa" 2>/dev/null
+        "$BIN/hal" fasta "$A" "$@" >"$TMP/f.fa" 2>/dev/null
+        check "$what" cmp "$TMP/h.fa" "$TMP/f.fa"
+    }
+    same "a whole genome" "$g"
+    same "a range of one sequence" "$g" --sequence "$seq" --start 17 --length 1234
+    same "a genome range across sequences, --lineWidth 17" "$g" --start 100 --length 250000 --lineWidth 17
+    same "a subtree, --ucscSequenceNames --upper" "${genomes[0]}" --subtree --ucscSequenceNames --upper
 fi
 
 if [ $fails -eq 0 ]; then echo "ALL PASS (0 failures)"; else echo "FAILURES ($fails)"; fi
