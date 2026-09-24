@@ -111,55 +111,18 @@ unique_ptr<MafSink> openMafSink(const string &path, bool bgzf) {
 
 /* ---------------------------------------------------------------- scope */
 
-MafExporter::MafExporter(const Alignment &alignment, const Genome *ref, const MafOptions &opts, MafSink &out)
-    : _aln(alignment), _ref(ref), _opts(opts), _out(out), _cursors((size_t)1 << 20, 4096) {
-    /* printed genomes: the targets (or the subtree of rootGenome) and the reference;
-     * scope: the spanning tree of those, whose top is where the walk turns */
-    vector<const Genome *> targets;
-    if (!_opts.rootGenome.empty()) {
-        if (!_opts.targets.empty()) throw runtime_error("--rootGenome and --targetGenomes cannot be combined");
-        const Genome *r = _aln.genome(_opts.rootGenome);
-        if (!r) throw runtime_error("no genome " + _opts.rootGenome);
-        vector<const Genome *> stack{r};
-        while (!stack.empty()) {
-            const Genome *g = stack.back();
-            stack.pop_back();
-            targets.push_back(g);
-            for (const Genome *c : g->children()) stack.push_back(c);
-        }
-    }
-    for (const string &t : _opts.targets) {
-        const Genome *g = _aln.genome(t);
-        if (!g) throw runtime_error("no genome " + t);
-        targets.push_back(g);
-    }
-    if (targets.empty()) {
-        vector<const Genome *> stack{_aln.root()};
-        while (!stack.empty()) {
-            const Genome *g = stack.back();
-            stack.pop_back();
-            targets.push_back(g);
-            for (const Genome *c : g->children()) stack.push_back(c);
-        }
-    }
-    targets.push_back(_ref);
-    _top = targets[0];
-    for (const Genome *t : targets) _top = lowestCommonAncestor(_top, t);
-    for (const Genome *t : targets) {
-        for (const Genome *g = t; g != _top; g = g->parent()) _scope.insert(g);
-        _printed.insert(t);
-    }
-    _scope.insert(_top);
-    for (const Genome *g = _ref;; g = g->parent()) {
-        _refPath.push_back(g);
-        if (g == _top) break;
-    }
-    if (!_opts.ancestors) {
-        if (!_ref->children().empty()) throw runtime_error("--noAncestors needs a leaf reference genome");
-        for (auto it = _printed.begin(); it != _printed.end();)
-            it = (*it)->children().empty() ? next(it) : _printed.erase(it);
-    }
+static WalkOptions walkOptions(const MafOptions &o) {
+    WalkOptions w;
+    w.ancestors = o.ancestors;
+    w.dupes = o.dupes;
+    w.onlyOrthologs = o.onlyOrthologs;
+    w.targets = o.targets;
+    w.rootGenome = o.rootGenome;
+    return w;
 }
+
+MafExporter::MafExporter(const Alignment &alignment, const Genome *ref, const MafOptions &opts, MafSink &out)
+    : _aln(alignment), _ref(ref), _opts(opts), _out(out), _walk(alignment, ref, walkOptions(opts)) {}
 
 MafExporter::~MafExporter() {
     for (auto &d : _dna)
@@ -170,114 +133,6 @@ void MafExporter::writeHeader() { _out.write("##maf version=1 scoring=N/A\n# hal
 
 void MafExporter::exportInterval(uint32_t refSeq, int64_t start, int64_t end) {
     for (int64_t s = start; s < end; s += _opts.chunk) chunk(refSeq, s, min(end, s + _opts.chunk));
-}
-
-/* ---------------------------------------------------------------- the walk */
-
-namespace {
-
-/* Merge pieces contiguous in both the reference and the target genome. */
-void coalesce(vector<LiftPiece> &v) {
-    if (v.size() < 2) return;
-    auto diag = [](const LiftPiece &p) { return p.reversed ? p.srcStart + p.tgtStart + p.length : p.tgtStart - p.srcStart; };
-    sort(v.begin(), v.end(), [&](const LiftPiece &a, const LiftPiece &b) {
-        return make_tuple(a.tgtSeq, a.reversed, diag(a), a.srcStart) < make_tuple(b.tgtSeq, b.reversed, diag(b), b.srcStart);
-    });
-    vector<LiftPiece> o;
-    for (const LiftPiece &p : v) {
-        if (!o.empty()) {
-            LiftPiece &q = o.back();
-            if (q.tgtSeq == p.tgtSeq && q.reversed == p.reversed && diag(q) == diag(p) && q.srcStart + q.length == p.srcStart) {
-                if (q.reversed) q.tgtStart = p.tgtStart;
-                q.length += p.length;
-                continue;
-            }
-        }
-        o.push_back(p);
-    }
-    v.swap(o);
-}
-}
-
-/* At v: its own pieces (arrived from the parent, plus any tops at v), recorded if v is
- * printed, then carried into each child in scope but skipChild. */
-void MafExporter::descend(const Genome *v, vector<LiftPiece> &in, const Genome *skipChild,
-                          map<const Genome *, vector<LiftPiece>> &tops, map<const Genome *, vector<LiftPiece>> &rows) {
-    auto t = tops.find(v);
-    if (t != tops.end()) {
-        in.insert(in.end(), t->second.begin(), t->second.end());
-        tops.erase(t);
-    }
-    coalesce(in);
-    if (_printed.count(v)) {
-        vector<LiftPiece> &r = rows[v];
-        r.insert(r.end(), in.begin(), in.end());
-    }
-    for (const Genome *c : v->children()) {
-        if (c == skipChild || !_scope.count(c)) continue;
-        vector<LiftPiece> down;
-        liftDownBranch(c, _opts.dupes, in, down, _cursors);
-        if (!down.empty() || tops.count(c)) descend(c, down, nullptr, tops, rows);
-    }
-}
-
-void MafExporter::walk(uint32_t refSeq, int64_t start, int64_t end, map<const Genome *, vector<LiftPiece>> &rows) {
-    rows.clear();
-    vector<LiftPiece> cur{LiftPiece{start, refSeq, start, end - start, false}}, next, unmapped;
-    if (!_opts.onlyOrthologs) {
-        /* up to the scope top; every top descends into its whole subtree */
-        map<const Genome *, vector<LiftPiece>> tops;
-        const Genome *a = _ref;
-        for (;;) {
-            if (a == _top) {
-                vector<LiftPiece> &t = tops[a];
-                t.insert(t.end(), cur.begin(), cur.end());
-                break;
-            }
-            liftUpBranch(a, cur, next, &unmapped, _cursors, !_opts.dupes);
-            if (!unmapped.empty()) {
-                vector<LiftPiece> &t = tops[a];
-                t.insert(t.end(), unmapped.begin(), unmapped.end());
-            }
-            cur.swap(next);
-            if (cur.empty()) break;
-            a = a->parent();
-        }
-        vector<LiftPiece> none;
-        descend(_top, none, nullptr, tops, rows);
-    } else {
-        /* liftover to the common ancestor with each genome: at each ancestor on the
-         * reference's lineage, descend only into the children off the lineage; and
-         * into the reference's own subtree */
-        map<const Genome *, vector<LiftPiece>> noTops;
-        const Genome *below = nullptr;
-        for (const Genome *a = _ref;; a = a->parent()) {
-            if (a != _ref && _printed.count(a)) {
-                vector<LiftPiece> &r = rows[a];
-                r.insert(r.end(), cur.begin(), cur.end());
-            }
-            for (const Genome *c : a->children()) {
-                if (c == below || !_scope.count(c)) continue;
-                vector<LiftPiece> down;
-                liftDownBranch(c, _opts.dupes, cur, down, _cursors);
-                if (!down.empty()) descend(c, down, nullptr, noTops, rows);
-            }
-            if (a == _top) break;
-            liftUpBranch(a, cur, next, nullptr, _cursors, !_opts.dupes);
-            cur.swap(next);
-            coalesce(cur);
-            if (cur.empty()) break;
-            below = a;
-        }
-    }
-    /* the reference's own identity pieces: its anchor row stands for them */
-    auto r = rows.find(_ref);
-    if (r != rows.end()) {
-        vector<LiftPiece> &v = r->second;
-        v.erase(remove_if(v.begin(), v.end(),
-                          [&](const LiftPiece &p) { return !p.reversed && p.tgtSeq == refSeq && p.tgtStart == p.srcStart; }),
-                v.end());
-    }
 }
 
 /* ---------------------------------------------------------------- insertions */
@@ -303,18 +158,18 @@ bool MafExporter::insertionKeys(const Genome *g, uint32_t seq, bool reversed, in
     keys.assign((size_t)len, Key{nullptr, 0, 0});
     if (_opts.onlyOrthologs) {
         vector<LiftPiece> hits;
-        liftInterval(g, seq, lo, lo + len, _ref, _opts.dupes, hits, &_cursors);
+        liftInterval(g, seq, lo, lo + len, _ref, _opts.dupes, hits, &_walk.cursors());
         if (!hits.empty()) return false;
     }
     /* up to the tops */
     vector<LiftPiece> cur{LiftPiece{lo, seq, lo, len, false}}, next, unmapped;
     vector<pair<const Genome *, vector<LiftPiece>>> tops;
     for (const Genome *a = g; !cur.empty(); a = a->parent()) {
-        if (a == _top) {
+        if (a == _walk.top()) {
             tops.emplace_back(a, cur);
             break;
         }
-        liftUpBranch(a, cur, next, &unmapped, _cursors, !_opts.dupes);
+        liftUpBranch(a, cur, next, &unmapped, _walk.cursors(), !_opts.dupes);
         if (!unmapped.empty()) tops.emplace_back(a, unmapped);
         cur.swap(next);
     }
@@ -329,12 +184,13 @@ bool MafExporter::insertionKeys(const Genome *g, uint32_t seq, bool reversed, in
         }
         if (_opts.onlyOrthologs) continue;
         /* down from the top towards the reference, if the top is on its lineage */
-        auto on = find(_refPath.begin(), _refPath.end(), t.first);
-        if (on == _refPath.end()) continue;
+        const vector<const Genome *> &path = _walk.refPath();
+        auto on = find(path.begin(), path.end(), t.first);
+        if (on == path.end()) continue;
         vector<LiftPiece> down = t.second;
-        for (auto c = on; c != _refPath.begin() && !down.empty();) {
+        for (auto c = on; c != path.begin() && !down.empty();) {
             --c;
-            liftDownBranch(*c, _opts.dupes, down, next, _cursors);
+            liftDownBranch(*c, _opts.dupes, down, next, _walk.cursors());
             down.swap(next);
         }
         if (!down.empty()) return false;
@@ -412,7 +268,7 @@ void MafExporter::fetch(const Genome *g, uint32_t seq, int64_t start, int64_t en
 
 void MafExporter::chunk(uint32_t refSeq, int64_t cs, int64_t ce) {
     map<const Genome *, vector<LiftPiece>> lifted;
-    walk(refSeq, cs, ce, lifted);
+    _walk.lift(refSeq, {{cs, ce}}, lifted);
     const int64_t n = max<int64_t>(0, _opts.joinGap);
 
     /* ---- rows: link each genome's pieces where one follows another in the genome --

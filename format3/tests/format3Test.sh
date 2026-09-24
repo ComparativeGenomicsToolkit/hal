@@ -344,5 +344,64 @@ else
     same "a subtree, --ucscSequenceNames --upper" "${genomes[0]}" --subtree --ucscSequenceNames --upper
 fi
 
+echo "hal stats against halStats:"
+if [ ! -x "$BIN/halStats" ]; then
+    echo "  skip (needs halStats: build the stats module)"
+else
+    H="$TMP/r7.hdf5.hal"; A="$TMP/r7.hdf5"
+    genomes=($("$BIN/halStats" --genomes "$H"))
+    g="${genomes[${#genomes[@]}-1]}"; a="${genomes[1]}"
+    nsame=0
+    for opt in "--genomes" "--tree" "--root" "--branches" "--assembly" "--metaData" "--chromSizes $g" \
+               "--sequences $a" "--bedSequences $a" "--children $a" "--parent $g" "--branchLength $g" \
+               "--span $g,${genomes[2]}" "--spanRoot $g,${genomes[2]}" "--baseComp $g,1000" "--genomeMetaData $g"; do
+        if [ "$("$BIN/halStats" "$H" $opt 2>&1)" = "$("$BIN/hal" stats "$A" $opt 2>&1)" ]; then
+            nsame=$((nsame + 1))
+        else
+            echo "  FAIL hal stats $opt differs from halStats"; fails=$((fails + 1))
+        fi
+    done
+    echo "  ok   $nsame options give halStats' output"
+    check "--sequenceStats: names and lengths as halStats" \
+        cmp <("$BIN/halStats" "$H" --sequenceStats "$g" | cut -d, -f1-2) <("$BIN/hal" stats "$A" --sequenceStats "$g" | cut -d, -f1-2)
+fi
+
+echo "hal coverage against hal2maf --onlyOrthologs:"
+if [ ! -x "$BIN/hal2maf" ] || [ ! -x "$BIN/halStats" ]; then
+    echo "  skip (needs hal2maf and halStats)"
+else
+    # exact coverage is the depth of each leaf's bases in hal2maf --onlyOrthologs columns
+    # (liftover with paralogs); the reference covers itself once
+    cat >"$TMP/covexp.py" <<'PYEOF'
+import sys, collections
+ref, leaves = sys.argv[1], sys.argv[2].split(",")
+depth, refpos = collections.Counter(), set()
+for l in sys.stdin:
+    f = l.rstrip("\n").split("\t")
+    if f[0] == "REF":
+        refpos.add((f[1], f[2])); continue
+    g = f[2].split(".")[0]
+    if g in leaves: depth[(f[0], f[1], g)] += 1
+hist = {g: collections.Counter() for g in leaves}
+for (s, p, g), d in depth.items():
+    for k in range(1, d + 1): hist[g][k] += 1
+if ref in leaves: hist[ref] = collections.Counter({1: len(refpos)})
+m = max([max(h) for h in hist.values() if h] or [0])
+print("Genome" + "".join(", sitesCovered%dTimes" % k for k in range(1, m + 1)))
+for g in leaves: print(g + "".join(", %d" % hist[g][k] for k in range(1, m + 1)))
+PYEOF
+    H="$TMP/r7.hdf5.hal"; A="$TMP/r7.hdf5"
+    leaves=$("$BIN/halStats" "$H" | awk -F', ' 'NR>2 && NF>2 && $2==0 {print $1}')
+    order=$("$BIN/hal" coverage "$A" "$("$BIN/halStats" "$H" --root)" | awk -F', ' 'NR>1 {print $1}' | paste -sd,)
+    for ref in $(echo "$leaves" | head -1) $("$BIN/halStats" "$H" --root); do
+        "$BIN/hal2maf" "$H" "$TMP/oo.maf" --refGenome "$ref" --onlyOrthologs 2>/dev/null
+        python3 "$TMP/mafcols.py" "$TMP/oo.maf" | python3 "$TMP/covexp.py" "$ref" "$order" >"$TMP/cov.exp"
+        check "exact coverage of $ref: hal2maf --onlyOrthologs column depths" cmp "$TMP/cov.exp" <("$BIN/hal" coverage "$A" "$ref")
+    done
+    ref=$(echo "$leaves" | head -1)
+    check "--numSamples 5000: no leaf covers more than 5000 samples" \
+        test "$("$BIN/hal" coverage "$A" "$ref" --numSamples 5000 --seed 3 | awk -F', ' 'NR>1 && $2>5000' | wc -l)" -eq 0
+fi
+
 if [ $fails -eq 0 ]; then echo "ALL PASS (0 failures)"; else echo "FAILURES ($fails)"; fi
 exit $((fails > 0))

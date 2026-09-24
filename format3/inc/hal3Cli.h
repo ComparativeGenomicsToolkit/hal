@@ -33,6 +33,8 @@ int main_validate(int argc, char **argv);
 int main_liftover(int argc, char **argv);
 int main_maf(int argc, char **argv);
 int main_fasta(int argc, char **argv);
+int main_stats(int argc, char **argv);
+int main_coverage(int argc, char **argv);
 }
 
 #endif

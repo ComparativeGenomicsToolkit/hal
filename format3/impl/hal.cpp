@@ -24,6 +24,8 @@ const Command COMMANDS[] = {
     {"liftover", "map BED intervals from one genome to another", hal3::main_liftover},
     {"maf", "export MAF blocks anchored on a reference genome", hal3::main_maf},
     {"fasta", "export genome sequences as FASTA", hal3::main_fasta},
+    {"stats", "facts about an alignment: tree, genomes, sequences, runs", hal3::main_stats},
+    {"coverage", "how much of a genome each leaf genome covers, and how many times", hal3::main_coverage},
 };
 
 void usage(ostream &os) {

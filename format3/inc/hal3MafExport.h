@@ -1,15 +1,8 @@
 /*
  * HAL format 3: MAF export, row by row, built on liftover.
  *
- * For each chunk of a reference sequence, one tree walk lifts it to every genome in
- * scope: up the reference's lineage to the scope top, collecting at each genome the
- * bases that go no higher ("tops"), then one pass down from the top that descends from
- * every top into its whole subtree.  That is hal2maf's column: every descendant of the
- * highest ancestral base the reference base reaches, paralogs included.
- * --onlyOrthologs instead descends at each ancestor only into the children off the
- * reference's lineage (and into the reference's own subtree), which is liftover to the
- * pairwise common ancestor; --noDupes goes up only from canonical copies and down only
- * to them.
+ * For each chunk of a reference sequence, the tree walk (hal3Walk.h) lifts it to every
+ * genome in scope at once: hal2maf's columns.
  *
  * Each printed genome's pieces are chained into rows: a piece continues a row when it
  * follows it directly in that genome (same sequence and strand, no bases between) and
@@ -36,6 +29,7 @@
 
 #include "hal3Alignment.h"
 #include "hal3Liftover.h"
+#include "hal3Walk.h"
 #include "twobit64.h"
 
 #include <cstdint>
@@ -103,19 +97,12 @@ class MafExporter {
     const Genome *_ref;
     MafOptions _opts;
     MafSink &_out;
-    std::set<const Genome *> _scope, _printed;
-    std::vector<const Genome *> _refPath;   /* the reference, its parent, ... up to _top */
-    const Genome *_top = nullptr;
-    CursorCache _cursors;
+    TreeWalk _walk;
     std::map<const Genome *, tb_file *> _dna;
     std::map<const Genome *, std::vector<int64_t>> _dnaIndex;
     Stats _stats;
 
     void chunk(uint32_t refSeq, int64_t start, int64_t end);
-    void walk(uint32_t refSeq, int64_t start, int64_t end, std::map<const Genome *, std::vector<LiftPiece>> &rows);
-    void descend(const Genome *v, std::vector<LiftPiece> &in, const Genome *skipChild,
-                 std::map<const Genome *, std::vector<LiftPiece>> &tops,
-                 std::map<const Genome *, std::vector<LiftPiece>> &rows);
     bool insertionKeys(const Genome *g, uint32_t seq, bool reversed, int64_t o1, int64_t o2, std::vector<Key> &keys);
     void fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, bool reversed, std::string &out);
 };
