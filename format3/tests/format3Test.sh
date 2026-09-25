@@ -326,6 +326,79 @@ PYEOF
     python3 "$TMP/mafcols.py" "$TMP/j.maf" | LC_ALL=C sort >"$TMP/j.cols"
     python3 "$TMP/mafcols.py" "$TMP/j0.maf" | LC_ALL=C sort >"$TMP/j0.cols"
     check "joining leaves every reference column as it was" cmp "$TMP/j.cols" "$TMP/j0.cols"
+
+    # threads, TAF, row selection -- on the short-segment alignment, which has joins
+    same=0
+    for ext in maf maf.gz taf taf.gz; do
+        "$BIN/hal" maf "$A" "$TMP/t1.$ext" --refGenome "$leaf" --chunk 3000 2>/dev/null
+        "$BIN/hal" maf "$A" "$TMP/t3.$ext" --refGenome "$leaf" --chunk 3000 --threads 3 2>/dev/null
+        cmp -s "$TMP/t1.$ext" "$TMP/t3.$ext" && [ -s "$TMP/t1.$ext" ] && same=$((same + 1))
+    done
+    check "--threads 3: the same bytes as 1 thread, for .maf, .maf.gz, .taf and .taf.gz" test $same -eq 4
+    check "the name picks the format: .maf.gz is BGZF MAF, .taf.gz BGZF TAF" \
+        sh -c "gzip -dc '$TMP/t1.maf.gz' | cmp -s - '$TMP/t1.maf' && gzip -dc '$TMP/t1.taf.gz' | cmp -s - '$TMP/t1.taf' && head -1 '$TMP/t1.taf' | grep -q '^#taf'"
+    # TAF read back, as taffy reads it: each ';' line starts a block whose rows are the
+    # last block's, each moved past its bases, then changed by the operations in order
+    cat >"$TMP/taf2maf.py" <<'PYEOF'
+import sys
+rle, rows, block = False, [], None
+out = sys.stdout
+def flush():
+    if block is None: return
+    out.write("a\n")
+    for r, t in zip(rows, block):
+        size = len(t) - t.count("-")
+        out.write("s\t%s\t%d\t%d\t%s\t%d\t%s\n" % (r[0], r[1], size, r[2], r[3], t))
+    out.write("\n")
+for n, line in enumerate(open(sys.argv[1])):
+    if n == 0:
+        rle = "run_length_encode_bases:1" in line.split(); continue
+    tok = line.split()
+    k = tok.index(";") if ";" in tok else len(tok)
+    bases = tok[:k]
+    col = "".join(bases[i] * int(bases[i + 1]) for i in range(0, len(bases), 2)) if rle else bases[0]
+    if k < len(tok):
+        flush()
+        if block is not None:
+            for r, t in zip(rows, block): r[1] += len(t) - t.count("-")
+        ops, i = tok[k + 1:], 0
+        while i < len(ops):
+            o, j = ops[i], int(ops[i + 1])
+            if o == "d": del rows[j]; i += 2
+            elif o in "is":
+                r = [ops[i + 2], int(ops[i + 3]), ops[i + 4], int(ops[i + 5])]
+                if o == "i": rows.insert(j, r)
+                else: rows[j] = r
+                i += 6
+            elif o == "g": rows[j][1] += int(ops[i + 2]); i += 3
+            else: sys.exit("unknown operation " + o)
+        block = ["" for _ in rows]
+    if len(col) != len(rows): sys.exit("line %d: %d bases for %d rows" % (n + 1, len(col), len(rows)))
+    block = [t + c for t, c in zip(block, col)]
+flush()
+PYEOF
+    "$BIN/hal" maf "$A" "$TMP/tp.taf" --refGenome "$leaf" --chunk 3000 --noRunLength 2>/dev/null
+    check "TAF (run-length encoded and not) read back gives the MAF's blocks exactly" \
+        sh -c "grep -v -e '^#' -e '^\$' '$TMP/t1.maf' >'$TMP/t1.body' && python3 '$TMP/taf2maf.py' '$TMP/t1.taf' | grep -v '^\$' | cmp -s - '$TMP/t1.body' && python3 '$TMP/taf2maf.py' '$TMP/tp.taf' | grep -v '^\$' | cmp -s - '$TMP/t1.body'"
+    if command -v taffy >/dev/null; then
+        check "taffy view -m gives the MAF back" sh -c "taffy view -m -i '$TMP/t1.taf' | grep -v -e '^#' -e '^\$' | cmp -s - '$TMP/t1.body'"
+    fi
+    genomes=($("$BIN/halStats" --genomes "$H"))
+    other=${genomes[1]}; [ "$other" = "$leaf" ] && other=${genomes[2]}
+    "$BIN/hal" maf "$A" "$TMP/x.maf" --refGenome "$leaf" --excludeGenomes "$other" --joinGap 0 2>/dev/null
+    python3 "$TMP/mafcols.py" "$TMP/x.maf" | LC_ALL=C sort >"$TMP/x.cols"
+    check "--excludeGenomes $other: the default columns without $other's rows" \
+        cmp "$TMP/x.cols" <(awk -F'\t' -v g="$other." 'index($3, g) != 1' "$TMP/j0.cols")
+    # a reference with other copies of its bases in the output
+    for dup in "${genomes[@]}"; do
+        "$BIN/hal" maf "$A" "$TMP/d.maf" --refGenome "$dup" --joinGap 0 2>/dev/null
+        python3 "$TMP/mafcols.py" "$TMP/d.maf" | LC_ALL=C sort >"$TMP/d.cols"
+        [ "$(awk -F'\t' -v g="$dup." 'index($3, g) == 1' "$TMP/d.cols" | wc -l)" -gt 0 ] && break
+    done
+    "$BIN/hal" maf "$A" "$TMP/s.maf" --refGenome "$dup" --refSingleCopy --joinGap 0 2>/dev/null
+    python3 "$TMP/mafcols.py" "$TMP/s.maf" | LC_ALL=C sort >"$TMP/s.cols"
+    check "--refSingleCopy ($dup): the default columns without $(awk -F'\t' -v g="$dup." 'index($3, g) == 1' "$TMP/d.cols" | wc -l) bases of $dup's other rows" \
+        sh -c "test \$(awk -F'\t' -v g='$dup.' 'index(\$3, g) == 1' '$TMP/d.cols' | wc -l) -gt 0 && awk -F'\t' -v g='$dup.' 'index(\$3, g) != 1' '$TMP/d.cols' | cmp -s - '$TMP/s.cols'"
 fi
 
 echo "hal fasta against hal2fasta:"
@@ -405,6 +478,8 @@ PYEOF
     ref=$(echo "$leaves" | head -1)
     check "--numSamples 5000: no leaf covers more than 5000 samples" \
         test "$("$BIN/hal" coverage "$A" "$ref" --numSamples 5000 --seed 3 | awk -F', ' 'NR>1 && $2>5000' | wc -l)" -eq 0
+    check "--threads 3: the same tables, exact and sampled, by sequence" \
+        sh -c "for o in '' '--numSamples 5000 --seed 3' '--bySequence'; do '$BIN/hal' coverage '$A' '$ref' \$o >'$TMP/c1.txt' && '$BIN/hal' coverage '$A' '$ref' \$o --threads 3 --chunk 3000 | cmp -s - '$TMP/c1.txt' || exit 1; done"
 fi
 
 echo "single file (pack):"

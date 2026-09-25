@@ -16,7 +16,12 @@
  *
  * Scope: the spanning tree of the printed genomes -- the targets, or the subtree of
  * rootGenome, or every genome -- and the reference.  Only printed genomes get pieces;
- * ancestors are left out with ancestors = false.
+ * ancestors are left out with ancestors = false, excluded genomes always, and the
+ * reference's own other copies with refSingleCopy.  Leaving a genome out of the printed
+ * set changes no other genome's pieces: the walk still goes through it.
+ *
+ * Also here, for the commands built on the walk: cutting reference intervals into
+ * chunks, and running chunks on several threads with results taken in order.
  */
 #ifndef _HAL3WALK_H
 #define _HAL3WALK_H
@@ -24,9 +29,16 @@
 #include "hal3Alignment.h"
 #include "hal3Liftover.h"
 
+#include <algorithm>
+#include <condition_variable>
+#include <exception>
+#include <functional>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <set>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -38,6 +50,8 @@ struct WalkOptions {
     bool onlyOrthologs = false;
     std::vector<std::string> targets;   /* empty: every genome */
     std::string rootGenome;
+    std::vector<std::string> exclude;   /* never printed */
+    bool refSingleCopy = false;         /* the reference's other copies not printed */
 };
 
 class TreeWalk {
@@ -74,6 +88,98 @@ class TreeWalk {
 
 /* Merge pieces contiguous in both source and target. */
 void coalescePieces(std::vector<LiftPiece> &v);
+
+/* [start, end) of reference sequence seq. */
+struct RefInterval {
+    uint32_t seq;
+    int64_t start, end;
+};
+
+/* Each interval cut every `size` bases from its start, in order. */
+std::vector<RefInterval> chunkIntervals(const std::vector<RefInterval> &intervals, int64_t size);
+
+/* produce(k) for k = 0 .. n-1 on `threads` threads, and consume(k, result) on the
+ * calling thread in order of k.  A thread takes the next k only while fewer than
+ * 2 x threads results are taken and not yet consumed, which bounds what waits.  The
+ * first exception, from either, stops the rest and is rethrown once every thread has
+ * finished.  With one thread, each k is produced and consumed in turn on the calling
+ * thread. */
+template <class R>
+void orderedParallel(size_t n, int threads, const std::function<R(size_t)> &produce,
+                     const std::function<void(size_t, R &)> &consume) {
+    if (threads <= 1 || n <= 1) {
+        for (size_t k = 0; k < n; k++) {
+            R r = produce(k);
+            consume(k, r);
+        }
+        return;
+    }
+    std::mutex m;
+    std::condition_variable cv;
+    std::vector<std::unique_ptr<R>> done(n);
+    size_t taken = 0, consumed = 0, ahead = 2 * (size_t)threads;
+    bool stop = false;
+    std::exception_ptr error;
+    auto fail = [&]() {   /* with m held */
+        if (!error) error = std::current_exception();
+        stop = true;
+        cv.notify_all();
+    };
+    auto work = [&]() {
+        for (;;) {
+            size_t k;
+            {
+                std::unique_lock<std::mutex> lock(m);
+                cv.wait(lock, [&]() { return stop || taken >= n || taken < consumed + ahead; });
+                if (stop || taken >= n) return;
+                k = taken++;
+            }
+            try {
+                std::unique_ptr<R> r(new R(produce(k)));
+                std::lock_guard<std::mutex> lock(m);
+                done[k] = std::move(r);
+                cv.notify_all();
+            } catch (...) {
+                std::lock_guard<std::mutex> lock(m);
+                fail();
+                return;
+            }
+        }
+    };
+    std::vector<std::thread> pool;
+    try {
+        for (size_t t = 0; t < std::min<size_t>((size_t)threads, n); t++) pool.emplace_back(work);
+    } catch (...) {   /* a thread could not be started: stop the others, then report it */
+        {
+            std::lock_guard<std::mutex> lock(m);
+            stop = true;
+            cv.notify_all();
+        }
+        for (std::thread &t : pool) t.join();
+        throw;
+    }
+    for (size_t k = 0; k < n; k++) {
+        std::unique_ptr<R> r;
+        {
+            std::unique_lock<std::mutex> lock(m);
+            cv.wait(lock, [&]() { return stop || done[k]; });
+            if (stop) break;
+            r = std::move(done[k]);
+        }
+        try {
+            consume(k, *r);
+        } catch (...) {
+            std::lock_guard<std::mutex> lock(m);
+            fail();
+            break;
+        }
+        std::lock_guard<std::mutex> lock(m);
+        consumed = k + 1;
+        cv.notify_all();
+    }
+    for (std::thread &t : pool) t.join();
+    if (error) std::rethrow_exception(error);
+}
 }
 
 #endif

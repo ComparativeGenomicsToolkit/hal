@@ -1,5 +1,5 @@
 /*
- * HAL format 3: MAF export, row by row, built on liftover.
+ * HAL format 3: MAF and TAF export, row by row, built on liftover.
  *
  * For each chunk of a reference sequence, the tree walk (hal3Walk.h) lifts it to every
  * genome in scope at once: hal2maf's columns.
@@ -20,22 +20,35 @@
  * different rows share such a column when they share a top key, i.e. descend from the
  * same ancestral base, which is exactly HAL's homology (no re-alignment).
  *
- * Output is MAF (hal2maf's header, 'a' lines, tab-separated 's' lines named
- * genome.sequence), in reference order; the reference row first, then rows by genome
- * name, sequence and position.  No HAL API; DNA comes from the .2bit files.
+ * Rows: the reference row first, then genomes by their distance from the reference in
+ * the tree's preorder (cactus-hal2maf's order), and within a genome by sequence name,
+ * strand (+ first) and position (taffy sort's).
+ *
+ * Output, in reference order:
+ *   MAF: hal2maf's header, 'a' lines, tab-separated 's' lines named genome.sequence.
+ *   TAF: the same blocks as taffy writes them (taffy view -m gives the MAF back): one
+ *        line per column, run-length encoded by default, the rows' coordinates at each
+ *        block's first column.  A row continues from one block to the next exactly
+ *        when it is the same row (no guessing, as taffy must from MAF); a row that
+ *        ends and a later one on the same sequence and strand also continue, with the
+ *        bases between skipped ("g").  All rows are given coordinates where the
+ *        reference's are, as taffy does, so taffy index and view -r work.
+ * Either plain or BGZF (blocked gzip, readable by gzip, indexable by taffy index).
+ *
+ * Chunks and threads: every interval is cut into chunks of opts.chunk bases, and no
+ * block, row or insertion crosses a chunk edge, so each chunk is exported on its own:
+ * by any of the worker threads, each with its own cursors and DNA handles for the
+ * length of the chunk (which bounds memory), and written out in order.  The output is
+ * the same, byte for byte, for any number of threads.  No HAL API; DNA comes from the
+ * .2bit files.
  */
 #ifndef _HAL3MAFEXPORT_H
 #define _HAL3MAFEXPORT_H
 
 #include "hal3Alignment.h"
-#include "hal3Liftover.h"
 #include "hal3Walk.h"
-#include "twobit64.h"
 
 #include <cstdint>
-#include <map>
-#include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -47,6 +60,8 @@ struct MafOptions {
     bool onlyOrthologs = false;
     std::vector<std::string> targets;   /* --targetGenomes; empty: all */
     std::string rootGenome;             /* --rootGenome */
+    std::vector<std::string> exclude;   /* --excludeGenomes: no rows for these */
+    bool refSingleCopy = false;         /* no rows for the reference's other copies */
     double breakFrac = 0.5;
     double gapBudget = 1.0;
     int64_t maxBlockCols = 10000;
@@ -57,55 +72,25 @@ struct MafOptions {
     bool onlySequenceNames = false;
 };
 
-/* Where MAF text goes: plain, or BGZF (blocked gzip, readable by gzip and indexable). */
-class MafSink {
-  public:
-    virtual ~MafSink() {}
-    virtual void write(const std::string &text) = 0;
-    virtual void close() = 0;
+struct MafFormat {
+    bool taf = false;
+    bool bgzf = false;
+    bool runLength = true;              /* TAF: run-length encode each column's bases */
 };
-/* "stdout" or a path.  Throws std::runtime_error. */
-std::unique_ptr<MafSink> openMafSink(const std::string &path, bool bgzf);
 
-class MafExporter {
-  public:
-    MafExporter(const Alignment &alignment, const Genome *ref, const MafOptions &opts, MafSink &out);
-    ~MafExporter();
-    MafExporter(const MafExporter &) = delete;
-    MafExporter &operator=(const MafExporter &) = delete;
-
-    void writeHeader();
-    /* [start, end) of one reference sequence; blocks never cross its ends. */
-    void exportInterval(uint32_t refSeq, int64_t start, int64_t end);
-
-    struct Stats {
-        uint64_t blocks = 0, rows = 0, columns = 0, alignedBases = 0;
-        uint64_t insertionColumns = 0, insertedBases = 0, joinsRejected = 0;
-    };
-    const Stats &stats() const { return _stats; }
-
-  private:
-    struct Chain;
-    struct Key {   /* a top ancestral base: where a base's homology is decided */
-        const Genome *node;
-        uint32_t seq;
-        int64_t pos;
-        bool operator<(const Key &o) const;
-        bool operator==(const Key &o) const { return node == o.node && seq == o.seq && pos == o.pos; }
-    };
-    const Alignment &_aln;
-    const Genome *_ref;
-    MafOptions _opts;
-    MafSink &_out;
-    TreeWalk _walk;
-    std::map<const Genome *, tb_file *> _dna;
-    std::map<const Genome *, std::vector<int64_t>> _dnaIndex;
-    Stats _stats;
-
-    void chunk(uint32_t refSeq, int64_t start, int64_t end);
-    bool insertionKeys(const Genome *g, uint32_t seq, bool reversed, int64_t o1, int64_t o2, std::vector<Key> &keys);
-    void fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, bool reversed, std::string &out);
+struct MafStats {
+    uint64_t blocks = 0, rows = 0, columns = 0, alignedBases = 0;
+    uint64_t insertionColumns = 0, insertedBases = 0, joinsRejected = 0;
 };
+
+/* The blocks of these reference intervals (blocks never cross an interval's ends), in
+ * order, to path ("stdout" or a file), exported by `threads` threads.  With one thread
+ * each chunk is written as it is made; with more, a chunk's output waits for the chunks
+ * before it in memory, or past 32 MB in an unlinked temporary file beside the output
+ * (in $TMPDIR, else /tmp, for stdout or when that directory cannot be written).  Throws
+ * std::runtime_error. */
+MafStats exportMaf(const Alignment &alignment, const Genome *ref, const MafOptions &opts, const MafFormat &format,
+                   const std::vector<RefInterval> &intervals, const std::string &path, int threads);
 }
 
 #endif

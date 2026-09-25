@@ -31,6 +31,7 @@ static const char *COVERAGE_USAGE =
     "  --seed S         random seed for --numSamples (default: the time)\n"
     "  --bySequence     also a table for each reference sequence\n"
     "  --refSequence S  only this reference sequence (and so only its table)\n"
+    "  --threads N      count N chunks of the reference at once (default 1)\n"
     "  -h, --help\n";
 
 namespace {
@@ -42,6 +43,11 @@ void add(Hist &h, int depth, uint64_t weight) {
     if (depth <= 0) return;
     if ((int)h.size() < depth) h.resize((size_t)depth, 0);
     for (int k = 0; k < depth; k++) h[(size_t)k] += weight;
+}
+
+void add(Hist &h, const Hist &o) {
+    if (h.size() < o.size()) h.resize(o.size(), 0);
+    for (size_t k = 0; k < o.size(); k++) h[k] += o[k];
 }
 
 /* The depth of pieces over [cs, ce), as (position, depth) steps in order. */
@@ -65,14 +71,16 @@ vector<pair<int64_t, int>> depthSteps(const vector<LiftPiece> &pieces) {
 
 int main_coverage(int argc, char **argv) {
     return runCommand("coverage", [&]() {
-        int64_t numSamples = 0, seed = 0;
+        int64_t numSamples = 0, seed = 0, threads = 1, chunk = 2000000;
         bool bySequence = false;
         string refSeqName;
-        enum { NUM_SAMPLES = 1000, SEED, BY_SEQUENCE, REF_SEQUENCE };
+        enum { NUM_SAMPLES = 1000, SEED, BY_SEQUENCE, REF_SEQUENCE, THREADS, CHUNK };
         static const option longOpts[] = {{"numSamples", required_argument, nullptr, NUM_SAMPLES},
                                           {"seed", required_argument, nullptr, SEED},
                                           {"bySequence", no_argument, nullptr, BY_SEQUENCE},
                                           {"refSequence", required_argument, nullptr, REF_SEQUENCE},
+                                          {"threads", required_argument, nullptr, THREADS},
+                                          {"chunk", required_argument, nullptr, CHUNK},
                                           {"help", no_argument, nullptr, 'h'},
                                           {nullptr, 0, nullptr, 0}};
         int c;
@@ -82,12 +90,15 @@ int main_coverage(int argc, char **argv) {
             case SEED: seed = parseInt("seed", optarg); break;
             case BY_SEQUENCE: bySequence = true; break;
             case REF_SEQUENCE: refSeqName = optarg; break;
+            case THREADS: threads = parseInt("threads", optarg); break;
+            case CHUNK: chunk = parseInt("chunk", optarg); break;
             case 'h': cout << COVERAGE_USAGE; return 0;
             default: throw CliError("bad option");
             }
         }
         if (argc - optind != 2) throw CliError("expected 2 arguments, got " + to_string(argc - optind));
         if (numSamples < 0) throw CliError("--numSamples must not be negative");
+        if (threads < 1 || chunk < 1) throw CliError("--threads and --chunk must be positive");
         Alignment aln(argv[optind]);
         const Genome *ref = aln.genome(argv[optind + 1]);
         if (!ref) throw runtime_error(string("Genome ") + argv[optind + 1] + " not found");
@@ -103,7 +114,7 @@ int main_coverage(int argc, char **argv) {
         WalkOptions wo;
         wo.onlyOrthologs = true;
         for (const Genome *l : leaves) wo.targets.push_back(l->name());
-        TreeWalk walk(aln, ref, wo);
+        { TreeWalk check(aln, ref, wo); }
 
         vector<uint32_t> seqs;
         if (!refSeqName.empty()) {
@@ -133,42 +144,48 @@ int main_coverage(int argc, char **argv) {
             }
         }
 
+        /* chunks, counted on their own (each with its own walk, so its own cursors) and
+         * added up in order */
+        vector<RefInterval> whole0;
+        for (uint32_t si : seqs) whole0.push_back(RefInterval{si, 0, ref->sequenceLength(si)});
+        const vector<RefInterval> chunks = chunkIntervals(whole0, chunk);
         map<const Genome *, Hist> whole;
         map<uint32_t, map<const Genome *, Hist>> bySeq;
-        const int64_t chunk = 2000000;
-        map<const Genome *, vector<LiftPiece>> pieces;
-        for (uint32_t si : seqs) {
-            int64_t len = ref->sequenceLength(si);
-            for (int64_t cs = 0; cs < len; cs += chunk) {
-                int64_t ce = min(len, cs + chunk);
+        orderedParallel<map<const Genome *, Hist>>(
+            chunks.size(), (int)threads,
+            [&](size_t k) {
+                const uint32_t si = chunks[k].seq;
+                const int64_t cs = chunks[k].start, ce = chunks[k].end;
+                map<const Genome *, Hist> part;
                 vector<pair<int64_t, int64_t>> intervals;
                 vector<pair<int64_t, uint64_t>> points;   /* sampled positions in this chunk */
                 if (numSamples > 0) {
-                    auto &sm = samples[si];
-                    for (auto it = sm.lower_bound(cs); it != sm.end() && it->first < ce; ++it) {
-                        points.push_back(*it);
-                        if (!intervals.empty() && intervals.back().second == it->first) intervals.back().second++;
-                        else intervals.push_back({it->first, it->first + 1});
-                    }
-                    if (intervals.empty()) continue;
+                    auto sm = samples.find(si);
+                    if (sm != samples.end())
+                        for (auto it = sm->second.lower_bound(cs); it != sm->second.end() && it->first < ce; ++it) {
+                            points.push_back(*it);
+                            if (!intervals.empty() && intervals.back().second == it->first) intervals.back().second++;
+                            else intervals.push_back({it->first, it->first + 1});
+                        }
+                    if (intervals.empty()) return part;
                 } else {
                     intervals.push_back({cs, ce});
                 }
+                TreeWalk walk(aln, ref, wo);
+                map<const Genome *, vector<LiftPiece>> pieces;
                 walk.lift(si, intervals, pieces);
                 for (const Genome *g : leaves) {
-                    const vector<LiftPiece> &ps = pieces[g];
+                    auto pg = pieces.find(g);
+                    vector<pair<int64_t, int>> steps = depthSteps(pg == pieces.end() ? vector<LiftPiece>() : pg->second);
                     /* the reference covers itself once, as liftover to itself gives the base */
                     int self = g == ref ? 1 : 0;
-                    vector<pair<int64_t, int>> steps = depthSteps(ps);
-                    Hist &h = whole[g];
-                    Hist *hs = bySequence ? &bySeq[si][g] : nullptr;
+                    Hist &h = part[g];
                     if (numSamples > 0) {
-                        size_t k = 0;
+                        size_t i = 0;
                         int d = 0;
                         for (auto &pt : points) {
-                            while (k < steps.size() && steps[k].first <= pt.first) d = steps[k++].second;
+                            while (i < steps.size() && steps[i].first <= pt.first) d = steps[i++].second;
                             add(h, d + self, pt.second);
-                            if (hs) add(*hs, d + self, pt.second);
                         }
                     } else {
                         int64_t x = cs;
@@ -176,19 +193,21 @@ int main_coverage(int argc, char **argv) {
                         for (auto &st : steps) {
                             if (st.first > x) {
                                 add(h, d + self, (uint64_t)(st.first - x));
-                                if (hs) add(*hs, d + self, (uint64_t)(st.first - x));
                                 x = st.first;
                             }
                             d = st.second;
                         }
-                        if (ce > x) {
-                            add(h, d + self, (uint64_t)(ce - x));
-                            if (hs) add(*hs, d + self, (uint64_t)(ce - x));
-                        }
+                        if (ce > x) add(h, d + self, (uint64_t)(ce - x));
                     }
                 }
-            }
-        }
+                return part;
+            },
+            [&](size_t k, map<const Genome *, Hist> &part) {
+                for (auto &gh : part) {
+                    add(whole[gh.first], gh.second);
+                    if (bySequence) add(bySeq[chunks[k].seq][gh.first], gh.second);
+                }
+            });
 
         size_t maxDepth = 0;
         for (auto &w : whole) maxDepth = max(maxDepth, w.second.size());

@@ -57,6 +57,10 @@ class Genome {
     mutable std::once_flag _opened;
     mutable lmap_file *_hgn = nullptr;
     mutable std::vector<int64_t> _starts;      /* numSequences + 1 */
+    mutable std::string _openError;            /* why _hgn could not be opened */
+    mutable std::once_flag _dnaOpened;
+    mutable lmap_io *_dna = nullptr;           /* the .2bit, for shared openDna handles */
+    mutable std::string _dnaError;
     void open() const;
 };
 
@@ -72,8 +76,12 @@ class Alignment {
     const Manifest &manifest() const { return _manifest; }
     const std::string &path() const { return _path; }
     const Store &store() const { return *_store; }
-    /* g's DNA; the caller tb_close()s it.  Throws if the genome has none. */
-    tb_file *openDna(const Genome *g) const;
+    /* g's DNA; the caller tb_close()s it, before the Alignment goes.  A shared handle
+     * reads through one file handle per genome, opened on first use and kept until the
+     * Alignment goes, so reopening is cheap and holds no descriptor of its own (for
+     * callers that reopen, like hal maf per chunk); otherwise the handle has its own.
+     * Throws if the genome has none. */
+    tb_file *openDna(const Genome *g, bool shared = false) const;
     const Genome *root() const { return _genomes.empty() ? nullptr : _genomes[0].get(); }
     const Genome *genome(const std::string &name) const;    /* nullptr if absent */
 

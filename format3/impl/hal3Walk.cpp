@@ -12,7 +12,7 @@ using namespace std;
 namespace hal3 {
 
 TreeWalk::TreeWalk(const Alignment &alignment, const Genome *ref, const WalkOptions &opts)
-    : _aln(alignment), _ref(ref), _opts(opts), _cursors((size_t)1 << 20, 4096) {
+    : _aln(alignment), _ref(ref), _opts(opts), _cursors((size_t)1 << 20, 1024) {
     /* printed genomes: the targets (or the subtree of rootGenome) and the reference;
      * scope: the spanning tree of those, whose top is where the walk turns */
     auto subtree = [](const Genome *r, vector<const Genome *> &out) {
@@ -54,6 +54,20 @@ TreeWalk::TreeWalk(const Alignment &alignment, const Genome *ref, const WalkOpti
         for (auto it = _printed.begin(); it != _printed.end();)
             it = (*it)->children().empty() ? next(it) : _printed.erase(it);
     }
+    for (const string &x : _opts.exclude) {
+        const Genome *g = _aln.genome(x);
+        if (!g) throw runtime_error("no genome " + x);
+        if (g == _ref) throw runtime_error("the reference genome " + x + " cannot be excluded");
+        _printed.erase(g);
+    }
+    if (_opts.refSingleCopy) _printed.erase(_ref);
+}
+
+vector<RefInterval> chunkIntervals(const vector<RefInterval> &intervals, int64_t size) {
+    vector<RefInterval> out;
+    for (const RefInterval &iv : intervals)
+        for (int64_t s = iv.start; s < iv.end; s += size) out.push_back(RefInterval{iv.seq, s, min(iv.end, s + size)});
+    return out;
 }
 
 void coalescePieces(vector<LiftPiece> &v) {

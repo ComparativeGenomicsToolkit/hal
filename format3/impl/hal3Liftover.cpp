@@ -160,21 +160,22 @@ CursorCache::~CursorCache() {
 void CursorCache::query(const Genome *g, int axis, uint32_t m, int64_t lo, int64_t hi, vector<lmap_hit> &out) {
     out.clear();
     lmap_file *f = g->hgn();
-    auto key = make_tuple(f, axis, m);
+    Key key = make_tuple(f, axis, m);
     auto it = _open.find(key);
     if (it == _open.end()) {
-        if (_open.size() >= _max) {
-            auto oldest = _open.begin();
-            for (auto i = _open.begin(); i != _open.end(); ++i)
-                if (i->second.lastUse < oldest->second.lastUse) oldest = i;
+        if (_open.size() >= _max && !_lru.empty()) {
+            auto oldest = _open.find(_lru.back());
             lmap_cursor_close(oldest->second.cursor);
             _open.erase(oldest);
+            _lru.pop_back();
         }
         lmap_cursor *c = lmap_cursor_open(f, axis, m, nullptr, 0, _bytes);
         if (!c) throw runtime_error("cannot open a cursor on " + g->name());
-        it = _open.emplace(key, Entry{c, 0}).first;
+        _lru.push_front(key);
+        it = _open.emplace(key, Entry{c, _lru.begin()}).first;
+    } else if (it->second.use != _lru.begin()) {
+        _lru.splice(_lru.begin(), _lru, it->second.use);
     }
-    it->second.lastUse = ++_clock;
     lmap_cursor *c = it->second.cursor;
     lmap_hit h, clipped;
     int rc = lmap_cursor_seek(c, lo, hi);

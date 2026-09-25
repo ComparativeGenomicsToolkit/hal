@@ -29,6 +29,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 namespace hal3 {
@@ -57,13 +58,19 @@ class CursorCache {
     void query(const Genome *g, int axis, uint32_t m, int64_t lo, int64_t hi, std::vector<lmap_hit> &out);
 
   private:
+    typedef std::tuple<lmap_file *, int, uint32_t> Key;
+    struct KeyHash {
+        size_t operator()(const Key &k) const {
+            return std::hash<const void *>()(std::get<0>(k)) ^ ((size_t)std::get<2>(k) * 2 + (size_t)std::get<1>(k)) * 0x9e3779b97f4a7c15ULL;
+        }
+    };
     struct Entry {
         lmap_cursor *cursor;
-        uint64_t lastUse;
+        std::list<Key>::iterator use;   /* its place in _lru */
     };
     size_t _bytes, _max;
-    uint64_t _clock = 0;
-    std::map<std::tuple<lmap_file *, int, uint32_t>, Entry> _open;
+    std::list<Key> _lru;                /* most recently used first */
+    std::unordered_map<Key, Entry, KeyHash> _open;
 };
 
 /* One branch at a time.  A piece relates a source interval to an interval of the
