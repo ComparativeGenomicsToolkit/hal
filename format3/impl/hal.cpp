@@ -29,6 +29,7 @@ const Command COMMANDS[] = {
     {"pack", "write an alignment as a single file (or compact one)", hal3::main_pack},
     {"unpack", "write an alignment as a directory", hal3::main_unpack},
     {"ls", "list an alignment's members", hal3::main_ls},
+    {"update", "split, join, subset, replace or rename genomes", hal3::main_update},
 };
 
 void usage(ostream &os) {

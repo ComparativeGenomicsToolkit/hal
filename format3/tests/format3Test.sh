@@ -435,5 +435,38 @@ if [ -x "$BIN/hal3PackTest" ]; then
         "$BIN/hal3PackTest" "$TMP/crash.hal"
 fi
 
+echo "hal update:"
+P="$TMP/r7.pack.hal"
+root=$("$BIN/hal" stats "$P" --root)
+kids=($("$BIN/hal" stats "$P" --children "$root"))
+mid="${kids[0]}"
+for c in "${kids[@]}"; do [ -n "$("$BIN/hal" stats "$P" --children "$c")" ] && { mid=$c; break; }; done
+grand=($("$BIN/hal" stats "$P" --children "$mid"))
+prunes=""; for c in "${grand[@]}"; do prunes="$prunes --prune $c"; done
+"$BIN/hal" update "$P" "$TMP/u.top.hal" $prunes >/dev/null 2>&1
+"$BIN/hal" update "$P" "$TMP/u.sub.hal" --extract "$mid" >/dev/null 2>&1
+"$BIN/hal" update "$TMP/u.top.hal" "$TMP/u.joined.hal" --graft "$TMP/u.sub.hal" >/dev/null 2>&1
+rm -rf "$TMP/u1" "$TMP/u2"; "$BIN/hal" unpack "$P" "$TMP/u1" >/dev/null 2>&1; "$BIN/hal" unpack "$TMP/u.joined.hal" "$TMP/u2" >/dev/null 2>&1
+check "split at $mid (prune below it / extract it) and graft back: every file as it was" diff -r "$TMP/u1" "$TMP/u2"
+check "the extracted subtree validates" "$BIN/hal" validate "$TMP/u.sub.hal"
+leaves=($("$BIN/hal" stats "$P" --genomes))
+l1=""; l2=""
+for g in "${leaves[@]}"; do
+    if [ -z "$("$BIN/hal" stats "$P" --children "$g")" ]; then [ -z "$l1" ] && l1=$g || l2=$g; fi
+done
+check "--keep $l1,$l2: the spanning tree, valid" \
+    sh -c "'$BIN/hal' update '$P' '$TMP/u.keep.hal' --keep $l1,$l2 >/dev/null 2>&1 && '$BIN/hal' validate '$TMP/u.keep.hal'"
+cp "$P" "$TMP/u.ip.hal"
+"$BIN/hal" update --inPlace "$TMP/u.ip.hal" --remove "$l2" --rename "$mid=RenamedAnc" >/dev/null 2>&1
+"$BIN/hal" update "$P" "$TMP/u.new.hal" --remove "$l2" --rename "$mid=RenamedAnc" >/dev/null 2>&1
+rm -rf "$TMP/u1" "$TMP/u2"; "$BIN/hal" unpack "$TMP/u.ip.hal" "$TMP/u1" >/dev/null 2>&1; "$BIN/hal" unpack "$TMP/u.new.hal" "$TMP/u2" >/dev/null 2>&1
+check "--inPlace (remove + rename, one transaction) gives what a new file gets, and validates" \
+    sh -c "diff -r '$TMP/u1' '$TMP/u2' && '$BIN/hal' validate '$TMP/u.ip.hal'"
+check "the input is untouched by an update to a new file" cmp "$P" "$TMP/r7.packed.hal"
+refuses "removing an ancestor but not its children is refused" "$BIN/hal" update "$P" "$TMP/u.bad.hal" --remove "$mid"
+check "... and writes nothing" test ! -e "$TMP/u.bad.hal"
+refuses "grafting genomes that are already there is refused" "$BIN/hal" update "$P" "$TMP/u.bad.hal" --graft "$TMP/u.sub.hal"
+refuses "replacing a genome with another alignment's root is refused" "$BIN/hal" update "$P" "$TMP/u.bad.hal" --replace "$TMP/u.sub.hal:$mid"
+
 if [ $fails -eq 0 ]; then echo "ALL PASS (0 failures)"; else echo "FAILURES ($fails)"; fi
 exit $((fails > 0))
