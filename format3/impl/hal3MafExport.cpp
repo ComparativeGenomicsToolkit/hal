@@ -246,8 +246,7 @@ void MafExporter::fetch(const Genome *g, uint32_t seq, int64_t start, int64_t en
         const GenomeEntry *e = _aln.manifest().find(g->name());
         if (!e || e->dnaPath.empty())
             throw runtime_error("genome " + g->name() + " has no DNA in this alignment (--noDna writes N)");
-        tb_file *f = tb_open((_aln.dir() + "/" + e->dnaPath).c_str());
-        if (!f) throw runtime_error("cannot open " + e->dnaPath);
+        tb_file *f = _aln.openDna(g);
         it = _dna.emplace(g, f).first;
         vector<int64_t> &idx = _dnaIndex[g];
         for (uint32_t i = 0; i < g->numSequences(); i++)

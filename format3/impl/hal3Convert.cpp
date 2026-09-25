@@ -4,6 +4,7 @@
 #include "hal3Convert.h"
 #include "hal.h"
 #include "hal3Manifest.h"
+#include "hal3Store.h"
 #include "liftmap.h"
 #include "twobit64.h"
 
@@ -143,7 +144,7 @@ GenomeConversion convertGenome(const Alignment *alignment, const string &name, c
     return out;
 }
 
-uint64_t checkGenome(const Alignment *alignment, const string &name, const string &genomesDir, uint64_t nSamples,
+uint64_t checkGenome(const Alignment *alignment, const string &name, const Store &store, uint64_t nSamples,
                      uint64_t seed, ostream &log) {
     uint64_t bad = 0;
     auto complain = [&](const string &what) {
@@ -153,9 +154,10 @@ uint64_t checkGenome(const Alignment *alignment, const string &name, const strin
     const Genome *parent = genome->getParent();
     vector<SeqInfo> seqs = sequencesOf(genome), pseqs;
     if (parent) pseqs = sequencesOf(parent);
-    string stem = genomesDir + "/" + genomeFileStem(name);
+    string stem = "genomes/" + genomeFileStem(name);
 
-    unique_ptr<lmap_file, void (*)(lmap_file *)> f(lmap_open((stem + ".hgn").c_str()), lmap_close);
+    unique_ptr<lmap_file, void (*)(lmap_file *)> f(nullptr, lmap_close);
+    if (store.has(stem + ".hgn")) f.reset(lmap_open_io(store.openMember(stem + ".hgn"), 1));
     if (!f) {
         complain("cannot open " + stem + ".hgn");
         return bad;
@@ -176,7 +178,11 @@ uint64_t checkGenome(const Alignment *alignment, const string &name, const strin
         }
     unique_ptr<tb_file, void (*)(tb_file *)> dna(NULL, tb_close);
     if (genome->containsDNAArray()) {
-        dna.reset(tb_open((stem + ".2bit").c_str()));
+        if (store.has(stem + ".2bit")) {
+            lmap_io *io = store.openMember(stem + ".2bit");
+            dna.reset(tb_open_io(io, 1));
+            if (!dna) lmap_io_close(io);
+        }
         if (!dna) complain("cannot open " + stem + ".2bit");
         else if (tb_n_seqs(dna.get()) != seqs.size()) complain(".2bit has the wrong number of sequences");
         else

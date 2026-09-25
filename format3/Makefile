@@ -14,10 +14,10 @@ format3LDLIBS = -lz -lpthread $(shell nm ${liftmapDir}/libliftmap.a 2>/dev/null 
 # hal with no HDF5 at all.
 hal3Hdf5 ?= 1
 
-libHal3_srcs = impl/hal3Manifest.cpp impl/hal3Alignment.cpp impl/hal3Liftover.cpp impl/hal3Walk.cpp \
+libHal3_srcs = impl/hal3Manifest.cpp impl/hal3Store.cpp impl/hal3Alignment.cpp impl/hal3Liftover.cpp impl/hal3Walk.cpp \
     impl/hal3MafExport.cpp impl/hal3Cli.cpp
 libHal3_objs = ${libHal3_srcs:%.cpp=${modObjDir}/%.o}
-cmd_srcs = impl/cmd_validate.cpp impl/cmd_liftover.cpp impl/cmd_maf.cpp impl/cmd_fasta.cpp impl/cmd_stats.cpp impl/cmd_coverage.cpp
+cmd_srcs = impl/cmd_validate.cpp impl/cmd_liftover.cpp impl/cmd_maf.cpp impl/cmd_fasta.cpp impl/cmd_stats.cpp impl/cmd_coverage.cpp impl/cmd_pack.cpp
 convert_srcs = impl/cmd_convert.cpp impl/hal3Convert.cpp
 # halLiftover's BED reading and writing, used as is (they need nothing of libHal but
 # halCommon's string helpers), compiled here so no HAL library is linked
@@ -76,9 +76,13 @@ ${modObjDir}/shared/%.o: ${rootDir}/api/impl/%.cpp
 	${CXX} ${CXXFLAGS} ${inclSpec} -c $< -o $@
 
 clean :
-	rm -f ${libHal3} ${objs} ${halShared_objs} ${progs} ${depends}
+	rm -f ${libHal3} ${objs} ${halShared_objs} ${progs} ${depends} ${binDir}/hal3PackTest
 
-test: all
+${binDir}/hal3PackTest: tests/packTest.cpp ${format3Libs}
+	@mkdir -p $(dir $@)
+	${hal3CXX} -std=c++11 ${inclSpec} -o $@ $< ${format3Libs} ${format3LDLIBS}
+
+test: all ${binDir}/hal3PackTest
 	./tests/format3Test.sh ${binDir}
 
 include ${rootDir}/rules.mk

@@ -76,9 +76,7 @@ struct Writer {
     /* A genome, or its range of concatenated sequences, as hal2fasta's printGenome. */
     void genome(const Alignment &aln, const Genome *g, int64_t seqOnly, int64_t start, int64_t length) {
         const GenomeEntry *e = aln.manifest().find(g->name());
-        if (!e || e->dnaPath.empty()) throw runtime_error("genome " + g->name() + " has no DNA in this alignment");
-        unique_ptr<tb_file, void (*)(tb_file *)> dna(tb_open((aln.dir() + "/" + e->dnaPath).c_str()), tb_close);
-        if (!dna) throw runtime_error("cannot open " + e->dnaPath);
+        unique_ptr<tb_file, void (*)(tb_file *)> dna(aln.openDna(g), tb_close);
         auto tbIndex = [&](uint32_t i) {
             int64_t t = i < tb_n_seqs(dna.get()) && !strcmp(tb_name(dna.get(), i), g->sequenceName(i))
                             ? (int64_t)i

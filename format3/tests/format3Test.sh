@@ -20,9 +20,13 @@ check() {   # check "what" command...
     local what=$1; shift
     if "$@" >"$TMP/out" 2>&1; then echo "  ok   $what"; else echo "  FAIL $what"; sed 's/^/       /' "$TMP/out" | head -5; fails=$((fails + 1)); fi
 }
-refuses() {   # refuses "what" command...  (must exit non-zero)
+refuses() {   # refuses "what" command...  (must exit non-zero, and not by crashing)
     local what=$1; shift
-    if "$@" >"$TMP/out" 2>&1; then echo "  FAIL $what (was accepted)"; fails=$((fails + 1)); else echo "  ok   $what"; fi
+    "$@" >"$TMP/out" 2>&1
+    local status=$?
+    if [ $status -eq 0 ]; then echo "  FAIL $what (was accepted)"; fails=$((fails + 1))
+    elif [ $status -ge 128 ]; then echo "  FAIL $what (crashed: exit status $status)"; fails=$((fails + 1))
+    else echo "  ok   $what"; fi
 }
 
 echo "conversion:"
@@ -30,13 +34,13 @@ for seed in 1 7 23; do
     for fmt in hdf5 mmap; do
         "$BIN/halRandGen" --testRand --seed $seed --format $fmt "$TMP/r$seed.$fmt.hal" >/dev/null 2>&1
         check "seed $seed, $fmt: converts and passes the check against HAL" \
-            "$BIN/hal" convert "$TMP/r$seed.$fmt.hal" "$TMP/r$seed.$fmt" --threads 3 --check 2000
+            "$BIN/hal" convert "$TMP/r$seed.$fmt.hal" "$TMP/r$seed.$fmt" --threads 3 --check 2000 --directory
         check "seed $seed, $fmt: hal3Validate passes" "$BIN/hal" validate "$TMP/r$seed.$fmt"
     done
     check "seed $seed: hdf5 and mmap inputs give identical genome files" \
         diff -r "$TMP/r$seed.hdf5/genomes" "$TMP/r$seed.mmap/genomes"
 done
-refuses "an existing alignment is not overwritten" "$BIN/hal" convert "$TMP/r1.hdf5.hal" "$TMP/r1.hdf5"
+refuses "an existing alignment is not overwritten" "$BIN/hal" convert "$TMP/r1.hdf5.hal" "$TMP/r1.hdf5" --directory
 check "--checkOnly passes on an intact alignment" "$BIN/hal" convert "$TMP/r1.hdf5.hal" "$TMP/r1.hdf5" --checkOnly
 
 echo "hal validate catches:"
@@ -308,7 +312,7 @@ PYEOF
     H="$TMP/short.hal"; A="$TMP/short"
     "$BIN/halRandGen" --testRand --seed 11 --minSegmentLength 5 --maxSegmentLength 40 --minSegments 200 \
         --maxSegments 400 "$H" >/dev/null 2>&1
-    "$BIN/hal" convert "$H" "$A" --check 2000 >/dev/null 2>&1
+    "$BIN/hal" convert "$H" "$A" --check 2000 --directory >/dev/null 2>&1
     leaf=$("$BIN/halStats" "$H" | awk -F', ' 'NR>2 && $2==0 {print $1; exit}')
     "$BIN/hal" maf "$A" "$TMP/j.maf" --refGenome "$leaf" --uncompressed 2>/dev/null
     check "joined output: valid MAF, inserted bases in no reference column, none twice in a column" \
@@ -401,6 +405,34 @@ PYEOF
     ref=$(echo "$leaves" | head -1)
     check "--numSamples 5000: no leaf covers more than 5000 samples" \
         test "$("$BIN/hal" coverage "$A" "$ref" --numSamples 5000 --seed 3 | awk -F', ' 'NR>1 && $2>5000' | wc -l)" -eq 0
+fi
+
+echo "single file (pack):"
+H="$TMP/r7.hdf5.hal"; D="$TMP/r7.hdf5"; P="$TMP/r7.pack.hal"
+check "hal convert writes a single file by default, which validates" \
+    sh -c "'$BIN/hal' convert '$H' '$P' --threads 3 --check 1000 >/dev/null 2>&1 && test -f '$P' && ! test -e '$P.convert-tmp' && '$BIN/hal' validate '$P'"
+check "hal convert --checkOnly checks a single file" "$BIN/hal" convert "$H" "$P" --checkOnly --check 1000
+"$BIN/hal" unpack "$P" "$TMP/r7.unpacked" >/dev/null 2>&1
+check "unpacking the single-file conversion gives the directory conversion" diff -r "$D" "$TMP/r7.unpacked"
+"$BIN/hal" pack "$D" "$TMP/r7.packed.hal" >/dev/null 2>&1
+check "packing the directory gives the same file as converting to one" cmp "$P" "$TMP/r7.packed.hal"
+if [ -x "$BIN/halStats" ]; then
+    genomes=($("$BIN/halStats" --genomes "$H"))
+    leaf=$("$BIN/halStats" "$H" | awk -F', ' 'NR>2 && NF>2 && $2==0 {print $1; exit}')
+    seq=$("$BIN/halStats" --sequenceStats "$leaf" "$H" | awk -F', ' 'NR==2 {print $1}')
+    printf "%s\t100\t5000\tx\t0\t+\n" "$seq" >"$TMP/p.bed"
+    nsame=0
+    for cmd in "stats ALN" "stats ALN --sequenceStats $leaf" "maf ALN stdout --refGenome $leaf" \
+               "liftover ALN $leaf $TMP/p.bed ${genomes[1]} stdout" "fasta ALN $leaf" "coverage ALN $leaf" "validate ALN --noCrc"; do
+        a=$("$BIN/hal" ${cmd//ALN/$D} 2>/dev/null | sed "s|$D|ALN|g"); b=$("$BIN/hal" ${cmd//ALN/$P} 2>/dev/null | sed "s|$P|ALN|g")
+        if [ "$a" = "$b" ] && [ -n "$a" ]; then nsame=$((nsame + 1)); else echo "  FAIL hal ${cmd%% *}: single file and directory differ"; fails=$((fails + 1)); fi
+    done
+    echo "  ok   $nsame commands: the same output from the single file as from the directory"
+fi
+if [ -x "$BIN/hal3PackTest" ]; then
+    cp "$P" "$TMP/crash.hal"
+    check "commit protocol: abandoned update, damaged slot, torn index, interrupted create, two writers" \
+        "$BIN/hal3PackTest" "$TMP/crash.hal"
 fi
 
 if [ $fails -eq 0 ]; then echo "ALL PASS (0 failures)"; else echo "FAILURES ($fails)"; fi

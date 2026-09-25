@@ -9,6 +9,7 @@
 #define _HAL3CONVERT_H
 
 #include "halAlignment.h"
+#include "hal3Store.h"
 #include <cstdint>
 #include <ostream>
 #include <string>
@@ -34,12 +35,12 @@ struct GenomeConversion {
 GenomeConversion convertGenome(const hal::Alignment *alignment, const std::string &genomeName,
                                const std::string &genomesDir, const ConvertOptions &opts);
 
-/* Compare the written files with HAL: the sequence tables, then nSamples random
+/* Compare a converted genome's files, in store, with HAL: the sequence tables, then nSamples random
  * bases, each checked for its parent position and strand (or for having none) and
  * for its DNA.  Returns the number of mismatches, and describes the first few on
  * log. */
-uint64_t checkGenome(const hal::Alignment *alignment, const std::string &genomeName,
-                     const std::string &genomesDir, uint64_t nSamples, uint64_t seed, std::ostream &log);
+uint64_t checkGenome(const hal::Alignment *alignment, const std::string &genomeName, const Store &store,
+                     uint64_t nSamples, uint64_t seed, std::ostream &log);
 }
 
 #endif

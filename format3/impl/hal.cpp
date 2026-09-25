@@ -26,12 +26,16 @@ const Command COMMANDS[] = {
     {"fasta", "export genome sequences as FASTA", hal3::main_fasta},
     {"stats", "facts about an alignment: tree, genomes, sequences, runs", hal3::main_stats},
     {"coverage", "how much of a genome each leaf genome covers, and how many times", hal3::main_coverage},
+    {"pack", "write an alignment as a single file (or compact one)", hal3::main_pack},
+    {"unpack", "write an alignment as a directory", hal3::main_unpack},
+    {"ls", "list an alignment's members", hal3::main_ls},
 };
 
 void usage(ostream &os) {
     os << "usage: hal <command> [options] <args>\n\n"
-          "HAL format 3: a directory holding a manifest, and per genome a .hgn genome file (its\n"
-          "branch to the parent) and a .2bit of its DNA.\n\ncommands:\n";
+          "HAL format 3: an alignment is one file (or, unpacked, a directory) holding a manifest\n"
+          "and, per genome, a .hgn genome file (its branch to its parent) and a .2bit of its DNA.\n"
+          "Every command takes either form, local or a URL.\n\ncommands:\n";
     for (const Command &c : COMMANDS) {
         os << "  " << c.name;
         for (size_t k = strlen(c.name); k < 10; k++) os << ' ';

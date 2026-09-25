@@ -63,6 +63,10 @@ struct Manifest {
     void write(const std::string &path) const;
     /* Throws std::runtime_error with the line number on malformed input. */
     static Manifest read(const std::string &path);
+    /* The same from the manifest's text; what names it in errors. */
+    static Manifest parse(const std::string &text, const std::string &what);
+    /* The manifest's text, as write() writes it. */
+    std::string text() const;
     /* Does the start of a file look like a manifest? */
     static bool isManifest(const std::string &initialBytes);
 };

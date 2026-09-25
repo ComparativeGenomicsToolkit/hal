@@ -141,11 +141,7 @@ void span(const Alignment &aln, const vector<string> &names, bool keepRoot) {
 }
 
 unique_ptr<tb_file, void (*)(tb_file *)> openDna(const Alignment &aln, const Genome *g) {
-    const GenomeEntry *e = aln.manifest().find(g->name());
-    if (!e || e->dnaPath.empty()) throw runtime_error("genome " + g->name() + " has no DNA in this alignment");
-    unique_ptr<tb_file, void (*)(tb_file *)> f(tb_open((aln.dir() + "/" + e->dnaPath).c_str()), tb_close);
-    if (!f) throw runtime_error("cannot open " + e->dnaPath);
-    return f;
+    return unique_ptr<tb_file, void (*)(tb_file *)>(aln.openDna(g), tb_close);
 }
 
 /* halStats --baseComp: every step-th base of the concatenated genome */

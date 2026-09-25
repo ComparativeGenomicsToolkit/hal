@@ -1,5 +1,5 @@
 /*
- * hal validate: check a HAL format 3 alignment (the unpacked directory form).
+ * hal validate: check a HAL format 3 alignment, pack or directory.
  *
  * Uses only the manifest code, liftmap and twobit64 -- no HAL API, no HDF5.
  *
@@ -14,16 +14,17 @@
  *   tables      axis a matches the manifest's length and sequence count; axis b is the
  *               parent's axis a, name for name and length for length; the .2bit holds
  *               the same sequences as axis a
- *   orphans     no .hgn or .2bit in genomes/ that the manifest does not name
+ *   orphans     no member the manifest does not name
+ *   pack        every member's bytes match the CRC-32 in the pack's index
  */
 #include "hal3Cli.h"
 #include "hal3Manifest.h"
+#include "hal3Store.h"
 #include "liftmap.h"
 #include "twobit64.h"
 
 #include <cmath>
 #include <cstring>
-#include <dirent.h>
 #include <getopt.h>
 #include <iostream>
 #include <map>
@@ -68,8 +69,10 @@ static int validate(int argc, char **argv) {
     errors = 0;
 
     hal3::Manifest m;
+    unique_ptr<hal3::Store> store;
     try {
-        m = hal3::Manifest::read(dir + "/" + hal3::MANIFEST_NAME);
+        store = hal3::Store::open(dir);
+        m = hal3::Manifest::parse(store->read(hal3::MANIFEST_NAME), dir);
     } catch (exception &e) {
         cerr << "hal validate: " << e.what() << endl;
         return 1;
@@ -105,18 +108,16 @@ static int validate(int argc, char **argv) {
         if (!g.dnaPath.empty()) named.insert(g.dnaPath);
         if (doCrc) {
             try {
-                uint64_t bytes;
-                uint32_t crc = hal3::fileCrc32(dir + "/" + g.hgnPath, &bytes);
-                if (bytes != g.hgnBytes || crc != g.hgnCrc) fail(gname + ": " + g.hgnPath + " size or CRC differs from the manifest");
-                if (!g.dnaPath.empty()) {
-                    crc = hal3::fileCrc32(dir + "/" + g.dnaPath, &bytes);
-                    if (bytes != g.dnaBytes || crc != g.dnaCrc) fail(gname + ": " + g.dnaPath + " size or CRC differs from the manifest");
-                }
+                if ((uint64_t)store->size(g.hgnPath) != g.hgnBytes || store->crc(g.hgnPath) != g.hgnCrc)
+                    fail(gname + ": " + g.hgnPath + " size or CRC differs from the manifest");
+                if (!g.dnaPath.empty() && ((uint64_t)store->size(g.dnaPath) != g.dnaBytes || store->crc(g.dnaPath) != g.dnaCrc))
+                    fail(gname + ": " + g.dnaPath + " size or CRC differs from the manifest");
             } catch (exception &e) {
                 fail(gname + ": " + e.what());
             }
         }
-        unique_ptr<lmap_file, void (*)(lmap_file *)> f(lmap_open((dir + "/" + g.hgnPath).c_str()), lmap_close);
+        if (!store->has(g.hgnPath)) { fail(gname + ": " + g.hgnPath + " is missing"); continue; }
+        unique_ptr<lmap_file, void (*)(lmap_file *)> f(lmap_open_io(store->openMember(g.hgnPath), 1), lmap_close);
         if (!f) { fail(gname + ": cannot open " + g.hgnPath); continue; }
         lmap_file *lf = f.get();
         if (strcmp(lmap_profile(lf), hal3::HGN_PROFILE) != 0) fail(gname + ": profile is " + lmap_profile(lf));
@@ -140,18 +141,28 @@ static int validate(int argc, char **argv) {
             fail(gname + ": " + to_string(t.size()) + " sequences, " + to_string(total) + " bp; the manifest says " +
                  to_string(g.numSequences) + ", " + to_string(g.length));
         if (!g.dnaPath.empty()) {
-            unique_ptr<tb_file, void (*)(tb_file *)> d(tb_open((dir + "/" + g.dnaPath).c_str()), tb_close);
-            if (!d) fail(gname + ": cannot open " + g.dnaPath);
-            else if (tb_n_seqs(d.get()) != t.size()) fail(gname + ": the .2bit has " + to_string(tb_n_seqs(d.get())) + " sequences");
-            else
-                for (uint32_t i = 0; i < t.size(); i++) {
-                    char err[256];
-                    if (t[i].first != tb_name(d.get(), i) || tb_length(d.get(), i) != (int64_t)t[i].second) {
-                        fail(gname + ": .2bit sequence " + to_string(i) + " is " + tb_name(d.get(), i) + ", not " + t[i].first);
-                        break;
-                    }
-                    if (tb_verify_seq(d.get(), i, err, sizeof err) != 0) fail(gname + ": .2bit " + t[i].first + ": " + err);
+            unique_ptr<tb_file, void (*)(tb_file *)> d(nullptr, tb_close);
+            if (!store->has(g.dnaPath)) fail(gname + ": " + g.dnaPath + " is missing");
+            else {
+                lmap_io *io = store->openMember(g.dnaPath);
+                d.reset(tb_open_io(io, 1));
+                if (!d) {
+                    lmap_io_close(io);
+                    fail(gname + ": cannot open " + g.dnaPath);
                 }
+            }
+            if (d) {
+                if (tb_n_seqs(d.get()) != t.size()) fail(gname + ": the .2bit has " + to_string(tb_n_seqs(d.get())) + " sequences");
+                else
+                    for (uint32_t i = 0; i < t.size(); i++) {
+                        char err[256];
+                        if (t[i].first != tb_name(d.get(), i) || tb_length(d.get(), i) != (int64_t)t[i].second) {
+                            fail(gname + ": .2bit sequence " + to_string(i) + " is " + tb_name(d.get(), i) + ", not " + t[i].first);
+                            break;
+                        }
+                        if (tb_verify_seq(d.get(), i, err, sizeof err) != 0) fail(gname + ": .2bit " + t[i].first + ": " + err);
+                    }
+            }
         }
         /* axis b against the parent's axis a (the parent comes first in the roster) */
         if (!g.parent.empty()) {
@@ -172,15 +183,12 @@ static int validate(int argc, char **argv) {
         }
     }
 
-    /* ---- orphaned files */
-    if (DIR *d = opendir((dir + "/genomes").c_str())) {
-        while (struct dirent *e = readdir(d)) {
-            string n = e->d_name;
-            bool ours = (n.size() > 4 && n.compare(n.size() - 4, 4, ".hgn") == 0) ||
-                        (n.size() > 5 && n.compare(n.size() - 5, 5, ".2bit") == 0);
-            if (ours && !named.count("genomes/" + n)) fail("genomes/" + n + " is not in the manifest");
-        }
-        closedir(d);
+    /* ---- members the manifest does not name; in a pack, members against its index */
+    for (const string &n : store->members())
+        if (n != hal3::MANIFEST_NAME && !named.count(n)) fail(n + " is not in the manifest");
+    if (store->isPack() && doCrc) {
+        for (const auto &e : hal3::packInfo(*store).entries)
+            if (store->crc(e.first) != e.second.crc) fail(e.first + ": CRC differs from the pack's index");
     }
 
     cout << dir << ": " << m.genomes.size() << " genomes, " << (errors ? "FAILED (" + to_string(errors) + " problems)" : "ok") << endl;

@@ -11,8 +11,9 @@ namespace hal3 {
 
 void Genome::open() const {
     call_once(_opened, [this]() {
-        string path = _alignment->dir() + "/" + _entry->hgnPath;
-        lmap_file *f = lmap_open(path.c_str());
+        string path = _alignment->path() + ":" + _entry->hgnPath;
+        lmap_io *io = _alignment->store().openMember(_entry->hgnPath);
+        lmap_file *f = lmap_open_io(io, 1);
         if (!f) throw runtime_error("cannot open genome file " + path);
         const char *g = lmap_meta_get(f, "hal.genome");
         if (!g || _entry->name != g) {
@@ -58,9 +59,9 @@ int64_t Genome::findSequence(const string &name) const {
     return lmap_member_by_name(_hgn, 0, name.c_str());
 }
 
-Alignment::Alignment(const string &dir) : _dir(dir) {
-    while (_dir.size() > 1 && _dir.back() == '/') _dir.pop_back();
-    _manifest = Manifest::read(_dir + "/" + MANIFEST_NAME);
+Alignment::Alignment(const string &path) : _path(path) {
+    _store = Store::open(path);
+    _manifest = Manifest::parse(_store->read(MANIFEST_NAME), path);
     for (const GenomeEntry &e : _manifest.genomes) {
         unique_ptr<Genome> g(new Genome());
         g->_alignment = this;
@@ -77,12 +78,24 @@ Alignment::Alignment(const string &dir) : _dir(dir) {
         g->_depth = p->second->_depth + 1;
         const_cast<Genome *>(p->second)->_children.push_back(g.get());
     }
-    if (_genomes.empty() || _genomes[0]->_parent) throw runtime_error(_dir + ": the root must be listed first");
+    if (_genomes.empty() || _genomes[0]->_parent) throw runtime_error(_path + ": the root must be listed first");
 }
 
 Alignment::~Alignment() {
     for (auto &g : _genomes)
         if (g->_hgn) lmap_close(g->_hgn);
+}
+
+tb_file *Alignment::openDna(const Genome *g) const {
+    const GenomeEntry *e = _manifest.find(g->name());
+    if (!e || e->dnaPath.empty()) throw runtime_error("genome " + g->name() + " has no DNA in this alignment");
+    lmap_io *io = _store->openMember(e->dnaPath);
+    tb_file *f = tb_open_io(io, 1);
+    if (!f) {
+        lmap_io_close(io);
+        throw runtime_error("cannot read " + e->dnaPath + " of " + _path);
+    }
+    return f;
 }
 
 const Genome *Alignment::genome(const string &name) const {

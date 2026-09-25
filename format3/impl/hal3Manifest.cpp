@@ -73,26 +73,29 @@ const GenomeEntry *Manifest::find(const string &name) const {
     return NULL;
 }
 
+string Manifest::text() const {
+    string out = string(MANIFEST_MAGIC) + "\n";
+    out += "tree\t" + escape(newick) + "\n";
+    for (const auto &kv : meta) out += "meta\t" + escape(kv.first) + "\t" + escape(kv.second) + "\n";
+    char buf[256];
+    for (const GenomeEntry &g : genomes) {
+        out += "genome\t" + escape(g.name) + "\t" + (g.parent.empty() ? string("-") : escape(g.parent)) + "\t" +
+               (g.parent.empty() ? string("-") : fmtDouble(g.branchLength));
+        snprintf(buf, sizeof buf, "\t%llu\t%llu\t", (unsigned long long)g.length, (unsigned long long)g.numSequences);
+        out += buf + escape(g.hgnPath);
+        snprintf(buf, sizeof buf, "\t%llu\t%08x\t", (unsigned long long)g.hgnBytes, g.hgnCrc);
+        out += buf + (g.dnaPath.empty() ? string("-") : escape(g.dnaPath));
+        snprintf(buf, sizeof buf, "\t%llu\t%08x\n", (unsigned long long)g.dnaBytes, g.dnaCrc);
+        out += buf;
+    }
+    return out;
+}
+
 void Manifest::write(const string &path) const {
-    string partial = path + ".partial";
+    string partial = path + ".partial", t = text();
     FILE *f = fopen(partial.c_str(), "w");
     if (!f) throw runtime_error("cannot write " + partial + ": " + strerror(errno));
-    fprintf(f, "%s\n", MANIFEST_MAGIC);
-    fprintf(f, "tree\t%s\n", escape(newick).c_str());
-    for (const auto &kv : meta)
-        fprintf(f, "meta\t%s\t%s\n", escape(kv.first).c_str(), escape(kv.second).c_str());
-    for (const GenomeEntry &g : genomes) {
-        char crc[2][16];
-        snprintf(crc[0], sizeof crc[0], "%08x", g.hgnCrc);
-        snprintf(crc[1], sizeof crc[1], "%08x", g.dnaCrc);
-        fprintf(f, "genome\t%s\t%s\t%s\t%llu\t%llu\t%s\t%llu\t%s\t%s\t%llu\t%s\n",
-                escape(g.name).c_str(), g.parent.empty() ? "-" : escape(g.parent).c_str(),
-                g.parent.empty() ? "-" : fmtDouble(g.branchLength).c_str(),
-                (unsigned long long)g.length, (unsigned long long)g.numSequences,
-                escape(g.hgnPath).c_str(), (unsigned long long)g.hgnBytes, crc[0],
-                g.dnaPath.empty() ? "-" : escape(g.dnaPath).c_str(), (unsigned long long)g.dnaBytes,
-                crc[1]);
-    }
+    fwrite(t.data(), 1, t.size(), f);
     if (ferror(f) | fclose(f)) {
         remove(partial.c_str());
         throw runtime_error("cannot write " + partial);
@@ -120,8 +123,15 @@ static uint32_t parseCrc(const string &s, size_t lineNo) {
 }
 
 Manifest Manifest::read(const string &path) {
-    ifstream in(path);
-    if (!in) throw runtime_error("cannot open manifest " + path);
+    ifstream f(path);
+    if (!f) throw runtime_error("cannot open manifest " + path);
+    stringstream ss;
+    ss << f.rdbuf();
+    return parse(ss.str(), path);
+}
+
+Manifest Manifest::parse(const string &text, const string &path) {
+    istringstream in(text);
     Manifest m;
     string line;
     size_t lineNo = 0;

@@ -2,9 +2,9 @@
  * HAL format 3: reading an alignment.
  *
  * An Alignment is the manifest plus the genome files it names, opened as they are
- * first used.  A Genome knows its place in the tree, its sequence table (axis a of
- * its .hgn) and its .hgn, which holds the branch to its parent.  Depends on liftmap
- * only -- no HAL API, no HDF5.
+ * first used, from a pack file or a directory (hal3Store.h), local or remote.  A Genome
+ * knows its place in the tree, its sequence table (axis a of its .hgn) and its .hgn,
+ * which holds the branch to its parent.  Depends on liftmap only -- no HAL API, no HDF5.
  *
  * Thread safety: an Alignment may be shared by threads; a genome's .hgn is opened
  * once, under a lock, and liftmap files are safe to share.
@@ -13,6 +13,8 @@
 #define _HAL3ALIGNMENT_H
 
 #include "hal3Manifest.h"
+#include "hal3Store.h"
+#include "twobit64.h"
 #include "liftmap.h"
 
 #include <cstdint>
@@ -60,19 +62,24 @@ class Genome {
 
 class Alignment {
   public:
-    /* A format 3 alignment directory (or URL).  Throws std::runtime_error. */
-    explicit Alignment(const std::string &dir);
+    /* A format 3 alignment: pack file, directory or manifest, local or a URL.  Throws
+     * std::runtime_error. */
+    explicit Alignment(const std::string &path);
     ~Alignment();
     Alignment(const Alignment &) = delete;
     Alignment &operator=(const Alignment &) = delete;
 
     const Manifest &manifest() const { return _manifest; }
-    const std::string &dir() const { return _dir; }
+    const std::string &path() const { return _path; }
+    const Store &store() const { return *_store; }
+    /* g's DNA; the caller tb_close()s it.  Throws if the genome has none. */
+    tb_file *openDna(const Genome *g) const;
     const Genome *root() const { return _genomes.empty() ? nullptr : _genomes[0].get(); }
     const Genome *genome(const std::string &name) const;    /* nullptr if absent */
 
   private:
-    std::string _dir;
+    std::string _path;
+    std::unique_ptr<Store> _store;
     Manifest _manifest;
     std::vector<std::unique_ptr<Genome>> _genomes;           /* manifest order */
     std::map<std::string, const Genome *> _byName;

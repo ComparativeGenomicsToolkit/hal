@@ -35,6 +35,9 @@ int main_maf(int argc, char **argv);
 int main_fasta(int argc, char **argv);
 int main_stats(int argc, char **argv);
 int main_coverage(int argc, char **argv);
+int main_pack(int argc, char **argv);
+int main_unpack(int argc, char **argv);
+int main_ls(int argc, char **argv);
 }
 
 #endif
