@@ -4,8 +4,8 @@
  * A format 3 alignment is a set of immutable per-genome files plus one small mutable
  * manifest that ties them together: the tree, the genome roster, where each genome's
  * files are and their checksums, and alignment-wide metadata.  Unpacked, it is a
- * directory `foo.hal/` holding `manifest` and `genomes/`; packed (later), the same
- * members in one container file.
+ * directory `foo.hal/` holding `manifest` and `genomes/`; packed, the same members in
+ * one file (hal3Store.h).
  *
  * Each genome has:
  *   - a `.hgn` genome file: a liftmap file (profile "hal.branch") whose axis a is the
@@ -21,7 +21,8 @@
  *   genome  <name> <parent|-> <branch length|-> <length> <sequences>
  *           <hgn path> <hgn bytes> <hgn crc32> <2bit path|-> <2bit bytes> <2bit crc32>
  *
- * Paths are relative to the manifest's directory.  Lines starting with '#' after the
+ * Paths are member names: relative to the manifest's directory, or in a pack the names
+ * in its index.  Lines starting with '#' after the
  * first are comments.  This code depends on nothing in the rest of HAL.
  */
 #ifndef _HAL3MANIFEST_H

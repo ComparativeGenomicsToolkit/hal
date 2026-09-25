@@ -1,6 +1,6 @@
 /*
- * hal convert: a HAL (HDF5 or mmap) alignment to HAL format 3 (the unpacked directory
- * form).  The one command that needs HDF5, and so libHal.
+ * hal convert: a HAL (HDF5 or mmap) alignment to HAL format 3, as a single file (a pack)
+ * or, with --directory, a directory.  The one command that needs HDF5, and so libHal.
  *
  * Genomes are independent -- each reads only itself and its parent -- so they convert
  * in parallel, in worker processes (HDF5 is not thread-safe), each opening the input
