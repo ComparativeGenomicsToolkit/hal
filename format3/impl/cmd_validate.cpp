@@ -14,10 +14,13 @@
  *   tables      axis a matches the manifest's length and sequence count; axis b is the
  *               parent's axis a, name for name and length for length; the .2bit holds
  *               the same sequences as axis a
+ *   members     each exists with its size and CRC-32; a likelihood (lik) member is for
+ *               the genome's own sequences, and every chunk of it is sound and decodes
  *   orphans     no member the manifest does not name
  *   pack        every member's bytes match the CRC-32 in the pack's index
  */
 #include "hal3Cli.h"
+#include "hal3Likelihood.h"
 #include "hal3Manifest.h"
 #include "hal3Store.h"
 #include "liftmap.h"
@@ -106,6 +109,21 @@ static int validate(int argc, char **argv) {
         string gname = "genome " + g.name;
         named.insert(g.hgnPath);
         if (!g.dnaPath.empty()) named.insert(g.dnaPath);
+        for (const hal3::MemberRef &mr : g.members) {
+            if (!named.insert(mr.path).second) fail(gname + ": its " + mr.role + " member " + mr.path + " is named twice");
+            if (!store->has(mr.path)) {
+                fail(gname + ": its " + mr.role + " member " + mr.path + " is missing");
+                continue;
+            }
+            if (doCrc) {
+                try {
+                    if ((uint64_t)store->size(mr.path) != mr.bytes || store->crc(mr.path) != mr.crc)
+                        fail(gname + ": " + mr.path + " size or CRC differs from the manifest");
+                } catch (exception &e) {
+                    fail(gname + ": " + e.what());
+                }
+            }
+        }
         if (doCrc) {
             try {
                 if ((uint64_t)store->size(g.hgnPath) != g.hgnBytes || store->crc(g.hgnPath) != g.hgnCrc)
@@ -162,6 +180,23 @@ static int validate(int argc, char **argv) {
                         }
                         if (tb_verify_seq(d.get(), i, err, sizeof err) != 0) fail(gname + ": .2bit " + t[i].first + ": " + err);
                     }
+            }
+        }
+        /* likelihoods: for this genome's sequences, every chunk sound */
+        if (const hal3::MemberRef *mr = g.member("lik")) {
+            if (store->has(mr->path)) {
+                try {
+                    unique_ptr<hal3::LikFile> lk = hal3::LikFile::open(store->openMember(mr->path), true, mr->path);
+                    bool same = lk->numSequences() == t.size();
+                    for (uint32_t i = 0; same && i < t.size(); i++)
+                        same = lk->sequenceName(i) == t[i].first && lk->sequenceLength(i) == (int64_t)t[i].second;
+                    if (!same) fail(gname + ": " + mr->path + " is not for its sequences");
+                    else
+                        for (const string &p : lk->verify()) fail(gname + ": " + p);
+                    if (g.dnaPath.empty()) fail(gname + ": has likelihoods but no DNA (they are relative to its bases)");
+                } catch (exception &e) {
+                    fail(gname + ": " + e.what());
+                }
             }
         }
         /* axis b against the parent's axis a (the parent comes first in the roster) */

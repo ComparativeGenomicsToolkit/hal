@@ -168,10 +168,7 @@ class DirStore : public Store {
         if (isUrl(_path)) {
             Manifest m = Manifest::parse(read(MANIFEST_NAME), _path);
             v.push_back(MANIFEST_NAME);
-            for (auto &g : m.genomes) {
-                v.push_back(g.hgnPath);
-                if (!g.dnaPath.empty()) v.push_back(g.dnaPath);
-            }
+            for (const NamedFile &f : m.files()) v.push_back(f.path);
         } else {
             if (has(MANIFEST_NAME)) v.push_back(MANIFEST_NAME);
             if (DIR *d = opendir((_path + "/genomes").c_str())) {
@@ -411,11 +408,9 @@ void PackWriter::commit() {
 uint64_t packAlignment(const string &in, const string &out) {
     unique_ptr<Store> store = Store::open(in);
     Manifest m = Manifest::parse(store->read(MANIFEST_NAME), in);
+    vector<NamedFile> files = m.files();
     vector<pair<string, const uint32_t *>> named;
-    for (const GenomeEntry &g : m.genomes) {
-        named.push_back({g.hgnPath, &g.hgnCrc});
-        if (!g.dnaPath.empty()) named.push_back({g.dnaPath, &g.dnaCrc});
-    }
+    for (const NamedFile &f : files) named.push_back({f.path, &f.crc});
     named.push_back({MANIFEST_NAME, nullptr});
     unique_ptr<PackWriter> w = PackWriter::create(out);
     uint64_t bytes = 0;

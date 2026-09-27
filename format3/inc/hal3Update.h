@@ -18,6 +18,12 @@
  * (its name, its parent's name, whether it has a branch).  A file that does not match
  * -- a renamed genome, or its children, or a genome that became the root -- is rewritten;
  * every other file is copied untouched (or, in place, not touched at all).
+ *
+ * A genome's members (its likelihoods, say: hal3Manifest.h) are about its own bases, so
+ * they go wherever its DNA goes: kept, renamed or dropped with it, taken from a donor
+ * with its DNA.  They are never rewritten.  Likelihoods that an update makes out of date
+ * -- a genome's "subtree" likelihoods when anything below it changes, "posterior" ones
+ * when the tree or any branch does -- are kept, and noted in the log.
  */
 #ifndef _HAL3UPDATE_H
 #define _HAL3UPDATE_H
@@ -27,6 +33,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -55,8 +62,15 @@ class Update {
     void replace(const std::string &donorPath, const std::vector<std::string> &genomes);
     void rename(const std::string &from, const std::string &to);
     void setBranchLength(const std::string &genome, double length);
+    /* A genome's member of this role (e.g. "lik") from a local file, replacing any it
+     * has; or none. */
+    void setMember(const std::string &genome, const std::string &role, const std::string &file);
+    void dropMember(const std::string &genome, const std::string &role);
+    /* A genome's DNA from a local .2bit file (the same sequences). */
+    void setDna(const std::string &genome, const std::string &file);
 
-    /* Every problem with the result, empty if it is a valid alignment. */
+    /* Every problem with the result, empty if it is a valid alignment (and then any
+     * likelihoods it makes out of date are noted in the log). */
     std::vector<std::string> check();
     /* A new alignment at out (a pack, or with directory a directory).  Throws, writing
      * nothing, if check() finds problems. */
@@ -70,7 +84,7 @@ class Update {
 
   private:
     struct Source {
-        const Store *store;             /* the input or a donor */
+        const Store *store;             /* the input or a donor; nullptr: a local file */
         std::string member;             /* "" when there is no such file (no DNA) */
     };
     struct Node {
@@ -78,6 +92,7 @@ class Update {
         double branchLength = -1;
         std::vector<std::string> children;
         Source hgn, dna;
+        std::map<std::string, Source> members;   /* by role */
     };
     std::string _path;
     std::unique_ptr<Store> _in;
@@ -86,9 +101,15 @@ class Update {
     std::map<std::string, Node> _nodes;
     std::string _root;
     bool _treeChanged = false;
+    bool _branchesChanged = false;          /* anything a posterior depends on */
+    std::set<std::string> _changedBelow;    /* genomes with something changed below them */
     std::vector<std::string> _log;
 
+    static lmap_io *openSource(const Source &s);   /* a store's member, or a local file */
+    static bool sourceExists(const Source &s);
     Node &need(const std::string &name);
+    void changedBelow(const std::string &genome);   /* genome and its ancestors */
+    void staleNotes();
     void detach(const std::string &name);
     void dropSubtree(const std::string &name);
     std::vector<std::string> preorder() const;

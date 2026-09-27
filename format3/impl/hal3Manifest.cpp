@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <zlib.h>
@@ -67,6 +68,39 @@ static string fmtDouble(double d) {
     return buf;
 }
 
+string memberExtension(const string &role) { return role == "lik" ? ".hlk" : "." + role; }
+
+bool validMemberRole(const string &role) {
+    if (role.empty() || !(role[0] >= 'a' && role[0] <= 'z')) return false;
+    for (char c : role)
+        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')) return false;
+    return role != "hgn" && role != "2bit" && role != "hlk" && role != "dna";
+}
+
+/* genomes/<name>: the only layout the tools write and read (unpack creates genomes/) */
+static void checkPath(const string &p, size_t lineNo) {
+    const string pre = "genomes/";
+    string name = p.compare(0, pre.size(), pre) == 0 ? p.substr(pre.size()) : "";
+    if (name.empty() || name == "." || name == ".." || name.find('/') != string::npos || name.find('\\') != string::npos)
+        throw runtime_error("manifest line " + to_string(lineNo) + ": bad file path '" + p + "' (not genomes/<name>)");
+}
+
+const MemberRef *GenomeEntry::member(const string &role) const {
+    for (const MemberRef &m : members)
+        if (m.role == role) return &m;
+    return NULL;
+}
+
+vector<NamedFile> Manifest::files() const {
+    vector<NamedFile> v;
+    for (const GenomeEntry &g : genomes) {
+        v.push_back(NamedFile{g.hgnPath, g.hgnBytes, g.hgnCrc});
+        if (!g.dnaPath.empty()) v.push_back(NamedFile{g.dnaPath, g.dnaBytes, g.dnaCrc});
+        for (const MemberRef &m : g.members) v.push_back(NamedFile{m.path, m.bytes, m.crc});
+    }
+    return v;
+}
+
 const GenomeEntry *Manifest::find(const string &name) const {
     for (const GenomeEntry &g : genomes)
         if (g.name == name) return &g;
@@ -87,6 +121,11 @@ string Manifest::text() const {
         out += buf + (g.dnaPath.empty() ? string("-") : escape(g.dnaPath));
         snprintf(buf, sizeof buf, "\t%llu\t%08x\n", (unsigned long long)g.dnaBytes, g.dnaCrc);
         out += buf;
+        for (const MemberRef &mr : g.members) {
+            out += "member\t" + escape(g.name) + "\t" + escape(mr.role) + "\t" + escape(mr.path);
+            snprintf(buf, sizeof buf, "\t%llu\t%08x\n", (unsigned long long)mr.bytes, mr.crc);
+            out += buf;
+        }
     }
     return out;
 }
@@ -162,19 +201,43 @@ Manifest Manifest::parse(const string &text, const string &path) {
             g.length = parseU64(f[4], lineNo, "length");
             g.numSequences = parseU64(f[5], lineNo, "sequence count");
             g.hgnPath = unescape(f[6], lineNo);
+            checkPath(g.hgnPath, lineNo);
             g.hgnBytes = parseU64(f[7], lineNo, "size");
             g.hgnCrc = parseCrc(f[8], lineNo);
-            if (f[9] != "-") g.dnaPath = unescape(f[9], lineNo);
+            if (f[9] != "-") {
+                g.dnaPath = unescape(f[9], lineNo);
+                checkPath(g.dnaPath, lineNo);
+            }
             g.dnaBytes = parseU64(f[10], lineNo, "size");
             g.dnaCrc = parseCrc(f[11], lineNo);
             if (m.find(g.name)) throw runtime_error("manifest line " + to_string(lineNo) + ": genome " + g.name + " listed twice");
             m.genomes.push_back(g);
+        } else if (f[0] == "member" && f.size() == 6) {
+            string gname = unescape(f[1], lineNo);
+            if (m.genomes.empty() || m.genomes.back().name != gname)
+                throw runtime_error("manifest line " + to_string(lineNo) + ": a member of " + gname + " not right after its genome");
+            MemberRef mr;
+            mr.role = unescape(f[2], lineNo);
+            mr.path = unescape(f[3], lineNo);
+            mr.bytes = parseU64(f[4], lineNo, "size");
+            mr.crc = parseCrc(f[5], lineNo);
+            if (!validMemberRole(mr.role)) throw runtime_error("manifest line " + to_string(lineNo) + ": bad member role '" + mr.role + "'");
+            checkPath(mr.path, lineNo);
+            if (m.genomes.back().member(mr.role))
+                throw runtime_error("manifest line " + to_string(lineNo) + ": " + gname + " has two " + mr.role + " members");
+            m.genomes.back().members.push_back(mr);
+        } else if (f[0] == "genome" || f[0] == "member") {
+            throw runtime_error("manifest line " + to_string(lineNo) + ": a " + f[0] + " record has " + to_string(f.size()) +
+                                " fields, not " + (f[0] == "genome" ? "12" : "6"));
         } else {
             throw runtime_error("manifest line " + to_string(lineNo) + ": unrecognised record '" + f[0] + "'");
         }
     }
     if (lineNo == 0) throw runtime_error(path + " is empty");
     if (!haveTree) throw runtime_error(path + ": no tree record");
+    set<string> paths;
+    for (const NamedFile &f : m.files())
+        if (!paths.insert(f.path).second) throw runtime_error(path + ": " + f.path + " is named twice");
     return m;
 }
 

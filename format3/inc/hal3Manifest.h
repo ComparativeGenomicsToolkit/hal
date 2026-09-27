@@ -12,6 +12,9 @@
  *     genome's sequences and axis b its parent's, with the runs of the branch above it.
  *     The root's has sequences and no runs.
  *   - a `.2bit` with its DNA (optional: DNA may be absent).
+ *   - optionally, other files about its own sequences ("members"), each with a role:
+ *     "lik", a `.hlk` of per-base likelihoods (hal3Likelihood.h).  Tools that do not
+ *     know a role carry its file unchanged.
  *
  * The manifest is text, one record per line, tab-separated, with \t \n \\ escaped:
  *
@@ -20,10 +23,12 @@
  *   meta    <key>    <value>
  *   genome  <name> <parent|-> <branch length|-> <length> <sequences>
  *           <hgn path> <hgn bytes> <hgn crc32> <2bit path|-> <2bit bytes> <2bit crc32>
+ *   member  <genome> <role> <path> <bytes> <crc32>     (after its genome's line)
  *
- * Paths are member names: relative to the manifest's directory, or in a pack the names
- * in its index.  Lines starting with '#' after the
- * first are comments.  This code depends on nothing in the rest of HAL.
+ * Paths are member names, `genomes/<name>` (no other '/', no "." or ".."), each named
+ * once: relative to the manifest's directory, or in a pack the names in its index.  Lines
+ * starting with '#' after the first are comments.  This code depends on nothing in the
+ * rest of HAL.
  */
 #ifndef _HAL3MANIFEST_H
 #define _HAL3MANIFEST_H
@@ -39,6 +44,21 @@ extern const char *const MANIFEST_MAGIC;     /* "#hal-manifest 3" */
 extern const char *const MANIFEST_NAME;      /* "manifest", inside the alignment directory */
 extern const char *const HGN_PROFILE;        /* "hal.branch" */
 
+/* A genome's file beyond its .hgn and .2bit. */
+struct MemberRef {
+    std::string role;            /* e.g. "lik" */
+    std::string path;
+    uint64_t bytes = 0;
+    uint32_t crc = 0;
+};
+
+/* The file name extension a member of this role gets: ".hlk" for "lik", else "." + role. */
+std::string memberExtension(const std::string &role);
+/* A role is lower-case letters, digits and '_', starting with a letter, and never
+ * "hgn", "2bit", "hlk" or "dna" -- so a member's file never has a genome's own file's
+ * name, nor another role's. */
+bool validMemberRole(const std::string &role);
+
 struct GenomeEntry {
     std::string name;
     std::string parent;          /* "" for the root */
@@ -51,6 +71,16 @@ struct GenomeEntry {
     std::string dnaPath;         /* "" when the genome has no DNA */
     uint64_t dnaBytes = 0;
     uint32_t dnaCrc = 0;
+    std::vector<MemberRef> members;
+
+    const MemberRef *member(const std::string &role) const;   /* nullptr if none */
+};
+
+/* A file the manifest names, with its size and CRC-32. */
+struct NamedFile {
+    std::string path;
+    uint64_t bytes;
+    uint32_t crc;
 };
 
 struct Manifest {
@@ -59,6 +89,9 @@ struct Manifest {
     std::vector<GenomeEntry> genomes;    /* the root first, then preorder */
 
     const GenomeEntry *find(const std::string &name) const;
+    /* Every file the manifest names -- each genome's .hgn, .2bit and members -- in
+     * genome order (not the manifest itself). */
+    std::vector<NamedFile> files() const;
 
     /* Write to `path` atomically (via path.partial).  Throws std::runtime_error. */
     void write(const std::string &path) const;

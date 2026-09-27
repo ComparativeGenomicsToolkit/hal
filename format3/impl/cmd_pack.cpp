@@ -33,15 +33,11 @@ void noOptions(int argc, char **argv, const char *usage) {
     }
 }
 
-/* The members an alignment is made of, as its manifest names them (manifest last), with
- * the CRC-32 the manifest records for each (the manifest's own: none). */
-vector<pair<string, const uint32_t *>> named(const Manifest &m) {
-    vector<pair<string, const uint32_t *>> v;
-    for (const GenomeEntry &g : m.genomes) {
-        v.push_back({g.hgnPath, &g.hgnCrc});
-        if (!g.dnaPath.empty()) v.push_back({g.dnaPath, &g.dnaCrc});
-    }
-    v.push_back({MANIFEST_NAME, nullptr});
+/* The members an alignment is made of, as its manifest names them, the manifest last. */
+vector<string> named(const Manifest &m) {
+    vector<string> v;
+    for (const NamedFile &f : m.files()) v.push_back(f.path);
+    v.push_back(MANIFEST_NAME);
     return v;
 }
 }
@@ -82,10 +78,10 @@ int main_unpack(int argc, char **argv) {
         for (const string &d : {dir, dir + "/genomes"})
             if (mkdir(d.c_str(), 0777) != 0 && errno != EEXIST) throw runtime_error("cannot create " + d + ": " + strerror(errno));
         vector<char> buf((size_t)4 << 20);
-        for (auto &n : named(m)) {
+        for (const string &n : named(m)) {
             /* the manifest last, so an interrupted unpack is not taken for a finished one */
-            string path = dir + "/" + n.first, partial = path + ".partial";
-            lmap_io *io = store->openMember(n.first);
+            string path = dir + "/" + n, partial = path + ".partial";
+            lmap_io *io = store->openMember(n);
             FILE *f = fopen(partial.c_str(), "wb");
             if (!f) {
                 lmap_io_close(io);

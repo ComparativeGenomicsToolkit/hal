@@ -2,6 +2,7 @@
  * HAL format 3: changing an alignment's genomes.  See hal3Update.h.
  */
 #include "hal3Update.h"
+#include "hal3Likelihood.h"
 #include "liftmap.h"
 #include "twobit64.h"
 
@@ -170,6 +171,15 @@ struct ScratchDir {
 };
 }
 
+lmap_io *Update::openSource(const Source &s) {
+    if (s.store) return s.store->openMember(s.member);
+    lmap_io *io = lmap_io_open_file(s.member.c_str());
+    if (!io) throw runtime_error("cannot read " + s.member + ": " + strerror(errno));
+    return io;
+}
+
+bool Update::sourceExists(const Source &s) { return s.store ? s.store->has(s.member) : access(s.member.c_str(), R_OK) == 0; }
+
 /* ---------------------------------------------------------------- the model */
 
 Update::Update(const string &path) : _path(path) {
@@ -182,6 +192,7 @@ Update::Update(const string &path) : _path(path) {
         n.branchLength = e.branchLength;
         n.hgn = Source{_in.get(), e.hgnPath};
         n.dna = Source{_in.get(), e.dnaPath};
+        for (const MemberRef &m : e.members) n.members[m.role] = Source{_in.get(), m.path};
         _nodes[e.name] = n;
         if (e.parent.empty()) _root = e.name;
     }
@@ -195,6 +206,15 @@ Update::Node &Update::need(const string &name) {
     auto it = _nodes.find(name);
     if (it == _nodes.end()) throw runtime_error("no genome " + name + " in the alignment being updated");
     return it->second;
+}
+
+void Update::changedBelow(const string &genome) {
+    for (string x = genome; !x.empty();) {
+        auto it = _nodes.find(x);
+        if (it == _nodes.end()) break;
+        _changedBelow.insert(x);
+        x = it->second.parent;
+    }
 }
 
 void Update::detach(const string &name) {
@@ -214,20 +234,22 @@ void Update::dropSubtree(const string &name) {
 
 void Update::remove(const vector<string> &genomes) {
     for (const string &g : genomes) {
+        changedBelow(need(g).parent);
         detach(g);
         _nodes.erase(g);
         if (g == _root) _root.clear();
-        _treeChanged = true;
+        _treeChanged = _branchesChanged = true;
         _log.push_back("removed " + g);
     }
 }
 
 void Update::prune(const string &genome) {
+    changedBelow(need(genome).parent);
     detach(genome);
     size_t before = _nodes.size();
     dropSubtree(genome);
     if (_nodes.find(_root) == _nodes.end()) _root.clear();
-    _treeChanged = true;
+    _treeChanged = _branchesChanged = true;
     _log.push_back("pruned " + genome + " (" + to_string(before - _nodes.size()) + " genomes)");
 }
 
@@ -246,7 +268,7 @@ void Update::extract(const string &genome) {
     g.parent.clear();
     g.branchLength = -1;
     _root = genome;
-    _treeChanged = true;
+    _treeChanged = _branchesChanged = true;
     _log.push_back("extracted the subtree of " + genome + " (" + to_string(_nodes.size()) + " genomes kept, " +
                    to_string(before - _nodes.size()) + " removed)");
 }
@@ -278,15 +300,19 @@ void Update::keep(const vector<string> &genomes) {
         }
     size_t before = _nodes.size();
     for (auto it = _nodes.begin(); it != _nodes.end();) it = keepSet.count(it->first) ? next(it) : _nodes.erase(it);
+    vector<string> lost;
     for (auto &n : _nodes) {
         auto &ch = n.second.children;
+        size_t had = ch.size();
         ch.erase(std::remove_if(ch.begin(), ch.end(), [&](const string &c) { return !keepSet.count(c); }), ch.end());
+        if (ch.size() != had) lost.push_back(n.first);
     }
     Node &root = need(lca);
     root.parent.clear();
     root.branchLength = -1;
     _root = lca;
-    _treeChanged = true;
+    for (const string &g : lost) changedBelow(g);
+    _treeChanged = _branchesChanged = true;
     _log.push_back("kept " + to_string(_nodes.size()) + " genomes (the spanning tree of " + to_string(genomes.size()) +
                    ", rooted at " + lca + "), removed " + to_string(before - _nodes.size()));
 }
@@ -308,11 +334,13 @@ void Update::graft(const string &donorPath) {
         n.branchLength = e.branchLength;
         n.hgn = Source{d, e.hgnPath};
         n.dna = Source{d, e.dnaPath};
+        for (const MemberRef &mr : e.members) n.members[mr.role] = Source{d, mr.path};
         _nodes[e.name] = n;
         need(e.parent).children.push_back(e.name);
         added++;
     }
-    _treeChanged = true;
+    changedBelow(r);
+    _treeChanged = _branchesChanged = true;
     _log.push_back("grafted " + to_string(added) + " genomes of " + donorPath + " below " + r);
 }
 
@@ -327,14 +355,21 @@ void Update::replace(const string &donorPath, const vector<string> &genomes) {
         if (e->parent.empty() && !n.parent.empty())
             throw runtime_error("--replace: " + g + " is the root of " + donorPath + ", so its file has no branch to put it below " +
                                 n.parent);
+        changedBelow(g);   /* its likelihoods come from the donor's subtree now */
         n.hgn = Source{d, e->hgnPath};
         n.dna = Source{d, e->dnaPath};
+        for (auto &kv : n.members)
+            if (!e->member(kv.first)) _log.push_back("dropped the " + kv.first + " member of " + g + " (" + donorPath + " has none)");
+        n.members.clear();
+        for (const MemberRef &mr : e->members) n.members[mr.role] = Source{d, mr.path};
+        _branchesChanged = true;
         if (e->parent != n.parent) {
             /* the donor places it elsewhere: move it there */
             detach(g);
             n.parent = e->parent;
             auto p = _nodes.find(e->parent);
             if (p != _nodes.end()) p->second.children.push_back(g);
+            changedBelow(e->parent);
             _treeChanged = true;
         }
         if (e->branchLength != n.branchLength) _treeChanged = true;
@@ -355,6 +390,7 @@ void Update::rename(const string &from, const string &to) {
         if (_nodes.count(c)) _nodes[c].parent = to;
     _nodes[to] = n;
     if (_root == from) _root = to;
+    if (_changedBelow.erase(from)) _changedBelow.insert(to);
     _treeChanged = true;
     _log.push_back("renamed " + from + " to " + to);
 }
@@ -362,9 +398,27 @@ void Update::rename(const string &from, const string &to) {
 void Update::setBranchLength(const string &genome, double length) {
     Node &n = need(genome);
     if (n.parent.empty()) throw runtime_error("--branchLength: " + genome + " is the root");
+    if (length != n.branchLength) {
+        changedBelow(n.parent);
+        _treeChanged = _branchesChanged = true;
+    }
     n.branchLength = length;
-    _treeChanged = true;
     _log.push_back("branch length of " + genome + " set to " + fmtLength(length));
+}
+
+void Update::setMember(const string &genome, const string &role, const string &file) {
+    if (!validMemberRole(role)) throw runtime_error("bad member role '" + role + "' (lower-case letters, digits and _)");
+    need(genome).members[role] = Source{nullptr, file};
+    _log.push_back("set the " + role + " member of " + genome + " from " + file);
+}
+
+void Update::dropMember(const string &genome, const string &role) {
+    if (need(genome).members.erase(role)) _log.push_back("dropped the " + role + " member of " + genome);
+}
+
+void Update::setDna(const string &genome, const string &file) {
+    need(genome).dna = Source{nullptr, file};
+    _log.push_back("set the DNA of " + genome + " from " + file);
 }
 
 vector<string> Update::preorder() const {
@@ -446,11 +500,11 @@ vector<string> Update::check() {
     for (const string &g : order) {
         const Node &n = _nodes.at(g);
         if (n.dna.member.empty() || !own.count(g)) continue;
-        if (!n.dna.store->has(n.dna.member)) {
+        if (!sourceExists(n.dna)) {
             problems.push_back(g + ": " + n.dna.member + " is missing");
             continue;
         }
-        lmap_io *io = n.dna.store->openMember(n.dna.member);
+        lmap_io *io = openSource(n.dna);
         tb_file *t = tb_open_io(io, 1);
         if (!t) {
             lmap_io_close(io);
@@ -463,7 +517,51 @@ vector<string> Update::check() {
         tb_close(t);
         if (!same) problems.push_back(g + ": its DNA does not match its sequence table");
     }
+    /* members: there; likelihoods for the genome's own sequences */
+    for (const string &g : order) {
+        const Node &n = _nodes.at(g);
+        for (auto &kv : n.members) {
+            if (!sourceExists(kv.second)) {
+                problems.push_back(g + ": its " + kv.first + " member " + kv.second.member + " is missing");
+                continue;
+            }
+            if (kv.first == "lik" && n.dna.member.empty()) problems.push_back(g + ": has likelihoods but no DNA (they are relative to its bases)");
+            if (kv.first != "lik" || !own.count(g)) continue;
+            try {
+                unique_ptr<LikFile> lf = LikFile::open(openSource(kv.second), true, kv.second.member);
+                const SeqTable &st = own[g];
+                bool same = lf->numSequences() == st.size();
+                for (uint32_t i = 0; same && i < st.size(); i++)
+                    same = lf->sequenceName(i) == st[i].first && lf->sequenceLength(i) == st[i].second;
+                if (!same) problems.push_back(g + ": its likelihoods are not for its sequences");
+            } catch (exception &e) {
+                problems.push_back(g + ": " + e.what());
+            }
+        }
+    }
+    set<string> paths;
+    for (const NamedFile &f : finalManifest().files())
+        if (!paths.insert(f.path).second) problems.push_back(f.path + " would be named twice");
+    if (problems.empty()) staleNotes();
     return problems;
+}
+
+void Update::staleNotes() {
+    for (const string &g : preorder()) {
+        const Node &n = _nodes.at(g);
+        auto it = n.members.find("lik");
+        if (it == n.members.end()) continue;
+        string kind;
+        try {
+            kind = LikFile::open(openSource(it->second), true, it->second.member)->meta("kind");
+        } catch (exception &) {
+            continue;   /* check() reported it */
+        }
+        if (kind == "subtree" && _changedBelow.count(g))
+            _log.push_back("note: the subtree likelihoods of " + g + " are out of date (the alignment below it changed)");
+        else if (kind == "posterior" && _branchesChanged)
+            _log.push_back("note: the posterior likelihoods of " + g + " are out of date (the tree changed)");
+    }
 }
 
 /* ---------------------------------------------------------------- writing */
@@ -480,6 +578,12 @@ Manifest Update::finalManifest() const {
         e.branchLength = n.parent.empty() ? -1 : n.branchLength;
         e.hgnPath = "genomes/" + genomeFileStem(g) + ".hgn";
         if (!n.dna.member.empty()) e.dnaPath = "genomes/" + genomeFileStem(g) + ".2bit";
+        for (auto &kv : n.members) {
+            MemberRef mr;
+            mr.role = kv.first;
+            mr.path = "genomes/" + genomeFileStem(g) + memberExtension(kv.first);
+            e.members.push_back(mr);
+        }
         m.genomes.push_back(e);
     }
     return m;
@@ -534,8 +638,13 @@ void Update::write(const string &out, bool directory) {
         e.hgnCrc = put(e.hgnPath, io, &e.hgnBytes);
         lmap_io_close(io);
         if (!e.dnaPath.empty()) {
-            io = n.dna.store->openMember(n.dna.member);
+            io = openSource(n.dna);
             e.dnaCrc = put(e.dnaPath, io, &e.dnaBytes);
+            lmap_io_close(io);
+        }
+        for (MemberRef &mr : e.members) {
+            io = openSource(n.members.at(mr.role));
+            mr.crc = put(mr.path, io, &mr.bytes);
             lmap_io_close(io);
         }
     }
@@ -553,11 +662,8 @@ void Update::writeInPlace() {
     Manifest m = finalManifest();
     ScratchDir scratch(_path);
     /* what each member was in the input, to leave unchanged members alone */
-    map<string, const GenomeEntry *> before;
-    for (const GenomeEntry &e : _manifest.genomes) {
-        before[e.hgnPath] = &e;
-        if (!e.dnaPath.empty()) before[e.dnaPath] = &e;
-    }
+    map<string, NamedFile> before;
+    for (const NamedFile &f : _manifest.files()) before[f.path] = f;
     unique_ptr<PackWriter> w;
     if (_in->isPack()) w = PackWriter::update(_path);
     vector<pair<string, string>> renames;   /* directory: temp file -> member path */
@@ -571,11 +677,28 @@ void Update::writeInPlace() {
         renames.push_back({tmp, _path + "/" + member});
         return c;
     };
+    /* a file that is only copied (DNA, members): as it is, under a new name, or anew */
+    auto plain = [&](const Source &src, const string &path, uint64_t *bytes, uint32_t *crc) {
+        bool input = src.store == _in.get();
+        auto was = before.find(path);
+        auto from = input ? before.find(src.member) : before.end();
+        if (input && src.member == path && was != before.end()) {
+            *bytes = was->second.bytes;
+            *crc = was->second.crc;
+        } else if (w && from != before.end()) {
+            w->link(src.member, path);
+            *bytes = from->second.bytes;
+            *crc = from->second.crc;
+        } else {
+            lmap_io *io = openSource(src);
+            *crc = put(path, io, bytes);
+            lmap_io_close(io);
+        }
+    };
     set<string> finalMembers{MANIFEST_NAME};
+    for (const NamedFile &f : m.files()) finalMembers.insert(f.path);
     for (GenomeEntry &e : m.genomes) {
         const Node &n = _nodes.at(e.name);
-        finalMembers.insert(e.hgnPath);
-        if (!e.dnaPath.empty()) finalMembers.insert(e.dnaPath);
         LmapGuard f;
         f.f = openHgn(*n.hgn.store, n.hgn.member);
         SeqTable t = table(f.f, 0);
@@ -587,12 +710,12 @@ void Update::writeInPlace() {
         auto was = before.find(e.hgnPath);
         auto from = before.find(n.hgn.member);
         if (fit && n.hgn.store == _in.get() && n.hgn.member == e.hgnPath && was != before.end()) {
-            e.hgnBytes = was->second->hgnBytes;
-            e.hgnCrc = was->second->hgnCrc;
+            e.hgnBytes = was->second.bytes;
+            e.hgnCrc = was->second.crc;
         } else if (w && fit && n.hgn.store == _in.get() && from != before.end()) {
             w->link(n.hgn.member, e.hgnPath);
-            e.hgnBytes = from->second->hgnBytes;
-            e.hgnCrc = from->second->hgnCrc;
+            e.hgnBytes = from->second.bytes;
+            e.hgnCrc = from->second.crc;
         } else {
             lmap_io *io;
             if (fit) {
@@ -606,22 +729,8 @@ void Update::writeInPlace() {
             e.hgnCrc = put(e.hgnPath, io, &e.hgnBytes);
             lmap_io_close(io);
         }
-        if (!e.dnaPath.empty()) {
-            auto wasDna = before.find(e.dnaPath);
-            auto fromDna = before.find(n.dna.member);
-            if (n.dna.store == _in.get() && n.dna.member == e.dnaPath && wasDna != before.end()) {
-                e.dnaBytes = wasDna->second->dnaBytes;
-                e.dnaCrc = wasDna->second->dnaCrc;
-            } else if (w && n.dna.store == _in.get() && fromDna != before.end()) {
-                w->link(n.dna.member, e.dnaPath);
-                e.dnaBytes = fromDna->second->dnaBytes;
-                e.dnaCrc = fromDna->second->dnaCrc;
-            } else {
-                lmap_io *io = n.dna.store->openMember(n.dna.member);
-                e.dnaCrc = put(e.dnaPath, io, &e.dnaBytes);
-                lmap_io_close(io);
-            }
-        }
+        if (!e.dnaPath.empty()) plain(n.dna, e.dnaPath, &e.dnaBytes, &e.dnaCrc);
+        for (MemberRef &mr : e.members) plain(n.members.at(mr.role), mr.path, &mr.bytes, &mr.crc);
     }
     if (w) {
         for (const string &member : w->members())

@@ -552,5 +552,162 @@ check "... and writes nothing" test ! -e "$TMP/u.bad.hal"
 refuses "grafting genomes that are already there is refused" "$BIN/hal" update "$P" "$TMP/u.bad.hal" --graft "$TMP/u.sub.hal"
 refuses "replacing a genome with another alignment's root is refused" "$BIN/hal" update "$P" "$TMP/u.bad.hal" --replace "$TMP/u.sub.hal:$mid"
 
+echo "ancestral likelihoods:"
+# Independent check: in a hal maf column where every genome has at most one row, the
+# column's tree is the genome tree, so Felsenstein's pruning over the leaf rows gives
+# the reference's exact subtree likelihoods, and an up-and-down pass every ancestor
+# row's exact posterior.  hal stores values rounded to 0.1 decade and builds each level
+# from its children's stored values, so it must agree closely (KL), and its most
+# probable base must be the exact one wherever that leads by more than 1.35x.
+cat >"$TMP/felsenstein.py" <<'PYEOF'
+import math, re, sys
+mode, newick, maf = sys.argv[1], sys.argv[2], sys.argv[3]
+tables = dict(zip(sys.argv[4::2], sys.argv[5::2]))     # genome -> hal fasta --likelihoods table
+def parse(s):                                           # Newick -> children, branch lengths, root
+    kids, parent, blen, stack, cur, pending = {}, {}, {}, [], None, []
+    for t in re.findall(r"[(),;]|:[^,();]+|[^:,();]+", s):
+        if t == "(": stack.append([])
+        elif t == ")": pending = stack.pop()
+        elif t in ",;": pass
+        elif t.startswith(":"): blen[cur] = float(t[1:])
+        else:
+            cur = t; kids[cur] = pending
+            for c in pending: parent[c] = cur
+            pending = []
+            if stack: stack[-1].append(cur)
+    return kids, blen, [g for g in kids if g not in parent][0]
+kids, blen, root = parse(open(newick).read().strip())
+IDX = {"A": 0, "C": 1, "G": 2, "T": 3}
+def norm(v):
+    s = sum(v); return [x / s for x in v] if s > 0 else [0.25] * 4
+def load(path):
+    t = {}
+    for line in open(path):
+        if line.startswith("#"): continue
+        f = line.split("\t"); t[(f[0], int(f[1]))] = [float(x) for x in f[3:7]]
+    return t
+ours = {g: load(p) for g, p in tables.items()}
+def comp(v): return [v[3], v[2], v[1], v[0]]
+def msg(c, col, L):          # product over c's copies of sum_b P(b | a) L_copy(b), over a
+    e = math.exp(-4 * blen[c] / 3); same, other = 0.25 + 0.75 * e, 0.25 - 0.25 * e
+    if kids[c]:
+        l = L[c]; s = sum(l); return [other * s + (same - other) * l[a] for a in range(4)]
+    v = [1.0] * 4
+    for row in col.get(c, []):                          # every copy of a leaf: evidence
+        if row[0] in IDX:
+            x = IDX[row[0]]; v = [v[a] * (same if a == x else other) for a in range(4)]
+    return v
+def up(g, col, L):
+    v = [1.0] * 4
+    for c in kids[g]:
+        if kids[c]: up(c, col, L)
+        m = msg(c, col, L); v = [v[a] * m[a] for a in range(4)]
+    L[g] = norm(v)
+def down(g, U, L, out, col):
+    out[g] = norm([L[g][a] * U[a] for a in range(4)])
+    for c in kids[g]:
+        if not kids[c]: continue
+        rest = list(U)
+        for s in kids[g]:
+            if s != c: m = msg(s, col, L); rest = [rest[a] * m[a] for a in range(4)]
+        e = math.exp(-4 * blen[c] / 3); same, other = 0.25 + 0.75 * e, 0.25 - 0.25 * e
+        down(c, norm([sum(rest[a] * (same if a == b else other) for a in range(4)) for b in range(4)]), L, out, col)
+kl, n, flips, clear = 0.0, 0, 0, 0
+def compare(exact, mine):
+    global kl, n, flips, clear
+    mine = norm(mine)
+    kl += sum(e * (math.log2(max(e, 1e-300)) - math.log2(max(m, 1e-12))) for e, m in zip(exact, mine)); n += 1
+    se = sorted(exact)
+    if max(range(4), key=lambda a: exact[a]) != max(range(4), key=lambda a: mine[a]) and se[3] > se[2]:
+        flips += 1
+        if se[3] > 1.35 * se[2]: clear += 1
+def columns(block):          # per column, genome -> its rows' (base, seq, strand, forward pos)
+    for i in range(len(block[0][5])):
+        col, bad = {}, False
+        for name, start, size, strand, srclen, text, g, pos in block:
+            if text[i] == "-": continue
+            col.setdefault(g, []).append((text[i].upper(), name.split(".", 1)[1], strand, pos[i]))
+            if kids.get(g) and len(col[g]) > 1: bad = True; break   # an ancestor twice: no tree
+        if not bad: yield col
+def flush(block):
+    if not block: return
+    for r in block:
+        name, start, size, strand, srclen, text = r[:6]; pos, p = [], start
+        for ch in text:
+            pos.append(p if strand == "+" else srclen - 1 - p)
+            if ch != "-": p += 1
+        r.extend([name.split(".", 1)[0], pos])
+    for col in columns(block):
+        L = {}
+        if mode == "subtree":
+            g = block[0][6]; b, seq, strand, p = col[g][0]
+            up(g, col, L)
+            compare(L[g], ours[g][(seq, p)])
+        elif root in col:
+            up(root, col, L); out = {}
+            down(root, [0.25] * 4, L, out, col)
+            for g, rows in col.items():
+                if g not in ours: continue
+                b, seq, strand, p = rows[0]; mine = ours[g][(seq, p)]
+                compare(out[g], mine if strand == "+" else comp(mine))
+block = []
+for line in open(maf):
+    if line.startswith("a"): flush(block); block = []
+    elif line.startswith("s"):
+        f = line.split(); block.append([f[1], int(f[2]), int(f[3]), f[4], int(f[5]), f[6]])
+flush(block)
+print(f"{n} vectors: mean KL {kl / max(n, 1):.2e} bits, top base differs at {flips}, with a lead over 1.35x at {clear}")
+sys.exit(0 if n > 200 and kl / n < 1e-2 and clear == 0 else 1)
+PYEOF
+# halRandGen's branches all have length 0, which would make every base certain: give
+# them lengths from 0.01 to 0.3 first
+bl=""; i=0
+for g in $("$BIN/hal" stats "$TMP/r7.pack.hal" --genomes); do
+    [ "$g" = "$("$BIN/hal" stats "$TMP/r7.pack.hal" --root)" ] && continue
+    bl="$bl --branchLength $g=$(awk -v i=$i 'BEGIN {printf "%.3f", 0.01 + (i * 37 % 30) / 100}')"; i=$((i + 1))
+done
+"$BIN/hal" update "$TMP/r7.pack.hal" "$TMP/lb.hal" $bl >/dev/null 2>&1
+P="$TMP/lb.hal"
+"$BIN/hal" likelihoods "$P" "$TMP/l1.hal" >/dev/null 2>&1
+"$BIN/hal" likelihoods "$P" "$TMP/l3.hal" --threads 3 >/dev/null 2>&1
+check "hal likelihoods: a valid alignment, the same for any number of threads" \
+    sh -c "'$BIN/hal' validate '$TMP/l1.hal' && cmp '$TMP/l1.hal' '$TMP/l3.hal'"
+"$BIN/hal" stats "$P" --tree >"$TMP/tree.nwk"
+ancs=$(for g in $("$BIN/hal" stats "$P" --genomes); do [ -n "$("$BIN/hal" stats "$P" --children "$g")" ] && echo "$g"; done)
+tabs=""; for g in $ancs; do "$BIN/hal" fasta "$TMP/l1.hal" "$g" --likelihoods >"$TMP/$g.lik"; tabs="$tabs $g $TMP/$g.lik"; done
+nanc=0
+for g in $ancs; do
+    "$BIN/hal" maf "$P" "$TMP/a.maf" --refGenome "$g" --rootGenome "$g" --joinGap 0 2>/dev/null
+    python3 "$TMP/felsenstein.py" subtree "$TMP/tree.nwk" "$TMP/a.maf" $tabs >"$TMP/f.out" && nanc=$((nanc + 1)) || { echo "  FAIL $g: $(cat "$TMP/f.out")"; fails=$((fails + 1)); }
+done
+echo "  ok   subtree likelihoods of $nanc ancestors agree with Felsenstein's pruning over hal maf columns"
+"$BIN/hal" posteriors "$TMP/l1.hal" "$TMP/p1.hal" >/dev/null 2>&1
+check "hal posteriors: a valid alignment" "$BIN/hal" validate "$TMP/p1.hal"
+tabs=""; for g in $ancs; do "$BIN/hal" fasta "$TMP/p1.hal" "$g" --likelihoods >"$TMP/$g.post"; tabs="$tabs $g $TMP/$g.post"; done
+"$BIN/hal" maf "$P" "$TMP/r.maf" --joinGap 0 2>/dev/null
+check "posteriors agree with an up-and-down pass over the root's hal maf columns: $(python3 "$TMP/felsenstein.py" posterior "$TMP/tree.nwk" "$TMP/r.maf" $tabs)" \
+    python3 "$TMP/felsenstein.py" posterior "$TMP/tree.nwk" "$TMP/r.maf" $tabs
+check "each ancestral base is its posterior's most probable (the table's base column)" \
+    sh -c "cat $(for g in $ancs; do printf "'%s' " "$TMP/$g.post"; done) | awk -F'\t' '!/^#/ {m=\$4; b=\"A\"; if (\$5>m) {m=\$5; b=\"C\"} if (\$6>m) {m=\$6; b=\"G\"} if (\$7>m) {m=\$7; b=\"T\"} if (toupper(\$3) != b && m > 0.26) {v=0; for (i=4;i<=7;i++) if (\$i==m) v++; if (v==1) bad++}} END {exit bad>0}'"
+refuses "hal posteriors needs subtree likelihoods first" "$BIN/hal" posteriors "$P" "$TMP/p.bad.hal"
+refuses "... and posteriors are not subtree likelihoods" "$BIN/hal" posteriors "$TMP/p1.hal" "$TMP/p.bad.hal"
+# the likelihoods go with their genomes: split, graft back, every file as it was
+"$BIN/hal" update "$TMP/l1.hal" "$TMP/lt.hal" $prunes >/dev/null 2>&1
+"$BIN/hal" update "$TMP/l1.hal" "$TMP/ls.hal" --extract "$mid" >/dev/null 2>&1
+"$BIN/hal" update "$TMP/lt.hal" "$TMP/lj.hal" --graft "$TMP/ls.hal" >/dev/null 2>&1
+rm -rf "$TMP/u1" "$TMP/u2"; "$BIN/hal" unpack "$TMP/l1.hal" "$TMP/u1" >/dev/null 2>&1; "$BIN/hal" unpack "$TMP/lj.hal" "$TMP/u2" >/dev/null 2>&1
+check "split and graft back with likelihoods: every file as it was" diff -r "$TMP/u1" "$TMP/u2"
+check "pruning below an ancestor notes that its subtree likelihoods are out of date" \
+    sh -c "'$BIN/hal' update '$TMP/l1.hal' '$TMP/ln.hal' $prunes 2>&1 | grep -q 'subtree likelihoods of $mid are out of date'"
+cp "$TMP/l1.hal" "$TMP/lr.hal"
+check "renaming in place renames the likelihoods too (no copy)" \
+    sh -c "'$BIN/hal' update --inPlace '$TMP/lr.hal' --rename $mid=RenamedAnc >/dev/null 2>&1 && '$BIN/hal' validate '$TMP/lr.hal' >/dev/null && '$BIN/hal' ls '$TMP/lr.hal' | grep -q 'RenamedAnc.hlk'"
+rm -rf "$TMP/ld"; "$BIN/hal" unpack "$TMP/l1.hal" "$TMP/ld" >/dev/null 2>&1
+lik=$(ls "$TMP/ld/genomes/"*.hlk | head -1)
+printf '\x55' | dd of="$lik" bs=1 seek=200 conv=notrunc 2>/dev/null
+refuses "hal validate catches a damaged likelihood file (even with --noCrc)" "$BIN/hal" validate "$TMP/ld" --noCrc
+rm "$lik"
+refuses "... and a missing one" "$BIN/hal" validate "$TMP/ld"
+
 if [ $fails -eq 0 ]; then echo "ALL PASS (0 failures)"; else echo "FAILURES ($fails)"; fi
 exit $((fails > 0))

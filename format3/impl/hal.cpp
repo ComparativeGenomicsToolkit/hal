@@ -30,6 +30,8 @@ const Command COMMANDS[] = {
     {"unpack", "write an alignment as a directory", hal3::main_unpack},
     {"ls", "list an alignment's members", hal3::main_ls},
     {"update", "split, join, subset, replace or rename genomes", hal3::main_update},
+    {"likelihoods", "per-base likelihoods of the ancestral genomes, bottom up", hal3::main_likelihoods},
+    {"posteriors", "ancestral base probabilities given all the data; the most probable bases", hal3::main_posteriors},
 };
 
 void usage(ostream &os) {
@@ -39,7 +41,7 @@ void usage(ostream &os) {
           "Every command takes either form, local or a URL.\n\ncommands:\n";
     for (const Command &c : COMMANDS) {
         os << "  " << c.name;
-        for (size_t k = strlen(c.name); k < 10; k++) os << ' ';
+        for (size_t k = strlen(c.name); k < 12; k++) os << ' ';
         os << c.summary << "\n";
     }
 #ifndef HAL3_CONVERT

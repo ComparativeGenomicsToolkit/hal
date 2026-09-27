@@ -4,6 +4,7 @@
  */
 #include "hal3Alignment.h"
 #include "hal3Cli.h"
+#include "hal3Likelihood.h"
 #include "twobit64.h"
 
 #include <cctype>
@@ -31,6 +32,9 @@ static const char *FASTA_USAGE =
     "  --subtree             every genome in the subtree of <genome>, breadth first\n"
     "  --upper               upper-case every base\n"
     "  --ucscSequenceNames   name sequences genome.sequence\n"
+    "  --likelihoods         instead of FASTA, a table of each base's probabilities: sequence,\n"
+    "                        position, base, A, C, G, T (from the genome's likelihoods; a\n"
+    "                        genome without them is certain of its bases)\n"
     "  -h, --help\n";
 
 namespace {
@@ -38,8 +42,11 @@ namespace {
 struct Writer {
     FILE *out;
     int64_t lineWidth;
-    bool upper, fullNames;
+    bool upper, fullNames, likelihoods;
     string buf;
+    const LikFile *lik = nullptr;   /* the genome's, with --likelihoods */
+    LikCache cache;
+    vector<double> p;
 
     /* One sequence's [start, start+length) (length 0: to the end), as hal2fasta's
      * printSequence. */
@@ -54,7 +61,7 @@ struct Writer {
             throw runtime_error("Specified range [" + to_string(start) + "," + to_string(length) +
                                 "] is out of range for sequence " + g->sequenceName(seq) + ", which has length " +
                                 to_string(seqLen));
-        fprintf(out, ">%s%s%s\n", fullNames ? g->name().c_str() : "", fullNames ? "." : "", g->sequenceName(seq));
+        if (!likelihoods) fprintf(out, ">%s%s%s\n", fullNames ? g->name().c_str() : "", fullNames ? "." : "", g->sequenceName(seq));
         const int64_t piece = (int64_t)1 << 20;
         for (int64_t p = start; p < last; p += piece) {
             int64_t e = min(last, p + piece);
@@ -63,6 +70,10 @@ struct Writer {
                 throw runtime_error(string("cannot read DNA of ") + g->name() + "." + g->sequenceName(seq));
             if (upper)
                 for (char &ch : buf) ch = (char)toupper((unsigned char)ch);
+            if (likelihoods) {
+                table(g, seq, p, e);
+                continue;
+            }
             /* lines of lineWidth counted from start */
             for (int64_t q = p; q < e;) {
                 int64_t lineEnd = min(e, start + ((q - start) / lineWidth + 1) * lineWidth);
@@ -73,10 +84,39 @@ struct Writer {
         }
     }
 
+    /* --likelihoods: the bases [s, e) of seq, in buf, as table lines */
+    void table(const Genome *g, uint32_t seq, int64_t s, int64_t e) {
+        p.resize((size_t)(4 * (e - s)));
+        if (lik) {
+            lik->probabilities(seq, s, e, buf.data(), false, p.data(), &cache);
+        } else {
+            for (size_t i = 0; i < buf.size(); i++) {
+                int x = likBase(buf[i]);
+                for (int k = 0; k < 4; k++) p[4 * i + k] = x == 4 ? 0.25 : (k == x ? 1.0 : 0.0);
+            }
+        }
+        string name = fullNames ? g->name() + "." + g->sequenceName(seq) : string(g->sequenceName(seq));
+        for (int64_t i = 0; i < e - s; i++) {
+            const double *v = &p[(size_t)(4 * i)];
+            fprintf(out, "%s\t%lld\t%c\t%.6g\t%.6g\t%.6g\t%.6g\n", name.c_str(), (long long)(s + i), buf[(size_t)i], v[0], v[1], v[2], v[3]);
+        }
+    }
+
     /* A genome, or its range of concatenated sequences, as hal2fasta's printGenome. */
     void genome(const Alignment &aln, const Genome *g, int64_t seqOnly, int64_t start, int64_t length) {
         const GenomeEntry *e = aln.manifest().find(g->name());
         unique_ptr<tb_file, void (*)(tb_file *)> dna(aln.openDna(g), tb_close);
+        unique_ptr<LikFile> likFile;
+        const MemberRef *mr = likelihoods ? e->member("lik") : nullptr;
+        if (mr) {
+            likFile = LikFile::open(aln.store().openMember(mr->path), true, mr->path);
+            bool same = likFile->numSequences() == g->numSequences();
+            for (uint32_t i = 0; same && i < g->numSequences(); i++)
+                same = likFile->sequenceName(i) == g->sequenceName(i) && likFile->sequenceLength(i) == g->sequenceLength(i);
+            if (!same) throw runtime_error(mr->path + " is not for the sequences of " + g->name());
+        }
+        lik = likFile.get();
+        cache = LikCache();
         auto tbIndex = [&](uint32_t i) {
             int64_t t = i < tb_n_seqs(dna.get()) && !strcmp(tb_name(dna.get(), i), g->sequenceName(i))
                             ? (int64_t)i
@@ -86,6 +126,7 @@ struct Writer {
         };
         if (seqOnly >= 0) {
             sequence(g, dna.get(), tbIndex((uint32_t)seqOnly), (uint32_t)seqOnly, start, length);
+            lik = nullptr;
             return;
         }
         int64_t total = g->sequenceStart(g->numSequences() - 1) + g->sequenceLength(g->numSequences() - 1);
@@ -103,6 +144,7 @@ struct Writer {
                 break;
             }
         }
+        lik = nullptr;
     }
 };
 }
@@ -111,8 +153,8 @@ int main_fasta(int argc, char **argv) {
     return runCommand("fasta", [&]() {
         string outPath = "stdout", seqName;
         int64_t start = 0, length = 0, lineWidth = 80;
-        bool subtree = false, upper = false, fullNames = false, startSet = false, lengthSet = false;
-        enum { OUT = 1000, SEQUENCE, START, LENGTH, LINE_WIDTH, SUBTREE, UPPER, UCSC };
+        bool subtree = false, upper = false, fullNames = false, startSet = false, lengthSet = false, likelihoods = false;
+        enum { OUT = 1000, SEQUENCE, START, LENGTH, LINE_WIDTH, SUBTREE, UPPER, UCSC, LIKELIHOODS };
         static const option longOpts[] = {{"outFaPath", required_argument, nullptr, OUT},
                                           {"sequence", required_argument, nullptr, SEQUENCE},
                                           {"start", required_argument, nullptr, START},
@@ -121,6 +163,7 @@ int main_fasta(int argc, char **argv) {
                                           {"subtree", no_argument, nullptr, SUBTREE},
                                           {"upper", no_argument, nullptr, UPPER},
                                           {"ucscSequenceNames", no_argument, nullptr, UCSC},
+                                          {"likelihoods", no_argument, nullptr, LIKELIHOODS},
                                           {"help", no_argument, nullptr, 'h'},
                                           {nullptr, 0, nullptr, 0}};
         int c;
@@ -134,6 +177,7 @@ int main_fasta(int argc, char **argv) {
             case SUBTREE: subtree = true; break;
             case UPPER: upper = true; break;
             case UCSC: fullNames = true; break;
+            case LIKELIHOODS: likelihoods = true; break;
             case 'h': cout << FASTA_USAGE; return 0;
             default: throw CliError("bad option");
             }
@@ -152,7 +196,13 @@ int main_fasta(int argc, char **argv) {
         }
         FILE *out = outPath == "stdout" ? stdout : fopen(outPath.c_str(), "w");
         if (!out) throw runtime_error("cannot write " + outPath);
-        Writer w{out, lineWidth, upper, fullNames, {}};
+        Writer w;
+        w.out = out;
+        w.lineWidth = lineWidth;
+        w.upper = upper;
+        w.fullNames = fullNames;
+        w.likelihoods = likelihoods;
+        if (likelihoods) fprintf(out, "#sequence\tposition\tbase\tA\tC\tG\tT\n");
         deque<const Genome *> queue{g};
         while (!queue.empty()) {
             const Genome *cur = queue.front();
