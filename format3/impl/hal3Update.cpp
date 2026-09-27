@@ -590,7 +590,7 @@ void Update::writeInPlace() {
             e.hgnBytes = was->second->hgnBytes;
             e.hgnCrc = was->second->hgnCrc;
         } else if (w && fit && n.hgn.store == _in.get() && from != before.end()) {
-            w->rename(n.hgn.member, e.hgnPath);
+            w->link(n.hgn.member, e.hgnPath);
             e.hgnBytes = from->second->hgnBytes;
             e.hgnCrc = from->second->hgnCrc;
         } else {
@@ -613,7 +613,7 @@ void Update::writeInPlace() {
                 e.dnaBytes = wasDna->second->dnaBytes;
                 e.dnaCrc = wasDna->second->dnaCrc;
             } else if (w && n.dna.store == _in.get() && fromDna != before.end()) {
-                w->rename(n.dna.member, e.dnaPath);
+                w->link(n.dna.member, e.dnaPath);
                 e.dnaBytes = fromDna->second->dnaBytes;
                 e.dnaCrc = fromDna->second->dnaCrc;
             } else {

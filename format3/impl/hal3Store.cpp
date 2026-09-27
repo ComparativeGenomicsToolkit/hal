@@ -304,7 +304,7 @@ unique_ptr<PackWriter> PackWriter::update(const string &path) {
         throw;
     }
     lmap_io_close(io);
-    w->_entries = info.entries;
+    w->_entries = w->_opened = info.entries;
     w->_generation = info.generation;
     w->_nextSlot = 1 - slot;
     struct stat st;
@@ -373,12 +373,10 @@ uint32_t PackWriter::putBytes(const string &name, const string &bytes) {
 
 void PackWriter::remove(const string &name) { _entries.erase(name); }
 
-void PackWriter::rename(const string &from, const string &to) {
-    auto it = _entries.find(from);
-    if (it == _entries.end()) throw runtime_error(_path + " has no member " + from);
-    PackEntry e = it->second;
-    _entries.erase(it);
-    _entries[to] = e;
+void PackWriter::link(const string &from, const string &to) {
+    auto it = _opened.find(from);
+    if (it == _opened.end()) throw runtime_error(_path + " had no member " + from);
+    _entries[to] = it->second;
 }
 
 vector<string> PackWriter::members() const {

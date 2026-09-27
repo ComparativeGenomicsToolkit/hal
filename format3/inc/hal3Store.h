@@ -103,8 +103,11 @@ class PackWriter {
     uint32_t putBytes(const std::string &name, const std::string &bytes);
     uint32_t putIo(const std::string &name, lmap_io *io);
     void remove(const std::string &name);
-    /* A member under a new name, its bytes where they are: nothing is copied. */
-    void rename(const std::string &from, const std::string &to);
+    /* to names the bytes that from named when the writer was opened -- whatever has
+     * been done to either name since -- where they are: nothing is copied.  from is
+     * left as it is; remove() it if it is to go.  (So a cycle of renames, a swap, can
+     * be done one link at a time.) */
+    void link(const std::string &from, const std::string &to);
     bool has(const std::string &name) const { return _entries.count(name) > 0; }
     std::vector<std::string> members() const;
 
@@ -119,6 +122,7 @@ class PackWriter {
     uint64_t _end = 0, _generation = 0;
     int _nextSlot = 0;
     std::map<std::string, PackEntry> _entries;
+    std::map<std::string, PackEntry> _opened;   /* _entries as the writer found them */
     void append(const void *data, size_t n, uint64_t at);
 };
 }

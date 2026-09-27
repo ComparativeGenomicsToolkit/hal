@@ -538,6 +538,15 @@ rm -rf "$TMP/u1" "$TMP/u2"; "$BIN/hal" unpack "$TMP/u.ip.hal" "$TMP/u1" >/dev/nu
 check "--inPlace (remove + rename, one transaction) gives what a new file gets, and validates" \
     sh -c "diff -r '$TMP/u1' '$TMP/u2' && '$BIN/hal' validate '$TMP/u.ip.hal'"
 check "the input is untouched by an update to a new file" cmp "$P" "$TMP/r7.packed.hal"
+# a cycle of renames in place: each member must end up under its new name, not a name
+# another genome has taken already
+cp "$P" "$TMP/u.swap.hal"; rm -rf "$TMP/u1" "$TMP/u2"; cp -r "$D" "$TMP/u2"
+swap="--rename $l1=T --rename $l2=$l1 --rename T=$l2"
+"$BIN/hal" update --inPlace "$TMP/u.swap.hal" $swap >/dev/null 2>&1
+"$BIN/hal" update --inPlace "$TMP/u2" $swap >/dev/null 2>&1
+"$BIN/hal" unpack "$TMP/u.swap.hal" "$TMP/u1" >/dev/null 2>&1
+check "--inPlace swap of two names: valid, and the single file equals the directory" \
+    sh -c "'$BIN/hal' validate '$TMP/u.swap.hal' && diff -r '$TMP/u1' '$TMP/u2'"
 refuses "removing an ancestor but not its children is refused" "$BIN/hal" update "$P" "$TMP/u.bad.hal" --remove "$mid"
 check "... and writes nothing" test ! -e "$TMP/u.bad.hal"
 refuses "grafting genomes that are already there is refused" "$BIN/hal" update "$P" "$TMP/u.bad.hal" --graft "$TMP/u.sub.hal"
