@@ -6,12 +6,17 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
+#include <deque>
+#include <list>
+#include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <sys/file.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <zlib.h>
@@ -156,9 +161,132 @@ class PackStore : public Store {
     }
 };
 
+/* Descriptors for a local directory's members, at most `cap` open at a time (see
+ * hal3Store.h).  A read takes its member's descriptor -- opening it, after closing the
+ * least recently used idle one if the pool is full -- and gives it back after.  If
+ * every descriptor is busy, a read opens one of its own and closes it after.
+ * Thread-safe: the bookkeeping is under a lock; the reads are not. */
+class FilePool {
+  public:
+    explicit FilePool(size_t cap) : _cap(max<size_t>(1, cap)) {}
+    ~FilePool() {
+        for (File &f : _files)
+            if (f.fd >= 0) ::close(f.fd);
+    }
+    FilePool(const FilePool &) = delete;
+    FilePool &operator=(const FilePool &) = delete;
+
+    /* The member at path (one id per path, however often it is opened). */
+    size_t add(const string &path) {
+        lock_guard<mutex> lock(_m);
+        auto i = _ids.find(path);
+        if (i != _ids.end()) return i->second;
+        _files.emplace_back();
+        _files.back().path = path;
+        return _ids[path] = _files.size() - 1;
+    }
+    int64_t read(size_t id, void *buf, int64_t off, int64_t len) {
+        int fd = acquire(id);
+        if (fd < 0) return -1;
+        int64_t got = 0;
+        bool failed = false;
+        while (got < len) {
+            ssize_t k = ::pread(fd, (char *)buf + got, (size_t)(len - got), (off_t)(off + got));
+            if (k < 0 && errno == EINTR) continue;
+            if (k < 0) failed = true;
+            if (k <= 0) break;   /* an error, or the end of the file */
+            got += k;
+        }
+        release(id);
+        return failed ? -1 : got;
+    }
+
+  private:
+    struct File {
+        string path;
+        int fd = -1;
+        int users = 0;
+        bool idle = false;                 /* in _idle */
+        list<size_t>::iterator at;
+    };
+    mutex _m;
+    const size_t _cap;
+    size_t _open = 0;
+    deque<File> _files;
+    map<string, size_t> _ids;
+    list<size_t> _idle;                   /* open and unused, most recently used first */
+
+    void closeIdle() {                    /* with _m held */
+        size_t v = _idle.back();
+        _idle.pop_back();
+        File &x = _files[v];
+        x.idle = false;
+        ::close(x.fd);
+        x.fd = -1;
+        _open--;
+    }
+    int acquire(size_t id) {
+        lock_guard<mutex> lock(_m);
+        File &f = _files[id];
+        if (f.fd >= 0) {
+            if (f.users++ == 0 && f.idle) {
+                _idle.erase(f.at);
+                f.idle = false;
+            }
+            return f.fd;
+        }
+        while (_open >= _cap && !_idle.empty()) closeIdle();
+        int fd = ::open(f.path.c_str(), O_RDONLY | O_CLOEXEC);
+        while (fd < 0 && (errno == EMFILE || errno == ENFILE) && !_idle.empty()) {   /* others' files count too */
+            closeIdle();
+            fd = ::open(f.path.c_str(), O_RDONLY | O_CLOEXEC);
+        }
+        if (fd < 0) return -1;
+        f.fd = fd;
+        f.users = 1;
+        _open++;
+        return fd;
+    }
+    void release(size_t id) {
+        lock_guard<mutex> lock(_m);
+        File &f = _files[id];
+        if (--f.users > 0) return;
+        if (_open > _cap) {               /* opened past the cap while all were busy */
+            ::close(f.fd);
+            f.fd = -1;
+            _open--;
+            return;
+        }
+        _idle.push_front(id);
+        f.at = _idle.begin();
+        f.idle = true;
+    }
+};
+
+/* A member of a local directory as an lmap_io over the pool. */
+struct PooledMember {
+    shared_ptr<FilePool> pool;
+    size_t id;
+};
+int64_t pooledRead(void *ctx, void *buf, int64_t off, int64_t len) {
+    PooledMember *m = (PooledMember *)ctx;
+    return m->pool->read(m->id, buf, off, len);
+}
+void pooledClose(void *ctx) { delete (PooledMember *)ctx; }
+const lmap_io_backend POOLED = {"hal3-pool", pooledRead, pooledClose};
+
+size_t defaultMaxOpenFiles() {
+    if (const char *e = getenv("HAL3_MAX_OPEN_FILES"))
+        if (atoll(e) > 0) return (size_t)atoll(e);
+    struct rlimit rl;
+    size_t soft = getrlimit(RLIMIT_NOFILE, &rl) == 0 && rl.rlim_cur != RLIM_INFINITY ? (size_t)rl.rlim_cur : 4096;
+    return max<size_t>(4, min<size_t>(256, soft / 4));
+}
+
 class DirStore : public Store {
   public:
-    explicit DirStore(const string &dir) {
+    DirStore(const string &dir, size_t maxOpenFiles)
+        : _pool(new FilePool(maxOpenFiles ? maxOpenFiles : defaultMaxOpenFiles())) {
         _path = dir;
         while (_path.size() > 1 && _path.back() == '/') _path.pop_back();
     }
@@ -198,14 +326,32 @@ class DirStore : public Store {
         return n;
     }
     lmap_io *openMember(const string &name) const override {
-        lmap_io *io = openPathIo(_path + "/" + name);
-        if (!io) throw runtime_error("cannot open " + _path + "/" + name);
+        const string p = _path + "/" + name;
+        if (isUrl(_path)) {
+            lmap_io *io = openPathIo(p);
+            if (!io) throw runtime_error("cannot open " + p);
+            return io;
+        }
+        struct stat st;
+        if (stat(p.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) throw runtime_error("cannot open " + p + ": " + strerror(errno));
+        int fd = ::open(p.c_str(), O_RDONLY | O_CLOEXEC);   /* readable now, as a plain open would say */
+        if (fd < 0) throw runtime_error("cannot open " + p + ": " + strerror(errno));
+        ::close(fd);
+        PooledMember *m = new PooledMember{_pool, _pool->add(p)};
+        lmap_io *io = lmap_io_open_backend(&POOLED, m, (int64_t)st.st_size);
+        if (!io) {
+            delete m;
+            throw runtime_error("cannot open " + p);
+        }
         return io;
     }
+
+  private:
+    shared_ptr<FilePool> _pool;
 };
 }
 
-unique_ptr<Store> Store::open(const string &path) {
+unique_ptr<Store> Store::open(const string &path, size_t maxOpenFiles) {
     if (isUrl(path)) {
         /* a pack, or else a directory */
         if (lmap_io *io = openPathIo(path)) {
@@ -214,11 +360,11 @@ unique_ptr<Store> Store::open(const string &path) {
                 return unique_ptr<Store>(new PackStore(path, io));
             lmap_io_close(io);
         }
-        return unique_ptr<Store>(new DirStore(path));
+        return unique_ptr<Store>(new DirStore(path, maxOpenFiles));
     }
     struct stat st;
     if (stat(path.c_str(), &st) != 0) throw runtime_error("cannot open " + path + ": " + strerror(errno));
-    if (S_ISDIR(st.st_mode)) return unique_ptr<Store>(new DirStore(path));
+    if (S_ISDIR(st.st_mode)) return unique_ptr<Store>(new DirStore(path, maxOpenFiles));
     lmap_io *io = lmap_io_open_file(path.c_str());
     if (!io) throw runtime_error("cannot open " + path + ": " + strerror(errno));
     char head[16] = {0};
@@ -228,7 +374,7 @@ unique_ptr<Store> Store::open(const string &path) {
     lmap_io_close(io);
     if (Manifest::isManifest(string(head, (size_t)n))) {
         size_t slash = path.rfind('/');
-        return unique_ptr<Store>(new DirStore(slash == string::npos ? "." : path.substr(0, slash)));
+        return unique_ptr<Store>(new DirStore(slash == string::npos ? "." : path.substr(0, slash), maxOpenFiles));
     }
     throw runtime_error(path + " is not a HAL format 3 alignment (a pack, or a directory with a manifest)");
 }

@@ -12,6 +12,8 @@
 #ifndef _HAL3_API_H
 #define _HAL3_API_H
 
+#include "hal3Branch.h"
+#include "hal3Dna.h"
 #include "hal3Error.h"
 #include "hal3Lift.h"
 #include "hal3Reader.h"

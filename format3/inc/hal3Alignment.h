@@ -66,9 +66,10 @@ class Genome {
 
 class Alignment {
   public:
-    /* A format 3 alignment: pack file, directory or manifest, local or a URL.  Throws
-     * std::runtime_error. */
-    explicit Alignment(const std::string &path);
+    /* A format 3 alignment: pack file, directory or manifest, local or a URL.
+     * maxOpenFiles: a local directory's descriptor pool (hal3Store.h; 0: the default).
+     * Throws std::runtime_error. */
+    explicit Alignment(const std::string &path, size_t maxOpenFiles = 0);
     ~Alignment();
     Alignment(const Alignment &) = delete;
     Alignment &operator=(const Alignment &) = delete;
@@ -92,6 +93,39 @@ class Alignment {
     std::vector<std::unique_ptr<Genome>> _genomes;           /* manifest order */
     std::map<std::string, const Genome *> _byName;
 };
+
+/* Genomes' DNA, read by one thread.  A genome's .2bit is opened on first use (a shared
+ * handle: see openDna), with its sequences matched to the genome's by name once.  A
+ * handle keeps the block lists it reads, so recycle() -- between units of work --
+ * reopens those that have served more than a few fetches or bases: what they hold stays
+ * bounded, while many small reads share a handle (opening one sorts every sequence
+ * name). */
+class DnaReader {
+  public:
+    explicit DnaReader(const Alignment &alignment) : _aln(alignment) {}
+    ~DnaReader();
+    DnaReader(const DnaReader &) = delete;
+    DnaReader &operator=(const DnaReader &) = delete;
+
+    /* out = bases [start, end) of sequence seq of g, forward strand, lower case where
+     * soft-masked unless noMask.  Throws std::runtime_error if g has no DNA, the
+     * sequence is not in its .2bit, or the read fails. */
+    void fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, std::string &out, bool noMask = false);
+    void recycle();
+
+  private:
+    struct Dna {
+        tb_file *f = nullptr;
+        int64_t fetches = 0, bases = 0;   /* since f was opened */
+        std::vector<int64_t> index;       /* sequence -> its index in the .2bit */
+    };
+    static const int64_t FETCHES = 256, BASES = (int64_t)1 << 20;
+    const Alignment &_aln;
+    std::map<const Genome *, Dna> _dna;
+};
+
+/* The reverse complement of s, in place (IUPAC codes other than ACGT kept as they are). */
+void reverseComplement(std::string &s);
 
 /* The lowest common ancestor of two genomes. */
 const Genome *lowestCommonAncestor(const Genome *a, const Genome *b);

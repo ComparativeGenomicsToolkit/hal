@@ -63,10 +63,10 @@ struct Genome::Impl {
 Alignment::Alignment() : _impl(new Impl()) {}
 Alignment::~Alignment() {}
 
-shared_ptr<const Alignment> Alignment::open(const string &path) {
+shared_ptr<const Alignment> Alignment::open(const string &path, const OpenOptions &opts) {
     shared_ptr<Alignment> a(new Alignment());
     Impl &m = *a->_impl;
-    m.aln.reset(new hal3::Alignment(path));
+    m.aln.reset(new hal3::Alignment(path, opts.maxOpenFiles));
     for (const GenomeEntry &e : m.aln->manifest().genomes) {
         const hal3::Genome *g = m.aln->genome(e.name);
         unique_ptr<Genome> p(new Genome());
@@ -220,6 +220,93 @@ void Lifter::down(const Genome *child, bool dupes, const vector<LiftPiece> &in, 
     toInternal(in, _impl->a);
     hal3::liftDownBranch(internal(child), dupes, _impl->a, _impl->b, _impl->cursors);
     toPublic(_impl->b, out);
+}
+
+/* ---------------------------------------------------------------- DNA */
+
+struct DnaReader::Impl {
+    shared_ptr<const Alignment> aln;
+    hal3::DnaReader reader;
+    explicit Impl(shared_ptr<const Alignment> a) : aln(move(a)), reader(*aln->impl().aln) {}
+};
+
+DnaReader::DnaReader(shared_ptr<const Alignment> alignment) : _impl(new Impl(move(alignment))) {}
+DnaReader::~DnaReader() {}
+
+void DnaReader::fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, string &out, bool noMask) {
+    const hal3::Genome *ig = internal(g);
+    if (!g->hasDna()) throw Error(ErrorKind::NotFound, "genome " + g->name() + " has no DNA in this alignment");
+    if (seq >= (uint64_t)g->numSequences() || start < 0 || end < start || end > g->sequenceLength(seq))
+        throw Error(ErrorKind::Argument, "no interval [" + to_string(start) + ", " + to_string(end) + ") of sequence " +
+                                             to_string(seq) + " of " + g->name());
+    _impl->reader.fetch(ig, seq, start, end, out, noMask);
+}
+
+void DnaReader::recycle() { _impl->reader.recycle(); }
+
+void reverseComplement(string &s) { hal3::reverseComplement(s); }
+
+/* ---------------------------------------------------------------- branch runs */
+
+namespace {
+Run toRun(const lmap_hit &h) { return Run{h.a_member, h.b_member, h.a, h.b, h.len, h.strand != 0}; }
+}
+
+struct BranchReader::Impl {
+    shared_ptr<const Alignment> aln;
+    CursorCache cursors;
+    vector<lmap_hit> hits;
+    explicit Impl(shared_ptr<const Alignment> a) : aln(move(a)) {}
+    void toRuns(vector<Run> &out) const {
+        out.clear();
+        out.reserve(hits.size());
+        for (const lmap_hit &h : hits) out.push_back(toRun(h));
+    }
+};
+
+BranchReader::BranchReader(shared_ptr<const Alignment> alignment) : _impl(new Impl(move(alignment))) {}
+BranchReader::~BranchReader() {}
+
+void BranchReader::byChild(const Genome *child, uint32_t childSeq, int64_t lo, int64_t hi, vector<Run> &out, bool clip) {
+    const hal3::Genome *c = internal(child);
+    out.clear();
+    if (childSeq >= (uint64_t)child->numSequences())
+        throw Error(ErrorKind::Argument, "genome " + child->name() + " has no sequence " + to_string(childSeq));
+    if (!child->parent() || hi <= lo) return;
+    branchByChild(c, childSeq, lo, hi, clip, _impl->cursors, _impl->hits);
+    _impl->toRuns(out);
+}
+
+void BranchReader::byParent(const Genome *child, uint32_t parentSeq, int64_t lo, int64_t hi, bool dupes, vector<Run> &out,
+                            bool clip) {
+    const hal3::Genome *c = internal(child);
+    out.clear();
+    if (!child->parent()) return;
+    if (parentSeq >= (uint64_t)child->parent()->numSequences())
+        throw Error(ErrorKind::Argument, "genome " + child->parent()->name() + " has no sequence " + to_string(parentSeq));
+    if (hi <= lo) return;
+    branchByParent(c, parentSeq, lo, hi, dupes, clip, _impl->cursors, _impl->hits);
+    _impl->toRuns(out);
+}
+
+void BranchReader::scan(const Genome *child, const function<void(const Run &)> &visit) {
+    const hal3::Genome *c = internal(child);
+    if (!child->parent()) return;
+    for (uint32_t i = 0; i < (uint32_t)child->numSequences(); i++) forEachRun(c, i, [&](const lmap_hit &h) { visit(toRun(h)); });
+}
+
+bool BranchReader::parentOf(const Genome *child, uint32_t seq, int64_t pos, uint32_t &parentSeq, int64_t &parentPos,
+                            bool &reversed) {
+    if (seq >= (uint64_t)child->numSequences() || pos < 0 || pos >= child->sequenceLength(seq))
+        throw Error(ErrorKind::Argument, "no position " + to_string(pos) + " of sequence " + to_string(seq) + " of " + child->name());
+    if (!child->parent()) return false;
+    branchByChild(internal(child), seq, pos, pos + 1, true, _impl->cursors, _impl->hits);
+    if (_impl->hits.empty()) return false;
+    const lmap_hit &h = _impl->hits[0];
+    parentSeq = h.b_member;
+    parentPos = h.b;
+    reversed = h.strand != 0;
+    return true;
 }
 
 /* ---------------------------------------------------------------- the reference walk */

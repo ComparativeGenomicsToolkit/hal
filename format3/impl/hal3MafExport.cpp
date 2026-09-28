@@ -540,20 +540,6 @@ WalkOptions walkOptions(const MafOptions &o) {
     return w;
 }
 
-char complement(char c) {
-    switch (c) {
-    case 'A': return 'T';
-    case 'C': return 'G';
-    case 'G': return 'C';
-    case 'T': return 'A';
-    case 'a': return 't';
-    case 'c': return 'g';
-    case 'g': return 'c';
-    case 't': return 'a';
-    default: return c;
-    }
-}
-
 /* ---------------------------------------------------------------- one chunk */
 
 /* A universal chunk: its segments (hal3Universal.h), and its top-level range's sequence,
@@ -571,11 +557,7 @@ struct UniChunk {
 class ChunkExporter {
   public:
     ChunkExporter(const Alignment &alignment, const Genome *ref, const MafOptions &opts, const map<const Genome *, int> &ranks)
-        : _aln(alignment), _ref(ref), _opts(opts), _ranks(ranks), _walk(alignment, ref, walkOptions(opts)) {}
-    ~ChunkExporter() {
-        for (auto &d : _dna)
-            if (d.second.f) tb_close(d.second.f);
-    }
+        : _aln(alignment), _ref(ref), _opts(opts), _ranks(ranks), _walk(alignment, ref, walkOptions(opts)), _dna(alignment) {}
     ChunkExporter(const ChunkExporter &) = delete;
     ChunkExporter &operator=(const ChunkExporter &) = delete;
 
@@ -641,17 +623,7 @@ class ChunkExporter {
     const MafOptions &_opts;
     const map<const Genome *, int> &_ranks;
     TreeWalk _walk;
-    /* A genome's .2bit.  A handle keeps the block lists it reads, so one that has served
-     * more than a few fetches or bases is reopened at the next chunk: what it holds stays
-     * about one chunk's, while many small chunks share a handle (opening one sorts every
-     * sequence name). */
-    struct Dna {
-        tb_file *f = nullptr;
-        int64_t fetches = 0, bases = 0;   /* since f was opened */
-        vector<int64_t> index;            /* sequence -> its index in the .2bit */
-    };
-    static const int64_t DNA_FETCHES = 256, DNA_BASES = (int64_t)1 << 20;
-    map<const Genome *, Dna> _dna;
+    DnaReader _dna;   /* recycled at each chunk: what its handles hold stays about one chunk's */
 
     int rank(const Genome *g) const {
         auto r = _ranks.find(g);
@@ -738,42 +710,20 @@ bool ChunkExporter::insertionKeys(const Genome *g, uint32_t seq, bool reversed, 
 /* ---------------------------------------------------------------- rows and blocks */
 
 void ChunkExporter::fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, bool reversed, string &out) {
-    out.assign((size_t)(end - start), 'N');
-    if (_opts.noDna) return;
-    Dna &d = _dna[g];
-    if (!d.f) {
-        const GenomeEntry *e = _aln.manifest().find(g->name());
-        if (!e || e->dnaPath.empty())
-            throw runtime_error("genome " + g->name() + " has no DNA in this alignment (--noDna writes N)");
-        d.f = _aln.openDna(g, true);
-        d.fetches = d.bases = 0;
-        if (d.index.empty())
-            for (uint32_t i = 0; i < g->numSequences(); i++)
-                d.index.push_back(i < tb_n_seqs(d.f) && !strcmp(tb_name(d.f, i), g->sequenceName(i))
-                                      ? (int64_t)i
-                                      : tb_find(d.f, g->sequenceName(i)));
+    if (_opts.noDna) {
+        out.assign((size_t)(end - start), 'N');
+        return;
     }
-    int64_t ti = d.index[seq];
-    if (ti < 0) throw runtime_error("sequence " + string(g->sequenceName(seq)) + " is not in the .2bit of " + g->name());
+    const GenomeEntry *e = _aln.manifest().find(g->name());
+    if (!e || e->dnaPath.empty()) throw runtime_error("genome " + g->name() + " has no DNA in this alignment (--noDna writes N)");
     int64_t len = g->sequenceLength(seq);
-    int64_t fs = reversed ? len - end : start, fe = reversed ? len - start : end;   /* forward coordinates */
-    d.fetches++;
-    d.bases += fe - fs;
-    if (tb_fetch(d.f, (uint32_t)ti, fs, fe, &out[0], 0) != 0)
-        throw runtime_error("cannot read DNA of " + g->name() + "." + g->sequenceName(seq));
-    if (reversed) {
-        reverse(out.begin(), out.end());
-        for (char &c : out) c = complement(c);
-    }
+    _dna.fetch(g, seq, reversed ? len - end : start, reversed ? len - start : end, out);   /* forward coordinates */
+    if (reversed) reverseComplement(out);
 }
 
 void ChunkExporter::startRun() {
     stats = MafStats();
-    for (auto &d : _dna)
-        if (d.second.f && (d.second.fetches > DNA_FETCHES || d.second.bases > DNA_BASES)) {
-            tb_close(d.second.f);
-            d.second.f = nullptr;
-        }
+    _dna.recycle();
 }
 
 void ChunkExporter::run(const RefInterval &chunk, BlockWriter &writer) {

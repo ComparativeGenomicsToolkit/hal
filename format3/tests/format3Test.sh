@@ -883,6 +883,7 @@ echo "the public API (inc/hal3/):"
 ROOT=$(cd "$BIN/.." && pwd)
 cat >"$TMP/api.cpp" <<'CPPEOF'
 #include "hal3/hal3.h"
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -915,6 +916,77 @@ int run(char **argv) {
             lifter.lift(src, (uint32_t)src->findSequence(name), s, e, tgt, strcmp(argv[5], "1") == 0, pieces);
             for (const LiftPiece &p : pieces)
                 printf("%s\t%lld\t%lld\n", tgt->sequenceName(p.tgtSeq).c_str(), (long long)p.tgtStart, (long long)(p.tgtStart + p.length));
+        }
+        return 0;
+    }
+    if (what == "dna") {       /* bases [argv[5], argv[6]) of sequence argv[4] of src, as hal fasta --upper */
+        DnaReader dna(aln);
+        std::string b;
+        uint32_t q = (uint32_t)src->findSequence(argv[4]);
+        dna.fetch(src, q, atoll(argv[5]), atoll(argv[6]), b, true);
+        printf(">%s\n", argv[4]);
+        for (size_t i = 0; i < b.size(); i += 80) printf("%s\n", b.substr(i, 80).c_str());
+        return 0;
+    }
+    if (what == "runs") {      /* the branch above src, as hal stats --runs */
+        BranchReader br(aln);
+        br.scan(src, [&](const Run &r) {
+            printf("%s\t%lld\t%lld\t%s:%lld\t0\t%c\n", src->sequenceName(r.childSeq).c_str(), (long long)r.childStart,
+                   (long long)(r.childStart + r.length), src->parent()->sequenceName(r.parentSeq).c_str(),
+                   (long long)r.parentStart, r.reversed ? '-' : '+');
+        });
+        return 0;
+    }
+    if (what == "branchcheck") {   /* byParent (all copies, canonical) and parentOf against the scan */
+        BranchReader br(aln);
+        std::vector<Run> all;
+        br.scan(src, [&](const Run &r) { all.push_back(r); });
+        const Genome *par = src->parent();
+        srand(3);
+        for (int t = 0; t < 200; t++) {
+            uint32_t q = (uint32_t)(rand() % par->numSequences());
+            int64_t len = par->sequenceLength(q);
+            if (len < 2) continue;
+            int64_t lo = rand() % len, hi = std::min(len, lo + 1 + rand() % 500);
+            /* every copy of every parent base in [lo, hi), from the scan: base -> child coordinates */
+            std::map<int64_t, std::vector<std::pair<int64_t, int64_t>>> want;   /* parent pos -> (genome coord, child pos) */
+            for (const Run &r : all) {
+                if (r.parentSeq != q) continue;
+                for (int64_t i = 0; i < r.length; i++) {
+                    int64_t pp = r.parentStart + i;
+                    if (pp < lo || pp >= hi) continue;
+                    int64_t cp = r.reversed ? r.childStart + r.length - 1 - i : r.childStart + i;
+                    want[pp].push_back({src->sequenceStart(r.childSeq) + cp, cp});
+                }
+            }
+            for (int d = 1; d >= 0; d--) {
+                std::vector<Run> got;
+                br.byParent(src, q, lo, hi, d == 1, got);
+                std::map<int64_t, std::vector<int64_t>> have;   /* parent pos -> genome coords */
+                for (const Run &r : got)
+                    for (int64_t i = 0; i < r.length; i++) {
+                        int64_t pp = r.parentStart + i, cp = r.reversed ? r.childStart + r.length - 1 - i : r.childStart + i;
+                        if (pp < lo || pp >= hi) return 1;
+                        have[pp].push_back(src->sequenceStart(r.childSeq) + cp);
+                    }
+                if (have.size() != want.size()) return 1;
+                for (auto &w : want) {
+                    std::vector<int64_t> h = have[w.first], x;
+                    for (auto &c : w.second) x.push_back(c.first);
+                    std::sort(h.begin(), h.end());
+                    std::sort(x.begin(), x.end());
+                    if (d == 1 ? h != x : (h.size() != 1 || h[0] != x[0])) return 1;   /* canonical: the smallest */
+                }
+            }
+        }
+        for (int t = 0; t < 200 && !all.empty(); t++) {   /* parentOf: a base inside a run, and one outside every run */
+            const Run &r = all[rand() % all.size()];
+            int64_t i = rand() % r.length, pp;
+            uint32_t ps;
+            bool rv;
+            if (!br.parentOf(src, r.childSeq, r.childStart + i, ps, pp, rv) || ps != r.parentSeq || rv != r.reversed ||
+                pp != (r.reversed ? r.parentStart + r.length - 1 - i : r.parentStart + i))
+                return 1;
         }
         return 0;
     }
@@ -977,6 +1049,26 @@ seq=$("$BIN/hal" stats "$A" --chromSizes "$leaf" | sort -k2,2nr | head -1 | cut 
 check "ReferenceWalk: as many bases as hal maf --joinGap 0 aligns ($leaf $seq:100-2100)" \
     sh -c "test \"\$('$TMP/api' '$A' walk '$leaf' '$seq' 100 2100)\" = \"\$('$BIN/hal' maf '$A' /dev/null --refGenome '$leaf' --refSequence '$seq' --start 100 --length 2000 --joinGap 0 2>&1 | sed -n 's/.* rows, \([0-9]*\) aligned bases.*/\1/p')\""
 refuses "Lifter refuses an interval outside the sequence" "$TMP/api" "$A" lift "$leaf" "$leaf" 1 <<<"$seq 0 999999999"
+check "DnaReader: the bases hal fasta gives ($leaf $seq:50-3050)" \
+    bash -c "cmp <('$TMP/api' '$A' dna '$leaf' '$seq' 50 3050) <('$BIN/hal' fasta '$A' '$leaf' --sequence '$seq' --start 50 --length 3000 --upper)"
+nb=0; bad=0
+for g in "${genomes[@]:1}"; do
+    nb=$((nb + 1))
+    bash -c "cmp -s <('$TMP/api' '$A' runs '$g' x) <('$BIN/hal' stats '$A' --runs '$g')" || bad=$((bad + 1))
+    "$TMP/api" "$A" branchcheck "$g" x >/dev/null 2>&1 || bad=$((bad + 1))
+done
+check "BranchReader: scan as hal stats --runs; byParent (every copy, canonical) and parentOf as the scan implies ($nb branches)" test $bad -eq 0
+
+echo "open files (a directory alignment's members share a pool of descriptors):"
+# the same output with the open-file limit below two per genome, and with a pool of 2
+# on 3 threads (every read waiting on, or opening past, a full pool)
+ng=${#genomes[@]}
+"$BIN/hal" maf "$A" "$TMP/fd0.maf" --refGenome "$leaf" --threads 3 --chunk 5000 2>/dev/null
+"$BIN/hal" maf "$A" "$TMP/fdu0.maf" --universal --leafInsertions --threads 3 --chunk 5000 2>/dev/null
+check "$ng genomes (.hgn and .2bit each) under ulimit -n $((ng + 6)): hal maf, --universal, validate as unlimited" \
+    bash -c "ulimit -n $((ng + 6)) && '$BIN/hal' maf '$A' '$TMP/fd1.maf' --refGenome '$leaf' --threads 3 --chunk 5000 2>/dev/null && '$BIN/hal' maf '$A' '$TMP/fdu1.maf' --universal --leafInsertions --threads 3 --chunk 5000 2>/dev/null && '$BIN/hal' validate '$A' >/dev/null 2>&1 && cmp -s '$TMP/fd0.maf' '$TMP/fd1.maf' && cmp -s '$TMP/fdu0.maf' '$TMP/fdu1.maf'"
+check "a pool of 2 files on 3 threads: hal maf and --universal as unlimited" \
+    bash -c "HAL3_MAX_OPEN_FILES=2 '$BIN/hal' maf '$A' '$TMP/fd2.maf' --refGenome '$leaf' --threads 3 --chunk 5000 2>/dev/null && HAL3_MAX_OPEN_FILES=2 '$BIN/hal' maf '$A' '$TMP/fdu2.maf' --universal --leafInsertions --threads 3 --chunk 5000 2>/dev/null && cmp -s '$TMP/fd0.maf' '$TMP/fd2.maf' && cmp -s '$TMP/fdu0.maf' '$TMP/fdu2.maf'"
 
 if [ $fails -eq 0 ]; then echo "ALL PASS (0 failures)"; else echo "FAILURES ($fails)"; fi
 exit $((fails > 0))

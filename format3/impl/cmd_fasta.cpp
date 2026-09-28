@@ -50,7 +50,7 @@ struct Writer {
 
     /* One sequence's [start, start+length) (length 0: to the end), as hal2fasta's
      * printSequence. */
-    void sequence(const Genome *g, tb_file *dna, int64_t tbIndex, uint32_t seq, int64_t start, int64_t length) {
+    void sequence(const Genome *g, DnaReader &dna, uint32_t seq, int64_t start, int64_t length) {
         int64_t seqLen = g->sequenceLength(seq);
         if (start > seqLen)
             throw runtime_error("Start position " + to_string(start) + " is out of range for sequence " +
@@ -65,9 +65,7 @@ struct Writer {
         const int64_t piece = (int64_t)1 << 20;
         for (int64_t p = start; p < last; p += piece) {
             int64_t e = min(last, p + piece);
-            buf.resize((size_t)(e - p));
-            if (tb_fetch(dna, (uint32_t)tbIndex, p, e, &buf[0], 0) != 0)
-                throw runtime_error(string("cannot read DNA of ") + g->name() + "." + g->sequenceName(seq));
+            dna.fetch(g, seq, p, e, buf);
             if (upper)
                 for (char &ch : buf) ch = (char)toupper((unsigned char)ch);
             if (likelihoods) {
@@ -105,7 +103,8 @@ struct Writer {
     /* A genome, or its range of concatenated sequences, as hal2fasta's printGenome. */
     void genome(const Alignment &aln, const Genome *g, int64_t seqOnly, int64_t start, int64_t length) {
         const GenomeEntry *e = aln.manifest().find(g->name());
-        unique_ptr<tb_file, void (*)(tb_file *)> dna(aln.openDna(g), tb_close);
+        if (!e || e->dnaPath.empty()) throw runtime_error("genome " + g->name() + " has no DNA in this alignment");
+        DnaReader dna(aln);
         unique_ptr<LikFile> likFile;
         const MemberRef *mr = likelihoods ? e->member("lik") : nullptr;
         if (mr) {
@@ -117,15 +116,8 @@ struct Writer {
         }
         lik = likFile.get();
         cache = LikCache();
-        auto tbIndex = [&](uint32_t i) {
-            int64_t t = i < tb_n_seqs(dna.get()) && !strcmp(tb_name(dna.get(), i), g->sequenceName(i))
-                            ? (int64_t)i
-                            : tb_find(dna.get(), g->sequenceName(i));
-            if (t < 0) throw runtime_error(string("sequence ") + g->sequenceName(i) + " is not in " + e->dnaPath);
-            return t;
-        };
         if (seqOnly >= 0) {
-            sequence(g, dna.get(), tbIndex((uint32_t)seqOnly), (uint32_t)seqOnly, start, length);
+            sequence(g, dna, (uint32_t)seqOnly, start, length);
             lik = nullptr;
             return;
         }
@@ -139,7 +131,7 @@ struct Writer {
             if (start + length > s0 && start < s0 + len) {
                 int64_t readStart = start < s0 ? 0 : start - s0;
                 int64_t readLen = start + length >= s0 + len ? len - readStart : start + length - s0 - readStart;
-                sequence(g, dna.get(), tbIndex(i), i, readStart, readLen);
+                sequence(g, dna, i, readStart, readLen);
             } else if (start + length <= s0) {
                 break;
             }

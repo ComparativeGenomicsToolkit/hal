@@ -10,6 +10,12 @@
  * Both open the same way, locally or over HTTP(S), and every member is read through
  * liftmap's lmap_io, so the genome files never know which it is.
  *
+ * Open files: a pack is one.  A local directory's members share a pool of at most
+ * maxOpenFiles descriptors (default: the soft limit on open files / 4, at most 256;
+ * HAL3_MAX_OPEN_FILES in the environment overrides it): a member takes one only while
+ * it is read, and keeps it until another needs the slot.  So an alignment of any
+ * number of genomes, each with a .hgn and a .2bit open, stays within the limit.
+ *
  * The pack format:
  *
  *   [0, 512)   header: magic "\x89HAL\r\n\x1a\n", u32 format 3, u32 pack version 1, then
@@ -45,8 +51,9 @@ extern const char PACK_MAGIC[8];
 class Store {
   public:
     /* A directory, a pack file, or a manifest file (its directory); local or a URL.
-     * Throws std::runtime_error. */
-    static std::unique_ptr<Store> open(const std::string &path);
+     * maxOpenFiles: the local directory's pool (0: the default).  Throws
+     * std::runtime_error. */
+    static std::unique_ptr<Store> open(const std::string &path, size_t maxOpenFiles = 0);
     virtual ~Store() {}
 
     virtual bool isPack() const = 0;

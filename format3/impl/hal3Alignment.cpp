@@ -3,6 +3,8 @@
  */
 #include "hal3Alignment.h"
 
+#include <algorithm>
+#include <cstring>
 #include <stdexcept>
 
 using namespace std;
@@ -66,8 +68,8 @@ int64_t Genome::findSequence(const string &name) const {
     return lmap_member_by_name(_hgn, 0, name.c_str());
 }
 
-Alignment::Alignment(const string &path) : _path(path) {
-    _store = Store::open(path);
+Alignment::Alignment(const string &path, size_t maxOpenFiles) : _path(path) {
+    _store = Store::open(path, maxOpenFiles);
     _manifest = Manifest::parse(_store->read(MANIFEST_NAME), path);
     for (const GenomeEntry &e : _manifest.genomes) {
         unique_ptr<Genome> g(new Genome());
@@ -123,6 +125,56 @@ tb_file *Alignment::openDna(const Genome *g, bool shared) const {
 const Genome *Alignment::genome(const string &name) const {
     auto i = _byName.find(name);
     return i == _byName.end() ? nullptr : i->second;
+}
+
+DnaReader::~DnaReader() {
+    for (auto &d : _dna)
+        if (d.second.f) tb_close(d.second.f);
+}
+
+void DnaReader::recycle() {
+    for (auto &d : _dna)
+        if (d.second.f && (d.second.fetches > FETCHES || d.second.bases > BASES)) {
+            tb_close(d.second.f);
+            d.second.f = nullptr;
+        }
+}
+
+void DnaReader::fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, string &out, bool noMask) {
+    Dna &d = _dna[g];
+    if (!d.f) {
+        d.f = _aln.openDna(g, true);
+        d.fetches = d.bases = 0;
+        if (d.index.empty())
+            for (uint32_t i = 0; i < g->numSequences(); i++)
+                d.index.push_back(i < tb_n_seqs(d.f) && !strcmp(tb_name(d.f, i), g->sequenceName(i)) ? (int64_t)i
+                                                                                                   : tb_find(d.f, g->sequenceName(i)));
+    }
+    if (seq >= d.index.size() || d.index[seq] < 0)
+        throw runtime_error("sequence " + string(seq < g->numSequences() ? g->sequenceName(seq) : "?") + " is not in the .2bit of " +
+                            g->name());
+    out.resize((size_t)(end - start));
+    d.fetches++;
+    d.bases += end - start;
+    if (end > start && tb_fetch(d.f, (uint32_t)d.index[seq], start, end, &out[0], noMask ? TB_NOMASK : 0) != 0)
+        throw runtime_error("cannot read DNA of " + g->name() + "." + g->sequenceName(seq));
+}
+
+void reverseComplement(string &s) {
+    reverse(s.begin(), s.end());
+    for (char &c : s) {
+        switch (c) {
+        case 'A': c = 'T'; break;
+        case 'C': c = 'G'; break;
+        case 'G': c = 'C'; break;
+        case 'T': c = 'A'; break;
+        case 'a': c = 't'; break;
+        case 'c': c = 'g'; break;
+        case 'g': c = 'c'; break;
+        case 't': c = 'a'; break;
+        default: break;
+        }
+    }
 }
 
 const Genome *lowestCommonAncestor(const Genome *a, const Genome *b) {

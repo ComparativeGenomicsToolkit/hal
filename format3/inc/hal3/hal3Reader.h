@@ -27,10 +27,17 @@ namespace api {
 
 class Genome;
 
+struct OpenOptions {
+    /* A local directory's members share at most this many open files (0: the soft limit
+     * on open files / 4, at most 256; HAL3_MAX_OPEN_FILES overrides it).  A pack is one
+     * open file. */
+    size_t maxOpenFiles = 0;
+};
+
 class Alignment {
   public:
     /* A pack file, a directory or a manifest; a local path or an http(s) URL. */
-    static std::shared_ptr<const Alignment> open(const std::string &path);
+    static std::shared_ptr<const Alignment> open(const std::string &path, const OpenOptions &opts = OpenOptions());
     ~Alignment();
     Alignment(const Alignment &) = delete;
     Alignment &operator=(const Alignment &) = delete;

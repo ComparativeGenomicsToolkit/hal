@@ -6,7 +6,7 @@
  */
 #include "hal3Alignment.h"
 #include "hal3Cli.h"
-#include "twobit64.h"
+#include "hal3Liftover.h"
 
 #include <algorithm>
 #include <cctype>
@@ -78,23 +78,14 @@ vector<string> split(const string &s, char sep) {
 
 /* Runs and aligned bases of each of g's sequences, from its .hgn. */
 void runsBySequence(const Genome *g, vector<uint64_t> &runs, vector<uint64_t> &bases) {
-    lmap_file *f = g->hgn();
     uint32_t n = g->numSequences();
     runs.assign(n, 0);
     bases.assign(n, 0);
-    for (uint32_t i = 0; i < n; i++) {
-        lmap_cursor *c = lmap_cursor_open(f, 0, i, nullptr, 0, 0);
-        if (!c) throw runtime_error("cannot read " + g->name() + "'s genome file");
-        lmap_hit h;
-        int rc = lmap_cursor_seek(c, 0, g->sequenceLength(i));
-        while (rc == 0 && (rc = lmap_cursor_next(c, &h)) == 1) {
-            rc = 0;
+    for (uint32_t i = 0; i < n; i++)
+        forEachRun(g, i, [&](const lmap_hit &h) {
             runs[i]++;
             bases[i] += (uint64_t)h.len;
-        }
-        lmap_cursor_close(c);
-        if (rc != 0) throw runtime_error("cannot read " + g->name() + "'s genome file");
-    }
+        });
 }
 
 void summary(const Alignment &aln) {
@@ -140,10 +131,6 @@ void span(const Alignment &aln, const vector<string> &names, bool keepRoot) {
     cout << endl;
 }
 
-unique_ptr<tb_file, void (*)(tb_file *)> openDna(const Alignment &aln, const Genome *g) {
-    return unique_ptr<tb_file, void (*)(tb_file *)>(aln.openDna(g), tb_close);
-}
-
 /* halStats --baseComp: every step-th base of the concatenated genome */
 void baseComp(const Alignment &aln, const string &arg) {
     vector<string> t = split(arg, ',');
@@ -151,19 +138,20 @@ void baseComp(const Alignment &aln, const string &arg) {
     if (t.size() == 2) step = atoll(t[1].c_str());
     if (step <= 0) throw CliError("Invalid value for --baseComp: " + arg + ".  Must be of format genomeName,step");
     const Genome *g = need(aln, t[0]);
-    auto dna = openDna(aln, g);
+    if (!aln.manifest().find(g->name()) || aln.manifest().find(g->name())->dnaPath.empty())
+        throw runtime_error("genome " + g->name() + " has no DNA in this alignment");
+    DnaReader dna(aln);
+    string c;
     int64_t len = g->sequenceStart(g->numSequences() - 1) + g->sequenceLength(g->numSequences() - 1);
     if (step >= len) step = len - 1;
     uint64_t n[4] = {0, 0, 0, 0};
     uint32_t seq = 0;
     for (int64_t i = 0; i < len; i += step) {
         while (i >= g->sequenceStart(seq) + g->sequenceLength(seq)) seq++;
-        char c;
-        int64_t ti = tb_find(dna.get(), g->sequenceName(seq)), p = i - g->sequenceStart(seq);
-        if (ti < 0 || tb_fetch(dna.get(), (uint32_t)ti, p, p + 1, &c, TB_NOMASK) != 0)
-            throw runtime_error("cannot read DNA of " + g->name());
-        const char *k = strchr("ACGT", c);
-        if (k && c) n[k - "ACGT"]++;
+        int64_t p = i - g->sequenceStart(seq);
+        dna.fetch(g, seq, p, p + 1, c, true);
+        const char *k = strchr("ACGT", c[0]);
+        if (k && c[0]) n[k - "ACGT"]++;
     }
     double total = (double)(n[0] + n[1] + n[2] + n[3]);
     cout << n[0] / total << '\t' << n[1] / total << '\t' << n[2] / total << '\t' << n[3] / total << '\n';
@@ -321,20 +309,12 @@ int main_stats(int argc, char **argv) {
         case RUNS: {
             const Genome *g = need(aln, arg);
             lmap_file *f = g->hgn();
-            for (uint32_t i = 0; i < g->numSequences(); i++) {
-                lmap_cursor *cur = lmap_cursor_open(f, 0, i, nullptr, 0, 0);
-                if (!cur) throw runtime_error("cannot read " + g->name() + "'s genome file");
-                lmap_hit h;
-                int rc = lmap_cursor_seek(cur, 0, g->sequenceLength(i));
-                while (rc == 0 && (rc = lmap_cursor_next(cur, &h)) == 1) {
-                    rc = 0;
+            for (uint32_t i = 0; i < g->numSequences(); i++)
+                forEachRun(g, i, [&](const lmap_hit &h) {
                     cout << g->sequenceName(i) << '\t' << h.a << '\t' << h.a + h.len << '\t'
                          << lmap_member_at(f, 1, h.b_member)->name << ':' << h.b << "\t0\t" << (h.strand ? '-' : '+')
                          << '\n';
-                }
-                lmap_cursor_close(cur);
-                if (rc != 0) throw runtime_error("cannot read " + g->name() + "'s genome file");
-            }
+                });
             break;
         }
         case BASE_COMP: baseComp(aln, arg); break;

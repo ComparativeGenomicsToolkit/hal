@@ -49,8 +49,9 @@ class CursorCache {
     ~CursorCache();
     CursorCache(const CursorCache &) = delete;
     CursorCache &operator=(const CursorCache &) = delete;
-    /* The runs of member m of `axis` of g's .hgn overlapping [lo, hi), clipped to it. */
-    void query(const Genome *g, int axis, uint32_t m, int64_t lo, int64_t hi, std::vector<lmap_hit> &out);
+    /* The runs of member m of `axis` of g's .hgn overlapping [lo, hi), clipped to it
+     * (clip false: whole). */
+    void query(const Genome *g, int axis, uint32_t m, int64_t lo, int64_t hi, std::vector<lmap_hit> &out, bool clip = true);
 
   private:
     typedef std::tuple<lmap_file *, int, uint32_t> Key;
@@ -82,6 +83,21 @@ void liftUpBranch(const Genome *g, const std::vector<LiftPiece> &in, std::vector
                   std::vector<LiftPiece> *unmapped, CursorCache &cursors, bool canonicalOnly = false);
 void liftDownBranch(const Genome *child, bool dupes, const std::vector<LiftPiece> &in, std::vector<LiftPiece> &out,
                     CursorCache &cursors);
+
+/* The runs of the branch above child, as hits (a: child, b: its parent; a parent
+ * sequence's index in the hit is its index in the parent genome).
+ *
+ * branchByChild: those overlapping [lo, hi) of child sequence seq, in child order -- at
+ * most one per base -- clipped to it unless clip is false.
+ * branchByParent: those overlapping [lo, hi) of parent sequence seq, in parent order:
+ * every copy of each parent base; or with dupes off, the canonical copy (the smallest
+ * child coordinate), cut to where it is canonical -- always clipped then.
+ * forEachRun: every run of child sequence seq, in child order, streamed (nothing kept). */
+void branchByChild(const Genome *child, uint32_t seq, int64_t lo, int64_t hi, bool clip, CursorCache &cursors,
+                   std::vector<lmap_hit> &out);
+void branchByParent(const Genome *child, uint32_t seq, int64_t lo, int64_t hi, bool dupes, bool clip, CursorCache &cursors,
+                    std::vector<lmap_hit> &out);
+void forEachRun(const Genome *child, uint32_t seq, const std::function<void(const lmap_hit &)> &visit);
 
 /* Map [start, end) of sequence srcSeq of src to tgt.  Throws std::runtime_error. */
 void liftInterval(const Genome *src, uint32_t srcSeq, int64_t start, int64_t end, const Genome *tgt, bool dupes,

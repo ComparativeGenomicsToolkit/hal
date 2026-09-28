@@ -151,7 +151,7 @@ CursorCache::~CursorCache() {
     for (auto &e : _open) lmap_cursor_close(e.second.cursor);
 }
 
-void CursorCache::query(const Genome *g, int axis, uint32_t m, int64_t lo, int64_t hi, vector<lmap_hit> &out) {
+void CursorCache::query(const Genome *g, int axis, uint32_t m, int64_t lo, int64_t hi, vector<lmap_hit> &out, bool clip) {
     out.clear();
     lmap_file *f = g->hgn();
     Key key = make_tuple(f, axis, m);
@@ -175,9 +175,42 @@ void CursorCache::query(const Genome *g, int axis, uint32_t m, int64_t lo, int64
     int rc = lmap_cursor_seek(c, lo, hi);
     while (rc == 0 && (rc = lmap_cursor_next(c, &h)) == 1) {
         rc = 0;
-        if (lmap_hit_clip(&h, axis, lo, hi, &clipped)) out.push_back(clipped);
+        if (!clip) out.push_back(h);
+        else if (lmap_hit_clip(&h, axis, lo, hi, &clipped)) out.push_back(clipped);
     }
     if (rc != 0) throw runtime_error("query failed on " + g->name());
+}
+
+void branchByChild(const Genome *child, uint32_t seq, int64_t lo, int64_t hi, bool clip, CursorCache &cursors,
+                   vector<lmap_hit> &out) {
+    cursors.query(child, 0, seq, lo, hi, out, clip);
+}
+
+void branchByParent(const Genome *child, uint32_t seq, int64_t lo, int64_t hi, bool dupes, bool clip, CursorCache &cursors,
+                    vector<lmap_hit> &out) {
+    if (dupes) {
+        cursors.query(child, 1, seq, lo, hi, out, clip);
+        return;
+    }
+    vector<lmap_hit> hits;
+    cursors.query(child, 1, seq, lo, hi, hits);
+    out.clear();
+    selectCanonical(child, hits, [&](int64_t plo, int64_t phi, const lmap_hit &h) {
+        lmap_hit c;
+        if (lmap_hit_clip(&h, 1, plo, phi, &c)) out.push_back(c);
+    });
+}
+
+void forEachRun(const Genome *child, uint32_t seq, const function<void(const lmap_hit &)> &visit) {
+    unique_ptr<lmap_cursor, void (*)(lmap_cursor *)> c(lmap_cursor_open(child->hgn(), 0, seq, nullptr, 0, 0), lmap_cursor_close);
+    if (!c) throw runtime_error("cannot read " + child->name() + "'s genome file");
+    lmap_hit h;
+    int rc = lmap_cursor_seek(c.get(), 0, child->sequenceLength(seq));
+    while (rc == 0 && (rc = lmap_cursor_next(c.get(), &h)) == 1) {
+        rc = 0;
+        visit(h);
+    }
+    if (rc != 0) throw runtime_error("cannot read " + child->name() + "'s genome file");
 }
 
 void liftInterval(const Genome *src, uint32_t srcSeq, int64_t start, int64_t end, const Genome *tgt, bool dupes,
