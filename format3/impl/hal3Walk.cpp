@@ -105,17 +105,20 @@ void TreeWalk::descend(const Genome *v, vector<LiftPiece> &in, map<const Genome 
         vector<LiftPiece> &r = pieces[v];
         r.insert(r.end(), in.begin(), in.end());
     }
+    /* a child with no pieces may still lead to tops (a walk up stops short of the scope
+     * top when every piece tops out lower down) */
     for (const Genome *c : v->children()) {
         if (!_scope.count(c)) continue;
         vector<LiftPiece> down;
         liftDownBranch(c, _opts.dupes, in, down, _cursors);
-        if (!down.empty() || tops.count(c)) descend(c, down, tops, pieces);
+        if (!down.empty() || _below.count(c)) descend(c, down, tops, pieces);
     }
 }
 
 void TreeWalk::lift(uint32_t refSeq, const vector<pair<int64_t, int64_t>> &intervals,
                     map<const Genome *, vector<LiftPiece>> &pieces) {
     pieces.clear();
+    _below.clear();
     vector<LiftPiece> cur, next, unmapped;
     for (const auto &iv : intervals)
         if (iv.second > iv.first) cur.push_back(LiftPiece{iv.first, refSeq, iv.first, iv.second - iv.first, false});
@@ -139,6 +142,9 @@ void TreeWalk::lift(uint32_t refSeq, const vector<pair<int64_t, int64_t>> &inter
             if (cur.empty()) break;
             a = a->parent();
         }
+        for (auto &t : tops)
+            for (const Genome *g = t.first; g && _below.insert(g).second; g = g->parent()) {
+            }
         vector<LiftPiece> none;
         descend(_top, none, tops, pieces);
     } else {

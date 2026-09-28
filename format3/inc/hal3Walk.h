@@ -78,6 +78,7 @@ class TreeWalk {
     const Genome *_ref;
     WalkOptions _opts;
     std::set<const Genome *> _scope, _printed;
+    std::set<const Genome *> _below;      /* genomes with tops at or below them, this walk */
     std::vector<const Genome *> _refPath;
     const Genome *_top = nullptr;
     CursorCache _cursors;

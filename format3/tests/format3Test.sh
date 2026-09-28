@@ -210,6 +210,15 @@ PYEOF
     python3 "$TMP/mafcols.py" "$TMP/z.maf" | LC_ALL=C sort >"$TMP/z.cols"
     python3 "$TMP/mafcols.py" "$TMP/c.maf" | LC_ALL=C sort >"$TMP/c.cols"
     check "a small chunk size changes blocks only, not columns" cmp "$TMP/z.cols" "$TMP/c.cols"
+    # a reference two levels below the root, whose chunks can be wholly parentless: the
+    # walk must still reach every genome below (the total of aligned bases is the same
+    # for any chunk size)
+    for deep in $("$BIN/hal" stats "$TMP/r7.hdf5" --genomes); do
+        p=$("$BIN/hal" stats "$TMP/r7.hdf5" --parent "$deep")
+        [ -n "$p" ] && [ -n "$("$BIN/hal" stats "$TMP/r7.hdf5" --parent "$p")" ] && break
+    done
+    total() { "$BIN/hal" maf "$TMP/r7.hdf5" stdout --refGenome "$deep" --joinGap 0 --noDna "$@" 2>/dev/null | awk '/^s/ {t+=$4} END {print t}'; }
+    check "reference $deep, chunks of 97 bases: the same aligned bases as one chunk" test "$(total)" = "$(total --chunk 97)"
 
     # insertion columns (--joinGap, on by default): valid MAF; no inserted base also in
     # a reference column or twice in one column; every pair of bases sharing an
