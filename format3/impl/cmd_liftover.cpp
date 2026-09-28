@@ -4,7 +4,7 @@
  */
 #include "hal3Alignment.h"
 #include "hal3Cli.h"
-#include "hal3Liftover.h"
+#include "hal3BedLiftover.h"
 
 #include <fstream>
 #include <getopt.h>

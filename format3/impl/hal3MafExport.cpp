@@ -794,10 +794,11 @@ void ChunkExporter::runUniversal(const UniChunk &c, BlockWriter &writer) {
     for (const Segment &sg : *c.segs) {
         (sg.depth ? own : quiet)[idx.genome(sg.g)].push_back(LiftPiece{sg.u, sg.seq, sg.pos, sg.len, sg.rev});
         if (sg.depth == 0) z.add(sg.u, sg.len);
-        else stats.placedColumns += (uint64_t)sg.len;
+        if (sg.depth > 0 || c.genome != _ref) stats.placedColumns += (uint64_t)sg.len;   /* an extra range is placed */
         if (sg.u > 0) extra.push_back(sg.u);
     }
-    stats.backboneColumns = (uint64_t)(z.at(c.cols) - c.rangePos);
+    const int64_t rowZeroBases = z.at(c.cols) - c.rangePos;
+    if (c.genome == _ref) stats.backboneColumns = (uint64_t)rowZeroBases;
     _walk.down(own, quiet, lifted);
     if (_opts.universalWhole) {
         for (auto &gp : lifted) {
@@ -808,7 +809,7 @@ void ChunkExporter::runUniversal(const UniChunk &c, BlockWriter &writer) {
             }
         }
         int64_t a = c.genome->sequenceStart(c.seq) + c.rangePos;
-        moments[c.genome].add(a, a + (int64_t)stats.backboneColumns);
+        moments[c.genome].add(a, a + rowZeroBases);
     }
     layout(lifted, 0, c.cols, z, extra, writer);
 }

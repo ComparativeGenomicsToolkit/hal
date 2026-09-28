@@ -876,5 +876,107 @@ refuses "hal validate catches a damaged likelihood file (even with --noCrc)" "$B
 rm "$lik"
 refuses "... and a missing one" "$BIN/hal" validate "$TMP/ld"
 
+echo "the public API (inc/hal3/):"
+# a program that includes only hal3/hal3.h, built with no liftmap, twobit64 or HAL
+# header on the include path (so the public headers expose none) and linked without
+# libHal or HDF5
+ROOT=$(cd "$BIN/.." && pwd)
+cat >"$TMP/api.cpp" <<'CPPEOF'
+#include "hal3/hal3.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+using namespace hal3::api;
+int run(char **argv) {
+    auto aln = Alignment::open(argv[1]);
+    std::string what = argv[2];
+    if (what == "genomes") {   /* name, parent, length, sequences; every sequence's table entry */
+        for (const Genome *g : aln->genomes()) {
+            printf("%s\t%s\t%lld\t%lld\n", g->name().c_str(), g->parent() ? g->parent()->name().c_str() : "-",
+                   (long long)g->length(), (long long)g->numSequences());
+            int64_t at = 0;
+            for (uint32_t i = 0; i < (uint32_t)g->numSequences(); i++) {
+                if (g->sequenceStart(i) != at || g->findSequence(g->sequenceName(i)) != (int64_t)i) return 1;
+                if (g->sequenceLength(i) > 0 && (g->sequenceAt(at) != i || g->sequenceAt(at + g->sequenceLength(i) - 1) != i)) return 1;
+                at += g->sequenceLength(i);
+            }
+            if (at != g->length()) return 1;
+        }
+        return aln->root() == aln->genomes()[0] && aln->genome("no such genome") == nullptr ? 0 : 1;
+    }
+    const Genome *src = aln->genome(argv[3]), *tgt = aln->genome(argv[4]);
+    if (what == "lift") {      /* BED on stdin, one interval per line, lifted: BED3 of the pieces */
+        Lifter lifter(aln);
+        std::vector<LiftPiece> pieces;
+        char name[1024];
+        long long s, e;
+        while (scanf("%1023s %lld %lld%*[^\n]", name, &s, &e) == 3) {
+            lifter.lift(src, (uint32_t)src->findSequence(name), s, e, tgt, strcmp(argv[5], "1") == 0, pieces);
+            for (const LiftPiece &p : pieces)
+                printf("%s\t%lld\t%lld\n", tgt->sequenceName(p.tgtSeq).c_str(), (long long)p.tgtStart, (long long)(p.tgtStart + p.length));
+        }
+        return 0;
+    }
+    if (what == "walk") {      /* bases of every printed genome for [s, e) of sequence argv[4] of src */
+        ReferenceWalk walk(aln, src);
+        std::map<const Genome *, std::vector<LiftPiece>> pieces;
+        walk.lift((uint32_t)src->findSequence(argv[4]), {{atoll(argv[5]), atoll(argv[6])}}, pieces);
+        long long n = 0;
+        for (auto &gp : pieces)
+            for (const LiftPiece &p : gp.second) n += p.length;
+        printf("%lld\n", n);
+        return 0;
+    }
+    return 2;
+}
+int main(int, char **argv) {
+    try {
+        return run(argv);
+    } catch (Error &e) {
+        fprintf(stderr, "error (kind %d): %s\n", (int)e.kind(), e.what());
+    } catch (std::exception &e) {
+        fprintf(stderr, "error: %s\n", e.what());
+    }
+    return 1;
+}
+CPPEOF
+curl=$(nm "$ROOT/../liftmap/libliftmap.a" 2>/dev/null | grep -q ' U curl_easy_init' && echo -lcurl)
+check "a program using only hal3/hal3.h builds, without liftmap, twobit64 or HAL headers or libHal" \
+    ${CXX:-g++} -std=c++11 -O1 -I"$ROOT/format3/inc" "$TMP/api.cpp" -o "$TMP/api" \
+    "$ROOT/lib/libHal3.a" "$ROOT/../twobit64/libtwobit64.a" "$ROOT/../liftmap/libliftmap.a" -lz -lpthread $curl
+A="$TMP/r7.hdf5"
+check "genomes, tree, lengths and sequence tables as hal stats" \
+    sh -c "'$TMP/api' '$A' genomes >'$TMP/api.g' && '$BIN/hal' stats '$A' | sed -n '/^GenomeName/,\$p' | tail -n +2 | awk -F', ' 'NF > 1 {print \$1\"\t\"\$3\"\t\"\$4}' >'$TMP/api.s' && cut -f1,3,4 '$TMP/api.g' | cmp -s - '$TMP/api.s'"
+cat >"$TMP/bases.py" <<'PYEOF'
+import sys, collections
+def bases(path):
+    c = collections.Counter()
+    for line in open(path):
+        f = line.split()
+        for p in range(int(f[1]), int(f[2])): c[(f[0], p)] += 1
+    return c
+print("same" if bases(sys.argv[1]) == bases(sys.argv[2]) else "DIFFERENT")
+PYEOF
+genomes=($("$BIN/hal" stats "$A" --genomes))
+nl=0; bad=0
+for src in "${genomes[@]:1:3}"; do
+    "$BIN/hal" stats "$A" --chromSizes "$src" | awk 'BEGIN{srand(5)} $2>100 {for (i=0;i<5;i++){s=int(rand()*($2-100)); printf "%s\t%d\t%d\n", $1, s, s+1+int(rand()*99)}}' >"$TMP/api.bed"
+    for tgt in "${genomes[@]}"; do
+        [ "$src" = "$tgt" ] && continue
+        for d in 1 0; do
+            "$TMP/api" "$A" lift "$src" "$tgt" $d <"$TMP/api.bed" >"$TMP/api.out"
+            "$BIN/hal" liftover "$A" "$src" "$TMP/api.bed" "$tgt" "$TMP/api.ref" $([ $d = 0 ] && echo --noDupes) 2>/dev/null
+            nl=$((nl + 1)); [ "$(python3 "$TMP/bases.py" "$TMP/api.out" "$TMP/api.ref")" = same ] || bad=$((bad + 1))
+        done
+    done
+done
+check "Lifter: the bases hal liftover gives, $nl source/target/copy-rule runs" test $bad -eq 0
+leaf=$("$BIN/hal" stats "$A" | sed -n '/^GenomeName/,$p' | awk -F', ' '$2==0 {print $1; exit}')
+seq=$("$BIN/hal" stats "$A" --chromSizes "$leaf" | sort -k2,2nr | head -1 | cut -f1)
+check "ReferenceWalk: as many bases as hal maf --joinGap 0 aligns ($leaf $seq:100-2100)" \
+    sh -c "test \"\$('$TMP/api' '$A' walk '$leaf' '$seq' 100 2100)\" = \"\$('$BIN/hal' maf '$A' /dev/null --refGenome '$leaf' --refSequence '$seq' --start 100 --length 2000 --joinGap 0 2>&1 | sed -n 's/.* rows, \([0-9]*\) aligned bases.*/\1/p')\""
+refuses "Lifter refuses an interval outside the sequence" "$TMP/api" "$A" lift "$leaf" "$leaf" 1 <<<"$seq 0 999999999"
+
 if [ $fails -eq 0 ]; then echo "ALL PASS (0 failures)"; else echo "FAILURES ($fails)"; fi
 exit $((fails > 0))

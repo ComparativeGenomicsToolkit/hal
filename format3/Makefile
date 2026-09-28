@@ -14,8 +14,8 @@ format3LDLIBS = -lz -lpthread $(shell nm ${liftmapDir}/libliftmap.a 2>/dev/null 
 # hal with no HDF5 at all.
 hal3Hdf5 ?= 1
 
-libHal3_srcs = impl/hal3Manifest.cpp impl/hal3Store.cpp impl/hal3Likelihood.cpp impl/hal3Alignment.cpp impl/hal3Liftover.cpp impl/hal3Walk.cpp \
-    impl/hal3Universal.cpp impl/hal3MafExport.cpp impl/hal3Update.cpp impl/hal3Cli.cpp
+libHal3_srcs = impl/hal3Manifest.cpp impl/hal3Store.cpp impl/hal3Likelihood.cpp impl/hal3Alignment.cpp impl/hal3Liftover.cpp impl/hal3BedLiftover.cpp impl/hal3Walk.cpp \
+    impl/hal3Universal.cpp impl/hal3MafExport.cpp impl/hal3Api.cpp impl/hal3Update.cpp impl/hal3Cli.cpp
 libHal3_objs = ${libHal3_srcs:%.cpp=${modObjDir}/%.o}
 cmd_srcs = impl/cmd_validate.cpp impl/cmd_liftover.cpp impl/cmd_maf.cpp impl/cmd_fasta.cpp impl/cmd_stats.cpp impl/cmd_coverage.cpp impl/cmd_pack.cpp impl/cmd_update.cpp impl/cmd_likelihoods.cpp
 convert_srcs = impl/cmd_convert.cpp impl/hal3Convert.cpp
