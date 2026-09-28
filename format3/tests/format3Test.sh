@@ -362,6 +362,7 @@ def flush():
 for n, line in enumerate(open(sys.argv[1])):
     if n == 0:
         rle = "run_length_encode_bases:1" in line.split(); continue
+    if line.startswith("#"): continue
     tok = line.split()
     k = tok.index(";") if ";" in tok else len(tok)
     bases = tok[:k]
@@ -409,6 +410,163 @@ PYEOF
     check "--refSingleCopy ($dup): the default columns without $(awk -F'\t' -v g="$dup." 'index($3, g) == 1' "$TMP/d.cols" | wc -l) bases of $dup's other rows" \
         sh -c "test \$(awk -F'\t' -v g='$dup.' 'index(\$3, g) == 1' '$TMP/d.cols' | wc -l) -gt 0 && awk -F'\t' -v g='$dup.' 'index(\$3, g) != 1' '$TMP/d.cols' | cmp -s - '$TMP/s.cols'"
 fi
+
+echo "hal maf --universal:"
+# the universal checker: reads a universal MAF on its own and checks every base is in
+# one row at most, row 0 is + and is the backbone's (or an extra sequence), and each
+# genome holds exactly the bases due: the backbone all; an ancestor its top intervals
+# (all with --allAncestorRows); a leaf all but its top intervals (all with
+# --leafInsertions).  Top intervals: the gaps between the runs of hal stats --runs.
+#   unicheck.py check MAF GENOMES.tsv MODE      GENOMES.tsv: genome, kind, sizes file, runs file
+#   unicheck.py tops SIZES RUNS                 the top intervals as BED
+#   unicheck.py cols MAF...                     every column, as its sorted bases
+cat >"$TMP/unicheck.py" <<'PYEOF'
+import sys, collections
+def intervals(sizes, runs):
+    L = {}
+    for l in open(sizes):
+        n, v = l.split()[:2]; L[n] = int(v)
+    cov = collections.defaultdict(list)
+    for l in open(runs):
+        f = l.split("\t")
+        if len(f) >= 3: cov[f[0]].append((int(f[1]), int(f[2])))
+    tops = {}
+    for n, ln in L.items():
+        p, g = 0, []
+        for a, b in sorted(cov[n]):
+            if a > p: g.append((p, a))
+            p = max(p, b)
+        if p < ln: g.append((p, ln))
+        tops[n] = g
+    return L, tops
+def rows(path):
+    """(block number, row number, name, fwd positions) of every row"""
+    blk, k, n = -1, 0, 0
+    for line in open(path):
+        if line.startswith("a"): blk += 1; k = 0
+        elif line.startswith("s"):
+            _, name, start, size, strand, slen, text = line.split()
+            start, size, slen = int(start), int(size), int(slen)
+            pos, out = start, []
+            for c in text:
+                if c == "-": out.append(None); continue
+                out.append(pos if strand == "+" else slen - 1 - pos); pos += 1
+            if pos - start != size: sys.exit("%s: size %d but %d bases" % (name, size, pos - start))
+            yield blk, k, name, strand, out
+            k += 1
+if sys.argv[1] == "tops":
+    L, tops = intervals(sys.argv[2], sys.argv[3])
+    for n in L:
+        for a, b in tops[n]: print("%s\t%d\t%d" % (n, a, b))
+elif sys.argv[1] == "cols":
+    cols = collections.defaultdict(set)
+    for path in sys.argv[2:]:
+        for blk, k, name, strand, out in rows(path):
+            for i, p in enumerate(out):
+                if p is not None: cols[(path, blk, i)].add((name, p))
+    for c in sorted(tuple(sorted(v)) for v in cols.values()): print(c)
+else:
+    maf, genomes, mode = sys.argv[2], sys.argv[3], sys.argv[4].split(",")
+    kind, want, byname = {}, {}, {}
+    backbone = None
+    for l in open(genomes):
+        g, k, sizes, runs = l.split()
+        kind[g] = k
+        L, tops = intervals(sizes, runs)
+        for n in L: byname[g + "." + n] = (g, n, L[n])
+        if k == "backbone": backbone = g
+        allb = {n: [(0, L[n])] for n in L}
+        if k == "backbone" or (k == "leaf" and "leaves" in mode) or (k == "anc" and "allanc" in mode): want[g] = allb
+        elif k == "anc": want[g] = tops
+        elif k == "excluded": want[g] = {n: [] for n in L}
+        else:
+            w = {}
+            for n in L:
+                p, g2 = 0, []
+                for a, b in tops[n]:
+                    if a > p: g2.append((p, a))
+                    p = b
+                if p < L[n]: g2.append((p, L[n]))
+                w[n] = g2
+            want[g] = w
+    seen = collections.defaultdict(set)
+    bad = []
+    for blk, k, name, strand, out in rows(maf):
+        g, n, ln = byname[name]
+        if k == 0 and (strand != "+" or (g != backbone and kind[g] == "leaf" and "leaves" not in mode)):
+            bad.append("block %d: row 0 %s %s" % (blk, name, strand))
+        for p in out:
+            if p is None: continue
+            if (n, p) in seen[g]: bad.append("%s %d twice" % (name, p))
+            seen[g].add((n, p))
+    for g, w in want.items():
+        exp = set((n, p) for n, iv in w.items() for a, b in iv for p in range(a, b))
+        if exp != seen[g]:
+            bad.append("%s: %d bases, %d due (%d missing, %d extra)" % (g, len(seen[g]), len(exp), len(exp - seen[g]), len(seen[g] - exp)))
+    if bad: sys.exit("\n".join(bad[:5]))
+PYEOF
+"$BIN/halRandGen" --testRand --seed 11 --minSegmentLength 5 --maxSegmentLength 40 --minSegments 1000 --maxSegments 2000 \
+    --maxBranchLength 3 "$TMP/u11.hal" >/dev/null 2>&1
+"$BIN/hal" convert "$TMP/u11.hal" "$TMP/u11" --directory >/dev/null 2>&1
+for A in "$TMP/r7.hdf5" "$TMP/u11"; do
+    a=$(basename "$A")
+    root=$("$BIN/hal" stats "$A" --root)
+    : >"$TMP/$a.genomes"
+    for g in $("$BIN/hal" stats "$A" --genomes); do
+        "$BIN/hal" stats "$A" --chromSizes "$g" >"$TMP/$a.$g.sizes"
+        "$BIN/hal" stats "$A" --runs "$g" >"$TMP/$a.$g.runs"
+        k=anc; [ -z "$("$BIN/hal" stats "$A" --children "$g")" ] && k=leaf; [ "$g" = "$root" ] && k=backbone
+        echo "$g $k $TMP/$a.$g.sizes $TMP/$a.$g.runs" >>"$TMP/$a.genomes"
+    done
+    # (--noDupes changes which bases are tops -- the copy rule's -- so it is checked
+    # where every genome is due all its bases)
+    for mode in "" --leafInsertions --allAncestorRows "--leafInsertions --allAncestorRows" "--leafInsertions --allAncestorRows --noDupes"; do
+        m=$(echo "$mode" | sed 's/--leafInsertions/leaves/; s/--allAncestorRows/allanc/; s/--noDupes/nodupes/; s/ /,/g')
+        "$BIN/hal" maf "$A" "$TMP/u.maf" --universal $mode --noDna --chunk 97 --threads 3 2>"$TMP/u.err"
+        check "$a ${mode:-default}: every base due in one row, no other, row 0 the backbone's on +" \
+            sh -c "grep -q 'every base once: checked' '$TMP/u.err' && python3 '$TMP/unicheck.py' check '$TMP/u.maf' '$TMP/$a.genomes' '$m'"
+    done
+    # the columns are the reference columns of the root's bases and of each ancestor's
+    # top intervals, with that ancestor as the reference: hal maf's own, independently
+    "$BIN/hal" maf "$A" "$TMP/u.maf" --universal --allAncestorRows --noDna 2>/dev/null
+    refs=("$TMP/o.$root.maf")
+    "$BIN/hal" maf "$A" "$TMP/o.$root.maf" --joinGap 0 --noDna 2>/dev/null
+    while read -r g k sizes runs; do
+        [ "$k" = anc ] || continue
+        python3 "$TMP/unicheck.py" tops "$sizes" "$runs" >"$TMP/o.$g.bed"
+        [ -s "$TMP/o.$g.bed" ] || continue
+        "$BIN/hal" maf "$A" "$TMP/o.$g.maf" --refGenome "$g" --rootGenome "$g" --refTargets "$TMP/o.$g.bed" --joinGap 0 --noDna 2>/dev/null
+        refs+=("$TMP/o.$g.maf")
+    done <"$TMP/$a.genomes"
+    check "$a: the columns are the reference columns of the root and of each ancestor's top intervals (${#refs[@]} exports)" \
+        cmp <(python3 "$TMP/unicheck.py" cols "$TMP/u.maf") <(python3 "$TMP/unicheck.py" cols "${refs[@]}")
+done
+A="$TMP/u11"
+for ext in maf maf.gz taf taf.gz; do
+    "$BIN/hal" maf "$A" "$TMP/u1.$ext" --universal --leafInsertions --chunk 500 --universalBed "$TMP/u1.$ext.bed" 2>/dev/null
+    "$BIN/hal" maf "$A" "$TMP/u3.$ext" --universal --leafInsertions --chunk 500 --threads 3 --universalBed "$TMP/u3.$ext.bed" 2>/dev/null
+done
+check "--threads 3: the same bytes as 1 thread (.maf, .maf.gz, .taf, .taf.gz, --universalBed)" \
+    sh -c "for e in maf maf.gz taf taf.gz; do cmp -s '$TMP/u1.'\$e '$TMP/u3.'\$e && cmp -s '$TMP/u1.'\$e.bed '$TMP/u3.'\$e.bed && [ -s '$TMP/u1.'\$e ] || exit 1; done"
+"$BIN/hal" maf "$A" "$TMP/u97.maf" --universal --leafInsertions --chunk 97 --universalBed "$TMP/u97.bed" 2>/dev/null
+check "--chunk 97: the same columns, in the same order (the axis), as --chunk 500" \
+    bash -c "cmp -s '$TMP/u97.bed' '$TMP/u1.maf.bed' && cmp -s <(python3 '$TMP/unicheck.py' cols '$TMP/u97.maf') <(python3 '$TMP/unicheck.py' cols '$TMP/u1.maf')"
+check "headers: the universal tags and the tree" \
+    sh -c "head -2 '$TMP/u1.maf' | grep -q '^##maf .*universal=flank1 leafInsertions=1 ancestorRows=own noDupes=0 chunk=500' && head -2 '$TMP/u1.maf' | grep -q '^# hal (' && head -2 '$TMP/u1.taf' | grep -q '^#taf .*universal:flank1' && head -2 '$TMP/u1.taf' | grep -q '^# hal ('"
+check "TAF read back gives the MAF's blocks exactly" \
+    sh -c "grep -v -e '^#' -e '^\$' '$TMP/u1.maf' >'$TMP/u1.body' && python3 '$TMP/taf2maf.py' '$TMP/u1.taf' | grep -v '^\$' | cmp -s - '$TMP/u1.body'"
+if command -v taffy >/dev/null; then
+    check "taffy view -m gives the MAF back" sh -c "taffy view -m -i '$TMP/u1.taf' | grep -v -e '^#' -e '^\$' | cmp -s - '$TMP/u1.body'"
+fi
+seq1=$("$BIN/hal" stats "$A" --sequences "$("$BIN/hal" stats "$A" --root)" | cut -d, -f2)
+"$BIN/hal" maf "$A" "$TMP/us.maf" --universal --leafInsertions --chunk 500 --refSequence "$seq1" 2>/dev/null
+check "--refSequence $seq1: its section of the whole export" \
+    sh -c "awk -v s='$("$BIN/hal" stats "$A" --root).$seq1' '/^a/ {b = \$0 \"\\n\"; f = 1; next} /^s/ {if (f) k = \$2 == s; f = 0; b = b \$0 \"\\n\"; next} /^\$/ {if (k && b != \"\") printf \"%s\", b; b = \"\"; k = 0}' '$TMP/u1.maf' >'$TMP/us.a' && grep -v -e '^#' -e '^\$' '$TMP/us.maf' | cmp -s - '$TMP/us.a' && test -s '$TMP/us.a'"
+anc=$(awk '$2 == "anc" {print $1; exit}' "$TMP/u11.genomes")
+refuses "--universal with --joinGap 5" "$BIN/hal" maf "$A" "$TMP/x.maf" --universal --joinGap 5
+refuses "--universal with --refGenome $anc (not the root)" "$BIN/hal" maf "$A" "$TMP/x.maf" --universal --refGenome "$anc"
+refuses "--universal with --targetGenomes" "$BIN/hal" maf "$A" "$TMP/x.maf" --universal --targetGenomes "$anc"
+refuses "--universal excluding an ancestor" "$BIN/hal" maf "$A" "$TMP/x.maf" --universal --excludeGenomes "$anc"
 
 echo "hal fasta against hal2fasta:"
 if [ ! -x "$BIN/hal2fasta" ] || [ ! -x "$BIN/halStats" ]; then

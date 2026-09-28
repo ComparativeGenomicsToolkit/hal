@@ -11,8 +11,17 @@ using namespace std;
 
 namespace hal3 {
 
+namespace {
+/* Cursors for a walk: at least 1024, and 4 per genome (a universal chunk reaches every
+ * genome), within about 1 GB. */
+size_t cursorCount(const Alignment &aln) { return max<size_t>(1024, 4 * aln.manifest().genomes.size()); }
+size_t cursorBytes(const Alignment &aln) {
+    return min<size_t>((size_t)1 << 20, max<size_t>((size_t)64 << 10, ((size_t)1 << 30) / cursorCount(aln)));
+}
+}
+
 TreeWalk::TreeWalk(const Alignment &alignment, const Genome *ref, const WalkOptions &opts)
-    : _aln(alignment), _ref(ref), _opts(opts), _cursors((size_t)1 << 20, 1024) {
+    : _aln(alignment), _ref(ref), _opts(opts), _cursors(cursorBytes(alignment), cursorCount(alignment)) {
     /* printed genomes: the targets (or the subtree of rootGenome) and the reference;
      * scope: the spanning tree of those, whose top is where the walk turns */
     auto subtree = [](const Genome *r, vector<const Genome *> &out) {
@@ -49,7 +58,10 @@ TreeWalk::TreeWalk(const Alignment &alignment, const Genome *ref, const WalkOpti
         _refPath.push_back(g);
         if (g == _top) break;
     }
-    if (!_opts.ancestors) {
+    if (_opts.universal) {
+        if (_ref != _top) throw runtime_error("internal error: the universal reference is not the scope top");
+        _printed.erase(_ref);
+    } else if (!_opts.ancestors) {
         if (!_ref->children().empty()) throw runtime_error("--noAncestors needs a leaf reference genome");
         for (auto it = _printed.begin(); it != _printed.end();)
             it = (*it)->children().empty() ? next(it) : _printed.erase(it);
@@ -112,6 +124,43 @@ void TreeWalk::descend(const Genome *v, vector<LiftPiece> &in, map<const Genome 
         vector<LiftPiece> down;
         liftDownBranch(c, _opts.dupes, in, down, _cursors);
         if (!down.empty() || _below.count(c)) descend(c, down, tops, pieces);
+    }
+}
+
+void TreeWalk::down(PieceMap &own, PieceMap &quiet, PieceMap &pieces) {
+    pieces.clear();
+    _below.clear();
+    for (PieceMap *m : {&own, &quiet})
+        for (auto &t : *m)
+            for (const Genome *g = t.first; g && _below.insert(g).second; g = g->parent()) {
+            }
+    vector<LiftPiece> none;
+    descendUniversal(_top, none, own, quiet, pieces);
+    for (auto &p : pieces) coalescePieces(p.second);
+}
+
+void TreeWalk::descendUniversal(const Genome *v, vector<LiftPiece> &in, PieceMap &own, PieceMap &quiet, PieceMap &pieces) {
+    const bool printed = _printed.count(v) != 0, leaf = v->children().empty();
+    if (printed && (leaf || _opts.allAncestorRows) && !in.empty()) {
+        vector<LiftPiece> &r = pieces[v];
+        r.insert(r.end(), in.begin(), in.end());
+    }
+    auto o = own.find(v);
+    if (o != own.end()) {
+        if (printed) {
+            vector<LiftPiece> &r = pieces[v];
+            r.insert(r.end(), o->second.begin(), o->second.end());
+        }
+        in.insert(in.end(), o->second.begin(), o->second.end());
+    }
+    auto q = quiet.find(v);
+    if (q != quiet.end()) in.insert(in.end(), q->second.begin(), q->second.end());
+    coalescePieces(in);
+    for (const Genome *c : v->children()) {
+        if (!_scope.count(c)) continue;
+        vector<LiftPiece> down;
+        liftDownBranch(c, _opts.dupes, in, down, _cursors);
+        if (!down.empty() || _below.count(c)) descendUniversal(c, down, own, quiet, pieces);
     }
 }
 

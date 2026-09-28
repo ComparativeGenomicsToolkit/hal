@@ -35,12 +35,22 @@
  *        reference's are, as taffy does, so taffy index and view -r work.
  * Either plain or BGZF (blocked gzip, readable by gzip, indexable by taffy index).
  *
+ * Universal (--universal, hal3Universal.h): the columns are the down-closures of the
+ * backbone's bases and of every covered top interval, in flank order, cut into chunks
+ * of opts.chunk columns per top-level range.  Each chunk is one walk down the tree
+ * with its placed intervals as tops; rows chain along the axis as they chain along the
+ * reference (joinGap 0).  Row 0 is always the top-level range's sequence, on +, with
+ * gaps where intervals sit (size 0 in a block of placed columns only).  A whole export
+ * checks that every printed base was written once (count, sum and sum of squares of
+ * its coordinates, per genome).
+ *
  * Chunks and threads: every interval is cut into chunks of opts.chunk bases, and no
- * block, row or insertion crosses a chunk edge, so each chunk is exported on its own:
- * by any of the worker threads, each with its own cursors and DNA handles for the
- * length of the chunk (which bounds memory), and written out in order.  The output is
- * the same, byte for byte, for any number of threads.  No HAL API; DNA comes from the
- * .2bit files.
+ * block, row or insertion crosses a chunk edge, so each chunk is exported on its own,
+ * by any of the worker threads, and written out in order.  Each thread keeps its walk
+ * (so its cursors) and DNA handles from chunk to chunk; a DNA handle that has served
+ * more than a little is reopened at the next chunk, which bounds what it holds.  The
+ * output is the same, byte for byte, for any number of threads.  No HAL API; DNA comes
+ * from the .2bit files.
  */
 #ifndef _HAL3MAFEXPORT_H
 #define _HAL3MAFEXPORT_H
@@ -70,6 +80,11 @@ struct MafOptions {
     int64_t joinGap = 30;               /* longest insertion a row continues across; 0: none */
     bool noDna = false;                 /* write N instead of bases */
     bool onlySequenceNames = false;
+    bool universal = false;             /* intervals are on the backbone (the root or rootGenome) */
+    bool leafInsertions = false;        /* universal: leaves' top intervals are columns too */
+    bool allAncestorRows = false;       /* universal: every ancestral base in its column */
+    bool universalWhole = false;        /* universal: intervals are the whole backbone (extras, check) */
+    std::string universalBed;           /* universal: write the axis here as BED */
 };
 
 struct MafFormat {
@@ -81,6 +96,9 @@ struct MafFormat {
 struct MafStats {
     uint64_t blocks = 0, rows = 0, columns = 0, alignedBases = 0;
     uint64_t insertionColumns = 0, insertedBases = 0, joinsRejected = 0;
+    /* universal */
+    uint64_t backboneColumns = 0, placedColumns = 0, placedIntervals = 0, extraSequences = 0;
+    bool onceChecked = false;
 };
 
 /* The blocks of these reference intervals (blocks never cross an interval's ends), in

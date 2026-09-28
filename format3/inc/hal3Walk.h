@@ -14,6 +14,13 @@
  *
  * dupes off (--noDupes): up only from canonical copies, down only to them.
  *
+ * universal (hal maf --universal, see hal3Universal.h): no reference interval; down()
+ * walks given tops -- the placed top intervals and the top-level range's own bases,
+ * each piece's source a column of the chunk -- down from the scope top once.  The
+ * reference is the scope top, the backbone, and is never printed (it is row 0).  A
+ * printed ancestor gets only its own placed intervals, or with allAncestorRows
+ * everything that reaches it; a leaf everything.
+ *
  * Scope: the spanning tree of the printed genomes -- the targets, or the subtree of
  * rootGenome, or every genome -- and the reference.  Only printed genomes get pieces;
  * ancestors are left out with ancestors = false, excluded genomes always, and the
@@ -52,7 +59,11 @@ struct WalkOptions {
     std::string rootGenome;
     std::vector<std::string> exclude;   /* never printed */
     bool refSingleCopy = false;         /* the reference's other copies not printed */
+    bool universal = false;
+    bool allAncestorRows = false;       /* universal: ancestors print every base that reaches them */
 };
+
+typedef std::map<const Genome *, std::vector<LiftPiece>> PieceMap;
 
 class TreeWalk {
   public:
@@ -64,6 +75,10 @@ class TreeWalk {
      * own identity pieces are left out; its paralogous copies are not. */
     void lift(uint32_t refSeq, const std::vector<std::pair<int64_t, int64_t>> &intervals,
               std::map<const Genome *, std::vector<LiftPiece>> &pieces);
+
+    /* Universal: walk own (printed at their genome) and quiet (walked only) down from
+     * top().  pieces[g]: what g's rows print, sources as in own and quiet. */
+    void down(PieceMap &own, PieceMap &quiet, PieceMap &pieces);
 
     const Genome *ref() const { return _ref; }
     const Genome *top() const { return _top; }
@@ -85,6 +100,7 @@ class TreeWalk {
 
     void descend(const Genome *v, std::vector<LiftPiece> &in, std::map<const Genome *, std::vector<LiftPiece>> &tops,
                  std::map<const Genome *, std::vector<LiftPiece>> &pieces);
+    void descendUniversal(const Genome *v, std::vector<LiftPiece> &in, PieceMap &own, PieceMap &quiet, PieceMap &pieces);
 };
 
 /* Merge pieces contiguous in both source and target. */
@@ -99,18 +115,20 @@ struct RefInterval {
 /* Each interval cut every `size` bases from its start, in order. */
 std::vector<RefInterval> chunkIntervals(const std::vector<RefInterval> &intervals, int64_t size);
 
-/* produce(k) for k = 0 .. n-1 on `threads` threads, and consume(k, result) on the
- * calling thread in order of k.  A thread takes the next k only while fewer than
+/* produce(k, w) for k = 0 .. n-1 on `threads` threads, and consume(k, result) on the
+ * calling thread in order of k.  w is the producing thread's number, below `threads`:
+ * no two calls with the same w run at once, so a thread can keep state (a walk, its
+ * cursors) from one k to the next.  A thread takes the next k only while fewer than
  * 2 x threads results are taken and not yet consumed, which bounds what waits.  The
  * first exception, from either, stops the rest and is rethrown once every thread has
- * finished.  With one thread, each k is produced and consumed in turn on the calling
- * thread. */
+ * finished.  With one thread, each k is produced (w = 0) and consumed in turn on the
+ * calling thread. */
 template <class R>
-void orderedParallel(size_t n, int threads, const std::function<R(size_t)> &produce,
+void orderedParallel(size_t n, int threads, const std::function<R(size_t, int)> &produce,
                      const std::function<void(size_t, R &)> &consume) {
     if (threads <= 1 || n <= 1) {
         for (size_t k = 0; k < n; k++) {
-            R r = produce(k);
+            R r = produce(k, 0);
             consume(k, r);
         }
         return;
@@ -126,7 +144,7 @@ void orderedParallel(size_t n, int threads, const std::function<R(size_t)> &prod
         stop = true;
         cv.notify_all();
     };
-    auto work = [&]() {
+    auto work = [&](int w) {
         for (;;) {
             size_t k;
             {
@@ -136,7 +154,7 @@ void orderedParallel(size_t n, int threads, const std::function<R(size_t)> &prod
                 k = taken++;
             }
             try {
-                std::unique_ptr<R> r(new R(produce(k)));
+                std::unique_ptr<R> r(new R(produce(k, w)));
                 std::lock_guard<std::mutex> lock(m);
                 done[k] = std::move(r);
                 cv.notify_all();
@@ -149,7 +167,7 @@ void orderedParallel(size_t n, int threads, const std::function<R(size_t)> &prod
     };
     std::vector<std::thread> pool;
     try {
-        for (size_t t = 0; t < std::min<size_t>((size_t)threads, n); t++) pool.emplace_back(work);
+        for (size_t t = 0; t < std::min<size_t>((size_t)threads, n); t++) pool.emplace_back(work, (int)t);
     } catch (...) {   /* a thread could not be started: stop the others, then report it */
         {
             std::lock_guard<std::mutex> lock(m);
@@ -180,6 +198,13 @@ void orderedParallel(size_t n, int threads, const std::function<R(size_t)> &prod
     }
     for (std::thread &t : pool) t.join();
     if (error) std::rethrow_exception(error);
+}
+
+/* The same, for a produce with no use for the thread's number. */
+template <class R>
+void orderedParallel(size_t n, int threads, const std::function<R(size_t)> &produce,
+                     const std::function<void(size_t, R &)> &consume) {
+    orderedParallel<R>(n, threads, std::function<R(size_t, int)>([&](size_t k, int) { return produce(k); }), consume);
 }
 }
 

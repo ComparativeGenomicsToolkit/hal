@@ -5,6 +5,7 @@
 #include "hal3Cli.h"
 #include "hal3MafExport.h"
 
+#include <algorithm>
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -44,7 +45,8 @@ static const char *MAF_USAGE =
     "                       homologous bases (default 30; 0: no insertion columns)\n"
     "  --breakFrac F        cut a block where this share of its rows break (default 0.5; 0 cuts at\n"
     "                       every break)\n"
-    "  --gapBudget G        cut a block before its gap cells exceed G x its aligned bases (default 1)\n"
+    "  --gapBudget G        cut a block before its gap cells exceed G x its aligned bases (default 1;\n"
+    "                       0.1 with --universal)\n"
     "  --maxBlockCols N     at most N columns per block (default 10000)\n"
     "  --maxBlockCells N    at most N cells, rows x columns, per block (default 5000000)\n"
     "  --noDna              write N for every base\n"
@@ -54,6 +56,19 @@ static const char *MAF_USAGE =
     "  --noRunLength        TAF: write each column's bases in full, not run-length encoded\n"
     "  --bgzip              BGZF, whatever the name (e.g. to stdout)\n"
     "  --uncompressed       plain text, whatever the name\n"
+    "universal (every base in one column, no reference):\n"
+    "  --universal          columns are the root's bases and every ancestral base with no parent\n"
+    "                       (with what descends from each), in flank order: such an interval goes\n"
+    "                       right after its genome's base before it, else right before the one\n"
+    "                       after it.  Row 0 is the root's sequence (gaps where intervals go);\n"
+    "                       --rootGenome R puts R in its place.  Whole exports check that each\n"
+    "                       base was written once.  --refSequence/--start/--length and\n"
+    "                       --refTargets restrict the root; --chunk counts columns\n"
+    "  --leafInsertions     leaves' bases with no parent get columns too: every base of every\n"
+    "                       genome once\n"
+    "  --allAncestorRows    ancestors have rows for every base, not only their own intervals'\n"
+    "  --universalBed FILE  the column axis as BED: sequence, start, end, first column, depth,\n"
+    "                       strand (.gz: BGZF)\n"
     "  -h, --help\n";
 
 int main_maf(int argc, char **argv) {
@@ -67,7 +82,7 @@ int main_maf(int argc, char **argv) {
             REF_GENOME = 1000, REF_SEQUENCE, START, LENGTH, REF_TARGETS, NO_ANCESTORS, NO_DUPES, ONLY_ORTHOLOGS,
             TARGET_GENOMES, ROOT_GENOME, BREAK_FRAC, GAP_BUDGET, MAX_BLOCK_COLS, MAX_BLOCK_CELLS, CHUNK, NO_DNA,
             ONLY_SEQUENCE_NAMES, UNCOMPRESSED, BGZIP, MAX_REF_GAP, MAX_BLOCK_LEN, JOIN_GAP, THREADS, TAF,
-            NO_RUN_LENGTH, EXCLUDE_GENOMES, REF_SINGLE_COPY
+            NO_RUN_LENGTH, EXCLUDE_GENOMES, REF_SINGLE_COPY, UNIVERSAL, LEAF_INSERTIONS, ALL_ANCESTOR_ROWS, UNIVERSAL_BED
         };
         static const option longOpts[] = {
             {"refGenome", required_argument, nullptr, REF_GENOME},
@@ -95,10 +110,15 @@ int main_maf(int argc, char **argv) {
             {"noRunLength", no_argument, nullptr, NO_RUN_LENGTH},
             {"excludeGenomes", required_argument, nullptr, EXCLUDE_GENOMES},
             {"refSingleCopy", no_argument, nullptr, REF_SINGLE_COPY},
+            {"universal", no_argument, nullptr, UNIVERSAL},
+            {"leafInsertions", no_argument, nullptr, LEAF_INSERTIONS},
+            {"allAncestorRows", no_argument, nullptr, ALL_ANCESTOR_ROWS},
+            {"universalBed", required_argument, nullptr, UNIVERSAL_BED},
             {"maxRefGap", required_argument, nullptr, MAX_REF_GAP},
             {"maxBlockLen", required_argument, nullptr, MAX_BLOCK_LEN},
             {"help", no_argument, nullptr, 'h'},
             {nullptr, 0, nullptr, 0}};
+        bool joinGapGiven = false, gapBudgetGiven = false;
         int c;
         while ((c = getopt_long(argc, argv, "h", longOpts, nullptr)) != -1) {
             switch (c) {
@@ -121,7 +141,10 @@ int main_maf(int argc, char **argv) {
             case REF_SINGLE_COPY: opts.refSingleCopy = true; break;
             case ROOT_GENOME: opts.rootGenome = optarg; break;
             case BREAK_FRAC: opts.breakFrac = parseDouble("breakFrac", optarg); break;
-            case GAP_BUDGET: opts.gapBudget = parseDouble("gapBudget", optarg); break;
+            case GAP_BUDGET:
+                opts.gapBudget = parseDouble("gapBudget", optarg);
+                gapBudgetGiven = true;
+                break;
             case MAX_BLOCK_COLS: opts.maxBlockCols = parseInt("maxBlockCols", optarg); break;
             case MAX_BLOCK_CELLS: opts.maxBlockCells = parseInt("maxBlockCells", optarg); break;
             case CHUNK: opts.chunk = parseInt("chunk", optarg); break;
@@ -129,10 +152,17 @@ int main_maf(int argc, char **argv) {
             case ONLY_SEQUENCE_NAMES: opts.onlySequenceNames = true; break;
             case UNCOMPRESSED: uncompressed = true; break;
             case BGZIP: bgzip = true; break;
-            case JOIN_GAP: opts.joinGap = parseInt("joinGap", optarg); break;
+            case JOIN_GAP:
+                opts.joinGap = parseInt("joinGap", optarg);
+                joinGapGiven = true;
+                break;
             case THREADS: threads = parseInt("threads", optarg); break;
             case TAF: taf = true; break;
             case NO_RUN_LENGTH: format.runLength = false; break;
+            case UNIVERSAL: opts.universal = true; break;
+            case LEAF_INSERTIONS: opts.leafInsertions = true; break;
+            case ALL_ANCESTOR_ROWS: opts.allAncestorRows = true; break;
+            case UNIVERSAL_BED: opts.universalBed = optarg; break;
             case MAX_REF_GAP:
             case MAX_BLOCK_LEN:
                 throw CliError(c == MAX_REF_GAP ? "--maxRefGap is not supported: see --joinGap"
@@ -150,9 +180,35 @@ int main_maf(int argc, char **argv) {
         bool gz = endsWith(outPath, ".gz");
         format.bgzf = bgzip || (gz && !uncompressed);
         format.taf = taf || endsWith(gz ? outPath.substr(0, outPath.size() - 3) : outPath, ".taf");
+        if (!opts.universal && (opts.leafInsertions || opts.allAncestorRows || !opts.universalBed.empty()))
+            throw CliError("--leafInsertions, --allAncestorRows and --universalBed need --universal");
+        if (opts.universal) {
+            if (joinGapGiven && opts.joinGap > 0) throw CliError("--universal has no insertion columns: --joinGap must be 0");
+            if (!opts.targets.empty() || opts.onlyOrthologs || opts.refSingleCopy || opts.onlySequenceNames)
+                throw CliError("--universal cannot be combined with --targetGenomes, --onlyOrthologs, --refSingleCopy or "
+                               "--onlySequenceNames");
+            opts.joinGap = 0;
+            /* narrower blocks: a universal block's rows come and go more (cactus's width) */
+            if (!gapBudgetGiven) opts.gapBudget = 0.1;
+            opts.ancestors = true;   /* --noAncestors: the default here, ancestors' own intervals only */
+        }
         Alignment aln(dir);
         const Genome *ref = refName.empty() ? aln.root() : aln.genome(refName);
         if (!ref) throw runtime_error("no genome " + refName);
+        if (opts.universal) {
+            /* the reference is the backbone: the root, or rootGenome */
+            const Genome *b = opts.rootGenome.empty() ? aln.root() : aln.genome(opts.rootGenome);
+            if (!b) throw runtime_error("no genome " + opts.rootGenome);
+            if (!refName.empty() && ref != b)
+                throw CliError("--universal: --refGenome must be the root, or --rootGenome if given (" + b->name() + ")");
+            ref = b;
+            for (const string &x : opts.exclude) {
+                const Genome *g = aln.genome(x);
+                if (g && !g->children().empty())
+                    throw CliError("--universal: only leaves can be excluded (" + x + " is an ancestor)");
+            }
+            opts.universalWhole = refSeqName.empty() && bedPath.empty();
+        }
         vector<RefInterval> intervals;
         auto seqIndex = [&](const string &name) {
             int64_t i = ref->findSequence(name);
@@ -184,7 +240,19 @@ int main_maf(int argc, char **argv) {
             if (start != 0 || length >= 0) throw CliError("--start / --length need --refSequence");
             for (uint32_t i = 0; i < ref->numSequences(); i++) intervals.push_back(RefInterval{i, 0, ref->sequenceLength(i)});
         }
+        if (opts.universal && !opts.universalWhole) {   /* ranges own the placements anchored in them: no overlaps */
+            vector<RefInterval> v = intervals;
+            sort(v.begin(), v.end(), [](const RefInterval &a, const RefInterval &b) {
+                return a.seq != b.seq ? a.seq < b.seq : a.start < b.start;
+            });
+            for (size_t i = 1; i < v.size(); i++)
+                if (v[i].seq == v[i - 1].seq && v[i].start < v[i - 1].end) throw runtime_error("--universal: the intervals overlap");
+        }
         MafStats st = exportMaf(aln, ref, opts, format, intervals, outPath, (int)threads);
+        if (opts.universal)
+            cerr << "hal maf: universal: " << st.backboneColumns + st.placedColumns << " columns = " << st.backboneColumns
+                 << " of " << ref->name() << " + " << st.placedColumns << " placed (" << st.placedIntervals << " intervals, "
+                 << st.extraSequences << " extra sequences)" << (st.onceChecked ? "; every base once: checked" : "") << endl;
         cerr << "hal maf: " << st.blocks << " blocks, " << st.columns << " columns, " << st.rows << " rows, "
              << st.alignedBases << " aligned bases; " << st.insertionColumns << " insertion columns ("
              << st.insertedBases << " bases), " << st.joinsRejected << " joins refused" << endl;

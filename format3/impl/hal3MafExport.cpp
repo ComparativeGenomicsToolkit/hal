@@ -3,6 +3,7 @@
  */
 #include "hal3MafExport.h"
 #include "hal3Manifest.h"
+#include "hal3Universal.h"
 #include "twobit64.h"
 
 #include <algorithm>
@@ -190,8 +191,9 @@ void writeBgzfEof(ByteSink &out) {
 
 /* ---------------------------------------------------------------- blocks */
 
-/* A finished block's row.  id is the row's chain (nullptr for the reference row): the
- * row continues the previous block's row with the same id. */
+/* A finished block's row.  id is the row's chain (nullptr for row 0, the reference or
+ * the universal top-level range): the row continues the previous block's row with the
+ * same id. */
 struct BlockRow {
     const void *id;
     const Genome *genome;
@@ -204,7 +206,7 @@ struct BlockRow {
 class BlockWriter {
   public:
     virtual ~BlockWriter() {}
-    /* rows[0 .. n) with rows[0] the reference row; every text ncol long */
+    /* rows[0 .. n) with rows[0] row 0 (see BlockRow); every text ncol long */
     virtual void block(const vector<BlockRow> &rows, size_t n, int64_t ncol) = 0;
 };
 
@@ -289,6 +291,9 @@ void appendColumn(const char *col, size_t n, bool runLength, string &line) {
 struct ChunkResult {
     unique_ptr<ChunkBuffer> body;
     MafStats stats;
+    /* universal: the chunk's axis, and the moments of what each genome's rows hold */
+    vector<Segment> axis;
+    map<const Genome *, Moments> moments;
     /* TAF: the chunk's first line depends on how many rows the chunk before it ended
      * with, so it is left out of body: its first column and its rows' coordinates. */
     string firstColumn;
@@ -302,11 +307,13 @@ struct ChunkResult {
  * between).  Links that would reorder rows are dropped (a longest increasing run is
  * kept), as TAF cannot move a row.  Coordinates are repeated as taffy view repeats
  * them: for a row more than REPEAT bases since its last, and for every row whenever
- * the reference row's are given. */
+ * row 0's are given.  columnCadence (universal, where row 0 may have no bases for
+ * millions of columns): row 0's too once REPEAT columns have passed since every row's
+ * were last given, so taffy's index finds coordinates for all rows that often. */
 class TafBlockWriter : public BlockWriter {
   public:
-    TafBlockWriter(TextOut &out, bool runLength, bool onlySequenceNames, ChunkResult &result)
-        : _out(out), _runLength(runLength), _names(onlySequenceNames), _result(result) {}
+    TafBlockWriter(TextOut &out, bool runLength, bool onlySequenceNames, bool columnCadence, ChunkResult &result)
+        : _out(out), _runLength(runLength), _names(onlySequenceNames), _cadence(columnCadence), _result(result) {}
     void block(const vector<BlockRow> &rows, size_t n, int64_t ncol) override {
         _next.resize(n);
         for (size_t j = 0; j < n; j++) {
@@ -345,6 +352,7 @@ class TafBlockWriter : public BlockWriter {
         }
         _out.put(_line);
         _prev.swap(_next);
+        _colsSinceAll += ncol;
     }
     void finish() { _result.lastRows = _prev.size(); }
     /* called once the chunk's first line is known (its first column and rows), before
@@ -362,8 +370,9 @@ class TafBlockWriter : public BlockWriter {
         int64_t start, size, since;   /* since: bases since its coordinates were last given */
     };
     TextOut &_out;
-    bool _runLength, _names;
+    bool _runLength, _names, _cadence;
     ChunkResult &_result;
+    int64_t _colsSinceAll = 0;   /* columns since every row's coordinates were given */
     bool _first = true;
     function<void()> _onFirst;
     vector<Row> _prev, _next;
@@ -376,7 +385,7 @@ class TafBlockWriter : public BlockWriter {
     void operations() {
         size_t p = _prev.size(), n = _next.size();
         vector<int64_t> link(n, -1);   /* next row -> the prev row it continues */
-        link[0] = 0;                   /* the reference row: always, and always adjacent */
+        link[0] = 0;                   /* row 0: always, and always adjacent (one sequence per chunk) */
         unordered_map<const void *, size_t> byId;
         for (size_t i = 1; i < p; i++) byId[_prev[i].id] = i;
         vector<bool> used(p, false);
@@ -438,7 +447,7 @@ class TafBlockWriter : public BlockWriter {
             }
             const Row &q = _prev[(size_t)link[j]];
             r.since = q.since + q.size;
-            if (everything || r.since > REPEAT) {
+            if (everything || r.since > REPEAT || (j == 0 && _cadence && _colsSinceAll >= REPEAT)) {
                 appendAnchor(_line, 's', j, anchor(r));
                 r.since = 0;
                 if (j == 0) everything = true;
@@ -452,6 +461,7 @@ class TafBlockWriter : public BlockWriter {
                 _line += to_string(gap);
             }
         }
+        if (everything) _colsSinceAll = 0;
     }
     static bool follows(const Row &q, const Row &r) {
         return q.genome == r.genome && q.seq == r.seq && q.reversed == r.reversed && r.start >= q.start + q.size;
@@ -520,6 +530,8 @@ WalkOptions walkOptions(const MafOptions &o) {
     WalkOptions w;
     w.ancestors = o.ancestors;
     w.dupes = o.dupes;
+    w.universal = o.universal;
+    w.allAncestorRows = o.allAncestorRows;
     w.onlyOrthologs = o.onlyOrthologs;
     w.targets = o.targets;
     w.rootGenome = o.rootGenome;
@@ -544,21 +556,57 @@ char complement(char c) {
 
 /* ---------------------------------------------------------------- one chunk */
 
+/* A universal chunk: its segments (hal3Universal.h), and its top-level range's sequence,
+ * whose bases from rangePos are the chunk's depth-0 segments. */
+struct UniChunk {
+    const UniversalIndex *index;
+    const vector<Segment> *segs;
+    const Genome *genome;
+    uint32_t seq;
+    int64_t rangePos, cols;
+};
+
+/* Exports chunks one at a time; one per thread, kept from chunk to chunk with its walk
+ * (so its cursors) and its DNA handles. */
 class ChunkExporter {
   public:
     ChunkExporter(const Alignment &alignment, const Genome *ref, const MafOptions &opts, const map<const Genome *, int> &ranks)
         : _aln(alignment), _ref(ref), _opts(opts), _ranks(ranks), _walk(alignment, ref, walkOptions(opts)) {}
     ~ChunkExporter() {
         for (auto &d : _dna)
-            if (d.second) tb_close(d.second);
+            if (d.second.f) tb_close(d.second.f);
     }
     ChunkExporter(const ChunkExporter &) = delete;
     ChunkExporter &operator=(const ChunkExporter &) = delete;
 
     void run(const RefInterval &chunk, BlockWriter &out);
-    MafStats stats;
+    void runUniversal(const UniChunk &chunk, BlockWriter &out);
+    MafStats stats;                          /* of the last run */
+    map<const Genome *, Moments> moments;    /* of the last universal run (universalWhole) */
 
   private:
+    /* Row 0: the reference, at every column (column x = position x); or the universal
+     * range's sequence, its bases from pos at the columns runs [u, u+len) in order. */
+    struct RowZero {
+        const Genome *genome;
+        uint32_t seq;
+        bool all;
+        int64_t pos;
+        vector<int64_t> runU, runLen, before;   /* before[i]: its bases in runs before i */
+        void add(int64_t u, int64_t len) {
+            before.push_back(before.empty() ? 0 : before.back() + runLen.back());
+            runU.push_back(u);
+            runLen.push_back(len);
+        }
+        /* its position at column x: the next base's */
+        int64_t at(int64_t x) const {
+            if (all) return x;
+            size_t i = (size_t)(upper_bound(runU.begin(), runU.end(), x) - runU.begin());
+            if (i == 0) return pos;
+            i--;
+            return pos + before[i] + min(runLen[i], x - runU[i]);
+        }
+    };
     struct Key {   /* a top ancestral base: where a base's homology is decided */
         const Genome *node;
         uint32_t seq;
@@ -593,8 +641,17 @@ class ChunkExporter {
     const MafOptions &_opts;
     const map<const Genome *, int> &_ranks;
     TreeWalk _walk;
-    map<const Genome *, tb_file *> _dna;
-    map<const Genome *, vector<int64_t>> _dnaIndex;
+    /* A genome's .2bit.  A handle keeps the block lists it reads, so one that has served
+     * more than a few fetches or bases is reopened at the next chunk: what it holds stays
+     * about one chunk's, while many small chunks share a handle (opening one sorts every
+     * sequence name). */
+    struct Dna {
+        tb_file *f = nullptr;
+        int64_t fetches = 0, bases = 0;   /* since f was opened */
+        vector<int64_t> index;            /* sequence -> its index in the .2bit */
+    };
+    static const int64_t DNA_FETCHES = 256, DNA_BASES = (int64_t)1 << 20;
+    map<const Genome *, Dna> _dna;
 
     int rank(const Genome *g) const {
         auto r = _ranks.find(g);
@@ -611,6 +668,10 @@ class ChunkExporter {
         return ao < bo;
     }
     bool insertionKeys(const Genome *g, uint32_t seq, bool reversed, int64_t o1, int64_t o2, vector<Key> &keys);
+    void startRun();
+    /* blocks of columns [cs, ce) from the lifted pieces (sources: columns); cut
+     * candidates are chain ends and extra */
+    void layout(PieceMap &lifted, int64_t cs, int64_t ce, const RowZero &z, const vector<int64_t> &extra, BlockWriter &writer);
     void fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, bool reversed, string &out);
 };
 
@@ -679,23 +740,26 @@ bool ChunkExporter::insertionKeys(const Genome *g, uint32_t seq, bool reversed, 
 void ChunkExporter::fetch(const Genome *g, uint32_t seq, int64_t start, int64_t end, bool reversed, string &out) {
     out.assign((size_t)(end - start), 'N');
     if (_opts.noDna) return;
-    auto it = _dna.find(g);
-    if (it == _dna.end()) {
+    Dna &d = _dna[g];
+    if (!d.f) {
         const GenomeEntry *e = _aln.manifest().find(g->name());
         if (!e || e->dnaPath.empty())
             throw runtime_error("genome " + g->name() + " has no DNA in this alignment (--noDna writes N)");
-        tb_file *f = _aln.openDna(g, true);
-        it = _dna.emplace(g, f).first;
-        vector<int64_t> &idx = _dnaIndex[g];
-        for (uint32_t i = 0; i < g->numSequences(); i++)
-            idx.push_back(i < tb_n_seqs(f) && !strcmp(tb_name(f, i), g->sequenceName(i)) ? (int64_t)i
-                                                                                        : tb_find(f, g->sequenceName(i)));
+        d.f = _aln.openDna(g, true);
+        d.fetches = d.bases = 0;
+        if (d.index.empty())
+            for (uint32_t i = 0; i < g->numSequences(); i++)
+                d.index.push_back(i < tb_n_seqs(d.f) && !strcmp(tb_name(d.f, i), g->sequenceName(i))
+                                      ? (int64_t)i
+                                      : tb_find(d.f, g->sequenceName(i)));
     }
-    int64_t ti = _dnaIndex[g][seq];
+    int64_t ti = d.index[seq];
     if (ti < 0) throw runtime_error("sequence " + string(g->sequenceName(seq)) + " is not in the .2bit of " + g->name());
     int64_t len = g->sequenceLength(seq);
     int64_t fs = reversed ? len - end : start, fe = reversed ? len - start : end;   /* forward coordinates */
-    if (tb_fetch(it->second, (uint32_t)ti, fs, fe, &out[0], 0) != 0)
+    d.fetches++;
+    d.bases += fe - fs;
+    if (tb_fetch(d.f, (uint32_t)ti, fs, fe, &out[0], 0) != 0)
         throw runtime_error("cannot read DNA of " + g->name() + "." + g->sequenceName(seq));
     if (reversed) {
         reverse(out.begin(), out.end());
@@ -703,12 +767,55 @@ void ChunkExporter::fetch(const Genome *g, uint32_t seq, int64_t start, int64_t 
     }
 }
 
+void ChunkExporter::startRun() {
+    stats = MafStats();
+    for (auto &d : _dna)
+        if (d.second.f && (d.second.fetches > DNA_FETCHES || d.second.bases > DNA_BASES)) {
+            tb_close(d.second.f);
+            d.second.f = nullptr;
+        }
+}
+
 void ChunkExporter::run(const RefInterval &chunk, BlockWriter &writer) {
-    const uint32_t refSeq = chunk.seq;
-    const int64_t cs = chunk.start, ce = chunk.end;
-    map<const Genome *, vector<LiftPiece>> lifted;
-    _walk.lift(refSeq, {{cs, ce}}, lifted);
-    const int64_t n = max<int64_t>(0, _opts.joinGap);
+    startRun();
+    PieceMap lifted;
+    _walk.lift(chunk.seq, {{chunk.start, chunk.end}}, lifted);
+    RowZero z{_ref, chunk.seq, true, 0, {}, {}, {}};
+    layout(lifted, chunk.start, chunk.end, z, {}, writer);
+}
+
+void ChunkExporter::runUniversal(const UniChunk &c, BlockWriter &writer) {
+    startRun();
+    moments.clear();
+    const UniversalIndex &idx = *c.index;
+    PieceMap own, quiet, lifted;
+    RowZero z{c.genome, c.seq, false, c.rangePos, {}, {}, {}};
+    vector<int64_t> extra;
+    for (const Segment &sg : *c.segs) {
+        (sg.depth ? own : quiet)[idx.genome(sg.g)].push_back(LiftPiece{sg.u, sg.seq, sg.pos, sg.len, sg.rev});
+        if (sg.depth == 0) z.add(sg.u, sg.len);
+        else stats.placedColumns += (uint64_t)sg.len;
+        if (sg.u > 0) extra.push_back(sg.u);
+    }
+    stats.backboneColumns = (uint64_t)(z.at(c.cols) - c.rangePos);
+    _walk.down(own, quiet, lifted);
+    if (_opts.universalWhole) {
+        for (auto &gp : lifted) {
+            Moments &m = moments[gp.first];
+            for (const LiftPiece &p : gp.second) {
+                int64_t a = gp.first->sequenceStart(p.tgtSeq) + p.tgtStart;
+                m.add(a, a + p.length);
+            }
+        }
+        int64_t a = c.genome->sequenceStart(c.seq) + c.rangePos;
+        moments[c.genome].add(a, a + (int64_t)stats.backboneColumns);
+    }
+    layout(lifted, 0, c.cols, z, extra, writer);
+}
+
+void ChunkExporter::layout(PieceMap &lifted, const int64_t cs, const int64_t ce, const RowZero &z, const vector<int64_t> &extra,
+                           BlockWriter &writer) {
+    const int64_t n = _opts.universal ? 0 : max<int64_t>(0, _opts.joinGap);
 
     /* ---- rows: link each genome's pieces where one follows another in the genome --
      * directly, or across at most n bases that are in no reference column -- and later
@@ -970,14 +1077,23 @@ void ChunkExporter::run(const RefInterval &chunk, BlockWriter &writer) {
         if (block.size() < nrows) block.resize(nrows);
         BlockRow &r0 = block[0];
         r0.id = nullptr;
-        r0.genome = _ref;
-        r0.seq = refSeq;
+        r0.genome = z.genome;
+        r0.seq = z.seq;
         r0.reversed = false;
-        r0.start = s;
-        r0.size = e - s;
-        fetch(_ref, refSeq, s, e, false, dna);
+        r0.start = z.at(s);
+        r0.size = z.at(e) - r0.start;
+        fetch(z.genome, z.seq, r0.start, r0.start + r0.size, false, dna);
         r0.text.assign((size_t)ncol, '-');
-        for (int64_t x = s; x < e; x++) r0.text[(size_t)refCol[(size_t)(x - s)]] = dna[(size_t)(x - s)];
+        if (z.all) {
+            for (int64_t x = s; x < e; x++) r0.text[(size_t)refCol[(size_t)(x - s)]] = dna[(size_t)(x - s)];
+        } else {
+            /* the runs from the one holding s, if any */
+            size_t i = (size_t)(upper_bound(z.runU.begin(), z.runU.end(), s) - z.runU.begin()), k = 0;
+            if (i > 0 && z.runU[i - 1] + z.runLen[i - 1] > s) i--;
+            for (; i < z.runU.size() && z.runU[i] < e; i++)
+                for (int64_t x = max(s, z.runU[i]); x < min(e, z.runU[i] + z.runLen[i]); x++)
+                    r0.text[(size_t)refCol[(size_t)(x - s)]] = dna[k++];
+        }
         for (size_t k = 0; k < out.size(); k++) {
             const Row &r = out[k];
             const Chain &c = *r.c;
@@ -1024,6 +1140,8 @@ void ChunkExporter::run(const RefInterval &chunk, BlockWriter &writer) {
         if (x > cs && x < ce) bps.push_back(x);
     for (int64_t x : ends)
         if (x > cs && x < ce) bps.push_back(x);
+    for (int64_t x : extra)
+        if (x > cs && x < ce) bps.push_back(x);
     sort(bps.begin(), bps.end());
     bps.erase(unique(bps.begin(), bps.end()), bps.end());
     int64_t s = cs;
@@ -1056,6 +1174,92 @@ void addStats(MafStats &a, const MafStats &b) {
     a.insertionColumns += b.insertionColumns;
     a.insertedBases += b.insertedBases;
     a.joinsRejected += b.joinsRejected;
+    a.backboneColumns += b.backboneColumns;
+    a.placedColumns += b.placedColumns;
+}
+
+bool endsWith(const string &s, const string &t) { return s.size() >= t.size() && !s.compare(s.size() - t.size(), t.size(), t); }
+
+/* --universalBed: the axis in order, one BED6 line per maximal run of one sequence --
+ * genome.sequence, start, end, first column, depth, strand -- a run cut by a chunk edge
+ * written once.  BGZF when the name ends in .gz. */
+class AxisBed {
+  public:
+    AxisBed(const string &path, const UniversalIndex &index)
+        : _file(path), _bgzf(endsWith(path, ".gz")), _out(_file, _bgzf), _idx(index) {}
+    void add(const vector<Segment> &segs, int64_t u0) {
+        for (const Segment &sg : segs) {
+            int64_t u = u0 + sg.u;
+            if (_have && sg.g == _run.g && sg.seq == _run.seq && sg.rev == _run.rev && sg.depth == _run.depth && u == _next &&
+                (sg.rev ? sg.pos + sg.len == _run.pos : sg.pos == _run.pos + _run.len)) {
+                if (sg.rev) _run.pos = sg.pos;
+                _run.len += sg.len;
+                _next += sg.len;
+                continue;
+            }
+            flush();
+            _have = true;
+            _run = sg;
+            _run.u = u;
+            _next = u + sg.len;
+        }
+    }
+    void finish() {
+        flush();
+        _out.put(_line);
+        _out.finish();
+        if (_bgzf) writeBgzfEof(_file);
+        _file.close();
+    }
+
+  private:
+    FileSink _file;
+    bool _bgzf;
+    TextOut _out;
+    const UniversalIndex &_idx;
+    bool _have = false;
+    Segment _run;
+    int64_t _next = 0;
+    string _line;
+    void flush() {
+        if (!_have) return;
+        const Genome *g = _idx.genome(_run.g);
+        _line += rowName(g, _run.seq, false) + "\t" + to_string(_run.pos) + "\t" + to_string(_run.pos + _run.len) + "\t" +
+                 to_string(_run.u) + "\t" + to_string(_run.depth) + (_run.rev ? "\t-\n" : "\t+\n");
+        _have = false;
+        if (_line.size() >= ((size_t)1 << 16)) {
+            _out.put(_line);
+            _line.clear();
+        }
+    }
+};
+
+/* A whole universal export wrote every base due exactly once: per genome, the moments
+ * of what its rows held against what they should hold -- the backbone all of it; an
+ * ancestor its top intervals (all with allAncestorRows); a leaf all but its top
+ * intervals (all with leafInsertions); an excluded leaf nothing. */
+void checkOnce(const UniversalIndex &idx, const MafOptions &opts, const map<const Genome *, Moments> &got) {
+    set<string> excluded(opts.exclude.begin(), opts.exclude.end());
+    for (int r = 0; r < idx.genomes(); r++) {
+        const Genome *g = idx.genome(r);
+        const bool leaf = g->children().empty();
+        Moments want;
+        if (!excluded.count(g->name())) {
+            if (r == 0 || (leaf ? opts.leafInsertions : opts.allAncestorRows)) {
+                want = idx.allBases(r);
+            } else if (!leaf) {
+                want = idx.topBases(r);
+            } else {
+                want = idx.allBases(r);
+                want.subtract(idx.topBases(r));
+            }
+        }
+        auto h = got.find(g);
+        const Moments have = h == got.end() ? Moments() : h->second;
+        if (!(have == want))
+            throw runtime_error("internal error: --universal wrote " + to_string(have.n) + " bases of " + g->name() + " where " +
+                                to_string(want.n) + " were due, each once");
+    }
 }
 }
 
@@ -1065,44 +1269,95 @@ MafStats exportMaf(const Alignment &aln, const Genome *ref, const MafOptions &op
                    const vector<RefInterval> &intervals, const string &path, int threads) {
     { TreeWalk check(aln, ref, walkOptions(opts)); }   /* bad options fail before any output */
     const map<const Genome *, int> ranks = rowRanks(aln, ref);
-    const vector<RefInterval> chunks = chunkIntervals(intervals, opts.chunk);
+    /* chunks: of the reference intervals; universal, of the axis the planner lays out */
+    vector<RefInterval> chunks;
+    unique_ptr<UniversalIndex> index;
+    unique_ptr<UniversalPlanner> plan;
+    if (opts.universal) {
+        set<const Genome *> excluded;
+        for (const string &x : opts.exclude) excluded.insert(aln.genome(x));
+        index.reset(new UniversalIndex(aln, ref, opts.leafInsertions, opts.dupes, excluded, opts.universalWhole, threads));
+        vector<TopRange> ranges;
+        for (const RefInterval &iv : intervals) ranges.push_back(TopRange{0, iv.seq, iv.start, iv.end});
+        plan.reset(new UniversalPlanner(*index, ranges, opts.universalWhole, opts.chunk));
+        plan->run();
+    } else {
+        chunks = chunkIntervals(intervals, opts.chunk);
+    }
+    const size_t nChunks = plan ? plan->chunks() : chunks.size();
+    unique_ptr<AxisBed> bed;
+    if (plan && !opts.universalBed.empty()) bed.reset(new AxisBed(opts.universalBed, *index));
     FileSink file(path);
     {
         TextOut header(file, format.bgzf);
-        if (format.taf) header.put(format.runLength ? "#taf run_length_encode_bases:1 version:1 scoring:N/A\n" : "#taf version:1 scoring:N/A\n");
-        else header.put("##maf version=1 scoring=N/A\n# hal " + aln.manifest().newick + "\n\n");
+        /* universal: what the axis is, as tags; and the tree, as hal2maf gives it (taffy
+         * skips # lines; its universal index needs it) */
+        string tags;
+        if (opts.universal) {
+            const char *eq = format.taf ? ":" : "=";
+            tags = string(" universal") + eq + "flank1 leafInsertions" + eq + (opts.leafInsertions ? "1" : "0") + " ancestorRows" + eq +
+                   (opts.allAncestorRows ? "all" : "own") + " noDupes" + eq + (opts.dupes ? "0" : "1") + " chunk" + eq +
+                   to_string(opts.chunk);
+            if (ref != aln.root()) tags += string(" rootGenome") + eq + ref->name();
+        }
+        if (format.taf)
+            header.put(string(format.runLength ? "#taf run_length_encode_bases:1 version:1 scoring:N/A" : "#taf version:1 scoring:N/A") +
+                       tags + "\n# hal " + aln.manifest().newick + "\n");
+        else header.put("##maf version=1 scoring=N/A" + tags + "\n# hal " + aln.manifest().newick + "\n\n");
         header.finish();
     }
     MafStats total;
+    map<const Genome *, Moments> moments;
     size_t prevRows = 0;   /* TAF: rows the last chunk written ended with */
     auto firstLine = [&](const ChunkResult &r) {   /* its own BGZF block(s), in either path */
         TextOut first(file, format.bgzf);
         first.put(tafFirstLine(r, prevRows));
         first.finish();
     };
-    /* chunk k to out; direct: out is the output, and the chunk's first line goes there
-     * as soon as it is known */
-    auto exportChunk = [&](size_t k, ByteSink &out, ChunkResult &r, bool direct) {
+    /* one exporter per thread, made when the thread first needs it */
+    vector<unique_ptr<ChunkExporter>> exporters((size_t)max(1, threads));
+    /* chunk k by thread w to out; direct: out is the output, and the chunk's first line
+     * goes there as soon as it is known */
+    auto exportChunk = [&](size_t k, int w, ByteSink &out, ChunkResult &r, bool direct) {
         TextOut body(out, format.bgzf);
-        ChunkExporter ex(aln, ref, opts, ranks);
+        unique_ptr<ChunkExporter> &e = exporters[(size_t)w];
+        if (!e) e.reset(new ChunkExporter(aln, ref, opts, ranks));
+        ChunkExporter &ex = *e;
+        auto run = [&](BlockWriter &bw) {
+            if (!plan) {
+                ex.run(chunks[k], bw);
+                return;
+            }
+            plan->segments(k, r.axis);
+            const UniversalPlanner::Chunk &c = plan->chunk(k);
+            const TopRange &t = plan->ranges()[c.range];
+            ex.runUniversal(UniChunk{index.get(), &r.axis, index->genome(t.g), t.seq, c.rangePos, c.cols}, bw);
+            r.moments.swap(ex.moments);
+        };
         if (format.taf) {
-            TafBlockWriter w(body, format.runLength, opts.onlySequenceNames, r);
+            TafBlockWriter w(body, format.runLength, opts.onlySequenceNames, opts.universal, r);
             if (direct) w.onFirstLine([&]() { firstLine(r); });
-            ex.run(chunks[k], w);
+            run(w);
             w.finish();
         } else {
             MafBlockWriter w(body, opts.onlySequenceNames);
-            ex.run(chunks[k], w);
+            run(w);
         }
         body.finish();
         r.stats = ex.stats;
     };
-    if (threads <= 1 || chunks.size() <= 1) {
-        for (size_t k = 0; k < chunks.size(); k++) {
+    /* what is kept of a chunk once it is written */
+    auto account = [&](size_t k, ChunkResult &r) {
+        prevRows = r.lastRows;
+        addStats(total, r.stats);
+        if (bed) bed->add(r.axis, plan->chunk(k).u0);
+        for (auto &m : r.moments) moments[m.first].add(m.second);
+    };
+    if (threads <= 1 || nChunks <= 1) {
+        for (size_t k = 0; k < nChunks; k++) {
             ChunkResult r;
-            exportChunk(k, file, r, true);
-            prevRows = r.lastRows;
-            addStats(total, r.stats);
+            exportChunk(k, 0, file, r, true);
+            account(k, r);
         }
     } else {
         /* chunks wait for the ones before them beside the output, or where temporary
@@ -1113,23 +1368,31 @@ MafStats exportMaf(const Alignment &aln, const Genome *ref, const MafOptions &op
         const char *t = getenv("TMPDIR");
         tmpDirs.push_back(t && *t ? t : "/tmp");
         orderedParallel<ChunkResult>(
-            chunks.size(), threads,
-            [&](size_t k) {
+            nChunks, threads,
+            [&](size_t k, int w) {
                 ChunkResult r;
                 r.body.reset(new ChunkBuffer(tmpDirs));
-                exportChunk(k, *r.body, r, false);
+                exportChunk(k, w, *r.body, r, false);
                 return r;
             },
-            [&](size_t, ChunkResult &r) {
+            [&](size_t k, ChunkResult &r) {
                 if (format.taf) firstLine(r);
-                prevRows = r.lastRows;
                 r.body->copyTo(file);
                 r.body.reset();
-                addStats(total, r.stats);
+                account(k, r);
             });
     }
     if (format.bgzf) writeBgzfEof(file);
     file.close();
+    if (bed) bed->finish();
+    if (plan) {
+        total.placedIntervals = plan->visited();
+        if (opts.universalWhole) {
+            total.extraSequences = index->flankless().size();
+            checkOnce(*index, opts, moments);
+            total.onceChecked = true;
+        }
+    }
     return total;
 }
 }
