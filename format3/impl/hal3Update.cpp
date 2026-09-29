@@ -117,41 +117,6 @@ void rewriteHgn(lmap_file *src, const string &name, const string &parent, const 
     if (lmap_builder_close(b, &st) != 0) throw runtime_error(out + ": " + st.error);
 }
 
-/* Copy an lmap_io to a file; returns the CRC-32 and sets *bytes. */
-uint32_t copyToFile(lmap_io *io, const string &path, uint64_t *bytes) {
-    FILE *f = fopen(path.c_str(), "wb");
-    if (!f) throw runtime_error("cannot write " + path + ": " + strerror(errno));
-    int64_t n = lmap_io_size(io);
-    vector<unsigned char> buf((size_t)4 << 20);
-    uLong c = crc32(0L, Z_NULL, 0);
-    bool good = true;
-    for (int64_t at = 0; at < n && good; at += (int64_t)buf.size()) {
-        int64_t k = min<int64_t>((int64_t)buf.size(), n - at);
-        good = lmap_pread(io, buf.data(), at, k) == 0 && fwrite(buf.data(), 1, (size_t)k, f) == (size_t)k;
-        c = crc32(c, buf.data(), (uInt)k);
-    }
-    good = (fclose(f) == 0) && good;
-    if (!good) throw runtime_error("cannot write " + path);
-    *bytes = (uint64_t)n;
-    return (uint32_t)c;
-}
-
-string quoteNewick(const string &name) {
-    if (name.find_first_of("()[]',:; \t") == string::npos) return name;
-    string q = "'";
-    for (char c : name) q += c == '\'' ? string("''") : string(1, c);
-    return q + "'";
-}
-
-string fmtLength(double d) {
-    char buf[64];
-    for (int prec = 6; prec <= 17; prec++) {
-        snprintf(buf, sizeof buf, "%.*g", prec, d);
-        if (strtod(buf, nullptr) == d) break;
-    }
-    return buf;
-}
-
 /* A scratch directory beside path, removed with its contents. */
 struct ScratchDir {
     string dir;

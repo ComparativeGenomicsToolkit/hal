@@ -1059,6 +1059,117 @@ for g in "${genomes[@]:1}"; do
 done
 check "BranchReader: scan as hal stats --runs; byParent (every copy, canonical) and parentOf as the scan implies ($nb branches)" test $bad -eq 0
 
+echo "writing (hal3/hal3Writer.h) and hal merge:"
+cat >"$TMP/w.cpp" <<'CPPEOF'
+#include "hal3/hal3.h"
+#include "hal3/hal3Writer.h"
+#include <cstdio>
+#include <cstring>
+#include <string>
+using namespace hal3::api;
+/* a 3-genome alignment written from scratch: root R (two sequences) with children A and B;
+ * A has a reversed run, B a duplication (two copies of one R stretch) */
+static int build(const std::string &dir) {
+    Fragment f(dir);
+    std::vector<SequenceDef> r{{"r1", 40}, {"r2", 20}}, a{{"a1", 30}}, b{{"b1", 50}};
+    std::string r1 = "ACGTACGTAAccggttAACCGGTTACGTNNNNACGTACGT", r2 = "TTTTGGGGCCCCAAAAGGGG";
+    GenomeWriter wr(f.genomesDir(), "R", "", r, {});
+    wr.addDna(r1.data(), 40);
+    wr.addDna(r2.data(), 20);
+    f.add(wr.finish());
+    GenomeWriter wa(f.genomesDir(), "A", "R", a, r);
+    wa.addRun(0, 0, 0, 5, 20, false);
+    wa.addRun(0, 20, 1, 0, 10, true);
+    std::string da(30, 'A');
+    wa.addDna(da.data(), 30);
+    f.add(wa.finish(), 0.1);
+    GenomeWriter wb(f.genomesDir(), "B", "R", b, r);
+    wb.addRun(0, 0, 0, 10, 15, false);
+    wb.addRun(0, 30, 0, 10, 15, false);   /* the same R stretch again: a paralog */
+    std::string db(50, 'c');
+    wb.beginDna();
+    wb.appendDna(db.data(), 20);
+    wb.appendDna(db.data(), 30);
+    wb.endDna();
+    f.add(wb.finish(), 0.2);
+    f.setMeta("made", "by the test");
+    f.finish();
+    return 0;
+}
+int main(int argc, char **argv) {
+    std::string what = argv[1], dir = argv[2];
+    try {
+        if (what == "build") return build(dir);
+        if (what == "outside") {   /* a run past the end of its parent sequence */
+            GenomeWriter w(dir, "X", "R", {{"x", 10}}, {{"r", 5}});
+            w.addRun(0, 0, 0, 0, 10, false);
+        } else if (what == "twoParents") {   /* a child base aligned twice */
+            GenomeWriter w(dir, "X", "R", {{"x", 10}}, {{"r", 50}});
+            w.addRun(0, 0, 0, 0, 10, false);
+            w.addRun(0, 5, 0, 20, 5, false);
+            w.finish();
+        } else if (what == "shortDna") {
+            GenomeWriter w(dir, "X", "", {{"x", 10}}, {});
+            w.addDna("ACGT", 4);
+        } else if (what == "check") {   /* the built alignment reads back */
+            auto aln = Alignment::open(dir);
+            Lifter l(aln);
+            std::vector<LiftPiece> p;
+            l.lift(aln->genome("A"), 0, 20, 30, aln->genome("R"), true, p);   /* reversed onto r2 [0, 10) */
+            if (p.size() != 1 || p[0].tgtSeq != 1 || p[0].tgtStart != 0 || p[0].length != 10 || !p[0].reversed) return 1;
+            l.lift(aln->genome("R"), 0, 10, 25, aln->genome("B"), true, p);   /* both copies */
+            if (p.size() != 2) return 1;
+            DnaReader d(aln);
+            std::string s;
+            d.fetch(aln->genome("R"), 0, 8, 16, s);
+            return s == "AAccggtt" && aln->meta().at("made") == "by the test" ? 0 : 1;
+        }
+    } catch (Error &e) {
+        fprintf(stderr, "error (kind %d): %s\n", (int)e.kind(), e.what());
+        return 1;
+    }
+    return 0;
+}
+CPPEOF
+check "a program writing with hal3/hal3Writer.h builds" \
+    ${CXX:-g++} -std=c++11 -O1 -I"$ROOT/format3/inc" "$TMP/w.cpp" -o "$TMP/w" \
+    "$ROOT/lib/libHal3.a" "$ROOT/../twobit64/libtwobit64.a" "$ROOT/../liftmap/libliftmap.a" -lz -lpthread $curl
+rm -rf "$TMP/wf"
+check "GenomeWriter and Fragment: a 3-genome alignment from scratch validates, lifts (reversed, paralogs) and reads back" \
+    sh -c "'$TMP/w' build '$TMP/wf' && '$BIN/hal' validate '$TMP/wf' >/dev/null && '$TMP/w' check '$TMP/wf'"
+mkdir -p "$TMP/wbad"
+refuses "GenomeWriter refuses a run outside its sequences" "$TMP/w" outside "$TMP/wbad"
+refuses "GenomeWriter refuses a base with two parents" "$TMP/w" twoParents "$TMP/wbad"
+refuses "GenomeWriter refuses DNA shorter than the sequence" "$TMP/w" shortDna "$TMP/wbad"
+check "... and leaves no file behind" test -z "$(ls "$TMP/wbad")"
+# split r7 at an internal genome into two fragments -- the tree above it (it a leaf
+# there) and its subtree (it the root) -- and merge them back: the same alignment
+A="$TMP/r7.hdf5"
+for x in $("$BIN/hal" stats "$A" --genomes); do
+    p=$("$BIN/hal" stats "$A" --parent "$x"); kids=$("$BIN/hal" stats "$A" --children "$x")
+    [ -n "$p" ] && [ -n "$kids" ] && break
+done
+prune=(); for k in $(echo "$kids" | tr ',' ' '); do prune+=(--prune "$k"); done
+rm -rf "$TMP/fr_top" "$TMP/fr_sub" "$TMP/mg.hal" "$TMP/mgd"
+"$BIN/hal" update "$A" "$TMP/fr_top" --directory "${prune[@]}" >/dev/null 2>&1
+"$BIN/hal" update "$A" "$TMP/fr_sub.hal" --extract "$x" >/dev/null 2>&1
+same() {   # same ALIGNMENT: its manifest (but for the tree's text) and every member as r7's
+    "$BIN/hal" unpack "$1" "$TMP/mgu" >/dev/null 2>&1 || cp -r "$1" "$TMP/mgu"
+    grep -v '^tree' "$A/manifest" | cmp -s - <(grep -v '^tree' "$TMP/mgu/manifest") && diff -rq "$A/genomes" "$TMP/mgu/genomes" >/dev/null
+    local r=$?; rm -rf "$TMP/mgu"; return $r
+}
+check "hal merge of r7 split at $x (a pack fragment and a directory fragment): r7 again, as a pack" \
+    sh -c "'$BIN/hal' merge '$TMP/mg.hal' '$TMP/fr_top' '$TMP/fr_sub.hal' 2>/dev/null && '$BIN/hal' validate '$TMP/mg.hal' >/dev/null"
+check "... every member and the manifest (but for the tree's text) as r7's" same "$TMP/mg.hal"
+check "... and as a directory" sh -c "'$BIN/hal' merge --directory '$TMP/mgd' '$TMP/fr_sub.hal' '$TMP/fr_top' 2>/dev/null"
+check "... the same" same "$TMP/mgd"
+rm -rf "$TMP/mgx"; cp -r "$TMP/fr_top" "$TMP/fr_bad"
+g=$("$BIN/hal" stats "$TMP/fr_bad" --genomes | tr ' ' '\n' | tail -1)
+printf 'x' | dd of="$TMP/fr_bad/genomes/$g.hgn" bs=1 seek=100 conv=notrunc 2>/dev/null
+refuses "hal merge refuses a fragment whose file differs from its manifest" "$BIN/hal" merge "$TMP/mgx" "$TMP/fr_bad" "$TMP/fr_sub.hal"
+check "... and leaves nothing" test ! -e "$TMP/mgx"
+refuses "hal merge refuses fragments with two roots" "$BIN/hal" merge "$TMP/mgx" "$TMP/fr_sub.hal" "$TMP/wf"
+
 echo "open files (a directory alignment's members share a pool of descriptors):"
 # the same output with the open-file limit below two per genome, and with a pool of 2
 # on 3 threads (every read waiting on, or opening past, a full pool)

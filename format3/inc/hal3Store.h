@@ -93,6 +93,10 @@ const PackInfo &packInfo(const Store &store);
  * in.  Returns the bytes copied.  Throws std::runtime_error, leaving out as it was. */
 uint64_t packAlignment(const std::string &in, const std::string &out);
 
+/* Copy all of io to a new file at path; returns its CRC-32 and sets *bytes.  Throws
+ * std::runtime_error. */
+uint32_t copyToFile(lmap_io *io, const std::string &path, uint64_t *bytes);
+
 /* Writing a pack: members are added (appended) and removed, then commit() makes the
  * change current, atomically.  One writer at a time (an exclusive lock on the file). */
 class PackWriter {

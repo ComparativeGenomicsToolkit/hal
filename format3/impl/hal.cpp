@@ -30,6 +30,7 @@ const Command COMMANDS[] = {
     {"unpack", "write an alignment as a directory", hal3::main_unpack},
     {"ls", "list an alignment's members", hal3::main_ls},
     {"update", "split, join, subset, replace or rename genomes", hal3::main_update},
+    {"merge", "stitch alignments that meet in shared genomes into one", hal3::main_merge},
     {"likelihoods", "per-base likelihoods of the ancestral genomes, bottom up", hal3::main_likelihoods},
     {"posteriors", "ancestral base probabilities given all the data; the most probable bases", hal3::main_posteriors},
 };

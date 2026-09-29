@@ -39,6 +39,7 @@ int main_pack(int argc, char **argv);
 int main_unpack(int argc, char **argv);
 int main_ls(int argc, char **argv);
 int main_update(int argc, char **argv);
+int main_merge(int argc, char **argv);
 int main_likelihoods(int argc, char **argv);
 int main_posteriors(int argc, char **argv);
 }

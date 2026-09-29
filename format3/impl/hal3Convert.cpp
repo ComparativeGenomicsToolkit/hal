@@ -3,6 +3,7 @@
  */
 #include "hal3Convert.h"
 #include "hal.h"
+#include "hal3/hal3Writer.h"
 #include "hal3Manifest.h"
 #include "hal3Store.h"
 #include "liftmap.h"
@@ -45,14 +46,6 @@ size_t sequenceAt(const vector<SeqInfo> &seqs, hal_index_t pos) {
     return i;
 }
 
-struct BuilderGuard {
-    lmap_builder *b;
-    ~BuilderGuard() { if (b) lmap_builder_abort(b); }
-};
-
-void check(int rc, lmap_builder *b, const string &what) {
-    if (rc < 0) throw runtime_error(what + ": " + lmap_builder_error(b));
-}
 }
 
 GenomeConversion convertGenome(const Alignment *alignment, const string &name, const string &genomesDir,
@@ -63,29 +56,19 @@ GenomeConversion convertGenome(const Alignment *alignment, const string &name, c
     vector<SeqInfo> seqs = sequencesOf(genome);
     vector<SeqInfo> pseqs;
     if (parent) pseqs = sequencesOf(parent);
-    string stem = genomesDir + "/" + genomeFileStem(name);
-
-    /* ---- the .hgn: sequences on axis a, the parent's on axis b, the branch as runs */
-    string hgn = stem + ".hgn";
-    BuilderGuard g{lmap_builder_open(hgn.c_str(), HGN_PROFILE, 0, NULL)};
-    if (!g.b) throw runtime_error("cannot write " + hgn);
-    lmap_builder *b = g.b;
-    check(lmap_builder_set_params(b, opts.chunkRuns, opts.chunkParentSpan, LMAP_CODEC_DEFLATE), b, hgn);
-    check(lmap_builder_set_order(b, LMAP_ORDER_A), b, hgn);
+    vector<api::SequenceDef> defs, pdefs;
+    for (const SeqInfo &x : seqs) defs.push_back(api::SequenceDef{x.name, (int64_t)x.length});
+    for (const SeqInfo &x : pseqs) pdefs.push_back(api::SequenceDef{x.name, (int64_t)x.length});
+    api::GenomeWriterOptions wo;
+    wo.chunkRuns = opts.chunkRuns;
+    wo.chunkParentSpan = opts.chunkParentSpan;
     /* HAL's top segments come in genome order, one parent each at most: exactly the
-     * builder's pre-sorted promise, so runs stream to disk as they are merged */
-    check(lmap_builder_set_presorted(b, 1), b, hgn);
-    check(lmap_builder_set_meta(b, "axis.a", ("genome " + name).c_str()), b, hgn);
-    check(lmap_builder_set_meta(b, "hal.genome", name.c_str()), b, hgn);
-    if (parent) {
-        check(lmap_builder_set_meta(b, "axis.b", ("genome " + parent->getName()).c_str()), b, hgn);
-        check(lmap_builder_set_meta(b, "hal.parent", parent->getName().c_str()), b, hgn);
-    }
-    check(lmap_builder_set_meta(b, "source", "halToFormat3"), b, hgn);
-    for (const auto &kv : genome->getMetaData()->getMap())
-        check(lmap_builder_set_meta(b, ("hal.meta." + kv.first).c_str(), kv.second.c_str()), b, hgn);
-    for (const SeqInfo &s : seqs) check(lmap_builder_add_member(b, 0, s.name.c_str(), s.length), b, hgn);
-    for (const SeqInfo &s : pseqs) check(lmap_builder_add_member(b, 1, s.name.c_str(), s.length), b, hgn);
+     * writer's presorted promise, so runs stream to disk as they are merged */
+    wo.presorted = true;
+    wo.source = "halToFormat3";
+    wo.checksums = false;   /* hal convert takes them once every genome is written */
+    api::GenomeWriter w(genomesDir, name, parent ? parent->getName() : "", defs, pdefs, wo);
+    for (const auto &kv : genome->getMetaData()->getMap()) w.setMeta(kv.first, kv.second);
 
     out.topSegments = genome->getNumTopSegments();
     if (parent && out.topSegments > 0) {
@@ -104,42 +87,30 @@ GenomeConversion convertGenome(const Alignment *alignment, const string &name, c
                 throw runtime_error(name + ": top segment " + to_string(k) + " and its parent differ in length");
             if (pstart < pseqs[pi].start || pstart >= pseqs[pi].start + (hal_index_t)pseqs[pi].length)
                 pi = sequenceAt(pseqs, pstart);
-            check(lmap_builder_add_run(b, (uint32_t)si, (uint32_t)pi, start - seqs[si].start,
-                                       pstart - pseqs[pi].start, (int64_t)len, ts->getParentReversed() ? 1 : 0),
-                  b, hgn);
+            w.addRun((uint32_t)si, start - seqs[si].start, (uint32_t)pi, pstart - pseqs[pi].start, (int64_t)len,
+                     ts->getParentReversed());
             out.alignedSegments++;
             out.alignedBases += len;
         }
     }
-    lmap_build_stats st;
-    lmap_builder *done = g.b;
-    g.b = NULL;
-    if (lmap_builder_close(done, &st) != 0) throw runtime_error(hgn + ": " + st.error);
-    out.runs = st.runs;
 
     /* ---- the .2bit */
     if (opts.dna && genome->containsDNAArray()) {
-        string tb = stem + ".2bit";
-        vector<const char *> names;
-        for (const SeqInfo &s : seqs) names.push_back(s.name.c_str());
-        tb_writer *w = tb_writer_open(tb.c_str(), names.data(), (uint32_t)names.size(), 0);
-        if (!w) throw runtime_error("cannot write " + tb + " (a sequence name longer than 255 bytes?)");
         string buf;
         SequenceIteratorPtr sit = genome->getSequenceIterator();
         for (size_t i = 0; i < seqs.size(); i++, sit->toNext()) {
             const Sequence *s = sit->getSequence();
-            tb_writer_begin(w);
+            w.beginDna();
             for (hal_size_t off = 0; off < seqs[i].length; off += 1 << 20) {
                 hal_size_t n = min<hal_size_t>(1 << 20, seqs[i].length - off);
                 s->getSubString(buf, off, n);
-                tb_writer_append(w, buf.data(), buf.size());
+                w.appendDna(buf.data(), buf.size());
             }
-            tb_writer_end(w);
+            w.endDna();
         }
-        char err[256];
-        if (tb_writer_close(w, err, sizeof err) != 0) throw runtime_error(tb + ": " + err);
         out.wroteDna = true;
     }
+    out.runs = w.finish().runs;
     alignment->closeGenome(genome);
     return out;
 }

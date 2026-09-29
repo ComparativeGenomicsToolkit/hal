@@ -576,4 +576,23 @@ uint64_t packAlignment(const string &in, const string &out) {
     w->commit();
     return bytes;
 }
+
+/* Copy an lmap_io to a file; returns the CRC-32 and sets *bytes. */
+uint32_t copyToFile(lmap_io *io, const string &path, uint64_t *bytes) {
+    FILE *f = fopen(path.c_str(), "wb");
+    if (!f) throw runtime_error("cannot write " + path + ": " + strerror(errno));
+    int64_t n = lmap_io_size(io);
+    vector<unsigned char> buf((size_t)4 << 20);
+    uLong c = crc32(0L, Z_NULL, 0);
+    bool good = true;
+    for (int64_t at = 0; at < n && good; at += (int64_t)buf.size()) {
+        int64_t k = min<int64_t>((int64_t)buf.size(), n - at);
+        good = lmap_pread(io, buf.data(), at, k) == 0 && fwrite(buf.data(), 1, (size_t)k, f) == (size_t)k;
+        c = crc32(c, buf.data(), (uInt)k);
+    }
+    good = (fclose(f) == 0) && good;
+    if (!good) throw runtime_error("cannot write " + path);
+    *bytes = (uint64_t)n;
+    return (uint32_t)c;
+}
 }

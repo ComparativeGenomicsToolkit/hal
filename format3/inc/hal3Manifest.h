@@ -120,6 +120,10 @@ struct NewickNode {
     double branchLength;
 };
 std::vector<NewickNode> parseNewick(const std::string &newick);
+/* A genome name as a Newick label (quoted when it holds a character Newick reserves),
+ * and a branch length in the fewest digits that read back as the same double. */
+std::string quoteNewick(const std::string &name);
+std::string fmtLength(double d);
 }
 
 #endif

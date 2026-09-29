@@ -348,4 +348,20 @@ vector<NewickNode> parseNewick(const string &newick) {
     if (np.p != newick.size()) np.fail("text after ';'");
     return np.nodes;
 }
+
+string quoteNewick(const string &name) {
+    if (name.find_first_of("()[]',:; \t") == string::npos) return name;
+    string q = "'";
+    for (char c : name) q += c == '\'' ? string("''") : string(1, c);
+    return q + "'";
+}
+
+string fmtLength(double d) {
+    char buf[64];
+    for (int prec = 6; prec <= 17; prec++) {
+        snprintf(buf, sizeof buf, "%.*g", prec, d);
+        if (strtod(buf, nullptr) == d) break;
+    }
+    return buf;
+}
 }
