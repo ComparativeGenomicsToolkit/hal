@@ -2,7 +2,7 @@ rootDir = ..
 include ${rootDir}/include.mk
 modObjDir = ${objDir}/format3
 
-# liftmap and twobit64, from sibling checkouts by default (see include.mk).  liftmap
+# liftmap and twobit64: the submodules, or sibling checkouts (see include.mk).  liftmap
 # built with HTTP=1 needs libcurl.
 inclSpec += -I${liftmapDir}/src -I${twobit64Dir}/src
 format3Libs = ${libHal3} ${twobit64Dir}/libtwobit64.a ${liftmapDir}/libliftmap.a
@@ -44,9 +44,14 @@ all : libs progs
 libs: ${libHal3}
 progs: ${progs}
 
-${twobit64Dir}/libtwobit64.a ${liftmapDir}/libliftmap.a:
-	@echo "format3 needs $@: build liftmap and twobit64 (sibling checkouts, or set liftmapDir / twobit64Dir)" >&2
-	@false
+# liftmap and twobit64, built here if they are not: liftmap without its HTTP backend
+# (libcurl) unless HTTP=1
+${liftmapDir}/libliftmap.a:
+	@test -f ${liftmapDir}/src/liftmap.h || { echo "format3 needs liftmap: git submodule update --init (or set liftmapDir)" >&2; false; }
+	cd ${liftmapDir} && ${MAKE} libliftmap.a CFLAGS="-std=c99 -O2 -g" $(if $(filter 1,${HTTP}),HTTP=1)
+${twobit64Dir}/libtwobit64.a: ${liftmapDir}/libliftmap.a
+	@test -f ${twobit64Dir}/src/twobit64.h || { echo "format3 needs twobit64: git submodule update --init (or set twobit64Dir)" >&2; false; }
+	cd ${twobit64Dir} && ${MAKE} libtwobit64.a CFLAGS="-std=c99 -O2 -g" LIFTMAP_DIR=$(abspath ${liftmapDir})
 
 # the command table, with and without convert
 ${modObjDir}/impl/hal_convert.o: impl/hal.cpp

@@ -18,9 +18,10 @@ libHalLod = ${libDir}/libHalLod.a
 libHalMaf = ${libDir}/libHalMaf.a
 libHal3 = ${libDir}/libHal3.a
 
-# HAL format 3 (format3/) builds on liftmap and twobit64, from sibling checkouts by default
-liftmapDir ?= ${rootDir}/../liftmap
-twobit64Dir ?= ${rootDir}/../twobit64
+# HAL format 3 (format3/) builds on liftmap and twobit64: the submodules (git submodule
+# update --init), or else sibling checkouts
+liftmapDir ?= $(if $(wildcard ${rootDir}/submodules/liftmap/src/liftmap.h),${rootDir}/submodules/liftmap,${rootDir}/../liftmap)
+twobit64Dir ?= $(if $(wildcard ${rootDir}/submodules/twobit64/src/twobit64.h),${rootDir}/submodules/twobit64,${rootDir}/../twobit64)
 
 inclSpec += -I${rootDir}/api/inc -Iimpl -Iinc -I${rootDir}/liftover/inc
 

@@ -1,0 +1,8 @@
+[submodule "submodules/liftmap"]
+	path = submodules/liftmap
+	url = https://github.com/glennhickey/liftmap.git
+	branch = development
+[submodule "submodules/twobit64"]
+	path = submodules/twobit64
+	url = https://github.com/glennhickey/twobit64.git
+	branch = development

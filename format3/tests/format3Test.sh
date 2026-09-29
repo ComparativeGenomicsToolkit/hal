@@ -1,6 +1,6 @@
 #!/bin/bash
 # HAL format 3 tests: generated alignments only (halRandGen), so they need nothing
-# outside this repository and its sibling liftmap / twobit64 checkouts.
+# outside this repository and its liftmap / twobit64 submodules (or sibling checkouts).
 #
 #   - halRandGen alignments (hdf5 and mmap back ends, several seeds) convert, pass
 #     halToFormat3's own check against the input, and pass hal3Validate
@@ -1013,10 +1013,13 @@ int main(int, char **argv) {
     return 1;
 }
 CPPEOF
-curl=$(nm "$ROOT/../liftmap/libliftmap.a" 2>/dev/null | grep -q ' U curl_easy_init' && echo -lcurl)
+# liftmap and twobit64 as the build found them: the submodules, or sibling checkouts
+LM="$ROOT/submodules/liftmap"; [ -f "$LM/libliftmap.a" ] || LM="$ROOT/../liftmap"
+TB="$ROOT/submodules/twobit64"; [ -f "$TB/libtwobit64.a" ] || TB="$ROOT/../twobit64"
+curl=$(nm "$LM/libliftmap.a" 2>/dev/null | grep -q ' U curl_easy_init' && echo -lcurl)
 check "a program using only hal3/hal3.h builds, without liftmap, twobit64 or HAL headers or libHal" \
     ${CXX:-g++} -std=c++11 -O1 -I"$ROOT/format3/inc" "$TMP/api.cpp" -o "$TMP/api" \
-    "$ROOT/lib/libHal3.a" "$ROOT/../twobit64/libtwobit64.a" "$ROOT/../liftmap/libliftmap.a" -lz -lpthread $curl
+    "$ROOT/lib/libHal3.a" "$TB/libtwobit64.a" "$LM/libliftmap.a" -lz -lpthread $curl
 A="$TMP/r7.hdf5"
 check "genomes, tree, lengths and sequence tables as hal stats" \
     sh -c "'$TMP/api' '$A' genomes >'$TMP/api.g' && '$BIN/hal' stats '$A' | sed -n '/^GenomeName/,\$p' | tail -n +2 | awk -F', ' 'NF > 1 {print \$1\"\t\"\$3\"\t\"\$4}' >'$TMP/api.s' && cut -f1,3,4 '$TMP/api.g' | cmp -s - '$TMP/api.s'"
@@ -1133,7 +1136,7 @@ int main(int argc, char **argv) {
 CPPEOF
 check "a program writing with hal3/hal3Writer.h builds" \
     ${CXX:-g++} -std=c++11 -O1 -I"$ROOT/format3/inc" "$TMP/w.cpp" -o "$TMP/w" \
-    "$ROOT/lib/libHal3.a" "$ROOT/../twobit64/libtwobit64.a" "$ROOT/../liftmap/libliftmap.a" -lz -lpthread $curl
+    "$ROOT/lib/libHal3.a" "$TB/libtwobit64.a" "$LM/libliftmap.a" -lz -lpthread $curl
 rm -rf "$TMP/wf"
 check "GenomeWriter and Fragment: a 3-genome alignment from scratch validates, lifts (reversed, paralogs) and reads back" \
     sh -c "'$TMP/w' build '$TMP/wf' && '$BIN/hal' validate '$TMP/wf' >/dev/null && '$TMP/w' check '$TMP/wf'"

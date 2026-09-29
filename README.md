@@ -60,7 +60,10 @@ Installation
 
 From the parent directory of where you want HAL installed:
 
-	 git clone https://github.com/ComparativeGenomicsToolkit/hal.git
+	 git clone --recursive https://github.com/ComparativeGenomicsToolkit/hal.git
+
+(`--recursive` fetches liftmap and twobit64, which HAL format 3 builds on; in an existing
+clone, `git submodule update --init` does the same.)
 
 ### Installing Dependencies
 
