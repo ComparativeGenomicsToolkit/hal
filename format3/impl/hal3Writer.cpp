@@ -443,6 +443,28 @@ void merge(const vector<string> &fragments, const string &out, const map<string,
         return make_pair(s.frag, (size_t)(s.e - manifests[s.frag].genomes.data()));
     };
     stable_sort(entries.begin(), entries.end(), [&](const GenomeEntry &x, const GenomeEntry &y) { return rank(x) < rank(y); });
+    if (!opts.tree.empty()) {
+        /* the given tree: the same genomes and parents; its lengths and order */
+        vector<NewickNode> nodes = parseNewick(opts.tree);
+        map<string, size_t> at;
+        for (size_t i = 0; i < nodes.size(); i++)
+            if (nodes[i].name.empty() || !at.emplace(nodes[i].name, i).second)
+                throw Error(ErrorKind::Argument, "the tree to merge to has an unnamed or repeated genome");
+        if (nodes.size() != entries.size())
+            throw Error(ErrorKind::Format, "the tree names " + to_string(nodes.size()) + " genomes, the fragments hold " +
+                                               to_string(entries.size()));
+        for (GenomeEntry &e : entries) {
+            auto i = at.find(e.name);
+            if (i == at.end()) throw Error(ErrorKind::Format, "genome " + e.name + " is not in the tree to merge to");
+            const NewickNode &n = nodes[i->second];
+            const string parent = n.parent < 0 ? "" : nodes[(size_t)n.parent].name;
+            if (parent != e.parent)
+                throw Error(ErrorKind::Format, "genome " + e.name + "'s parent is " + (e.parent.empty() ? "none" : e.parent) +
+                                                   " in the fragments, " + (parent.empty() ? "none" : parent) + " in the tree");
+            if (!e.parent.empty() && n.branchLength >= 0) e.branchLength = n.branchLength;
+        }
+        stable_sort(entries.begin(), entries.end(), [&](const GenomeEntry &x, const GenomeEntry &y) { return at[x.name] < at[y.name]; });
+    }
     Manifest m = assemble(entries, allMeta);
 
     /* the files, each once: into a pack, or a directory */

@@ -126,6 +126,9 @@ struct MergeOptions {
                                           * fragments where possible, else copy */
     bool checkDna = true;                /* a genome's DNA in two fragments must agree */
     bool checksums = false;              /* validate the result with checksums too */
+    /* a Newick tree the result must be (the same genomes and parents): its branch
+     * lengths and its order of children are used, not the fragments' */
+    std::string tree;
 };
 
 /* Stitch fragments (packs or directories) into one alignment at out, which must not

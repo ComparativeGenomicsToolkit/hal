@@ -31,17 +31,20 @@ static const char *MERGE_USAGE =
     "  --meta KEY=VALUE   set alignment metadata (after the fragments'; repeatable)\n"
     "  --noDnaCheck       do not require a genome's DNA to agree between fragments\n"
     "  --checksums        also check every file's CRC-32 in the result\n"
+    "  --tree NEWICK      the tree the result must be (same genomes and parents): its branch\n"
+    "                     lengths and order of children, not the fragments'\n"
     "  -h, --help\n";
 
 int main_merge(int argc, char **argv) {
     return runCommand("merge", [&]() {
         api::MergeOptions o;
         map<string, string> meta;
-        enum { DIRECTORY = 1000, META, NO_DNA_CHECK, CHECKSUMS };
+        enum { DIRECTORY = 1000, META, NO_DNA_CHECK, CHECKSUMS, TREE };
         static const option longOpts[] = {{"directory", no_argument, nullptr, DIRECTORY},
                                           {"meta", required_argument, nullptr, META},
                                           {"noDnaCheck", no_argument, nullptr, NO_DNA_CHECK},
                                           {"checksums", no_argument, nullptr, CHECKSUMS},
+                                          {"tree", required_argument, nullptr, TREE},
                                           {"help", no_argument, nullptr, 'h'},
                                           {nullptr, 0, nullptr, 0}};
         int c;
@@ -57,6 +60,7 @@ int main_merge(int argc, char **argv) {
             }
             case NO_DNA_CHECK: o.checkDna = false; break;
             case CHECKSUMS: o.checksums = true; break;
+            case TREE: o.tree = optarg; break;
             case 'h': cout << MERGE_USAGE; return 0;
             default: throw CliError("bad option");
             }
