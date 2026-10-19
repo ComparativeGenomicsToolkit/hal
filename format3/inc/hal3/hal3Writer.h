@@ -137,7 +137,7 @@ struct MergeOptions {
  * .2bit from the one where it is the root (else any): each checked against the
  * fragment's manifest as it is copied.  The tree splices the fragments' at shared
  * genomes, children in fragment order.  Metadata: the fragments', which must not
- * conflict, then meta over them.  The result is validated; on any problem nothing is
+ * conflict but on keys meta sets, then meta over them.  The result is validated; on any problem nothing is
  * left at out and Error(Format) says why. */
 void merge(const std::vector<std::string> &fragments, const std::string &out,
            const std::map<std::string, std::string> &meta = std::map<std::string, std::string>(),

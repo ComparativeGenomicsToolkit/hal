@@ -374,7 +374,8 @@ void merge(const vector<string> &fragments, const string &out, const map<string,
         }
         for (const auto &kv : manifests[i].meta) {
             auto m = allMeta.find(kv.first);
-            if (m != allMeta.end() && m->second != kv.second)
+            /* fragments may disagree on a key that meta sets: it decides */
+            if (m != allMeta.end() && m->second != kv.second && !meta.count(kv.first))
                 throw Error(ErrorKind::Format, "metadata " + kv.first + " differs between fragments (" + m->second + ", " + kv.second + ")");
             allMeta[kv.first] = kv.second;
         }

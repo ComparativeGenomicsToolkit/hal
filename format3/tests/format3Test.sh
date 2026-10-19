@@ -1172,6 +1172,15 @@ printf 'x' | dd of="$TMP/fr_bad/genomes/$g.hgn" bs=1 seek=100 conv=notrunc 2>/de
 refuses "hal merge refuses a fragment whose file differs from its manifest" "$BIN/hal" merge "$TMP/mgx" "$TMP/fr_bad" "$TMP/fr_sub.hal"
 check "... and leaves nothing" test ! -e "$TMP/mgx"
 refuses "hal merge refuses fragments with two roots" "$BIN/hal" merge "$TMP/mgx" "$TMP/fr_sub.hal" "$TMP/wf"
+# fragments disagreeing on a metadata key (as Cactus subproblems each stamp their config):
+# refused, unless --meta sets the key
+rm -rf "$TMP/fr_m1" "$TMP/fr_m2"; cp -r "$TMP/fr_top" "$TMP/fr_m1"
+"$BIN/hal" unpack "$TMP/fr_sub.hal" "$TMP/fr_m2" >/dev/null 2>&1
+printf 'meta\tJOB\tone\n' >> "$TMP/fr_m1/manifest"; printf 'meta\tJOB\ttwo\n' >> "$TMP/fr_m2/manifest"
+refuses "hal merge refuses fragments whose metadata disagree" "$BIN/hal" merge "$TMP/mgx" "$TMP/fr_m1" "$TMP/fr_m2"
+check "... but --meta settles the key" \
+    sh -c "'$BIN/hal' merge '$TMP/mgx' '$TMP/fr_m1' '$TMP/fr_m2' --meta JOB=all 2>/dev/null && '$BIN/hal' stats '$TMP/mgx' --metaData | grep -q 'JOB.*all'"
+rm -rf "$TMP/mgx"
 
 echo "open files (a directory alignment's members share a pool of descriptors):"
 # the same output with the open-file limit below two per genome, and with a pool of 2
