@@ -8,6 +8,7 @@
 #ifndef _HALDNADRIVER_H
 #define _HALDNADRIVER_H
 #include "halCommon.h"
+#include <algorithm>
 
 namespace hal {
     /**
@@ -39,6 +40,38 @@ namespace hal {
             hal_index_t relIndex = access(index);
             _buffer[relIndex / 2] = dnaPack(base, relIndex, _buffer[relIndex / 2]);
             _dirty = true;
+        }
+
+        /* get length bases starting at index.  the same as calling getBase()
+         * for each, but the buffer is checked once per page instead of once
+         * per base. */
+        inline void getBases(hal_index_t index, hal_size_t length, char *outBases) const {
+            hal_index_t end = index + length;
+            while (index < end) {
+                hal_index_t relIndex = access(index);
+                hal_index_t relEnd = std::min(end, _endIndex) - _startIndex;
+                for (; relIndex < relEnd; ++relIndex) {
+                    *outBases++ = dnaUnpack(relIndex, _buffer[relIndex / 2]);
+                }
+                index = _startIndex + relEnd;
+            }
+        }
+
+        /* set length bases starting at index.  the same as calling setBase()
+         * for each, but the buffer is checked once per page instead of once
+         * per base. */
+        inline void setBases(hal_index_t index, hal_size_t length, const char *inBases) {
+            hal_index_t end = index + length;
+            while (index < end) {
+                hal_index_t relIndex = access(index);
+                hal_index_t relEnd = std::min(end, _endIndex) - _startIndex;
+                for (; relIndex < relEnd; ++relIndex) {
+                    _buffer[relIndex / 2] = dnaPack(*inBases++, relIndex, _buffer[relIndex / 2]);
+                }
+                // must be set before the next access(), which can page this buffer out
+                _dirty = true;
+                index = _startIndex + relEnd;
+            }
         }
 
       protected:
