@@ -13,10 +13,16 @@ namespace hal3 {
 
 namespace {
 /* Cursors for a walk: at least 1024, and 4 per genome (a universal chunk reaches every
- * genome), within about 1 GB. */
+ * genome).  Each keeps 1 MB of decoded chunks, less when there are many (to stay near 1 GB)
+ * -- but never less than two full chunks: a cursor that cannot keep the chunk it just
+ * decoded decodes it again on every lookup (on the 577-way, 1153 genomes, 232 KB a cursor
+ * cost about 60% of hal maf's time).  The cache holds only chunks a walk touches, so most
+ * cursors keep far less than the budget. */
+const size_t DECODED_RUN_BYTES = 40;   /* liftmap: a decoded run (32) and its running max (8) */
+const size_t CHUNK_RUNS = 8192;        /* the writer's default chunk */
 size_t cursorCount(const Alignment &aln) { return max<size_t>(1024, 4 * aln.manifest().genomes.size()); }
 size_t cursorBytes(const Alignment &aln) {
-    return min<size_t>((size_t)1 << 20, max<size_t>((size_t)64 << 10, ((size_t)1 << 30) / cursorCount(aln)));
+    return max<size_t>(2 * CHUNK_RUNS * DECODED_RUN_BYTES, min<size_t>((size_t)1 << 20, ((size_t)1 << 30) / cursorCount(aln)));
 }
 }
 
