@@ -6,6 +6,7 @@
 #include "halSegmentIterator.h"
 #include "halSequenceIterator.h"
 #include "halTopSegmentIterator.h"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <map>
@@ -246,8 +247,15 @@ void hal::Genome::copySequence(Genome *dest) const {
     DnaIteratorPtr outDna = dest->getDnaIterator();
     hal_size_t n = getSequenceLength();
     assert(n == dest->getSequenceLength());
-    for (; (hal_size_t)inDna->getArrayIndex() < n; inDna->toRight(), outDna->toRight()) {
-        outDna->setBase(inDna->getBase());
+    // copy a chunk at a time: readString and writeString go a page at a time
+    // rather than a base at a time, and the chunk keeps a whole genome's DNA
+    // from being held in memory
+    const hal_size_t chunkSize = 1 << 20;
+    string dna;
+    for (hal_size_t pos = 0; pos < n; pos += chunkSize) {
+        hal_size_t length = min(chunkSize, n - pos);
+        inDna->readString(dna, length);
+        outDna->writeString(dna, length);
     }
     outDna->flush();
 }

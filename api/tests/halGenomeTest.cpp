@@ -235,6 +235,35 @@ struct GenomeSubStringTest : public AlignmentTest {
     }
 };
 
+// copySequence goes a chunk of about a megabase at a time, so the genome is
+// long enough to take several, and odd sequence lengths put the chunk
+// boundaries on odd positions within them
+struct GenomeCopySequenceTest : public AlignmentTest {
+    std::string _string;
+    void createCallBack(AlignmentPtr alignment) {
+        Genome *ancGenome = alignment->addRootGenome("AncGenome", 0);
+        Genome *copyGenome = alignment->addLeafGenome("CopyGenome", "AncGenome", 0);
+        vector<hal_size_t> lengths = {1, 1048577, 999, 1500001};
+        vector<Sequence::Info> seqVec;
+        for (size_t i = 0; i < lengths.size(); ++i) {
+            seqVec.push_back(Sequence::Info("Sequence" + std::to_string(i), lengths[i], 0, 0));
+        }
+        copyGenome->setDimensions(seqVec);
+        ancGenome->setDimensions(seqVec);
+
+        _string = randomString(ancGenome->getSequenceLength());
+        ancGenome->setString(_string);
+        ancGenome->copySequence(copyGenome);
+    }
+
+    void checkCallBack(AlignmentConstPtr alignment) {
+        const Genome *copyGenome = alignment->openGenome("CopyGenome");
+        string dna;
+        copyGenome->getString(dna);
+        CuAssertTrue(_testCase, dna == _string);
+    }
+};
+
 struct GenomeCopyTest : public AlignmentTest {
     std::string _path;
     AlignmentPtr _secondAlignment;
@@ -652,6 +681,11 @@ static void halGenomeSubStringTest(CuTest *testCase) {
     tester.check(testCase);
 }
 
+static void halGenomeCopySequenceTest(CuTest *testCase) {
+    GenomeCopySequenceTest tester;
+    tester.check(testCase);
+}
+
 static void halGenomeCopyTest(CuTest *testCase) {
     GenomeCopyTest tester;
     tester.check(testCase);
@@ -675,6 +709,7 @@ static CuSuite *halGenomeTestSuite(void) {
     SUITE_ADD_TEST(suite, halGenomeUpdateTest);
     SUITE_ADD_TEST(suite, halGenomeStringTest);
     SUITE_ADD_TEST(suite, halGenomeSubStringTest);
+    SUITE_ADD_TEST(suite, halGenomeCopySequenceTest);
     SUITE_ADD_TEST(suite, halGenomeCopyTest);
     SUITE_ADD_TEST(suite, halGenomeCopySegmentsWhenSequencesOutOfOrderTest);
     SUITE_ADD_TEST(suite, halGenomeDNAPackUnpackTest);
