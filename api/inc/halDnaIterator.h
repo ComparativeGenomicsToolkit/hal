@@ -166,6 +166,16 @@ namespace hal {
         assert(length == 0 || inRange() == true);
         outString.resize(length);
 
+        if (not _reversed) {
+            // forward strand: decode a page at a time
+            if (length > 0 and
+                (_index < 0 or _index + (hal_index_t)length > (hal_index_t)_genome->getSequenceLength())) {
+                throw hal_exception("Trying to read characters out of range");
+            }
+            _dnaAccess->getBases(_index, length, &outString[0]);
+            _index += length;
+            return;
+        }
         for (hal_size_t i = 0; i < length; ++i) {
             outString[i] = getBase();
             toRight();
@@ -174,6 +184,22 @@ namespace hal {
 
     inline void DnaIterator::writeString(const std::string &inString, hal_size_t length) {
         assert(length == 0 || inRange());
+        if (not _reversed) {
+            // forward strand: check the whole string, then encode a page at a time
+            if (length > 0 and
+                (_index < 0 or _index + (hal_index_t)length > (hal_index_t)_genome->getSequenceLength())) {
+                throw hal_exception("Trying to set character out of range");
+            }
+            for (hal_size_t i = 0; i < length; ++i) {
+                if (not isNucleotide(inString[i])) {
+                    throw hal_exception(std::string("Trying to set invalid character: ") + inString[i]);
+                }
+            }
+            _dnaAccess->setBases(_index, length, inString.data());
+            _index += length;
+            flush();
+            return;
+        }
         for (hal_size_t i = 0; i < length; ++i) {
             setBase(inString[i]);
             toRight();

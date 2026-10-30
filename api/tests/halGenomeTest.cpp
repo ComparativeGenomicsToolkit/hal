@@ -11,6 +11,7 @@
 #include "halDnaIterator.h"
 #include "halGenome.h"
 #include "halMetaData.h"
+#include "halSequenceIterator.h"
 #include "halTopSegmentIterator.h"
 #include "halValidate.h"
 #include <iostream>
@@ -141,6 +142,125 @@ struct GenomeStringTest : public AlignmentTest {
         string genomeString;
         ancGenome->getString(genomeString);
         CuAssertTrue(_testCase, genomeString == _string);
+    }
+};
+
+// DNA is packed two bases to a byte and (with the default chunk size) paged
+// 20000 bases at a time, so these lengths start sequences on odd positions and
+// the substrings below cross page boundaries
+struct GenomeSubStringTest : public AlignmentTest {
+    std::string _string;
+    void createCallBack(AlignmentPtr alignment) {
+        Genome *ancGenome = alignment->addRootGenome("AncGenome", 0);
+        vector<hal_size_t> lengths = {1, 20001, 45679, 3, 30000};
+        vector<Sequence::Info> seqVec;
+        for (size_t i = 0; i < lengths.size(); ++i) {
+            seqVec.push_back(Sequence::Info("Sequence" + std::to_string(i), lengths[i], 0, 0));
+        }
+        ancGenome->setDimensions(seqVec);
+
+        // write the sequences last to first, so the writes page backwards
+        _string = randomString(ancGenome->getSequenceLength());
+        for (size_t i = lengths.size(); i > 0; --i) {
+            Sequence *sequence = ancGenome->getSequence("Sequence" + std::to_string(i - 1));
+            sequence->setString(_string.substr(sequence->getStartPosition(), sequence->getSequenceLength()));
+        }
+
+        // overwrite pieces at odd offsets, across page boundaries, and up to the end of a sequence
+        vector<pair<string, pair<hal_index_t, hal_size_t>>> pieces = {
+            {"Sequence2", {0, 1}},
+            {"Sequence2", {1, 2}},
+            {"Sequence2", {19995, 7}},
+            {"Sequence2", {39997, 3}},
+            {"Sequence2", {101, 30001}},
+            {"Sequence1", {19997, 4}}};
+        for (auto &piece : pieces) {
+            Sequence *sequence = ancGenome->getSequence(piece.first);
+            string dna = randomString(piece.second.second);
+            sequence->setSubString(dna, piece.second.first, piece.second.second);
+            _string.replace(sequence->getStartPosition() + piece.second.first, piece.second.second, dna);
+        }
+
+        // a bad character is caught before anything is written
+        bool threw = false;
+        try {
+            ancGenome->getSequence("Sequence2")->setSubString("acgtXacgt", 5, 9);
+        } catch (const hal_exception &) {
+            threw = true;
+        }
+        CuAssertTrue(_testCase, threw);
+
+        // as is reading past the end of the genome
+        threw = false;
+        try {
+            string dna;
+            ancGenome->getDnaIterator(ancGenome->getSequenceLength() - 2)->readString(dna, 3);
+        } catch (const hal_exception &) {
+            threw = true;
+        }
+        CuAssertTrue(_testCase, threw);
+    }
+
+    void checkCallBack(AlignmentConstPtr alignment) {
+        const Genome *ancGenome = alignment->openGenome("AncGenome");
+        string dna;
+        ancGenome->getString(dna);
+        CuAssertTrue(_testCase, dna == _string);
+
+        for (SequenceIteratorPtr seqIt = ancGenome->getSequenceIterator(); not seqIt->atEnd(); seqIt->toNext()) {
+            const Sequence *sequence = seqIt->getSequence();
+            sequence->getString(dna);
+            CuAssertTrue(_testCase, dna == _string.substr(sequence->getStartPosition(), sequence->getSequenceLength()));
+        }
+
+        const Sequence *sequence = ancGenome->getSequence("Sequence2");
+        vector<hal_index_t> starts = {0, 1, 19997, 19998, 39999};
+        vector<hal_size_t> lengths = {0, 1, 2, 5, 5678};
+        for (hal_index_t start : starts) {
+            for (hal_size_t length : lengths) {
+                if (start + length <= sequence->getSequenceLength()) {
+                    sequence->getSubString(dna, start, length);
+                    CuAssertTrue(_testCase, dna == _string.substr(sequence->getStartPosition() + start, length));
+                }
+            }
+        }
+
+        // the reverse strand is still read a base at a time
+        DnaIteratorPtr dnaIt = ancGenome->getDnaIterator(40002);
+        dnaIt->toReverse();
+        dnaIt->readString(dna, 5);
+        string expected = _string.substr(39998, 5);
+        reverseComplement(expected);
+        CuAssertTrue(_testCase, dna == expected);
+    }
+};
+
+// copySequence goes a chunk of about a megabase at a time, so the genome is
+// long enough to take several, and odd sequence lengths put the chunk
+// boundaries on odd positions within them
+struct GenomeCopySequenceTest : public AlignmentTest {
+    std::string _string;
+    void createCallBack(AlignmentPtr alignment) {
+        Genome *ancGenome = alignment->addRootGenome("AncGenome", 0);
+        Genome *copyGenome = alignment->addLeafGenome("CopyGenome", "AncGenome", 0);
+        vector<hal_size_t> lengths = {1, 1048577, 999, 1500001};
+        vector<Sequence::Info> seqVec;
+        for (size_t i = 0; i < lengths.size(); ++i) {
+            seqVec.push_back(Sequence::Info("Sequence" + std::to_string(i), lengths[i], 0, 0));
+        }
+        copyGenome->setDimensions(seqVec);
+        ancGenome->setDimensions(seqVec);
+
+        _string = randomString(ancGenome->getSequenceLength());
+        ancGenome->setString(_string);
+        ancGenome->copySequence(copyGenome);
+    }
+
+    void checkCallBack(AlignmentConstPtr alignment) {
+        const Genome *copyGenome = alignment->openGenome("CopyGenome");
+        string dna;
+        copyGenome->getString(dna);
+        CuAssertTrue(_testCase, dna == _string);
     }
 };
 
@@ -556,6 +676,16 @@ static void halGenomeStringTest(CuTest *testCase) {
     tester.check(testCase);
 }
 
+static void halGenomeSubStringTest(CuTest *testCase) {
+    GenomeSubStringTest tester;
+    tester.check(testCase);
+}
+
+static void halGenomeCopySequenceTest(CuTest *testCase) {
+    GenomeCopySequenceTest tester;
+    tester.check(testCase);
+}
+
 static void halGenomeCopyTest(CuTest *testCase) {
     GenomeCopyTest tester;
     tester.check(testCase);
@@ -578,6 +708,8 @@ static CuSuite *halGenomeTestSuite(void) {
     SUITE_ADD_TEST(suite, halGenomeCreateTest);
     SUITE_ADD_TEST(suite, halGenomeUpdateTest);
     SUITE_ADD_TEST(suite, halGenomeStringTest);
+    SUITE_ADD_TEST(suite, halGenomeSubStringTest);
+    SUITE_ADD_TEST(suite, halGenomeCopySequenceTest);
     SUITE_ADD_TEST(suite, halGenomeCopyTest);
     SUITE_ADD_TEST(suite, halGenomeCopySegmentsWhenSequencesOutOfOrderTest);
     SUITE_ADD_TEST(suite, halGenomeDNAPackUnpackTest);
