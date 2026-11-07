@@ -568,6 +568,91 @@ refuses "--universal with --refGenome $anc (not the root)" "$BIN/hal" maf "$A" "
 refuses "--universal with --targetGenomes" "$BIN/hal" maf "$A" "$TMP/x.maf" --universal --targetGenomes "$anc"
 refuses "--universal excluding an ancestor" "$BIN/hal" maf "$A" "$TMP/x.maf" --universal --excludeGenomes "$anc"
 
+echo "hal maf --universal --axisRow, and hal wig:"
+# axis.py sizes MAF          each axis sequence's columns, from its rows (as --axisSizes)
+# axis.py same WHOLE PART    PART's columns are WHOLE's at the same axis coordinates
+# axis.py wig MAF            a wig on the axis whose score is each column's own coordinate
+# axis.py due MAF GENOME     what hal wig owes GENOME for that wig: sequence, position, score
+# axis.py got WIG            a wig as sequence, position, score
+cat >"$TMP/axis.py" <<'PYEOF'
+import sys
+def blocks(path):
+    rows = []
+    for line in open(path):
+        if line.startswith('a'):
+            if rows: yield rows
+            rows = []
+        elif line.startswith('s'):
+            f = line.split()
+            rows.append((f[1], int(f[2]), int(f[3]), f[4], int(f[5]), f[6]))
+    if rows: yield rows
+def columns(path):
+    m = {}
+    for rows in blocks(path):
+        ax = rows[0]
+        assert ax[0].startswith('_axis.') and ax[3] == '+' and ax[5] == 'N' * len(ax[5]), ax[0]
+        for k in range(len(ax[5])):
+            m[(ax[0], ax[1] + k)] = tuple(sorted((r[0], r[1] + len(r[5][:k].replace('-', '')), r[3])
+                                                 for r in rows[1:] if r[5][k] != '-'))
+    return m
+cmd = sys.argv[1]
+if cmd == 'sizes':
+    n = {}
+    for rows in blocks(sys.argv[2]):
+        n[rows[0][0]] = rows[0][4]
+    for k in sorted(n): print('%s\t%d' % (k, n[k]))
+elif cmd == 'same':
+    w, p = columns(sys.argv[2]), columns(sys.argv[3])
+    print('ok' if p and all(w.get(k) == v for k, v in p.items()) else 'DIFFERENT')
+elif cmd == 'wig':
+    for rows in blocks(sys.argv[2]):
+        ax = rows[0]
+        print('fixedStep chrom=%s start=%d step=1' % (ax[0], ax[1] + 1))
+        for k in range(len(ax[5])): print(ax[1] + k)
+elif cmd == 'due':
+    g = sys.argv[3] + '.'
+    for rows in blocks(sys.argv[2]):
+        ax = rows[0]
+        for name, start, size, strand, srcsize, text in rows[1:]:
+            if not name.startswith(g): continue
+            pos = start
+            for k, ch in enumerate(text):
+                if ch == '-': continue
+                fwd = pos if strand == '+' else srcsize - 1 - pos
+                print('%s\t%d\t%d' % (name[len(g):], fwd, ax[1] + k))
+                pos += 1
+elif cmd == 'got':
+    chrom = pos = None
+    for line in open(sys.argv[2]):
+        if line.startswith('fixedStep'):
+            f = dict(kv.split('=') for kv in line.split()[1:])
+            chrom, pos = f['chrom'], int(f['start']) - 1
+        elif line.strip():
+            print('%s\t%d\t%s' % (chrom, pos, line.strip()))
+            pos += 1
+PYEOF
+root=$("$BIN/hal" stats "$A" --root)
+len1=$(awk -v s="$seq1" '$1 == s {print $2}' "$TMP/u11.$root.sizes")
+for mode in "" --noDupes --leafInsertions; do
+    "$BIN/hal" maf "$A" "$TMP/ax.maf" --universal $mode --chunk 97 --threads 3 --axisRow --axisSizes "$TMP/ax.sizes" 2>"$TMP/ax.err"
+    check "${mode:-default}: row 0 the axis, every base once, --axisSizes its sequences' columns (all of them)" \
+        bash -c "grep -q 'every base once: checked' '$TMP/ax.err' && python3 '$TMP/axis.py' sizes '$TMP/ax.maf' | cmp -s - <(sort '$TMP/ax.sizes') && test \$(awk '{t += \$2} END {print t}' '$TMP/ax.sizes') = \$(sed -n 's/.*universal: \([0-9]*\) columns.*/\1/p' '$TMP/ax.err')"
+    "$BIN/hal" maf "$A" "$TMP/axw.maf" --universal $mode --chunk 97 --axisRow --refSequence "$seq1" --start $((len1 / 3)) --length $((len1 / 3)) 2>/dev/null
+    check "${mode:-default}: a window of $seq1 has the whole export's columns at the same axis coordinates" \
+        sh -c "test \"\$(python3 '$TMP/axis.py' same '$TMP/ax.maf' '$TMP/axw.maf')\" = ok"
+    python3 "$TMP/axis.py" wig "$TMP/ax.maf" >"$TMP/ax.wig"
+    bad=
+    while read -r g k sizes runs; do
+        [ "$k" = leaf ] || continue
+        "$BIN/hal" wig "$A" "$TMP/ax.wig" "$g" "$TMP/hw.wig" $mode --decimals 0 2>/dev/null || { bad="$bad $g(failed)"; continue; }
+        cmp -s <(python3 "$TMP/axis.py" due "$TMP/ax.maf" "$g" | LC_ALL=C sort) <(python3 "$TMP/axis.py" got "$TMP/hw.wig" | LC_ALL=C sort) ||
+            bad="$bad $g"
+    done <"$TMP/u11.genomes"
+    check "${mode:-default}: hal wig gives each leaf base its column's score, and no other base one" test -z "$bad"
+done
+refuses "--axisRow without --universal" "$BIN/hal" maf "$A" "$TMP/x.maf" --axisRow
+refuses "hal wig with a sequence not on the axis" sh -c "printf 'fixedStep chrom=_axis.nope start=1 step=1\n1\n' >'$TMP/x.wig' && '$BIN/hal' wig '$A' '$TMP/x.wig' '$anc' '$TMP/x.out'"
+
 echo "hal fasta against hal2fasta:"
 if [ ! -x "$BIN/hal2fasta" ] || [ ! -x "$BIN/halStats" ]; then
     echo "  skip (needs hal2fasta and halStats: build the fasta and stats modules)"

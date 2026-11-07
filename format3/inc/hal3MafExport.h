@@ -85,6 +85,11 @@ struct MafOptions {
     bool allAncestorRows = false;       /* universal: every ancestral base in its column */
     bool universalWhole = false;        /* universal: intervals are the whole backbone (extras, check) */
     std::string universalBed;           /* universal: write the axis here as BED */
+    bool axisRow = false;               /* universal: row 0 an axis sequence, _axis.<range>, all N:
+                                         * columns numbered from its range's first, the
+                                         * whole sequence's even when a window is exported */
+    std::string axisSizes;              /* universal, axisRow: each axis sequence's columns,
+                                         * as chrom.sizes */
 };
 
 struct MafFormat {

@@ -69,6 +69,12 @@ static const char *MAF_USAGE =
     "  --allAncestorRows    ancestors have rows for every base, not only their own intervals'\n"
     "  --universalBed FILE  the column axis as BED: sequence, start, end, first column, depth,\n"
     "                       strand (.gz: BGZF)\n"
+    "  --axisRow            row 0 is the axis: a sequence _axis.<range> (the root's sequence, or a\n"
+    "                       whole sequence placed after it) of N, one per column, numbered from the\n"
+    "                       sequence's first column even in a window -- coordinates that tools\n"
+    "                       reading a reference row (phyloP, taffy index) and hal wig share.  The\n"
+    "                       root becomes an ordinary row\n"
+    "  --axisSizes FILE     with --axisRow: each axis sequence's columns, as chrom.sizes\n"
     "  -h, --help\n";
 
 int main_maf(int argc, char **argv) {
@@ -82,7 +88,8 @@ int main_maf(int argc, char **argv) {
             REF_GENOME = 1000, REF_SEQUENCE, START, LENGTH, REF_TARGETS, NO_ANCESTORS, NO_DUPES, ONLY_ORTHOLOGS,
             TARGET_GENOMES, ROOT_GENOME, BREAK_FRAC, GAP_BUDGET, MAX_BLOCK_COLS, MAX_BLOCK_CELLS, CHUNK, NO_DNA,
             ONLY_SEQUENCE_NAMES, UNCOMPRESSED, BGZIP, MAX_REF_GAP, MAX_BLOCK_LEN, JOIN_GAP, THREADS, TAF,
-            NO_RUN_LENGTH, EXCLUDE_GENOMES, REF_SINGLE_COPY, UNIVERSAL, LEAF_INSERTIONS, ALL_ANCESTOR_ROWS, UNIVERSAL_BED
+            NO_RUN_LENGTH, EXCLUDE_GENOMES, REF_SINGLE_COPY, UNIVERSAL, LEAF_INSERTIONS, ALL_ANCESTOR_ROWS, UNIVERSAL_BED,
+            AXIS_ROW, AXIS_SIZES
         };
         static const option longOpts[] = {
             {"refGenome", required_argument, nullptr, REF_GENOME},
@@ -114,6 +121,8 @@ int main_maf(int argc, char **argv) {
             {"leafInsertions", no_argument, nullptr, LEAF_INSERTIONS},
             {"allAncestorRows", no_argument, nullptr, ALL_ANCESTOR_ROWS},
             {"universalBed", required_argument, nullptr, UNIVERSAL_BED},
+            {"axisRow", no_argument, nullptr, AXIS_ROW},
+            {"axisSizes", required_argument, nullptr, AXIS_SIZES},
             {"maxRefGap", required_argument, nullptr, MAX_REF_GAP},
             {"maxBlockLen", required_argument, nullptr, MAX_BLOCK_LEN},
             {"help", no_argument, nullptr, 'h'},
@@ -163,6 +172,8 @@ int main_maf(int argc, char **argv) {
             case LEAF_INSERTIONS: opts.leafInsertions = true; break;
             case ALL_ANCESTOR_ROWS: opts.allAncestorRows = true; break;
             case UNIVERSAL_BED: opts.universalBed = optarg; break;
+            case AXIS_ROW: opts.axisRow = true; break;
+            case AXIS_SIZES: opts.axisSizes = optarg; break;
             case MAX_REF_GAP:
             case MAX_BLOCK_LEN:
                 throw CliError(c == MAX_REF_GAP ? "--maxRefGap is not supported: see --joinGap"
@@ -180,8 +191,9 @@ int main_maf(int argc, char **argv) {
         bool gz = endsWith(outPath, ".gz");
         format.bgzf = bgzip || (gz && !uncompressed);
         format.taf = taf || endsWith(gz ? outPath.substr(0, outPath.size() - 3) : outPath, ".taf");
-        if (!opts.universal && (opts.leafInsertions || opts.allAncestorRows || !opts.universalBed.empty()))
-            throw CliError("--leafInsertions, --allAncestorRows and --universalBed need --universal");
+        if (!opts.universal && (opts.leafInsertions || opts.allAncestorRows || !opts.universalBed.empty() || opts.axisRow))
+            throw CliError("--leafInsertions, --allAncestorRows, --universalBed and --axisRow need --universal");
+        if (!opts.axisSizes.empty() && !opts.axisRow) throw CliError("--axisSizes needs --axisRow");
         if (opts.universal) {
             if (joinGapGiven && opts.joinGap > 0) throw CliError("--universal has no insertion columns: --joinGap must be 0");
             if (!opts.targets.empty() || opts.onlyOrthologs || opts.refSingleCopy || opts.onlySequenceNames)

@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -201,6 +202,9 @@ struct BlockRow {
     bool reversed;
     int64_t start, size;   /* oriented (MAF) coordinates */
     string text;
+    /* a row of no genome (--axisRow's): its name and its sequence's length */
+    const string *name = nullptr;
+    int64_t length = 0;
 };
 
 class BlockWriter {
@@ -213,6 +217,8 @@ class BlockWriter {
 string rowName(const Genome *g, uint32_t seq, bool onlySequenceNames) {
     return onlySequenceNames ? string(g->sequenceName(seq)) : g->name() + "." + g->sequenceName(seq);
 }
+string rowName(const BlockRow &r, bool onlySequenceNames) { return r.name ? *r.name : rowName(r.genome, r.seq, onlySequenceNames); }
+int64_t rowLength(const BlockRow &r) { return r.name ? r.length : r.genome->sequenceLength(r.seq); }
 
 class MafBlockWriter : public BlockWriter {
   public:
@@ -222,9 +228,9 @@ class MafBlockWriter : public BlockWriter {
         for (size_t i = 0; i < n; i++) {
             const BlockRow &r = rows[i];
             _text += "s\t";
-            _text += rowName(r.genome, r.seq, _names);
+            _text += rowName(r, _names);
             _text += "\t" + to_string(r.start) + "\t" + to_string(r.size) + "\t" + (r.reversed ? "-" : "+") + "\t" +
-                     to_string(r.genome->sequenceLength(r.seq)) + "\t";
+                     to_string(rowLength(r)) + "\t";
             _text += r.text;
             _text += "\n";
         }
@@ -318,7 +324,7 @@ class TafBlockWriter : public BlockWriter {
         _next.resize(n);
         for (size_t j = 0; j < n; j++) {
             const BlockRow &r = rows[j];
-            _next[j] = Row{r.id, r.genome, r.seq, r.reversed, r.start, r.size, 0};
+            _next[j] = Row{r.id, r.genome, r.seq, r.reversed, r.start, r.size, 0, r.name, r.name ? r.length : 0};
         }
         _line.clear();
         /* the block's columns, TILE at a time, transposed so each column is contiguous */
@@ -368,6 +374,8 @@ class TafBlockWriter : public BlockWriter {
         uint32_t seq;
         bool reversed;
         int64_t start, size, since;   /* since: bases since its coordinates were last given */
+        const string *name;           /* a row of no genome: its name and length */
+        int64_t length;
     };
     TextOut &_out;
     bool _runLength, _names, _cadence;
@@ -379,6 +387,7 @@ class TafBlockWriter : public BlockWriter {
     string _line, _cols;
 
     TafAnchor anchor(const Row &r) const {
+        if (r.name) return TafAnchor{*r.name, r.start, r.reversed, r.length};
         return TafAnchor{rowName(r.genome, r.seq, _names), r.start, r.reversed, r.genome->sequenceLength(r.seq)};
     }
     /* _line += the coordinate operations taking _prev's rows to _next's */
@@ -464,7 +473,7 @@ class TafBlockWriter : public BlockWriter {
         if (everything) _colsSinceAll = 0;
     }
     static bool follows(const Row &q, const Row &r) {
-        return q.genome == r.genome && q.seq == r.seq && q.reversed == r.reversed && r.start >= q.start + q.size;
+        return q.genome == r.genome && q.name == r.name && q.seq == r.seq && q.reversed == r.reversed && r.start >= q.start + q.size;
     }
     /* keep the longest run of links increasing in both rows (the reference row's
      * first); unlink the rest */
@@ -550,6 +559,10 @@ struct UniChunk {
     const Genome *genome;
     uint32_t seq;
     int64_t rangePos, cols;
+    /* --axisRow: row 0 names the axis -- its sequence's name and columns, and the column
+     * the chunk starts at (null name: no axis row) */
+    const string *axisName;
+    int64_t axisStart, axisSize;
 };
 
 /* Exports chunks one at a time; one per thread, kept from chunk to chunk with its walk
@@ -624,6 +637,10 @@ class ChunkExporter {
     const map<const Genome *, int> &_ranks;
     TreeWalk _walk;
     DnaReader _dna;   /* recycled at each chunk: what its handles hold stays about one chunk's */
+    /* --axisRow, for the chunk being laid out: the axis row's name (null: none), its
+     * sequence's columns, and the column the chunk starts at */
+    const string *_axisName = nullptr;
+    int64_t _axisSize = 0, _axisStart = 0;
 
     int rank(const Genome *g) const {
         auto r = _ranks.find(g);
@@ -728,6 +745,7 @@ void ChunkExporter::startRun() {
 
 void ChunkExporter::run(const RefInterval &chunk, BlockWriter &writer) {
     startRun();
+    _axisName = nullptr;
     PieceMap lifted;
     _walk.lift(chunk.seq, {{chunk.start, chunk.end}}, lifted);
     RowZero z{_ref, chunk.seq, true, 0, {}, {}, {}};
@@ -737,6 +755,9 @@ void ChunkExporter::run(const RefInterval &chunk, BlockWriter &writer) {
 void ChunkExporter::runUniversal(const UniChunk &c, BlockWriter &writer) {
     startRun();
     moments.clear();
+    _axisName = c.axisName;
+    _axisSize = c.axisSize;
+    _axisStart = c.axisStart;
     const UniversalIndex &idx = *c.index;
     PieceMap own, quiet, lifted;
     RowZero z{c.genome, c.seq, false, c.rangePos, {}, {}, {}};
@@ -1024,15 +1045,34 @@ void ChunkExporter::layout(PieceMap &lifted, const int64_t cs, const int64_t ce,
             if (o1 >= 0) out.push_back(Row{&c, o1, o2});
         }
         stable_sort(out.begin(), out.end(), [&](const Row &x, const Row &y) { return rowBefore(*x.c, x.o1, *y.c, y.o1); });
-        size_t nrows = out.size() + 1;
-        if (block.size() < nrows) block.resize(nrows);
-        BlockRow &r0 = block[0];
-        r0.id = nullptr;
+        /* --axisRow: row 0 is the axis (all N, a column a base), and the backbone an
+         * ordinary row, left out of a block where it has no base */
+        const bool axis = _axisName != nullptr;
+        const int64_t z0 = z.at(s), zSize = z.at(e) - z0;
+        const size_t first = axis ? 1 : 0, rowsFrom = first + (!axis || zSize > 0 ? 1 : 0);
+        size_t nrows = out.size() + rowsFrom;
+        if (block.size() < nrows + 1) block.resize(nrows + 1);
+        if (axis) {
+            if (ncol != e - s) throw runtime_error("internal error: --axisRow with insertion columns");
+            BlockRow &a = block[0];
+            a.id = nullptr;
+            a.genome = nullptr;
+            a.seq = 0;
+            a.reversed = false;
+            a.start = _axisStart + s;
+            a.size = e - s;
+            a.text.assign((size_t)ncol, 'N');
+            a.name = _axisName;
+            a.length = _axisSize;
+        }
+        BlockRow &r0 = block[first];   /* left out: built, then its slot taken by the next row */
+        r0.id = axis ? (const void *)&z : nullptr;
         r0.genome = z.genome;
         r0.seq = z.seq;
         r0.reversed = false;
-        r0.start = z.at(s);
-        r0.size = z.at(e) - r0.start;
+        r0.start = z0;
+        r0.size = zSize;
+        r0.name = nullptr;
         fetch(z.genome, z.seq, r0.start, r0.start + r0.size, false, dna);
         r0.text.assign((size_t)ncol, '-');
         if (z.all) {
@@ -1048,8 +1088,9 @@ void ChunkExporter::layout(PieceMap &lifted, const int64_t cs, const int64_t ce,
         for (size_t k = 0; k < out.size(); k++) {
             const Row &r = out[k];
             const Chain &c = *r.c;
-            BlockRow &br = block[k + 1];
+            BlockRow &br = block[k + rowsFrom];
             br.id = &c;
+            br.name = nullptr;
             br.genome = c.genome;
             br.seq = c.seq;
             br.reversed = c.reversed;
@@ -1214,6 +1255,60 @@ void checkOnce(const UniversalIndex &idx, const MafOptions &opts, const map<cons
 }
 }
 
+/* --axisRow: each planned range's axis sequence -- its name, its columns (its whole
+ * sequence's), and the column the range starts at.  A window of a sequence is a
+ * contiguous stretch of the sequence's axis, so its first column is where its first base
+ * falls in the whole sequence's plan. */
+struct AxisRange {
+    string name;
+    int64_t offset = 0, size = 0, u0 = -1;   /* u0: the range's first column in the plan */
+};
+
+vector<AxisRange> axisRanges(const UniversalIndex &idx, const UniversalPlanner &plan, int64_t chunk) {
+    vector<AxisRange> ax(plan.ranges().size());
+    vector<size_t> firstChunk(ax.size(), 0);
+    for (size_t k = 0; k < plan.chunks(); k++) {
+        const UniversalPlanner::Chunk &c = plan.chunk(k);
+        AxisRange &a = ax[c.range];
+        if (a.u0 < 0) {
+            a.u0 = c.u0;
+            firstChunk[c.range] = k;
+        }
+        a.size += c.cols;
+    }
+    map<pair<int, uint32_t>, unique_ptr<UniversalPlanner>> wholes;
+    vector<Segment> segs, ws;
+    for (size_t r = 0; r < ax.size(); r++) {
+        const TopRange &t = plan.ranges()[r];
+        const Genome *g = idx.genome(t.g);
+        AxisRange &a = ax[r];
+        a.name = "_axis." + rowName(g, t.seq, false);
+        if (a.u0 < 0 || (t.start == 0 && t.end == g->sequenceLength(t.seq))) continue;
+        unique_ptr<UniversalPlanner> &w = wholes[make_pair(t.g, t.seq)];
+        if (!w) {
+            w.reset(new UniversalPlanner(idx, {TopRange{t.g, t.seq, 0, g->sequenceLength(t.seq)}}, false, chunk));
+            w->run();
+        }
+        a.size = w->columns();
+        plan.segments(firstChunk[r], segs);
+        if (segs.empty()) throw runtime_error("internal error: --axisRow: an empty first chunk");
+        const Segment &f = segs.front();
+        const int64_t b = f.rev ? f.pos + f.len - 1 : f.pos;   /* the window's first base */
+        bool found = false;
+        for (size_t j = 0; j < w->chunks() && !found; j++) {
+            w->segments(j, ws);
+            for (const Segment &x : ws)
+                if (x.g == f.g && x.seq == f.seq && b >= x.pos && b < x.pos + x.len) {
+                    a.offset = w->chunk(j).u0 + x.u + (x.rev ? x.pos + x.len - 1 - b : b - x.pos) - f.u;
+                    found = true;
+                    break;
+                }
+        }
+        if (!found) throw runtime_error("internal error: --axisRow: a window's first base is not in its sequence's axis");
+    }
+    return ax;
+}
+
 /* ---------------------------------------------------------------- the driver */
 
 MafStats exportMaf(const Alignment &aln, const Genome *ref, const MafOptions &opts, const MafFormat &format,
@@ -1236,6 +1331,17 @@ MafStats exportMaf(const Alignment &aln, const Genome *ref, const MafOptions &op
         chunks = chunkIntervals(intervals, opts.chunk);
     }
     const size_t nChunks = plan ? plan->chunks() : chunks.size();
+    vector<AxisRange> axes;
+    if (plan && opts.axisRow) {
+        axes = axisRanges(*index, *plan, opts.chunk);
+        if (!opts.axisSizes.empty()) {
+            ofstream sizes(opts.axisSizes);
+            set<string> done;
+            for (const AxisRange &a : axes)
+                if (a.u0 >= 0 && done.insert(a.name).second) sizes << a.name << "\t" << a.size << "\n";
+            if (!sizes) throw runtime_error("cannot write " + opts.axisSizes);
+        }
+    }
     unique_ptr<AxisBed> bed;
     if (plan && !opts.universalBed.empty()) bed.reset(new AxisBed(opts.universalBed, *index));
     FileSink file(path);
@@ -1282,7 +1388,14 @@ MafStats exportMaf(const Alignment &aln, const Genome *ref, const MafOptions &op
             plan->segments(k, r.axis);
             const UniversalPlanner::Chunk &c = plan->chunk(k);
             const TopRange &t = plan->ranges()[c.range];
-            ex.runUniversal(UniChunk{index.get(), &r.axis, index->genome(t.g), t.seq, c.rangePos, c.cols}, bw);
+            UniChunk uc{index.get(), &r.axis, index->genome(t.g), t.seq, c.rangePos, c.cols, nullptr, 0, 0};
+            if (!axes.empty()) {
+                const AxisRange &a = axes[c.range];
+                uc.axisName = &a.name;
+                uc.axisStart = a.offset + (c.u0 - a.u0);
+                uc.axisSize = a.size;
+            }
+            ex.runUniversal(uc, bw);
             r.moments.swap(ex.moments);
         };
         if (format.taf) {
