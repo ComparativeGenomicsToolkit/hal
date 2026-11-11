@@ -773,6 +773,11 @@ done
 check "each base's parent is where hal liftover maps the base in its parent genome" test -z "$bad"
 "$BIN/hal" columns "$A" "$TMP/c3.txt" --chunk 97 --threads 3 2>/dev/null
 check "--threads 3: the same bytes" cmp "$TMP/c1.txt" "$TMP/c3.txt"
+# chunks smaller than a placed interval: some start inside one, the walk passing through
+# genomes with no base in the chunk
+"$BIN/hal" columns "$A" "$TMP/c5.txt" --chunk 5 2>/dev/null
+check "--chunk 5 (chunks inside placed intervals): the same columns, one tree each" \
+    bash -c "python3 '$TMP/cols.py' dump '$TMP/c5.txt' | cmp -s - '$TMP/c1.cols' && python3 '$TMP/cols.py' tree '$TMP/c5.txt' \"\$(sed -n '2s/^# hal //p' '$TMP/cm.maf')\""
 "$BIN/hal" columns "$A" "$TMP/cw.txt" --chunk 97 --refSequence "$seq1" --start $((len1 / 3)) --length $((len1 / 3)) 2>/dev/null
 "$BIN/hal" maf "$A" "$TMP/cwm.maf" --universal --allAncestorRows --axisRow --chunk 97 --refSequence "$seq1" --start $((len1 / 3)) \
     --length $((len1 / 3)) 2>/dev/null

@@ -130,11 +130,13 @@ void UniversalColumns::chunk(size_t k, int w, ColumnChunk &out) {
         const Genome *pg = g->parent();
         const vector<LiftPiece> *pps = nullptr;
         const vector<int64_t> *pat = nullptr;
+        /* the parent's pieces, if it has any in this chunk (the walk passes through a
+         * genome with none on its way to tops below it) */
         if (g != backbone()) {
-            auto pp = pieces.find(pg);
-            if (pp != pieces.end()) {
-                pps = &pp->second;
-                pat = &at.at(pg);
+            auto pa = at.find(pg);
+            if (pa != at.end()) {
+                pps = &pieces.at(pg);
+                pat = &pa->second;
             }
         }
         const GenomeEntry *e = _aln.manifest().find(g->name());
