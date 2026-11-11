@@ -170,6 +170,43 @@ void TreeWalk::descendUniversal(const Genome *v, vector<LiftPiece> &in, PieceMap
     }
 }
 
+void TreeWalk::downParented(PieceMap &own, PieceMap &quiet, PieceMap &pieces, map<const Genome *, vector<int32_t>> &from) {
+    if (!_opts.dupes) throw runtime_error("internal error: a parented walk keeps every copy");
+    pieces.clear();
+    from.clear();
+    _below.clear();
+    for (PieceMap *m : {&own, &quiet})
+        for (auto &t : *m)
+            for (const Genome *g = t.first; g && _below.insert(g).second; g = g->parent()) {
+            }
+    descendParented(_top, own, quiet, pieces, from);
+}
+
+/* At v: pieces[v] holds what arrived from the parent (from[v] where from); add v's own
+ * and quiet pieces, then carry them all into each child in scope.  (Map entries stay
+ * put as others are added, so the references hold.) */
+void TreeWalk::descendParented(const Genome *v, PieceMap &own, PieceMap &quiet, PieceMap &pieces,
+                               map<const Genome *, vector<int32_t>> &from) {
+    vector<LiftPiece> &in = pieces[v];
+    vector<int32_t> &f = from[v];
+    for (PieceMap *m : {&own, &quiet}) {
+        auto o = m->find(v);
+        if (o == m->end()) continue;
+        in.insert(in.end(), o->second.begin(), o->second.end());
+        f.insert(f.end(), o->second.size(), -1);
+    }
+    for (const Genome *c : v->children()) {
+        if (!_scope.count(c)) continue;
+        liftDownBranchParented(c, in, pieces[c], from[c], _cursors);
+        if (!pieces[c].empty() || _below.count(c)) {
+            descendParented(c, own, quiet, pieces, from);
+        } else {
+            pieces.erase(c);
+            from.erase(c);
+        }
+    }
+}
+
 void TreeWalk::lift(uint32_t refSeq, const vector<pair<int64_t, int64_t>> &intervals,
                     map<const Genome *, vector<LiftPiece>> &pieces) {
     pieces.clear();

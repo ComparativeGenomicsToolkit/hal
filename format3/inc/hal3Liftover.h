@@ -78,11 +78,17 @@ class CursorCache {
  * with the smallest child coordinate); other copies stay behind as unmapped.
  *
  * liftDownBranch: from child's parent to child, every copy, or with dupes off the
- * canonical copy of each parent base. */
+ * canonical copy of each parent base.
+ *
+ * liftDownBranchParented: every copy, and from[i] is the index in `in` of the piece
+ * out[i] was carried from -- the parent of each of its bases, at the same source
+ * position. */
 void liftUpBranch(const Genome *g, const std::vector<LiftPiece> &in, std::vector<LiftPiece> &out,
                   std::vector<LiftPiece> *unmapped, CursorCache &cursors, bool canonicalOnly = false);
 void liftDownBranch(const Genome *child, bool dupes, const std::vector<LiftPiece> &in, std::vector<LiftPiece> &out,
                     CursorCache &cursors);
+void liftDownBranchParented(const Genome *child, const std::vector<LiftPiece> &in, std::vector<LiftPiece> &out,
+                            std::vector<int32_t> &from, CursorCache &cursors);
 
 /* The runs of the branch above child, as hits (a: child, b: its parent; a parent
  * sequence's index in the hit is its index in the parent genome).

@@ -114,6 +114,21 @@ struct MafStats {
  * std::runtime_error. */
 MafStats exportMaf(const Alignment &alignment, const Genome *ref, const MafOptions &opts, const MafFormat &format,
                    const std::vector<RefInterval> &intervals, const std::string &path, int threads);
+
+/* --axisRow: each planned range's axis sequence -- its name, its columns (its whole
+ * sequence's), and the column the range starts at.  A window of a sequence is a
+ * contiguous stretch of the sequence's axis, so its first column is where its first base
+ * falls in the whole sequence's plan.  Chunk k of range r starts at axis position
+ * offset + (chunk(k).u0 - u0). */
+class UniversalIndex;
+class UniversalPlanner;
+
+struct AxisRange {
+    std::string name;
+    int64_t offset = 0, size = 0, u0 = -1;   /* u0: the range's first column in the plan */
+};
+
+std::vector<AxisRange> axisRanges(const UniversalIndex &idx, const UniversalPlanner &plan, int64_t chunk);
 }
 
 #endif

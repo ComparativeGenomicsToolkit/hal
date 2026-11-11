@@ -1255,15 +1255,6 @@ void checkOnce(const UniversalIndex &idx, const MafOptions &opts, const map<cons
 }
 }
 
-/* --axisRow: each planned range's axis sequence -- its name, its columns (its whole
- * sequence's), and the column the range starts at.  A window of a sequence is a
- * contiguous stretch of the sequence's axis, so its first column is where its first base
- * falls in the whole sequence's plan. */
-struct AxisRange {
-    string name;
-    int64_t offset = 0, size = 0, u0 = -1;   /* u0: the range's first column in the plan */
-};
-
 vector<AxisRange> axisRanges(const UniversalIndex &idx, const UniversalPlanner &plan, int64_t chunk) {
     vector<AxisRange> ax(plan.ranges().size());
     vector<size_t> firstChunk(ax.size(), 0);

@@ -44,6 +44,7 @@ int main_import(int argc, char **argv);
 int main_likelihoods(int argc, char **argv);
 int main_posteriors(int argc, char **argv);
 int main_wig(int argc, char **argv);
+int main_columns(int argc, char **argv);
 }
 
 #endif

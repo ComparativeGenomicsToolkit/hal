@@ -80,6 +80,13 @@ class TreeWalk {
      * top().  pieces[g]: what g's rows print, sources as in own and quiet. */
     void down(PieceMap &own, PieceMap &quiet, PieceMap &pieces);
 
+    /* Universal, every base with its parent (dupes only; see hal3Columns.h): pieces[g] is
+     * every piece of g the walk reaches, printed or not -- those carried from its parent,
+     * then its own (own), then the walked-only (quiet), none coalesced -- and from[g][i]
+     * the index in pieces[g's parent] of the piece pieces[g][i] was carried from, or -1
+     * (own and quiet: tops). */
+    void downParented(PieceMap &own, PieceMap &quiet, PieceMap &pieces, std::map<const Genome *, std::vector<int32_t>> &from);
+
     const Genome *ref() const { return _ref; }
     const Genome *top() const { return _top; }
     /* the reference, its parent, ... up to top() */
@@ -101,6 +108,8 @@ class TreeWalk {
     void descend(const Genome *v, std::vector<LiftPiece> &in, std::map<const Genome *, std::vector<LiftPiece>> &tops,
                  std::map<const Genome *, std::vector<LiftPiece>> &pieces);
     void descendUniversal(const Genome *v, std::vector<LiftPiece> &in, PieceMap &own, PieceMap &quiet, PieceMap &pieces);
+    void descendParented(const Genome *v, PieceMap &own, PieceMap &quiet, PieceMap &pieces,
+                         std::map<const Genome *, std::vector<int32_t>> &from);
 };
 
 /* Merge pieces contiguous in both source and target. */

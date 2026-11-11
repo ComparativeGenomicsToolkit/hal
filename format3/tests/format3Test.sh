@@ -653,6 +653,143 @@ done
 refuses "--axisRow without --universal" "$BIN/hal" maf "$A" "$TMP/x.maf" --axisRow
 refuses "hal wig with a sequence not on the axis" sh -c "printf 'fixedStep chrom=_axis.nope start=1 step=1\n1\n' >'$TMP/x.wig' && '$BIN/hal' wig '$A' '$TMP/x.wig' '$anc' '$TMP/x.out'"
 
+echo "hal columns (universal columns as trees of bases):"
+# cols.py maf MAF           each column's bases, the axis row left out: name|position|strand|base
+# cols.py dump TXT          the same from hal columns
+# cols.py tree TXT NEWICK   each column one tree: one top, first; each parent before its child, of the parent genome
+# cols.py bed TXT DIR       per genome, DIR/G.bed: each base with a parent; DIR/G.want: that parent
+# cols.py lifted DIR G      G's bases lifted to its parent (DIR/G.lifted) land on their parents only
+# cols.py nanc TXT GENOMES  the dump with ancestors' bases N (GENOMES: name kind ... lines)
+cat >"$TMP/cols.py" <<'PYEOF'
+import sys
+from collections import defaultdict
+def maf_cols(path):
+    out, rows = {}, []
+    def flush():
+        ax = rows[0]
+        for k in range(len(ax[5])):
+            col = []
+            for name, start, size, strand, srclen, text in rows[1:]:
+                if text[k] == '-': continue
+                p = start + len(text[:k].replace('-', ''))
+                col.append((name, p if strand == '+' else srclen - 1 - p, strand, text[k]))
+            out[(ax[0], ax[1] + k)] = sorted(col)
+    for line in open(path):
+        if line.startswith('a'):
+            if rows: flush()
+            rows = []
+        elif line.startswith('s'):
+            f = line.split()
+            rows.append((f[1], int(f[2]), int(f[3]), f[4], int(f[5]), f[6]))
+    if rows: flush()
+    return out
+def dump(path):
+    for line in open(path):
+        f = line.rstrip('\n').split('\t')
+        yield f[0], int(f[1]), [e.split('|') for e in f[2:]]
+def parents(newick):
+    parent, kids, i, n = {}, [[]], 0, len(newick)
+    while i < n:
+        c = newick[i]
+        if c == '(':
+            kids.append([]); i += 1
+        elif c in ',;':
+            i += 1
+        elif c == ')':
+            i += 1; j = i
+            while j < n and newick[j] not in ',();:': j += 1
+            for k in kids.pop(): parent[k] = newick[i:j]
+            kids[-1].append(newick[i:j]); i = j
+        elif c == ':':
+            j = i + 1
+            while j < n and newick[j] not in ',();': j += 1
+            i = j
+        else:
+            j = i
+            while j < n and newick[j] not in ',();:': j += 1
+            kids[-1].append(newick[i:j]); i = j
+    return parent
+cmd = sys.argv[1]
+if cmd == 'maf':
+    for k, v in sorted(maf_cols(sys.argv[2]).items()):
+        print('%s\t%d\t%s' % (k[0], k[1], ' '.join('%s|%d|%s|%s' % x for x in v)))
+elif cmd == 'dump':
+    for ax, pos, es in sorted(dump(sys.argv[2]), key=lambda x: (x[0], x[1])):
+        print('%s\t%d\t%s' % (ax, pos, ' '.join('|'.join(e[:4]) for e in sorted(es, key=lambda e: (e[0], int(e[1]), e[2], e[3])))))
+elif cmd == 'tree':
+    par, bad = parents(sys.argv[3].strip()), []
+    for ax, pos, es in dump(sys.argv[2]):
+        if [i for i, e in enumerate(es) if e[4] == '-'] != [0]: bad.append('%s %d: not one top, first' % (ax, pos))
+        for i, e in enumerate(es[1:], 1):
+            p = int(e[4]) if e[4] != '-' else -1
+            if not 0 <= p < i or par.get(e[0].split('.')[0]) != es[p][0].split('.')[0]:
+                bad.append('%s %d: entry %d (%s) has parent %d' % (ax, pos, i, e[0], p))
+    if bad: sys.exit('\n'.join(bad[:5]))
+elif cmd == 'bed':
+    outs, n = {}, 0
+    for ax, pos, es in dump(sys.argv[2]):
+        for e in es:
+            if e[4] == '-': continue
+            g, seq = e[0].split('.', 1)
+            pseq = es[int(e[4])][0].split('.', 1)[1]
+            if g not in outs: outs[g] = (open('%s/%s.bed' % (sys.argv[3], g), 'w'), open('%s/%s.want' % (sys.argv[3], g), 'w'))
+            outs[g][0].write('%s\t%s\t%d\tb%d\n' % (seq, e[1], int(e[1]) + 1, n))
+            outs[g][1].write('b%d\t%s\t%s\n' % (n, pseq, es[int(e[4])][1]))
+            n += 1
+    print(' '.join(sorted(outs)))
+elif cmd == 'lifted':
+    d, g = sys.argv[2:4]
+    got = defaultdict(set)
+    for line in open('%s/%s.lifted' % (d, g)):
+        f = line.split()
+        for p in range(int(f[1]), int(f[2])): got[f[3]].add((f[0], p))
+    want = [l.split() for l in open('%s/%s.want' % (d, g))]
+    bad = [w for w in want if got[w[0]] != {(w[1], int(w[2]))}]
+    if bad or not want: sys.exit('%d of %d bases lifted elsewhere than their parent' % (len(bad), len(want)))
+elif cmd == 'nanc':
+    leaves = set(l.split()[0] for l in open(sys.argv[3]) if l.split()[1] == 'leaf')
+    for line in open(sys.argv[2]):
+        f = line.rstrip('\n').split('\t')
+        for i in range(2, len(f)):
+            e = f[i].split('|')
+            if e[0].split('.')[0] not in leaves: e[3] = 'N'
+            f[i] = '|'.join(e)
+        print('\t'.join(f))
+PYEOF
+A="$TMP/u11"
+"$BIN/hal" columns "$A" "$TMP/c1.txt" --chunk 97 2>/dev/null
+"$BIN/hal" maf "$A" "$TMP/cm.maf" --universal --allAncestorRows --axisRow --chunk 97 2>/dev/null
+check "the columns are hal maf --universal --allAncestorRows's, base for base" \
+    bash -c "python3 '$TMP/cols.py' dump '$TMP/c1.txt' >'$TMP/c1.cols' && python3 '$TMP/cols.py' maf '$TMP/cm.maf' | cmp -s - '$TMP/c1.cols' && test -s '$TMP/c1.cols'"
+check "each column is one tree: one top, first; each parent before its child, of the parent genome" \
+    python3 "$TMP/cols.py" tree "$TMP/c1.txt" "$(sed -n '2s/^# hal //p' "$TMP/cm.maf")"
+mkdir -p "$TMP/clift"
+bad=
+for g in $(python3 "$TMP/cols.py" bed "$TMP/c1.txt" "$TMP/clift"); do
+    p=$("$BIN/hal" stats "$A" --parent "$g")
+    { "$BIN/hal" liftover "$A" "$g" "$TMP/clift/$g.bed" "$p" "$TMP/clift/$g.lifted" && python3 "$TMP/cols.py" lifted "$TMP/clift" "$g"; } >/dev/null 2>&1 ||
+        bad="$bad $g"
+done
+check "each base's parent is where hal liftover maps the base in its parent genome" test -z "$bad"
+"$BIN/hal" columns "$A" "$TMP/c3.txt" --chunk 97 --threads 3 2>/dev/null
+check "--threads 3: the same bytes" cmp "$TMP/c1.txt" "$TMP/c3.txt"
+"$BIN/hal" columns "$A" "$TMP/cw.txt" --chunk 97 --refSequence "$seq1" --start $((len1 / 3)) --length $((len1 / 3)) 2>/dev/null
+"$BIN/hal" maf "$A" "$TMP/cwm.maf" --universal --allAncestorRows --axisRow --chunk 97 --refSequence "$seq1" --start $((len1 / 3)) \
+    --length $((len1 / 3)) 2>/dev/null
+check "a window of $seq1: the window export's columns, and the whole one's at the same axis coordinates" \
+    bash -c "python3 '$TMP/cols.py' dump '$TMP/cw.txt' >'$TMP/cw.cols' && python3 '$TMP/cols.py' maf '$TMP/cwm.maf' | cmp -s - '$TMP/cw.cols' && test -s '$TMP/cw.cols' && test -z \"\$(LC_ALL=C comm -23 <(LC_ALL=C sort '$TMP/cw.cols') <(LC_ALL=C sort '$TMP/c1.cols'))\""
+leaf=$(awk '$2 == "leaf" {print $1; exit}' "$TMP/u11.genomes")
+for opts in "--rootGenome $anc" "--excludeGenomes $leaf"; do
+    "$BIN/hal" columns "$A" "$TMP/co.txt" $opts 2>/dev/null
+    "$BIN/hal" maf "$A" "$TMP/com.maf" --universal --allAncestorRows --axisRow $opts 2>/dev/null
+    check "$opts: hal maf's columns" bash -c "python3 '$TMP/cols.py' maf '$TMP/com.maf' | cmp -s - <(python3 '$TMP/cols.py' dump '$TMP/co.txt') && test -s '$TMP/co.txt'"
+done
+"$BIN/hal" columns "$A" "$TMP/cn.txt" --chunk 97 --noAncestorBases 2>/dev/null
+check "--noAncestorBases: ancestors' bases N, all else the same" \
+    bash -c "python3 '$TMP/cols.py' nanc '$TMP/c1.txt' '$TMP/u11.genomes' | cmp -s - '$TMP/cn.txt'"
+refuses "hal columns excluding an ancestor" "$BIN/hal" columns "$A" "$TMP/x.txt" --excludeGenomes "$anc"
+refuses "hal columns --start without --refSequence" "$BIN/hal" columns "$A" "$TMP/x.txt" --start 5
+
 echo "hal fasta against hal2fasta:"
 if [ ! -x "$BIN/hal2fasta" ] || [ ! -x "$BIN/halStats" ]; then
     echo "  skip (needs hal2fasta and halStats: build the fasta and stats modules)"

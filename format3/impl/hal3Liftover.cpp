@@ -145,6 +145,21 @@ void liftDownBranch(const Genome *child, bool dupes, const vector<LiftPiece> &in
     }
 }
 
+void liftDownBranchParented(const Genome *child, const vector<LiftPiece> &in, vector<LiftPiece> &out, vector<int32_t> &from,
+                            CursorCache &cursors) {
+    out.clear();
+    from.clear();
+    vector<lmap_hit> hits;
+    for (size_t i = 0; i < in.size(); i++) {
+        const LiftPiece &c = in[i];
+        cursors.query(child, 1, c.tgtSeq, c.tgtStart, c.tgtStart + c.length, hits);
+        for (const lmap_hit &h : hits) {
+            out.push_back(carry(c, h.b, h.len, h.a_member, h.a, h.strand != 0));
+            from.push_back((int32_t)i);
+        }
+    }
+}
+
 CursorCache::CursorCache(size_t bytesPerCursor, size_t maxCursors) : _bytes(bytesPerCursor), _max(maxCursors) {}
 
 CursorCache::~CursorCache() {
