@@ -746,6 +746,55 @@ elif cmd == 'lifted':
     want = [l.split() for l in open('%s/%s.want' % (d, g))]
     bad = [w for w in want if got[w[0]] != {(w[1], int(w[2]))}]
     if bad or not want: sys.exit('%d of %d bases lifted elsewhere than their parent' % (len(bad), len(want)))
+elif cmd == 'parts':   # cut where a base has two copies of a genome below it: parts of 2+ leaves, as SS tuple counts
+    par = parents(sys.argv[3].strip())
+    kids_, rows_ = {}, []
+    for g, p in par.items(): kids_.setdefault(p, []).append(g)
+    root_ = [g for g in set(par.values()) if g not in par][0]
+    def pre_(g):
+        out = [g]
+        for c in order_[g]: out += pre_(c)
+        return out
+    # the tree's own child order, from the newick
+    order_, stk, nw = {}, [[]], sys.argv[3].strip()
+    i = 0
+    while i < len(nw):
+        ch = nw[i]
+        if ch == '(':
+            stk.append([]); i += 1
+        elif ch in ',;': i += 1
+        elif ch == ')':
+            i += 1; j = i
+            while j < len(nw) and nw[j] not in ',();:': j += 1
+            order_[nw[i:j]] = stk.pop(); stk[-1].append(nw[i:j]); i = j
+        elif ch == ':':
+            j = i + 1
+            while j < len(nw) and nw[j] not in ',();': j += 1
+            i = j
+        else:
+            j = i
+            while j < len(nw) and nw[j] not in ',();:': j += 1
+            order_[nw[i:j]] = []; stk[-1].append(nw[i:j]); i = j
+    lv = [g for g in pre_(stk[0][0]) if not order_[g]]
+    row_ = {g: i for i, g in enumerate(lv)}
+    tc = defaultdict(int)
+    for ax, pos, es in dump(sys.argv[2]):
+        gen = [e[0].split('.')[0] for e in es]
+        pr = [-1 if e[4] == '-' else int(e[4]) for e in es]
+        kc = defaultdict(int)
+        for i in range(len(es)):
+            if pr[i] >= 0: kc[(pr[i], gen[i])] += 1
+        rt = []
+        for i in range(len(es)): rt.append(i if pr[i] < 0 or kc[(pr[i], gen[i])] > 1 else rt[pr[i]])
+        parts = defaultdict(list)
+        for i, e in enumerate(es):
+            if gen[i] in row_ and e[3].upper() in 'ACGT': parts[rt[i]].append((row_[gen[i]], e[3].upper()))
+        for m in parts.values():
+            if len(m) < 2: continue
+            t = ['*'] * len(lv)
+            for x, b in m: t[x] = b
+            tc[''.join(t)] += 1
+    for t in sorted(tc): print('%s\t%d' % (t, tc[t]))
 elif cmd == 'nanc':
     leaves = set(l.split()[0] for l in open(sys.argv[3]) if l.split()[1] == 'leaf')
     for line in open(sys.argv[2]):
@@ -792,8 +841,329 @@ done
 "$BIN/hal" columns "$A" "$TMP/cn.txt" --chunk 97 --noAncestorBases 2>/dev/null
 check "--noAncestorBases: ancestors' bases N, all else the same" \
     bash -c "python3 '$TMP/cols.py' nanc '$TMP/c1.txt' '$TMP/u11.genomes' | cmp -s - '$TMP/cn.txt'"
+"$BIN/hal" columns "$A" "$TMP/cs.ss" --ss --chunk 97 --threads 3 2>/dev/null
+check "--ss: each column cut where a base has two copies of a genome below it, parts of two leaves or more, as SS" \
+    bash -c "awk 'NR > 8 && NF == 3 {print \$2 \"\t\" \$3}' '$TMP/cs.ss' | LC_ALL=C sort | cmp -s - <(python3 '$TMP/cols.py' parts '$TMP/c1.txt' \"\$(sed -n '2s/^# hal //p' '$TMP/cm.maf')\" | LC_ALL=C sort) && test -s '$TMP/cs.ss'"
+"$BIN/hal" columns "$A" "$TMP/cs5.ss" --ss --chunk 97 --sampleChunks 5 --sample 40 2>/dev/null
+check "--ss --sampleChunks 5 --sample 40: 40 sites" grep -q 'LENGTH = 40$' "$TMP/cs5.ss"
 refuses "hal columns excluding an ancestor" "$BIN/hal" columns "$A" "$TMP/x.txt" --excludeGenomes "$anc"
 refuses "hal columns --start without --refSequence" "$BIN/hal" columns "$A" "$TMP/x.txt" --start 5
+
+echo "hal 4d (fourfold degenerate sites in universal columns):"
+# gen_ann.py SEED SEQ LENGTH OUT.gff3 OUT.gtf   random CDS on both strands: multi-exon, isoforms, frame shifts, bad phases
+# fourd_oracle.py HAL BIN OUTDIR G=ANN ...      hal 4d's sites and SS tuples from hal maf reference columns, independently
+#                                               (FOURD_DUPES=split (default), mask or drop: --dupes;
+#                                               FOURD_PARTS=largest (default) or all: --parts)
+cat >"$TMP/gen_ann.py" <<'PYEOF'
+"""gen_ann.py SEED SEQ LENGTH OUT.gff3 OUT.gtf: random multi-exon transcripts on both strands,
+an isoform sharing exons, two with wrong phases, two overlapping others in another frame."""
+import random, sys
+seed, seq, L, gff, gtf = int(sys.argv[1]), sys.argv[2], int(sys.argv[3]), sys.argv[4], sys.argv[5]
+rng = random.Random(seed)
+txs = []   # (id, strand, [(start0, end0, phase)])
+def make(tid, strand, exons, phase0=0):
+    # exons in transcription order; phases from the cumulative length
+    segs, cum = [], 0
+    for s, e in exons:
+        segs.append((s, e, (phase0 - cum) % 3))
+        cum += e - s
+    txs.append((tid, strand, segs))
+pos = 100
+n = 0
+while pos < L - 3000 and n < 60:
+    strand = rng.choice('+-')
+    exons = []
+    p = pos
+    for k in range(rng.randint(1, 4)):
+        ln = rng.randint(20, 300); exons.append((p, p + ln)); p += ln + rng.randint(15, 200)
+    if strand == '-': exons = exons[::-1]
+    make('tx%d' % n, strand, exons, rng.randint(0, 2) if rng.random() < 0.2 else 0)
+    if rng.random() < 0.3 and len(exons) > 2:   # an isoform skipping an exon (same frame only if the skipped length is a multiple of 3)
+        make('tx%d.iso' % n, strand, [exons[0]] + exons[2:])
+    if rng.random() < 0.1:   # another frame over the same exons
+        make('tx%d.shift' % n, strand, exons, (txs[-1][2][0][2] + 1) % 3)
+    if rng.random() < 0.08:   # a wrong phase on a later exon
+        tid, st, segs = txs[-1]
+        if len(segs) > 1:
+            segs = segs[:1] + [(segs[1][0], segs[1][1], (segs[1][2] + 1) % 3)] + segs[2:]
+            txs.append((tid + '.bad', st, segs))
+    pos = p + rng.randint(50, 600)
+    n += 1
+with open(gff, 'w') as f, open(gtf, 'w') as g:
+    f.write('##gff-version 3\n')
+    for tid, strand, segs in txs:
+        for s, e, ph in sorted(segs):
+            f.write('%s\tsim\tCDS\t%d\t%d\t.\t%s\t%d\tID=cds-%s;Parent=rna-%s\n' % (seq, s + 1, e, strand, ph, tid, tid))
+            g.write('%s\tsim\tCDS\t%d\t%d\t.\t%s\t%d\tgene_id "g%s"; transcript_id "%s";\n' % (seq, s + 1, e, strand, ph, tid, tid))
+print(len(txs), 'transcripts')
+PYEOF
+cat >"$TMP/fourd_oracle.py" <<'PYEOF'
+"""fourd_oracle.py HAL BIN OUTDIR GENOME=ANNOTATION ...: hal 4d's sites and SS tuples (FOURD_DUPES=mask|drop|split), computed
+independently from hal maf reference columns (duplicates kept, ancestors in), hal fasta and the
+tree.  Writes OUTDIR/sites.tsv (sorted) and OUTDIR/tuples.tsv (tuple, count; sorted)."""
+import collections, gzip, os, subprocess, sys
+aln, B, out = sys.argv[1], sys.argv[2], sys.argv[3]
+hal = os.path.join(B, 'hal')
+def run(*a): return subprocess.run([hal] + list(a), check=True, capture_output=True, text=True).stdout
+# tree: preorder, depth, leaves
+nw = run('stats', aln, '--tree').strip()
+kids, par = collections.defaultdict(list), {}
+stack, i, n, lastname = [[]], 0, len(nw), None
+order_children = collections.defaultdict(list)
+def parse(s):
+    i = 0
+    stack = [[]]
+    while i < len(s):
+        c = s[i]
+        if c == '(':
+            stack.append([]); i += 1
+        elif c in ',;': i += 1
+        elif c == ')':
+            i += 1; j = i
+            while j < len(s) and s[j] not in ',();:': j += 1
+            name = s[i:j]; ch = stack.pop()
+            for k in ch: par[k] = name
+            order_children[name] = ch; stack[-1].append(name); i = j
+        elif c == ':':
+            j = i + 1
+            while j < len(s) and s[j] not in ',();': j += 1
+            i = j
+        else:
+            j = i
+            while j < len(s) and s[j] not in ',();:': j += 1
+            stack[-1].append(s[i:j]); order_children[s[i:j]] = []; i = j
+    return stack[0][0]
+root = parse(nw)
+pre, depth = [], {}
+def walk(g, d):
+    pre.append(g); depth[g] = d
+    for c in order_children[g]: walk(c, d + 1)
+walk(root, 0)
+leaves = [g for g in pre if not order_children[g]]
+def below(g):
+    return [g] if not order_children[g] else [x for c in order_children[g] for x in below(c)]
+row = {g: i for i, g in enumerate(leaves)}
+comp = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+def up(c):
+    c = c.upper(); return c if c in 'ACGT' else 'N'
+def cmp(c): return comp.get(c, 'N')
+def opener(p): return gzip.open(p, 'rt') if p.endswith('.gz') else open(p)
+def fnv(s):
+    h = 1469598103934665603
+    for b in s.encode():
+        h ^= b; h = (h * 1099511628211) & 0xFFFFFFFFFFFFFFFF
+    return h
+def attr(a, key):
+    out = []
+    for f in a.split(';'):
+        f = f.strip()
+        if f.startswith(key + '='): out += [x for x in f[len(key) + 1:].split(',') if x]
+        elif f.startswith(key + ' ') and '"' in f: out.append(f.split('"')[1])
+    return out
+sites, roles = {}, collections.defaultdict(set)
+for ai, arg in enumerate(sys.argv[4:]):
+    G, path = arg.split('=', 1)
+    fa, name = {}, None
+    for l in run('fasta', aln, G).split('\n'):
+        if l.startswith('>'): name = l[1:].split()[0]; fa[name] = []
+        elif l: fa[name].append(l)
+    fa = {k: ''.join(v) for k, v in fa.items()}
+    tx = collections.defaultdict(list)
+    for l in opener(path):
+        f = l.rstrip('\n').split('\t')
+        if l.startswith('#') or len(f) < 9 or f[2] != 'CDS': continue
+        ids = attr(f[8], 'Parent') or attr(f[8], 'transcript_id') or attr(f[8], 'ID')
+        for t in ids: tx[t].append((f[0], int(f[3]) - 1, int(f[4]), f[6], 0 if f[7] == '.' else int(f[7])))
+    codons = set()
+    for t, segs in tx.items():
+        if any(s[0] not in fa for s in segs) or len(set((s[0], s[3]) for s in segs)) > 1: continue
+        minus = segs[0][3] == '-'
+        segs = sorted(segs, key=lambda s: -s[2] if minus else s[1])
+        posl, ok = [], True
+        for k, (sq, a, b, st, ph) in enumerate(segs):
+            if k and ph != (segs[0][4] - len(posl)) % 3: ok = False
+            if k and (b > segs[k - 1][1] if minus else a < segs[k - 1][2]): ok = False
+            posl += list(range(b - 1, a - 1, -1)) if minus else list(range(a, b))
+        if not ok: continue
+        for t0 in range(segs[0][4], len(posl) - 2, 3):
+            codons.add((segs[0][0], posl[t0], posl[t0 + 1], posl[t0 + 2], minus))
+    role = collections.defaultdict(set)
+    for c in codons:
+        for k in range(3): role[(c[0], c[1 + k])].add((k, c[4]))
+    codons = sorted(c for c in codons if all(len(role[(c[0], c[1 + k])]) == 1 for k in range(3)))   # hal 4d's order
+    cand = []
+    for c in codons:
+        b = [up(fa[c[0]][c[1 + k]]) for k in range(3)]
+        if c[4]: b = [cmp(x) for x in b]
+        if 'N' in b: continue
+        if not ((b[0] in 'AT' and b[1] == 'C') or (b[0] in 'CG' and b[1] != 'A')): continue
+        cand.append(c)
+    if not cand: continue
+    if os.environ.get('FOURD_DUPES', 'split') == 'split':
+        if 'dump' not in globals():
+            dpath = os.path.join(out, 'columns.txt')
+            run('columns', aln, dpath, '--leafInsertions')
+            dump, where = [], {}
+            for l in open(dpath):
+                f = l.rstrip('\n').split('\t')
+                es = [e.split('|') for e in f[2:]]
+                for i, e in enumerate(es): where[(e[0], int(e[1]))] = (len(dump), i)
+                dump.append(es)
+        for c in cand:
+            if not (c[2] - c[1] == c[3] - c[2] and abs(c[2] - c[1]) == 1): continue
+            ci = [where[(G + '.' + c[0], c[1 + k])] for k in range(3)]
+            cols3 = [dump[x[0]] for x in ci]
+            sa = [cols3[k][ci[k][1]][2] for k in range(3)]   # the anchor's strand on the axis, each column
+            tops = [(cols3[k][0][0].split('.', 1)[0], cols3[k][0][0].split('.', 1)[1], int(cols3[k][0][1])) for k in range(3)]
+            es = cols3[2]
+            gen = [e[0].split('.', 1)[0] for e in es]
+            par = [-1 if e[4] == '-' else int(e[4]) for e in es]
+            kids = collections.Counter((par[i], gen[i]) for i in range(len(es)) if par[i] >= 0)
+            root = []
+            for i in range(len(es)):
+                root.append(i if par[i] < 0 or kids[(par[i], gen[i])] > 1 else root[par[i]])
+            o = (lambda x: cmp(x)) if c[4] else (lambda x: x)
+            def anchor_base(e, k):   # a base of column k in the anchor's orientation
+                b = up(e[3]); return cmp(b) if sa[k] == '-' else b
+            look = [dict(((e[0], int(e[1]), e[2]), e) for e in cols3[k]) for k in range(2)]
+            parts = collections.defaultdict(list)
+            for i in range(len(es)):
+                if gen[i] in row: parts[root[i]].append(i)
+            passing = []
+            for r, mem in parts.items():
+                if len(mem) < 2: continue
+                p0 = p1 = None; bad = None
+                for i in mem:
+                    e = es[i]
+                    rel = -1 if e[2] != sa[2] else 1
+                    ys = []
+                    for k in range(2):
+                        # the same copy's neighbouring base, its strand on the axis: the same relative to the anchor's
+                        want_strand = e[2] if sa[k] == sa[2] else ('+' if e[2] == '-' else '-')
+                        y = look[k].get((e[0], int(e[1]) + (c[1 + k] - c[3]) * rel, want_strand))
+                        ys.append(y)
+                    if ys[0] is None or ys[1] is None: bad = 'gap'; break
+                    b0, b1 = o(anchor_base(ys[0], 0)), o(anchor_base(ys[1], 1))
+                    if b0 != 'N':
+                        if p0 is None: p0 = b0
+                        elif b0 != p0: bad = 'differs'
+                    if b1 != 'N':
+                        if p1 is None: p1 = b1
+                        elif b1 != p1: bad = 'differs'
+                if bad: continue
+                if p0 is None or p1 is None or not ((p0 in 'AT' and p1 == 'C') or (p0 in 'CG' and p1 != 'A')): continue
+                rt = es[r]
+                key = (rt[0].split('.', 1)[0], rt[0].split('.', 1)[1], int(rt[1]))
+                passing.append((key, mem))
+            if os.environ.get('FOURD_PARTS', 'largest') == 'largest' and passing:
+                best = max(passing, key=lambda x: (len(x[1]), -fnv(x[0][0] + '\0' + x[0][1] + '\0' + str(x[0][2]))))
+                passing = [(tops[2], best[1])]
+            for key, mem in passing:
+                mins = [c[4] != (cols3[k][0][2] != sa[k]) for k in range(3)]
+                for k in range(3): roles[tops[k]].add((k, mins[k]))
+                tup = ['*'] * len(leaves)
+                for i in mem: tup[row[gen[i]]] = o(anchor_base(es[i], 2))
+                s_ = sites.setdefault(key, {'minus': mins[2], 'anns': set(), 'first': G, 'tuple': ''.join(tup), 'col': tops[2]})
+                s_['anns'].add(ai)
+        continue
+    with open(os.path.join(out, 'targets.bed'), 'w') as f:
+        for sq in sorted(set(c[0] for c in cand)):
+            ps = sorted(set(p for c in cand if c[0] == sq for p in c[1:4]))
+            s = ps[0]; e = s + 1
+            for p in ps[1:]:
+                if p == e: e += 1
+                else: f.write('%s\t%d\t%d\n' % (sq, s, e)); s = p; e = p + 1
+            f.write('%s\t%d\t%d\n' % (sq, s, e))
+    mpath = os.path.join(out, 'ref.maf')
+    run('maf', aln, mpath, '--refGenome', G, '--refTargets', os.path.join(out, 'targets.bed'), '--joinGap', '0')
+    cols = {}
+    rows = []
+    def flush():
+        r0 = rows[0]
+        k = 0
+        for j in range(len(r0[5])):
+            if r0[5][j] == '-': continue
+            rp = r0[1] + k; k += 1
+            ent = []
+            for name, st, sz, strand, srclen, text in rows:
+                if text[j] == '-': continue
+                g, sq = name.split('.', 1)
+                p = st + len(text[:j].replace('-', ''))
+                ent.append((g, sq, p if strand == '+' else srclen - 1 - p, up(text[j]), strand))
+            cols[(r0[0].split('.', 1)[1], rp)] = ent
+    for l in open(mpath):
+        if l.startswith('a'):
+            if rows: flush()
+            rows = []
+        elif l.startswith('s'):
+            f = l.split(); rows.append((f[1], int(f[2]), int(f[3]), f[4], int(f[5]), f[6]))
+    if rows: flush()
+    for c in cand:
+        cs = [cols[(c[0], c[1 + k])] for k in range(3)]
+        cs_all = cs
+        cnt = [collections.Counter(e[0] for e in col) for col in cs]
+        dups = set(g for ct in cnt for g, v in ct.items() if v > 1)
+        if dups and os.environ.get('FOURD_DUPES', 'split') == 'drop': continue
+        masked = set(x for d in dups for x in below(d))
+        if G in masked: continue
+        cs = [[e for e in col if e[0] not in masked] for col in cs]
+        ls = [sorted(e[0] for e in col if e[0] in row) for col in cs]
+        if not (ls[0] == ls[1] == ls[2]): continue
+        o = (lambda x: cmp(x)) if c[4] else (lambda x: x)
+        a0, a1 = o(up(fa[c[0]][c[1]])), o(up(fa[c[0]][c[2]]))
+        if any(o(e[3]) not in ('N', a0) for e in cs[0] if e[0] in row) or any(o(e[3]) not in ('N', a1) for e in cs[1] if e[0] in row): continue
+        topes = [min(col, key=lambda e: depth[e[0]]) for col in cs_all]
+        keys = [t[:3] for t in topes]
+        mins = [c[4] != (t[4] == '-') for t in topes]   # the codon's strand against each column's top
+        for k in range(3): roles[keys[k]].add((k, mins[k]))
+        tup = ['*'] * len(leaves)
+        for e in cs[2]:
+            if e[0] in row: tup[row[e[0]]] = o(e[3])
+        s = sites.setdefault(keys[2], {'minus': mins[2], 'anns': set(), 'first': G, 'tuple': ''.join(tup)})
+        s['anns'].add(ai)
+with open(os.path.join(out, 'sites.tsv'), 'w') as f:
+    for k in sorted(sites, key=lambda k: (pre.index(k[0]), k[1], k[2])):
+        s = sites[k]
+        st = 'kept' if roles[s.get('col', k)] == {(2, s['minus'])} else 'conflict'
+        f.write('%s.%s\t%d\t%s\t%d\t%s\t%s\n' % (k[0], k[1], k[2], '-' if s['minus'] else '+', len(s['anns']), s['first'], st))
+tc = collections.Counter(s['tuple'] for k, s in sites.items() if roles[s.get('col', k)] == {(2, s['minus'])})
+with open(os.path.join(out, 'tuples.tsv'), 'w') as f:
+    for t, c in sorted(tc.items()): f.write('%s\t%d\n' % (t, c))
+print('oracle: %d sites, %d kept' % (len(sites), sum(tc.values())))
+PYEOF
+A="$TMP/u11"
+l10=$(awk 'NR == 1 {print $2}' "$TMP/u11.Genome_10.sizes" 2>/dev/null)
+python3 "$TMP/gen_ann.py" 3 Genome_10_seq "${l10:-50730}" "$TMP/g10.gff3" "$TMP/g10.gtf" >/dev/null
+python3 "$TMP/gen_ann.py" 4 Genome_16_seq 39525 "$TMP/g16.gff3" "$TMP/g16.gtf" >/dev/null
+gzip -kf "$TMP/g16.gff3"
+awk -F'\t' 'BEGIN {OFS = "\t"} /^#/ {print; next} {$8 = ($8 + 1) % 3; gsub(/rna-/, "rna-s", $9); print}' "$TMP/g10.gff3" >"$TMP/g10s.gff3"
+mkdir -p "$TMP/o4d"
+anns="Genome_10=$TMP/g10.gff3 Genome_10=$TMP/g10s.gff3 Genome_16=$TMP/g16.gff3.gz"
+python3 "$TMP/fourd_oracle.py" "$A" "$BIN" "$TMP/o4d" $anns >/dev/null
+"$BIN/hal" 4d "$A" "$TMP/h4.ss" $anns --sites "$TMP/h4.sites" --threads 3 2>/dev/null
+check "--dupes split: sites (a column's largest single-copy part; strand, annotations, the first, kept or a role conflict) as an independent computation (hal columns' trees)" \
+    bash -c "grep -v '^#' '$TMP/h4.sites' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d/sites.tsv') && grep -q conflict '$TMP/h4.sites' && grep -q kept '$TMP/h4.sites'"
+check "the SS: its tuples and counts as the independent computation" \
+    bash -c "awk 'NR > 8 && NF == 3 {print \$2 \"\t\" \$3}' '$TMP/h4.ss' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d/tuples.tsv')"
+"$BIN/hal" 4d "$A" "$TMP/h4g.ss" Genome_10=$TMP/g10.gtf Genome_10=$TMP/g10s.gff3 Genome_16=$TMP/g16.gtf --threads 1 2>/dev/null
+check "GTF for GFF3, 1 thread for 3: the same SS" cmp "$TMP/h4.ss" "$TMP/h4g.ss"
+mkdir -p "$TMP/o4dall"
+FOURD_PARTS=all python3 "$TMP/fourd_oracle.py" "$A" "$BIN" "$TMP/o4dall" $anns >/dev/null
+"$BIN/hal" 4d "$A" "$TMP/h4all.ss" $anns --parts all --sites "$TMP/h4all.sites" 2>/dev/null
+check "--parts all: every single-copy part that passes a site (by its root), as the independent computation" \
+    bash -c "grep -v '^#' '$TMP/h4all.sites' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4dall/sites.tsv') && awk 'NR > 8 && NF == 3 {print \$2 \"\t\" \$3}' '$TMP/h4all.ss' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4dall/tuples.tsv') && ! cmp -s '$TMP/h4.ss' '$TMP/h4all.ss'"
+for mode in mask drop; do
+    mkdir -p "$TMP/o4d$mode"
+    FOURD_DUPES=$mode python3 "$TMP/fourd_oracle.py" "$A" "$BIN" "$TMP/o4d$mode" $anns >/dev/null
+    "$BIN/hal" 4d "$A" "$TMP/h4$mode.ss" $anns --dupes $mode --sites "$TMP/h4$mode.sites" 2>/dev/null
+    check "--dupes $mode: sites and tuples as the independent computation (hal maf's reference columns)" \
+        bash -c "grep -v '^#' '$TMP/h4$mode.sites' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d$mode/sites.tsv') && awk 'NR > 8 && NF == 3 {print \$2 \"\t\" \$3}' '$TMP/h4$mode.ss' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d$mode/tuples.tsv') && ! cmp -s '$TMP/h4.ss' '$TMP/h4$mode.ss'"
+done
+"$BIN/hal" 4d "$A" "$TMP/s20.ss" $anns --sample 20 --sites "$TMP/s20.sites" 2>/dev/null
+"$BIN/hal" 4d "$A" "$TMP/s60.ss" $anns --sample 60 --sites "$TMP/s60.sites" 2>/dev/null
+check "--sample 20 and 60: that many sites, the 20 among the 60" \
+    bash -c "grep -q 'LENGTH = 20\$' '$TMP/s20.ss' && grep -q 'LENGTH = 60\$' '$TMP/s60.ss' && test -z \"\$(LC_ALL=C comm -23 <(awk '\$6 == \"kept\" {print \$1, \$2}' '$TMP/s20.sites' | LC_ALL=C sort) <(awk '\$6 == \"kept\" {print \$1, \$2}' '$TMP/s60.sites' | LC_ALL=C sort))\""
+refuses "hal 4d with an ancestor's annotation" "$BIN/hal" 4d "$A" "$TMP/x.ss" "Genome_1=$TMP/g10.gff3"
 
 echo "hal fasta against hal2fasta:"
 if [ ! -x "$BIN/hal2fasta" ] || [ ! -x "$BIN/halStats" ]; then

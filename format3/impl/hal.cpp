@@ -25,6 +25,7 @@ const Command COMMANDS[] = {
     {"maf", "export MAF blocks anchored on a reference genome", hal3::main_maf},
     {"wig", "project scores on the universal axis (maf --universal --axisRow) onto a genome", hal3::main_wig},
     {"columns", "universal columns as trees of bases (each base with its parent), as text", hal3::main_columns},
+    {"4d", "fourfold degenerate sites of annotated genes, in universal columns, for phyloFit", hal3::main_4d},
     {"fasta", "export genome sequences as FASTA", hal3::main_fasta},
     {"stats", "facts about an alignment: tree, genomes, sequences, runs", hal3::main_stats},
     {"coverage", "how much of a genome each leaf genome covers, and how many times", hal3::main_coverage},

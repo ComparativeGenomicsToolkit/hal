@@ -182,9 +182,50 @@ void TreeWalk::downParented(PieceMap &own, PieceMap &quiet, PieceMap &pieces, ma
     descendParented(_top, own, quiet, pieces, from);
 }
 
+/* Merge pieces contiguous in both source and target that came from the same parent piece
+ * (or are both tops): a piece's parent link holds, while the breakpoints it inherited from
+ * its ancestors' pieces -- which would otherwise pile up down the tree -- go.  Then put
+ * them in the genome's order. */
+static void coalesceParented(vector<LiftPiece> &v, vector<int32_t> &f) {
+    if (v.size() < 2) return;
+    auto diag = [](const LiftPiece &p) { return p.reversed ? p.srcStart + p.tgtStart + p.length : p.tgtStart - p.srcStart; };
+    vector<size_t> idx(v.size());
+    for (size_t i = 0; i < idx.size(); i++) idx[i] = i;
+    /* (pieces that can merge are neighbours here: a target base is in one piece) */
+    sort(idx.begin(), idx.end(), [&](size_t a, size_t b) {
+        const LiftPiece &x = v[a], &y = v[b];
+        return make_tuple(x.tgtSeq, x.reversed, diag(x), x.srcStart, f[a]) < make_tuple(y.tgtSeq, y.reversed, diag(y), y.srcStart, f[b]);
+    });
+    vector<LiftPiece> o;
+    vector<int32_t> of;
+    for (size_t i : idx) {
+        const LiftPiece &p = v[i];
+        if (!o.empty()) {
+            LiftPiece &q = o.back();
+            if (of.back() == f[i] && q.tgtSeq == p.tgtSeq && q.reversed == p.reversed && diag(q) == diag(p) && q.srcStart + q.length == p.srcStart) {
+                if (q.reversed) q.tgtStart = p.tgtStart;
+                q.length += p.length;
+                continue;
+            }
+        }
+        o.push_back(p);
+        of.push_back(f[i]);
+    }
+    /* in the genome's order: the children's lifts and the DNA reads go forward through it */
+    idx.resize(o.size());
+    for (size_t i = 0; i < idx.size(); i++) idx[i] = i;
+    sort(idx.begin(), idx.end(), [&](size_t a, size_t b) { return make_pair(o[a].tgtSeq, o[a].tgtStart) < make_pair(o[b].tgtSeq, o[b].tgtStart); });
+    v.resize(o.size());
+    f.resize(o.size());
+    for (size_t i = 0; i < idx.size(); i++) {
+        v[i] = o[idx[i]];
+        f[i] = of[idx[i]];
+    }
+}
+
 /* At v: pieces[v] holds what arrived from the parent (from[v] where from); add v's own
- * and quiet pieces, then carry them all into each child in scope.  (Map entries stay
- * put as others are added, so the references hold.) */
+ * and quiet pieces, merge what can be, then carry them all into each child in scope.
+ * (Map entries stay put as others are added, so the references hold.) */
 void TreeWalk::descendParented(const Genome *v, PieceMap &own, PieceMap &quiet, PieceMap &pieces,
                                map<const Genome *, vector<int32_t>> &from) {
     vector<LiftPiece> &in = pieces[v];
@@ -195,6 +236,7 @@ void TreeWalk::descendParented(const Genome *v, PieceMap &own, PieceMap &quiet, 
         in.insert(in.end(), o->second.begin(), o->second.end());
         f.insert(f.end(), o->second.size(), -1);
     }
+    coalesceParented(in, f);
     for (const Genome *c : v->children()) {
         if (!_scope.count(c)) continue;
         liftDownBranchParented(c, in, pieces[c], from[c], _cursors);
@@ -205,6 +247,40 @@ void TreeWalk::descendParented(const Genome *v, PieceMap &own, PieceMap &quiet, 
             from.erase(c);
         }
     }
+}
+
+void TreeWalk::liftParented(uint32_t refSeq, const vector<pair<int64_t, int64_t>> &intervals, PieceMap &pieces,
+                            map<const Genome *, vector<int32_t>> &from) {
+    if (!_opts.dupes || _opts.onlyOrthologs) throw runtime_error("internal error: a parented lift keeps every copy, to the scope top");
+    pieces.clear();
+    from.clear();
+    _below.clear();
+    vector<LiftPiece> cur, next, unmapped;
+    for (const auto &iv : intervals)
+        if (iv.second > iv.first) cur.push_back(LiftPiece{iv.first, refSeq, iv.first, iv.second - iv.first, false});
+    if (cur.empty()) return;
+    /* up to the scope top: what goes no higher is a top where it stops */
+    PieceMap tops;
+    for (const Genome *a = _ref;;) {
+        if (a == _top) {
+            vector<LiftPiece> &t = tops[a];
+            t.insert(t.end(), cur.begin(), cur.end());
+            break;
+        }
+        liftUpBranch(a, cur, next, &unmapped, _cursors, false);
+        if (!unmapped.empty()) {
+            vector<LiftPiece> &t = tops[a];
+            t.insert(t.end(), unmapped.begin(), unmapped.end());
+        }
+        cur.swap(next);
+        if (cur.empty()) break;
+        a = a->parent();
+    }
+    for (auto &t : tops)
+        for (const Genome *g = t.first; g && _below.insert(g).second; g = g->parent()) {
+        }
+    PieceMap none;
+    descendParented(_top, tops, none, pieces, from);
 }
 
 void TreeWalk::lift(uint32_t refSeq, const vector<pair<int64_t, int64_t>> &intervals,

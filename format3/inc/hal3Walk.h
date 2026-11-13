@@ -87,6 +87,14 @@ class TreeWalk {
      * (own and quiet: tops). */
     void downParented(PieceMap &own, PieceMap &quiet, PieceMap &pieces, std::map<const Genome *, std::vector<int32_t>> &from);
 
+    /* lift, every base with its parent (dupes only, not onlyOrthologs): pieces[g] is every
+     * piece of g in scope the walk reaches -- the reference's own identity pieces included
+     * -- none coalesced, and from[g][i] the index in pieces[g's parent] of the piece
+     * pieces[g][i] was carried from, or -1 for a top (where a reference base's lift up
+     * stopped). */
+    void liftParented(uint32_t refSeq, const std::vector<std::pair<int64_t, int64_t>> &intervals, PieceMap &pieces,
+                      std::map<const Genome *, std::vector<int32_t>> &from);
+
     const Genome *ref() const { return _ref; }
     const Genome *top() const { return _top; }
     /* the reference, its parent, ... up to top() */
