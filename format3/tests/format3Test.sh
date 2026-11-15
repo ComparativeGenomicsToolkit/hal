@@ -960,7 +960,7 @@ def attr(a, key):
         if f.startswith(key + '='): out += [x for x in f[len(key) + 1:].split(',') if x]
         elif f.startswith(key + ' ') and '"' in f: out.append(f.split('"')[1])
     return out
-sites, roles = {}, collections.defaultdict(set)
+sites, roles, tested = {}, collections.defaultdict(set), {}
 for ai, arg in enumerate(sys.argv[4:]):
     G, path = arg.split('=', 1)
     fa, name = {}, None
@@ -998,7 +998,12 @@ for ai, arg in enumerate(sys.argv[4:]):
         if 'N' in b: continue
         if not ((b[0] in 'AT' and b[1] == 'C') or (b[0] in 'CG' and b[1] != 'A')): continue
         cand.append(c)
-    if not cand: continue
+    if not codons: continue
+    # a later annotation's codon whose site (its third position's column) is held counts, untested;
+    # one whose site's column was tested (and not kept) is not tested again
+    largest = os.environ.get('FOURD_PARTS', 'largest') == 'largest'
+    held = lambda key: largest and key in sites and sites[key]['ai'] < ai
+    tried = lambda key: largest and key in tested and tested[key] < ai
     if os.environ.get('FOURD_DUPES', 'split') == 'split':
         if 'dump' not in globals():
             dpath = os.path.join(out, 'columns.txt')
@@ -1009,8 +1014,21 @@ for ai, arg in enumerate(sys.argv[4:]):
                 es = [e.split('|') for e in f[2:]]
                 for i, e in enumerate(es): where[(e[0], int(e[1]))] = (len(dump), i)
                 dump.append(es)
+        def topof(sq, p):   # a base's column's top, and the codon's strand there is flipped
+            ci = where[(G + '.' + sq, p)]
+            t = dump[ci[0]][0]
+            return (t[0].split('.', 1)[0], t[0].split('.', 1)[1], int(t[1])), t[2] != dump[ci[0]][ci[1]][2]
+        for c in codons:   # every codon gives its columns roles
+            for k in range(3):
+                t, flip = topof(c[0], c[1 + k])
+                roles[t].add((k, c[4] != flip))
         for c in cand:
             if not (c[2] - c[1] == c[3] - c[2] and abs(c[2] - c[1]) == 1): continue
+            t2 = topof(c[0], c[3])[0]
+            if held(t2):
+                sites[t2]['anns'].add(ai); continue
+            if tried(t2): continue
+            tested.setdefault(t2, ai)
             ci = [where[(G + '.' + c[0], c[1 + k])] for k in range(3)]
             cols3 = [dump[x[0]] for x in ci]
             sa = [cols3[k][ci[k][1]][2] for k in range(3)]   # the anchor's strand on the axis, each column
@@ -1060,15 +1078,14 @@ for ai, arg in enumerate(sys.argv[4:]):
                 passing = [(tops[2], best[1])]
             for key, mem in passing:
                 mins = [c[4] != (cols3[k][0][2] != sa[k]) for k in range(3)]
-                for k in range(3): roles[tops[k]].add((k, mins[k]))
                 tup = ['*'] * len(leaves)
                 for i in mem: tup[row[gen[i]]] = o(anchor_base(es[i], 2))
-                s_ = sites.setdefault(key, {'minus': mins[2], 'anns': set(), 'first': G, 'tuple': ''.join(tup), 'col': tops[2]})
+                s_ = sites.setdefault(key, {'minus': mins[2], 'anns': set(), 'first': G, 'ai': ai, 'tuple': ''.join(tup), 'col': tops[2]})
                 s_['anns'].add(ai)
         continue
     with open(os.path.join(out, 'targets.bed'), 'w') as f:
-        for sq in sorted(set(c[0] for c in cand)):
-            ps = sorted(set(p for c in cand if c[0] == sq for p in c[1:4]))
+        for sq in sorted(set(c[0] for c in codons)):
+            ps = sorted(set(p for c in codons if c[0] == sq for p in c[1:4]))
             s = ps[0]; e = s + 1
             for p in ps[1:]:
                 if p == e: e += 1
@@ -1098,14 +1115,27 @@ for ai, arg in enumerate(sys.argv[4:]):
         elif l.startswith('s'):
             f = l.split(); rows.append((f[1], int(f[2]), int(f[3]), f[4], int(f[5]), f[6]))
     if rows: flush()
+    def topof(sq, p):   # a base's column's top, and the codon's strand there is flipped
+        t = min(cols[(sq, p)], key=lambda e: depth[e[0]])
+        return t[:3], t[4] == '-'
+    for c in codons:   # every codon gives its columns roles
+        for k in range(3):
+            t, flip = topof(c[0], c[1 + k])
+            roles[t].add((k, c[4] != flip))
     for c in cand:
+        t2 = topof(c[0], c[3])[0]
+        if held(t2):
+            sites[t2]['anns'].add(ai); continue
+        if tried(t2): continue
         cs = [cols[(c[0], c[1 + k])] for k in range(3)]
         cs_all = cs
         cnt = [collections.Counter(e[0] for e in col) for col in cs]
         dups = set(g for ct in cnt for g, v in ct.items() if v > 1)
-        if dups and os.environ.get('FOURD_DUPES', 'split') == 'drop': continue
+        if dups and os.environ.get('FOURD_DUPES', 'split') == 'drop':
+            tested.setdefault(t2, ai); continue
         masked = set(x for d in dups for x in below(d))
-        if G in masked: continue
+        if G in masked: continue   # the annotated genome's own copies: not the column's
+        tested.setdefault(t2, ai)
         cs = [[e for e in col if e[0] not in masked] for col in cs]
         ls = [sorted(e[0] for e in col if e[0] in row) for col in cs]
         if not (ls[0] == ls[1] == ls[2]): continue
@@ -1115,11 +1145,10 @@ for ai, arg in enumerate(sys.argv[4:]):
         topes = [min(col, key=lambda e: depth[e[0]]) for col in cs_all]
         keys = [t[:3] for t in topes]
         mins = [c[4] != (t[4] == '-') for t in topes]   # the codon's strand against each column's top
-        for k in range(3): roles[keys[k]].add((k, mins[k]))
         tup = ['*'] * len(leaves)
         for e in cs[2]:
             if e[0] in row: tup[row[e[0]]] = o(e[3])
-        s = sites.setdefault(keys[2], {'minus': mins[2], 'anns': set(), 'first': G, 'tuple': ''.join(tup)})
+        s = sites.setdefault(keys[2], {'minus': mins[2], 'anns': set(), 'first': G, 'ai': ai, 'tuple': ''.join(tup)})
         s['anns'].add(ai)
 with open(os.path.join(out, 'sites.tsv'), 'w') as f:
     for k in sorted(sites, key=lambda k: (pre.index(k[0]), k[1], k[2])):
@@ -1159,10 +1188,39 @@ for mode in mask drop; do
     check "--dupes $mode: sites and tuples as the independent computation (hal maf's reference columns)" \
         bash -c "grep -v '^#' '$TMP/h4$mode.sites' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d$mode/sites.tsv') && awk 'NR > 8 && NF == 3 {print \$2 \"\t\" \$3}' '$TMP/h4$mode.ss' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d$mode/tuples.tsv') && ! cmp -s '$TMP/h4.ss' '$TMP/h4$mode.ss'"
 done
-"$BIN/hal" 4d "$A" "$TMP/s20.ss" $anns --sample 20 --sites "$TMP/s20.sites" 2>/dev/null
-"$BIN/hal" 4d "$A" "$TMP/s60.ss" $anns --sample 60 --sites "$TMP/s60.sites" 2>/dev/null
-check "--sample 20 and 60: that many sites, the 20 among the 60" \
-    bash -c "grep -q 'LENGTH = 20\$' '$TMP/s20.ss' && grep -q 'LENGTH = 60\$' '$TMP/s60.ss' && test -z \"\$(LC_ALL=C comm -23 <(awk '\$6 == \"kept\" {print \$1, \$2}' '$TMP/s20.sites' | LC_ALL=C sort) <(awk '\$6 == \"kept\" {print \$1, \$2}' '$TMP/s60.sites' | LC_ALL=C sort))\""
+# the first annotation again, last: its codons' sites are held, or failed before
+sanns="Genome_10=$TMP/g10.gff3 Genome_16=$TMP/g16.gff3.gz Genome_10=$TMP/g10.gtf"
+"$BIN/hal" 4d "$A" "$TMP/sall.ss" $sanns --sites "$TMP/sall.sites" --stats "$TMP/sall.stats" 2>/dev/null
+"$BIN/hal" 4d "$A" "$TMP/s20.ss" $sanns --sample 20 --sites "$TMP/s20.sites" --threads 3 2>"$TMP/s20.err"
+"$BIN/hal" 4d "$A" "$TMP/s60.ss" $sanns --sample 60 --sites "$TMP/s60.sites" 2>/dev/null
+"$BIN/hal" 4d "$A" "$TMP/s500.ss" $sanns --sample 500 --sites "$TMP/s500.sites" --threads 2 2>/dev/null
+cat >"$TMP/sample.py" <<'PYEOF'
+# --sample N: the 2N sites that hash lowest of those held without it, alike (strand, annotations, the
+# first; a conflict there one here); of them the N lowest not in conflict kept, the rest unsampled
+import sys
+def fnv(s):
+    h = 1469598103934665603
+    for b in s.encode(): h ^= b; h = (h * 1099511628211) & 0xFFFFFFFFFFFFFFFF
+    return h
+def rows(p): return [l.rstrip('\n').split('\t') for l in open(p) if not l.startswith('#')]
+H = lambda f: fnv(f[0].split('.', 1)[0] + '\0' + f[0].split('.', 1)[1] + '\0' + f[1])
+full = sorted(rows(sys.argv[1]), key=H)
+assert any(int(f[3]) > 1 for f in full), 'a site two annotations chose'
+for k in range(2, len(sys.argv), 2):
+    n, got = int(sys.argv[k]), sorted(rows(sys.argv[k + 1]), key=H)
+    want = full[:2 * n]
+    assert [f[:5] for f in got] == [f[:5] for f in want], '%d: the sites held' % n
+    ok = [f for f in want if f[5] == 'kept'][:n]
+    assert [f for f in got if f[5] == 'kept'] == ok, '%d: those kept' % n
+    assert all(g[5] == 'conflict' if f[5] == 'conflict' else g[5] in ('kept', 'unsampled') for f, g in zip(want, got)), '%d: statuses' % n
+    ss = sys.argv[k + 1][:-len('sites')] + 'ss'
+    assert 'LENGTH = %d\n' % len(ok) in open(ss).read(), '%d: the SS' % n
+st = [l.rstrip('\n').split('\t') for l in open(sys.argv[1][:-len('sites')] + 'stats')]
+assert st[3][st[0].index('kept')] == '0' and int(st[3][st[0].index('alreadyHeld')]) > 0, 'the repeat'
+assert int(st[3][st[0].index('alreadyTested')]) > 0 and st[3][st[0].index('parts')] == '0', 'the repeat tests nothing'
+PYEOF
+check "--sample 20, 60 and 500: the sites that hash lowest without --sample; the repeated annotation tests nothing again; a warning when conflicts leave fewer than N" \
+    bash -c "python3 '$TMP/sample.py' '$TMP/sall.sites' 20 '$TMP/s20.sites' 60 '$TMP/s60.sites' 500 '$TMP/s500.sites' && grep -q 'warning: [0-9]* sites, not 20' '$TMP/s20.err'"
 refuses "hal 4d with an ancestor's annotation" "$BIN/hal" 4d "$A" "$TMP/x.ss" "Genome_1=$TMP/g10.gff3"
 
 echo "hal fasta against hal2fasta:"

@@ -249,19 +249,14 @@ void TreeWalk::descendParented(const Genome *v, PieceMap &own, PieceMap &quiet, 
     }
 }
 
-void TreeWalk::liftParented(uint32_t refSeq, const vector<pair<int64_t, int64_t>> &intervals, PieceMap &pieces,
-                            map<const Genome *, vector<int32_t>> &from) {
-    if (!_opts.dupes || _opts.onlyOrthologs) throw runtime_error("internal error: a parented lift keeps every copy, to the scope top");
-    pieces.clear();
-    from.clear();
-    _below.clear();
+void TreeWalk::liftTops(uint32_t refSeq, const vector<pair<int64_t, int64_t>> &intervals, PieceMap &tops) {
+    if (!_opts.dupes || _opts.onlyOrthologs) throw runtime_error("internal error: tops are of every copy, to the scope top");
+    tops.clear();
     vector<LiftPiece> cur, next, unmapped;
     for (const auto &iv : intervals)
         if (iv.second > iv.first) cur.push_back(LiftPiece{iv.first, refSeq, iv.first, iv.second - iv.first, false});
-    if (cur.empty()) return;
     /* up to the scope top: what goes no higher is a top where it stops */
-    PieceMap tops;
-    for (const Genome *a = _ref;;) {
+    for (const Genome *a = _ref; !cur.empty();) {
         if (a == _top) {
             vector<LiftPiece> &t = tops[a];
             t.insert(t.end(), cur.begin(), cur.end());
@@ -273,9 +268,19 @@ void TreeWalk::liftParented(uint32_t refSeq, const vector<pair<int64_t, int64_t>
             t.insert(t.end(), unmapped.begin(), unmapped.end());
         }
         cur.swap(next);
-        if (cur.empty()) break;
         a = a->parent();
     }
+}
+
+void TreeWalk::liftParented(uint32_t refSeq, const vector<pair<int64_t, int64_t>> &intervals, PieceMap &pieces,
+                            map<const Genome *, vector<int32_t>> &from) {
+    if (!_opts.dupes || _opts.onlyOrthologs) throw runtime_error("internal error: a parented lift keeps every copy, to the scope top");
+    pieces.clear();
+    from.clear();
+    _below.clear();
+    PieceMap tops;
+    liftTops(refSeq, intervals, tops);
+    if (tops.empty()) return;
     for (auto &t : tops)
         for (const Genome *g = t.first; g && _below.insert(g).second; g = g->parent()) {
         }

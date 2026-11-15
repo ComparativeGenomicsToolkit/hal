@@ -95,6 +95,11 @@ class TreeWalk {
     void liftParented(uint32_t refSeq, const std::vector<std::pair<int64_t, int64_t>> &intervals, PieceMap &pieces,
                       std::map<const Genome *, std::vector<int32_t>> &from);
 
+    /* liftParented's way up alone: tops[g] the pieces of the reference whose lift up stops at
+     * g (source = the reference), every reference base in exactly one -- each base's column's
+     * top base, without the walk down. */
+    void liftTops(uint32_t refSeq, const std::vector<std::pair<int64_t, int64_t>> &intervals, PieceMap &tops);
+
     const Genome *ref() const { return _ref; }
     const Genome *top() const { return _top; }
     /* the reference, its parent, ... up to top() */
