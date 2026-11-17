@@ -1193,10 +1193,11 @@ sanns="Genome_10=$TMP/g10.gff3 Genome_16=$TMP/g16.gff3.gz Genome_10=$TMP/g10.gtf
 "$BIN/hal" 4d "$A" "$TMP/sall.ss" $sanns --sites "$TMP/sall.sites" --stats "$TMP/sall.stats" 2>/dev/null
 "$BIN/hal" 4d "$A" "$TMP/s20.ss" $sanns --sample 20 --sites "$TMP/s20.sites" --threads 3 2>"$TMP/s20.err"
 "$BIN/hal" 4d "$A" "$TMP/s60.ss" $sanns --sample 60 --sites "$TMP/s60.sites" 2>/dev/null
-"$BIN/hal" 4d "$A" "$TMP/s500.ss" $sanns --sample 500 --sites "$TMP/s500.sites" --threads 2 2>/dev/null
+"$BIN/hal" 4d "$A" "$TMP/s500.ss" $sanns --sample 500 --sites "$TMP/s500.sites" --threads 2 2>"$TMP/s500.err"
 cat >"$TMP/sample.py" <<'PYEOF'
-# --sample N: the 2N sites that hash lowest of those held without it, alike (strand, annotations, the
-# first; a conflict there one here); of them the N lowest not in conflict kept, the rest unsampled
+# --sample N: columns tested in hash order until N sites in no conflict: the sites are those of
+# the run without it up to some hash, alike (strand, annotations, the first; a conflict there one
+# here); the N lowest not in conflict kept, the rest unsampled
 import sys
 def fnv(s):
     h = 1469598103934665603
@@ -1206,21 +1207,20 @@ def rows(p): return [l.rstrip('\n').split('\t') for l in open(p) if not l.starts
 H = lambda f: fnv(f[0].split('.', 1)[0] + '\0' + f[0].split('.', 1)[1] + '\0' + f[1])
 full = sorted(rows(sys.argv[1]), key=H)
 assert any(int(f[3]) > 1 for f in full), 'a site two annotations chose'
+clean = [f for f in full if f[5] == 'kept']
 for k in range(2, len(sys.argv), 2):
     n, got = int(sys.argv[k]), sorted(rows(sys.argv[k + 1]), key=H)
-    want = full[:2 * n]
-    assert [f[:5] for f in got] == [f[:5] for f in want], '%d: the sites held' % n
-    ok = [f for f in want if f[5] == 'kept'][:n]
-    assert [f for f in got if f[5] == 'kept'] == ok, '%d: those kept' % n
-    assert all(g[5] == 'conflict' if f[5] == 'conflict' else g[5] in ('kept', 'unsampled') for f, g in zip(want, got)), '%d: statuses' % n
+    assert [f[:5] for f in got] == [f[:5] for f in full[:len(got)]], '%d: the sites, a prefix by hash' % n
+    assert all((g[5] == 'conflict') == (f[5] == 'conflict') for f, g in zip(full, got)), '%d: conflicts' % n
+    assert [f[:5] for f in got if f[5] == 'kept'] == [f[:5] for f in clean[:n]], '%d: those kept' % n
     ss = sys.argv[k + 1][:-len('sites')] + 'ss'
-    assert 'LENGTH = %d\n' % len(ok) in open(ss).read(), '%d: the SS' % n
+    assert 'LENGTH = %d\n' % min(n, len(clean)) in open(ss).read(), '%d: the SS' % n
 st = [l.rstrip('\n').split('\t') for l in open(sys.argv[1][:-len('sites')] + 'stats')]
 assert st[3][st[0].index('kept')] == '0' and int(st[3][st[0].index('alreadyHeld')]) > 0, 'the repeat'
 assert int(st[3][st[0].index('alreadyTested')]) > 0 and st[3][st[0].index('parts')] == '0', 'the repeat tests nothing'
 PYEOF
-check "--sample 20, 60 and 500: the sites that hash lowest without --sample; the repeated annotation tests nothing again; a warning when conflicts leave fewer than N" \
-    bash -c "python3 '$TMP/sample.py' '$TMP/sall.sites' 20 '$TMP/s20.sites' 60 '$TMP/s60.sites' 500 '$TMP/s500.sites' && grep -q 'warning: [0-9]* sites, not 20' '$TMP/s20.err'"
+check "--sample 20, 60 and 500: the sites that hash lowest without --sample; the repeated annotation tests nothing again; a warning when there are fewer than N" \
+    bash -c "python3 '$TMP/sample.py' '$TMP/sall.sites' 20 '$TMP/s20.sites' 60 '$TMP/s60.sites' 500 '$TMP/s500.sites' && ! grep -q warning '$TMP/s20.err' && grep -q 'warning: [0-9]* sites, not 500' '$TMP/s500.err'"
 refuses "hal 4d with an ancestor's annotation" "$BIN/hal" 4d "$A" "$TMP/x.ss" "Genome_1=$TMP/g10.gff3"
 
 echo "hal fasta against hal2fasta:"
