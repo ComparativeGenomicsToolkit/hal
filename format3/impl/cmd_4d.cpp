@@ -87,6 +87,9 @@ const char *FOURD_USAGE =
     "                       column's top base (or its part's root), the codon's strand against\n"
     "                       the column's top base, how many annotations have a codon there, the\n"
     "                       first, and what became of it\n"
+    "  --siteDetails        --sites also gives the codon that kept the site (its genome's\n"
+    "                       sequence and third position), the leaves with two copies in its\n"
+    "                       column, and its bases (by leaf, the SS's order)\n"
     "  --stats FILE         per annotation: transcripts, codons and why codons were dropped (TSV)\n"
     "  --excludeGenomes A,B leaves left out (no row, and not walked into)\n"
     "  --threads N          N threads (default 1); the output is the same\n";
@@ -147,11 +150,13 @@ struct ColKeyHash {
 
 /* a candidate codon (phase 1): its three columns, by their top bases; its strand against
  * each column's top base (bit k of m); its annotation and its place among that annotation's
- * codons (the order codons are tested in); and the annotated genome */
+ * codons (the order codons are tested in); and the annotated genome, and where its third
+ * position is there */
 struct Cand {
     ColKey col[3];
     uint64_t hash;   /* the site column's (col[2]), for sampling */
-    uint32_t ann, idx, anchor;
+    uint32_t ann, idx, anchor, seq;
+    int64_t pos;     /* the third position's, in the annotated genome */
     uint8_t m;
     bool operator<(const Cand &o) const { return tie(col[2], ann, idx) < tie(o.col[2], o.ann, o.idx); }
 };
@@ -183,6 +188,8 @@ struct Site {
     uint32_t first, nann;
     size_t sc;   /* its SiteCol */
     string tuple;
+    uint32_t anchor, seq, dupLeaves;   /* the codon that kept it: its genome and third position; leaves with two copies in the column */
+    int64_t pos;
 };
 
 bool gzLine(gzFile f, string &line) {
@@ -512,6 +519,8 @@ ScanResult scanUnit(const Context &cx, Worker &wk, const Genome *anchor, uint32_
         x.hash = siteHash(cx, x.col[2]);
         x.ann = ann;
         x.idx = (uint32_t)i;
+        x.seq = c.seq;
+        x.pos = c.p[2];
         x.anchor = ai;
         r.cands.push_back(x);
     }
@@ -651,6 +660,11 @@ TestResult testUnit(const Context &cx, Worker &wk, const vector<SiteCol> &sc, co
     auto t2 = chrono::steady_clock::now();
     r.ph.columnSecs += chrono::duration<double>(t2 - t1).count();
 
+    auto dupLeaves = [&](size_t i) {   /* leaves with two copies in column i */
+        uint32_t n = 0;
+        for (uint32_t g : wk.dupG[i]) n += cx.leafOf[g] >= 0 ? 1 : 0;
+        return n;
+    };
     /* a base in the codon's orientation, from its column's top's: m the codon on the minus
      * strand of that top */
     auto orient = [](char x, bool m) { return m ? complementBase(x) : x; };
@@ -763,12 +777,12 @@ TestResult testUnit(const Context &cx, Worker &wk, const vector<SiteCol> &sc, co
                     }
                     continue;
                 }
-                Site site{partRoot, c.col[2], m[2], h, c.ann, 1, s, string(cx.leaves, '*')};
+                Site site{partRoot, c.col[2], m[2], h, c.ann, 1, s, string(cx.leaves, '*'), c.anchor, c.seq, dupLeaves(ix[2]), c.pos};
                 for (size_t x = pb; x < pe; x++) site.tuple[(size_t)cx.leafOf[e3[parts[x].second].genome]] = orient(e3[parts[x].second].base, m[2]);
                 found.push_back(move(site));
             }
             if (bestE > bestB) {   /* the column's site: its largest part */
-                Site site{c.col[2], c.col[2], m[2], c.hash, c.ann, 1, s, string(cx.leaves, '*')};
+                Site site{c.col[2], c.col[2], m[2], c.hash, c.ann, 1, s, string(cx.leaves, '*'), c.anchor, c.seq, dupLeaves(ix[2]), c.pos};
                 for (size_t x = bestB; x < bestE; x++) site.tuple[(size_t)cx.leafOf[e3[parts[x].second].genome]] = orient(e3[parts[x].second].base, m[2]);
                 found.push_back(move(site));
                 st.columns++;
@@ -834,7 +848,7 @@ TestResult testUnit(const Context &cx, Worker &wk, const vector<SiteCol> &sc, co
         }
         st.passed++;
         if (b[2].size() == 1) st.alone++;
-        Site site{c.col[2], c.col[2], m[2], c.hash, c.ann, 1, s, string(cx.leaves, '*')};
+        Site site{c.col[2], c.col[2], m[2], c.hash, c.ann, 1, s, string(cx.leaves, '*'), c.anchor, c.seq, dupLeaves(ix[2]), c.pos};
         for (const auto &e : b[2]) site.tuple[(size_t)e.first] = e.second;
         found.push_back(move(site));
     };
@@ -907,10 +921,10 @@ int main_4d(int argc, char **argv) {
     return runCommand("4d", [&]() {
         string sitesPath, statsPath, dupStatsPath;
         Context::Dupes dupes = Context::SPLIT;
-        bool allParts = false;
+        bool allParts = false, siteDetails = false;
         int64_t sample = -1, threads = 1;
         vector<string> exclude;
-        enum { SAMPLE = 1000, SITES, STATS, EXCLUDE_GENOMES, THREADS, DUPES, DUP_STATS, PARTS };
+        enum { SAMPLE = 1000, SITES, STATS, EXCLUDE_GENOMES, THREADS, DUPES, DUP_STATS, PARTS, SITE_DETAILS };
         static const option longOpts[] = {{"sample", required_argument, nullptr, SAMPLE},
                                           {"sites", required_argument, nullptr, SITES},
                                           {"stats", required_argument, nullptr, STATS},
@@ -919,6 +933,7 @@ int main_4d(int argc, char **argv) {
                                           {"dupes", required_argument, nullptr, DUPES},
                                           {"dupStats", required_argument, nullptr, DUP_STATS},
                                           {"parts", required_argument, nullptr, PARTS},
+                                          {"siteDetails", no_argument, nullptr, SITE_DETAILS},
                                           {"help", no_argument, nullptr, 'h'},
                                           {nullptr, 0, nullptr, 0}};
         int c;
@@ -948,6 +963,7 @@ int main_4d(int argc, char **argv) {
                 else if (string(optarg) == "all") allParts = true;
                 else throw CliError("--parts must be largest or all");
                 break;
+            case SITE_DETAILS: siteDetails = true; break;
             case 'h': cout << FOURD_USAGE; return 0;
             default: throw CliError("bad option");
             }
@@ -1266,7 +1282,7 @@ int main_4d(int argc, char **argv) {
         if (!sitesPath.empty()) {
             ofstream s(sitesPath);
             if (!s) throw runtime_error("cannot write " + sitesPath);
-            s << "#top\tpos\tstrand\tannotations\tfirst\tstatus\n";
+            s << "#top\tpos\tstrand\tannotations\tfirst\tstatus" << (siteDetails ? "\tcodon\tcodonPos\tdupLeaves\tbases" : "") << "\n";
             static const char *what[] = {"kept", "conflict", "unsampled"};
             vector<uint32_t> all(sites.size());
             iota(all.begin(), all.end(), (uint32_t)0);
@@ -1275,7 +1291,12 @@ int main_4d(int argc, char **argv) {
                 const Site &x = sites[i];
                 const Genome *g = genomes[x.key.genome];
                 s << g->name() << '.' << g->sequenceName(x.key.seq) << '\t' << x.key.pos << '\t' << (x.minus ? '-' : '+') << '\t' << x.nann << '\t'
-                  << anns[x.first].first->name() << '\t' << what[status[i]] << '\n';
+                  << anns[x.first].first->name() << '\t' << what[status[i]];
+                if (siteDetails) {
+                    const Genome *a = genomes[x.anchor];
+                    s << '\t' << a->name() << '.' << a->sequenceName(x.seq) << '\t' << x.pos << '\t' << x.dupLeaves << '\t' << x.tuple;
+                }
+                s << '\n';
             }
             if (!s) throw runtime_error("cannot write " + sitesPath);
         }

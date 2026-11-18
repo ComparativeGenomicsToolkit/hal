@@ -1080,7 +1080,9 @@ for ai, arg in enumerate(sys.argv[4:]):
                 mins = [c[4] != (cols3[k][0][2] != sa[k]) for k in range(3)]
                 tup = ['*'] * len(leaves)
                 for i in mem: tup[row[gen[i]]] = o(anchor_base(es[i], 2))
-                s_ = sites.setdefault(key, {'minus': mins[2], 'anns': set(), 'first': G, 'ai': ai, 'tuple': ''.join(tup), 'col': tops[2]})
+                dup = sum(1 for g, v in collections.Counter(g for g in gen if g in row).items() if v > 1)   # leaves with two copies in the column
+                s_ = sites.setdefault(key, {'minus': mins[2], 'anns': set(), 'first': G, 'ai': ai, 'tuple': ''.join(tup), 'col': tops[2],
+                                            'codon': (G + '.' + c[0], c[3], dup)})
                 s_['anns'].add(ai)
         continue
     with open(os.path.join(out, 'targets.bed'), 'w') as f:
@@ -1148,13 +1150,16 @@ for ai, arg in enumerate(sys.argv[4:]):
         tup = ['*'] * len(leaves)
         for e in cs[2]:
             if e[0] in row: tup[row[e[0]]] = o(e[3])
-        s = sites.setdefault(keys[2], {'minus': mins[2], 'anns': set(), 'first': G, 'ai': ai, 'tuple': ''.join(tup)})
+        dup = sum(1 for g, v in collections.Counter(e[0] for e in cs_all[2] if e[0] in row).items() if v > 1)   # leaves with two copies
+        s = sites.setdefault(keys[2], {'minus': mins[2], 'anns': set(), 'first': G, 'ai': ai, 'tuple': ''.join(tup), 'codon': (G + '.' + c[0], c[3], dup)})
         s['anns'].add(ai)
-with open(os.path.join(out, 'sites.tsv'), 'w') as f:
+with open(os.path.join(out, 'sites.tsv'), 'w') as f, open(os.path.join(out, 'details.tsv'), 'w') as d:
     for k in sorted(sites, key=lambda k: (pre.index(k[0]), k[1], k[2])):
         s = sites[k]
         st = 'kept' if roles[s.get('col', k)] == {(2, s['minus'])} else 'conflict'
-        f.write('%s.%s\t%d\t%s\t%d\t%s\t%s\n' % (k[0], k[1], k[2], '-' if s['minus'] else '+', len(s['anns']), s['first'], st))
+        line = '%s.%s\t%d\t%s\t%d\t%s\t%s' % (k[0], k[1], k[2], '-' if s['minus'] else '+', len(s['anns']), s['first'], st)
+        f.write(line + '\n')
+        d.write(line + '\t%s\t%d\t%d\t%s\n' % (s['codon'] + (s['tuple'],)))
 tc = collections.Counter(s['tuple'] for k, s in sites.items() if roles[s.get('col', k)] == {(2, s['minus'])})
 with open(os.path.join(out, 'tuples.tsv'), 'w') as f:
     for t, c in sorted(tc.items()): f.write('%s\t%d\n' % (t, c))
@@ -1172,6 +1177,9 @@ python3 "$TMP/fourd_oracle.py" "$A" "$BIN" "$TMP/o4d" $anns >/dev/null
 "$BIN/hal" 4d "$A" "$TMP/h4.ss" $anns --sites "$TMP/h4.sites" --threads 3 2>/dev/null
 check "--dupes split: sites (a column's largest single-copy part; strand, annotations, the first, kept or a role conflict) as an independent computation (hal columns' trees)" \
     bash -c "grep -v '^#' '$TMP/h4.sites' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d/sites.tsv') && grep -q conflict '$TMP/h4.sites' && grep -q kept '$TMP/h4.sites'"
+"$BIN/hal" 4d "$A" "$TMP/h4d.ss" $anns --sites "$TMP/h4d.sites" --siteDetails --threads 2 2>/dev/null
+check "--siteDetails: the same sites, with each one's codon, leaves with two copies and bases as the independent computation" \
+    bash -c "cut -f1-6 '$TMP/h4d.sites' | cmp -s - '$TMP/h4.sites' && grep -v '^#' '$TMP/h4d.sites' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d/details.tsv') && awk -F'\\t' 'NR > 1 && \$9 > 0' '$TMP/h4d.sites' | grep -q ."
 check "the SS: its tuples and counts as the independent computation" \
     bash -c "awk 'NR > 8 && NF == 3 {print \$2 \"\t\" \$3}' '$TMP/h4.ss' | LC_ALL=C sort | cmp -s - <(LC_ALL=C sort '$TMP/o4d/tuples.tsv')"
 "$BIN/hal" 4d "$A" "$TMP/h4g.ss" Genome_10=$TMP/g10.gtf Genome_10=$TMP/g10s.gff3 Genome_16=$TMP/g16.gtf --threads 1 2>/dev/null
